@@ -13,25 +13,22 @@ module HTTPX::Channel
 
     BUFFER_SIZE = 1 << 16 
 
-    attr_reader :remote_ip, :remote_port
+    attr_reader :remote_ip, :remote_port, :protocol
 
     def_delegator :@io, :to_io
     
-    def initialize(uri)
+    def initialize(uri, *)
       @io = TCPSocket.new(uri.host, uri.port)
       _, @remote_port, _,@remote_ip = @io.peeraddr
       @read_buffer = +""
       @write_buffer = +""
+      @protocol = "h2"
     end
 
     def close
       @io.close
     end
 
-    def protocol
-      "h2"
-    end
-   
     def empty?
       @write_buffer.empty?
     end

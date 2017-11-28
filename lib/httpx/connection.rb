@@ -62,7 +62,7 @@ module HTTPX
 
     def close(channel)
       @channels.delete(channel)
-      @channel.close
+      channel.close
     end
   end
 end

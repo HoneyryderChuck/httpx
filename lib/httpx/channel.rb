@@ -3,12 +3,12 @@
 module HTTPX::Channel
   module_function
 
-  def by(uri)
+  def by(uri, *options)
     case uri.scheme
     when "http"
-      TCP.new(uri)
+      TCP.new(uri, *options)
     when "https"
-      TLS.new(uri)
+      SSL.new(uri, *options)
     else
       raise "#{uri.scheme}: unrecognized channel"
     end
@@ -17,3 +17,4 @@ end
 
 require "httpx/channel/http2"
 require "httpx/channel/tcp"
+require "httpx/channel/ssl"
