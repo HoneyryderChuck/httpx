@@ -2,12 +2,10 @@
 require "http/2"
 
 module HTTPX
-  class Connection::HTTP2
+  class Channel::HTTP2
     include Callbacks
 
-    attr_accessor :buffer
-
-    def initialize
+    def initialize(buffer)
       @connection = HTTP2::Client.new
       @connection.on(:frame, &method(:on_frame))
       @connection.on(:frame_sent, &method(:on_frame_sent))
@@ -15,10 +13,7 @@ module HTTPX
       @connection.on(:promise, &method(:on_promise))
       @connection.on(:altsvc, &method(:on_altsvc))
       @streams = {}
-    end
-
-    def empty?
-      @buffer.empty?
+      @buffer = buffer
     end
 
     def <<(data)
@@ -104,6 +99,7 @@ module HTTPX
     end
 
     def log(&msg)
+      return unless $HTTPX_DEBUG
       $stderr << (+"connection (HTTP/2): " << msg.call << "\n")
     end
   end

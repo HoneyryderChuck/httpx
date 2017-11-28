@@ -3,7 +3,6 @@
 
 require "httpx/version"
 require "httpx/callbacks"
-require "httpx/scheme"
 require "httpx/connection"
 require "httpx/headers"
 require "httpx/request"

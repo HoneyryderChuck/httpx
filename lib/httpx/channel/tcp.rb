@@ -2,21 +2,21 @@
 
 require "forwardable"
 
-module HTTPX
-  class Scheme::HTTP
+module HTTPX::Channel
+  PROTOCOLS = {
+    "h2" => HTTP2
+  }
+
+  class TCP
     extend Forwardable
-    include Callbacks
+    include HTTPX::Callbacks
 
     BUFFER_SIZE = 1 << 16 
-
-    attr_reader :processor
 
     attr_reader :remote_ip, :remote_port
 
     def_delegator :@io, :to_io
     
-    def_delegator :@processor, :empty?
-
     def initialize(uri)
       @io = TCPSocket.new(uri.host, uri.port)
       _, @remote_port, _,@remote_ip = @io.peeraddr
@@ -24,16 +24,23 @@ module HTTPX
       @write_buffer = +""
     end
 
-    def processor=(processor)
-      processor.buffer = @write_buffer
-      @processor = processor
+    def close
+      @io.close
     end
 
     def protocol
       "h2"
     end
-    
-    def send(request)
+   
+    def empty?
+      @write_buffer.empty?
+    end
+
+    def send(request, &block)
+      if @processor.nil?
+        @processor = PROTOCOLS[protocol].new(@write_buffer)
+        @processor.on(:response, &block)
+      end
       @processor.send(request)
     end
 
@@ -48,7 +55,7 @@ module HTTPX
           # wait read/write
         rescue EOFError
           # EOF
-          @io.close
+          throw(:close, self)
         end
       end
 
@@ -63,7 +70,7 @@ module HTTPX
           # wait read/write
         rescue EOFError
           # EOF
-          @io.close
+          throw(:close, self)
         end
       end
     else
@@ -74,8 +81,7 @@ module HTTPX
           when :wait_readable
             return
           when nil
-            @io.close
-            return
+            throw(:close, self)
           else
             @processor << @read_buffer
           end
@@ -90,8 +96,7 @@ module HTTPX
           when :wait_writable
             return
           when nil
-            @io.close
-            return
+            throw(:close, self)
           else
             @write_buffer.slice!(0, siz)
           end
