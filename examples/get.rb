@@ -1,7 +1,16 @@
 require "httpx"
 
-client = HTTPX::Client.new
-request = client.request(:get, "http://nghttp2.org")
+include HTTPX
+
+# URL = "http://nghttp2.org"
+URL = "https://nghttp2.org"
+# URL = "https://github.com"
+
+$HTTPX_DEBUG = true
+client = Client.new
+request = client.request(:get, URL)
 response = client.send(request)
 
-puts response.to_s
+puts response.status
+
+client.close
