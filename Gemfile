@@ -18,7 +18,5 @@ gem "certificate_authority", git: "https://github.com/cchandler/certificate_auth
 
 gem "simplecov", ">= 0.9"
 
-gem "rspec" 
-gem "rspec-its"
-
+gem "minitest"
 gem "rubocop"
