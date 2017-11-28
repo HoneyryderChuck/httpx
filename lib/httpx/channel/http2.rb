@@ -40,17 +40,8 @@ module HTTPX
       stream.on(:data) do |data|
         @streams[stream] << data
       end
-      join_headers
-      if body = request.body
-        # TODO: expect-continue
-        stream.headers(headers, end_stream: false)
-        body.each do |chunk|
-          stream.data(chunk, end_stream: false)
-        end
-        stream.data("", end_stream: true)
-      else
-        stream.headers(headers, end_stream: true)
-      end
+      join_headers(stream, request)
+      join_body(stream, request)
     end
 
     private
