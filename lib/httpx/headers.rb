@@ -4,6 +4,13 @@ module HTTPX
   class Headers
     EMPTY = [].freeze # :nodoc:
 
+    class << self
+      def new(h = nil)
+        return h if h.is_a?(self)
+        super
+      end
+    end
+
     def initialize(h = nil)
       @headers = {}
       return unless h
@@ -90,6 +97,10 @@ module HTTPX
       end
     end
 
+    def ==(other)
+      to_hash == Headers.new(other).to_hash
+    end
+
     # the headers store in Hash format
     def to_hash
       Hash[to_a]
@@ -133,7 +144,7 @@ module HTTPX
     end
 
     def downcased(field)
-      field.downcase
+      String(field).downcase
     end
   end
 end

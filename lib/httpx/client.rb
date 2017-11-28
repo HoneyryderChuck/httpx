@@ -3,8 +3,12 @@
 module HTTPX
   class Client
     def initialize(**options)
-      @connection = Connection.new(**options)
-      @default_options = options 
+      @default_options = Options.new(options) 
+      @connection = Connection.new(@default_options)
+    end
+
+    def close
+      @connection.close
     end
 
     def request(verb, uri, **options)

@@ -7,11 +7,9 @@ require "httpx/channel"
 
 module HTTPX
   class Connection
-    CONNECTION_TIMEOUT = 2 
-
-    def initialize(**options)
-      @options = options
-      @connection_timeout = options.fetch(:connection_timeout, CONNECTION_TIMEOUT)
+    def initialize(options)
+      @options = Options.new(options)
+      @operation_timeout = options.operation_timeout
       @channels = []
       @responses = {}
     end
@@ -42,10 +40,10 @@ module HTTPX
     end
 
     def response(request)
-      @responses[request]
+      @responses.delete(request)
     end
 
-    def process_events(timeout: @connection_timeout) 
+    def process_events(timeout: @operation_timeout) 
       rmonitors = @channels
       wmonitors = rmonitors.reject(&:empty?)
       readers, writers = IO.select(rmonitors, wmonitors, nil, timeout)
@@ -60,9 +58,15 @@ module HTTPX
       end if writers
     end
 
-    def close(channel)
-      @channels.delete(channel)
-      channel.close
+    def close(channel = nil)
+      if channel
+        @channels.delete(channel)
+        channel.close
+      else
+        while ch = @channels.shift
+          ch.close
+        end 
+      end
     end
   end
 end
