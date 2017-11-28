@@ -8,7 +8,7 @@ module HTTPX
       @headers = {}
       return unless h
       h.each do |field, value|
-        @headers[downcased(field)] = value
+        @headers[downcased(field)] = array_value(value)
       end
     end
 
@@ -55,7 +55,7 @@ module HTTPX
     #
     def []=(field, value)
       return unless value
-      @headers[downcased(field)] = [String(value)]
+      @headers[downcased(field)] = array_value(value)
     end
 
     # deletes all values associated with +field+ header.
@@ -122,6 +122,15 @@ module HTTPX
     end
 
     private
+
+    def array_value(value)
+      case value
+      when Array
+        value.map{ |val| String(val) }
+      else
+        [String(value)]
+      end
+    end
 
     def downcased(field)
       field.downcase

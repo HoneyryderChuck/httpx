@@ -12,11 +12,10 @@ module HTTPX
     def initialize(status, headers)
       @status = Integer(status)
       @headers = Headers.new(headers)
-      @body = +"".b
     end 
 
     def <<(data)
-      @body << data
+      (@body ||= +"") << data
     end
 
     

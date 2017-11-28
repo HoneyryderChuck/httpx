@@ -11,6 +11,10 @@ module HTTPX
       @body    = nil
     end
 
+    def scheme
+      @uri.scheme
+    end
+
     def path
       path = uri.path
       path << "/" if path.empty?

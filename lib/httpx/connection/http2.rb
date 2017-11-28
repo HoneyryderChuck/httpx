@@ -43,7 +43,7 @@ module HTTPX
       end
 
       headers = {}
-      headers[":scheme"] = uri.scheme
+      headers[":scheme"] = request.scheme
       headers[":method"] = request.verb.to_s.upcase
       headers[":path"] = request.path 
       headers[":authority"] = request.authority 
