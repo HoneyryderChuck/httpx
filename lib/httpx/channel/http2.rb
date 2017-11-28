@@ -16,6 +16,10 @@ module HTTPX
       @buffer = buffer
     end
 
+    def close
+      @connection.goaway
+    end
+
     def <<(data)
       @connection << data
     end
@@ -36,26 +40,39 @@ module HTTPX
       stream.on(:data) do |data|
         @streams[stream] << data
       end
-
-      headers = {}
-      headers[":scheme"] = request.scheme
-      headers[":method"] = request.verb.to_s.upcase
-      headers[":path"] = request.path 
-      headers[":authority"] = request.authority 
-
-      headers = headers.merge(request.headers)
-
+      join_headers
       if body = request.body
-        headers["content-length"] = String(body.bytesize) if body.respond_to?(:bytesize)
         # TODO: expect-continue
-        stream.data(headers, end_stream: false)
-        stream.data(body.to_s, end_stream: true)
+        stream.headers(headers, end_stream: false)
+        body.each do |chunk|
+          stream.data(chunk, end_stream: false)
+        end
+        stream.data("", end_stream: true)
       else
         stream.headers(headers, end_stream: true)
       end
     end
 
     private
+
+    def join_headers(stream, request)
+      headers = {}
+      headers[":scheme"]    = request.scheme
+      headers[":method"]    = request.verb.to_s.upcase
+      headers[":path"]      = request.path 
+      headers[":authority"] = request.authority 
+      headers = headers.merge(request.headers)
+      stream.headers(headers, end_stream: !request.body)
+    end
+
+    def join_body(stream, request)
+      return unless request.body
+      request.body.each do |chunk|
+        stream.data(chunk, end_stream: false)
+      end
+      stream.data("", end_stream: true)
+    end
+
     ######
     # HTTP/2 Callbacks
     ######
@@ -96,6 +113,7 @@ module HTTPX
     end
 
     def on_promise(stream)
+      # TODO: policy for handling promises
     end
 
     def log(&msg)

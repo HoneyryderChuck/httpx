@@ -4,7 +4,8 @@ require "forwardable"
 
 module HTTPX::Channel
   PROTOCOLS = {
-    "h2" => HTTP2
+    "h2" => HTTP2,
+    "http/1.1" => HTTP1
   }
 
   class TCP
@@ -17,15 +18,16 @@ module HTTPX::Channel
 
     def_delegator :@io, :to_io
     
-    def initialize(uri, *)
+    def initialize(uri, **)
       @io = TCPSocket.new(uri.host, uri.port)
       _, @remote_port, _,@remote_ip = @io.peeraddr
       @read_buffer = +""
       @write_buffer = +""
-      @protocol = "h2"
+      @protocol = "http/1.1"
     end
 
     def close
+      @processor.close if @processor
       @io.close
     end
 

@@ -2,6 +2,8 @@
 
 module HTTPX
   class Request
+    USER_AGENT = "httpx.rb/#{VERSION}"
+
     attr_reader :verb, :uri, :headers, :body
 
     def initialize(verb, uri, headers: {}, **options)
@@ -9,6 +11,9 @@ module HTTPX
       @uri     = URI(uri)
       @headers = Headers.new(headers)
       @body    = nil
+
+      @headers["user-agent"] ||= USER_AGENT
+      @headers["accept"]     ||= "*/*" 
     end
 
     def scheme

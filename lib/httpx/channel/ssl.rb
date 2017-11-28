@@ -5,7 +5,7 @@ require "openssl"
 
 module HTTPX::Channel
   class SSL < TCP
-    def initialize(uri, ssl = {}, **)
+    def initialize(uri, ssl: {}, **)
       ctx = OpenSSL::SSL::SSLContext.new
       ctx.set_params(ssl)
       ctx.alpn_protocols = %w[h2 http/1.1] if ctx.respond_to?(:alpn_protocols=)
