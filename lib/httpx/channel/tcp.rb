@@ -78,6 +78,11 @@ module HTTPX::Channel
       @processor.send(request)
     end
 
+    def drain
+      dread
+      dwrite
+    end
+
     if RUBY_VERSION < "2.3"
       def dread(size = BUFFER_SIZE)
         begin

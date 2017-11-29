@@ -3,6 +3,7 @@
 require "socket"
 require "timeout"
 
+require "httpx/selector"
 require "httpx/channel"
 
 module HTTPX
@@ -12,6 +13,7 @@ module HTTPX
       @timeout = options.timeout
       @channels = []
       @responses = {}
+      @selector = Selector.new
     end
 
     # opens a channel to the IP reachable through +uri+.
@@ -27,7 +29,9 @@ module HTTPX
         uri.scheme == channel.uri.scheme
       end || begin
         channel = Channel.by(uri, @options)
-        @channels << channel 
+        @channels << channel
+        monitor = @selector.register(channel, :rw)
+        monitor.value = -> { channel.drain }
         channel
       end
     end
@@ -46,27 +50,25 @@ module HTTPX
     end
 
     def process_events(timeout: @timeout.timeout)
-      rmonitors = @channels
-      wmonitors = rmonitors.reject(&:empty?)
-      readers, writers = IO.select(rmonitors, wmonitors, nil, timeout)
-      raise TimeoutError, "timed out waiting for data" if readers.nil? && writers.nil?
-      readers.each do |reader|
-        channel = catch(:close) { reader.dread }
-        close(channel) if channel 
-      end if readers
-      writers.each do |writer|
-        channel = catch(:close) { writer.dwrite }
-        close(channel) if channel 
-      end if writers
+      @selector.select(timeout) do |monitor|
+        if task = monitor.value
+          channel = catch(:close) { task.call } 
+          close(channel) if channel 
+        end
+      end
     end
 
     def close(channel = nil)
       if channel
         channel.close
-        @channels.delete(channel) if channel.closed?
+        if channel.closed?
+          @channels.delete(channel)
+          @selector.deregister(channel)
+        end
       else
         while ch = @channels.shift
           ch.close
+          @selector.deregister(ch)
         end 
       end
     end
