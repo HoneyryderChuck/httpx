@@ -2,15 +2,17 @@ require "httpx"
 
 include HTTPX
 
-# URL = "http://nghttp2.org"
-URL = "https://nghttp2.org"
-# URL = "https://github.com"
+# supports HTTP/1 pipelining and HTTP/2
+URLS  = %w[https://nghttp2.org https://nghttp2.org/blog/]
+#
+# supports HTTP/1 pipelining
+# URLS  = %w[https://github.com https://github.com/blog]
 
 $HTTPX_DEBUG = true
 client = Client.new
-request = client.request(:get, URL)
-response = client.send(request)
+requests = URLS.map { |url| client.request(:get, url) }
+responses = client.send(*requests)
 
-puts response.status
+puts responses.map(&:status)
 
 client.close
