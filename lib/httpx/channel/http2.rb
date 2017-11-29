@@ -7,6 +7,7 @@ module HTTPX
 
     def initialize(buffer)
       init_connection
+      @pending = []
       @streams = {}
       @buffer = buffer
     end
@@ -24,11 +25,15 @@ module HTTPX
     end
 
     def send(request)
-      uri = request.uri
-
+      if @connection.active_stream_count >= @connection.remote_settings[:settings_max_concurrent_streams]
+        @pending << request
+        return
+      end
       stream = @connection.new_stream
       stream.on(:close) do
         emit(:response, request, @streams.delete(stream))
+
+        send(@pending.shift) unless @pending.empty?
       end
       # stream.on(:half_close)
       # stream.on(:altsvc)
