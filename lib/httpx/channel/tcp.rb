@@ -14,7 +14,7 @@ module HTTPX::Channel
 
     BUFFER_SIZE = 1 << 16 
 
-    attr_reader :remote_ip, :remote_port, :protocol
+    attr_reader :uri, :protocol
 
     def_delegator :@io, :to_io
     
@@ -28,6 +28,20 @@ module HTTPX::Channel
       @read_buffer = +""
       @write_buffer = +""
       @protocol = "http/1.1"
+    end
+
+    def remote_ip
+      @remote_ip || begin
+        set_remote_info
+        @remote_ip
+      end
+    end
+
+    def remote_port
+      @remote_port || begin
+        set_remote_info
+        @remote_port
+      end
     end
 
     def close
@@ -108,6 +122,10 @@ module HTTPX::Channel
     end
 
     private
+
+    def set_remote_info
+      _, @remote_port, _,@remote_ip = @io.peeraddr
+    end
 
     def perform_io
       yield

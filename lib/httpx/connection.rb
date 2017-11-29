@@ -21,10 +21,12 @@ module HTTPX
     def bind(uri)
       uri = URI(uri)
       ip = TCPSocket.getaddress(uri.host)
-      return @channels.find do |io|
-        ip == io.remote_ip && uri.port == io.remote_port
+      return @channels.find do |channel|
+        ip == channel.remote_ip &&
+        uri.port == channel.remote_port &&
+        uri.scheme == channel.uri.scheme
       end || begin
-        channel = Channel.by(uri)
+        channel = Channel.by(uri, @options)
         @channels << channel 
         channel
       end
