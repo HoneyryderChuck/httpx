@@ -104,6 +104,7 @@ module HTTPX
     end
 
     def on_promise(stream)
+      stream.refuse
       # TODO: policy for handling promises
     end
 
