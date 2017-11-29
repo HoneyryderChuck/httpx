@@ -18,14 +18,14 @@ module HTTPX::Channel
 
     def_delegator :@io, :to_io
     
-    def initialize(uri, options)
-      @closed = false
+    def initialize(uri, options, &on_response)
       @uri = uri
       @options = HTTPX::Options.new(options)
       @timeout = options.timeout
       @read_buffer = +""
       @write_buffer = +""
       connect
+      @on_response = on_response
       set_remote_info
     end
 
@@ -56,13 +56,12 @@ module HTTPX::Channel
       @write_buffer.empty?
     end
 
-    def send(request, &block)
-      if @processor.nil?
-        @processor = PROTOCOLS[protocol].new(@write_buffer)
-        @processor.on(:response, &block)
-        @processor.on(:close) { throw(:close, self) }
+    def send(request)
+      if @processor
+        @processor.send(request)
+      else
+        @pending << request
       end
-      @processor.send(request)
     end
 
     def drain
@@ -134,6 +133,15 @@ module HTTPX::Channel
       @io = TCPSocket.new(@remote_ip, @remote_port)
       @read_buffer.clear
       @write_buffer.clear
+    def set_processor
+      return @processor if defined?(@processor)
+      @processor = PROTOCOLS[protocol].new(@write_buffer)
+      @processor.on(:response, &@on_response)
+      @processor.on(:close) { throw(:close, self) }
+      while request = @pending.shift
+        @processor.send(request)
+      end
+      @processor
     end
 
     def set_remote_info

@@ -3,12 +3,12 @@
 module HTTPX::Channel
   module_function
 
-  def by(uri, options)
+  def by(uri, options, &blk)
     case uri.scheme
     when "http"
-      TCP.new(uri, options)
+      TCP.new(uri, options, &blk)
     when "https"
-      SSL.new(uri, options)
+      SSL.new(uri, options, &blk)
     else
       raise Error, "#{uri.scheme}: unrecognized channel"
     end

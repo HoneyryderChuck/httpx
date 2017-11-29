@@ -11,9 +11,9 @@ module HTTPX
     def initialize(options)
       @options = Options.new(options)
       @timeout = options.timeout
+      @selector = Selector.new
       @channels = []
       @responses = {}
-      @selector = Selector.new
     end
 
     # opens a channel to the IP reachable through +uri+.
@@ -28,7 +28,10 @@ module HTTPX
         uri.port == channel.remote_port &&
         uri.scheme == channel.uri.scheme
       end || begin
-        channel = Channel.by(uri, @options)
+        channel = Channel.by(uri, @options) do |request, response|
+          @responses[request] = response
+        end
+
         @channels << channel
         monitor = @selector.register(channel, :rw)
         monitor.value = -> { channel.drain }
@@ -40,9 +43,7 @@ module HTTPX
       channel = bind(request.uri)
       raise Error, "no channel available" unless channel
 
-      channel.send(request) do |request, response|
-        @responses[request] = response
-      end
+      channel.send(request)
     end
 
     def response(request)
@@ -52,7 +53,7 @@ module HTTPX
     def process_events(timeout: @timeout.timeout)
       @selector.select(timeout) do |monitor|
         if task = monitor.value
-          channel = catch(:close) { task.call } 
+          channel = catch(:close) { task.call }
           close(channel) if channel 
         end
       end
