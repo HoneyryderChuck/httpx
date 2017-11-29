@@ -14,7 +14,7 @@ module HTTPX::Channel
 
     BUFFER_SIZE = 1 << 16 
 
-    attr_reader :uri, :protocol
+    attr_reader :uri, :remote_ip, :remote_port
 
     def_delegator :@io, :to_io
     
@@ -26,24 +26,11 @@ module HTTPX::Channel
       @read_buffer = +""
       @write_buffer = +""
       connect
+      set_remote_info
     end
 
     def protocol
       "http/1.1"
-    end
-
-    def remote_ip
-      @remote_ip || begin
-        set_remote_info
-        @remote_ip
-      end
-    end
-
-    def remote_port
-      @remote_port || begin
-        set_remote_info
-        @remote_port
-      end
     end
 
     def closed?
@@ -143,16 +130,15 @@ module HTTPX::Channel
       end
     end
 
-    private
-
     def connect
-      @io = TCPSocket.new(uri.host, uri.port)
+      @io = TCPSocket.new(@remote_ip, @remote_port)
       @read_buffer.clear
       @write_buffer.clear
     end
 
     def set_remote_info
-      _, @remote_port, _,@remote_ip = @io.peeraddr
+      @remote_ip = TCPSocket.getaddress(@uri.host)
+      @remote_port = @uri.port
     end
 
     def perform_io
