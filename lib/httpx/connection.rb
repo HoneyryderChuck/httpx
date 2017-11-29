@@ -45,7 +45,7 @@ module HTTPX
       @responses.delete(request)
     end
 
-    def process_events(timeout: @timeout.timeout) 
+    def process_events(timeout: @timeout.timeout)
       rmonitors = @channels
       wmonitors = rmonitors.reject(&:empty?)
       readers, writers = IO.select(rmonitors, wmonitors, nil, timeout)
@@ -62,8 +62,8 @@ module HTTPX
 
     def close(channel = nil)
       if channel
-        @channels.delete(channel)
         channel.close
+        @channels.delete(channel) if channel.closed?
       else
         while ch = @channels.shift
           ch.close

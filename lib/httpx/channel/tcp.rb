@@ -19,15 +19,17 @@ module HTTPX::Channel
     def_delegator :@io, :to_io
     
     def initialize(uri, options)
+      @closed = false
       @uri = uri
       @options = HTTPX::Options.new(options)
       @timeout = options.timeout
-      @timeout.connect do
-        @io = TCPSocket.new(uri.host, uri.port)
-      end
       @read_buffer = +""
       @write_buffer = +""
-      @protocol = "http/1.1"
+      connect
+    end
+
+    def protocol
+      "http/1.1"
     end
 
     def remote_ip
@@ -44,9 +46,23 @@ module HTTPX::Channel
       end
     end
 
+    def closed?
+      @closed
+    end
+
     def close
-      @processor.close if @processor
+      if processor = @processor
+        processor.close
+        @processor = nil
+      end
       @io.close
+      @closed = true
+      unless processor.empty?
+        connect
+        @processor = processor
+        @processor.reenqueue!
+        @closed = false
+      end
     end
 
     def empty?
@@ -57,6 +73,7 @@ module HTTPX::Channel
       if @processor.nil?
         @processor = PROTOCOLS[protocol].new(@write_buffer)
         @processor.on(:response, &block)
+        @processor.on(:close) { throw(:close, self) }
       end
       @processor.send(request)
     end
@@ -69,7 +86,7 @@ module HTTPX::Channel
             @processor << @read_buffer
           end
         rescue IO::WaitReadable
-          # wait read/write
+          return
         rescue EOFError
           # EOF
           throw(:close, self)
@@ -84,7 +101,7 @@ module HTTPX::Channel
             @write_buffer.slice!(0, siz)
           end
         rescue IO::WaitWritable
-          # wait read/write
+          return
         rescue EOFError
           # EOF
           throw(:close, self)
@@ -122,6 +139,14 @@ module HTTPX::Channel
     end
 
     private
+
+    def connect
+      @timeout.connect do
+        @io = TCPSocket.new(uri.host, uri.port)
+      end
+      @read_buffer.clear
+      @write_buffer.clear
+    end
 
     def set_remote_info
       _, @remote_port, _,@remote_ip = @io.peeraddr

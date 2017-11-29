@@ -5,9 +5,31 @@ require "openssl"
 
 module HTTPX::Channel
   class SSL < TCP
-    def initialize(uri, options)
-      @timeout = options.timeout
-      @options = HTTPX::Options.new(options)
+    def protocol
+      @io.alpn_protocol
+    end
+
+    if OpenSSL::VERSION < "2.0.6"
+      # OpenSSL < 2.0.6 has a leak in the buffer destination data.
+      # It has been fixed as of 2.0.6: https://github.com/ruby/openssl/pull/153
+      def dread(size = BUFFER_SIZE)
+        begin
+          loop do
+            @io.read_nonblock(size, @read_buffer)
+            @processor << @read_buffer
+          end
+        rescue IO::WaitReadable
+          return 
+        rescue EOFError
+          # EOF
+          throw(:close, self)
+        end
+      end
+    end
+
+    private
+
+    def connect
       ssl = @options.ssl
       ctx = OpenSSL::SSL::SSLContext.new
       ctx.set_params(ssl)
@@ -24,38 +46,6 @@ module HTTPX::Channel
         @io.connect # TODO: non-block variant missing
       end
     end
-
-    def protocol
-      @io.alpn_protocol
-    end
-
-    def send(request, &block)
-      if @processor.nil?
-        @processor = PROTOCOLS[protocol].new(@write_buffer)
-        @processor.on(:response, &block)
-      end
-      @processor.send(request)
-    end
-
-    if OpenSSL::VERSION < "2.0.6"
-      # OpenSSL < 2.0.6 has a leak in the buffer destination data.
-      # It has been fixed as of 2.0.6: https://github.com/ruby/openssl/pull/153
-      def dread(size = BUFFER_SIZE)
-        begin
-          loop do
-            @io.read_nonblock(size, @read_buffer)
-            @processor << @read_buffer
-          end
-        rescue IO::WaitReadable
-          # wait read/write
-        rescue EOFError
-          # EOF
-          throw(:close, self)
-        end
-      end
-    end
-
-    private
 
     def perform_io
       yield

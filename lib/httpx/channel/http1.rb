@@ -12,23 +12,35 @@ module HTTPX
       @parser.header_value_type = :arrays
       @buffer = buffer
       @version = version
+      @requests = []
+      @responses = []
     end
 
     def reset
-      @request = nil
-      @response = nil
       @parser.reset! 
     end
     alias :close :reset
+
+    def empty?
+      @requests.empty?
+    end
 
     def <<(data)
       @parser << data
     end
 
     def send(request)
-      @request = request
+      @requests << request
       join_headers(request)
       join_body(request)
+    end
+
+    def reenqueue!
+      requests = @requests.dup
+      @requests.clear
+      requests.each do |request|
+        send(request)
+      end
     end
 
     def on_message_begin
@@ -37,23 +49,23 @@ module HTTPX
 
     def on_headers_complete(h)
       log { "headers received" }
-      @response = Response.new(@parser.status_code, h)
-      log { @response.headers.each.map { |f, v| "-> #{f}: #{v}" }.join("\n") }
+      response =  Response.new(@parser.status_code, h)
+      @responses << response
+      log { response.headers.each.map { |f, v| "-> #{f}: #{v}" }.join("\n") }
     end
 
     def on_body(chunk)
       log { "-> #{chunk.inspect}" }
-      @response << chunk
+      @responses.last << chunk
     end
 
     def on_message_complete
       log { "parsing complete" }
-      emit(:response, @request, @response)
-      response = @response
+      request = @requests.shift
+      response = @responses.shift
+      emit(:response, request, response)
       reset
-      if response.headers["connection"] == "close"
-        throw(:close)
-      end
+      emit(:close) if response.headers["connection"] == "close"
     end
 
     private

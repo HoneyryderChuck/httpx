@@ -25,6 +25,7 @@ module HTTPX
         @connection.process_events until response = @connection.response(request)
 
         responses << response
+
         break if requests.empty?
       end
       requests.size == 1 ? responses.first : responses

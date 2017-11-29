@@ -6,18 +6,17 @@ module HTTPX
     include Callbacks
 
     def initialize(buffer)
-      @connection = HTTP2::Client.new
-      @connection.on(:frame, &method(:on_frame))
-      @connection.on(:frame_sent, &method(:on_frame_sent))
-      @connection.on(:frame_received, &method(:on_frame_received))
-      @connection.on(:promise, &method(:on_promise))
-      @connection.on(:altsvc, &method(:on_altsvc))
+      init_connection
       @streams = {}
       @buffer = buffer
     end
 
     def close
       @connection.goaway
+    end
+
+    def empty?
+      @streams.empty?
     end
 
     def <<(data)
@@ -44,7 +43,25 @@ module HTTPX
       join_body(stream, request)
     end
 
+    def reenqueue!
+      requests = @streams.values
+      @streams.clear
+      init_connection
+      requests.each do |request|
+        send(request)
+      end
+    end
+
     private
+
+    def init_connection
+      @connection = HTTP2::Client.new
+      @connection.on(:frame, &method(:on_frame))
+      @connection.on(:frame_sent, &method(:on_frame_sent))
+      @connection.on(:frame_received, &method(:on_frame_received))
+      @connection.on(:promise, &method(:on_promise))
+      @connection.on(:altsvc, &method(:on_altsvc))
+    end
 
     def join_headers(stream, request)
       headers = {}
