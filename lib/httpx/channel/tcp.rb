@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "ipaddr"
 require "forwardable"
 
 module HTTPX::Channel
@@ -17,9 +18,10 @@ module HTTPX::Channel
     attr_reader :uri, :remote_ip, :remote_port
 
     def to_io
-      return @io.to_io if defined?(@io)
-      connect
-      set_processor
+      if @closed
+        connect
+        set_processor unless @closed
+      end
       @io.to_io
     end
     
@@ -32,6 +34,8 @@ module HTTPX::Channel
       @pending = []
       @on_response = on_response
       set_remote_info
+      addr = IPAddr.new(@remote_ip)
+      @io = Socket.new(addr.family, :STREAM, 0)
     end
 
     def protocol
@@ -68,7 +72,8 @@ module HTTPX::Channel
       end
     end
 
-    def call 
+    def call
+      return if @closed
       dread
       dwrite
       nil
@@ -135,10 +140,18 @@ module HTTPX::Channel
     end
 
     def connect
-      @io = TCPSocket.new(@remote_ip, @remote_port)
+      return unless @closed
+      begin
+        @io.connect_nonblock(Socket.sockaddr_in(@remote_port, @remote_ip))
+      rescue Errno::EISCONN
+      end
+      @options.timeout # force renovation
       @read_buffer.clear
       @write_buffer.clear
       @closed = false
+    rescue Errno::EINPROGRESS,
+           Errno::EALREADY,
+           IO::WaitReadable
     end
 
     def set_processor

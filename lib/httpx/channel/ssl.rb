@@ -37,12 +37,13 @@ module HTTPX::Channel
       ctx.alpn_select_cb = lambda do |pr|
         pr.first unless pr.nil? || pr.empty? 
       end if ctx.respond_to?(:alpn_select_cb=) 
-
       super
+      return if @closed 
       @io = OpenSSL::SSL::SSLSocket.new(@io, ctx)
       @io.hostname = uri.host
       @io.sync_close = true
       @io.connect # TODO: non-block variant missing
+    rescue IO::WaitWritable 
     end
 
     def perform_io
