@@ -18,9 +18,13 @@ module HTTPX::Channel
 
     def_delegator :@io, :to_io
     
-    def initialize(uri, **)
-      @io = TCPSocket.new(uri.host, uri.port)
-      _, @remote_port, _,@remote_ip = @io.peeraddr
+    def initialize(uri, options)
+      @uri = uri
+      @options = HTTPX::Options.new(options)
+      @timeout = options.timeout
+      @timeout.connect do
+        @io = TCPSocket.new(uri.host, uri.port)
+      end
       @read_buffer = +""
       @write_buffer = +""
       @protocol = "http/1.1"

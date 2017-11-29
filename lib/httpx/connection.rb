@@ -9,7 +9,7 @@ module HTTPX
   class Connection
     def initialize(options)
       @options = Options.new(options)
-      @operation_timeout = options.operation_timeout
+      @timeout = options.timeout
       @channels = []
       @responses = {}
     end
@@ -32,7 +32,7 @@ module HTTPX
 
     def <<(request)
       channel = bind(request.uri)
-      raise "no channel available" unless channel
+      raise Error, "no channel available" unless channel
 
       channel.send(request) do |request, response|
         @responses[request] = response
@@ -43,11 +43,11 @@ module HTTPX
       @responses.delete(request)
     end
 
-    def process_events(timeout: @operation_timeout) 
+    def process_events(timeout: @timeout.timeout) 
       rmonitors = @channels
       wmonitors = rmonitors.reject(&:empty?)
       readers, writers = IO.select(rmonitors, wmonitors, nil, timeout)
-      raise Timeout::Error, "timed out waiting for data" if readers.nil? && writers.nil?
+      raise TimeoutError, "timed out waiting for data" if readers.nil? && writers.nil?
       readers.each do |reader|
         channel = catch(:close) { reader.dread }
         close(channel) if channel 

@@ -35,9 +35,7 @@ module HTTPX
       defaults = {
         :proxy              => {},
         :ssl                => {},
-        :keep_alive_timeout => KEEP_ALIVE_TIMEOUT,
-        :operation_timeout  => OPERATION_TIMEOUT,
-        :connect_timeout    => CONNECT_TIMEOUT, 
+        :timeout            => Timeout.by(:null), 
         :headers            => {},
         :cookies            => {},
       }
@@ -58,10 +56,13 @@ module HTTPX
       end
     end
 
+    def_option(:timeout) do |type, opts|
+      self.timeout = Timeout.by(type, opts)
+    end
+
     %w[
       proxy params form json body follow 
-      ssl_context ssl
-      keep_alive_timeout connect_timeout operation_timeout 
+      ssl
     ].each do |method_name|
       def_option(method_name)
     end

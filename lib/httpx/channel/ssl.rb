@@ -5,18 +5,24 @@ require "openssl"
 
 module HTTPX::Channel
   class SSL < TCP
-    def initialize(uri, ssl: {}, **)
+    def initialize(uri, options)
+      @timeout = options.timeout
+      @options = HTTPX::Options.new(options)
+      ssl = @options.ssl
       ctx = OpenSSL::SSL::SSLContext.new
       ctx.set_params(ssl)
       ctx.alpn_protocols = %w[h2 http/1.1] if ctx.respond_to?(:alpn_protocols=)
       ctx.alpn_select_cb = lambda do |pr|
         pr.first unless pr.nil? || pr.empty? 
       end if ctx.respond_to?(:alpn_select_cb=) 
-      super
-      @io = OpenSSL::SSL::SSLSocket.new(@io, ctx)
-      @io.hostname = uri.host
-      @io.sync_close = true
-      @io.connect # TODO: non-block variant missing
+
+      @timeout.connect do
+        super
+        @io = OpenSSL::SSL::SSLSocket.new(@io, ctx)
+        @io.hostname = uri.host
+        @io.sync_close = true
+        @io.connect # TODO: non-block variant missing
+      end
     end
 
     def protocol
