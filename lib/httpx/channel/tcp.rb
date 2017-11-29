@@ -16,15 +16,20 @@ module HTTPX::Channel
 
     attr_reader :uri, :remote_ip, :remote_port
 
-    def_delegator :@io, :to_io
+    def to_io
+      return @io.to_io if defined?(@io)
+      connect
+      set_processor
+      @io.to_io
+    end
     
     def initialize(uri, options, &on_response)
+      @closed = true 
       @uri = uri
       @options = HTTPX::Options.new(options)
-      @timeout = options.timeout
       @read_buffer = +""
       @write_buffer = +""
-      connect
+      @pending = []
       @on_response = on_response
       set_remote_info
     end
@@ -48,7 +53,6 @@ module HTTPX::Channel
         connect
         @processor = processor
         @processor.reenqueue!
-        @closed = false
       end
     end
 
@@ -67,6 +71,7 @@ module HTTPX::Channel
     def drain
       dread
       dwrite
+      nil
     end
 
     if RUBY_VERSION < "2.3"
@@ -133,6 +138,9 @@ module HTTPX::Channel
       @io = TCPSocket.new(@remote_ip, @remote_port)
       @read_buffer.clear
       @write_buffer.clear
+      @closed = false
+    end
+
     def set_processor
       return @processor if defined?(@processor)
       @processor = PROTOCOLS[protocol].new(@write_buffer)
