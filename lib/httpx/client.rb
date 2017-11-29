@@ -12,13 +12,22 @@ module HTTPX
     end
 
     def request(verb, uri, **options)
-      request = Request.new(verb, uri, **@default_options.merge(options))
+      Request.new(verb, uri, **@default_options.merge(options))
     end
 
-    def send(request)
-      @connection << request
-      @connection.process_events until response = @connection.response(request)
-      response
+    def send(*requests)
+      requests.each { |request| @connection << request }
+      responses = []
+
+      # guarantee ordered responses
+      loop do
+        request = requests.shift
+        @connection.process_events until response = @connection.response(request)
+
+        responses << response
+        break if requests.empty?
+      end
+      requests.size == 1 ? responses.first : responses
     end
   end
 end
