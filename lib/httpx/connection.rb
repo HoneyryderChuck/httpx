@@ -34,7 +34,7 @@ module HTTPX
 
         @channels << channel
         monitor = @selector.register(channel, :rw)
-        monitor.value = -> { channel.drain }
+        monitor.value = channel
         channel
       end
     end

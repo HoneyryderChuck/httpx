@@ -68,7 +68,7 @@ module HTTPX::Channel
       end
     end
 
-    def drain
+    def call 
       dread
       dwrite
       nil
