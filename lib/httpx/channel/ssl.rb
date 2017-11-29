@@ -38,13 +38,11 @@ module HTTPX::Channel
         pr.first unless pr.nil? || pr.empty? 
       end if ctx.respond_to?(:alpn_select_cb=) 
 
-      @timeout.connect do
-        super
-        @io = OpenSSL::SSL::SSLSocket.new(@io, ctx)
-        @io.hostname = uri.host
-        @io.sync_close = true
-        @io.connect # TODO: non-block variant missing
-      end
+      super
+      @io = OpenSSL::SSL::SSLSocket.new(@io, ctx)
+      @io.hostname = uri.host
+      @io.sync_close = true
+      @io.connect # TODO: non-block variant missing
     end
 
     def perform_io

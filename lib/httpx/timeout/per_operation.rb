@@ -8,14 +8,19 @@ module HTTPX::Timeout
 
     attr_reader :connect_timeout, :operation_timeout, :keep_alive_timeout
 
-    alias :timeout :operation_timeout
-
     def initialize(connect: CONNECT_TIMEOUT,
                    operation: OPERATION_TIMEOUT,
                    keep_alive: KEEP_ALIVE_TIMEOUT)
       @connect_timeout = connect
       @operation_timeout = operation
       @keep_alive_timeout = keep_alive
+      @timeout = @connect_timeout
+    end
+
+    def timeout
+      timeout = @timeout
+      @timeout = @operation_timeout
+      timeout
     end
 
     def ==(other)

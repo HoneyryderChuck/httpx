@@ -146,9 +146,7 @@ module HTTPX::Channel
     private
 
     def connect
-      @timeout.connect do
-        @io = TCPSocket.new(uri.host, uri.port)
-      end
+      @io = TCPSocket.new(uri.host, uri.port)
       @read_buffer.clear
       @write_buffer.clear
     end
