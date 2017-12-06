@@ -68,7 +68,8 @@ module HTTPX
     end
 
     %w[
-      proxy params form json body follow ssl max_retries
+      params form json body
+      proxy follow ssl max_retries
     ].each do |method_name|
       def_option(method_name)
     end
