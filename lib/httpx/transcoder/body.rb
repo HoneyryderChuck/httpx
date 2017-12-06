@@ -5,12 +5,16 @@ module HTTPX::Transcoder
     module_function
 
     class Encoder
+      extend Forwardable
+
+      def_delegator :@raw, :to_str
+      
+      def_delegator :@raw, :to_s
+     
+      def_delegator :@raw, :force_encoding
+
       def initialize(body)
         @raw = body
-      end
-
-      def to_str
-        @raw
       end
 
       def bytesize 

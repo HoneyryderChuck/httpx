@@ -7,6 +7,16 @@ module HTTPX::Transcoder
     module_function
 
     class Encoder
+      extend Forwardable
+    
+      def_delegator :@raw, :to_str
+      
+      def_delegator :@raw, :to_s
+      
+      def_delegator :@raw, :bytesize
+      
+      def_delegator :@raw, :force_encoding
+
       def initialize(json)
         @raw = ::JSON.dump(json)
         @charset = @raw.encoding.name.downcase
@@ -14,14 +24,6 @@ module HTTPX::Transcoder
 
       def content_type
         "application/json; charset=#{@charset}"
-      end
-
-      def bytesize 
-        @raw.bytesize
-      end
-
-      def to_str
-        @raw
       end
     end
 
