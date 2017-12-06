@@ -27,7 +27,9 @@ module HTTPX
     alias :close :reset
 
     def empty?
-      @requests.empty?
+      # this means that for every request there's an available
+      # partial response, so there are no in-flight requests waiting.
+      @requests.size == @responses.size
     end
 
     def <<(data)
