@@ -72,6 +72,7 @@ module HTTPX
       @connection.on(:promise, &method(:on_promise))
       @connection.on(:altsvc, &method(:on_altsvc))
       @connection.on(:settings_ack, &method(:on_settings))
+      @connection.on(:goaway, &method(:on_close))
     end
 
     def join_headers(stream, request)
@@ -102,6 +103,12 @@ module HTTPX
 
     def on_settings(*)
       @max_concurrent_requests = [@max_concurrent_requests, @connection.remote_settings[:settings_max_concurrent_streams]].min
+    end
+
+    def on_close
+      return unless @server.state == :closed && @server.active_stream_count.zero?
+      log { "connection closed" }
+      emit(:close) 
     end
 
     def on_frame_sent(frame)

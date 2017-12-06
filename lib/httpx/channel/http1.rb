@@ -73,9 +73,11 @@ module HTTPX
       response = @responses.shift
       emit(:response, request, response)
       reset
-      emit(:close) if response.headers["connection"] == "close"
 
       send(@pending.shift) unless @pending.empty?
+      return unless response.headers["connection"] == "close"
+      log { "connection closed" }
+      emit(:close)
     end
 
     private
