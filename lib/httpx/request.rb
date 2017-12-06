@@ -1,8 +1,5 @@
 # frozen_string_literal: true
 
-require "http/form_data"
-require "json"
-
 module HTTPX
   class Request
     METHODS = [
@@ -72,18 +69,14 @@ module HTTPX
         @headers = headers
         @body = case
         when options.body
-          options.body
+          Transcoder.registry("body").encode(options.body)
         when options.form
-          form = HTTP::FormData.create(options.form)
-          @headers["content-type"] = form.content_type
-          @headers["content-length"] = form.content_length
-          form
+          Transcoder.registry("form").encode(options.form)
         when options.json
-          body = JSON.dump(options.json)
-          @headers["content-type"] = "application/json; charset=#{body.encoding.name.downcase}"
-          @headers["content-length"] = body.bytesize 
-          body 
+          Transcoder.registry("json").encode(options.json)
         end
+        @headers["content-type"] ||= @body.content_type
+        @headers["content-length"] ||= @body.content_length
       end
 
       def each(&block)
