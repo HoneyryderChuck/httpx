@@ -16,6 +16,10 @@ module HTTPX
       @responses = {}
     end
 
+    def running?
+      !@channels.empty?
+    end
+
     # opens a channel to the IP reachable through +uri+.
     # Many hostnames are reachable through the same IP, so we try to
     # maximize pipelining by opening as few channels as possible.
@@ -28,7 +32,7 @@ module HTTPX
         uri.port == channel.remote_port &&
         uri.scheme == channel.uri.scheme
       end || begin
-        channel = Channel.by(uri, @options) do |request, response|
+        channel = Channel.by(self, uri, @options) do |request, response|
           @responses[request] = response
         end
 
@@ -62,7 +66,7 @@ module HTTPX
       end
     end
 
-    def process_events(timeout: @timeout.timeout)
+    def next_tick(timeout: @timeout.timeout)
       @selector.select(timeout) do |monitor|
         if task = monitor.value
           channel = catch(:close) { task.call }

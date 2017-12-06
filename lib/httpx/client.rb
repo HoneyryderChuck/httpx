@@ -22,7 +22,7 @@ module HTTPX
       # guarantee ordered responses
       loop do
         request = requests.shift
-        @connection.process_events until response = @connection.response(request)
+        @connection.next_tick until response = @connection.response(request)
 
         responses << response
 

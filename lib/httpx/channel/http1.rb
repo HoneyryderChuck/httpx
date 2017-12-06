@@ -8,8 +8,9 @@ module HTTPX
 
     CRLF = "\r\n"
 
-    def initialize(buffer, options)
+    def initialize(selector, buffer, options)
       @options = Options.new(options)
+      @selector = selector
       @max_concurrent_requests = @options.max_concurrent_requests
       @parser = HTTP::Parser.new(self)
       @parser.header_value_type = :arrays
@@ -58,8 +59,10 @@ module HTTPX
 
     def on_headers_complete(h)
       log { "headers received" }
-      response =  Response.new(@parser.status_code, h)
+      response = Response.new(@selector, @parser.status_code, h)
       @responses << response
+      request = @requests[@responses.size - 1]
+      emit(:response, request, response)
       log { response.headers.each.map { |f, v| "-> #{f}: #{v}" }.join("\n") }
     end
 
@@ -72,7 +75,6 @@ module HTTPX
       log { "parsing complete" }
       request = @requests.shift
       response = @responses.shift
-      emit(:response, request, response)
       reset
 
       send(@pending.shift) unless @pending.empty?

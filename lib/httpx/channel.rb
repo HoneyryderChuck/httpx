@@ -15,12 +15,12 @@ module HTTPX
     BUFFER_SIZE = 1 << 16
 
     class << self
-      def by(uri, options, &blk)
+      def by(selector, uri, options, &blk)
         io = case uri.scheme
         when "http"
-          TCP.new(uri, options)
+          TCP.new(selector, uri, options)
         when "https"
-          SSL.new(uri, options)
+          SSL.new(selector, uri, options)
         else
           raise Error, "#{uri.scheme}: unrecognized channel"
         end
@@ -115,7 +115,7 @@ module HTTPX
 
     def set_processor
       return @processor if defined?(@processor)
-      @processor = PROTOCOLS[@io.protocol].new(@write_buffer, @options)
+      @processor = PROTOCOLS[@io.protocol].new(@io.selector, @write_buffer, @options)
       @processor.on(:response, &@on_response)
       @processor.on(:close) { throw(:close, self) }
       while (request, args = @pending.shift)

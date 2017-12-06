@@ -7,10 +7,11 @@ require "ipaddr"
 module HTTPX
   class TCP
     
-    attr_reader :ip, :port, :uri
+    attr_reader :ip, :port, :uri, :selector
 
-    def initialize(uri, **)
+    def initialize(selector, uri, **)
       @connected = false
+      @selector = selector
       @uri = uri
       @ip = TCPSocket.getaddress(@uri.host) 
       @port = @uri.port
@@ -23,8 +24,7 @@ module HTTPX
     end
 
     def protocol
-      #"http/1.1"
-      "h2"
+      "http/1.1"
     end
 
     def connect
@@ -88,7 +88,7 @@ module HTTPX
   end
 
   class SSL < TCP
-    def initialize(uri, options)
+    def initialize(_, _, options)
       @negotiated = false
       @ctx = OpenSSL::SSL::SSLContext.new
       @ctx.set_params(options.ssl)

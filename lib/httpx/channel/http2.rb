@@ -5,8 +5,9 @@ module HTTPX
   class Channel::HTTP2
     include Callbacks
 
-    def initialize(buffer, options)
+    def initialize(selector, buffer, options)
       @options = Options.new(options)
+      @selector = selector
       @max_concurrent_requests = @options.max_concurrent_requests
       init_connection
       @retries = options.max_retries
@@ -20,7 +21,7 @@ module HTTPX
     end
 
     def empty?
-      @streams.empty?
+      @connection.state == :closed || @streams.empty?
     end
 
     def <<(data)
@@ -34,9 +35,10 @@ module HTTPX
       end
       stream = @connection.new_stream
       stream.on(:close) do |error|
-        response = @streams.delete(stream.id) ||
-                   ErrorResponse.new(error, retries)
-        emit(:response, request, response)
+        unless @streams.delete(stream.id)
+          response = ErrorResponse.new(error, retries)
+          emit(:response, request, response)
+        end
 
         send(@pending.shift) unless @pending.empty?
       end
@@ -44,7 +46,9 @@ module HTTPX
       # stream.on(:altsvc)
       stream.on(:headers) do |headers|
         _, status = headers.shift
-        @streams[stream.id] = Response.new(status, headers)
+        response = Response.new(@selector, status, headers)
+        @streams[stream.id] = response
+        emit(:response, request, response)
       end
       stream.on(:data) do |data|
         @streams[stream.id] << data
@@ -105,8 +109,8 @@ module HTTPX
       @max_concurrent_requests = [@max_concurrent_requests, @connection.remote_settings[:settings_max_concurrent_streams]].min
     end
 
-    def on_close
-      return unless @server.state == :closed && @server.active_stream_count.zero?
+    def on_close(*)
+      return unless @connection.state == :closed && @connection.active_stream_count.zero?
       log { "connection closed" }
       emit(:close) 
     end
