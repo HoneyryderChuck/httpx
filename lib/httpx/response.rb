@@ -17,7 +17,16 @@ module HTTPX
     def <<(data)
       (@body ||= +"") << data
     end
+  end
 
-    
+  class ErrorResponse
+
+    attr_reader :error
+
+    alias :status :error
+
+    def initialize(error)
+      @error = error
+    end
   end
 end

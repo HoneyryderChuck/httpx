@@ -25,13 +25,15 @@ module HTTPX
     end
 
     def send(request)
-      if @connection.active_stream_count >= @connection.remote_settings[:settings_max_concurrent_streams]
-        @pending << request
-        return
-      end
+      # if @connection.active_stream_count >= @connection.remote_settings[:settings_max_concurrent_streams]
+      #   @pending << request
+      #   return
+      # end
       stream = @connection.new_stream
-      stream.on(:close) do
-        emit(:response, request, @streams.delete(stream))
+      stream.on(:close) do |error|
+        response = @streams.delete(stream.id) ||
+                   ErrorResponse.new(error)
+        emit(:response, request, response)
 
         send(@pending.shift) unless @pending.empty?
       end
@@ -39,10 +41,10 @@ module HTTPX
       # stream.on(:altsvc)
       stream.on(:headers) do |headers|
         _, status = headers.shift
-        @streams[stream] = Response.new(status, headers)
+        @streams[stream.id] = Response.new(status, headers)
       end
       stream.on(:data) do |data|
-        @streams[stream] << data
+        @streams[stream.id] << data
       end
       join_headers(stream, request)
       join_body(stream, request)
