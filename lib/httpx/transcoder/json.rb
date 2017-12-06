@@ -16,7 +16,7 @@ module HTTPX::Transcoder
         "application/json; charset=#{@charset}"
       end
 
-      def content_length
+      def bytesize 
         @raw.bytesize
       end
 

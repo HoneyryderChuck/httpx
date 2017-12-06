@@ -29,7 +29,7 @@ module HTTPX
 
     attr_reader :verb, :uri, :headers, :body
 
-    def initialize(verb, uri, options)
+    def initialize(verb, uri, options={})
       @verb    = verb.to_s.downcase.to_sym
       @uri     = URI(uri)
       @options = Options.new(options)
@@ -75,11 +75,13 @@ module HTTPX
         when options.json
           Transcoder.registry("json").encode(options.json)
         end
+        return if @body.nil?
         @headers["content-type"] ||= @body.content_type
-        @headers["content-length"] ||= @body.content_length
+        @headers["content-length"] ||= @body.bytesize
       end
 
       def each(&block)
+        return if @body.nil?
         if @body.respond_to?(:read)
           IO.copy_stream(@body, ProcIO.new(block))
         elsif @body.respond_to?(:each)
@@ -87,6 +89,11 @@ module HTTPX
         else
           block[@body]
         end
+      end
+
+      def empty?
+        return true if @body.nil?
+        bytesize.zero?
       end
 
       def bytesize

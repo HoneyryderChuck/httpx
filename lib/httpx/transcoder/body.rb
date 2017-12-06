@@ -13,7 +13,7 @@ module HTTPX::Transcoder
         @raw
       end
 
-      def content_length
+      def bytesize 
         if @raw.respond_to?(:bytesize)
           @raw.bytesize
         elsif @raw.respond_to?(:size)
