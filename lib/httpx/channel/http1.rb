@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require "http_parser"
 
 module HTTPX
@@ -7,11 +8,14 @@ module HTTPX
 
     CRLF = "\r\n"
 
-    def initialize(buffer, version: [1,1], **)
+    def initialize(buffer, options)
+      @options = Options.new(options)
+      @max_concurrent_requests = @options.max_concurrent_requests
       @parser = HTTP::Parser.new(self)
       @parser.header_value_type = :arrays
       @buffer = buffer
-      @version = version
+      @version = [1,1]
+      @pending = []  
       @requests = []
       @responses = []
     end
@@ -29,7 +33,11 @@ module HTTPX
       @parser << data
     end
 
-    def send(request)
+    def send(request, **)
+      if @requests.size >= @max_concurrent_requests
+        @pending << request
+        return
+      end
       @requests << request
       join_headers(request)
       join_body(request)
@@ -66,6 +74,8 @@ module HTTPX
       emit(:response, request, response)
       reset
       emit(:close) if response.headers["connection"] == "close"
+
+      send(@pending.shift) unless @pending.empty?
     end
 
     private

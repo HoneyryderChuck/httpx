@@ -39,15 +39,27 @@ module HTTPX
       end
     end
 
-    def <<(request)
+    def send(request, **args)
       channel = bind(request.uri)
       raise Error, "no channel available" unless channel
 
-      channel.send(request)
+      channel.send(request, **args)
     end
+    alias :<< :send
 
     def response(request)
-      @responses.delete(request)
+      response = @responses.delete(request)
+      case response
+      when ErrorResponse
+        if response.retryable?
+          send(request, retries: response.retries - 1)
+          nil
+        else
+          response
+        end
+      else
+        response
+      end
     end
 
     def process_events(timeout: @timeout.timeout)

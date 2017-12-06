@@ -21,12 +21,17 @@ module HTTPX
 
   class ErrorResponse
 
-    attr_reader :error
+    attr_reader :error, :retries
 
     alias :status :error
 
-    def initialize(error)
+    def initialize(error, retries)
       @error = error
+      @retries = retries
+    end
+
+    def retryable?
+      @retries.positive?
     end
   end
 end

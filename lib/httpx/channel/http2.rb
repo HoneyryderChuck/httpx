@@ -5,8 +5,11 @@ module HTTPX
   class Channel::HTTP2
     include Callbacks
 
-    def initialize(buffer)
+    def initialize(buffer, options)
+      @options = Options.new(options)
+      @max_concurrent_requests = @options.max_concurrent_requests
       init_connection
+      @retries = options.max_retries
       @pending = []
       @streams = {}
       @buffer = buffer
@@ -24,15 +27,15 @@ module HTTPX
       @connection << data
     end
 
-    def send(request)
-      # if @connection.active_stream_count >= @connection.remote_settings[:settings_max_concurrent_streams]
-      #   @pending << request
-      #   return
-      # end
+    def send(request, retries: @retries, **)
+      if @connection.active_stream_count >= @max_concurrent_requests
+        @pending << request
+        return
+      end
       stream = @connection.new_stream
       stream.on(:close) do |error|
         response = @streams.delete(stream.id) ||
-                   ErrorResponse.new(error)
+                   ErrorResponse.new(error, retries)
         emit(:response, request, response)
 
         send(@pending.shift) unless @pending.empty?
@@ -68,6 +71,7 @@ module HTTPX
       @connection.on(:frame_received, &method(:on_frame_received))
       @connection.on(:promise, &method(:on_promise))
       @connection.on(:altsvc, &method(:on_altsvc))
+      @connection.on(:settings_ack, &method(:on_settings))
     end
 
     def join_headers(stream, request)
@@ -94,6 +98,10 @@ module HTTPX
 
     def on_frame(bytes)
       @buffer << bytes
+    end
+
+    def on_settings(*)
+      @max_concurrent_requests = [@max_concurrent_requests, @connection.remote_settings[:settings_max_concurrent_streams]].min
     end
 
     def on_frame_sent(frame)

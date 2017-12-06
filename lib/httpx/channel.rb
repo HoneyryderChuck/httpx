@@ -78,11 +78,11 @@ module HTTPX
       @write_buffer.empty?
     end
     
-    def send(request)
+    def send(request, **args)
       if @processor
-        @processor.send(request)
+        @processor.send(request, **args)
       else
-        @pending << request
+        @pending << [request, args]
       end
     end
 
@@ -115,11 +115,11 @@ module HTTPX
 
     def set_processor
       return @processor if defined?(@processor)
-      @processor = PROTOCOLS[@io.protocol].new(@write_buffer)
+      @processor = PROTOCOLS[@io.protocol].new(@write_buffer, @options)
       @processor.on(:response, &@on_response)
       @processor.on(:close) { throw(:close, self) }
-      while request = @pending.shift
-        @processor.send(request)
+      while (request, args = @pending.shift)
+        @processor.send(request, **args)
       end
       @processor
     end
