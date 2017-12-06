@@ -34,6 +34,7 @@ module HTTPX
     end
 
     def send(request, **)
+      request.headers["connection"] ||= "keep-alive"
       if @requests.size >= @max_concurrent_requests
         @pending << request
         return
@@ -86,15 +87,16 @@ module HTTPX
       request.headers["host"] ||= request.authority 
       buffer = +""
       buffer << "#{request.verb.to_s.upcase} #{request.path} HTTP/#{@version.join(".")}" << CRLF
-      log { "<- #{buffer.inspect}" }
+      log { "<- #{buffer.chomp.inspect}" }
       @buffer << buffer
       buffer.clear
       request.headers.each do |field, value|
         buffer << "#{capitalized(field)}: #{value}" << CRLF 
-        log { "<- #{buffer.inspect}" }
+        log { "<- #{buffer.chomp.inspect}" }
         @buffer << buffer
         buffer.clear
       end
+      log { "<- " }
       @buffer << CRLF
     end
 
