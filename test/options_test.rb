@@ -69,6 +69,9 @@ class OptionsSpec < Minitest::Test
       :cookies            => {},
       :max_concurrent_requests => 100,
       :max_retries        => 3,
+      :request_class      => bar.request_class,
+      :response_class     => bar.response_class,
+      :headers_class      => bar.headers_class,
     }, "options haven't merged correctly"
   end
 
