@@ -45,6 +45,7 @@ module HTTPX
     end
 
     @default_options = Options.new
+    @plugins = []
 
     class << self
       attr_reader :default_options
@@ -57,22 +58,25 @@ module HTTPX
       def plugin(pl, *args, &block)
         # raise Error, "Cannot add a plugin to a frozen config" if frozen?
         pl = Plugins.load_plugin(pl) if pl.is_a?(Symbol)
-        pl.load_dependencies(self, *args, &block) if pl.respond_to?(:load_dependencies)
-        include(pl::InstanceMethods) if defined?(pl::InstanceMethods)
-        extend(pl::ClassMethods) if defined?(pl::ClassMethods)
-        if defined?(pl::OptionsMethods) || defined?(pl::OptionsClassMethods)
-          options_klass = Class.new(@default_options.class)
-          options_klass.extend(pl::OptionsClassMethods) if defined?(pl::OptionsClassMethods)
-          options_klass.__send__(:include, pl::OptionsMethods) if defined?(pl::OptionsMethods)
-          @default_options = options_klass.new(default_options)
+        unless @plugins.include?(pl)
+          @plugins << pl
+          pl.load_dependencies(self, *args, &block) if pl.respond_to?(:load_dependencies)
+          include(pl::InstanceMethods) if defined?(pl::InstanceMethods)
+          extend(pl::ClassMethods) if defined?(pl::ClassMethods)
+          if defined?(pl::OptionsMethods) || defined?(pl::OptionsClassMethods)
+            options_klass = Class.new(@default_options.class)
+            options_klass.extend(pl::OptionsClassMethods) if defined?(pl::OptionsClassMethods)
+            options_klass.__send__(:include, pl::OptionsMethods) if defined?(pl::OptionsMethods)
+            @default_options = options_klass.new(default_options)
+          end
+          default_options.request_class.__send__(:include, pl::RequestMethods) if defined?(pl::RequestMethods)
+          default_options.request_class.extend(pl::RequestClassMethods) if defined?(pl::RequestClassMethods)
+          default_options.response_class.__send__(:include, pl::ResponseMethods) if defined?(pl::ResponseMethods)
+          default_options.response_class.extend(pl::ResponseClassMethods) if defined?(pl::ResponseClassMethods)
+          default_options.headers_class.__send__(:include, pl::HeadersMethods) if defined?(pl::HeadersMethods)
+          default_options.headers_class.extend(pl::HeadersClassMethods) if defined?(pl::HeadersClassMethods)
+          pl.configure(self, *args, &block) if pl.respond_to?(:configure)
         end
-        default_options.request_class.__send__(:include, pl::RequestMethods) if defined?(pl::RequestMethods)
-        default_options.request_class.extend(pl::RequestClassMethods) if defined?(pl::RequestClassMethods)
-        default_options.response_class.__send__(:include, pl::ResponseMethods) if defined?(pl::ResponseMethods)
-        default_options.response_class.extend(pl::ResponseClassMethods) if defined?(pl::ResponseClassMethods)
-        default_options.headers_class.__send__(:include, pl::HeadersMethods) if defined?(pl::HeadersMethods)
-        default_options.headers_class.extend(pl::HeadersClassMethods) if defined?(pl::HeadersClassMethods)
-        pl.configure(self, *args, &block) if pl.respond_to?(:configure)
         nil
       end
     end
