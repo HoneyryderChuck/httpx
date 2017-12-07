@@ -3,7 +3,7 @@ require "httpx"
 include HTTPX
 
 # supports HTTP/1 pipelining and HTTP/2
-URLS  = %w[http://nghttp2.org http://nghttp2.org/blog/] * 51
+URLS  = %w[https://nghttp2.org https://nghttp2.org/blog/] * 51
 
 
 # supports HTTP/2 and HTTP/1 Keep-Alive
