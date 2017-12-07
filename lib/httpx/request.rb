@@ -36,7 +36,7 @@ module HTTPX
 
       raise(Error, "unknown method: #{verb}") unless METHODS.include?(@verb)
 
-      @headers = Headers.new(@options.headers)
+      @headers = @options.headers_class.new(@options.headers)
       @headers["user-agent"] ||= USER_AGENT
       @headers["accept"]     ||= "*/*" 
       
@@ -55,7 +55,7 @@ module HTTPX
     end
 
     def <<(data)
-      (@body ||= +"") << data
+      @body << data
     end
 
     def authority

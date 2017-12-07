@@ -61,7 +61,8 @@ module HTTPX
 
     def on_headers_complete(h)
       log { "headers received" }
-      response = Response.new(@selector, @parser.status_code, h)
+      headers = @options.headers_class.new(h)
+      response = @options.response_class.new(@selector, @parser.status_code, headers)
       @responses << response
       request = @requests[@responses.size - 1]
       emit(:response, request, response)

@@ -30,7 +30,7 @@ module HTTPX
 
     def initialize(io, options, &on_response)
       @io = io
-      @options = HTTPX::Options.new(options)
+      @options = Options.new(options)
       @read_buffer = +""
       @write_buffer = +""
       @pending = []

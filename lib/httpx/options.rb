@@ -32,13 +32,16 @@ module HTTPX
 
     def initialize(options = {})
       defaults = {
-        :proxy              => {},
-        :ssl                => {},
-        :timeout            => Timeout.by(:null), 
-        :headers            => {},
-        :cookies            => {},
-        :max_concurrent_requests => MAX_CONCURRENT_REQUESTS,
-        :max_retries        => MAX_RETRIES,
+        :proxy                    => {},
+        :ssl                      => {},
+        :timeout                  => Timeout.by(:null), 
+        :headers                  => {},
+        :cookies                  => {},
+        :max_concurrent_requests  => MAX_CONCURRENT_REQUESTS,
+        :max_retries              => MAX_RETRIES,
+        :request_class            => Class.new(Request),
+        :response_class           => Class.new(Response),
+        :headers_class            => Class.new(Headers),
       }
 
       defaults.merge!(options)
@@ -70,6 +73,7 @@ module HTTPX
     %w[
       params form json body
       proxy follow ssl max_retries
+      request_class response_class headers_class
     ].each do |method_name|
       def_option(method_name)
     end

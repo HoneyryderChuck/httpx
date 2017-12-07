@@ -45,9 +45,10 @@ module HTTPX
       end
       # stream.on(:half_close)
       # stream.on(:altsvc)
-      stream.on(:headers) do |headers|
-        _, status = headers.shift
-        response = Response.new(@selector, status, headers)
+      stream.on(:headers) do |h|
+        _, status = h.shift
+        headers = @options.headers_class.new(h)
+        response = @options.response_class.new(@selector, status, headers)
         @streams[stream.id] = response
         emit(:response, request, response)
       end
