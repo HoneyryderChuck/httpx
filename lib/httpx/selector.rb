@@ -52,8 +52,9 @@ module HTTPX
     # deregisters +io+ from selectables.
     def deregister(io)
       @lock.synchronize do
-        monitor = @readers.delete(io)
-        monitor ||= @writers.delete(io)
+        rmonitor = @readers.delete(io)
+        wmonitor = @writers.delete(io)
+        monitor = rmonitor || wmonitor
         monitor.close(false) if monitor
       end
     end
