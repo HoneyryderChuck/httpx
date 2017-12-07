@@ -2,6 +2,8 @@
 
 module HTTPX
   class Client
+    include Chainable
+
     def initialize(**options)
       @default_options = self.class.default_options.merge(options) 
       @connection = Connection.new(@default_options)
