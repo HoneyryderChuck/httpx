@@ -2,9 +2,8 @@
 
 module HTTPX
   class Options
-    KEEP_ALIVE_TIMEOUT = 5
-    OPERATION_TIMEOUT = 5
-    CONNECT_TIMEOUT = 5
+    MAX_CONCURRENT_REQUESTS = 100
+    MAX_RETRIES = 3
 
     class << self
       def new(options = {})
@@ -33,11 +32,16 @@ module HTTPX
 
     def initialize(options = {})
       defaults = {
-        :proxy              => {},
-        :ssl                => {},
-        :timeout            => Timeout.by(:null), 
-        :headers            => {},
-        :cookies            => {},
+        :proxy                    => {},
+        :ssl                      => {},
+        :timeout                  => Timeout.by(:null), 
+        :headers                  => {},
+        :cookies                  => {},
+        :max_concurrent_requests  => MAX_CONCURRENT_REQUESTS,
+        :max_retries              => MAX_RETRIES,
+        :request_class            => Class.new(Request),
+        :response_class           => Class.new(Response),
+        :headers_class            => Class.new(Headers),
       }
 
       defaults.merge!(options)
@@ -60,9 +64,16 @@ module HTTPX
       self.timeout = Timeout.by(type, opts)
     end
 
+    def_option(:max_concurrent_requests) do |num|
+      max = Integer(num)
+      raise Error, ":max_concurrent_requests must be positive" unless max.positive?
+      self.max_concurrent_requests = max
+    end
+
     %w[
-      proxy params form json body follow 
-      ssl
+      params form json body
+      proxy follow ssl max_retries
+      request_class response_class headers_class
     ].each do |method_name|
       def_option(method_name)
     end

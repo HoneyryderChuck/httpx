@@ -16,12 +16,6 @@ class RequestTest < Minitest::Test
     assert resource.headers.is_a?(Headers), "headers should have been coerced" 
   end
 
-  def test_request_body_concat
-    assert resource.body.nil?, "body should be nil after init"
-    resource << "data"
-    assert resource.body == "data", "body should have been updated"
-  end
-
   def test_request_scheme
     r1 = Request.new(:get, "http://google.com/path")
     assert r1.scheme == "http", "unexpected scheme (#{r1.scheme}"
@@ -47,6 +41,26 @@ class RequestTest < Minitest::Test
     assert r3.path == "/path?q=bang&region=eu-west-1", "unexpected path (#{r3.path})"
   end
 
+  def test_request_body_raw
+    req = Request.new(:post, "/", body: "bang")
+    assert !req.body.empty?, "body should exist"
+    assert req.headers["content-type"] == "application/octet-stream", "content type is wrong"
+    assert req.headers["content-length"] == "4", "content length is wrong"
+  end
+
+  def test_request_body_form
+    req = Request.new(:post, "/", form: {"foo" => "bar"})
+    assert !req.body.empty?, "body should exist"
+    assert req.headers["content-type"] == "application/x-www-form-urlencoded", "content type is wrong"
+    assert req.headers["content-length"] == "7", "content length is wrong"
+  end
+
+  def test_request_body_json
+    req = Request.new(:post, "/", json: {"foo" => "bar"})
+    assert !req.body.empty?, "body should exist"
+    assert req.headers["content-type"] == "application/json; charset=utf-8", "content type is wrong"
+    assert req.headers["content-length"] == "13", "content length is wrong"
+  end
   private
 
   def resource

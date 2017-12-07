@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require "http_parser"
 
 module HTTPX
@@ -7,11 +8,15 @@ module HTTPX
 
     CRLF = "\r\n"
 
-    def initialize(buffer, version: [1,1], **)
+    def initialize(selector, buffer, options)
+      @options = Options.new(options)
+      @selector = selector
+      @max_concurrent_requests = @options.max_concurrent_requests
       @parser = HTTP::Parser.new(self)
       @parser.header_value_type = :arrays
       @buffer = buffer
-      @version = version
+      @version = [1,1]
+      @pending = []  
       @requests = []
       @responses = []
     end
@@ -22,14 +27,21 @@ module HTTPX
     alias :close :reset
 
     def empty?
-      @requests.empty?
+      # this means that for every request there's an available
+      # partial response, so there are no in-flight requests waiting.
+      @requests.size == @responses.size
     end
 
     def <<(data)
       @parser << data
     end
 
-    def send(request)
+    def send(request, **)
+      request.headers["connection"] ||= "keep-alive"
+      if @requests.size >= @max_concurrent_requests
+        @pending << request
+        return
+      end
       @requests << request
       join_headers(request)
       join_body(request)
@@ -49,8 +61,11 @@ module HTTPX
 
     def on_headers_complete(h)
       log { "headers received" }
-      response =  Response.new(@parser.status_code, h)
+      headers = @options.headers_class.new(h)
+      response = @options.response_class.new(@selector, @parser.status_code, headers)
       @responses << response
+      request = @requests[@responses.size - 1]
+      emit(:response, request, response)
       log { response.headers.each.map { |f, v| "-> #{f}: #{v}" }.join("\n") }
     end
 
@@ -63,9 +78,12 @@ module HTTPX
       log { "parsing complete" }
       request = @requests.shift
       response = @responses.shift
-      emit(:response, request, response)
       reset
-      emit(:close) if response.headers["connection"] == "close"
+
+      send(@pending.shift) unless @pending.empty?
+      return unless response.headers["connection"] == "close"
+      log { "connection closed" }
+      emit(:close)
     end
 
     private
@@ -74,15 +92,16 @@ module HTTPX
       request.headers["host"] ||= request.authority 
       buffer = +""
       buffer << "#{request.verb.to_s.upcase} #{request.path} HTTP/#{@version.join(".")}" << CRLF
-      log { "<- #{buffer.inspect}" }
+      log { "<- #{buffer.chomp.inspect}" }
       @buffer << buffer
       buffer.clear
       request.headers.each do |field, value|
         buffer << "#{capitalized(field)}: #{value}" << CRLF 
-        log { "<- #{buffer.inspect}" }
+        log { "<- #{buffer.chomp.inspect}" }
         @buffer << buffer
         buffer.clear
       end
+      log { "<- " }
       @buffer << CRLF
     end
 

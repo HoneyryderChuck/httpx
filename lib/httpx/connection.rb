@@ -3,6 +3,7 @@
 require "socket"
 require "timeout"
 
+require "httpx/selector"
 require "httpx/channel"
 
 module HTTPX
@@ -10,9 +11,63 @@ module HTTPX
     def initialize(options)
       @options = Options.new(options)
       @timeout = options.timeout
+      @selector = Selector.new
       @channels = []
       @responses = {}
     end
+
+    def running?
+      !@channels.empty?
+    end
+
+    def send(request, **args)
+      channel = bind(request.uri)
+      raise Error, "no channel available" unless channel
+
+      channel.send(request, **args)
+    end
+    alias :<< :send
+
+    def next_tick(timeout: @timeout.timeout)
+      @selector.select(timeout) do |monitor|
+        if task = monitor.value
+          channel = catch(:close) { task.call }
+          close(channel) if channel 
+        end
+      end
+    end
+
+    def close(channel = nil)
+      if channel
+        channel.close
+        if channel.closed?
+          @channels.delete(channel)
+          @selector.deregister(channel)
+        end
+      else
+        while ch = @channels.shift
+          ch.close
+          @selector.deregister(ch)
+        end 
+      end
+    end
+
+    def response(request)
+      response = @responses.delete(request)
+      case response
+      when ErrorResponse
+        if response.retryable?
+          send(request, retries: response.retries - 1)
+          nil
+        else
+          response
+        end
+      else
+        response
+      end
+    end
+
+    private
 
     # opens a channel to the IP reachable through +uri+.
     # Many hostnames are reachable through the same IP, so we try to
@@ -26,49 +81,17 @@ module HTTPX
         uri.port == channel.remote_port &&
         uri.scheme == channel.uri.scheme
       end || begin
-        channel = Channel.by(uri, @options)
-        @channels << channel 
+        channel = Channel.by(self, uri, @options) do |request, response|
+          @responses[request] = response
+        end
+
+        @channels << channel
+        monitor = @selector.register(channel, :rw)
+        monitor.value = channel
         channel
       end
     end
 
-    def <<(request)
-      channel = bind(request.uri)
-      raise Error, "no channel available" unless channel
 
-      channel.send(request) do |request, response|
-        @responses[request] = response
-      end
-    end
-
-    def response(request)
-      @responses.delete(request)
-    end
-
-    def process_events(timeout: @timeout.timeout)
-      rmonitors = @channels
-      wmonitors = rmonitors.reject(&:empty?)
-      readers, writers = IO.select(rmonitors, wmonitors, nil, timeout)
-      raise TimeoutError, "timed out waiting for data" if readers.nil? && writers.nil?
-      readers.each do |reader|
-        channel = catch(:close) { reader.dread }
-        close(channel) if channel 
-      end if readers
-      writers.each do |writer|
-        channel = catch(:close) { writer.dwrite }
-        close(channel) if channel 
-      end if writers
-    end
-
-    def close(channel = nil)
-      if channel
-        channel.close
-        @channels.delete(channel) if channel.closed?
-      else
-        while ch = @channels.shift
-          ch.close
-        end 
-      end
-    end
   end
 end
