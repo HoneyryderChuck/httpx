@@ -27,6 +27,10 @@ class ClientTest < Minitest::Test
     assert client.foo == "client-foo", "instance method is unexpected"
     assert client.respond_to?(:bar), "load and configure didn't work"
     assert client.bar == "config-load-bar", "load and configure didn't work"
+    
+    assert client.respond_to?(:options), "instance methods weren't added"
+    assert client.options.respond_to?(:foo), "options methods weren't added"
+    assert client.options.foo == "options-foo", "option method is unexpected"
     request = client.request(:get, "/")
     assert request.respond_to?(:foo), "request methods haven't been added"
     assert request.foo == "request-foo", "request method is unexpected"
@@ -51,8 +55,22 @@ class ClientTest < Minitest::Test
         self.class.foo
       end
 
+      def options
+        @default_options
+      end
+
       def response(*args)
         @default_options.response_class.new(*args)
+      end
+    end
+    self::OptionsClassMethods = Module.new do
+      def foo
+        "options-foo" 
+      end
+    end
+    self::OptionsMethods = Module.new do
+      def foo
+        self.class.foo 
       end
     end
     self::RequestClassMethods = Module.new do

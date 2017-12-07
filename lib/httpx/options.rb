@@ -6,7 +6,14 @@ module HTTPX
     MAX_RETRIES = 3
 
     class << self
+      def inherited(klass)
+        super
+        klass.instance_variable_set(:@defined_options, @defined_options.dup)
+      end
+
       def new(options = {})
+        # let enhanced options go through
+        return options if self == Options && options.class > self
         return options if options.is_a?(self)
         super
       end
