@@ -11,8 +11,10 @@ module HTTPX
           PerOperation.new(opts)
         when :global
           Global.new(opts) 
-        when Null
-          type
+        when Null, Global, PerOperation
+          type.new(opts)
+        when Hash # default way
+          PerOperation.new(type)
         else
           raise "#{type}: unrecognized timeout option"
         end
