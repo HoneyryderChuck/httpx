@@ -5,6 +5,15 @@ module HTTPX
     def initialize(**options)
       @default_options = self.class.default_options.merge(options) 
       @connection = Connection.new(@default_options)
+      if block_given?
+        begin
+          @keep_open = true
+          yield self 
+        ensure
+          @keep_open = false
+          close
+        end
+      end
     end
 
     def close
@@ -13,7 +22,11 @@ module HTTPX
 
     def request(verb, uri, **options)
       @default_options.request_class.new(verb, uri, **@default_options.merge(options))
+    ensure
+      close unless @keep_open
     end
+
+    private
 
     def send(*requests)
       requests.each { |request| @connection << request }
