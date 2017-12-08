@@ -95,9 +95,9 @@ module HTTPX
 
     private
 
-    def dread(size = BUFFER_SIZE)
+    def dread(wsize = BUFFER_SIZE)
       loop do
-        siz = @io.read(size, @read_buffer)
+        siz = @io.read(wsize, @read_buffer)
         throw(:close, self) unless siz
         return if siz.zero?
         @processor << @read_buffer

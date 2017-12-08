@@ -87,7 +87,7 @@ module HTTPX
   end
 
   class SSL < TCP
-    def initialize(_, _, options)
+    def initialize(_, options)
       @negotiated = false
       @ctx = OpenSSL::SSL::SSLContext.new
       @ctx.set_params(options.ssl)

@@ -31,8 +31,7 @@ module HTTPX
     def next_tick(timeout: @timeout.timeout)
       @selector.select(timeout) do |monitor|
         if task = monitor.value
-          channel = catch(:close) { task.call }
-          close(channel) if channel 
+          consume(task)
         end
       end
     end
@@ -92,6 +91,9 @@ module HTTPX
       end
     end
 
-
+    def consume(task)
+      channel = catch(:close) { task.call }
+      close(channel) if channel 
+    end
   end
 end

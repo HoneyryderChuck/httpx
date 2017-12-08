@@ -29,7 +29,7 @@ module HTTPX
 
     attr_reader :verb, :uri, :headers, :body
 
-    def initialize(verb, uri, options={})
+    def initialize(verb, uri, **options)
       @verb    = verb.to_s.downcase.to_sym
       @uri     = URI(uri)
       @options = Options.new(options)
