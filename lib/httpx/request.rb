@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "cgi"
-
 module HTTPX
   class Request
     METHODS = [
@@ -70,7 +68,7 @@ module HTTPX
       return @query if defined?(@query)
       query = []
       if q = @options.params
-        query << q.map { |k,v| "#{CGI.escape(k)}=#{CGI.escape(v)}" }.join("&")
+        query << URI.encode_www_form(q)
       end
       query << @uri.query if @uri.query
       @query = query.join("&")
