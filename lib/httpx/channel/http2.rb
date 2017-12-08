@@ -6,9 +6,8 @@ module HTTPX
   class Channel::HTTP2
     include Callbacks
 
-    def initialize(selector, buffer, options)
+    def initialize(buffer, options)
       @options = Options.new(options)
-      @selector = selector
       @max_concurrent_requests = @options.max_concurrent_requests
       init_connection
       @retries = options.max_retries
@@ -36,10 +35,8 @@ module HTTPX
       end
       stream = @connection.new_stream
       stream.on(:close) do |error|
-        unless @streams.delete(stream.id)
-          response = ErrorResponse.new(error, retries)
-          emit(:response, request, response)
-        end
+        response = @streams.delete(stream.id) || ErrorResponse.new(error, retries)
+        emit(:response, request, response)
 
         send(@pending.shift) unless @pending.empty?
       end
@@ -48,9 +45,8 @@ module HTTPX
       stream.on(:headers) do |h|
         _, status = h.shift
         headers = @options.headers_class.new(h)
-        response = @options.response_class.new(@selector, status, headers)
+        response = @options.response_class.new(request, status, headers, @options)
         @streams[stream.id] = response
-        emit(:response, request, response)
       end
       stream.on(:data) do |data|
         @streams[stream.id] << data

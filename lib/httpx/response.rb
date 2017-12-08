@@ -9,8 +9,10 @@ module HTTPX
     attr_reader :status, :headers, :body
 
     def_delegator :@body, :to_s 
-    def initialize(selector, status, headers)
-      @selector = selector
+
+    def initialize(request, status, headers, **options)
+      @options = Options.new(options) 
+      @request = request
       @status = Integer(status)
       @headers = @options.headers_class.new(headers)
       @body = Body.new(self)
@@ -50,13 +52,11 @@ module HTTPX
         @length += chunk.bytesize
         transition
         @buffer.write(chunk)
-        @chunk_cb[chunk] if @chunk_cb
       end
       alias :<< :write
   
       def each
         return enum_for(__method__) unless block_given?
-        @chunk_cb = ->(e) { yield(e) } 
         begin
           unless @state == :idle
             rewind
@@ -64,16 +64,15 @@ module HTTPX
               yield(*args)
             end
           end
-          buffering!
         ensure
-          @chunk_cb = nil
           close
         end
       end
-  
+ 
       def to_s
-        buffering!
-        @buffer.read
+        rewind
+        return @buffer.read if @buffer
+        ""
       ensure
         close
       end
@@ -97,28 +96,24 @@ module HTTPX
       end
   
       private
-  
+ 
       def rewind
         return if @state == :idle
         @buffer.rewind
       end
   
-      def buffering!
-        @selector.next_tick until buffered?
-        rewind
-      end
-  
-      def buffered?
-        if content_length = @headers["content-length"]
-          content_length = Integer(content_length)
-          @length >= content_length
-        elsif @headers["transfer-encoding"] == "chunked"
-          # dechunk
-          raise "TODO: implement de-chunking"
-        else
-          !@selector.running?
-        end
-      end
+      # def buffered?
+      #   return true if @response.bodyless?
+      #   if content_length = @headers["content-length"]
+      #     content_length = Integer(content_length)
+      #     @length >= content_length
+      #   elsif @headers["transfer-encoding"] == "chunked"
+      #     # dechunk
+      #     raise "TODO: implement de-chunking"
+      #   else
+      #     true
+      #   end
+      # end
   
       def transition
         case @state
@@ -146,6 +141,39 @@ module HTTPX
         end
   
         return unless %i[memory buffer].include?(@state)
+      end
+    end
+  end
+
+  class ContentType
+    MIME_TYPE_RE = %r{^([^/]+/[^;]+)(?:$|;)}
+    CHARSET_RE   = /;\s*charset=([^;]+)/i
+
+    attr_reader :mime_type, :charset
+
+    def initialize(mime_type, charset)
+      @mime_type = mime_type
+      @charset = charset
+    end
+
+    class << self
+      # Parse string and return ContentType struct
+      def parse(str)
+        new(mime_type(str), charset(str))
+      end
+
+      private
+
+      # :nodoc:
+      def mime_type(str)
+        m = str.to_s[MIME_TYPE_RE, 1]
+        m && m.strip.downcase
+      end
+
+      # :nodoc:
+      def charset(str)
+        m = str.to_s[CHARSET_RE, 1]
+        m && m.strip.delete('"')
       end
     end
   end

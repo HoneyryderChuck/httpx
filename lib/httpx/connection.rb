@@ -81,7 +81,7 @@ module HTTPX
         uri.port == channel.remote_port &&
         uri.scheme == channel.uri.scheme
       end || begin
-        channel = Channel.by(self, uri, @options) do |request, response|
+        channel = Channel.by(uri, @options) do |request, response|
           @responses[request] = response
         end
 

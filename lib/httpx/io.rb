@@ -7,11 +7,10 @@ require "ipaddr"
 module HTTPX
   class TCP
     
-    attr_reader :ip, :port, :uri, :selector
+    attr_reader :ip, :port, :uri
 
-    def initialize(selector, uri, **)
+    def initialize(uri, **)
       @connected = false
-      @selector = selector
       @uri = uri
       @ip = TCPSocket.getaddress(@uri.host) 
       @port = @uri.port
