@@ -12,8 +12,8 @@ module HTTPX
     def initialize(selector, status, headers)
       @selector = selector
       @status = Integer(status)
-      @headers = Headers.new(headers)
-      @body = Body.new(@selector, @headers)
+      @headers = @options.headers_class.new(headers)
+      @body = Body.new(self)
     end 
 
     def <<(data)
@@ -23,9 +23,9 @@ module HTTPX
     class Body
       MAX_THRESHOLD_SIZE = 1024 * (80 + 32) # 112 Kbytes
   
-      def initialize(selector, headers, threshold_size: MAX_THRESHOLD_SIZE)
-        @selector = selector
-        @headers = headers
+      def initialize(response, threshold_size: MAX_THRESHOLD_SIZE)
+        @response = response
+        @headers = response.headers
         @threshold_size = threshold_size
         @length = 0
         @buffer = nil 
