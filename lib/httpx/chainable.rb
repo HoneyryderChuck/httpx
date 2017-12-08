@@ -60,6 +60,10 @@ module HTTPX
 
     private
 
+    def default_options
+      @default_options || Options.new
+    end
+
     # :nodoc:
     def branch(options)
       Client.new(options)

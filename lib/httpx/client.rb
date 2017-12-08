@@ -79,6 +79,7 @@ module HTTPX
       def inherited(klass)
         super
         klass.instance_variable_set(:@default_options, @default_options.dup)
+        klass.instance_variable_set(:@plugins, @plugins.dup)
       end
 
       def plugin(pl, *args, &block)
