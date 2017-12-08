@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "cgi"
+
 module HTTPX
   class Request
     METHODS = [
@@ -50,7 +52,7 @@ module HTTPX
     def path
       path = uri.path
       path << "/" if path.empty?
-      path << "?#{uri.query}" if uri.query
+      path << "?#{query}" unless query.empty?
       path
     end
 
@@ -62,6 +64,16 @@ module HTTPX
       host = @uri.host
       port_string = @uri.port == @uri.default_port ? nil : ":#{@uri.port}"
       "#{host}#{port_string}"
+    end
+
+    def query
+      return @query if defined?(@query)
+      query = []
+      if q = @options.params
+        query << q.map { |k,v| "#{CGI.escape(k)}=#{CGI.escape(v)}" }.join("&")
+      end
+      query << @uri.query if @uri.query
+      @query = query.join("&")
     end
 
     class Body

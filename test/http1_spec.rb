@@ -19,6 +19,17 @@ class HTTP1Test < Minitest::Spec
   end
 
   %w[post put patch delete].each do |meth|
+    define_method :"test_#{meth}_query_params" do
+      uri = build_uri("/#{meth}")
+      response = HTTPX.send(meth, uri, params: {"q" => "this is a test"})
+      assert response.status == 200, "status is unexpected"
+      body = json_body(response)
+      assert body.key?("args")
+      assert body["args"].key?("q")
+      assert body["args"]["q"] == "this is a test"
+      assert body["url"] == build_uri("/#{meth}?q=this+is+a+test") 
+    end
+
     define_method :"test_#{meth}_form_params" do
       uri = build_uri("/#{meth}")
       response = HTTPX.send(meth, uri, form: {"foo" => "bar"})
