@@ -67,11 +67,11 @@ class HTTP1Test < Minitest::Spec
     response = HTTPX.get(uri)
     body = json_body(response)
     assert body.key?("headers"), "no headers"
-    assert body["headers"]["accept"] == "*/*", "unexpected accept"
+    assert body["headers"]["Accept"] == "*/*", "unexpected accept"
 
     response = HTTPX.headers("accept" => "text/css").get(uri)
     body = json_body(response)
-    assert body["headers"]["accept"] == "text/css", "accept should have been set at the client"
+    assert body["headers"]["Accept"] == "text/css", "accept should have been set at the client"
   end
 
   def test_http_user_agent
