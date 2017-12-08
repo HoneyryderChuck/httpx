@@ -63,7 +63,7 @@ module HTTPX
         @processor = nil
       end
       @io.close
-      unless processor.empty?
+      unless processor && processor.empty?
         @io.connect
         @processor = processor
         @processor.reenqueue!
