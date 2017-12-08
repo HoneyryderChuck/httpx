@@ -62,7 +62,7 @@ class OptionsSpec < Minitest::Test
       :body               => nil,
       :follow             => nil,
       :form               => {:bar => "bar"},
-      :timeout            => Timeout::Null.new,
+      :timeout            => Timeout::PerOperation.new,
       :ssl                => {:foo => "bar"},
       :headers            => {"Foo" => "foo", "Accept" => "xml", "Bar" => "bar"},
       :proxy              => {:proxy_address => "127.0.0.1", :proxy_port => 8080},
