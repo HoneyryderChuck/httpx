@@ -20,6 +20,19 @@ module HTTPX
       @body << data
     end
 
+    def bodyless?
+      @request.verb == :head ||
+      @status < 200 ||
+      @status == 201 ||
+      @status == 204 ||
+      @status == 205 ||
+      @status == 304
+    end
+
+    def content_type
+      ContentType.parse(@headers["content-type"])
+    end
+
     class Body
       MAX_THRESHOLD_SIZE = 1024 * (80 + 32) # 112 Kbytes
   
@@ -27,6 +40,7 @@ module HTTPX
         @response = response
         @headers = response.headers
         @threshold_size = threshold_size
+        @encoding = response.content_type.charset || Encoding::BINARY
         @length = 0
         @buffer = nil 
         @state = :idle
