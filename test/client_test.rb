@@ -5,20 +5,6 @@ require_relative "test_helper"
 class ClientTest < Minitest::Test
   include HTTPX
 
-  def test_client_request
-    client1 = Client.new
-    client2 = Client.new(headers: {"accept" => "text/css"})
-
-    request1 = client1.request(:get, "http://google.com", headers: {"accept" => "text/html"})
-    assert request1.headers["accept"] == "text/html", "header hasn't been properly set"
-
-    request2 = client2.request(:get, "http://google.com")
-    assert request2.headers["accept"] == "text/css", "header hasn't been properly set"
-    
-    request3 = client2.request(:get, "http://google.com", headers: {"accept" => "text/javascript"})
-    assert request3.headers["accept"] == "text/javascript", "header hasn't been properly set"
-  end
-
   def test_client_plugin
     klient_class = Class.new(Client)
     klient_class.plugin(TestPlugin)
@@ -31,7 +17,7 @@ class ClientTest < Minitest::Test
     assert client.respond_to?(:options), "instance methods weren't added"
     assert client.options.respond_to?(:foo), "options methods weren't added"
     assert client.options.foo == "options-foo", "option method is unexpected"
-    request = client.request(:get, "/")
+    request = client.options.request_class.new(:get, "/", client.options)
     assert request.respond_to?(:foo), "request methods haven't been added"
     assert request.foo == "request-foo", "request method is unexpected"
     assert request.headers.respond_to?(:foo), "headers methods haven't been added"
