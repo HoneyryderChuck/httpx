@@ -13,10 +13,10 @@ URLS  = %w[https://nghttp2.org https://nghttp2.org/blog/] * 51
 # URLS  = %w[https://github.com https://github.com/blog]
 
 $HTTPX_DEBUG = true
-responses = HTTPX.get(URLS)
-puts responses.map(&:status)
-# response = HTTPX.get(URLS.first)
-# puts response.status
+# responses = HTTPX.get(URLS)
+# puts responses.map(&:status)
+response = HTTPX.get(URLS.first)
+puts response.status
 # response = HTTPX.get(URLS.last)
 # puts response.status
 # response = HTTPX.get(URLS.last)
