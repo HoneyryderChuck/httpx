@@ -8,9 +8,8 @@ module HTTPX
 
     CRLF = "\r\n"
 
-    def initialize(selector, buffer, options)
+    def initialize(buffer, options)
       @options = Options.new(options)
-      @selector = selector
       @max_concurrent_requests = @options.max_concurrent_requests
       @parser = HTTP::Parser.new(self)
       @parser.header_value_type = :arrays
@@ -62,11 +61,13 @@ module HTTPX
     def on_headers_complete(h)
       log { "headers received" }
       headers = @options.headers_class.new(h)
-      response = @options.response_class.new(@selector, @parser.status_code, headers)
+      response = @options.response_class.new(@requests.last, @parser.status_code, headers, @options)
       @responses << response
-      request = @requests[@responses.size - 1]
-      emit(:response, request, response)
       log { response.headers.each.map { |f, v| "-> #{f}: #{v}" }.join("\n") }
+      request = @requests.last
+      # parser can't say if it's parsing GET or HEAD,
+      # call the completeness callback manually
+      on_message_complete if request.verb == :head
     end
 
     def on_body(chunk)
@@ -79,6 +80,8 @@ module HTTPX
       request = @requests.shift
       response = @responses.shift
       reset
+
+      emit(:response, request, response)
 
       send(@pending.shift) unless @pending.empty?
       return unless response.headers["connection"] == "close"
@@ -108,7 +111,7 @@ module HTTPX
     def join_body(request)
       return unless request.body
       request.body.each do |chunk|
-        log { "<- #{chunk}" }
+        log { "<- #{chunk.inspect}" }
         @buffer << chunk
       end
     end

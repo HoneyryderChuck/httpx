@@ -15,12 +15,12 @@ module HTTPX
     BUFFER_SIZE = 1 << 16
 
     class << self
-      def by(selector, uri, options, &blk)
+      def by(uri, options, &blk)
         io = case uri.scheme
         when "http"
-          TCP.new(selector, uri, options)
+          TCP.new(uri, options)
         when "https"
-          SSL.new(selector, uri, options)
+          SSL.new(uri, options)
         else
           raise Error, "#{uri.scheme}: unrecognized channel"
         end
@@ -63,7 +63,7 @@ module HTTPX
         @processor = nil
       end
       @io.close
-      unless processor.empty?
+      unless processor && processor.empty?
         @io.connect
         @processor = processor
         @processor.reenqueue!
@@ -95,9 +95,9 @@ module HTTPX
 
     private
 
-    def dread(size = BUFFER_SIZE)
+    def dread(wsize = BUFFER_SIZE)
       loop do
-        siz = @io.read(size, @read_buffer)
+        siz = @io.read(wsize, @read_buffer)
         throw(:close, self) unless siz
         return if siz.zero?
         @processor << @read_buffer
@@ -115,7 +115,7 @@ module HTTPX
 
     def set_processor
       return @processor if defined?(@processor)
-      @processor = PROTOCOLS[@io.protocol].new(@io.selector, @write_buffer, @options)
+      @processor = PROTOCOLS[@io.protocol].new(@write_buffer, @options)
       @processor.on(:response, &@on_response)
       @processor.on(:close) { throw(:close, self) }
       while (request, args = @pending.shift)

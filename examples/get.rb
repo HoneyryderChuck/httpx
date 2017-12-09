@@ -13,11 +13,15 @@ URLS  = %w[https://nghttp2.org https://nghttp2.org/blog/] * 51
 # URLS  = %w[https://github.com https://github.com/blog]
 
 $HTTPX_DEBUG = true
-client = Client.new
-requests = URLS.map { |url| client.request(:get, url) }
-responses = client.send(*requests)
+# responses = HTTPX.get(URLS)
+# puts responses.map(&:status)
+response = HTTPX.get(URLS.first)
+puts response.status
+# response = HTTPX.get(URLS.last)
+# puts response.status
+# response = HTTPX.get(URLS.last)
 
 #responses.each do |res| 
 #  puts "status: #{res.status}, length: #{res.body.to_s.bytesize}"
 #end
-puts responses.map(&:status)
+

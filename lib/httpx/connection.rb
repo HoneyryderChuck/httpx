@@ -31,8 +31,7 @@ module HTTPX
     def next_tick(timeout: @timeout.timeout)
       @selector.select(timeout) do |monitor|
         if task = monitor.value
-          channel = catch(:close) { task.call }
-          close(channel) if channel 
+          consume(task)
         end
       end
     end
@@ -81,7 +80,7 @@ module HTTPX
         uri.port == channel.remote_port &&
         uri.scheme == channel.uri.scheme
       end || begin
-        channel = Channel.by(self, uri, @options) do |request, response|
+        channel = Channel.by(uri, @options) do |request, response|
           @responses[request] = response
         end
 
@@ -92,6 +91,9 @@ module HTTPX
       end
     end
 
-
+    def consume(task)
+      channel = catch(:close) { task.call }
+      close(channel) if channel 
+    end
   end
 end

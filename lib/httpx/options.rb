@@ -41,7 +41,7 @@ module HTTPX
       defaults = {
         :proxy                    => {},
         :ssl                      => {},
-        :timeout                  => Timeout.by(:null), 
+        :timeout                  => Timeout.by(:per_operation),
         :headers                  => {},
         :cookies                  => {},
         :max_concurrent_requests  => MAX_CONCURRENT_REQUESTS,

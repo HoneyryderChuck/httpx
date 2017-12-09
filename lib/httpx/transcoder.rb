@@ -9,3 +9,4 @@ end
 require "httpx/transcoder/body"
 require "httpx/transcoder/form"
 require "httpx/transcoder/json"
+require "httpx/transcoder/chunker"

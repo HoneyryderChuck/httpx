@@ -29,7 +29,7 @@ module HTTPX
 
     attr_reader :verb, :uri, :headers, :body
 
-    def initialize(verb, uri, options={})
+    def initialize(verb, uri, **options)
       @verb    = verb.to_s.downcase.to_sym
       @uri     = URI(uri)
       @options = Options.new(options)
@@ -50,7 +50,7 @@ module HTTPX
     def path
       path = uri.path
       path << "/" if path.empty?
-      path << "?#{uri.query}" if uri.query
+      path << "?#{query}" unless query.empty?
       path
     end
 
@@ -62,6 +62,16 @@ module HTTPX
       host = @uri.host
       port_string = @uri.port == @uri.default_port ? nil : ":#{@uri.port}"
       "#{host}#{port_string}"
+    end
+
+    def query
+      return @query if defined?(@query)
+      query = []
+      if q = @options.params
+        query << URI.encode_www_form(q)
+      end
+      query << @uri.query if @uri.query
+      @query = query.join("&")
     end
 
     class Body
@@ -77,17 +87,18 @@ module HTTPX
         end
         return if @body.nil?
         @headers["content-type"] ||= @body.content_type
-        @headers["content-length"] ||= @body.bytesize
+        @headers["content-length"] ||= @body.bytesize unless chunked?
       end
 
       def each(&block)
         return if @body.nil?
-        if @body.respond_to?(:read)
-          IO.copy_stream(@body, ProcIO.new(block))
-        elsif @body.respond_to?(:each)
-          @body.each(&block)
+        body = stream(@body)
+        if body.respond_to?(:read)
+          IO.copy_stream(body, ProcIO.new(block))
+        elsif body.respond_to?(:each)
+          body.each(&block)
         else
-          block[@body]
+          block[body.to_s]
         end
       end
 
@@ -106,7 +117,21 @@ module HTTPX
           raise Error, "cannot determine size of body: #{@body.inspect}"
         end
       end
+
+      def stream(body)
+        encoded = body
+        if chunked?
+          encoded = Transcoder::Chunker.encode(body) 
+        end
+        encoded
+      end
+
+      def chunked?
+        @headers["transfer-encoding"] == "chunked"
+      end
     end
+
+    private
 
     class ProcIO
       def initialize(block)

@@ -12,6 +12,7 @@ require "httpx/connection"
 require "httpx/headers"
 require "httpx/request"
 require "httpx/response"
+require "httpx/chainable"
 require "httpx/client"
 
 module HTTPX
@@ -40,4 +41,5 @@ module HTTPX
     end
   end
 
+  extend Chainable
 end
