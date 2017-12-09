@@ -117,7 +117,21 @@ module HTTPX
           raise Error, "cannot determine size of body: #{@body.inspect}"
         end
       end
+
+      def stream(body)
+        encoded = body
+        if chunked?
+          encoded = Transcoder::Chunker.encode(body) 
+        end
+        encoded
+      end
+
+      def chunked?
+        @headers["transfer-encoding"] == "chunked"
+      end
     end
+
+    private
 
     class ProcIO
       def initialize(block)
