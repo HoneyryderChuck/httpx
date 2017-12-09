@@ -30,7 +30,7 @@ module HTTPX
         requests = reqs.map do |verb, uri, opts = {}|
           rklass.new(verb, uri, **@default_options.merge(options.merge(opts)))
         end
-        responses = send(*requests)
+        responses = __send_reqs(*requests)
       when 2, 3
         verb, uris, opts = args
         opts ||= {}
@@ -38,11 +38,11 @@ module HTTPX
           requests = uris.map do |uri|
             rklass.new(verb, uri, **@default_options.merge(options.merge(opts)))
           end
-          responses = send(*requests)
+          responses = __send_reqs(*requests)
           responses
         else
           request = rklass.new(verb, uris, **@default_options.merge(options.merge(opts)))
-          responses = send(request)
+          responses = __send_reqs(request)
           responses.first
         end
       else
@@ -54,7 +54,7 @@ module HTTPX
 
     private
 
-    def send(*requests)
+    def __send_reqs(*requests)
       requests.each { |request| @connection << request }
       responses = []
 

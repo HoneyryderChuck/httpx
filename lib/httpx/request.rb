@@ -87,17 +87,18 @@ module HTTPX
         end
         return if @body.nil?
         @headers["content-type"] ||= @body.content_type
-        @headers["content-length"] ||= @body.bytesize
+        @headers["content-length"] ||= @body.bytesize unless chunked?
       end
 
       def each(&block)
         return if @body.nil?
-        if @body.respond_to?(:read)
-          IO.copy_stream(@body, ProcIO.new(block))
-        elsif @body.respond_to?(:each)
-          @body.each(&block)
+        body = stream(@body)
+        if body.respond_to?(:read)
+          IO.copy_stream(body, ProcIO.new(block))
+        elsif body.respond_to?(:each)
+          body.each(&block)
         else
-          block[@body]
+          block[body.to_s]
         end
       end
 
