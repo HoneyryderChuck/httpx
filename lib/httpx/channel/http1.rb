@@ -111,7 +111,7 @@ module HTTPX
     def join_body(request)
       return unless request.body
       request.body.each do |chunk|
-        log { "<- #{chunk}" }
+        log { "<- #{chunk.inspect}" }
         @buffer << chunk
       end
     end
