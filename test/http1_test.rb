@@ -18,6 +18,14 @@ class HTTP1Test < Minitest::Spec
     assert response.body.to_s.bytesize == response.headers["content-length"].to_i, "didn't load the whole body"
   end
 
+  def test_http_chunked_get
+    uri = build_uri("/stream-bytes/30?chunk_size=5")
+    response = HTTPX.get(uri)
+    assert response.status == 200, "status is unexpected"
+    assert response.headers["transfer-encoding"] == "chunked", "response hasn't been chunked"
+    assert response.body.to_s.bytesize == 30, "didn't load the whole body"
+  end
+
   %w[post put patch delete].each do |meth|
     define_method :"test_#{meth}_query_params" do
       uri = build_uri("/#{meth}")
