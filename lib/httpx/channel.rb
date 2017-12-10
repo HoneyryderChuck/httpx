@@ -12,8 +12,6 @@ module HTTPX
       "http/1.1" => HTTP1
     }
 
-    BUFFER_SIZE = 1 << 16
-
     class << self
       def by(uri, options, &blk)
         io = case uri.scheme
@@ -31,6 +29,7 @@ module HTTPX
     def initialize(io, options, &on_response)
       @io = io
       @options = Options.new(options)
+      @window_size = @options.window_size
       @read_buffer = +""
       @write_buffer = +""
       @pending = []

@@ -4,6 +4,7 @@ module HTTPX
   class Options
     MAX_CONCURRENT_REQUESTS = 100
     MAX_RETRIES = 3
+    WINDOW_SIZE = 1 << 14
 
     class << self
       def inherited(klass)
@@ -46,6 +47,7 @@ module HTTPX
         :cookies                  => {},
         :max_concurrent_requests  => MAX_CONCURRENT_REQUESTS,
         :max_retries              => MAX_RETRIES,
+        :window_size              => WINDOW_SIZE,
         :request_class            => Class.new(Request),
         :response_class           => Class.new(Response),
         :headers_class            => Class.new(Headers),
@@ -75,6 +77,10 @@ module HTTPX
       max = Integer(num)
       raise Error, ":max_concurrent_requests must be positive" unless max.positive?
       self.max_concurrent_requests = max
+    end
+
+    def_option(:window_size) do |num|
+      self.window_size = Integer(num)
     end
 
     %w[
