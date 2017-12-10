@@ -81,6 +81,7 @@ module HTTPX
       params form json body
       proxy follow ssl max_retries
       request_class response_class headers_class
+      io
     ].each do |method_name|
       def_option(method_name)
     end

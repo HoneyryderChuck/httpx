@@ -9,13 +9,22 @@ module HTTPX
     
     attr_reader :ip, :port, :uri
 
-    def initialize(uri, **)
+    def initialize(uri, options)
       @connected = false
       @uri = uri
       @ip = TCPSocket.getaddress(@uri.host) 
       @port = @uri.port
       addr = IPAddr.new(@ip)
-      @io = Socket.new(addr.family, :STREAM, 0)
+      if options.io
+        @io = case options.io
+        when Hash
+          options.io[@ip] || options.io["#{@ip}:#{@port}"]
+        else
+          options.io
+        end
+        @keep_open = !@io.nil?
+      end
+      @io ||= Socket.new(addr.family, :STREAM, 0)
     end
 
     def to_io
@@ -27,7 +36,7 @@ module HTTPX
     end
 
     def connect
-      return if @connected
+      return if @connected || @keep_open
       begin
         @io.connect_nonblock(Socket.sockaddr_in(@port, @ip))
       rescue Errno::EISCONN
@@ -76,13 +85,14 @@ module HTTPX
     end
 
     def close
+      return if @keep_open || !@connected
       @io.close
     ensure
       @connected = false
     end
 
     def closed?
-      !@connected
+      !@keep_open && !@connected
     end
   end
 

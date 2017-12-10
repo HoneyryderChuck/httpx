@@ -57,6 +57,7 @@ class OptionsSpec < Minitest::Test
 
 
     assert foo.merge(bar).to_hash == {
+      :io                 => nil,
       :params             => nil,
       :json               => nil,
       :body               => nil,

@@ -112,6 +112,17 @@ class HTTP1Test < Minitest::Spec
     assert body["user-agent"] == "httpx.rb/#{HTTPX::VERSION}", "user agent is unexpected"
   end
 
+  def test_http_io
+    io = origin_io
+    uri = build_uri("/")
+    response = HTTPX.get(uri, io: io)
+    assert response.status == 200, "status is unexpected"
+    assert response.body.to_s.bytesize == response.headers["content-length"].to_i, "didn't load the whole body"
+    assert !io.closed?, "io should have been left open"
+  ensure
+    io.close if io
+  end
+
   private
 
   def json_body(response)
@@ -124,6 +135,19 @@ class HTTP1Test < Minitest::Spec
 
   def origin
     "http://nghttp2.org/httpbin"
+  end
+
+  def origin_io
+    uri = URI(origin)
+    case uri.scheme
+    when "http"
+      TCPSocket.new(uri.host, uri.port)
+    when "https"
+      sock = TCPSocket.new(uri.host, uri.port)
+      OpenSSL::SSL::SSLSocket.new(sock)
+    else
+      raise "#{uri.scheme}: unsupported scheme"
+    end
   end
 
   def fixture
