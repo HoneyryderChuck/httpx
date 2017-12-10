@@ -38,10 +38,7 @@ module HTTPX
     end
 
     def to_io
-      if @io.closed?
-        @io.connect
-        set_processor unless @io.closed?
-      end
+      connect
       @io.to_io
     end
 
@@ -58,20 +55,20 @@ module HTTPX
     end
 
     def close
-      if processor = @processor
-        processor.close
+      if pr = @processor
+        pr.close
         @processor = nil
       end
       @io.close
-      unless processor && processor.empty?
+      unless pr && pr.empty?
         @io.connect
-        @processor = processor
-        @processor.reenqueue!
+        @processor = pr
+        processor.reenqueue!
       end
     end
 
     def closed?
-      !@io || @io.closed?
+      @io.closed?
     end
 
     def empty?
@@ -80,7 +77,7 @@ module HTTPX
     
     def send(request, **args)
       if @processor
-        @processor.send(request, **args)
+        processor.send(request, **args)
       else
         @pending << [request, args]
       end
@@ -94,13 +91,18 @@ module HTTPX
     end
 
     private
+    
+    def connect
+      @io.connect
+      send_pending
+    end
 
     def dread(wsize = BUFFER_SIZE)
       loop do
         siz = @io.read(wsize, @read_buffer)
         throw(:close, self) unless siz
         return if siz.zero?
-        @processor << @read_buffer
+        processor << @read_buffer
       end
     end
 
@@ -113,15 +115,19 @@ module HTTPX
       end
     end
 
-    def set_processor
-      return @processor if defined?(@processor)
-      @processor = PROTOCOLS[@io.protocol].new(@write_buffer, @options)
-      @processor.on(:response, &@on_response)
-      @processor.on(:close) { throw(:close, self) }
+    def send_pending
       while (request, args = @pending.shift)
-        @processor.send(request, **args)
+        processor.send(request, **args)
       end
-      @processor
+    end
+
+    def processor
+      @processor || begin
+        @processor = PROTOCOLS[@io.protocol].new(@write_buffer, @options)
+        @processor.on(:response, &@on_response)
+        @processor.on(:close) { throw(:close, self) }
+        @processor
+      end
     end
   end
 end
