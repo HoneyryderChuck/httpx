@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "fileutils"
 require "forwardable"
 
 module HTTPX
@@ -9,6 +10,10 @@ module HTTPX
     attr_reader :status, :headers, :body
 
     def_delegator :@body, :to_s 
+    
+    def_delegator :@body, :read
+    
+    def_delegator :@body, :copy_to
 
     def initialize(request, status, headers, **options)
       @options = Options.new(options) 
@@ -54,7 +59,16 @@ module HTTPX
         @buffer.write(chunk)
       end
       alias :<< :write
-  
+
+      def read(*args)
+        return unless @buffer
+        @buffer.read(*args)
+      end
+
+      def bytesize
+        @length
+      end
+
       def each
         return enum_for(__method__) unless block_given?
         begin
@@ -80,7 +94,17 @@ module HTTPX
       def empty?
         @length.zero? 
       end
-  
+ 
+      def copy_to(dest)
+        return unless @buffer
+        if dest.is_a?(File) and @buffer.is_a?(File)
+          FileUtils.mv(@buffer.path, dest.path)
+        else
+          @buffer.rewind
+          IO.copy_stream(@buffer, dest)
+        end
+      end
+
       # closes/cleans the buffer, resets everything
       def close
         return if @state == :idle
