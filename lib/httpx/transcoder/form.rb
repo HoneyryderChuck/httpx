@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "forwardable"
 require "http/form_data"
 
 module HTTPX::Transcoder

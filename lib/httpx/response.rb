@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "stringio"
+require "tempfile"
 require "fileutils"
 require "forwardable"
 

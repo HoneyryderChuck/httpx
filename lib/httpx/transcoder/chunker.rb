@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "forwardable"
+
 module HTTPX::Transcoder
   module Chunker
     module_function

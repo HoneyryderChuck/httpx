@@ -1,8 +1,5 @@
 # frozen_string_literal: true
 
-require "socket"
-require "timeout"
-
 require "httpx/selector"
 require "httpx/channel"
 

@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "thread"
+
 module HTTPX 
   class Selector
     #
