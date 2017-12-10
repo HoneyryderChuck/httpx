@@ -32,6 +32,6 @@ module HTTPX::Transcoder
       Encoder.new(json)
     end
   end
-  register "json", JSON 
+  register "chunker", Chunker 
 end
 

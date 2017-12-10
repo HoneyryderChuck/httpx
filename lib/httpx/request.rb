@@ -121,7 +121,7 @@ module HTTPX
       def stream(body)
         encoded = body
         if chunked?
-          encoded = Transcoder::Chunker.encode(body) 
+          encoded = Transcoder.registry("chunker").encode(body) 
         end
         encoded
       end
