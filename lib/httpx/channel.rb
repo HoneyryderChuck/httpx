@@ -55,15 +55,15 @@ module HTTPX
     end
 
     def close
-      if pr = @processor
+      if pr = @parser
         pr.close
-        @processor = nil
+        @parser = nil
       end
       @io.close
       unless pr && pr.empty?
         @io.connect
-        @processor = pr
-        processor.reenqueue!
+        @parser = pr
+        parser.reenqueue!
       end
     end
 
@@ -76,8 +76,8 @@ module HTTPX
     end
     
     def send(request, **args)
-      if @processor
-        processor.send(request, **args)
+      if @parser
+        parser.send(request, **args)
       else
         @pending << [request, args]
       end
@@ -97,12 +97,12 @@ module HTTPX
       send_pending
     end
 
-    def dread(wsize = BUFFER_SIZE)
+    def dread(wsize = @window_size)
       loop do
         siz = @io.read(wsize, @read_buffer)
         throw(:close, self) unless siz
         return if siz.zero?
-        processor << @read_buffer
+        parser << @read_buffer
       end
     end
 
@@ -117,16 +117,16 @@ module HTTPX
 
     def send_pending
       while (request, args = @pending.shift)
-        processor.send(request, **args)
+        parser.send(request, **args)
       end
     end
 
-    def processor
-      @processor || begin
-        @processor = PROTOCOLS[@io.protocol].new(@write_buffer, @options)
-        @processor.on(:response, &@on_response)
-        @processor.on(:close) { throw(:close, self) }
-        @processor
+    def parser
+      @parser || begin
+        @parser = PROTOCOLS[@io.protocol].new(@write_buffer, @options)
+        @parser.on(:response, &@on_response)
+        @parser.on(:close) { throw(:close, self) }
+        @parser
       end
     end
   end
