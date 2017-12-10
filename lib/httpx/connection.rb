@@ -80,15 +80,18 @@ module HTTPX
         uri.port == channel.remote_port &&
         uri.scheme == channel.uri.scheme
       end || begin
-        channel = Channel.by(uri, @options) do |request, response|
-          @responses[request] = response
-        end
-
-        @channels << channel
-        monitor = @selector.register(channel, :rw)
-        monitor.value = channel
-        channel
+        build_channel(uri)
       end
+    end
+
+    def build_channel(uri)
+      channel = Channel.by(uri, @options) do |request, response|
+        @responses[request] = response
+      end
+      monitor = @selector.register(channel, :rw)
+      monitor.value = channel
+      @channels << channel
+      channel
     end
 
     def consume(task)
