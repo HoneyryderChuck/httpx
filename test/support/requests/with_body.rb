@@ -59,10 +59,6 @@ module Requests
 
     private
 
-    def json_body(response)
-      JSON.parse(response.body.to_s)
-    end
-
     def fixture
       File.read(fixture_file_path, encoding: Encoding::BINARY)
     end
