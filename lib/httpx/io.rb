@@ -124,6 +124,10 @@ module HTTPX
 
     def connect
       super
+      if @keep_open
+        @negotiated = true
+        return
+      end
       return if not @connected
       return if @negotiated 
       @io = OpenSSL::SSL::SSLSocket.new(@io, @ctx)
