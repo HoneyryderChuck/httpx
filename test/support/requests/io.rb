@@ -22,8 +22,13 @@ module Requests
     when "http"
       TCPSocket.new(uri.host, uri.port)
     when "https"
-      sock = TCPSocket.new(uri.host, uri.port)
-      OpenSSL::SSL::SSLSocket.new(sock)
+      ctx = OpenSSL::SSL::SSLContext.new
+      ctx.alpn_protocols = %w[h2 http/1.1]
+      sock = OpenSSL::SSL::SSLSocket.new(TCPSocket.new(uri.host, uri.port), ctx)
+      sock.hostname = uri.host
+      sock.sync_close = true
+      sock.connect
+      sock
     else
       raise "#{uri.scheme}: unsupported scheme"
     end
