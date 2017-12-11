@@ -53,6 +53,7 @@ module HTTPX
         :request_class            => Class.new(Request),
         :response_class           => Class.new(Response),
         :headers_class            => Class.new(Headers),
+        :response_body_class      => Response::Body,
       }
 
       defaults.merge!(options)
@@ -92,7 +93,7 @@ module HTTPX
     %w[
       params form json body
       proxy follow ssl max_retries
-      request_class response_class headers_class
+      request_class response_class headers_class response_body_class
       io
     ].each do |method_name|
       def_option(method_name)

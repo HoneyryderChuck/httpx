@@ -150,6 +150,36 @@ class HTTP1Test < Minitest::Spec
     io.close if io 
   end
 
+   def test_http_buffer_to_custom
+     uri = build_uri("/")
+     custom_body = Class.new do 
+      attr_reader :file
+
+      def initialize(response, **)
+        @file = Tempfile.new
+      end
+
+      def <<(data)
+        @file << data
+      end
+
+      def close
+        return unless @file
+        @file.close
+        @file.unlink
+      end
+    end
+
+    response = HTTPX.get(uri, response_body_class: custom_body)
+    assert response.status == 200, "status is unexpected"
+    assert response.body.is_a?(custom_body), "body should be from custom type"
+    file = response.body.file
+    file.rewind
+    assert file.size == response.headers["content-length"].to_i, "didn't buffer the whole body"
+  ensure
+    response.close if response
+  end
+   
   private
 
   def json_body(response)

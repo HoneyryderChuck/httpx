@@ -16,7 +16,7 @@ class ResponseTest < Minitest::Test
     assert resource.headers.is_a?(Headers), "headers should have been coerced" 
   end
 
-  def test_response_body_concat
+  def test_response_body_write
     assert resource.body.empty?, "body should be empty after init"
     resource << "data"
     assert resource.body == "data", "body should have been updated"

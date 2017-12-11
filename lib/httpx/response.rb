@@ -16,13 +16,15 @@ module HTTPX
     def_delegator :@body, :read
     
     def_delegator :@body, :copy_to
+    
+    def_delegator :@body, :close
 
     def initialize(request, status, headers, **options)
       @options = Options.new(options) 
       @request = request
       @status = Integer(status)
       @headers = @options.headers_class.new(headers)
-      @body = Body.new(self, threshold_size: @options.body_threshold_size)
+      @body = @options.response_body_class.new(self, threshold_size: @options.body_threshold_size)
     end 
 
     def <<(data)
