@@ -63,6 +63,7 @@ class OptionsSpec < Minitest::Test
       :body               => nil,
       :follow             => nil,
       :window_size        => 16_384,
+      :body_threshold_size => 114_688,
       :form               => {:bar => "bar"},
       :timeout            => Timeout::PerOperation.new,
       :ssl                => {:foo => "bar"},

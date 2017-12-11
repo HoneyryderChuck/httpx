@@ -4,7 +4,8 @@ module HTTPX
   class Options
     MAX_CONCURRENT_REQUESTS = 100
     MAX_RETRIES = 3
-    WINDOW_SIZE = 1 << 14
+    WINDOW_SIZE = 1 << 14 # 16K
+    MAX_BODY_THRESHOLD_SIZE = (1 << 10) * 112 # 112K
 
     class << self
       def inherited(klass)
@@ -48,6 +49,7 @@ module HTTPX
         :max_concurrent_requests  => MAX_CONCURRENT_REQUESTS,
         :max_retries              => MAX_RETRIES,
         :window_size              => WINDOW_SIZE,
+        :body_threshold_size      => MAX_BODY_THRESHOLD_SIZE,
         :request_class            => Class.new(Request),
         :response_class           => Class.new(Response),
         :headers_class            => Class.new(Headers),
@@ -81,6 +83,10 @@ module HTTPX
 
     def_option(:window_size) do |num|
       self.window_size = Integer(num)
+    end
+
+    def_option(:body_threshold_size) do |num|
+      self.body_threshold_size = Integer(num)
     end
 
     %w[
