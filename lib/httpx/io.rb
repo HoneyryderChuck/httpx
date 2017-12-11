@@ -101,10 +101,6 @@ module HTTPX
       @negotiated = false
       @ctx = OpenSSL::SSL::SSLContext.new
       @ctx.set_params(options.ssl)
-      @ctx.alpn_protocols = %w[h2 http/1.1] if @ctx.respond_to?(:alpn_protocols=)
-      @ctx.alpn_select_cb = lambda do |pr|
-        pr.first unless pr.nil? || pr.empty? 
-      end if @ctx.respond_to?(:alpn_select_cb=)
       super
     end
 

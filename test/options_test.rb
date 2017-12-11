@@ -66,7 +66,7 @@ class OptionsSpec < Minitest::Test
       :body_threshold_size => 114_688,
       :form               => {:bar => "bar"},
       :timeout            => Timeout::PerOperation.new,
-      :ssl                => {:foo => "bar"},
+      :ssl                => {:foo => "bar", :alpn_protocols => %w[h2 http/1.1] },
       :headers            => {"Foo" => "foo", "Accept" => "xml", "Bar" => "bar"},
       :proxy              => {:proxy_address => "127.0.0.1", :proxy_port => 8080},
       :cookies            => {},

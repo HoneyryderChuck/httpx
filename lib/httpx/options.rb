@@ -42,7 +42,7 @@ module HTTPX
     def initialize(options = {})
       defaults = {
         :proxy                    => {},
-        :ssl                      => {},
+        :ssl                      => { alpn_protocols: %w[h2 http/1.1] },
         :timeout                  => Timeout.by(:per_operation),
         :headers                  => {},
         :cookies                  => {},
@@ -106,6 +106,8 @@ module HTTPX
       merged = h1.merge(h2) do |k, v1, v2|
         case k
         when :headers
+          v1.merge(v2)
+        when :ssl
           v1.merge(v2)
         else
           v2
