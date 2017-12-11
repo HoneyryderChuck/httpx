@@ -43,6 +43,7 @@ module HTTPX
       defaults = {
         :proxy                    => {},
         :ssl                      => { alpn_protocols: %w[h2 http/1.1] },
+        :fallback_protocol        => "http/1.1", 
         :timeout                  => Timeout.by(:per_operation),
         :headers                  => {},
         :cookies                  => {},
@@ -94,7 +95,7 @@ module HTTPX
       params form json body
       proxy follow ssl max_retries
       request_class response_class headers_class response_body_class
-      io
+      io fallback_protocol
     ].each do |method_name|
       def_option(method_name)
     end

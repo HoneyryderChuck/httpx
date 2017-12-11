@@ -10,6 +10,7 @@ module HTTPX
     attr_reader :ip, :port, :uri
 
     def initialize(uri, options)
+      @fallback_protocol = options.fallback_protocol
       @connected = false
       @uri = uri
       @ip = TCPSocket.getaddress(@uri.host) 
@@ -32,7 +33,7 @@ module HTTPX
     end
 
     def protocol
-      "http/1.1"
+      @fallback_protocol 
     end
 
     def connect
