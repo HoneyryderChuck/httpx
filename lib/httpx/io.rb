@@ -15,7 +15,6 @@ module HTTPX
       @uri = uri
       @ip = TCPSocket.getaddress(@uri.host) 
       @port = @uri.port
-      addr = IPAddr.new(@ip)
       if options.io
         @io = case options.io
         when Hash
@@ -25,7 +24,7 @@ module HTTPX
         end
         @keep_open = !@io.nil?
       end
-      @io ||= Socket.new(addr.family, :STREAM, 0)
+      @io ||= build_socket 
     end
 
     def to_io
@@ -39,10 +38,12 @@ module HTTPX
     def connect
       return if @connected || @keep_open
       begin
+        @io = build_socket if @io.closed?
         @io.connect_nonblock(Socket.sockaddr_in(@port, @ip))
       rescue Errno::EISCONN
       end
       @connected = true
+      log { "connected" }
 
     rescue Errno::EINPROGRESS,
            Errno::EALREADY,
@@ -94,6 +95,18 @@ module HTTPX
 
     def closed?
       !@keep_open && !@connected
+    end
+
+    private
+
+    def build_socket
+      addr = IPAddr.new(@ip)
+      Socket.new(addr.family, :STREAM, 0)
+    end
+    
+    def log(&msg)
+      return unless $HTTPX_DEBUG
+      $stderr << (+"io: " << msg.call << "\n")
     end
   end
 
