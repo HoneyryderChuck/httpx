@@ -149,17 +149,23 @@ module HTTPX
     end
 
     def transition(nextstate)
-      case @state
+      case nextstate
       when :idle
-        return unless nextstate == :headers
-        @state = nextstate
+
       when :headers
-        @state = nextstate if nextstate == :body || nextstate == :done
+        return unless @state == :idle
       when :body
-        @state = nextstate if nextstate == :done
+        return unless @state == :headers
+        if @headers.key?("expect")
+          return unless @response
+          expect_status, _ = @headers["expect"].split("-")
+          return unless @response.status == expect_status.to_i 
+        end
       when :done
-        # do nothing
+        return unless @state == :body ||
+                      @state == :headers
       end
+      @state = nextstate
       nil
     end
 
