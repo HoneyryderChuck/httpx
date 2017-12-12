@@ -62,12 +62,16 @@ module HTTPX
         @parser = nil
       end
       @io.close
-      return if hard
+      @read_buffer.clear
+      @write_buffer.clear
+      return true if hard
       unless pr && pr.empty?
-        @io.connect
+        connect
         @parser = pr
         parser.reenqueue!
+        return false
       end
+      true
     end
 
     def closed?
@@ -132,6 +136,11 @@ module HTTPX
         @parser.on(:close) { throw(:close, self) }
         @parser
       end
+    end
+    
+    def log(&msg)
+      return unless $HTTPX_DEBUG
+      $stderr << (+"" << msg.call << "\n")
     end
   end
 end

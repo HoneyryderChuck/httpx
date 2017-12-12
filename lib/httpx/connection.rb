@@ -35,8 +35,7 @@ module HTTPX
 
     def close(channel = nil)
       if channel
-        channel.close
-        if channel.closed?
+        if channel.close
           @channels.delete(channel)
           @selector.deregister(channel)
         end
