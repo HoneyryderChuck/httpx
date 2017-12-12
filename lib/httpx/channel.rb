@@ -56,12 +56,13 @@ module HTTPX
       @io.port
     end
 
-    def close
+    def close(hard=false)
       if pr = @parser
         pr.close
         @parser = nil
       end
       @io.close
+      return if hard
       unless pr && pr.empty?
         @io.connect
         @parser = pr

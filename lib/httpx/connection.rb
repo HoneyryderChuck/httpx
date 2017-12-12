@@ -42,7 +42,7 @@ module HTTPX
         end
       else
         while ch = @channels.shift
-          ch.close
+          ch.close(true)
           @selector.deregister(ch)
         end 
       end
