@@ -82,9 +82,23 @@ module HTTPX
       emit(:response, request, response)
 
       send(@pending.shift) unless @pending.empty?
-      return unless response.headers["connection"] == "close"
-      log { "connection closed" }
-      emit(:close)
+      if response.headers["connection"] == "close"
+        unless @requests.empty?
+          @requests.map { |r| r.transition(:idle) }
+          # server doesn't handle pipelining, and probably
+          # doesn't support keep-alive. Fallback to send only
+          # 1 keep alive request. 
+          @max_concurrent_requests = 1
+        end
+        log { "connection: close" }
+        emit(:close)
+      end
+    end
+
+    def consume
+      @requests.each do |request|
+        handle(request)
+      end
     end
 
     private
