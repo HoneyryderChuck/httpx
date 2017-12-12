@@ -113,11 +113,11 @@ module HTTPX
       while chunk
         next_chunk = request.drain_body
         stream.data(chunk, end_stream: !next_chunk)
-        chunk = next_chunk
-        if chunk && @buffer.full?
-          @drains[request] = chunk
+        if next_chunk && @buffer.full?
+          @drains[request] = next_chunk
           throw(:buffer_full)
         end
+        chunk = next_chunk
       end
     end
 
