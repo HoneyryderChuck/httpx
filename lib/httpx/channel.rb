@@ -94,6 +94,7 @@ module HTTPX
       return if closed?
       dread
       dwrite
+      parser.consume
       nil
     end
 
