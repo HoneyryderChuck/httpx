@@ -79,7 +79,7 @@ module HTTPX
     end
     
     def send(request, **args)
-      if @parser
+      if @parser && !@write_buffer.full?
         parser.send(request, **args)
       else
         @pending << [request, args]
@@ -122,6 +122,7 @@ module HTTPX
       return if @io.closed?
       while (request, args = @pending.shift)
         parser.send(request, **args)
+        break if @write_buffer.full?
       end
     end
 
