@@ -15,14 +15,12 @@ module HTTPX
     def_delegator :@buffer, :empty?
     
     def_delegator :@buffer, :slice!
+    
+    def_delegator :@buffer, :clear
 
     def initialize(limit)
       @buffer = "".b
       @limit = limit
-    end
-
-    def <<(data)
-      @buffer << data
     end
 
     def full?
