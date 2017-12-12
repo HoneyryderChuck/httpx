@@ -3,6 +3,7 @@
 gem "minitest"
 require "minitest/autorun"
 
+$HTTPX_DEBUG = !!ENV["HTTPX_DEBUG"]
 
 require "httpx"
 
