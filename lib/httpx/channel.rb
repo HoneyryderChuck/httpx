@@ -1,11 +1,14 @@
 # frozen_string_literal: true
 
 require "httpx/io"
+require "httpx/buffer"
 
 module HTTPX
   class Channel
     require "httpx/channel/http2"
     require "httpx/channel/http1"
+
+    BUFFER_SIZE = 1 << 14
 
     PROTOCOLS = {
       "h2"       => HTTP2,
@@ -30,8 +33,8 @@ module HTTPX
       @io = io
       @options = Options.new(options)
       @window_size = @options.window_size
-      @read_buffer = +""
-      @write_buffer = +""
+      @read_buffer = "".b
+      @write_buffer = Buffer.new(BUFFER_SIZE)
       @pending = []
       @on_response = on_response
     end
