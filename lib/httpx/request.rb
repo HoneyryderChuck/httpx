@@ -84,7 +84,8 @@ module HTTPX
     def drain_body
       return nil if @body.nil?
       @drainer ||= @body.each
-      @drainer.next
+      chunk = @drainer.next
+      chunk.dup
     rescue StopIteration
       nil
     end
