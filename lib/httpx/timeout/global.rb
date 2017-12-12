@@ -3,13 +3,15 @@
 require "timeout"
 
 module HTTPX::Timeout
-  class Global < PerOperation 
+  class Global < PerOperation
+    TOTAL_TIMEOUT = 15
 
     attr_reader :total_timeout
 
-    def initialize(**options)
-      @total_timeout = options.values.reduce(:+, 0)
-      reset_counter 
+    def initialize(total_timeout: TOTAL_TIMEOUT)
+      @total_timeout = total_timeout 
+      reset_counter
+      @running = false
     end
 
     def ==(other)
@@ -17,19 +19,11 @@ module HTTPX::Timeout
       @total_timeout == other.total_timeout
     end
 
-    def connect(&blk)
-      return yield if @connecting
-      reset_timer
-      ::Timeout.timeout(@time_left, HTTPX::TimeoutError) do
-        @connecting = true
-        yield
-      end
-      log_time
-    ensure
-      @connecting = false
-    end
-
     def timeout
+      unless @running
+        reset_timer
+        @running = true
+      end
       log_time
       @time_left
     end
@@ -52,6 +46,5 @@ module HTTPX::Timeout
 
       reset_timer
     end
-
   end
 end

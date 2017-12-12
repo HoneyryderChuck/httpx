@@ -103,6 +103,10 @@ module HTTPX
         r.unshift(@__r__)
 
         readers, writers = IO.select(r, w, nil, interval)
+
+        if readers.nil? and writers.nil?
+          raise HTTPX::TimeoutError, "timed out while waiting on select"
+        end
       rescue IOError, SystemCallError
         @lock.synchronize do
           @readers.reject! { |io, _| io.closed? }

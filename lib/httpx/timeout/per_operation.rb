@@ -31,16 +31,6 @@ module HTTPX::Timeout
       @operation_timeout == other.operation_timeout &&
       @keep_alive_timeout == other.keep_alive_timeout
     end
-
-    def connect
-      return yield if @connecting
-      ::Timeout.timeout(@connect_timeout, HTTPX::TimeoutError) do
-        @connecting = true
-        yield
-      end
-    ensure
-      @connecting = false
-    end
   end
 end
 
