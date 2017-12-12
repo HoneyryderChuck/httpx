@@ -41,14 +41,7 @@ module HTTPX
         return
       end
       @requests << request unless @requests.include?(request)
-      catch(:buffer_full) do
-        request.headers["connection"] ||= "keep-alive"
-        request.transition(:headers)
-        join_headers(request) if request.state == :headers
-        request.transition(:body)
-        join_body(request) if request.state == :body
-        request.transition(:done)
-      end
+      handle(request)
     end
 
     def reenqueue!
@@ -95,6 +88,17 @@ module HTTPX
     end
 
     private
+
+    def handle(request)
+      catch(:buffer_full) do
+        request.headers["connection"] ||= "keep-alive"
+        request.transition(:headers)
+        join_headers(request) if request.state == :headers
+        request.transition(:body)
+        join_body(request) if request.state == :body
+        request.transition(:done)
+      end
+    end
 
     def join_headers(request)
       request.headers["host"] ||= request.authority 

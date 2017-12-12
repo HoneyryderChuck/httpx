@@ -57,13 +57,7 @@ module HTTPX
         end
         @streams[request] = stream
       end
-      catch(:buffer_full) do
-        request.transition(:headers)
-        join_headers(stream, request) if request.state == :headers
-        request.transition(:body)
-        join_body(stream, request) if request.state == :body
-        request.transition(:done)
-      end
+      handle(request, stream)
     end
 
     def reenqueue!
@@ -76,6 +70,16 @@ module HTTPX
     end
 
     private
+
+    def handle(request, stream)
+      catch(:buffer_full) do
+        request.transition(:headers)
+        join_headers(stream, request) if request.state == :headers
+        request.transition(:body)
+        join_body(stream, request) if request.state == :body
+        request.transition(:done)
+      end
+    end
 
     def init_connection
       @connection = HTTP2::Client.new
