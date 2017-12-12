@@ -69,6 +69,12 @@ module HTTPX
       end
     end
 
+    def consume
+      @streams.each do |request, stream|
+        handle(request, stream)
+      end
+    end
+
     private
 
     def handle(request, stream)
