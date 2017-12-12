@@ -30,7 +30,7 @@ module HTTPX
         requests = reqs.map do |verb, uri, opts = {}|
           rklass.new(verb, uri, **@default_options.merge(options.merge(opts)))
         end
-        responses = __send_reqs(*requests)
+        __send_reqs(*requests)
       when 2, 3
         verb, uris, opts = args
         opts ||= {}
@@ -38,8 +38,7 @@ module HTTPX
           requests = uris.map do |uri|
             rklass.new(verb, uri, **@default_options.merge(options.merge(opts)))
           end
-          responses = __send_reqs(*requests)
-          responses
+          __send_reqs(*requests)
         else
           request = rklass.new(verb, uris, **@default_options.merge(options.merge(opts)))
           responses = __send_reqs(request)
