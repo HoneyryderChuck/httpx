@@ -36,14 +36,19 @@ module HTTPX
     end
 
     def send(request, **)
-      request.headers["connection"] ||= "keep-alive"
       if @requests.size >= @max_concurrent_requests
         @pending << request
         return
       end
-      @requests << request
-      join_headers(request)
-      join_body(request)
+      @requests << request unless @requests.include?(request)
+      catch(:buffer_full) do
+        request.headers["connection"] ||= "keep-alive"
+        request.transition(:headers)
+        join_headers(request) if request.state == :headers
+        request.transition(:body)
+        join_body(request) if request.state == :body
+        request.transition(:done)
+      end
     end
 
     def reenqueue!
@@ -109,10 +114,11 @@ module HTTPX
     end
 
     def join_body(request)
-      return unless request.body
-      request.body.each do |chunk|
+      return if request.empty?
+      while chunk = request.drain_body
         log { "<- #{chunk.inspect}" }
         @buffer << chunk
+        throw(:buffer_full, request) if @buffer.full?
       end
     end
 
