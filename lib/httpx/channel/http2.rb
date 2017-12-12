@@ -55,6 +55,7 @@ module HTTPX
         stream.on(:data) do |data|
           request.response << data
         end
+        @streams[request] = stream
       end
       catch(:buffer_full) do
         request.transition(:headers)
