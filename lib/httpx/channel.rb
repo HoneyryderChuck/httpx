@@ -35,21 +35,17 @@ module HTTPX
       @on_response = on_response
     end
 
+    def match?(uri)
+      ip = TCPSocket.getaddress(uri.host)
+
+      ip == @io.ip &&
+      uri.port == @io.port &&
+      uri.scheme == @uri.scheme
+    end
+
     def to_io
       connect
       @io.to_io
-    end
-
-    def uri
-      @io.uri
-    end
-
-    def remote_ip
-      @io.ip
-    end
-
-    def remote_port
-      @io.port
     end
 
     def close(hard=false)

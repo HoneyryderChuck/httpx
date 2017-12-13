@@ -70,11 +70,8 @@ module HTTPX
     #
     def bind(uri)
       uri = URI(uri)
-      ip = TCPSocket.getaddress(uri.host)
       return @channels.find do |channel|
-        ip == channel.remote_ip &&
-        uri.port == channel.remote_port &&
-        uri.scheme == channel.uri.scheme
+        channel.match?(uri)
       end || begin
         build_channel(uri)
       end
