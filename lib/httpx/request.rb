@@ -155,11 +155,23 @@ module HTTPX
       when :headers
         return unless @state == :idle
       when :body
-        return unless @state == :headers
+        return unless @state == :headers ||
+                      @state == :expect
+
         if @headers.key?("expect")
-          return unless @response
-          expect_status, _ = @headers["expect"].split("-")
-          return unless @response.status == expect_status.to_i 
+          unless @response
+            @state = :expect
+            return
+          end
+
+          case @response.status
+          when 100
+            # deallocate
+            @response = nil
+          when 417
+            @response = ErrorResponse.new("Expectation Failed", 0)
+            return
+          end
         end
       when :done
         return unless @state == :body ||
@@ -167,6 +179,11 @@ module HTTPX
       end
       @state = nextstate
       nil
+    end
+
+    def expects?
+      @headers["expect"] == "100-continue" &&
+      @response && @response.status == 100
     end
 
     private

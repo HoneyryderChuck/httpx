@@ -25,16 +25,6 @@ module Requests
         assert body["form"]["foo"] == "bar" 
       end
 
-      define_method :"test_#{meth}_form_file_params" do
-        uri = build_uri("/#{meth}")
-        response = HTTPX.send(meth, uri, form: {image: HTTP::FormData::File.new(fixture_file_path)})
-        assert response.status == 200, "status is unexpected"
-        body = json_body(response)
-        assert body["headers"]["Content-Type"].start_with?("multipart/form-data")
-        assert body.key?("files")
-        assert body["files"].key?("image")
-      end
-
       define_method :"test_#{meth}_json_params" do
         uri = build_uri("/#{meth}")
         response = HTTPX.send(meth, uri, json: {"foo" => "bar"})
@@ -54,6 +44,28 @@ module Requests
         assert body["headers"]["Content-Type"] == "application/octet-stream"
         assert body.key?("data")
         assert body["data"] == "data" 
+      end
+
+      define_method :"test_#{meth}_form_file_params" do
+        uri = build_uri("/#{meth}")
+        response = HTTPX.send(meth, uri, form: {image: HTTP::FormData::File.new(fixture_file_path)})
+        assert response.status == 200, "status is unexpected"
+        body = json_body(response)
+        assert body["headers"]["Content-Type"].start_with?("multipart/form-data")
+        assert body.key?("files")
+        assert body["files"].key?("image")
+      end
+
+      define_method :"test_#{meth}_expect_100_form_file_params" do
+        uri = build_uri("/#{meth}")
+        response = HTTPX.headers("expect" => "100-continue")
+                        .send(meth, uri, form: {image: HTTP::FormData::File.new(fixture_file_path)})
+        assert response.status == 200, "status is unexpected"
+        body = json_body(response)
+        assert body["headers"]["Content-Type"].start_with?("multipart/form-data")
+        assert body["headers"]["Expect"].start_with?("100-continue")
+        assert body.key?("files")
+        assert body["files"].key?("image")
       end
     end
 

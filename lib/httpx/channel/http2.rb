@@ -37,6 +37,9 @@ module HTTPX
       unless stream = @streams[request]
         stream = @connection.new_stream
         stream.on(:close) do |error|
+          if request.expects?
+            return handle(request, stream)
+          end
           response = request.response || ErrorResponse.new(error, retries)
           emit(:response, request, response)
           log(stream.id) { "closing stream" }

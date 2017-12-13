@@ -84,10 +84,12 @@ module HTTPX
 
     def on_message_complete
       log { "parsing complete" }
-      request = @requests.shift
-      response = request.response
       @parser.reset!
+      request = @requests.first
+      return handle(request) if request.expects?
 
+      @requests.shift
+      response = request.response
       emit(:response, request, response)
 
       send(@pending.shift) unless @pending.empty?
