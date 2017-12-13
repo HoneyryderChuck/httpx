@@ -133,7 +133,7 @@ module HTTPX
       super
       # allow reconnections
       # connect only works if initial @io is a socket
-      @io = @io.io
+      @io = @io.io if @io.respond_to?(:io)
       @negotiated = false
     end
 
