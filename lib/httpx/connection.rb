@@ -49,17 +49,11 @@ module HTTPX
 
     def response(request)
       response = @responses.delete(request)
-      case response
-      when ErrorResponse
-        if response.retryable?
-          send(request, retries: response.retries - 1)
-          nil
-        else
-          response
-        end
-      else
-        response
-      end
+      if response.is_a?(ErrorResponse) && response.retryable?
+        send(request, retries: response.retries - 1)
+        return 
+      end 
+      response
     end
 
     private
