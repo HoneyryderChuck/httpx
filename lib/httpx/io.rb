@@ -10,17 +10,18 @@ module HTTPX
     attr_reader :ip, :port, :uri
 
     def initialize(uri, options)
-      @fallback_protocol = options.fallback_protocol
+      @options = Options.new(options)
+      @fallback_protocol = @options.fallback_protocol
       @connected = false
       @uri = uri
       @ip = TCPSocket.getaddress(@uri.host) 
       @port = @uri.port
-      if options.io
-        @io = case options.io
+      if @options.io
+        @io = case @options.io
         when Hash
-          options.io[@ip] || options.io["#{@ip}:#{@port}"]
+          @options.io[@ip] || @options.io["#{@ip}:#{@port}"]
         else
-          options.io
+          @options.io
         end
         @keep_open = !@io.nil?
       end
