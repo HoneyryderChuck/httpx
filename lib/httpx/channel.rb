@@ -1,10 +1,35 @@
 # frozen_string_literal: true
 
+require "forwardable"
 require "httpx/io"
 require "httpx/buffer"
 
 module HTTPX
+  # The Channel entity can be watched for IO events.
+  #
+  # It contains the +io+ object to read/write from, and knows what to do when it can.
+  #
+  # It defers connecting until absolutely necessary. Connection should be triggered from
+  # the IO selector (until then, any request will be queued).
+  #
+  # A channel boots up its parser after connection is established. All pending requests
+  # will be redirected there after connection.
+  #
+  # A channel can be prevented from closing by the parser, that is, if there are pending
+  # requests. This will signal that the channel was prematurely closed, due to a possible
+  # number of conditions:
+  #
+  # * Remote peer closed the connection ("Connection: close");
+  # * Remote peer doesn't support pipelining;
+  #
+  # A channel may also route requests for a different host for which the +io+ was connected
+  # to, provided that the IP is the same and the port and scheme as well. This will allow to
+  # share the same socket to send HTTP/2 requests to different hosts. 
+  # TODO: For this to succeed, the certificates sent by the servers to the client must be 
+  #       identical (or match both hosts).
+  #
   class Channel
+    extend Forwardable
     include Registry
     require "httpx/channel/http2"
     require "httpx/channel/http1"
@@ -24,6 +49,10 @@ module HTTPX
         new(io, options, &blk)
       end
     end
+
+    def_delegator :@io, :closed?
+
+    def_delegator :@write_buffer, :empty?
 
     def initialize(io, options, &on_response)
       @io = io
@@ -66,14 +95,6 @@ module HTTPX
       true
     end
 
-    def closed?
-      @io.closed?
-    end
-
-    def empty?
-      @write_buffer.empty?
-    end
-    
     def send(request, **args)
       if @parser && !@write_buffer.full?
         parser.send(request, **args)

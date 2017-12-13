@@ -19,10 +19,9 @@ module HTTPX
       @requests = []
     end
 
-    def reset
+    def close 
       @parser.reset! 
     end
-    alias :close :reset
 
     def empty?
       # this means that for every request there's an available
@@ -51,6 +50,16 @@ module HTTPX
       end
     end
 
+    def consume
+      @requests.each do |request|
+        handle(request)
+      end
+    end
+
+    # HTTP Parser callbacks
+    #
+    # must be public methods, or else they won't be reachable
+    
     def on_message_begin
       log { "parsing begins" }
     end
@@ -76,7 +85,7 @@ module HTTPX
       log { "parsing complete" }
       request = @requests.shift
       response = request.response
-      reset
+      @parser.reset!
 
       emit(:response, request, response)
 
@@ -91,12 +100,6 @@ module HTTPX
         end
         log { "connection: close" }
         emit(:close)
-      end
-    end
-
-    def consume
-      @requests.each do |request|
-        handle(request)
       end
     end
 
