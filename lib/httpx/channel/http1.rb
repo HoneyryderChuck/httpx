@@ -149,5 +149,6 @@ module HTTPX
       $stderr << (+"" << msg.call << "\n")
     end
   end
+  Channel.register "http/1.1", Channel::HTTP1
 end
 

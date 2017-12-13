@@ -5,15 +5,11 @@ require "httpx/buffer"
 
 module HTTPX
   class Channel
+    include Registry
     require "httpx/channel/http2"
     require "httpx/channel/http1"
 
     BUFFER_SIZE = 1 << 14
-
-    PROTOCOLS = {
-      "h2"       => HTTP2,
-      "http/1.1" => HTTP1
-    }
 
     class << self
       def by(uri, options, &blk)
@@ -132,7 +128,7 @@ module HTTPX
 
     def parser
       @parser || begin
-        @parser = PROTOCOLS[@io.protocol].new(@write_buffer, @options)
+        @parser = registry(@io.protocol).new(@write_buffer, @options)
         @parser.on(:response, &@on_response)
         @parser.on(:close) { throw(:close, self) }
         @parser

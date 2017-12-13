@@ -180,4 +180,5 @@ module HTTPX
       $stderr << (+"connection (HTTP/2): " << msg.call << "\n")
     end
   end
+  Channel.register "h2", Channel::HTTP2
 end
