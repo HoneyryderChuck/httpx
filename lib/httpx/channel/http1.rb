@@ -26,7 +26,7 @@ module HTTPX
     def empty?
       # this means that for every request there's an available
       # partial response, so there are no in-flight requests waiting.
-      @requests.size == @requests.count { |r| r.response.nil? }
+      @requests.any? { |request| request.response.nil? }
     end
 
     def <<(data)
@@ -68,9 +68,10 @@ module HTTPX
       log { "headers received" }
       headers = @options.headers_class.new(h)
       response = @options.response_class.new(@requests.last, @parser.status_code, headers, @options)
+      log { response.headers.each.map { |f, v| "-> #{f}: #{v}" }.join("\n") }
+      
       request = @requests.last
       request.response = response
-      log { response.headers.each.map { |f, v| "-> #{f}: #{v}" }.join("\n") }
       # parser can't say if it's parsing GET or HEAD,
       # call the completeness callback manually
       on_message_complete if request.verb == :head
