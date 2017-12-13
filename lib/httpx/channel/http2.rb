@@ -39,13 +39,17 @@ module HTTPX
         stream.on(:close) do |error|
           response = request.response || ErrorResponse.new(error, retries)
           emit(:response, request, response)
+          log(stream.id) { "closing stream" }
 
           @streams.delete(request)
           send(@pending.shift) unless @pending.empty?
         end
-        # stream.on(:half_close)
+        stream.on(:half_close) do
+          log(stream.id) { "waiting for response..." }
+        end
         # stream.on(:altsvc)
         stream.on(:headers) do |h|
+          log(stream.id) { "received headers: #{h.inspect}" }
           _, status = h.shift
           headers = @options.headers_class.new(h)
           response = @options.response_class.new(request, status, headers, @options)
@@ -140,8 +144,8 @@ module HTTPX
     end
 
     def on_frame_sent(frame)
-      log { "frame was sent!" }
-      log do
+      log(frame[:stream]) { "frame was sent!" }
+      log(frame[:stream]) do
         case frame[:type]
         when :data
           frame.merge(payload: frame[:payload].bytesize).inspect
@@ -154,8 +158,8 @@ module HTTPX
     end
 
     def on_frame_received(frame)
-      log { "frame was received" }
-      log do
+      log(frame[:stream]) { "frame was received!" }
+      log(frame[:stream]) do
         case frame[:type]
         when :data
           frame.merge(payload: frame[:payload].bytesize).inspect
@@ -166,18 +170,20 @@ module HTTPX
     end
 
     def on_altsvc(frame)
-      log { "altsvc frame was received" }
-      log { frame.inspect }
+      log(frame[:stream]) { "altsvc frame was received" }
+      log(frame[:stream]) { frame.inspect }
     end
 
     def on_promise(stream)
+      log(stream.id) { "refusing stream!" }
       stream.refuse
       # TODO: policy for handling promises
     end
 
-    def log(&msg)
-      return unless @options.debug 
-      @options.debug << (+"connection (HTTP/2): " << msg.call << "\n")
+    def log(stream=nil, &msg)
+      return unless @options.debug
+      prefix =  +"connection (HTTP/2, stream: #{stream || 0}):"
+      @options.debug << (prefix << msg.call << "\n")
     end
   end
   Channel.register "h2", Channel::HTTP2
