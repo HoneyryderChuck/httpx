@@ -147,8 +147,8 @@ module HTTPX
     end
 
     def log(&msg)
-      return unless $HTTPX_DEBUG
-      $stderr << (+"" << msg.call << "\n")
+      return unless @options.debug 
+      @options.debug << (+"" << msg.call << "\n")
     end
   end
   Channel.register "http/1.1", Channel::HTTP1

@@ -97,6 +97,10 @@ module HTTPX
       !@keep_open && !@connected
     end
 
+    def inspect
+      "#<#{self.class}#{@io.fileno}: #{@ip}:#{@port}>"
+    end
+
     private
 
     def build_socket
@@ -105,8 +109,8 @@ module HTTPX
     end
     
     def log(&msg)
-      return unless $HTTPX_DEBUG
-      $stderr << (+"io: " << msg.call << "\n")
+      return unless @options.debug 
+      @options.debug << (+"#{inspect}: " << msg.call << "\n")
     end
   end
 

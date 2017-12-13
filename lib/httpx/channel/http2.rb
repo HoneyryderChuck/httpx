@@ -176,8 +176,8 @@ module HTTPX
     end
 
     def log(&msg)
-      return unless $HTTPX_DEBUG
-      $stderr << (+"connection (HTTP/2): " << msg.call << "\n")
+      return unless @options.debug 
+      @options.debug << (+"connection (HTTP/2): " << msg.call << "\n")
     end
   end
   Channel.register "h2", Channel::HTTP2

@@ -57,7 +57,8 @@ class OptionsSpec < Minitest::Test
 
 
     assert foo.merge(bar).to_hash == {
-      :io                 => nil,
+      :io                 => ENV.key?("HTTPX_DEBUG") ? $stderr : nil,
+      :debug              => nil,
       :params             => nil,
       :json               => nil,
       :body               => nil,
