@@ -101,6 +101,8 @@ module HTTPX
           default_options.response_class.extend(pl::ResponseClassMethods) if defined?(pl::ResponseClassMethods)
           default_options.headers_class.__send__(:include, pl::HeadersMethods) if defined?(pl::HeadersMethods)
           default_options.headers_class.extend(pl::HeadersClassMethods) if defined?(pl::HeadersClassMethods)
+          default_options.response_body_class.__send__(:include, pl::ResponseBodyMethods) if defined?(pl::ResponseBodyMethods)
+          default_options.response_body_class.extend(pl::ResponseBodyClassMethods) if defined?(pl::ResponseBodyClassMethods)
           pl.configure(self, *args, &block) if pl.respond_to?(:configure)
         end
         nil

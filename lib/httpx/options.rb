@@ -54,7 +54,7 @@ module HTTPX
         :request_class            => Class.new(Request),
         :response_class           => Class.new(Response),
         :headers_class            => Class.new(Headers),
-        :response_body_class      => Response::Body,
+        :response_body_class      => Class.new(Response::Body),
       }
 
       defaults.merge!(options)
