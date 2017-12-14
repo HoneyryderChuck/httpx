@@ -65,12 +65,17 @@ module HTTPX
     end
 
     def on_headers_complete(h)
+      # Wait for fix: https://github.com/tmm1/http_parser.rb/issues/52
+      # callback is called 2 times when chunked
+      request = @requests.last
+      return if request.response
+
       log { "headers received" }
       headers = @options.headers_class.new(h)
       response = @options.response_class.new(@requests.last, @parser.status_code, headers, @options)
+      log { "#{response.status} HTTP/#{@parser.http_version.join(".")}" } 
       log { response.headers.each.map { |f, v| "-> #{f}: #{v}" }.join("\n") }
       
-      request = @requests.last
       request.response = response
       # parser can't say if it's parsing GET or HEAD,
       # call the completeness callback manually
