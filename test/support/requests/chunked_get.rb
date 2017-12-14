@@ -5,9 +5,9 @@ module Requests
     def test_http_chunked_get
       uri = build_uri("/stream-bytes/30?chunk_size=5")
       response = HTTPX.get(uri)
-      assert response.status == 200, "status is unexpected"
-      assert response.headers["transfer-encoding"] == "chunked", "response hasn't been chunked"
-      assert response.body.to_s.bytesize == 30, "didn't load the whole body"
+      verify_status(response.status, 200)
+      verify_header(response.headers, "transfer-encoding", "chunked")
+      verify_body_length(response, 30)
     end
   end
 end

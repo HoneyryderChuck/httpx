@@ -6,7 +6,7 @@ module Requests
       define_method :"test_#{meth}_query_params" do
         uri = build_uri("/#{meth}")
         response = HTTPX.send(meth, uri, params: {"q" => "this is a test"})
-        assert response.status == 200, "status is unexpected"
+        verify_status(response.status, 200)
         body = json_body(response)
         assert body.key?("args")
         assert body["args"].key?("q")
@@ -17,9 +17,9 @@ module Requests
       define_method :"test_#{meth}_form_params" do
         uri = build_uri("/#{meth}")
         response = HTTPX.send(meth, uri, form: {"foo" => "bar"})
-        assert response.status == 200, "status is unexpected"
+        verify_status(response.status, 200)
         body = json_body(response)
-        assert body["headers"]["Content-Type"] == "application/x-www-form-urlencoded"
+        verify_header(body["headers"], "Content-Type", "application/x-www-form-urlencoded")
         assert body.key?("form")
         assert body["form"].key?("foo")
         assert body["form"]["foo"] == "bar" 
@@ -28,9 +28,9 @@ module Requests
       define_method :"test_#{meth}_json_params" do
         uri = build_uri("/#{meth}")
         response = HTTPX.send(meth, uri, json: {"foo" => "bar"})
-        assert response.status == 200, "status is unexpected"
+        verify_status(response.status, 200)
         body = json_body(response)
-        assert body["headers"]["Content-Type"].start_with?("application/json")
+        verify_header(body["headers"], "Content-Type", "application/json")
         assert body.key?("json")
         assert body["json"].key?("foo")
         assert body["json"]["foo"] == "bar" 
@@ -39,9 +39,9 @@ module Requests
       define_method :"test_#{meth}_body_params" do
         uri = build_uri("/#{meth}")
         response = HTTPX.send(meth, uri, body: "data")
-        assert response.status == 200, "status is unexpected"
+        verify_status(response.status, 200)
         body = json_body(response)
-        assert body["headers"]["Content-Type"] == "application/octet-stream"
+        verify_header(body["headers"], "Content-Type", "application/octet-stream")
         assert body.key?("data")
         assert body["data"] == "data" 
       end
@@ -49,9 +49,9 @@ module Requests
       define_method :"test_#{meth}_form_file_params" do
         uri = build_uri("/#{meth}")
         response = HTTPX.send(meth, uri, form: {image: HTTP::FormData::File.new(fixture_file_path)})
-        assert response.status == 200, "status is unexpected"
+        verify_status(response.status, 200)
         body = json_body(response)
-        assert body["headers"]["Content-Type"].start_with?("multipart/form-data")
+        verify_header(body["headers"], "Content-Type", "multipart/form-data")
         assert body.key?("files")
         assert body["files"].key?("image")
       end
@@ -60,10 +60,10 @@ module Requests
         uri = build_uri("/#{meth}")
         response = HTTPX.headers("expect" => "100-continue")
                         .send(meth, uri, form: {image: HTTP::FormData::File.new(fixture_file_path)})
-        assert response.status == 200, "status is unexpected"
+        verify_status(response.status, 200)
         body = json_body(response)
-        assert body["headers"]["Content-Type"].start_with?("multipart/form-data")
-        assert body["headers"]["Expect"].start_with?("100-continue")
+        verify_header(body["headers"], "Content-Type", "multipart/form-data")
+        verify_header(body["headers"], "Expect", "100-continue")
         assert body.key?("files")
         assert body["files"].key?("image")
       end
