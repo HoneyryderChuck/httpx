@@ -1,0 +1,25 @@
+# frozen_string_literal: true
+
+module ResponseHelpers
+  private
+
+  def verify_status(value, expect)
+    assert value == expect, "status assertion failed: #{value} (expected: #{expect})"
+  end
+
+  %w(header param).each do |meth|
+    class_eval <<-DEFINE, __FILE__, __LINE__ + 1
+      def verify_#{meth}(#{meth}s, key, expect)
+        assert #{meth}s.key?(key), "#{meth}s don't contain the given key (" + key + ")"
+        value = #{meth}s[key]
+        assert value.start_with?(expect), "#{meth} assertion failed: " + key + "=" + value + " (expected: " + expect + ")"
+      end
+    DEFINE
+  end
+
+  def verify_body_length(response, expect=response.headers["content-length"].to_i)
+    len = response.body.to_s.bytesize
+    assert len == expect, "length assertion failed: #{len} (expected: #{expect})"
+  end
+
+end

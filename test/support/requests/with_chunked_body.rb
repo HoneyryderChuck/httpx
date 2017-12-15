@@ -7,9 +7,9 @@ module Requests
       #   uri = build_uri("/#{meth}")
       #   response = HTTPX.headers("transfer-encoding" => "chunked")
       #                   .send(meth, uri, body: %w[this is a chunked response])
-      #   assert response.status == 200, "status is unexpected"
+      #   verify_status(response.status, 200)
       #   body = json_body(response)
-      #   assert body["headers"]["Transfer-Encoding"] == "chunked"
+      #   verify_header(body["headers"], "Transfer-Encoding", "chunked")
       #   assert body.key?("data")
       #   assert body["data"] == "thisisachunkedresponse" 
       # end

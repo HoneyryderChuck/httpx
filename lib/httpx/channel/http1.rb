@@ -17,18 +17,16 @@ module HTTPX
       @version = [1,1]
       @pending = []  
       @requests = []
-      @responses = []
     end
 
-    def reset
+    def close 
       @parser.reset! 
     end
-    alias :close :reset
 
     def empty?
       # this means that for every request there's an available
       # partial response, so there are no in-flight requests waiting.
-      @requests.size == @responses.size
+      @requests.any? { |request| request.response.nil? }
     end
 
     def <<(data)
@@ -36,14 +34,12 @@ module HTTPX
     end
 
     def send(request, **)
-      request.headers["connection"] ||= "keep-alive"
       if @requests.size >= @max_concurrent_requests
         @pending << request
         return
       end
-      @requests << request
-      join_headers(request)
-      join_body(request)
+      @requests << request unless @requests.include?(request)
+      handle(request)
     end
 
     def reenqueue!
@@ -54,17 +50,33 @@ module HTTPX
       end
     end
 
+    def consume
+      @requests.each do |request|
+        handle(request)
+      end
+    end
+
+    # HTTP Parser callbacks
+    #
+    # must be public methods, or else they won't be reachable
+    
     def on_message_begin
       log { "parsing begins" }
     end
 
     def on_headers_complete(h)
+      # Wait for fix: https://github.com/tmm1/http_parser.rb/issues/52
+      # callback is called 2 times when chunked
+      request = @requests.last
+      return if request.response
+
       log { "headers received" }
       headers = @options.headers_class.new(h)
       response = @options.response_class.new(@requests.last, @parser.status_code, headers, @options)
-      @responses << response
+      log { "#{response.status} HTTP/#{@parser.http_version.join(".")}" } 
       log { response.headers.each.map { |f, v| "-> #{f}: #{v}" }.join("\n") }
-      request = @requests.last
+      
+      request.response = response
       # parser can't say if it's parsing GET or HEAD,
       # call the completeness callback manually
       on_message_complete if request.verb == :head
@@ -72,24 +84,45 @@ module HTTPX
 
     def on_body(chunk)
       log { "-> #{chunk.inspect}" }
-      @responses.last << chunk
+      @requests.last.response << chunk
     end
 
     def on_message_complete
       log { "parsing complete" }
-      request = @requests.shift
-      response = @responses.shift
-      reset
+      @parser.reset!
+      request = @requests.first
+      return handle(request) if request.expects?
 
+      @requests.shift
+      response = request.response
       emit(:response, request, response)
 
       send(@pending.shift) unless @pending.empty?
-      return unless response.headers["connection"] == "close"
-      log { "connection closed" }
-      emit(:close)
+      if response.headers["connection"] == "close"
+        unless @requests.empty?
+          @requests.map { |r| r.transition(:idle) }
+          # server doesn't handle pipelining, and probably
+          # doesn't support keep-alive. Fallback to send only
+          # 1 keep alive request. 
+          @max_concurrent_requests = 1
+        end
+        log { "connection: close" }
+        emit(:close)
+      end
     end
 
     private
+
+    def handle(request)
+      catch(:buffer_full) do
+        request.headers["connection"] ||= "keep-alive"
+        request.transition(:headers)
+        join_headers(request) if request.state == :headers
+        request.transition(:body)
+        join_body(request) if request.state == :body
+        request.transition(:done)
+      end
+    end
 
     def join_headers(request)
       request.headers["host"] ||= request.authority 
@@ -109,10 +142,11 @@ module HTTPX
     end
 
     def join_body(request)
-      return unless request.body
-      request.body.each do |chunk|
+      return if request.empty?
+      while chunk = request.drain_body
         log { "<- #{chunk.inspect}" }
         @buffer << chunk
+        throw(:buffer_full, request) if @buffer.full?
       end
     end
 
@@ -121,9 +155,10 @@ module HTTPX
     end
 
     def log(&msg)
-      return unless $HTTPX_DEBUG
-      $stderr << (+"" << msg.call << "\n")
+      return unless @options.debug 
+      @options.debug << (+"" << msg.call << "\n")
     end
   end
+  Channel.register "http/1.1", Channel::HTTP1
 end
 

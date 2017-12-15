@@ -30,7 +30,7 @@ module HTTPX
         requests = reqs.map do |verb, uri, opts = {}|
           rklass.new(verb, uri, **@default_options.merge(options.merge(opts)))
         end
-        responses = __send_reqs(*requests)
+        __send_reqs(*requests)
       when 2, 3
         verb, uris, opts = args
         opts ||= {}
@@ -38,8 +38,7 @@ module HTTPX
           requests = uris.map do |uri|
             rklass.new(verb, uri, **@default_options.merge(options.merge(opts)))
           end
-          responses = __send_reqs(*requests)
-          responses
+          __send_reqs(*requests)
         else
           request = rklass.new(verb, uris, **@default_options.merge(options.merge(opts)))
           responses = __send_reqs(request)
@@ -102,6 +101,8 @@ module HTTPX
           default_options.response_class.extend(pl::ResponseClassMethods) if defined?(pl::ResponseClassMethods)
           default_options.headers_class.__send__(:include, pl::HeadersMethods) if defined?(pl::HeadersMethods)
           default_options.headers_class.extend(pl::HeadersClassMethods) if defined?(pl::HeadersClassMethods)
+          default_options.response_body_class.__send__(:include, pl::ResponseBodyMethods) if defined?(pl::ResponseBodyMethods)
+          default_options.response_body_class.extend(pl::ResponseBodyClassMethods) if defined?(pl::ResponseBodyClassMethods)
           pl.configure(self, *args, &block) if pl.respond_to?(:configure)
         end
         nil

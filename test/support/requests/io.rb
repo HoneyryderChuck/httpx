@@ -6,8 +6,8 @@ module Requests
       io = origin_io
       uri = build_uri("/")
       response = HTTPX.get(uri, io: io)
-      assert response.status == 200, "status is unexpected"
-      assert response.body.to_s.bytesize == response.headers["content-length"].to_i, "didn't load the whole body"
+      verify_status(response.status, 200)
+      verify_body_length(response)
       assert !io.closed?, "io should have been left open"
     ensure
       io.close if io

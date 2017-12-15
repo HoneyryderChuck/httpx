@@ -10,21 +10,22 @@ module HTTPX
     attr_reader :ip, :port, :uri
 
     def initialize(uri, options)
+      @options = Options.new(options)
+      @fallback_protocol = @options.fallback_protocol
       @connected = false
       @uri = uri
       @ip = TCPSocket.getaddress(@uri.host) 
       @port = @uri.port
-      addr = IPAddr.new(@ip)
-      if options.io
-        @io = case options.io
+      if @options.io
+        @io = case @options.io
         when Hash
-          options.io[@ip] || options.io["#{@ip}:#{@port}"]
+          @options.io[@ip] || @options.io["#{@ip}:#{@port}"]
         else
-          options.io
+          @options.io
         end
         @keep_open = !@io.nil?
       end
-      @io ||= Socket.new(addr.family, :STREAM, 0)
+      @io ||= build_socket 
     end
 
     def to_io
@@ -32,16 +33,18 @@ module HTTPX
     end
 
     def protocol
-      "http/1.1"
+      @fallback_protocol 
     end
 
     def connect
       return if @connected || @keep_open
       begin
+        @io = build_socket if @io.closed?
         @io.connect_nonblock(Socket.sockaddr_in(@port, @ip))
       rescue Errno::EISCONN
       end
       @connected = true
+      log { "connected" }
 
     rescue Errno::EINPROGRESS,
            Errno::EALREADY,
@@ -94,6 +97,22 @@ module HTTPX
     def closed?
       !@keep_open && !@connected
     end
+
+    def inspect
+      "#<TCP(fd: #{@io.fileno}): #{@ip}:#{@port}>"
+    end
+
+    private
+
+    def build_socket
+      addr = IPAddr.new(@ip)
+      Socket.new(addr.family, :STREAM, 0)
+    end
+    
+    def log(&msg)
+      return unless @options.debug 
+      @options.debug << (+"#{inspect}: " << msg.call << "\n")
+    end
   end
 
   class SSL < TCP
@@ -114,7 +133,7 @@ module HTTPX
       super
       # allow reconnections
       # connect only works if initial @io is a socket
-      @io = @io.io
+      @io = @io.io if @io.respond_to?(:io)
       @negotiated = false
     end
 
@@ -161,6 +180,10 @@ module HTTPX
 
     def closed?
       super || !@negotiated
+    end
+    
+    def inspect
+      "#<SSL(fd: #{@io.fileno}): #{@ip}:#{@port}>"
     end
   end
 end

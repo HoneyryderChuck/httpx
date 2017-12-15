@@ -17,6 +17,7 @@ class ClientTest < Minitest::Test
     assert client.respond_to?(:options), "instance methods weren't added"
     assert client.options.respond_to?(:foo), "options methods weren't added"
     assert client.options.foo == "options-foo", "option method is unexpected"
+    
     request = client.options.request_class.new(:get, "/", client.options)
     assert request.respond_to?(:foo), "request methods haven't been added"
     assert request.foo == "request-foo", "request method is unexpected"
@@ -26,6 +27,12 @@ class ClientTest < Minitest::Test
     response = client.response(nil, 200, {})
     assert response.respond_to?(:foo), "response methods haven't been added" 
     assert response.foo == "response-foo", "response method is unexpected"
+    assert request.headers.respond_to?(:foo), "headers methods haven't been added"
+    assert request.headers.foo == "headers-foo", "headers method is unexpected"
+
+    body = response.body
+    assert body.respond_to?(:foo), "response body methods haven't been added" 
+    assert body.foo == "response-body-foo", "response body method is unexpected"
   end
 
   private
@@ -46,7 +53,7 @@ class ClientTest < Minitest::Test
       end
 
       def response(*args)
-        @default_options.response_class.new(*args)
+        @default_options.response_class.new(*args, @default_options)
       end
     end
     self::OptionsClassMethods = Module.new do
@@ -75,6 +82,16 @@ class ClientTest < Minitest::Test
       end
     end
     self::ResponseMethods = Module.new do
+      def foo
+        self.class.foo
+      end
+    end
+    self::ResponseBodyClassMethods = Module.new do
+      def foo
+        "response-body-foo"
+      end
+    end
+    self::ResponseBodyMethods = Module.new do
       def foo
         self.class.foo
       end

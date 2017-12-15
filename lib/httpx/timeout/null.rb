@@ -9,10 +9,6 @@ module HTTPX::Timeout
       other.is_a?(Null)
     end
 
-    def connect
-      yield
-    end
-
     def timeout
       nil
     end

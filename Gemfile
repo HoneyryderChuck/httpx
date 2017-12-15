@@ -16,7 +16,8 @@ gem "certificate_authority", git: "https://github.com/cchandler/certificate_auth
                              branch: "master",
                              require: false
 
-gem "simplecov", ">= 0.9"
+gem "simplecov"
 
-gem "minitest"
-gem "rubocop"
+gem "minitest", require: false
+gem "minitest-proveit", require: false
+gem "rubocop", require: false

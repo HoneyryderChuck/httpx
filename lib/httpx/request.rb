@@ -1,7 +1,11 @@
 # frozen_string_literal: true
 
+require "forwardable"
+
 module HTTPX
   class Request
+    extend Forwardable
+
     METHODS = [
       # RFC 2616: Hypertext Transfer Protocol -- HTTP/1.1
       :options, :get, :head, :post, :put, :delete, :trace, :connect,
@@ -27,7 +31,13 @@ module HTTPX
 
     USER_AGENT = "httpx.rb/#{VERSION}"
 
-    attr_reader :verb, :uri, :headers, :body
+    attr_reader :verb, :uri, :headers, :body, :state
+
+    attr_accessor :response
+
+    def_delegator :@body, :<<
+    
+    def_delegator :@body, :empty?
 
     def initialize(verb, uri, **options)
       @verb    = verb.to_s.downcase.to_sym
@@ -40,7 +50,8 @@ module HTTPX
       @headers["user-agent"] ||= USER_AGENT
       @headers["accept"]     ||= "*/*" 
       
-      @body = Body.new(@headers, @options) 
+      @body = Body.new(@headers, @options)
+      @state = :idle
     end
 
     def scheme
@@ -52,10 +63,6 @@ module HTTPX
       path << "/" if path.empty?
       path << "?#{query}" unless query.empty?
       path
-    end
-
-    def <<(data)
-      @body << data
     end
 
     def authority
@@ -72,6 +79,15 @@ module HTTPX
       end
       query << @uri.query if @uri.query
       @query = query.join("&")
+    end
+
+    def drain_body
+      return nil if @body.nil?
+      @drainer ||= @body.each
+      chunk = @drainer.next
+      chunk.dup
+    rescue StopIteration
+      nil
     end
 
     class Body
@@ -91,6 +107,7 @@ module HTTPX
       end
 
       def each(&block)
+        return enum_for(__method__) unless block_given?
         return if @body.nil?
         body = stream(@body)
         if body.respond_to?(:read)
@@ -129,6 +146,44 @@ module HTTPX
       def chunked?
         @headers["transfer-encoding"] == "chunked"
       end
+    end
+
+    def transition(nextstate)
+      case nextstate
+      when :idle
+
+      when :headers
+        return unless @state == :idle
+      when :body
+        return unless @state == :headers ||
+                      @state == :expect
+
+        if @headers.key?("expect")
+          unless @response
+            @state = :expect
+            return
+          end
+
+          case @response.status
+          when 100
+            # deallocate
+            @response = nil
+          when 417
+            @response = ErrorResponse.new("Expectation Failed", 0)
+            return
+          end
+        end
+      when :done
+        return unless @state == :body ||
+                      @state == :headers
+      end
+      @state = nextstate
+      nil
+    end
+
+    def expects?
+      @headers["expect"] == "100-continue" &&
+      @response && @response.status == 100
     end
 
     private

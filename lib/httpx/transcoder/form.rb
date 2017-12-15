@@ -14,6 +14,8 @@ module HTTPX::Transcoder
      
       def_delegator :@raw, :to_s
       
+      def_delegator :@raw, :read
+
       def initialize(form)
         @raw = HTTP::FormData.create(form)
       end

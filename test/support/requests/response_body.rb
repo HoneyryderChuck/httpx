@@ -6,10 +6,12 @@ module Requests
       file = Tempfile.new(%w[cat .jpeg])
       uri = build_uri("/image")
       response = HTTPX.get(uri, headers: {"accept" => "image/jpeg"})
-      assert response.status == 200, "status is unexpected"
-      assert response.headers["content-type"]== "image/jpeg", "content is not an image"
+      verify_status(response.status, 200)
+      verify_header(response.headers, "content-type", "image/jpeg")
       response.copy_to(file)
-      assert file.size == response.headers["content-length"].to_i, "file should contain the content of response"
+      verify_body_length(response)
+      content_length = response.headers["content-length"].to_i
+      assert file.size == content_length, "file should contain the content of response"
     ensure
       if file
         file.close
@@ -21,10 +23,11 @@ module Requests
       io = StringIO.new 
       uri = build_uri("/image")
       response = HTTPX.get(uri, headers: {"accept" => "image/jpeg"})
-      assert response.status == 200, "status is unexpected"
-      assert response.headers["content-type"]== "image/jpeg", "content is not an image"
+      verify_status(response.status, 200)
+      verify_header(response.headers, "content-type", "image/jpeg")
       response.copy_to(io)
-      assert io.size == response.headers["content-length"].to_i, "file should contain the content of response"
+      content_length = response.headers["content-length"].to_i
+      assert io.size == content_length, "file should contain the content of response"
     ensure
       io.close if io 
     end
@@ -50,11 +53,12 @@ module Requests
       end
 
       response = HTTPX.get(uri, response_body_class: custom_body)
-      assert response.status == 200, "status is unexpected"
+      verify_status(response.status, 200)
       assert response.body.is_a?(custom_body), "body should be from custom type"
       file = response.body.file
       file.rewind
-      assert file.size == response.headers["content-length"].to_i, "didn't buffer the whole body"
+      content_length = response.headers["content-length"].to_i
+      assert file.size == content_length, "didn't buffer the whole body"
     ensure
       response.close if response
     end

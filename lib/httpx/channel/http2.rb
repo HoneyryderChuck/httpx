@@ -13,6 +13,7 @@ module HTTPX
       @retries = options.max_retries
       @pending = []
       @streams = {}
+      @drains  = {}
       @buffer = buffer
     end
 
@@ -33,30 +34,41 @@ module HTTPX
         @pending << request
         return
       end
-      stream = @connection.new_stream
-      stream.on(:close) do |error|
-        response = @streams.delete(stream.id) || ErrorResponse.new(error, retries)
-        emit(:response, request, response)
+      unless stream = @streams[request]
+        stream = @connection.new_stream
+        stream.on(:close) do |error|
+          if request.expects?
+            return handle(request, stream)
+          end
+          response = request.response || ErrorResponse.new(error, retries)
+          emit(:response, request, response)
+          log(stream.id) { "closing stream" }
 
-        send(@pending.shift) unless @pending.empty?
+          @streams.delete(request)
+          send(@pending.shift) unless @pending.empty?
+        end
+        stream.on(:half_close) do
+          log(stream.id) { "waiting for response..." }
+        end
+        # stream.on(:altsvc)
+        stream.on(:headers) do |h|
+          log(stream.id) { "received headers: #{h.inspect}" }
+          _, status = h.shift
+          headers = @options.headers_class.new(h)
+          response = @options.response_class.new(request, status, headers, @options)
+          request.response = response
+          @streams[request] = stream 
+        end
+        stream.on(:data) do |data|
+          request.response << data
+        end
+        @streams[request] = stream
       end
-      # stream.on(:half_close)
-      # stream.on(:altsvc)
-      stream.on(:headers) do |h|
-        _, status = h.shift
-        headers = @options.headers_class.new(h)
-        response = @options.response_class.new(request, status, headers, @options)
-        @streams[stream.id] = response
-      end
-      stream.on(:data) do |data|
-        @streams[stream.id] << data
-      end
-      join_headers(stream, request)
-      join_body(stream, request)
+      handle(request, stream)
     end
 
     def reenqueue!
-      requests = @streams.values
+      requests = @streams.keys
       @streams.clear
       init_connection
       requests.each do |request|
@@ -64,10 +76,26 @@ module HTTPX
       end
     end
 
+    def consume
+      @streams.each do |request, stream|
+        handle(request, stream)
+      end
+    end
+
     private
 
+    def handle(request, stream)
+      catch(:buffer_full) do
+        request.transition(:headers)
+        join_headers(stream, request) if request.state == :headers
+        request.transition(:body)
+        join_body(stream, request) if request.state == :body
+        request.transition(:done)
+      end
+    end
+
     def init_connection
-      @connection = HTTP2::Client.new
+      @connection = HTTP2::Client.new(settings_enable_push: 0)
       @connection.on(:frame, &method(:on_frame))
       @connection.on(:frame_sent, &method(:on_frame_sent))
       @connection.on(:frame_received, &method(:on_frame_received))
@@ -84,15 +112,20 @@ module HTTPX
       headers[":path"]      = request.path 
       headers[":authority"] = request.authority 
       headers = headers.merge(request.headers)
-      stream.headers(headers, end_stream: !request.body)
+      stream.headers(headers, end_stream: request.empty?)
     end
 
     def join_body(stream, request)
-      return unless request.body
-      request.body.each do |chunk|
-        stream.data(chunk, end_stream: false)
+      chunk = @drains.delete(request) || request.drain_body
+      while chunk
+        next_chunk = request.drain_body
+        stream.data(chunk, end_stream: !next_chunk)
+        if next_chunk && @buffer.full?
+          @drains[request] = next_chunk
+          throw(:buffer_full)
+        end
+        chunk = next_chunk
       end
-      stream.data("", end_stream: true)
     end
 
     ######
@@ -114,8 +147,8 @@ module HTTPX
     end
 
     def on_frame_sent(frame)
-      log { "frame was sent!" }
-      log do
+      log(frame[:stream]) { "frame was sent!" }
+      log(frame[:stream]) do
         case frame[:type]
         when :data
           frame.merge(payload: frame[:payload].bytesize).inspect
@@ -128,8 +161,8 @@ module HTTPX
     end
 
     def on_frame_received(frame)
-      log { "frame was received" }
-      log do
+      log(frame[:stream]) { "frame was received!" }
+      log(frame[:stream]) do
         case frame[:type]
         when :data
           frame.merge(payload: frame[:payload].bytesize).inspect
@@ -140,18 +173,21 @@ module HTTPX
     end
 
     def on_altsvc(frame)
-      log { "altsvc frame was received" }
-      log { frame.inspect }
+      log(frame[:stream]) { "altsvc frame was received" }
+      log(frame[:stream]) { frame.inspect }
     end
 
     def on_promise(stream)
+      log(stream.id) { "refusing stream!" }
       stream.refuse
       # TODO: policy for handling promises
     end
 
-    def log(&msg)
-      return unless $HTTPX_DEBUG
-      $stderr << (+"connection (HTTP/2): " << msg.call << "\n")
+    def log(stream=nil, &msg)
+      return unless @options.debug
+      prefix =  +"connection (HTTP/2, stream: #{stream || 0}):"
+      @options.debug << (prefix << msg.call << "\n")
     end
   end
+  Channel.register "h2", Channel::HTTP2
 end

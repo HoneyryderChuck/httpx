@@ -35,14 +35,13 @@ module HTTPX
 
     def close(channel = nil)
       if channel
-        channel.close
-        if channel.closed?
+        if channel.close
           @channels.delete(channel)
           @selector.deregister(channel)
         end
       else
         while ch = @channels.shift
-          ch.close
+          ch.close(true)
           @selector.deregister(ch)
         end 
       end
@@ -50,17 +49,11 @@ module HTTPX
 
     def response(request)
       response = @responses.delete(request)
-      case response
-      when ErrorResponse
-        if response.retryable?
-          send(request, retries: response.retries - 1)
-          nil
-        else
-          response
-        end
-      else
-        response
-      end
+      if response.is_a?(ErrorResponse) && response.retryable?
+        send(request, retries: response.retries - 1)
+        return 
+      end 
+      response
     end
 
     private
@@ -71,11 +64,8 @@ module HTTPX
     #
     def bind(uri)
       uri = URI(uri)
-      ip = TCPSocket.getaddress(uri.host)
       return @channels.find do |channel|
-        ip == channel.remote_ip &&
-        uri.port == channel.remote_port &&
-        uri.scheme == channel.uri.scheme
+        channel.match?(uri)
       end || begin
         build_channel(uri)
       end

@@ -41,8 +41,10 @@ module HTTPX
 
     def initialize(options = {})
       defaults = {
+        :debug                    => ENV.key?("HTTPX_DEBUG") ? $stderr : nil,
         :proxy                    => {},
         :ssl                      => { alpn_protocols: %w[h2 http/1.1] },
+        :fallback_protocol        => "http/1.1", 
         :timeout                  => Timeout.by(:per_operation),
         :headers                  => {},
         :cookies                  => {},
@@ -53,7 +55,7 @@ module HTTPX
         :request_class            => Class.new(Request),
         :response_class           => Class.new(Response),
         :headers_class            => Class.new(Headers),
-        :response_body_class      => Response::Body,
+        :response_body_class      => Class.new(Response::Body),
       }
 
       defaults.merge!(options)
@@ -94,7 +96,7 @@ module HTTPX
       params form json body
       proxy follow ssl max_retries
       request_class response_class headers_class response_body_class
-      io
+      io fallback_protocol debug
     ].each do |method_name|
       def_option(method_name)
     end
