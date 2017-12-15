@@ -99,7 +99,7 @@ module HTTPX
     end
 
     def inspect
-      "#<#{self.class}#{@io.fileno}: #{@ip}:#{@port}>"
+      "#<TCP(fd: #{@io.fileno}): #{@ip}:#{@port}>"
     end
 
     private
@@ -180,6 +180,10 @@ module HTTPX
 
     def closed?
       super || !@negotiated
+    end
+    
+    def inspect
+      "#<SSL(fd: #{@io.fileno}): #{@ip}:#{@port}>"
     end
   end
 end
