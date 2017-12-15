@@ -58,6 +58,11 @@ module HTTPX
       headers("accept" => String(type)) 
     end
 
+    def plugin(*plugins)
+      Class.new(Client).plugins(plugins).new(default_options)
+    end
+    alias :plugins :plugin
+
     private
 
     def default_options
