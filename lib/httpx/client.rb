@@ -105,7 +105,14 @@ module HTTPX
           default_options.response_body_class.extend(pl::ResponseBodyClassMethods) if defined?(pl::ResponseBodyClassMethods)
           pl.configure(self, *args, &block) if pl.respond_to?(:configure)
         end
-        nil
+        self
+      end
+
+      def plugins(pls)
+        pls.each do |pl, *args|
+          plugin(pl, *args)
+        end
+        self
       end
     end
   end
