@@ -12,7 +12,9 @@ class HTTP1Test < HTTPTest
   include Headers 
   include ResponseBody 
   include IO 
-  
+ 
+  include Plugins::Authentication
+
   private
 
   def origin
