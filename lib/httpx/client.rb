@@ -22,7 +22,18 @@ module HTTPX
       @connection.close
     end
 
-    def request(*args, **options)
+    def request(*args, keep_open: @keep_open, **options)
+      requests = __build_reqs(*args, **options)
+      responses = __send_reqs(*requests)
+      return responses.first if responses.size == 1 
+      responses
+    ensure
+      close unless keep_open
+    end
+
+    private
+
+    def __build_reqs(*args, **options)
       rklass = @default_options.request_class
       case args.size
       when 1
@@ -30,7 +41,6 @@ module HTTPX
         requests = reqs.map do |verb, uri, opts = {}|
           rklass.new(verb, uri, **@default_options.merge(options.merge(opts)))
         end
-        __send_reqs(*requests)
       when 2, 3
         verb, uris, opts = args
         opts ||= {}
@@ -38,20 +48,13 @@ module HTTPX
           requests = uris.map do |uri|
             rklass.new(verb, uri, **@default_options.merge(options.merge(opts)))
           end
-          __send_reqs(*requests)
         else
-          request = rklass.new(verb, uris, **@default_options.merge(options.merge(opts)))
-          responses = __send_reqs(request)
-          responses.first
+          [rklass.new(verb, uris, **@default_options.merge(options.merge(opts)))]
         end
       else
         raise ArgumentError, "unsupported number of arguments"
       end
-    ensure
-      close unless @keep_open
     end
-
-    private
 
     def __send_reqs(*requests)
       requests.each { |request| @connection << request }
