@@ -45,7 +45,6 @@ module HTTPX
         :fallback_protocol        => "http/1.1", 
         :timeout                  => Timeout.by(:per_operation),
         :headers                  => {},
-        :cookies                  => {},
         :max_concurrent_requests  => MAX_CONCURRENT_REQUESTS,
         :max_retries              => MAX_RETRIES,
         :window_size              => WINDOW_SIZE,
@@ -63,13 +62,6 @@ module HTTPX
 
     def_option(:headers) do |headers|
       self.headers.merge(headers)
-    end
-
-    def_option(:cookies) do |cookies|
-      cookies.each_with_object self.cookies.dup do |(k, v), jar|
-        cookie = k.is_a?(Cookie) ? k : Cookie.new(k.to_s, v.to_s)
-        jar[cookie.name] = cookie.cookie_value
-      end
     end
 
     def_option(:timeout) do |type, opts|
