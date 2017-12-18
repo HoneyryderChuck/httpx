@@ -26,6 +26,6 @@ Gem::Specification.new do |gem|
   gem.add_runtime_dependency "http_parser.rb", ">= 0.6.0"
   gem.add_runtime_dependency "http-2", ">= 0.8.4"
   gem.add_runtime_dependency "http-form_data", ">= 2.0.0", "< 3"
-  gem.add_runtime_dependency "http-cookie",    "~> 1.0"
+  gem.add_development_dependency "http-cookie",    "~> 1.0"
   # gem.add_runtime_dependency "addressable",    "~> 2.3"
 end
