@@ -39,7 +39,7 @@ module HTTPX
     
     def_delegator :@body, :empty?
 
-    def initialize(verb, uri, **options)
+    def initialize(verb, uri, options = {})
       @verb    = verb.to_s.downcase.to_sym
       @uri     = URI(uri)
       @options = Options.new(options)

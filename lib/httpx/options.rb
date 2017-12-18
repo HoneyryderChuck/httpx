@@ -24,8 +24,6 @@ module HTTPX
         @defined_options ||= []
       end
 
-      protected
-
       def def_option(name, &interpreter)
         defined_options << name.to_sym
         interpreter ||= lambda { |v| v }

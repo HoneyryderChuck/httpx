@@ -4,7 +4,7 @@ module HTTPX
   class Client
     include Chainable
 
-    def initialize(**options)
+    def initialize(options = {})
       @default_options = self.class.default_options.merge(options) 
       @connection = Connection.new(@default_options)
       if block_given?
@@ -34,22 +34,21 @@ module HTTPX
     private
 
     def __build_reqs(*args, **options)
-      rklass = @default_options.request_class
       case args.size
       when 1
         reqs = args.first
         requests = reqs.map do |verb, uri, opts = {}|
-          rklass.new(verb, uri, **@default_options.merge(options.merge(opts)))
+          __build_req(verb, uri, options.merge(opts))
         end
       when 2, 3
         verb, uris, opts = args
         opts ||= {}
         if uris.respond_to?(:each)
           requests = uris.map do |uri|
-            rklass.new(verb, uri, **@default_options.merge(options.merge(opts)))
+            __build_req(verb, uri, options.merge(opts))
           end
         else
-          [rklass.new(verb, uris, **@default_options.merge(options.merge(opts)))]
+          [ __build_req(verb, uris, options.merge(opts)) ]
         end
       else
         raise ArgumentError, "unsupported number of arguments"
@@ -70,6 +69,11 @@ module HTTPX
         break if requests.empty?
       end
       requests.size == 1 ? responses.first : responses
+    end
+
+    def __build_req(verb, uri, options = {})
+      rklass = @default_options.request_class
+      rklass.new(verb, uri, @default_options.merge(options))
     end
 
     @default_options = Options.new

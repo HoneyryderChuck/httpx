@@ -19,7 +19,7 @@ module HTTPX
     
     def_delegator :@body, :close
 
-    def initialize(request, status, headers, **options)
+    def initialize(request, status, headers, options = {})
       @options = Options.new(options) 
       @request = request
       @status = Integer(status)
