@@ -1,27 +1,14 @@
 # frozen_string_literal: true
 
-require "base64"
-
 module Requests
   module Plugins
     module Authentication
-    
-      def test_plugin_authentication_no_auth
-    
-      end
-    
-      def test_plugin_authentication_auth
-    
-      end
-    
-      def test_plugin_authentication_no_basic_auth
-        response = HTTPX.get(basic_auth_uri)
-        verify_status(response.status, 401)
-        verify_header(response.headers, "www-authenticate", "Basic realm=\"Fake Realm\"") 
-      end
+      def test_plugin_basic_authentication
+        no_auth_response = HTTPX.get(basic_auth_uri)
+        verify_status(no_auth_response.status, 401)
+        verify_header(no_auth_response.headers, "www-authenticate", "Basic realm=\"Fake Realm\"") 
 
-      def test_plugin_authentication_basic_auth
-        client = HTTPX.plugin(:authentication)
+        client = HTTPX.plugin(:basic_authentication)
         response = client.basic_authentication(user, pass).get(basic_auth_uri)
         verify_status(response.status, 200)
         body = json_body(response)
@@ -32,8 +19,8 @@ module Requests
         verify_status(invalid_response.status, 401)
       end
 
-      def test_plugin_authentication_digest_auth
-        client = HTTPX.plugin(:authentication)
+      def test_plugin_digest_authentication
+        client = HTTPX.plugin(:digest_authentication)
         response = client.digest_authentication(user, pass).get(digest_auth_uri)
         verify_status(response.status, 200)
         body = json_body(response)
@@ -58,11 +45,6 @@ module Requests
       def pass
         "pass"
       end
-
-      def basic_auth_token
-        Base64.strict_encode64("#{user}:#{pass}")
-      end
-
     end
   end
 end
