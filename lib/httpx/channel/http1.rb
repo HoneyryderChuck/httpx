@@ -73,8 +73,8 @@ module HTTPX
       log { "headers received" }
       headers = @options.headers_class.new(h)
       response = @options.response_class.new(@requests.last, @parser.status_code, headers, @options)
-      log { "#{response.status} HTTP/#{@parser.http_version.join(".")}" } 
-      log { response.headers.each.map { |f, v| "-> #{f}: #{v}" }.join("\n") }
+      log { "-> HEADLINE: #{response.status} HTTP/#{@parser.http_version.join(".")}" } 
+      log { response.headers.each.map { |f, v| "-> HEADER: #{f}: #{v}" }.join("\n") }
       
       request.response = response
       # parser can't say if it's parsing GET or HEAD,
@@ -83,7 +83,7 @@ module HTTPX
     end
 
     def on_body(chunk)
-      log { "-> #{chunk.inspect}" }
+      log { "-> DATA: #{chunk.bytesize} bytes..." }
       @requests.last.response << chunk
     end
 
@@ -128,12 +128,12 @@ module HTTPX
       request.headers["host"] ||= request.authority 
       buffer = +""
       buffer << "#{request.verb.to_s.upcase} #{request.path} HTTP/#{@version.join(".")}" << CRLF
-      log { "<- #{buffer.chomp.inspect}" }
+      log { "<- HEADLINE: #{buffer.chomp.inspect}" }
       @buffer << buffer
       buffer.clear
       request.headers.each do |field, value|
         buffer << "#{capitalized(field)}: #{value}" << CRLF 
-        log { "<- #{buffer.chomp.inspect}" }
+        log { "<- HEADER: #{buffer.chomp.inspect}" }
         @buffer << buffer
         buffer.clear
       end
@@ -144,7 +144,7 @@ module HTTPX
     def join_body(request)
       return if request.empty?
       while chunk = request.drain_body
-        log { "<- #{chunk.inspect}" }
+        log { "<- DATA: #{chunk.bytesize} bytes..." }
         @buffer << chunk
         throw(:buffer_full, request) if @buffer.full?
       end
