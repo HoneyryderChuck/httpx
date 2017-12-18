@@ -13,6 +13,8 @@ class HTTP1Test < HTTPTest
   include ResponseBody 
   include IO 
   
+  include Plugins::Cookies 
+  
   private
 
   def origin
