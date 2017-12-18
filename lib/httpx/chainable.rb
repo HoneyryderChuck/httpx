@@ -59,7 +59,7 @@ module HTTPX
     end
 
     def plugin(*plugins)
-      Class.new(Client).plugins(plugins).new(default_options)
+      Class.new(Client).plugins(plugins).new
     end
     alias :plugins :plugin
 
@@ -71,6 +71,7 @@ module HTTPX
 
     # :nodoc:
     def branch(options)
+      return self.class.new(options) if self.is_a?(Client)
       Client.new(options)
     end
   end
