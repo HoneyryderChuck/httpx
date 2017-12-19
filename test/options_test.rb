@@ -71,7 +71,6 @@ class OptionsSpec < Minitest::Test
       :fallback_protocol  => "http/1.1",
       :headers            => {"Foo" => "foo", "Accept" => "xml", "Bar" => "bar"},
       :proxy              => {:proxy_address => "127.0.0.1", :proxy_port => 8080},
-      :cookies            => {},
       :max_concurrent_requests => 100,
       :max_retries        => 3,
       :request_class      => bar.request_class,
