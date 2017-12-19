@@ -100,7 +100,7 @@ module HTTPX
             options_klass = Class.new(@default_options.class)
             options_klass.extend(pl::OptionsClassMethods) if defined?(pl::OptionsClassMethods)
             options_klass.__send__(:include, pl::OptionsMethods) if defined?(pl::OptionsMethods)
-            @default_options = options_klass.new(default_options)
+            @default_options = options_klass.new
           end
           default_options.request_class.__send__(:include, pl::RequestMethods) if defined?(pl::RequestMethods)
           default_options.request_class.extend(pl::RequestClassMethods) if defined?(pl::RequestClassMethods)
