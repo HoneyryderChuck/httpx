@@ -22,6 +22,7 @@ module HTTPX
 
       module HeadersMethods
         def cookies(cookies)
+          return unless cookies
           cookies.each do |k, v|
             cookie = k.is_a?(HTTP::Cookie) ? k : HTTP::Cookie.new(k.to_s, v.to_s)
             add("cookie", cookie.cookie_value)
