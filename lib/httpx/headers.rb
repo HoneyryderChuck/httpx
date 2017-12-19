@@ -15,7 +15,9 @@ module HTTPX
       @headers = {}
       return unless h
       h.each do |field, value|
-        @headers[downcased(field)] = array_value(value)
+        array_value(value).each do |v|
+          add(downcased(field), v)
+        end
       end
     end
 
