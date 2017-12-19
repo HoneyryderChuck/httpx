@@ -40,6 +40,7 @@ module HTTPX
     def initialize(options = {})
       defaults = {
         :debug                    => ENV.key?("HTTPX_DEBUG") ? $stderr : nil,
+        :debug_level              => (ENV["HTTPX_DEBUG"] || 1).to_i,
         :proxy                    => {},
         :ssl                      => { alpn_protocols: %w[h2 http/1.1] },
         :fallback_protocol        => "http/1.1", 
@@ -86,7 +87,7 @@ module HTTPX
       params form json body
       proxy follow ssl max_retries
       request_class response_class headers_class response_body_class
-      io fallback_protocol debug
+      io fallback_protocol debug debug_level
     ].each do |method_name|
       def_option(method_name)
     end

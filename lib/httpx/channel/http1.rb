@@ -61,7 +61,7 @@ module HTTPX
     # must be public methods, or else they won't be reachable
     
     def on_message_begin
-      log { "parsing begins" }
+      log(2) { "parsing begins" }
     end
 
     def on_headers_complete(h)
@@ -70,7 +70,7 @@ module HTTPX
       request = @requests.last
       return if request.response
 
-      log { "headers received" }
+      log(2) { "headers received" }
       headers = @options.headers_class.new(h)
       response = @options.response_class.new(@requests.last, @parser.status_code, headers, @options)
       log { "-> HEADLINE: #{response.status} HTTP/#{@parser.http_version.join(".")}" } 
@@ -84,11 +84,12 @@ module HTTPX
 
     def on_body(chunk)
       log { "-> DATA: #{chunk.bytesize} bytes..." }
+      log(2) { "-> #{chunk.inspect}" }
       @requests.last.response << chunk
     end
 
     def on_message_complete
-      log { "parsing complete" }
+      log(2) { "parsing complete" }
       @parser.reset!
       request = @requests.first
       return handle(request) if request.expects?
@@ -106,7 +107,7 @@ module HTTPX
           # 1 keep alive request. 
           @max_concurrent_requests = 1
         end
-        log { "connection: close" }
+        log(2) { "connection: close" }
         emit(:close)
       end
     end
@@ -145,6 +146,7 @@ module HTTPX
       return if request.empty?
       while chunk = request.drain_body
         log { "<- DATA: #{chunk.bytesize} bytes..." }
+        log(2) { "<- #{chunk.inspect}" }
         @buffer << chunk
         throw(:buffer_full, request) if @buffer.full?
       end
@@ -154,8 +156,9 @@ module HTTPX
       field.to_s.split("-").map(&:capitalize).join("-")
     end
 
-    def log(&msg)
-      return unless @options.debug 
+    def log(level=@options.debug_level, &msg)
+      return unless @options.debug
+      return unless @options.debug_level >= level 
       @options.debug << (+"" << msg.call << "\n")
     end
   end
