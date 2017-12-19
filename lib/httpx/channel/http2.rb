@@ -42,17 +42,19 @@ module HTTPX
           end
           response = request.response || ErrorResponse.new(error, retries)
           emit(:response, request, response)
-          log(stream.id) { "closing stream" }
+          log(stream.id, 2) { "closing stream" }
 
           @streams.delete(request)
           send(@pending.shift) unless @pending.empty?
         end
         stream.on(:half_close) do
-          log(stream.id) { "waiting for response..." }
+          log(stream.id, 2) { "waiting for response..." }
         end
         # stream.on(:altsvc)
         stream.on(:headers) do |h|
-          log(stream.id) { "received headers: #{h.inspect}" }
+          log(stream.id) do
+            h.map { |k, v| "<- HEADER: #{k}: #{v}" }.join("\n")
+          end
           _, status = h.shift
           headers = @options.headers_class.new(h)
           response = @options.response_class.new(request, status, headers, @options)
@@ -60,6 +62,8 @@ module HTTPX
           @streams[request] = stream 
         end
         stream.on(:data) do |data|
+          log(stream.id) { "<- DATA: #{data.bytesize} bytes..." }
+          log(stream.id, 2) { "<- #{data.inspect}" }
           request.response << data
         end
         @streams[request] = stream
@@ -112,6 +116,9 @@ module HTTPX
       headers[":path"]      = request.path 
       headers[":authority"] = request.authority 
       headers = headers.merge(request.headers)
+      log(stream.id) do
+        headers.map { |k, v| "-> HEADER: #{k}: #{v}" }.join("\n")
+      end
       stream.headers(headers, end_stream: request.empty?)
     end
 
@@ -119,6 +126,8 @@ module HTTPX
       chunk = @drains.delete(request) || request.drain_body
       while chunk
         next_chunk = request.drain_body
+        log(stream.id) { "-> DATA: #{chunk.bytesize} bytes..." }
+        log(stream.id, 2) { "-> #{chunk.inspect}" }
         stream.data(chunk, end_stream: !next_chunk)
         if next_chunk && @buffer.full?
           @drains[request] = next_chunk
@@ -147,8 +156,8 @@ module HTTPX
     end
 
     def on_frame_sent(frame)
-      log(frame[:stream]) { "frame was sent!" }
-      log(frame[:stream]) do
+      log(frame[:stream], 2) { "frame was sent!" }
+      log(frame[:stream], 2) do
         case frame[:type]
         when :data
           frame.merge(payload: frame[:payload].bytesize).inspect
@@ -161,8 +170,8 @@ module HTTPX
     end
 
     def on_frame_received(frame)
-      log(frame[:stream]) { "frame was received!" }
-      log(frame[:stream]) do
+      log(frame[:stream], 2) { "frame was received!" }
+      log(frame[:stream], 2) do
         case frame[:type]
         when :data
           frame.merge(payload: frame[:payload].bytesize).inspect
@@ -173,18 +182,19 @@ module HTTPX
     end
 
     def on_altsvc(frame)
-      log(frame[:stream]) { "altsvc frame was received" }
-      log(frame[:stream]) { frame.inspect }
+      log(frame[:stream], 2) { "altsvc frame was received" }
+      log(frame[:stream], 2) { frame.inspect }
     end
 
     def on_promise(stream)
-      log(stream.id) { "refusing stream!" }
+      log(stream.id, 2) { "refusing stream!" }
       stream.refuse
       # TODO: policy for handling promises
     end
 
-    def log(stream=nil, &msg)
+    def log(stream=nil, level = @options.debug_level, &msg)
       return unless @options.debug
+      return unless @options.debug_level >= level 
       prefix =  +"connection (HTTP/2, stream: #{stream || 0}):"
       @options.debug << (prefix << msg.call << "\n")
     end
