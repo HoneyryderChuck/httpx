@@ -16,24 +16,36 @@ module HTTPX
       module RequestMethods
         def initialize(*)
           super
-          @headers.cookies(@options.cookies)
+          @headers.cookies(@options.cookies, self)
         end
       end
 
       module HeadersMethods
-        def cookies(cookies)
-          return unless cookies
-          cookies.each do |k, v|
-            cookie = k.is_a?(HTTP::Cookie) ? k : HTTP::Cookie.new(k.to_s, v.to_s)
-            add("cookie", cookie.cookie_value)
+        def cookies(jar, request)
+          return unless jar
+          unless jar.is_a?(HTTP::CookieJar)
+            jar = jar.each_with_object(HTTP::CookieJar.new) do |(k, v), j|
+              cookie = k.is_a?(HTTP::Cookie) ? v : HTTP::Cookie.new(k.to_s, v.to_s)
+              cookie.domain = request.authority
+              cookie.path = request.path
+              j.add(cookie)
+            end
           end
+          self["cookie"] = HTTP::Cookie.cookie_value(jar.cookies)
         end
       end
 
       module ResponseMethods
-        def cookies
-          headers["cookie"]
+        def cookie_jar
+          return @cookies if defined?(@cookies)
+          return nil unless headers.key?("set-cookie")
+          @cookies ||= begin
+            jar = HTTP::CookieJar.new
+            jar.parse(headers["set-cookie"], @request.uri)
+            jar
+          end
         end
+        alias :cookies :cookie_jar
       end
 
       module OptionsMethods
