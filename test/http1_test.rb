@@ -12,7 +12,8 @@ class HTTP1Test < HTTPTest
   include Headers 
   include ResponseBody 
   include IO 
-  
+
+  include Plugins::FollowRedirects  
   private
 
   def origin
