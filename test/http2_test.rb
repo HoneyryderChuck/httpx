@@ -4,8 +4,8 @@ require_relative "support/http_test"
 
 class HTTP2Test < HTTPTest
   include Requests
-  include Head
   include Get
+  include Head
   include WithBody
   include Headers 
   include ResponseBody 
