@@ -4,7 +4,7 @@ module TimeoutForTest
   end
 
   def run(*)
-    ::Timeout.timeout(RUBY_ENGINE == "jruby" ? 20 : 5, TestTimeout) { super }
+    ::Timeout.timeout(RUBY_ENGINE == "jruby" ? 60 : 30, TestTimeout) { super }
   end
 end
 
