@@ -103,7 +103,7 @@ module HTTPX
           FileUtils.mv(@buffer.path, dest.path)
         else
           @buffer.rewind
-          IO.copy_stream(@buffer, dest)
+          ::IO.copy_stream(@buffer, dest)
         end
       end
 
