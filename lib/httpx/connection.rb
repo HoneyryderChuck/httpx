@@ -80,7 +80,6 @@ module HTTPX
     end
 
     def register_channel(channel)
-
       monitor = @selector.register(channel, :rw)
       monitor.value = channel
       @channels << channel
