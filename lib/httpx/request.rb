@@ -111,7 +111,7 @@ module HTTPX
         return if @body.nil?
         body = stream(@body)
         if body.respond_to?(:read)
-          IO.copy_stream(body, ProcIO.new(block))
+          ::IO.copy_stream(body, ProcIO.new(block))
         elsif body.respond_to?(:each)
           body.each(&block)
         else

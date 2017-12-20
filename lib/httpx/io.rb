@@ -186,4 +186,10 @@ module HTTPX
       "#<SSL(fd: #{@io.fileno}): #{@ip}:#{@port}>"
     end
   end
+
+  module IO
+    extend Registry
+    register "tcp", TCP
+    register "ssl", SSL
+  end
 end
