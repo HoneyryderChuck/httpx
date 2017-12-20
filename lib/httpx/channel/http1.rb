@@ -114,9 +114,18 @@ module HTTPX
 
     private
 
+    def set_request_headers(request)
+      request.headers["host"] ||= request.authority 
+      request.headers["connection"] ||= "keep-alive"
+    end
+
+    def headline(request)
+      "#{request.verb.to_s.upcase} #{request.path} HTTP/#{@version.join(".")}"
+    end
+
     def handle(request)
+      set_request_headers(request)
       catch(:buffer_full) do
-        request.headers["connection"] ||= "keep-alive"
         request.transition(:headers)
         join_headers(request) if request.state == :headers
         request.transition(:body)
@@ -126,9 +135,8 @@ module HTTPX
     end
 
     def join_headers(request)
-      request.headers["host"] ||= request.authority 
       buffer = +""
-      buffer << "#{request.verb.to_s.upcase} #{request.path} HTTP/#{@version.join(".")}" << CRLF
+      buffer << headline(request) << CRLF
       log { "<- HEADLINE: #{buffer.chomp.inspect}" }
       @buffer << buffer
       buffer.clear
