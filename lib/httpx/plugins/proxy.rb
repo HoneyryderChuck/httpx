@@ -49,7 +49,7 @@ module HTTPX
         def initialize(*)
           super
           @connection.extend(ConnectionMethods)
-          if not @default_options.proxy.empty?
+          if @default_options.proxy
             channel = @connection.__send__(:build_proxy_channel)
             @connection.__send__(:register_channel, channel)
           end
@@ -57,6 +57,15 @@ module HTTPX
 
         def with_proxy(*args)
           branch(default_options.with_proxy(*args))
+        end
+      end
+
+      module OptionsMethods
+        def self.included(klass)
+          super
+          klass.def_option(:proxy) do |pr|
+            Hash[pr]
+          end
         end
       end
     end

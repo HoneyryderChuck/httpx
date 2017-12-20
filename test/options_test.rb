@@ -45,14 +45,12 @@ class OptionsSpec < Minitest::Test
     foo = Options.new(
       :form      => {:foo => "foo"},
       :headers   => {:accept => "json", :foo => "foo"},
-      :proxy     => {},
     )
 
     bar = Options.new(
       :form       => {:bar => "bar"},
       :headers            => {:accept => "xml", :bar => "bar"},
       :ssl        => {:foo => "bar"},
-      :proxy      => {:proxy_address => "127.0.0.1", :proxy_port => 8080}
     )
 
 
@@ -71,7 +69,6 @@ class OptionsSpec < Minitest::Test
       :ssl                => {:foo => "bar", :alpn_protocols => %w[h2 http/1.1] },
       :fallback_protocol  => "http/1.1",
       :headers            => {"Foo" => "foo", "Accept" => "xml", "Bar" => "bar"},
-      :proxy              => {:proxy_address => "127.0.0.1", :proxy_port => 8080},
       :max_concurrent_requests => 100,
       :max_retries        => 3,
       :request_class      => bar.request_class,
