@@ -48,14 +48,14 @@ module HTTPX
 
     rescue Errno::EINPROGRESS,
            Errno::EALREADY,
-           IO::WaitReadable
+           ::IO::WaitReadable
     end
 
     if RUBY_VERSION < "2.3"
       def read(size, buffer)
         @io.read_nonblock(size, buffer)
         buffer.bytesize
-      rescue IO::WaitReadable
+      rescue ::IO::WaitReadable
         0
       rescue EOFError
         nil
@@ -65,7 +65,7 @@ module HTTPX
         siz = @io.write_nonblock(buffer)
         buffer.slice!(0, siz)
         siz
-      rescue IO::WaitWritable
+      rescue ::IO::WaitWritable
         0
       rescue EOFError
         nil
@@ -156,13 +156,13 @@ module HTTPX
     if RUBY_VERSION < "2.3"
       def read(*)
         super
-      rescue IO::WaitWritable
+      rescue ::IO::WaitWritable
         0
       end
       
       def write(*)
         super
-      rescue IO::WaitReadable
+      rescue ::IO::WaitReadable
         0
       end
     else
@@ -170,7 +170,8 @@ module HTTPX
         def read(size, buffer)
           @io.read_nonblock(size, buffer)
           buffer.bytesize
-        rescue IO::WaitReadable, IO::WaitWritable
+        rescue ::IO::WaitReadable,
+               ::IO::WaitWritable
           0
         rescue EOFError
           nil
