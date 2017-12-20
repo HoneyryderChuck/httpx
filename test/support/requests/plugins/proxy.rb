@@ -9,7 +9,7 @@ module Requests
 
         server.run do
           client = HTTPX.plugin(:proxy).with_proxy(proxy_uri: proxy_uri)
-          uri = build_uri("/")
+          uri = build_uri("/get")
           response = client.get(uri)
           verify_status(response.status, 200)
           verify_body_length(response)
