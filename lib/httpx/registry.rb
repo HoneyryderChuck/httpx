@@ -46,6 +46,11 @@ module HTTPX
 
     # Class Methods
     module ClassMethods
+      def inherited(klass)
+        super
+        klass.instance_variable_set(:@registry, @registry.dup)
+      end
+
       # @param [Object] tag the handler identifier in the registry
       # @return [Symbol, String, Object] the corresponding handler (if Symbol or String,
       #   will assume it referes to an autoloaded module, and will load-and-return it).
