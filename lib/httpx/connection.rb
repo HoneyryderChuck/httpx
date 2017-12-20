@@ -75,10 +75,15 @@ module HTTPX
       channel = Channel.by(uri, @options) do |request, response|
         @responses[request] = response
       end
+      register_channel(channel)
+      channel
+    end
+
+    def register_channel(channel)
+
       monitor = @selector.register(channel, :rw)
       monitor.value = channel
       @channels << channel
-      channel
     end
 
     def consume(task)
