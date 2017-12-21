@@ -2,7 +2,14 @@
 
 module Requests
   module Plugins
-    module Proxy
+    module Proxy 
+      PROXIES = %W[
+        139.162.90.230:51089
+        139.162.113.44:51089
+        139.162.111.253:51089
+        139.162.76.78:51089
+        139.162.116.181:51089
+      ]
 
       def test_plugin_proxy_anonymous
         client = HTTPX.plugin(:proxy).with_proxy(proxy_uri: proxy_uri)
@@ -15,7 +22,7 @@ module Requests
       private
 
       def proxy_uri
-        "http://139.162.74.66:51089"
+        "http://#{PROXIES.sample}"
       end
     end
   end
