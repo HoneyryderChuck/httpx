@@ -5,6 +5,10 @@ require "forwardable"
 module HTTPX
   module Plugins
     module Proxy
+      def self.load_dependencies(*)
+        require "base64"
+      end
+
       class Parameters
         attr_reader :uri
 
@@ -15,7 +19,11 @@ module HTTPX
         end
 
         def authenticated?
-          false
+          @username && @password 
+        end
+
+        def token_authentication
+          Base64.strict_encode64("#{user}:#{password}") 
         end
       end
 
@@ -125,7 +133,7 @@ module HTTPX
         transition(:connect) 
         connect_request = ProxyRequest.new(req.uri)
         if @parameters.authenticated?
-          connect_request.headers["proxy-authentication"] = @parameters.token_authentication
+          connect_request.headers["proxy-authentication"] = "Basic #{@parameters.token_authentication}"
         end
         parser.send(connect_request)
       end
