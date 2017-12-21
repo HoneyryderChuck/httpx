@@ -2,7 +2,8 @@
 
 module Requests
   module Plugins
-    module Proxy 
+    module Proxy
+      # https://www.sslproxies.org
       PROXIES = %W[
         139.162.90.230:51089
         139.162.113.44:51089
