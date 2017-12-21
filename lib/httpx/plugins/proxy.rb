@@ -143,8 +143,6 @@ module HTTPX
 
     def on_connect(request, response)
       if response.status == 200
-        @parser.close
-        @parser = nil
         transition(:open)
         req, _ = @pending.first
         request_uri = req.uri
@@ -165,6 +163,8 @@ module HTTPX
         return unless @state == :idle
       when :open
         return unless @state == :connect
+        @parser.close
+        @parser = nil
       end
       @state = nextstate
     end
