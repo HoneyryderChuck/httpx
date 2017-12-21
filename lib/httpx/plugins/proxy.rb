@@ -20,15 +20,32 @@ module HTTPX
       end
 
       module ConnectionMethods
+
+        def bind(uri)
+          proxy = proxy_params(uri)
+          return super unless proxy 
+          return @channels.find do |channel|
+            @channel.match?(uri)
+          end || build_proxy_channel(proxy) 
+        end
+
         private
 
-        def build_proxy_channel
-          raise "must have proxy defined" unless @options.proxy
-          parameters = Parameters.new(**@options.proxy)
+        def proxy_params(uri)
+          return @options.proxy if @options.proxy
+          uri = URI(uri).find_proxy
+          return unless uri
+          { proxy_uri: uri }
+        end
+
+        def build_proxy_channel(proxy)
+          parameters = Parameters.new(**proxy)
           io = TCP.new(parameters.uri, @options)
-          ProxyChannel.new(io, parameters, @options) do |request, response|
+          channel = ProxyChannel.new(io, parameters, @options) do |request, response|
             @responses[request] = response
-          end 
+          end
+          register_channel(channel)
+          channel
         end
       end
 
@@ -56,15 +73,14 @@ module HTTPX
         def initialize(*)
           super
           @connection.extend(ConnectionMethods)
-          if @default_options.proxy
-            channel = @connection.__send__(:build_proxy_channel)
-            @connection.__send__(:register_channel, channel)
-          end
+          # channel = @connection.__send__(:build_proxy_channel)
+          # @connection.__send__(:register_channel, channel)
         end
 
         def with_proxy(*args)
           branch(default_options.with_proxy(*args))
         end
+
       end
 
       module OptionsMethods
