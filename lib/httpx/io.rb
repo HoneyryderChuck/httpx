@@ -12,7 +12,6 @@ module HTTPX
     def initialize(uri, options)
       @options = Options.new(options)
       @fallback_protocol = @options.fallback_protocol
-      @connected = false
       @uri = uri
       @ip = TCPSocket.getaddress(@uri.host) 
       @port = @uri.port
@@ -25,6 +24,7 @@ module HTTPX
         end
         @keep_open = !@io.nil?
       end
+      @connected = @keep_open || false
       @io ||= build_socket 
     end
 
@@ -37,7 +37,7 @@ module HTTPX
     end
 
     def connect
-      return if @connected || @keep_open
+      return unless closed?
       begin
         @io = build_socket if @io.closed?
         @io.connect_nonblock(Socket.sockaddr_in(@port, @ip))
@@ -89,13 +89,16 @@ module HTTPX
 
     def close
       return if @keep_open || !@connected
-      @io.close
-    ensure
-      @connected = false
+      begin
+        log { "closing" }
+        @io.close
+      ensure
+        @connected = false
+      end
     end
 
     def closed?
-      !@keep_open && !@connected
+      !@connected
     end
 
     def inspect
@@ -117,10 +120,10 @@ module HTTPX
 
   class SSL < TCP
     def initialize(_, options)
-      @negotiated = false
       @ctx = OpenSSL::SSL::SSLContext.new
       @ctx.set_params(options.ssl)
       super
+      @negotiated = @keep_open || false 
     end
 
     def protocol
@@ -148,7 +151,9 @@ module HTTPX
       @io = OpenSSL::SSL::SSLSocket.new(@io, @ctx)
       @io.hostname = @uri.host
       @io.sync_close = true
+      log { "negotiating..." }
       @io.connect
+      log { "negotiated!" }
       @negotiated = true
     end
 
@@ -184,7 +189,19 @@ module HTTPX
     end
     
     def inspect
-      "#<SSL(fd: #{@io.fileno}): #{@ip}:#{@port}>"
+      "#<SSL(fd: #{@io.to_io.fileno}): #{@ip}:#{@port}>"
+    end
+  end
+
+  class ProxySSL < SSL
+    def initialize(tcp, request_uri, options)
+      @io = tcp.to_io
+      super(request_uri, options)
+      @connected = true
+    end
+
+    def connect
+      super
     end
   end
 

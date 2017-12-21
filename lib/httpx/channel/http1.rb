@@ -79,7 +79,8 @@ module HTTPX
       request.response = response
       # parser can't say if it's parsing GET or HEAD,
       # call the completeness callback manually
-      on_message_complete if request.verb == :head
+      on_message_complete if request.verb == :head ||
+                             request.verb == :connect
     end
 
     def on_body(chunk)

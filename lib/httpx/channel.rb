@@ -105,9 +105,11 @@ module HTTPX
 
     def call
       return if closed?
-      dread
-      dwrite
-      parser.consume
+      catch(:called) do
+        dread
+        dwrite
+        parser.consume
+      end
       nil
     end
 
@@ -123,6 +125,7 @@ module HTTPX
         siz = @io.read(wsize, @read_buffer)
         throw(:close, self) unless siz
         return if siz.zero?
+        log { "READ: #{siz} bytes..."}
         parser << @read_buffer
       end
     end
@@ -132,6 +135,7 @@ module HTTPX
         return if @write_buffer.empty?
         siz = @io.write(@write_buffer)
         throw(:close, self) unless siz
+        log { "WRITE: #{siz} bytes..."}
         return if siz.zero?
       end
     end

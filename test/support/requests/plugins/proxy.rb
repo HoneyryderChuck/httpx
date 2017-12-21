@@ -5,27 +5,17 @@ module Requests
     module Proxy
 
       def test_plugin_proxy_anonymous
-        server = proxy_server(proxy_uri: proxy_uri)
-
-        server.run do
-          client = HTTPX.plugin(:proxy).with_proxy(proxy_uri: proxy_uri)
-          uri = build_uri("/get")
-          response = client.get(uri)
-          verify_status(response.status, 200)
-          verify_body_length(response)
-        end
+        client = HTTPX.plugin(:proxy).with_proxy(proxy_uri: proxy_uri)
+        uri = build_uri("/get")
+        response = client.get(uri)
+        verify_status(response.status, 200)
+        verify_body_length(response)
       end
-
-
 
       private
 
       def proxy_uri
-        "http://127.0.0.1:9999"
-      end
-
-      def proxy_server(**args)
-        ProxyServer.new(**args)
+        "http://139.162.74.66:51089"
       end
     end
   end

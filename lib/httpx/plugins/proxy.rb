@@ -13,24 +13,17 @@ module HTTPX
           raise "must have proxy defined" unless @options.proxy
           parameters = Parameters.new(**@options.proxy)
           io = TCP.new(parameters.uri, @options)
-          ProxyChannel.new(io, @options) do |request, response|
+          ProxyChannel.new(io, parameters, @options) do |request, response|
             @responses[request] = response
           end 
+        end
+      end
 
-          # parameters = Parameters.new(**@options.proxy)
-          # unless uri.scheme == "https"
-          #   @options.headers["proxy-connection"] = "keep-alive"
-          #   return super(parameters.uri)
-          # end
-
-          # connect_request = ProxyRequest.new(uri)
-          # connect_request.headers["proxy-connection"] = "keep-alive"
-          # if parameters.authenticated?
-          #   connect_request.headers["proxy-authentication"] = parameters.token_authentication
-          # end
-          # channel.send(connect_request)
-          # register_channel(channel)
-          # channel 
+      module SecureParserMethods
+        def headline(request)
+          return super unless request.verb == :connect
+          uri = request.uri
+          "#{request.verb.to_s.upcase} #{uri.host}:#{uri.port} HTTP/#{@version.join(".")}"
         end
       end
 
@@ -73,8 +66,9 @@ module HTTPX
   end
 
   class ProxyChannel < Channel
-    def initialize(*)
-      super
+    def initialize(io, parameters, options)
+      super(io, options)
+      @parameters = parameters
       @connected = false
     end
 
@@ -82,7 +76,28 @@ module HTTPX
       true
     end
 
+    def send_pending
+      return if @pending.empty?
+      # do NOT enqueue requests if proxy is connecting
+      return if @https_proxy
+      # normal flow after connection
+      return super if @proxy_connected
+      req, _ = @pending.first
+      if req.uri.scheme == "https"
+        @https_proxy = true
+        connect_request = ProxyRequest.new(req.uri)
+        if @parameters.authenticated?
+          connect_request.headers["proxy-authentication"] = @parameters.token_authentication
+        end
+        parser.send(connect_request)
+      else
+        super
+      end
+    end
+
     def parser
+      return super if @proxy_connected
+      return connect_parser if @https_proxy
       pr = super
       pr.extend(Plugins::Proxy::ParserMethods)
       pr
@@ -90,28 +105,35 @@ module HTTPX
 
     private
 
-    #def parser
-    #  return super if @connected
-    #  @parser || begin
-    #  @parser = HTTP1.new(@write_buffer, @options.merge(max_concurrent_requests: 1))
-    #    @parser.once(:response, &method(:on_connect))
-    #    @parser.on(:close) { throw(:close, self) }
-    #    @parser
-    #  end
-    #end
+    def connect_parser
+      @parser || begin
+        @parser = HTTP1.new(@write_buffer, @options.merge(max_concurrent_requests: 1))
+        @parser.extend(Plugins::Proxy::ParserMethods)
+        @parser.extend(Plugins::Proxy::SecureParserMethods)
+        @parser.once(:response, &method(:on_connect))
+        @parser.on(:close) { throw(:close, self) }
+        @parser
+      end
+    end
 
-    #def on_connect(request, response)
-    #  if response.status == 200
-    #    @connected = true
-    #    @parser.close
-    #    @parser = nil 
-    #  else
-    #    pending = @parser.instance_variable_get(:@pending)
-    #    while req = pending.shift
-    #      @on_response.call(req, response)
-    #    end
-    #  end
-    #end
+    def on_connect(request, response)
+      if response.status == 200
+        @connected = true
+        @parser.close
+        @parser = nil
+        @https_proxy = nil
+        @proxy_connected = true
+        req, _ = @pending.first
+        request_uri = req.uri
+        @io = ProxySSL.new(@io, request_uri, @options)
+        throw(:called)
+      else
+        pending = @parser.instance_variable_get(:@pending)
+        while req = pending.shift
+          @on_response.call(req, response)
+        end
+      end
+    end
   end
 
   class ProxyRequest < Request
