@@ -82,7 +82,6 @@ module HTTPX
     def initialize(io, parameters, options)
       super(io, options)
       @parameters = parameters
-      @connected = false
     end
 
     def match?(*)
@@ -131,7 +130,6 @@ module HTTPX
 
     def on_connect(request, response)
       if response.status == 200
-        @connected = true
         @parser.close
         @parser = nil
         @https_proxy = nil
