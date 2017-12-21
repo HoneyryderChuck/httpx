@@ -190,6 +190,8 @@ module HTTPX
     def initialize(tcp, request_uri, options)
       @io = tcp.to_io
       super(request_uri, options)
+      @ip = tcp.ip
+      @port = tcp.port
       @connected = true
     end
   end
