@@ -5,8 +5,21 @@ require "forwardable"
 module HTTPX
   module Plugins
     module Proxy
-      module ConnectionMethods
+      class Parameters
+        attr_reader :uri
 
+        def initialize(proxy_uri: , username: nil, password: nil)
+          @uri = proxy_uri.is_a?(URI::Generic) ? proxy_uri : URI(proxy_uri)
+          @username = username || @uri.user
+          @password = password || @uri.password
+        end
+
+        def authenticated?
+          false
+        end
+      end
+
+      module ConnectionMethods
         private
 
         def build_proxy_channel
@@ -19,7 +32,7 @@ module HTTPX
         end
       end
 
-      module SecureParserMethods
+      module ConnectProxyParserMethods
         def headline(request)
           return super unless request.verb == :connect
           uri = request.uri
@@ -27,7 +40,7 @@ module HTTPX
         end
       end
 
-      module ParserMethods
+      module ProxyParserMethods
         def headline(request)
           "#{request.verb.to_s.upcase} #{request.uri.to_s} HTTP/#{@version.join(".")}"
         end
@@ -99,7 +112,7 @@ module HTTPX
       return super if @proxy_connected
       return connect_parser if @https_proxy
       pr = super
-      pr.extend(Plugins::Proxy::ParserMethods)
+      pr.extend(Plugins::Proxy::ProxyParserMethods)
       pr
     end
 
@@ -108,8 +121,8 @@ module HTTPX
     def connect_parser
       @parser || begin
         @parser = HTTP1.new(@write_buffer, @options.merge(max_concurrent_requests: 1))
-        @parser.extend(Plugins::Proxy::ParserMethods)
-        @parser.extend(Plugins::Proxy::SecureParserMethods)
+        @parser.extend(Plugins::Proxy::ProxyParserMethods)
+        @parser.extend(Plugins::Proxy::ConnectProxyParserMethods)
         @parser.once(:response, &method(:on_connect))
         @parser.on(:close) { throw(:close, self) }
         @parser
@@ -153,20 +166,6 @@ module HTTPX
 
     def path
       "#{@uri.host}:#{@uri.port}"
-    end
-  end
-
-  class Parameters
-    attr_reader :uri
-
-    def initialize(proxy_uri: , username: nil, password: nil)
-      @uri = proxy_uri.is_a?(URI::Generic) ? proxy_uri : URI(proxy_uri)
-      @username = username
-      @password = password
-    end
-
-    def authenticated?
-      false
     end
   end
 end 
