@@ -82,6 +82,7 @@ module HTTPX
     def initialize(io, parameters, options)
       super(io, options)
       @parameters = parameters
+      @state = :idle
     end
 
     def match?(*)
@@ -90,29 +91,40 @@ module HTTPX
 
     def send_pending
       return if @pending.empty?
-      # do NOT enqueue requests if proxy is connecting
-      return if @https_proxy
-      # normal flow after connection
-      return super if @proxy_connected
-      req, _ = @pending.first
-      if req.uri.scheme == "https"
-        @https_proxy = true
+      case @state
+      when :connect
+        # do NOT enqueue requests if proxy is connecting
+        return
+      when :open
+        # normal flow after connection
+        return super
+      else
+        req, _ = @pending.first
+        # if the first request after CONNECT is to an https address, it is assumed that
+        # all requests in the queue are not only ALL HTTPS, but they also share the certificate,
+        # and therefore, will share the connection.
+        #
+        return super unless req.uri.scheme == "https"
+        transition(:connect) 
         connect_request = ProxyRequest.new(req.uri)
         if @parameters.authenticated?
           connect_request.headers["proxy-authentication"] = @parameters.token_authentication
         end
         parser.send(connect_request)
-      else
-        super
       end
     end
 
     def parser
-      return super if @proxy_connected
-      return connect_parser if @https_proxy
-      pr = super
-      pr.extend(Plugins::Proxy::ProxyParserMethods)
-      pr
+      case @state
+      when :open
+        super
+      when :connect
+        connect_parser
+      else
+        pr = super
+        pr.extend(Plugins::Proxy::ProxyParserMethods)
+        pr
+      end
     end
 
     private
@@ -132,8 +144,7 @@ module HTTPX
       if response.status == 200
         @parser.close
         @parser = nil
-        @https_proxy = nil
-        @proxy_connected = true
+        transition(:open)
         req, _ = @pending.first
         request_uri = req.uri
         @io = ProxySSL.new(@io, request_uri, @options)
@@ -144,6 +155,17 @@ module HTTPX
           @on_response.call(req, response)
         end
       end
+    end
+
+    def transition(nextstate)
+      case nextstate
+      when :idle
+      when :connect
+        return unless @state == :idle
+      when :open
+        return unless @state == :connect
+      end
+      @state = nextstate
     end
   end
   
