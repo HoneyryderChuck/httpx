@@ -33,21 +33,22 @@ module HTTPX
       end
 
       module ConnectProxyParserMethods
-        def headline(request)
+        def headline_uri(request)
           return super unless request.verb == :connect
           uri = request.uri
-          "#{request.verb.to_s.upcase} #{uri.host}:#{uri.port} HTTP/#{@version.join(".")}"
+          "#{uri.host}:#{uri.port}"
         end
       end
 
       module ProxyParserMethods
-        def headline(request)
-          "#{request.verb.to_s.upcase} #{request.uri.to_s} HTTP/#{@version.join(".")}"
+        def headline_uri(request)
+          "#{request.uri.to_s}"
         end
 
         def set_request_headers(request)
           super
-          request.headers["proxy-connection"] = request.headers["connection"] 
+          request.headers["proxy-connection"] = request.headers["connection"]
+          request.headers.delete("connection") 
         end
       end
 
@@ -180,7 +181,6 @@ module HTTPX
   class ProxyRequest < Request
     def initialize(uri, options = {})
       super(:connect, uri, options)
-      @headers.delete("user-agent")
       @headers.delete("accept")
     end
 

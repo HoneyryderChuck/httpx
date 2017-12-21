@@ -120,8 +120,8 @@ module HTTPX
       request.headers["connection"] ||= "keep-alive"
     end
 
-    def headline(request)
-      "#{request.verb.to_s.upcase} #{request.path} HTTP/#{@version.join(".")}"
+    def headline_uri(request)
+      request.path
     end
 
     def handle(request)
@@ -137,7 +137,7 @@ module HTTPX
 
     def join_headers(request)
       buffer = +""
-      buffer << headline(request) << CRLF
+      buffer << "#{request.verb.to_s.upcase} #{headline_uri(request)} HTTP/#{@version.join(".")}" << CRLF
       log { "<- HEADLINE: #{buffer.chomp.inspect}" }
       @buffer << buffer
       buffer.clear
