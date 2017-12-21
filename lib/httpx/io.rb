@@ -192,19 +192,7 @@ module HTTPX
       "#<SSL(fd: #{@io.to_io.fileno}): #{@ip}:#{@port}>"
     end
   end
-
-  class ProxySSL < SSL
-    def initialize(tcp, request_uri, options)
-      @io = tcp.to_io
-      super(request_uri, options)
-      @connected = true
-    end
-
-    def connect
-      super
-    end
-  end
-
+  
   module IO
     extend Registry
     register "tcp", TCP

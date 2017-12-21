@@ -135,6 +135,14 @@ module HTTPX
       end
     end
   end
+  
+  class ProxySSL < SSL
+    def initialize(tcp, request_uri, options)
+      @io = tcp.to_io
+      super(request_uri, options)
+      @connected = true
+    end
+  end
 
   class ProxyRequest < Request
     def initialize(uri, options = {})
