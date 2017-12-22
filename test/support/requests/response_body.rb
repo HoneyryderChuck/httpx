@@ -41,7 +41,7 @@ module Requests
           @file = Tempfile.new
         end
 
-        def <<(data)
+        def write(data)
           @file << data
         end
 
