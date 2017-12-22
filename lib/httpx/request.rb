@@ -102,6 +102,9 @@ module HTTPX
           Transcoder.registry("json").encode(options.json)
         end
         return if @body.nil?
+        @headers.get("content-encoding").each do |encoding|
+          @body = Transcoder.registry(encoding).encode(@body)
+        end
         @headers["content-type"] ||= @body.content_type
         @headers["content-length"] ||= @body.bytesize unless chunked?
       end
