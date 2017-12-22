@@ -24,11 +24,12 @@ module HTTPX
       @request = request
       @status = Integer(status)
       @headers = @options.headers_class.new(headers)
-      @body = @options.response_body_class.new(self, threshold_size: @options.body_threshold_size)
+      @body = @options.response_body_class.new(self, threshold_size: @options.body_threshold_size,
+                                                     window_size: @options.window_size)
     end 
 
     def <<(data)
-      @body << data
+      @body.write(data)
     end
 
     def bodyless?
@@ -45,10 +46,11 @@ module HTTPX
     end
 
     class Body
-      def initialize(response, threshold_size: )
+      def initialize(response, threshold_size: , window_size: 1 << 14)
         @response = response
         @headers = response.headers
         @threshold_size = threshold_size
+        @window_size = window_size 
         @encoding = response.content_type.charset || Encoding::BINARY
         @length = 0
         @buffer = nil 
@@ -60,7 +62,6 @@ module HTTPX
         transition
         @buffer.write(chunk)
       end
-      alias :<< :write
 
       def read(*args)
         return unless @buffer
@@ -76,8 +77,8 @@ module HTTPX
         begin
           unless @state == :idle
             rewind
-            @buffer.each do |*args|
-              yield(*args)
+            while chunk = @buffer.read(@window_size)
+              yield(chunk)
             end
           end
         ensure
