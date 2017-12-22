@@ -67,7 +67,7 @@ module HTTPX
     def on_headers_complete(h)
       # Wait for fix: https://github.com/tmm1/http_parser.rb/issues/52
       # callback is called 2 times when chunked
-      request = @requests.last
+      request = @requests.first
       return if request.response
 
       log(2) { "headers received" }
@@ -86,7 +86,7 @@ module HTTPX
     def on_body(chunk)
       log { "-> DATA: #{chunk.bytesize} bytes..." }
       log(2) { "-> #{chunk.inspect}" }
-      @requests.last.response << chunk
+      @requests.first.response << chunk
     end
 
     def on_message_complete
