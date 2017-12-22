@@ -12,8 +12,8 @@ module HTTPX
       class Parameters
         attr_reader :uri
 
-        def initialize(proxy_uri: , username: nil, password: nil)
-          @uri = proxy_uri.is_a?(URI::Generic) ? proxy_uri : URI(proxy_uri)
+        def initialize(uri: , username: nil, password: nil)
+          @uri = uri.is_a?(URI::Generic) ? uri : URI(uri)
           @username = username || @uri.user
           @password = password || @uri.password
         end
@@ -43,7 +43,7 @@ module HTTPX
           return @options.proxy if @options.proxy
           uri = URI(uri).find_proxy
           return unless uri
-          { proxy_uri: uri }
+          { uri: uri }
         end
 
         def build_proxy_channel(proxy)

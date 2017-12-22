@@ -88,6 +88,14 @@ module HTTPX
 
     private
 
+    def headline_uri(request)
+      request.path
+    end
+
+    def set_request_headers(request)
+
+    end
+
     def handle(request, stream)
       catch(:buffer_full) do
         request.transition(:headers)
@@ -110,10 +118,11 @@ module HTTPX
     end
 
     def join_headers(stream, request)
+      set_request_headers(request)
       headers = {}
       headers[":scheme"]    = request.scheme
       headers[":method"]    = request.verb.to_s.upcase
-      headers[":path"]      = request.path 
+      headers[":path"]      = headline_uri(request)
       headers[":authority"] = request.authority 
       headers = headers.merge(request.headers)
       log(stream.id) do

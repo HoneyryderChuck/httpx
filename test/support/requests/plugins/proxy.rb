@@ -5,15 +5,15 @@ module Requests
     module Proxy
       # https://www.sslproxies.org
       PROXIES = %W[
-        139.162.90.230:51089
-        139.162.113.44:51089
-        139.162.111.253:51089
-        139.162.76.78:51089
-        139.162.116.181:51089
+        18.216.86.189:3128
+        151.80.140.233:54566
+        45.6.216.66:3128
+        137.74.168.174:8080
+        154.66.122.130:53281
       ]
 
       def test_plugin_proxy_anonymous
-        client = HTTPX.plugin(:proxy).with_proxy(proxy_uri: proxy_uri)
+        client = HTTPX.plugin(:proxy).with_proxy(uri: proxy_uri)
         uri = build_uri("/get")
         response = client.get(uri)
         verify_status(response.status, 200)
