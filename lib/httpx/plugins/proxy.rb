@@ -28,13 +28,16 @@ module HTTPX
       end
 
       module ConnectionMethods
-
         def bind(uri)
           proxy = proxy_params(uri)
           return super unless proxy 
           return @channels.find do |channel|
-            @channel.match?(uri)
-          end || build_proxy_channel(proxy) 
+            channel.match?(uri)
+          end || begin
+            channel = build_proxy_channel(proxy)
+            register_channel(channel)
+            channel
+          end
         end
 
         private
@@ -49,11 +52,7 @@ module HTTPX
         def build_proxy_channel(proxy)
           parameters = Parameters.new(**proxy)
           io = TCP.new(parameters.uri, @options)
-          channel = ProxyChannel.new(io, parameters, @options) do |request, response|
-            @responses[request] = response
-          end
-          register_channel(channel)
-          channel
+          ProxyChannel.new(io, parameters, @options, &method(:on_response))
         end
       end
 
@@ -81,8 +80,6 @@ module HTTPX
         def initialize(*)
           super
           @connection.extend(ConnectionMethods)
-          # channel = @connection.__send__(:build_proxy_channel)
-          # @connection.__send__(:register_channel, channel)
         end
 
         def with_proxy(*args)

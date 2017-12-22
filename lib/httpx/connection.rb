@@ -58,6 +58,10 @@ module HTTPX
 
     private
 
+    def on_response(request, response)
+      @responses[request] = response
+    end
+
     # opens a channel to the IP reachable through +uri+.
     # Many hostnames are reachable through the same IP, so we try to
     # maximize pipelining by opening as few channels as possible.
@@ -67,16 +71,14 @@ module HTTPX
       return @channels.find do |channel|
         channel.match?(uri)
       end || begin
-        build_channel(uri)
+        channel = build_channel(uri)
+        register_channel(channel)
+        channel
       end
     end
 
     def build_channel(uri)
-      channel = Channel.by(uri, @options) do |request, response|
-        @responses[request] = response
-      end
-      register_channel(channel)
-      channel
+      Channel.by(uri, @options, &method(:on_response))
     end
 
     def register_channel(channel)
