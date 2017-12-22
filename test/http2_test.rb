@@ -11,6 +11,8 @@ class HTTP2Test < HTTPTest
   include ResponseBody 
   include IO 
   
+  include Plugins::Compression
+
   private
 
   def origin
