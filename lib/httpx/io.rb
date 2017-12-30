@@ -10,6 +10,7 @@ module HTTPX
     attr_reader :ip, :port, :uri
 
     def initialize(uri, options)
+      @state = :idle
       @options = Options.new(options)
       @fallback_protocol = @options.fallback_protocol
       @uri = uri
@@ -22,9 +23,11 @@ module HTTPX
         else
           @options.io
         end
-        @keep_open = !@io.nil?
+        unless @io.nil?
+          @keep_open = true 
+          @state = :connected
+        end
       end
-      @connected = @keep_open || false
       @io ||= build_socket 
     end
 
@@ -43,8 +46,7 @@ module HTTPX
         @io.connect_nonblock(Socket.sockaddr_in(@port, @ip))
       rescue Errno::EISCONN
       end
-      @connected = true
-      log { "connected" }
+      transition(:connected)
 
     rescue Errno::EINPROGRESS,
            Errno::EALREADY,
@@ -88,21 +90,24 @@ module HTTPX
     end
 
     def close
-      return if @keep_open || !@connected
+      return if @keep_open || closed?
       begin
-        log { "closing" }
         @io.close
       ensure
-        @connected = false
+        transition(:closed)
       end
     end
 
+    def connected?
+      @state == :connected
+    end
+
     def closed?
-      !@connected
+      @state == :idle || @state == :closed
     end
 
     def inspect
-      "#<TCP(fd: #{@io.fileno}): #{@ip}:#{@port}>"
+      "#<TCP(fd: #{@io.fileno}): #{@ip}:#{@port} (state: #{@state}>"
     end
 
     private
@@ -111,10 +116,23 @@ module HTTPX
       addr = IPAddr.new(@ip)
       Socket.new(addr.family, :STREAM, 0)
     end
+
+    def transition(nextstate)
+      case nextstate
+      when :idle
+        return
+      when :connected
+        return unless @state == :idle
+      when :closed
+        return unless @state == :connected
+      end
+      log { "transition: #{nextstate}" }
+      @state = nextstate
+    end
     
     def log(&msg)
       return unless @options.debug 
-      @options.debug << (+"#{inspect}: " << msg.call << "\n")
+      @options.debug << (+"#{inspect}: " << msg.call.to_s << "\n")
     end
   end
 
@@ -123,7 +141,7 @@ module HTTPX
       @ctx = OpenSSL::SSL::SSLContext.new
       @ctx.set_params(options.ssl)
       super
-      @negotiated = @keep_open || false 
+      @state = :negotiated if @keep_open
     end
 
     def protocol
@@ -143,18 +161,16 @@ module HTTPX
     def connect
       super
       if @keep_open
-        @negotiated = true
+        @state = :negotiated
         return
       end
-      return if not @connected
-      return if @negotiated 
+      return if @state == :negotiated ||
+                @state != :connected
       @io = OpenSSL::SSL::SSLSocket.new(@io, @ctx)
       @io.hostname = @uri.host
       @io.sync_close = true
-      log { "negotiating..." }
       @io.connect
-      log { "negotiated!" }
-      @negotiated = true
+      transition(:negotiated)
     end
 
 
@@ -184,12 +200,21 @@ module HTTPX
       end
     end
 
-    def closed?
-      super || !@negotiated
-    end
-    
     def inspect
-      "#<SSL(fd: #{@io.to_io.fileno}): #{@ip}:#{@port}>"
+      "#<SSL(fd: #{@io.to_io.fileno}): #{@ip}:#{@port} state: #{@state}>"
+    end
+
+    private
+
+    def transition(nextstate)
+      case nextstate
+      when :negotiated
+        return unless @state == :connected
+      when :closed
+        return unless @state == :negotiated ||
+                      @state == :connected
+      end
+      super
     end
   end
   
