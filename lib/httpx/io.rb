@@ -107,7 +107,8 @@ module HTTPX
     end
 
     def inspect
-      "#<TCP(fd: #{@io.fileno}): #{@ip}:#{@port} (state: #{@state}>"
+      id = @io.closed? ? "closed" : @io.fileno
+      "#<TCP(fd: #{id}): #{@ip}:#{@port} (state: #{@state})>"
     end
 
     private
