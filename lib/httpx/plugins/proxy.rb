@@ -6,14 +6,17 @@ module HTTPX
   module Plugins
     module Proxy
       def self.load_dependencies(*)
-        require "base64"
+        require "httpx/plugins/proxy/http"
       end
 
       class Parameters
-        attr_reader :uri
+        extend Registry
 
-        def initialize(uri: , username: nil, password: nil)
+        attr_reader :uri, :type
+
+        def initialize(uri: , username: nil, password: nil, type: nil)
           @uri = uri.is_a?(URI::Generic) ? uri : URI(uri)
+          @type = type || @uri.scheme
           @username = username || @uri.user
           @password = password || @uri.password
         end
@@ -52,27 +55,8 @@ module HTTPX
         def build_proxy_channel(proxy)
           parameters = Parameters.new(**proxy)
           io = TCP.new(parameters.uri, @options)
-          ProxyChannel.new(io, parameters, @options, &method(:on_response))
-        end
-      end
-
-      module ConnectProxyParserMethods
-        def headline_uri(request)
-          return super unless request.verb == :connect
-          uri = request.uri
-          "#{uri.host}:#{uri.port}"
-        end
-      end
-
-      module ProxyParserMethods
-        def headline_uri(request)
-          "#{request.uri.to_s}"
-        end
-
-        def set_request_headers(request)
-          super
-          request.headers["proxy-connection"] = request.headers["connection"]
-          request.headers.delete("connection") 
+          proxy_type = Parameters.registry(parameters.type)
+          proxy_type.new(io, parameters, @options, &method(:on_response))
         end
       end
 
@@ -104,111 +88,10 @@ module HTTPX
     def initialize(io, parameters, options)
       super(io, options)
       @parameters = parameters
-      @state = :idle
     end
 
     def match?(*)
       true
-    end
-
-    def send_pending
-      return if @pending.empty?
-      case @state
-      when :connect
-        # do NOT enqueue requests if proxy is connecting
-        return
-      when :open
-        # normal flow after connection
-        return super
-      else
-        req, _ = @pending.first
-        # if the first request after CONNECT is to an https address, it is assumed that
-        # all requests in the queue are not only ALL HTTPS, but they also share the certificate,
-        # and therefore, will share the connection.
-        #
-        return super unless req.uri.scheme == "https"
-        transition(:connect) 
-        connect_request = ProxyRequest.new(req.uri)
-        if @parameters.authenticated?
-          connect_request.headers["proxy-authentication"] = "Basic #{@parameters.token_authentication}"
-        end
-        parser.send(connect_request)
-      end
-    end
-
-    def parser
-      case @state
-      when :open
-        super
-      when :connect
-        connect_parser
-      else
-        pr = super
-        pr.extend(Plugins::Proxy::ProxyParserMethods)
-        pr
-      end
-    end
-
-    private
-
-    def connect_parser
-      @parser || begin
-        @parser = HTTP1.new(@write_buffer, @options.merge(max_concurrent_requests: 1))
-        @parser.extend(Plugins::Proxy::ProxyParserMethods)
-        @parser.extend(Plugins::Proxy::ConnectProxyParserMethods)
-        @parser.once(:response, &method(:on_connect))
-        @parser.on(:close) { throw(:close, self) }
-        @parser
-      end
-    end
-
-    def on_connect(request, response)
-      if response.status == 200
-        transition(:open)
-        req, _ = @pending.first
-        request_uri = req.uri
-        @io = ProxySSL.new(@io, request_uri, @options)
-        throw(:called)
-      else
-        pending = @parser.instance_variable_get(:@pending)
-        while req = pending.shift
-          @on_response.call(req, response)
-        end
-      end
-    end
-
-    def transition(nextstate)
-      case nextstate
-      when :idle
-      when :connect
-        return unless @state == :idle
-      when :open
-        return unless @state == :connect
-        @parser.close
-        @parser = nil
-      end
-      @state = nextstate
-    end
-  end
-  
-  class ProxySSL < SSL
-    def initialize(tcp, request_uri, options)
-      @io = tcp.to_io
-      super(request_uri, options)
-      @ip = tcp.ip
-      @port = tcp.port
-      @connected = true
-    end
-  end
-
-  class ProxyRequest < Request
-    def initialize(uri, options = {})
-      super(:connect, uri, options)
-      @headers.delete("accept")
-    end
-
-    def path
-      "#{@uri.host}:#{@uri.port}"
     end
   end
 end 
