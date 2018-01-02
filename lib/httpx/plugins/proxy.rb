@@ -7,12 +7,13 @@ module HTTPX
     module Proxy
       def self.load_dependencies(*)
         require "httpx/plugins/proxy/http"
+        require "httpx/plugins/proxy/socks"
       end
 
       class Parameters
         extend Registry
 
-        attr_reader :uri, :type
+        attr_reader :uri, :type, :username, :password
 
         def initialize(uri: , username: nil, password: nil, type: nil)
           @uri = uri.is_a?(URI::Generic) ? uri : URI(uri)
