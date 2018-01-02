@@ -202,7 +202,8 @@ module HTTPX
     end
 
     def inspect
-      "#<SSL(fd: #{@io.to_io.fileno}): #{@ip}:#{@port} state: #{@state}>"
+      id = @io.closed? ? "closed" : @io.to_io.fileno
+      "#<SSL(fd: #{id}): #{@ip}:#{@port} state: #{@state}>"
     end
 
     private
