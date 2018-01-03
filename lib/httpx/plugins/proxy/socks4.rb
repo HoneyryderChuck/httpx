@@ -1,11 +1,13 @@
 # frozen_string_literal: true
 
+require "resolv"
 require "ipaddr"
 
 module HTTPX
   module Plugins
     module Proxy
-      module Socks 
+      module Socks4 
+        GRANTED = 90
         class Socks4ProxyChannel < ProxyChannel
           def initialize(*args)
             super(*args)
@@ -36,7 +38,7 @@ module HTTPX
           
           def on_connect(packet)
             version, status, port, ip = packet.unpack("CCnN")
-            if status == 90
+            if status == GRANTED
               transition(:open)
               req, _ = @pending.first
               request_uri = req.uri
@@ -66,6 +68,7 @@ module HTTPX
           end
         end
         Parameters.register("socks4", Socks4ProxyChannel)
+        Parameters.register("socks4a", Socks4ProxyChannel)
       end
 
       class SocksParser < Channel::HTTP1
@@ -87,12 +90,15 @@ module HTTPX
       end
 
       class ConnectRequest
+        VERSION = 4
+        CONNECT = 1
         attr_accessor :response
 
         def initialize(parameters, request_uri)
           @parameters = parameters
           @uri = request_uri
-          @ip = IPAddr.new(TCPSocket.getaddress(@uri.host))
+          @host = @uri.host
+          @socks_version = @parameters.uri.scheme
           @done = false
         end
 
@@ -105,11 +111,26 @@ module HTTPX
         end
 
         def to_packet
-          [4, 1, @uri.port, @ip.to_i, @parameters.username].pack("CCnNZ*")
+          packet = [VERSION, CONNECT, @uri.port].pack("CCn")
+          begin
+            ip = IPAddr.new(@host)
+            raise Error, "Socks4 connection to #{ip.to_s} not supported" unless ip.ipv4?
+            packet << [ip.to_i].pack("N")
+          rescue IPAddr::InvalidAddressError
+            if @socks_version == "socks4"
+              # resolv defaults to IPv4, and socks4 doesn't support IPv6 otherwise
+              ip = IPAddr.new(Resolv.getaddress(@host))
+              packet << [ip.to_i].pack("N")
+            else
+              packet << "\x0\x0\x0\x1" << "\x7\x0" << @host
+            end
+          end
+          packet << [@parameters.username].pack("Z*")
+          packet
         end
       end
     end
-    register_plugin :"proxy/socks", Proxy::Socks
+    register_plugin :"proxy/socks4", Proxy::Socks4
   end
 end
 

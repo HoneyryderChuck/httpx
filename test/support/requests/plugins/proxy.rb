@@ -28,6 +28,14 @@ module Requests
         verify_body_length(response)
       end
 
+      def test_plugin_socks4a_proxy
+        client = HTTPX.plugin(:proxy).with_proxy(uri: socks4a_proxy_uri)
+        uri = build_uri("/get")
+        response = client.get(uri)
+        verify_status(response.status, 200)
+        verify_body_length(response)
+      end
+
       def test_plugin_socks5_proxy
         client = HTTPX.plugin(:proxy).with_proxy(uri: socks5_proxy_uri)
         uri = build_uri("/get")
@@ -44,6 +52,10 @@ module Requests
 
       def socks4_proxy_uri
         "socks4://119.28.107.60:1080"
+      end
+
+      def socks4a_proxy_uri
+        "socks4a://119.28.107.60:1080"
       end
 
       def socks5_proxy_uri
