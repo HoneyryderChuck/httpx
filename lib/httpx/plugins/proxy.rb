@@ -90,9 +90,8 @@ module HTTPX
   class ProxySSL < SSL
     def initialize(tcp, request_uri, options)
       @io = tcp.to_io
-      super(request_uri.host, request_uri.port, options)
-      @ip = tcp.ip
-      @port = tcp.port
+      super(tcp.ip, tcp.port, options)
+      @hostname = request_uri.host
       @state = :connected
     end
   end
