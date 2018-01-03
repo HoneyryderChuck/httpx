@@ -5,6 +5,7 @@ require "forwardable"
 module HTTPX
   module Plugins
     module Proxy
+      Error = Class.new(Error)
       class Parameters
         extend Registry
 

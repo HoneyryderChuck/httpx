@@ -6,8 +6,13 @@ require "ipaddr"
 module HTTPX
   module Plugins
     module Proxy
-      module Socks4 
+      module Socks4
+        VERSION = 4
+        CONNECT = 1
         GRANTED = 90
+
+        Error = Class.new(Error)
+
         class Socks4ProxyChannel < ProxyChannel
 
           private
@@ -56,64 +61,62 @@ module HTTPX
         end
         Parameters.register("socks4", Socks4ProxyChannel)
         Parameters.register("socks4a", Socks4ProxyChannel)
-      end
 
-      class SocksParser < Channel::HTTP1
+        class SocksParser < Channel::HTTP1
 
-        def close
-        end
-
-        def handle(request)
-          return if request.done? 
-          packet = request.to_packet
-          log(2) { "SOCKS: #{packet.inspect}" }
-          @buffer << packet
-          request.done! 
-        end
-
-        def <<(packet)
-          emit(:response, packet)
-        end
-      end
-
-      class ConnectRequest
-        VERSION = 4
-        CONNECT = 1
-        attr_accessor :response
-
-        def initialize(parameters, request_uri)
-          @parameters = parameters
-          @uri = request_uri
-          @host = @uri.host
-          @socks_version = @parameters.uri.scheme
-          @done = false
-        end
-
-        def done?
-          @done
-        end
-
-        def done!
-          @done = true
-        end
-
-        def to_packet
-          packet = [VERSION, CONNECT, @uri.port].pack("CCn")
-          begin
-            ip = IPAddr.new(@host)
-            raise Error, "Socks4 connection to #{ip.to_s} not supported" unless ip.ipv4?
-            packet << [ip.to_i].pack("N")
-          rescue IPAddr::InvalidAddressError
-            if @socks_version == "socks4"
-              # resolv defaults to IPv4, and socks4 doesn't support IPv6 otherwise
-              ip = IPAddr.new(Resolv.getaddress(@host))
-              packet << [ip.to_i].pack("N")
-            else
-              packet << "\x0\x0\x0\x1" << "\x7\x0" << @host
-            end
+          def close
           end
-          packet << [@parameters.username].pack("Z*")
-          packet
+
+          def handle(request)
+            return if request.done? 
+            packet = request.to_packet
+            log(2) { "SOCKS: #{packet.inspect}" }
+            @buffer << packet
+            request.done! 
+          end
+
+          def <<(packet)
+            emit(:response, packet)
+          end
+        end
+
+        class ConnectRequest
+          attr_accessor :response
+
+          def initialize(parameters, request_uri)
+            @parameters = parameters
+            @uri = request_uri
+            @host = @uri.host
+            @socks_version = @parameters.uri.scheme
+            @done = false
+          end
+
+          def done?
+            @done
+          end
+
+          def done!
+            @done = true
+          end
+
+          def to_packet
+            packet = [VERSION, CONNECT, @uri.port].pack("CCn")
+            begin
+              ip = IPAddr.new(@host)
+              raise Error, "Socks4 connection to #{ip.to_s} not supported" unless ip.ipv4?
+              packet << [ip.to_i].pack("N")
+            rescue IPAddr::InvalidAddressError
+              if @socks_version == "socks4"
+                # resolv defaults to IPv4, and socks4 doesn't support IPv6 otherwise
+                ip = IPAddr.new(Resolv.getaddress(@host))
+                packet << [ip.to_i].pack("N")
+              else
+                packet << "\x0\x0\x0\x1" << "\x7\x0" << @host
+              end
+            end
+            packet << [@parameters.username].pack("Z*")
+            packet
+          end
         end
       end
     end
