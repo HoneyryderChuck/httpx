@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "resolv"
 require "ipaddr"
 
 module HTTPX
@@ -37,7 +36,6 @@ module HTTPX
           
           def on_connect(packet)
             version, status, port, ip = packet.unpack("CCnN")
-            puts "on connect: #{status}"
             if status == 90
               transition(:open)
               req, _ = @pending.first
@@ -94,7 +92,7 @@ module HTTPX
         def initialize(parameters, request_uri)
           @parameters = parameters
           @uri = request_uri
-          @ip = IPAddr.new(Resolv.getaddress(@uri.hostname))
+          @ip = IPAddr.new(TCPSocket.getaddress(@uri.host))
           @done = false
         end
 
