@@ -7,37 +7,25 @@ module HTTPX
     module Proxy
       module HTTP
         class HTTPProxyChannel < ProxyChannel
-          def initialize(*args)
-            super(*args)
-            @state = :idle
-          end
 
-          def send_pending
-            return if @pending.empty?
-            case @state
-            when :open
-              # normal flow after connection
-              return super
-            when :connecting
-              # do NOT enqueue requests if proxy is connecting
-              return
-            when :idle
-              req, _ = @pending.first
-              # if the first request after CONNECT is to an https address, it is assumed that
-              # all requests in the queue are not only ALL HTTPS, but they also share the certificate,
-              # and therefore, will share the connection.
-              #
-              if req.uri.scheme == "https"
-                transition(:connecting) 
-                connect_request = ConnectRequest.new(req.uri)
-                if @parameters.authenticated?
-                  connect_request.headers["proxy-authentication"] = "Basic #{@parameters.token_authentication}"
-                end
-                parser.send(connect_request)
-              else
-                transition(:open)
-                super
+          private
+
+          def proxy_connect 
+            req, _ = @pending.first
+            # if the first request after CONNECT is to an https address, it is assumed that
+            # all requests in the queue are not only ALL HTTPS, but they also share the certificate,
+            # and therefore, will share the connection.
+            #
+            if req.uri.scheme == "https"
+              transition(:connecting) 
+              connect_request = ConnectRequest.new(req.uri)
+              if @parameters.authenticated?
+                connect_request.headers["proxy-authentication"] = "Basic #{@parameters.token_authentication}"
               end
+              parser.send(connect_request)
+            else
+              transition(:open)
+              send_pending
             end
           end
 

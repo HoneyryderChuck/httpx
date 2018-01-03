@@ -9,32 +9,19 @@ module HTTPX
       module Socks4 
         GRANTED = 90
         class Socks4ProxyChannel < ProxyChannel
-          def initialize(*args)
-            super(*args)
-            @state = :idle
-          end
-
-          def send_pending
-            return if @pending.empty?
-            case @state
-            when :open
-              # normal flow after connection
-              return super
-            when :connecting
-              return
-            when :idle
-              transition(:connecting)
-              @parser = SocksParser.new(@write_buffer, @options.merge(max_concurrent_requests: 1))
-              @parser.once(:response, &method(:on_connect))
-              @parser.on(:close) { throw(:close, self) }
-              req, _ = @pending.first
-              request_uri = req.uri
-              connect_request = ConnectRequest.new(@parameters, request_uri)
-              parser.send(connect_request)
-            end
-          end
 
           private
+
+          def proxy_connect 
+            transition(:connecting)
+            @parser = SocksParser.new(@write_buffer, @options.merge(max_concurrent_requests: 1))
+            @parser.once(:response, &method(:on_connect))
+            @parser.on(:close) { throw(:close, self) }
+            req, _ = @pending.first
+            request_uri = req.uri
+            connect_request = ConnectRequest.new(@parameters, request_uri)
+            parser.send(connect_request)
+          end
           
           def on_connect(packet)
             version, status, port, ip = packet.unpack("CCnN")

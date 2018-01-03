@@ -80,10 +80,25 @@ module HTTPX
     def initialize(io, parameters, options)
       super(io, options)
       @parameters = parameters
+      @state = :idle
     end
 
     def match?(*)
       true
+    end
+
+    def send_pending
+      return if @pending.empty?
+      case @state
+      when :open
+        # normal flow after connection
+        return super
+      when :connecting
+        # do NOT enqueue requests if proxy is connecting
+        return
+      when :idle
+        proxy_connect
+      end
     end
   end
 
