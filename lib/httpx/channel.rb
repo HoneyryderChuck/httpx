@@ -158,8 +158,8 @@ module HTTPX
     end
     
     def log(&msg)
-      return unless $HTTPX_DEBUG
-      $stderr << (+"" << msg.call << "\n")
+      return unless @options.debug 
+      @options.debug << (+"" << msg.call << "\n")
     end
   end
 end

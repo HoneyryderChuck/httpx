@@ -126,7 +126,7 @@ module HTTPX
       when :closed
         return unless @state == :connected
       end
-      log { "transition: #{nextstate}" }
+      log { nextstate.to_s }
       @state = nextstate
     end
     
