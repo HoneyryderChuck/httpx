@@ -19,8 +19,8 @@ module HTTPX
 
           def proxy_connect 
             transition(:connecting)
-            @parser = SocksParser.new(@write_buffer, @options.merge(max_concurrent_requests: 1))
-            @parser.once(:response, &method(:on_connect))
+            @parser = SocksParser.new(@write_buffer, @options)
+            @parser.once(:packet, &method(:on_packet))
             @parser.on(:close) { throw(:close, self) }
             req, _ = @pending.first
             request_uri = req.uri
@@ -28,7 +28,7 @@ module HTTPX
             parser.send(connect_request)
           end
           
-          def on_connect(packet)
+          def on_packet(packet)
             version, status, port, ip = packet.unpack("CCnN")
             if status == GRANTED
               transition(:open)
@@ -62,21 +62,34 @@ module HTTPX
         Parameters.register("socks4", Socks4ProxyChannel)
         Parameters.register("socks4a", Socks4ProxyChannel)
 
-        class SocksParser < Channel::HTTP1
+        class SocksParser
+          include Callbacks
+
+          def initialize(buffer, options)
+            @buffer = buffer
+            @options = Options.new(options)
+          end
 
           def close
           end
 
-          def handle(request)
-            return if request.done? 
+          def consume(*)
+          end
+
+          def send(request)
             packet = request.to_packet
             log(2) { "SOCKS: #{packet.inspect}" }
             @buffer << packet
-            request.done! 
           end
 
           def <<(packet)
-            emit(:response, packet)
+            emit(:packet, packet)
+          end
+
+          def log(level=@options.debug_level, &msg)
+            return unless @options.debug
+            return unless @options.debug_level >= level 
+            @options.debug << (+"" << msg.call << "\n")
           end
         end
 

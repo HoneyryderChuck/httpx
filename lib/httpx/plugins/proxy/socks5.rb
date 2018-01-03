@@ -22,12 +22,12 @@ module HTTPX
 
           def proxy_connect 
             @parser = SocksParser.new(@write_buffer, @options.merge(max_concurrent_requests: 1))
-            @parser.on(:response, &method(:on_connect))
+            @parser.on(:packet, &method(:on_packet))
             @parser.on(:close) { throw(:close, self) }
             transition(:negotiating)
           end
           
-          def on_connect(packet)
+          def on_packet(packet)
             case @state
             when :negotiating
               version, method = packet.unpack("CC")
@@ -87,21 +87,34 @@ module HTTPX
         end
         Parameters.register("socks5", Socks5ProxyChannel)
 
-        class SocksParser < Channel::HTTP1
+        class SocksParser
+          include Callbacks
+
+          def initialize(buffer, options)
+            @buffer = buffer
+            @options = Options.new(options)
+          end
 
           def close
           end
 
+          def consume(*)
+          end
+
           def send(request)
-            return if request.done? 
             packet = request.to_packet
             log(2) { "SOCKS: #{packet.inspect}" }
             @buffer << packet
-            request.done! 
           end
 
           def <<(packet)
-            emit(:response, packet)
+            emit(:packet, packet)
+          end
+
+          def log(level=@options.debug_level, &msg)
+            return unless @options.debug
+            return unless @options.debug_level >= level 
+            @options.debug << (+"" << msg.call << "\n")
           end
         end
 
@@ -110,15 +123,6 @@ module HTTPX
 
           def initialize(parameters)
             @parameters = parameters
-            @done = false
-          end
-
-          def done?
-            @done
-          end
-
-          def done!
-            @done = true
           end
 
           def to_packet
@@ -133,17 +137,8 @@ module HTTPX
         class PasswordRequest
           def initialize(parameters)
             @parameters = parameters
-            @done = false
           end
-
-          def done?
-            @done
-          end
-
-          def done!
-            @done = true
-          end
-
+          
           def to_packet
             user = @parameters.username
             pass = @parameters.password
@@ -156,15 +151,6 @@ module HTTPX
             @parameters = parameters
             @uri = request_uri
             @host = @uri.host
-            @done = false
-          end
-
-          def done?
-            @done
-          end
-
-          def done!
-            @done = true
           end
 
           def to_packet
