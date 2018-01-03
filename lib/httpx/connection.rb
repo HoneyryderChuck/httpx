@@ -17,14 +17,6 @@ module HTTPX
       !@channels.empty?
     end
 
-    def send(request, **args)
-      channel = bind(request.uri)
-      raise Error, "no channel available" unless channel
-
-      channel.send(request, **args)
-    end
-    alias :<< :send
-
     def next_tick(timeout: @timeout.timeout)
       @selector.select(timeout) do |monitor|
         if task = monitor.value
@@ -56,29 +48,26 @@ module HTTPX
       response
     end
 
-    private
-
-    def on_response(request, response)
-      @responses[request] = response
+    def build_channel(uri)
+      channel = Channel.by(uri, @options, &method(:on_response))
+      register_channel(channel)
+      channel
     end
 
     # opens a channel to the IP reachable through +uri+.
     # Many hostnames are reachable through the same IP, so we try to
     # maximize pipelining by opening as few channels as possible.
     #
-    def bind(uri)
-      uri = URI(uri)
+    def find_channel(uri)
       return @channels.find do |channel|
         channel.match?(uri)
-      end || begin
-        channel = build_channel(uri)
-        register_channel(channel)
-        channel
       end
     end
 
-    def build_channel(uri)
-      Channel.by(uri, @options, &method(:on_response))
+    private
+
+    def on_response(request, response)
+      @responses[request] = response
     end
 
     def register_channel(channel)

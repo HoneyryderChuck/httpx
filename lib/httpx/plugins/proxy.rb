@@ -5,7 +5,7 @@ require "forwardable"
 module HTTPX
   module Plugins
     module Proxy
-      def self.load_dependencies(*)
+      def self.configure(*)
         require "httpx/plugins/proxy/http"
         require "httpx/plugins/proxy/socks"
       end
@@ -31,47 +31,37 @@ module HTTPX
         end
       end
 
-      module ConnectionMethods
-        def bind(uri)
-          proxy = proxy_params(uri)
-          return super unless proxy 
-          return @channels.find do |channel|
-            channel.match?(uri)
-          end || begin
-            channel = build_proxy_channel(proxy)
-            register_channel(channel)
-            channel
-          end
+      module InstanceMethods
+        def with_proxy(*args)
+          branch(default_options.with_proxy(*args))
         end
 
         private
-
+        
         def proxy_params(uri)
-          return @options.proxy if @options.proxy
+          return @default_options.proxy if @default_options.proxy
           uri = URI(uri).find_proxy
           return unless uri
           { uri: uri }
         end
 
+        def find_channel(request)
+          uri = URI(request.uri)
+          proxy = proxy_params(uri)
+          return super unless proxy 
+          @connection.find_channel(proxy) ||
+          build_proxy_channel(proxy) 
+        end
+
         def build_proxy_channel(proxy)
           parameters = Parameters.new(**proxy)
           uri = parameters.uri
-          io = TCP.new(uri.host, uri.port, @options)
+          io = TCP.new(uri.host, uri.port, @default_options)
           proxy_type = Parameters.registry(parameters.type)
-          proxy_type.new(io, parameters, @options, &method(:on_response))
+          channel = proxy_type.new(io, parameters, @default_options, &@connection.method(:on_response))
+          @connection.__send__(:register_channel, channel)
+          channel
         end
-      end
-
-      module InstanceMethods
-        def initialize(*)
-          super
-          @connection.extend(ConnectionMethods)
-        end
-
-        def with_proxy(*args)
-          branch(default_options.with_proxy(*args))
-        end
-
       end
 
       module OptionsMethods

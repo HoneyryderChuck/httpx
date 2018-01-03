@@ -33,6 +33,12 @@ module HTTPX
 
     private
 
+    def find_channel(request)
+      uri = URI(request.uri)
+      @connection.find_channel(uri) ||
+      @connection.build_channel(uri) 
+    end
+
     def __build_reqs(*args, **options)
       case args.size
       when 1
@@ -56,7 +62,10 @@ module HTTPX
     end
 
     def __send_reqs(*requests)
-      requests.each { |request| @connection << request }
+      requests.each do |request|
+        channel = find_channel(request)
+        channel.send(request)
+      end
       responses = []
 
       # guarantee ordered responses
