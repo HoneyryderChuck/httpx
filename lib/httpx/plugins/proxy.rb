@@ -55,7 +55,8 @@ module HTTPX
 
         def build_proxy_channel(proxy)
           parameters = Parameters.new(**proxy)
-          io = TCP.new(parameters.uri, @options)
+          uri = parameters.uri
+          io = TCP.new(uri.host, uri.port, @options)
           proxy_type = Parameters.registry(parameters.type)
           proxy_type.new(io, parameters, @options, &method(:on_response))
         end
@@ -99,7 +100,7 @@ module HTTPX
   class ProxySSL < SSL
     def initialize(tcp, request_uri, options)
       @io = tcp.to_io
-      super(request_uri, options)
+      super(request_uri.host, request_uri.port, options)
       @ip = tcp.ip
       @port = tcp.port
       @state = :connected

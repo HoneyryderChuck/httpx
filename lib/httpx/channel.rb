@@ -40,9 +40,9 @@ module HTTPX
       def by(uri, options, &blk)
         io = case uri.scheme
         when "http"
-          IO.registry("tcp").new(uri, options)
+          IO.registry("tcp").new(uri.host, uri.port, options)
         when "https"
-          IO.registry("ssl").new(uri, options)
+          IO.registry("ssl").new(uri.host, uri.port, options)
         else
           raise Error, "#{uri.scheme}: unrecognized channel"
         end

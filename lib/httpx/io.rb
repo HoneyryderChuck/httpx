@@ -9,13 +9,12 @@ module HTTPX
     
     attr_reader :ip, :port, :uri
 
-    def initialize(uri, options)
+    def initialize(hostname, port, options)
       @state = :idle
       @options = Options.new(options)
       @fallback_protocol = @options.fallback_protocol
-      @uri = uri
-      @ip = TCPSocket.getaddress(@uri.host) 
-      @port = @uri.port
+      @ip = TCPSocket.getaddress(hostname) 
+      @port = port
       if @options.io
         @io = case @options.io
         when Hash
@@ -138,7 +137,7 @@ module HTTPX
   end
 
   class SSL < TCP
-    def initialize(_, options)
+    def initialize(_, _, options)
       @ctx = OpenSSL::SSL::SSLContext.new
       @ctx.set_params(options.ssl)
       super
@@ -168,7 +167,7 @@ module HTTPX
       return if @state == :negotiated ||
                 @state != :connected
       @io = OpenSSL::SSL::SSLSocket.new(@io, @ctx)
-      @io.hostname = @uri.host
+      @io.hostname = @hostname
       @io.sync_close = true
       @io.connect
       transition(:negotiated)
