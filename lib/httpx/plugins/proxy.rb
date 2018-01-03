@@ -5,11 +5,6 @@ require "forwardable"
 module HTTPX
   module Plugins
     module Proxy
-      def self.configure(*)
-        require "httpx/plugins/proxy/http"
-        require "httpx/plugins/proxy/socks"
-      end
-
       class Parameters
         extend Registry
 
@@ -71,6 +66,11 @@ module HTTPX
             Hash[pr]
           end
         end
+      end
+ 
+      def self.configure(klass, *)
+        klass.plugin(:"proxy/http")
+        klass.plugin(:"proxy/socks")
       end
     end
     register_plugin :proxy, Proxy

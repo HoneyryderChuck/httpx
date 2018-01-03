@@ -109,6 +109,7 @@ module HTTPX
         end
       end
     end
+    register_plugin :"proxy/socks", Proxy::Socks
   end
 end
 

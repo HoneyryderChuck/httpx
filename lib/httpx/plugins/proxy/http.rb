@@ -116,5 +116,6 @@ module HTTPX
         Parameters.register("http", HTTPProxyChannel)
       end 
     end
+    register_plugin :"proxy/http", Proxy::HTTP
   end
 end
