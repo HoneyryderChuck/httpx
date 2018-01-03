@@ -72,6 +72,7 @@ module HTTPX
       def self.configure(klass, *)
         klass.plugin(:"proxy/http")
         klass.plugin(:"proxy/socks4")
+        klass.plugin(:"proxy/socks5")
       end
     end
     register_plugin :proxy, Proxy
