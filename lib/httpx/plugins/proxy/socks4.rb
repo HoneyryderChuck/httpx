@@ -14,18 +14,12 @@ module HTTPX
         Error = Class.new(Error)
 
         class Socks4ProxyChannel < ProxyChannel
-
           private
 
           def proxy_connect 
-            transition(:connecting)
             @parser = SocksParser.new(@write_buffer, @options)
             @parser.once(:packet, &method(:on_packet))
-            @parser.on(:close) { throw(:close, self) }
-            req, _ = @pending.first
-            request_uri = req.uri
-            connect_request = ConnectRequest.new(@parameters, request_uri)
-            parser.send(connect_request)
+            transition(:connecting)
           end
           
           def on_packet(packet)
@@ -51,11 +45,14 @@ module HTTPX
             when :idle
             when :connecting
               return unless @state == :idle
+              req, _ = @pending.first
+              request_uri = req.uri
+              @write_buffer << Packet.connect(@parameters, request_uri)
             when :open
               return unless :connecting
-              @parser.close
               @parser = nil
             end
+            log { "#{nextstate.to_s}: #{@write_buffer.to_s.inspect}" }
             @state = nextstate
           end
         end
@@ -70,16 +67,7 @@ module HTTPX
             @options = Options.new(options)
           end
 
-          def close
-          end
-
           def consume(*)
-          end
-
-          def send(request)
-            packet = request.to_packet
-            log(2) { "SOCKS: #{packet.inspect}" }
-            @buffer << packet
           end
 
           def <<(packet)
@@ -93,41 +81,25 @@ module HTTPX
           end
         end
 
-        class ConnectRequest
-          attr_accessor :response
+        module Packet
+          module_function
 
-          def initialize(parameters, request_uri)
-            @parameters = parameters
-            @uri = request_uri
-            @host = @uri.host
-            @socks_version = @parameters.uri.scheme
-            @done = false
-          end
-
-          def done?
-            @done
-          end
-
-          def done!
-            @done = true
-          end
-
-          def to_packet
-            packet = [VERSION, CONNECT, @uri.port].pack("CCn")
+          def connect(parameters, uri) 
+            packet = [VERSION, CONNECT, uri.port].pack("CCn")
             begin
-              ip = IPAddr.new(@host)
+              ip = IPAddr.new(uri.host)
               raise Error, "Socks4 connection to #{ip.to_s} not supported" unless ip.ipv4?
               packet << [ip.to_i].pack("N")
             rescue IPAddr::InvalidAddressError
-              if @socks_version == "socks4"
+              if parameters.uri.scheme == "socks4"
                 # resolv defaults to IPv4, and socks4 doesn't support IPv6 otherwise
-                ip = IPAddr.new(Resolv.getaddress(@host))
+                ip = IPAddr.new(Resolv.getaddress(uri.host))
                 packet << [ip.to_i].pack("N")
               else
-                packet << "\x0\x0\x0\x1" << "\x7\x0" << @host
+                packet << "\x0\x0\x0\x1" << "\x7\x0" << uri.host
               end
             end
-            packet << [@parameters.username].pack("Z*")
+            packet << [parameters.username].pack("Z*")
             packet
           end
         end
