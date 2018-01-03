@@ -73,7 +73,7 @@ module HTTPX
               @io = ProxySSL.new(@io, request_uri, @options)
               throw(:called)
             else
-              pending = @parser.instance_variable_get(:@pending)
+              pending = @parser.pending
               while req = pending.shift
                 @on_response.call(req, response)
               end
@@ -93,11 +93,15 @@ module HTTPX
           end
         end
   
-        class ConnectProxyParser < ProxyParser 
+        class ConnectProxyParser < ProxyParser
+          attr_reader :pending
+
           def headline_uri(request)
             return super unless request.verb == :connect
             uri = request.uri
-            "#{uri.host}:#{uri.port}"
+            tunnel = "#{uri.hostname}:#{uri.port}"
+            log { "establishing HTTP proxy tunnel to #{tunnel}" }
+            tunnel
           end
         end
 
@@ -109,7 +113,7 @@ module HTTPX
           end
 
           def path
-            "#{@uri.host}:#{@uri.port}"
+            "#{@uri.hostname}:#{@uri.port}"
           end
         end
 
