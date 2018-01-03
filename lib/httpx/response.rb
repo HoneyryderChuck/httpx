@@ -156,7 +156,7 @@ module HTTPX
             aux = @buffer
             @buffer = Tempfile.new("palanca", encoding: Encoding::BINARY, mode: File::RDWR)
             aux.rewind
-            IO.copy_stream(aux, @buffer)
+            ::IO.copy_stream(aux, @buffer)
             # TODO: remove this if/when minor ruby is 2.3
             # (this looks like a bug from older versions)
             @buffer.pos = aux.pos #######################
