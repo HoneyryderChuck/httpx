@@ -7,7 +7,7 @@ require "ipaddr"
 module HTTPX
   class TCP
     
-    attr_reader :ip, :port, :uri
+    attr_reader :ip, :port
 
     def initialize(hostname, port, options)
       @state = :idle
@@ -28,6 +28,10 @@ module HTTPX
         end
       end
       @io ||= build_socket 
+    end
+
+    def scheme
+      "http"
     end
 
     def to_io
@@ -142,6 +146,10 @@ module HTTPX
       @ctx.set_params(options.ssl)
       super
       @state = :negotiated if @keep_open
+    end
+
+    def scheme
+      "https"
     end
 
     def protocol

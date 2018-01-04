@@ -69,7 +69,7 @@ module HTTPX
 
       ip == @io.ip &&
       uri.port == @io.port &&
-      uri.scheme == @io.uri.scheme
+      uri.scheme == @io.scheme
     end
 
     def to_io
