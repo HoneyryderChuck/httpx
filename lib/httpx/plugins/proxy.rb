@@ -9,11 +9,10 @@ module HTTPX
       class Parameters
         extend Registry
 
-        attr_reader :uri, :type, :username, :password
+        attr_reader :uri, :username, :password
 
-        def initialize(uri: , username: nil, password: nil, type: nil)
+        def initialize(uri: , username: nil, password: nil)
           @uri = uri.is_a?(URI::Generic) ? uri : URI(uri)
-          @type = type || @uri.scheme
           @username = username || @uri.user
           @password = password || @uri.password
         end
@@ -53,7 +52,7 @@ module HTTPX
           parameters = Parameters.new(**proxy)
           uri = parameters.uri
           io = TCP.new(uri.host, uri.port, @default_options)
-          proxy_type = Parameters.registry(parameters.type)
+          proxy_type = Parameters.registry(parameters.uri.scheme)
           channel = proxy_type.new(io, parameters, @default_options, &@connection.method(:on_response))
           @connection.__send__(:register_channel, channel)
           channel
