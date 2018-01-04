@@ -26,7 +26,7 @@ module HTTPX
     def empty?
       # this means that for every request there's an available
       # partial response, so there are no in-flight requests waiting.
-      @requests.empty? || @requests.any? { |request| request.response.nil? }
+      @requests.empty? || @requests.all? { |request| !request.response.nil? }
     end
 
     def <<(data)
@@ -67,7 +67,7 @@ module HTTPX
     def on_headers_complete(h)
       # Wait for fix: https://github.com/tmm1/http_parser.rb/issues/52
       # callback is called 2 times when chunked
-      request = @requests.last
+      request = @requests.first
       return if request.response
 
       log(2) { "headers received" }
@@ -79,13 +79,14 @@ module HTTPX
       request.response = response
       # parser can't say if it's parsing GET or HEAD,
       # call the completeness callback manually
-      on_message_complete if request.verb == :head
+      on_message_complete if request.verb == :head ||
+                             request.verb == :connect
     end
 
     def on_body(chunk)
       log { "-> DATA: #{chunk.bytesize} bytes..." }
       log(2) { "-> #{chunk.inspect}" }
-      @requests.last.response << chunk
+      @requests.first.response << chunk
     end
 
     def on_message_complete
@@ -114,9 +115,18 @@ module HTTPX
 
     private
 
+    def set_request_headers(request)
+      request.headers["host"] ||= request.authority 
+      request.headers["connection"] ||= "keep-alive"
+    end
+
+    def headline_uri(request)
+      request.path
+    end
+
     def handle(request)
+      set_request_headers(request)
       catch(:buffer_full) do
-        request.headers["connection"] ||= "keep-alive"
         request.transition(:headers)
         join_headers(request) if request.state == :headers
         request.transition(:body)
@@ -126,9 +136,8 @@ module HTTPX
     end
 
     def join_headers(request)
-      request.headers["host"] ||= request.authority 
       buffer = +""
-      buffer << "#{request.verb.to_s.upcase} #{request.path} HTTP/#{@version.join(".")}" << CRLF
+      buffer << "#{request.verb.to_s.upcase} #{headline_uri(request)} HTTP/#{@version.join(".")}" << CRLF
       log { "<- HEADLINE: #{buffer.chomp.inspect}" }
       @buffer << buffer
       buffer.clear

@@ -40,9 +40,9 @@ module HTTPX
       def by(uri, options, &blk)
         io = case uri.scheme
         when "http"
-          IO.registry("tcp").new(uri, options)
+          IO.registry("tcp").new(uri.host, uri.port, options)
         when "https"
-          IO.registry("ssl").new(uri, options)
+          IO.registry("ssl").new(uri.host, uri.port, options)
         else
           raise Error, "#{uri.scheme}: unrecognized channel"
         end
@@ -69,7 +69,7 @@ module HTTPX
 
       ip == @io.ip &&
       uri.port == @io.port &&
-      uri.scheme == @io.uri.scheme
+      uri.scheme == @io.scheme
     end
 
     def to_io
@@ -105,9 +105,11 @@ module HTTPX
 
     def call
       return if closed?
-      dread
-      dwrite
-      parser.consume
+      catch(:called) do
+        dread
+        dwrite
+        parser.consume
+      end
       nil
     end
 
@@ -123,6 +125,7 @@ module HTTPX
         siz = @io.read(wsize, @read_buffer)
         throw(:close, self) unless siz
         return if siz.zero?
+        log { "READ: #{siz} bytes..."}
         parser << @read_buffer
       end
     end
@@ -132,6 +135,7 @@ module HTTPX
         return if @write_buffer.empty?
         siz = @io.write(@write_buffer)
         throw(:close, self) unless siz
+        log { "WRITE: #{siz} bytes..."}
         return if siz.zero?
       end
     end
@@ -154,8 +158,8 @@ module HTTPX
     end
     
     def log(&msg)
-      return unless $HTTPX_DEBUG
-      $stderr << (+"" << msg.call << "\n")
+      return unless @options.debug 
+      @options.debug << (+"" << msg.call << "\n")
     end
   end
 end

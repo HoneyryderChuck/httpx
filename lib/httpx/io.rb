@@ -7,15 +7,14 @@ require "ipaddr"
 module HTTPX
   class TCP
     
-    attr_reader :ip, :port, :uri
+    attr_reader :ip, :port
 
-    def initialize(uri, options)
+    def initialize(hostname, port, options)
+      @state = :idle
       @options = Options.new(options)
       @fallback_protocol = @options.fallback_protocol
-      @connected = false
-      @uri = uri
-      @ip = TCPSocket.getaddress(@uri.host) 
-      @port = @uri.port
+      @ip = TCPSocket.getaddress(hostname) 
+      @port = port
       if @options.io
         @io = case @options.io
         when Hash
@@ -23,9 +22,16 @@ module HTTPX
         else
           @options.io
         end
-        @keep_open = !@io.nil?
+        unless @io.nil?
+          @keep_open = true 
+          @state = :connected
+        end
       end
       @io ||= build_socket 
+    end
+
+    def scheme
+      "http"
     end
 
     def to_io
@@ -37,14 +43,16 @@ module HTTPX
     end
 
     def connect
-      return if @connected || @keep_open
+      return unless closed?
       begin
-        @io = build_socket if @io.closed?
+        if @io.closed?
+          transition(:idle) 
+          @io = build_socket
+        end
         @io.connect_nonblock(Socket.sockaddr_in(@port, @ip))
       rescue Errno::EISCONN
       end
-      @connected = true
-      log { "connected" }
+      transition(:connected)
 
     rescue Errno::EINPROGRESS,
            Errno::EALREADY,
@@ -88,18 +96,25 @@ module HTTPX
     end
 
     def close
-      return if @keep_open || !@connected
-      @io.close
-    ensure
-      @connected = false
+      return if @keep_open || closed?
+      begin
+        @io.close
+      ensure
+        transition(:closed)
+      end
+    end
+
+    def connected?
+      @state == :connected
     end
 
     def closed?
-      !@keep_open && !@connected
+      @state == :idle || @state == :closed
     end
 
     def inspect
-      "#<TCP(fd: #{@io.fileno}): #{@ip}:#{@port}>"
+      id = @io.closed? ? "closed" : @io.fileno
+      "#<TCP(fd: #{id}): #{@ip}:#{@port} (state: #{@state})>"
     end
 
     private
@@ -108,19 +123,35 @@ module HTTPX
       addr = IPAddr.new(@ip)
       Socket.new(addr.family, :STREAM, 0)
     end
+
+    def transition(nextstate)
+      case nextstate
+      when :idle
+      when :connected
+        return unless @state == :idle
+      when :closed
+        return unless @state == :connected
+      end
+      log { nextstate.to_s }
+      @state = nextstate
+    end
     
     def log(&msg)
       return unless @options.debug 
-      @options.debug << (+"#{inspect}: " << msg.call << "\n")
+      @options.debug << (+"#{inspect}: " << msg.call.to_s << "\n")
     end
   end
 
   class SSL < TCP
-    def initialize(_, options)
-      @negotiated = false
+    def initialize(_, _, options)
       @ctx = OpenSSL::SSL::SSLContext.new
       @ctx.set_params(options.ssl)
       super
+      @state = :negotiated if @keep_open
+    end
+
+    def scheme
+      "https"
     end
 
     def protocol
@@ -140,16 +171,16 @@ module HTTPX
     def connect
       super
       if @keep_open
-        @negotiated = true
+        @state = :negotiated
         return
       end
-      return if not @connected
-      return if @negotiated 
+      return if @state == :negotiated ||
+                @state != :connected
       @io = OpenSSL::SSL::SSLSocket.new(@io, @ctx)
-      @io.hostname = @uri.host
+      @io.hostname = @hostname
       @io.sync_close = true
       @io.connect
-      @negotiated = true
+      transition(:negotiated)
     end
 
 
@@ -179,15 +210,24 @@ module HTTPX
       end
     end
 
-    def closed?
-      super || !@negotiated
-    end
-    
     def inspect
-      "#<SSL(fd: #{@io.fileno}): #{@ip}:#{@port}>"
+      id = @io.closed? ? "closed" : @io.to_io.fileno
+      "#<SSL(fd: #{id}): #{@ip}:#{@port} state: #{@state}>"
+    end
+
+    private
+
+    def transition(nextstate)
+      case nextstate
+      when :negotiated
+        return unless @state == :connected
+      when :closed
+        return unless @state == :negotiated ||
+                      @state == :connected
+      end
+      super
     end
   end
-
   module IO
     extend Registry
     register "tcp", TCP

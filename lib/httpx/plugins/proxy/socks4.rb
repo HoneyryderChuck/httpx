@@ -1,0 +1,111 @@
+# frozen_string_literal: true
+
+require "resolv"
+require "ipaddr"
+
+module HTTPX
+  module Plugins
+    module Proxy
+      module Socks4
+        VERSION = 4
+        CONNECT = 1
+        GRANTED = 90
+
+        Error = Class.new(Error)
+
+        class Socks4ProxyChannel < ProxyChannel
+          private
+
+          def proxy_connect 
+            @parser = SocksParser.new(@write_buffer, @options)
+            @parser.once(:packet, &method(:on_packet))
+            transition(:connecting)
+          end
+          
+          def on_packet(packet)
+            version, status, port, ip = packet.unpack("CCnN")
+            if status == GRANTED
+              transition(:open)
+              req, _ = @pending.first
+              request_uri = req.uri
+              if request_uri.scheme == "https"
+                @io = ProxySSL.new(@io, request_uri, @options)
+              end
+              throw(:called)
+            else
+              pending = @parser.instance_variable_get(:@pending)
+              while req = pending.shift
+                @on_response.call(req, response)
+              end
+            end
+          end
+
+          def transition(nextstate)
+            case nextstate
+            when :idle
+            when :connecting
+              return unless @state == :idle
+              req, _ = @pending.first
+              request_uri = req.uri
+              @write_buffer << Packet.connect(@parameters, request_uri)
+            when :open
+              return unless :connecting
+              @parser = nil
+            end
+            log { "#{nextstate.to_s}: #{@write_buffer.to_s.inspect}" }
+            @state = nextstate
+          end
+        end
+        Parameters.register("socks4", Socks4ProxyChannel)
+        Parameters.register("socks4a", Socks4ProxyChannel)
+
+        class SocksParser
+          include Callbacks
+
+          def initialize(buffer, options)
+            @buffer = buffer
+            @options = Options.new(options)
+          end
+
+          def consume(*)
+          end
+
+          def <<(packet)
+            emit(:packet, packet)
+          end
+
+          def log(level=@options.debug_level, &msg)
+            return unless @options.debug
+            return unless @options.debug_level >= level 
+            @options.debug << (+"" << msg.call << "\n")
+          end
+        end
+
+        module Packet
+          module_function
+
+          def connect(parameters, uri) 
+            packet = [VERSION, CONNECT, uri.port].pack("CCn")
+            begin
+              ip = IPAddr.new(uri.host)
+              raise Error, "Socks4 connection to #{ip.to_s} not supported" unless ip.ipv4?
+              packet << [ip.to_i].pack("N")
+            rescue IPAddr::InvalidAddressError
+              if parameters.uri.scheme == "socks4"
+                # resolv defaults to IPv4, and socks4 doesn't support IPv6 otherwise
+                ip = IPAddr.new(Resolv.getaddress(uri.host))
+                packet << [ip.to_i].pack("N")
+              else
+                packet << "\x0\x0\x0\x1" << "\x7\x0" << uri.host
+              end
+            end
+            packet << [parameters.username].pack("Z*")
+            packet
+          end
+        end
+      end
+    end
+    register_plugin :"proxy/socks4", Proxy::Socks4
+  end
+end
+
