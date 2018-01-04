@@ -30,9 +30,7 @@ module HTTPX
             case @state
             when :negotiating
               version, method = packet.unpack("CC")
-              if version != 5
-                raise Error, "invalid SOCKS version (#{version})" 
-              end
+              check_version(version)
               case method
               when PASSWD
                 transition(:authenticating)
@@ -44,15 +42,12 @@ module HTTPX
               end
             when :authenticating
               version, status = packet.unpack("CC")
-              if version != 5
-                raise Error, "invalid SOCKS version (#{version})" 
-              end
-              if status != SUCCESS
-                raise Error, "could not authorize"
-              end
+              check_version(version)
+              raise Error, "could not authorize" if status != SUCCESS
               transition(:connecting)
             when :connecting
               version, reply, = packet.unpack("CC")
+              check_version(version)
               raise Error, "Illegal response type" unless reply == SUCCESS
               transition(:open)
               req, _ = @pending.first
@@ -84,6 +79,10 @@ module HTTPX
             end
             log { "#{nextstate.to_s}: #{@write_buffer.to_s.inspect}" }
             @state = nextstate
+          end
+
+          def check_version(version)
+            raise Error, "invalid SOCKS version (#{version})" if version != 5
           end
         end
         Parameters.register("socks5", Socks5ProxyChannel)
