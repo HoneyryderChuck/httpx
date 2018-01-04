@@ -45,7 +45,10 @@ module HTTPX
     def connect
       return unless closed?
       begin
-        @io = build_socket if @io.closed?
+        if @io.closed?
+          transition(:idle) 
+          @io = build_socket
+        end
         @io.connect_nonblock(Socket.sockaddr_in(@port, @ip))
       rescue Errno::EISCONN
       end
@@ -124,7 +127,6 @@ module HTTPX
     def transition(nextstate)
       case nextstate
       when :idle
-        return
       when :connected
         return unless @state == :idle
       when :closed
