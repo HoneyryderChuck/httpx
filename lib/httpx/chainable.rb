@@ -59,7 +59,7 @@ module HTTPX
     end
 
     def plugin(*plugins)
-      Class.new(Client).plugins(plugins).new(default_options)
+      Class.new(Client).plugins(plugins).new
     end
     alias :plugins :plugin
 
