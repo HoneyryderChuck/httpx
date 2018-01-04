@@ -4,6 +4,7 @@ require "httpx/version"
 
 require "httpx/errors"
 require "httpx/callbacks"
+require "httpx/loggable"
 require "httpx/registry"
 require "httpx/transcoder"
 require "httpx/options"

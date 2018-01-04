@@ -73,12 +73,6 @@ module HTTPX
           def <<(packet)
             emit(:packet, packet)
           end
-
-          def log(level=@options.debug_level, &msg)
-            return unless @options.debug
-            return unless @options.debug_level >= level 
-            @options.debug << (+"" << msg.call << "\n")
-          end
         end
 
         module Packet

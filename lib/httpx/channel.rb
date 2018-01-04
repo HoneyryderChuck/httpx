@@ -31,6 +31,8 @@ module HTTPX
   class Channel
     extend Forwardable
     include Registry
+    include Loggable
+
     require "httpx/channel/http2"
     require "httpx/channel/http1"
 
@@ -155,11 +157,6 @@ module HTTPX
         @parser.on(:close) { throw(:close, self) }
         @parser
       end
-    end
-    
-    def log(&msg)
-      return unless @options.debug 
-      @options.debug << (+"" << msg.call << "\n")
     end
   end
 end

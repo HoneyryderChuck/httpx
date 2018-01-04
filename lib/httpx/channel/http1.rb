@@ -5,6 +5,7 @@ require "http_parser"
 module HTTPX
   class Channel::HTTP1
     include Callbacks
+    include Loggable
 
     CRLF = "\r\n"
 
@@ -163,12 +164,6 @@ module HTTPX
 
     def capitalized(field)
       field.to_s.split("-").map(&:capitalize).join("-")
-    end
-
-    def log(level=@options.debug_level, &msg)
-      return unless @options.debug
-      return unless @options.debug_level >= level 
-      @options.debug << (+"" << msg.call << "\n")
     end
   end
   Channel.register "http/1.1", Channel::HTTP1

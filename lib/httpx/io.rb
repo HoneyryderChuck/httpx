@@ -6,7 +6,8 @@ require "ipaddr"
 
 module HTTPX
   class TCP
-    
+    include Loggable
+
     attr_reader :ip, :port
 
     def initialize(hostname, port, options)
@@ -132,13 +133,8 @@ module HTTPX
       when :closed
         return unless @state == :connected
       end
-      log { nextstate.to_s }
+      log(1, "#{inspect}: ") { nextstate.to_s }
       @state = nextstate
-    end
-    
-    def log(&msg)
-      return unless @options.debug 
-      @options.debug << (+"#{inspect}: " << msg.call.to_s << "\n")
     end
   end
 
