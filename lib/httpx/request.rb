@@ -91,6 +91,13 @@ module HTTPX
     end
 
     class Body
+      class << self
+        def new(*, options)
+          return options.body if options.body.is_a?(self)
+          super
+        end
+      end
+
       def initialize(headers, options)
         @headers = headers
         @body = case

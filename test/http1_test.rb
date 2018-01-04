@@ -15,7 +15,7 @@ class HTTP1Test < HTTPTest
 
   include Plugins::Proxy
   include Plugins::Authentication
-
+  include Plugins::FollowRedirects  
   private
 
   def origin

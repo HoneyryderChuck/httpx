@@ -19,6 +19,8 @@ module HTTPX
     
     def_delegator :@body, :close
 
+    def_delegator :@request, :uri
+
     def initialize(request, status, headers, options = {})
       @options = Options.new(options) 
       @request = request

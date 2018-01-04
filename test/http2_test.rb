@@ -12,6 +12,8 @@ class HTTP2Test < HTTPTest
   include IO 
  
   include Plugins::Proxy
+  include Plugins::Authentication
+  include Plugins::FollowRedirects
 
   private
 
