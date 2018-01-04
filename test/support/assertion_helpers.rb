@@ -12,7 +12,11 @@ module ResponseHelpers
       def verify_#{meth}(#{meth}s, key, expect)
         assert #{meth}s.key?(key), "#{meth}s don't contain the given key (" + key + ")"
         value = #{meth}s[key]
-        assert value.start_with?(expect), "#{meth} assertion failed: " + key + "=" + value + " (expected: " + expect + ")"
+        if value.respond_to?(:start_with?)
+          assert value.start_with?(expect), "#{meth} assertion failed: " + key + "=" + value + " (expected: " + expect + ")"
+        else
+          assert value == expect, "#{meth} assertion failed: " + key + "=" + value.to_s + " (expected: " + expect.to_s + ")"
+        end
       end
     DEFINE
   end

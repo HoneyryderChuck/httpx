@@ -14,6 +14,7 @@ class HTTP1Test < HTTPTest
   include IO 
 
   include Plugins::Proxy
+  include Plugins::Authentication
 
   private
 
