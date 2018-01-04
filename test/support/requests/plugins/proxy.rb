@@ -5,11 +5,7 @@ module Requests
     module Proxy
       # https://www.sslproxies.org
       PROXIES = %W[
-        18.216.86.189:3128
-        151.80.140.233:54566
-        45.6.216.66:3128
-        137.74.168.174:8080
-        154.66.122.130:53281
+        185.82.212.95:8080
       ]
 
       def test_plugin_proxy_anonymous
