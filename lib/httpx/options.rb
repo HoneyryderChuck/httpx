@@ -118,6 +118,12 @@ module HTTPX
 
     def dup
       dupped = super
+      dupped.headers             = headers.dup 
+      dupped.ssl                 = ssl.dup 
+      dupped.request_class       = request_class.dup 
+      dupped.response_class      = response_class.dup
+      dupped.headers_class       = headers_class.dup
+      dupped.response_body_class = response_body_class.dup
       yield(dupped) if block_given?
       dupped
     end

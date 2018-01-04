@@ -15,6 +15,7 @@ class HTTP2Test < HTTPTest
   include Plugins::Authentication
   include Plugins::FollowRedirects
   include Plugins::Cookies
+  include Plugins::Compression
 
   private
 
