@@ -90,6 +90,10 @@ module HTTPX
       nil
     end
 
+    def inspect
+      "#<Request #{@verb.to_s.upcase} #{path} @headers=#{@headers.to_hash} @body=#{@body}>"
+    end
+
     class Body
       class << self
         def new(*, options)

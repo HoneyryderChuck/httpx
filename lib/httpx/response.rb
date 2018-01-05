@@ -47,6 +47,10 @@ module HTTPX
       ContentType.parse(@headers["content-type"])
     end
 
+    def inspect
+      "#<Response @status=#{@status} @headers=#{@headers} @body=#{@body}>"
+    end
+
     class Body
       def initialize(response, threshold_size: , window_size: 1 << 14)
         @response = response

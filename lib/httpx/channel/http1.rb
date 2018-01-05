@@ -144,7 +144,7 @@ module HTTPX
       buffer.clear
       request.headers.each do |field, value|
         buffer << "#{capitalized(field)}: #{value}" << CRLF 
-        log { "<- HEADER: #{buffer.chomp.inspect}" }
+        log { "<- HEADER: #{buffer.chomp}" }
         @buffer << buffer
         buffer.clear
       end
