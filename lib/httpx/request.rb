@@ -165,7 +165,7 @@ module HTTPX
     def transition(nextstate)
       case nextstate
       when :idle
-
+        @response = nil
       when :headers
         return unless @state == :idle
       when :body
