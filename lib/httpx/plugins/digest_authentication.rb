@@ -17,12 +17,9 @@ module HTTPX
         end
         alias :digest_auth :digest_authentication
 
-        def request(*args, **options)
+        def request(*args, keep_open: @keep_open, **options)
           return super unless @_digest
           begin
-            #keep_open = @keep_open
-            #@keep_open = true
-
             requests = __build_reqs(*args, **options)
             probe_request = requests.first
             prev_response = __send_reqs(*probe_request).first
@@ -44,7 +41,7 @@ module HTTPX
             return responses.first if responses.size == 1 
             responses
           ensure
-            #@keep_open = keep_open
+            close unless keep_open
           end
         end
       end
