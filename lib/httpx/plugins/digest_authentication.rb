@@ -72,6 +72,7 @@ module HTTPX
           # TODO: assert if auth-type is Digest
           auth_info = www[/^(\w+) (.*)/, 2]
 
+          uri = request.path
 
           params = Hash[ auth_info.scan(/(\w+)="(.*?)"/) ]
 
@@ -112,43 +113,24 @@ module HTTPX
           end
 
           ha1 = algorithm.hexdigest(a1)
-          ha2 = algorithm.hexdigest("#{method}:#{request.path}")
-
+          ha2 = algorithm.hexdigest("#{method}:#{uri}")
           request_digest = [ha1, nonce]
           request_digest.push(nc, cnonce, qop) if qop
           request_digest << ha2
           request_digest = request_digest.join(":")
 
           header = [
-            "username=\"#{user}\"",
-            "response=\"#{algorithm.hexdigest(request_digest)}\"",
-            "uri=\"#{request.path}\"",
-            "nonce=\"#{nonce}\""
+            %[username="#{user}"],
+            %[nonce="#{nonce}"],
+            %[uri="#{uri}"],
+            %[response="#{algorithm.hexdigest(request_digest)}"]
           ]
-          header << "realm=\"#{params["realm"]}\"" if params.key?("realm")
-          header << "opaque=\"#{params["opaque"]}\"" if params.key?("opaque")
-          header << "algorithm=#{params["algorithm"]}" if params.key?("algorithm")
-          header << "cnonce=#{cnonce}" if cnonce
-          header << "nc=#{nc}"
-          header << "qop=#{qop}" if qop
-  #          
-  #          if qop.nil? then
-  #          elsif iis then
-  #            "qop=\"#{qop}\""
-  #          else
-  #            "qop=#{qop}"
-  #          end,
-  #          if qop then
-  #            [
-  #              "nc=#{"%08x" % nonce}",
-  #              "cnonce=\"#{cnonce}\"",
-  #            ]
-  #          end,
-  #          if params.key?("opaque") then
-  #            "opaque=\"#{params["opaque"]}\""
-  #          end
-  #        ].compact
-
+          header << %[realm="#{params["realm"]}"] if params.key?("realm")
+          header << %[algorithm=#{params["algorithm"]}"] if params.key?("algorithm")
+          header << %[opaque="#{params["opaque"]}"] if params.key?("opaque")
+          header << %[cnonce="#{cnonce}"] if cnonce
+          header << %[nc=#{nc}]
+          header << %[qop=#{qop}] if qop
           header.join ", "
         end
 
