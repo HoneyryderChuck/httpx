@@ -55,7 +55,7 @@ module Requests
       end
 
       def socks5_proxy_uri
-        "socks5://37.59.56.88:13372"
+        "socks5://118.201.230.192:58303"
       end
     end
   end
