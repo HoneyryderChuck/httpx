@@ -12,6 +12,7 @@ module HTTPX
     def initialize(buffer, options)
       @options = Options.new(options)
       @max_concurrent_requests = @options.max_concurrent_requests
+      @retries = options.max_retries
       @parser = HTTP::Parser.new(self)
       @parser.header_value_type = :arrays
       @buffer = buffer
@@ -34,7 +35,7 @@ module HTTPX
       @parser << data
     end
 
-    def send(request, **)
+    def send(request, retries: @retries, **)
       if @requests.size >= @max_concurrent_requests
         @pending << request
         return
