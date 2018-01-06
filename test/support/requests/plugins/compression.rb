@@ -59,6 +59,13 @@ module Requests
         assert body["data"].bytesize < 8012, "body hasn't been compressed"
       end
 
+      def test_plugin_compression_brotli
+        client = HTTPX.plugin(:"compression/brotli")
+        response = client.get("http://httpbin.org/brotli")
+        verify_status(response.status, 200)
+        body = json_body(response)
+        assert body["brotli"], "response should be deflated"
+      end
     end
   end
 end
