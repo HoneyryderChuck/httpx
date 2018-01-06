@@ -9,7 +9,7 @@ module HTTPX
   class Response
     extend Forwardable
 
-    attr_reader :status, :headers, :body
+    attr_reader :status, :headers, :body, :version
 
     def_delegator :@body, :to_s 
     
@@ -21,8 +21,9 @@ module HTTPX
 
     def_delegator :@request, :uri
 
-    def initialize(request, status, headers, options = {})
-      @options = Options.new(options) 
+    def initialize(request, status, version, headers, options = {})
+      @options = Options.new(options)
+      @version = version
       @request = request
       @status = Integer(status)
       @headers = @options.headers_class.new(headers)

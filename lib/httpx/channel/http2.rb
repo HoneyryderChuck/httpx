@@ -59,7 +59,7 @@ module HTTPX
           end
           _, status = h.shift
           headers = @options.headers_class.new(h)
-          response = @options.response_class.new(request, status, headers, @options)
+          response = @options.response_class.new(request, status, "2.0", headers, @options)
           request.response = response
           @streams[request] = stream 
         end
