@@ -18,6 +18,7 @@ class HTTP1Test < HTTPTest
   include Plugins::FollowRedirects  
   include Plugins::Cookies
   include Plugins::Compression
+  include Plugins::H2C
 
   private
 
