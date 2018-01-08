@@ -42,6 +42,7 @@ module HTTPX
         :debug                    => ENV.key?("HTTPX_DEBUG") ? $stderr : nil,
         :debug_level              => (ENV["HTTPX_DEBUG"] || 1).to_i,
         :ssl                      => { alpn_protocols: %w[h2 http/1.1] },
+        :http2_settings           => { settings_enable_push: 0 },
         :fallback_protocol        => "http/1.1", 
         :timeout                  => Timeout.by(:per_operation),
         :headers                  => {},
@@ -84,7 +85,7 @@ module HTTPX
 
     %w[
       params form json body
-      follow ssl max_retries
+      follow ssl http2_settings max_retries
       request_class response_class headers_class response_body_class
       io fallback_protocol debug debug_level
     ].each do |method_name|
@@ -97,9 +98,7 @@ module HTTPX
 
       merged = h1.merge(h2) do |k, v1, v2|
         case k
-        when :headers
-          v1.merge(v2)
-        when :ssl
+        when :headers, :ssl, :http2_settings
           v1.merge(v2)
         else
           v2

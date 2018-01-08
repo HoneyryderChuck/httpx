@@ -202,6 +202,14 @@ module HTTPX
       stream.refuse
       # TODO: policy for handling promises
     end
+
+    def method_missing(meth, *args, &blk)
+      if @connection.respond_to?(meth)
+        @connection.__send__(meth, *args, &blk)
+      else
+        super
+      end
+    end
   end
   Channel.register "h2", Channel::HTTP2
 end
