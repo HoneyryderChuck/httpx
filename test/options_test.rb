@@ -67,6 +67,7 @@ class OptionsSpec < Minitest::Test
       :form               => {:bar => "bar"},
       :timeout            => Timeout::PerOperation.new,
       :ssl                => {:foo => "bar", :alpn_protocols => %w[h2 http/1.1] },
+      :http2_settings     => { :settings_enable_push => 0 },
       :fallback_protocol  => "http/1.1",
       :headers            => {"Foo" => "foo", "Accept" => "xml", "Bar" => "bar"},
       :max_concurrent_requests => 100,

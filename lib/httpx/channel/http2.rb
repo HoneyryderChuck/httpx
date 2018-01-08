@@ -109,7 +109,7 @@ module HTTPX
     end
 
     def init_connection
-      @connection = HTTP2::Client.new(settings_enable_push: 0)
+      @connection = HTTP2::Client.new(@options.http2_settings)
       @connection.on(:frame, &method(:on_frame))
       @connection.on(:frame_sent, &method(:on_frame_sent))
       @connection.on(:frame_received, &method(:on_frame_received))
