@@ -19,10 +19,12 @@ module HTTPX
       @version = [1,1]
       @pending = []  
       @requests = []
+      @has_response = false
     end
 
     def close 
-      @parser.reset! 
+      @parser.reset!
+      @has_response = false 
     end
 
     def empty?
@@ -33,6 +35,7 @@ module HTTPX
 
     def <<(data)
       @parser << data
+      dispatch if @has_response
     end
 
     def send(request, retries: @retries, **)
@@ -84,8 +87,8 @@ module HTTPX
       request.response = response
       # parser can't say if it's parsing GET or HEAD,
       # call the completeness callback manually
-      on_message_complete if request.verb == :head ||
-                             request.verb == :connect
+      dispatch if request.verb == :head ||
+                  request.verb == :connect
     end
 
     def on_body(chunk)
@@ -96,7 +99,10 @@ module HTTPX
 
     def on_message_complete
       log(2) { "parsing complete" }
-      @parser.reset!
+      @has_response = true
+    end
+
+    def dispatch
       request = @requests.first
       return handle(request) if request.expects?
 
@@ -104,6 +110,11 @@ module HTTPX
       response = request.response
       emit(:response, request, response)
 
+      if @parser.upgrade?
+        response << @parser.upgrade_data 
+        throw(:called)
+      end
+      close
       send(@pending.shift) unless @pending.empty?
       if response.headers["connection"] == "close"
         unless @requests.empty?
@@ -130,6 +141,7 @@ module HTTPX
     end
 
     def handle(request)
+      @has_response = false
       set_request_headers(request)
       catch(:buffer_full) do
         request.transition(:headers)
