@@ -178,8 +178,13 @@ module HTTPX
       end
     end
 
+    UPCASED = {
+      "www-authenticate" => "WWW-Authenticate",
+      "http2-settings" => "HTTP2-Settings"
+    }
+
     def capitalized(field)
-      field.to_s.split("-").map(&:capitalize).join("-")
+      UPCASED[field] || field.to_s.split("-").map(&:capitalize).join("-")
     end
   end
   Channel.register "http/1.1", Channel::HTTP1

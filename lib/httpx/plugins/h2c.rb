@@ -16,6 +16,8 @@ module HTTPX
             upgrade_request = requests.first
             return super unless valid_h2c_upgrade_request?(upgrade_request)
             upgrade_request.headers["upgrade"] = "h2c"
+            upgrade_request.headers.add("connection", "upgrade")
+            upgrade_request.headers.add("connection", "http2-settings")
             upgrade_request.headers["http2-settings"] = FrameBuilder.settings_value(@default_options.http2_settings)
             # TODO: validate!
             upgrade_response = __send_reqs(*upgrade_request).first
