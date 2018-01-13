@@ -5,7 +5,7 @@ module HTTPX
     module Compression
       module Brotli 
 
-        def self_load_dependencies(klass, *)
+        def self.load_dependencies(klass, *)
           klass.plugin(:compression)
           require "brotli"
         end
@@ -14,15 +14,22 @@ module HTTPX
           Transcoder.register "br", BrotliTranscoder
         end
 
+        module ResponseBodyMethods
+          def write(chunk)
+            chunk = decompress(chunk)
+            super(chunk)
+          end
+        end
+
         module BrotliTranscoder
           module_function
           
           def encode(payload)
-            Brotli.encode(payload)
+            ::Brotli.deflate(payload)
           end
           
           def decode(io)
-            Brotli.decode(io)
+            ::Brotli.inflate(io)
           end
         end
 
