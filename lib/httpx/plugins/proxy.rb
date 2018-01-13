@@ -34,7 +34,7 @@ module HTTPX
         private
         
         def proxy_params(uri)
-          return @default_options.proxy if @default_options.proxy
+          return @options.proxy if @options.proxy
           uri = URI(uri).find_proxy
           return unless uri
           { uri: uri }
@@ -44,16 +44,19 @@ module HTTPX
           uri = URI(request.uri)
           proxy = proxy_params(uri)
           return super unless proxy 
-          @connection.find_channel(proxy) ||
-          build_proxy_channel(proxy) 
+          @connection.find_channel(proxy) || begin
+            channel = build_proxy_channel(proxy) 
+            set_channel_callbacks(channel)
+            channel
+          end
         end
 
         def build_proxy_channel(proxy)
           parameters = Parameters.new(**proxy)
           uri = parameters.uri
-          io = TCP.new(uri.host, uri.port, @default_options)
+          io = TCP.new(uri.host, uri.port, @options)
           proxy_type = Parameters.registry(parameters.uri.scheme)
-          channel = proxy_type.new(io, parameters, @default_options, &method(:on_response))
+          channel = proxy_type.new(io, parameters, @options, &method(:on_response))
           @connection.__send__(:register_channel, channel)
           channel
         end

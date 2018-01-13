@@ -2,11 +2,12 @@
 
 module HTTPX
   class Client
+    include Loggable
     include Chainable
 
     def initialize(options = {})
-      @default_options = self.class.default_options.merge(options) 
-      @connection = Connection.new(@default_options)
+      @options = self.class.default_options.merge(options) 
+      @connection = Connection.new(@options)
       @responses = {}
       if block_given?
         begin
@@ -95,8 +96,8 @@ module HTTPX
     end
 
     def __build_req(verb, uri, options = {})
-      rklass = @default_options.request_class
-      rklass.new(verb, uri, @default_options.merge(options))
+      rklass = @options.request_class
+      rklass.new(verb, uri, @options.merge(options))
     end
 
     @default_options = Options.new

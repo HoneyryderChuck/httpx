@@ -36,7 +36,7 @@ module HTTPX
     private
 
     def default_options
-      @default_options || Options.new
+      @options || Options.new
     end
 
     # :nodoc:
