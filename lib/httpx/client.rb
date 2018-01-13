@@ -99,12 +99,20 @@ module HTTPX
 
       # guarantee ordered responses
       loop do
-        request = requests.shift
-        @connection.next_tick until response = fetch_response(request)
+        begin
+          request = requests.first
+          @connection.next_tick until response = fetch_response(request)
 
-        responses << response
+          responses << response
+          requests.shift
 
-        break if requests.empty?
+          break if requests.empty?
+        rescue TimeoutError => e
+          while requests.shift
+            responses << ErrorResponse.new(e.message, 0)
+          end
+          break
+        end
       end
       requests.size == 1 ? responses.first : responses
     end

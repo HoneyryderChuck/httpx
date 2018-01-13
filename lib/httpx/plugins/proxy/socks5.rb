@@ -28,7 +28,7 @@ module HTTPX
           
           def on_packet(packet)
             case @state
-            when :negotiating
+            when :connecting
               version, method = packet.unpack("CC")
               check_version(version)
               case method
@@ -36,53 +36,62 @@ module HTTPX
                 transition(:authenticating)
                 return
               when NONE
-                raise Error, "no supported authorization methods"
+                on_error_response("no supported authorization methods")
               else
-                transition(:connecting)
+                transition(:negotiating)
               end
             when :authenticating
               version, status = packet.unpack("CC")
               check_version(version)
-              raise Error, "could not authorize" if status != SUCCESS
-              transition(:connecting)
-            when :connecting
+              return transition(:negotiating) if status == SUCCESS
+              on_error_response("socks authentication error: #{status}")
+            when :negotiating
               version, reply, = packet.unpack("CC")
               check_version(version)
-              raise Error, "Illegal response type" unless reply == SUCCESS
-              transition(:open)
+              return on_error_response("socks5 negotiation error: #{reply}") unless reply == SUCCESS
               req, _ = @pending.first
               request_uri = req.uri
               if request_uri.scheme == "https"
                 @io = ProxySSL.new(@io, request_uri, @options)
               end
+              transition(:open)
               throw(:called)
             end
           end
 
           def transition(nextstate)
             case nextstate
-            when :idle
-            when :negotiating
-              return unless @state == :idle
-              @write_buffer << Packet.negotiate(@parameters)
-            when :authenticating
-              return unless @state == :negotiating
-              @write_buffer << Packet.authenticate(@parameters)
             when :connecting
-              return unless @state == :negotiating || @state == :authenticating
+              return unless @state == :idle
+              @io.connect
+              return if @io.closed?
+              @write_buffer << Packet.negotiate(@parameters)
+              proxy_connect
+            when :authenticating
+              return unless @state == :connecting
+              @write_buffer << Packet.authenticate(@parameters)
+            when :negotiating
+              return unless @state == :connecting || @state == :authenticating
               req, _ = @pending.first
               request_uri = req.uri
               @write_buffer << Packet.connect(request_uri)
             when :open
-              return unless :connecting
+              return unless @state == :negotiating
               @parser = nil
             end
             log { "#{nextstate.to_s}: #{@write_buffer.to_s.inspect}" }
-            @state = nextstate
+            super
           end
 
           def check_version(version)
             raise Error, "invalid SOCKS version (#{version})" if version != 5
+          end
+
+          def on_error_response(error)
+            response = ErrorResponse.new(error, 0) 
+            while (req, _ = @pending.shift)
+              @on_response.call(req, response)
+            end
           end
         end
         Parameters.register("socks5", Socks5ProxyChannel)
@@ -99,6 +108,10 @@ module HTTPX
           end
 
           def consume(*)
+          end
+
+          def empty?
+            true
           end
 
           def <<(packet)

@@ -5,7 +5,7 @@ module HTTPX
     module Compression
       module GZIP
 
-        def self_load_dependencies(*)
+        def self.load_dependencies(*)
           require "zlib"
         end
 

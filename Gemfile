@@ -6,6 +6,7 @@ gemspec
 gem "rake"
 
 platform :mri do
+  gem "brotli", require: false
 	gem "pry-byebug", require: false
 end
 # gem "guard-rspec", :require => false
