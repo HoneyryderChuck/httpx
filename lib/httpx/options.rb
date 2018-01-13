@@ -44,7 +44,7 @@ module HTTPX
         :ssl                      => { alpn_protocols: %w[h2 http/1.1] },
         :http2_settings           => { settings_enable_push: 0 },
         :fallback_protocol        => "http/1.1", 
-        :timeout                  => Timeout.by(:per_operation),
+        :timeout                  => Timeout.new,
         :headers                  => {},
         :max_concurrent_requests  => MAX_CONCURRENT_REQUESTS,
         :max_retries              => MAX_RETRIES,
@@ -65,8 +65,8 @@ module HTTPX
       self.headers.merge(headers)
     end
 
-    def_option(:timeout) do |type, opts|
-      self.timeout = Timeout.by(type, opts)
+    def_option(:timeout) do |opts|
+      self.timeout = Timeout.new(opts)
     end
 
     def_option(:max_concurrent_requests) do |num|
@@ -98,7 +98,7 @@ module HTTPX
 
       merged = h1.merge(h2) do |k, v1, v2|
         case k
-        when :headers, :ssl, :http2_settings
+        when :headers, :ssl, :http2_settings, :timeout
           v1.merge(v2)
         else
           v2

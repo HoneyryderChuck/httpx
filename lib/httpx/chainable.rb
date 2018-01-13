@@ -42,8 +42,8 @@ module HTTPX
       branch(**options).request(verb, uri)
     end
 
-    def timeout(klass, **options)
-      branch(timeout: Timeout.by(klass, **options))
+    def timeout(**args)
+      branch(timeout: args)
     end
 
     def headers(headers)
