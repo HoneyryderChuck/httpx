@@ -10,6 +10,7 @@ class HTTP2Test < HTTPTest
   include Headers 
   include ResponseBody 
   include IO 
+  include Timeouts
  
   include Plugins::Proxy
   include Plugins::Authentication

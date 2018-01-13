@@ -17,7 +17,6 @@ module HTTPX
             # and therefore, will share the connection.
             #
             if req.uri.scheme == "https"
-              transition(:connecting) 
               connect_request = ConnectRequest.new(req.uri)
               if @parameters.authenticated?
                 connect_request.headers["proxy-authentication"] = "Basic #{@parameters.token_authentication}"
@@ -25,18 +24,20 @@ module HTTPX
               parser.send(connect_request)
             else
               transition(:open)
-              send_pending
             end
           end
 
           def transition(nextstate)
             case nextstate
-            when :idle
             when :connecting
               return unless @state == :idle
+              @io.connect
+              return if @io.closed?
               @parser = ConnectProxyParser.new(@write_buffer, @options.merge(max_concurrent_requests: 1))
               @parser.once(:response, &method(:on_connect))
               @parser.on(:close) { throw(:close, self) }
+              proxy_connect
+              return if @state == :open
             when :open
               case @state
               when :connecting
@@ -46,19 +47,17 @@ module HTTPX
                 @parser = ProxyParser.new(@write_buffer, @options)
                 @parser.inherit_callbacks(self)
                 @parser.on(:close) { throw(:close, self) }
-              else
-                return
               end
             end
-            @state = nextstate
+            super
           end
 
           def on_connect(request, response)
             if response.status == 200
-              transition(:open)
               req, _ = @pending.first
               request_uri = req.uri
               @io = ProxySSL.new(@io, request_uri, @options)
+              transition(:open)
               throw(:called)
             else
               pending = @parser.pending

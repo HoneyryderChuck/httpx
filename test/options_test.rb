@@ -53,7 +53,6 @@ class OptionsSpec < Minitest::Test
       :ssl        => {:foo => "bar"},
     )
 
-
     assert foo.merge(bar).to_hash == {
       :io                 => ENV.key?("HTTPX_DEBUG") ? $stderr : nil,
       :debug              => nil,
@@ -65,7 +64,7 @@ class OptionsSpec < Minitest::Test
       :window_size        => 16_384,
       :body_threshold_size => 114_688,
       :form               => {:bar => "bar"},
-      :timeout            => Timeout::PerOperation.new,
+      :timeout            => Timeout.new,
       :ssl                => {:foo => "bar", :alpn_protocols => %w[h2 http/1.1] },
       :http2_settings     => { :settings_enable_push => 0 },
       :fallback_protocol  => "http/1.1",
