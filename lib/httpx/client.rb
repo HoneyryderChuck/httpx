@@ -39,7 +39,7 @@ module HTTPX
       @responses[request] = response
     end
 
-    def on_promise(stream)
+    def on_promise(_, stream)
       log(2, "#{stream.id}: ") { "refusing stream!" }
       stream.refuse
       # TODO: policy for handling promises
