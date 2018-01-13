@@ -2,11 +2,12 @@
 
 module HTTPX
   class Client
+    include Loggable
     include Chainable
 
     def initialize(options = {})
-      @default_options = self.class.default_options.merge(options) 
-      @connection = Connection.new(@default_options)
+      @options = self.class.default_options.merge(options) 
+      @connection = Connection.new(@options)
       @responses = {}
       if block_given?
         begin
@@ -38,6 +39,12 @@ module HTTPX
       @responses[request] = response
     end
 
+    def on_promise(_, stream)
+      log(2, "#{stream.id}: ") { "refusing stream!" }
+      stream.refuse
+      # TODO: policy for handling promises
+    end
+
     def fetch_response(request)
       response = @responses.delete(request)
       if response.is_a?(ErrorResponse) && response.retryable?
@@ -50,26 +57,33 @@ module HTTPX
 
     def find_channel(request)
       uri = URI(request.uri)
-      @connection.find_channel(uri) ||
-      @connection.build_channel(uri, &method(:on_response)) 
+      @connection.find_channel(uri) || begin
+        channel = @connection.build_channel(uri)
+        set_channel_callbacks(channel)
+        channel
+      end
+    end
+
+    def set_channel_callbacks(channel)
+      channel.on(:response, &method(:on_response))
+      channel.on(:promise, &method(:on_promise))
     end
 
     def __build_reqs(*args, **options)
       case args.size
       when 1
         reqs = args.first
-        requests = reqs.map do |verb, uri, opts = {}|
-          __build_req(verb, uri, options.merge(opts))
+        requests = reqs.map do |verb, uri|
+          __build_req(verb, uri, options)
         end
       when 2, 3
-        verb, uris, opts = args
-        opts ||= {}
+        verb, *uris = args
         if uris.respond_to?(:each)
           requests = uris.map do |uri|
-            __build_req(verb, uri, options.merge(opts))
+            __build_req(verb, uri, options)
           end
         else
-          [ __build_req(verb, uris, options.merge(opts)) ]
+          [ __build_req(verb, uris, options) ]
         end
       else
         raise ArgumentError, "unsupported number of arguments"
@@ -96,8 +110,8 @@ module HTTPX
     end
 
     def __build_req(verb, uri, options = {})
-      rklass = @default_options.request_class
-      rklass.new(verb, uri, @default_options.merge(options))
+      rklass = @options.request_class
+      rklass.new(verb, uri, @options.merge(options))
     end
 
     @default_options = Options.new

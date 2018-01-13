@@ -5,10 +5,10 @@ module Requests
     module Proxy
       # https://www.sslproxies.org
       PROXIES = %W[
-        185.82.212.95:8080
+        137.74.168.174:8080
       ]
 
-      def test_plugin_proxy_anonymous
+      def test_plugin_http_proxy
         client = HTTPX.plugin(:proxy).with_proxy(uri: http_proxy_uri)
         uri = build_uri("/get")
         response = client.get(uri)
@@ -47,15 +47,15 @@ module Requests
       end
 
       def socks4_proxy_uri
-        "socks4://119.28.107.60:1080"
+        "socks4://138.201.6.100:8080"
       end
 
       def socks4a_proxy_uri
-        "socks4a://119.28.107.60:1080"
+        "socks4a://138.201.6.100:8080"
       end
 
       def socks5_proxy_uri
-        "socks5://118.201.230.192:58303"
+        "socks5://99.194.30.192:47997"
       end
     end
   end

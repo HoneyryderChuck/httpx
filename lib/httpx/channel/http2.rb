@@ -7,6 +7,8 @@ module HTTPX
     include Callbacks
     include Loggable
 
+    attr_reader :streams, :pending
+
     def initialize(buffer, options)
       @options = Options.new(options)
       @max_concurrent_requests = @options.max_concurrent_requests
@@ -94,7 +96,7 @@ module HTTPX
         if request.expects?
           return handle(request, stream)
         end
-        response = request.response || ErrorResponse.new(error, retries)
+        response = request.response || ErrorResponse.new(error, @retries)
         emit(:response, request, response)
         log(2, "#{stream.id}: ") { "closing stream" }
 
@@ -202,9 +204,7 @@ module HTTPX
     end
 
     def on_promise(stream)
-      log(2, "#{stream.id}: ") { "refusing stream!" }
-      stream.refuse
-      # TODO: policy for handling promises
+      emit(:promise, self, stream)
     end
 
     def method_missing(meth, *args, &blk)

@@ -188,8 +188,7 @@ module HTTPX
           end
         end
       when :done
-        return unless @state == :body ||
-                      @state == :headers
+        return if @state == :expect
       end
       @state = nextstate
       nil

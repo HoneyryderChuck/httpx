@@ -18,7 +18,7 @@ module HTTPX
             keep_open = @keep_open
             @keep_open = true
             
-            max_redirects = @default_options.max_redirects || MAX_REDIRECTS
+            max_redirects = @options.max_redirects || MAX_REDIRECTS
             requests = __build_reqs(*args, **options)
             responses = __send_reqs(*requests)
 

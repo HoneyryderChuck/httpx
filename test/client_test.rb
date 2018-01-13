@@ -49,11 +49,11 @@ class ClientTest < Minitest::Test
       end
 
       def options
-        @default_options
+        @options
       end
 
       def response(*args)
-        @default_options.response_class.new(*args, @default_options)
+        @options.response_class.new(*args, @options)
       end
     end
     self::OptionsClassMethods = Module.new do

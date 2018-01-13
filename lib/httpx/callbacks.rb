@@ -17,9 +17,14 @@ module HTTPX
       callbacks(type).delete_if { |pr| pr[*args] == :delete }
     end
 
-    private
+    protected
 
-    def callbacks(type)
+    def inherit_callbacks(callbackable)
+      @callbacks = callbackable.callbacks
+    end
+
+    def callbacks(type=nil)
+      return @callbacks unless type
       @callbacks ||= Hash.new { |h, k| h[k] = [] }
       @callbacks[type]
     end
