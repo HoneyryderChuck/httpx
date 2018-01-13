@@ -39,6 +39,12 @@ module HTTPX
       @responses[request] = response
     end
 
+    def on_promise(stream)
+      log(2, "#{stream.id}: ") { "refusing stream!" }
+      stream.refuse
+      # TODO: policy for handling promises
+    end
+
     def fetch_response(request)
       response = @responses.delete(request)
       if response.is_a?(ErrorResponse) && response.retryable?
@@ -51,8 +57,16 @@ module HTTPX
 
     def find_channel(request)
       uri = URI(request.uri)
-      @connection.find_channel(uri) ||
-      @connection.build_channel(uri, &method(:on_response)) 
+      @connection.find_channel(uri) || begin
+        channel = @connection.build_channel(uri)
+        set_channel_callbacks(channel)
+        channel
+      end
+    end
+
+    def set_channel_callbacks(channel)
+      channel.on(:response, &method(:on_response))
+      channel.on(:promise, &method(:on_promise))
     end
 
     def __build_reqs(*args, **options)

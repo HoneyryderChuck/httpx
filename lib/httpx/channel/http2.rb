@@ -202,9 +202,7 @@ module HTTPX
     end
 
     def on_promise(stream)
-      log(2, "#{stream.id}: ") { "refusing stream!" }
-      stream.refuse
-      # TODO: policy for handling promises
+      emit(:promise, stream)
     end
 
     def method_missing(meth, *args, &blk)
