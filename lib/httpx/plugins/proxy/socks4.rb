@@ -19,22 +19,21 @@ module HTTPX
           def proxy_connect 
             @parser = SocksParser.new(@write_buffer, @options)
             @parser.once(:packet, &method(:on_packet))
-            transition(:connecting)
           end
           
           def on_packet(packet)
             version, status, port, ip = packet.unpack("CCnN")
             if status == GRANTED
-              transition(:open)
               req, _ = @pending.first
               request_uri = req.uri
               if request_uri.scheme == "https"
                 @io = ProxySSL.new(@io, request_uri, @options)
               end
+              transition(:open)
               throw(:called)
             else
-              pending = @parser.instance_variable_get(:@pending)
-              while req = pending.shift
+              response = ErrorResponse.new("socks error: #{status}", 0) 
+              while (req, _ = @pending.shift)
                 @on_response.call(req, response)
               end
             end
@@ -42,18 +41,20 @@ module HTTPX
 
           def transition(nextstate)
             case nextstate
-            when :idle
             when :connecting
               return unless @state == :idle
+              @io.connect
+              return if @io.closed?
               req, _ = @pending.first
               request_uri = req.uri
               @write_buffer << Packet.connect(@parameters, request_uri)
+              proxy_connect
             when :open
-              return unless :connecting
+              return unless @state == :connecting
               @parser = nil
             end
             log { "#{nextstate.to_s}: #{@write_buffer.to_s.inspect}" }
-            @state = nextstate
+            super
           end
         end
         Parameters.register("socks4", Socks4ProxyChannel)
@@ -71,6 +72,10 @@ module HTTPX
           end
 
           def consume(*)
+          end
+
+          def empty?
+            true
           end
 
           def <<(packet)

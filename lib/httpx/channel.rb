@@ -64,6 +64,7 @@ module HTTPX
       @write_buffer = Buffer.new(BUFFER_SIZE)
       @pending = []
       @on_response = on_response
+      @state = :idle
     end
 
     def match?(uri)
@@ -75,18 +76,17 @@ module HTTPX
     end
 
     def to_io
-      connect
+      case @state
+      when :idle
+        transition(:open)
+      when :open
+      end
       @io.to_io
     end
 
     def close(hard=false)
-      if pr = @parser
-        pr.close
-        @parser = nil
-      end
-      @io.close
-      @read_buffer.clear
-      @write_buffer.clear
+      pr = @parser
+      transition(:closed)
       return true if hard
       unless pr && pr.empty?
         connect
@@ -106,7 +106,7 @@ module HTTPX
     end
 
     def call
-      return if closed?
+      return if @state == :closed
       catch(:called) do
         dread
         dwrite
@@ -121,11 +121,6 @@ module HTTPX
     end
 
     private
-    
-    def connect
-      @io.connect
-      send_pending
-    end
 
     def dread(wsize = @window_size)
       loop do
@@ -148,7 +143,6 @@ module HTTPX
     end
 
     def send_pending
-      return if @io.closed?
       while !@write_buffer.full? && (req_args = @pending.shift)
         request, args = req_args 
         parser.send(request, **args)
@@ -164,6 +158,28 @@ module HTTPX
       parser.on(:response, &@on_response)
       parser.on(:close) { throw(:close, self) }
       parser
+    end
+
+    def transition(nextstate)
+      case nextstate
+      when :idle
+
+      when :open
+        return if @state == :closed
+        @io.connect
+        return if @io.closed?
+        send_pending
+      when :closed
+        return if @state == :idle
+        if pr = @parser
+          pr.close
+          @parser = nil
+        end
+        @io.close
+        @read_buffer.clear
+        @write_buffer.clear
+      end
+      @state = nextstate
     end
   end
 end
