@@ -32,6 +32,7 @@ module HTTPX
     extend Forwardable
     include Registry
     include Loggable
+    include Callbacks
 
     require "httpx/channel/http2"
     require "httpx/channel/http1"
@@ -39,7 +40,7 @@ module HTTPX
     BUFFER_SIZE = 1 << 14
 
     class << self
-      def by(uri, options, &blk)
+      def by(uri, options)
         io = case uri.scheme
         when "http"
           IO.registry("tcp").new(uri.host, uri.port, options)
@@ -48,7 +49,7 @@ module HTTPX
         else
           raise Error, "#{uri.scheme}: unrecognized channel"
         end
-        new(io, options, &blk)
+        new(io, options)
       end
     end
 
@@ -56,14 +57,13 @@ module HTTPX
 
     def_delegator :@write_buffer, :empty?
 
-    def initialize(io, options, &on_response)
+    def initialize(io, options)
       @io = io
       @options = Options.new(options)
       @window_size = @options.window_size
       @read_buffer = "".b
       @write_buffer = Buffer.new(BUFFER_SIZE)
       @pending = []
-      @on_response = on_response
     end
 
     def match?(uri)
@@ -161,7 +161,7 @@ module HTTPX
 
     def build_parser(protocol=@io.protocol)
       parser = registry(protocol).new(@write_buffer, @options)
-      parser.on(:response, &@on_response)
+      parser.inherit_callbacks(self)
       parser.on(:close) { throw(:close, self) }
       parser
     end
