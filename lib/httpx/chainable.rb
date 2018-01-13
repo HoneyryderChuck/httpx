@@ -33,6 +33,10 @@ module HTTPX
     end
     alias :plugins :plugin
 
+    def with(options)
+      branch(default_options.merge(options))
+    end
+
     private
 
     def default_options
