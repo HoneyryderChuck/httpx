@@ -58,18 +58,17 @@ module HTTPX
       case args.size
       when 1
         reqs = args.first
-        requests = reqs.map do |verb, uri, opts = {}|
-          __build_req(verb, uri, options.merge(opts))
+        requests = reqs.map do |verb, uri|
+          __build_req(verb, uri, options)
         end
       when 2, 3
-        verb, uris, opts = args
-        opts ||= {}
+        verb, *uris = args
         if uris.respond_to?(:each)
           requests = uris.map do |uri|
-            __build_req(verb, uri, options.merge(opts))
+            __build_req(verb, uri, options)
           end
         else
-          [ __build_req(verb, uris, options.merge(opts)) ]
+          [ __build_req(verb, uris, options) ]
         end
       else
         raise ArgumentError, "unsupported number of arguments"
