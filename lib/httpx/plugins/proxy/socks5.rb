@@ -95,6 +95,9 @@ module HTTPX
             @options = Options.new(options)
           end
 
+          def close
+          end
+
           def consume(*)
           end
 

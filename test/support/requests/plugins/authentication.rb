@@ -20,7 +20,7 @@ module Requests
       end
 
       def test_plugin_digest_authentication
-        client = HTTPX.plugin(:digest_authentication)
+        client = HTTPX.plugin(:digest_authentication).headers("cookie" => "fake=fake_value")
         response = client.digest_authentication(user, pass).get(digest_auth_uri)
         verify_status(response.status, 200)
         body = json_body(response)

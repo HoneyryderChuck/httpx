@@ -7,6 +7,7 @@ module HTTPX
     def initialize(options = {})
       @default_options = self.class.default_options.merge(options) 
       @connection = Connection.new(@default_options)
+      @responses = {}
       if block_given?
         begin
           @keep_open = true
@@ -33,10 +34,24 @@ module HTTPX
 
     private
 
+    def on_response(request, response)
+      @responses[request] = response
+    end
+
+    def fetch_response(request)
+      response = @responses.delete(request)
+      if response.is_a?(ErrorResponse) && response.retryable?
+          channel = find_channel(request)
+          channel.send(request, retries: response.retries - 1)
+        return 
+      end 
+      response
+    end
+
     def find_channel(request)
       uri = URI(request.uri)
       @connection.find_channel(uri) ||
-      @connection.build_channel(uri) 
+      @connection.build_channel(uri, &method(:on_response)) 
     end
 
     def __build_reqs(*args, **options)
@@ -71,7 +86,7 @@ module HTTPX
       # guarantee ordered responses
       loop do
         request = requests.shift
-        @connection.next_tick until response = @connection.response(request)
+        @connection.next_tick until response = fetch_response(request)
 
         responses << response
 

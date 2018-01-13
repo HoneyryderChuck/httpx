@@ -10,7 +10,6 @@ module HTTPX
       @timeout = options.timeout
       @selector = Selector.new
       @channels = []
-      @responses = {}
     end
 
     def running?
@@ -39,17 +38,8 @@ module HTTPX
       end
     end
 
-    def response(request)
-      response = @responses.delete(request)
-      if response.is_a?(ErrorResponse) && response.retryable?
-        send(request, retries: response.retries - 1)
-        return 
-      end 
-      response
-    end
-
-    def build_channel(uri)
-      channel = Channel.by(uri, @options, &method(:on_response))
+    def build_channel(uri, &on_response)
+      channel = Channel.by(uri, @options, &on_response)
       register_channel(channel)
       channel
     end
@@ -65,10 +55,6 @@ module HTTPX
     end
 
     private
-
-    def on_response(request, response)
-      @responses[request] = response
-    end
 
     def register_channel(channel)
       monitor = @selector.register(channel, :rw)

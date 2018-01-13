@@ -12,16 +12,19 @@ module HTTPX
     def initialize(buffer, options)
       @options = Options.new(options)
       @max_concurrent_requests = @options.max_concurrent_requests
+      @retries = options.max_retries
       @parser = HTTP::Parser.new(self)
       @parser.header_value_type = :arrays
       @buffer = buffer
       @version = [1,1]
       @pending = []  
       @requests = []
+      @has_response = false
     end
 
     def close 
-      @parser.reset! 
+      @parser.reset!
+      @has_response = false 
     end
 
     def empty?
@@ -32,9 +35,10 @@ module HTTPX
 
     def <<(data)
       @parser << data
+      dispatch if @has_response
     end
 
-    def send(request, **)
+    def send(request, retries: @retries, **)
       if @requests.size >= @max_concurrent_requests
         @pending << request
         return
@@ -73,15 +77,18 @@ module HTTPX
 
       log(2) { "headers received" }
       headers = @options.headers_class.new(h)
-      response = @options.response_class.new(@requests.last, @parser.status_code, headers, @options)
+      response = @options.response_class.new(@requests.last,
+                                             @parser.status_code,
+                                             @parser.http_version.join("."),
+                                             headers, @options)
       log { "-> HEADLINE: #{response.status} HTTP/#{@parser.http_version.join(".")}" } 
       log { response.headers.each.map { |f, v| "-> HEADER: #{f}: #{v}" }.join("\n") }
       
       request.response = response
       # parser can't say if it's parsing GET or HEAD,
       # call the completeness callback manually
-      on_message_complete if request.verb == :head ||
-                             request.verb == :connect
+      dispatch if request.verb == :head ||
+                  request.verb == :connect
     end
 
     def on_body(chunk)
@@ -92,7 +99,10 @@ module HTTPX
 
     def on_message_complete
       log(2) { "parsing complete" }
-      @parser.reset!
+      @has_response = true
+    end
+
+    def dispatch
       request = @requests.first
       return handle(request) if request.expects?
 
@@ -100,6 +110,11 @@ module HTTPX
       response = request.response
       emit(:response, request, response)
 
+      if @parser.upgrade?
+        response << @parser.upgrade_data 
+        throw(:called)
+      end
+      close
       send(@pending.shift) unless @pending.empty?
       if response.headers["connection"] == "close"
         unless @requests.empty?
@@ -126,6 +141,7 @@ module HTTPX
     end
 
     def handle(request)
+      @has_response = false
       set_request_headers(request)
       catch(:buffer_full) do
         request.transition(:headers)
@@ -144,7 +160,7 @@ module HTTPX
       buffer.clear
       request.headers.each do |field, value|
         buffer << "#{capitalized(field)}: #{value}" << CRLF 
-        log { "<- HEADER: #{buffer.chomp.inspect}" }
+        log { "<- HEADER: #{buffer.chomp}" }
         @buffer << buffer
         buffer.clear
       end
@@ -162,8 +178,13 @@ module HTTPX
       end
     end
 
+    UPCASED = {
+      "www-authenticate" => "WWW-Authenticate",
+      "http2-settings" => "HTTP2-Settings"
+    }
+
     def capitalized(field)
-      field.to_s.split("-").map(&:capitalize).join("-")
+      UPCASED[field] || field.to_s.split("-").map(&:capitalize).join("-")
     end
   end
   Channel.register "http/1.1", Channel::HTTP1

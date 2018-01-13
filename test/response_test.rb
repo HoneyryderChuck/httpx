@@ -6,9 +6,9 @@ class ResponseTest < Minitest::Test
   include HTTPX
 
   def test_response_status
-    r1 = Response.new(request, 200, {})
+    r1 = Response.new(request, 200, "1.1", {})
     assert r1.status == 200, "unexpected status code (#{r1.status})"
-    r2 = Response.new(request, "200", {})
+    r2 = Response.new(request, "200", "1.1", {})
     assert r2.status == 200, "unexpected status code (#{r2.status})"
   end
 
@@ -24,7 +24,7 @@ class ResponseTest < Minitest::Test
 
   def test_response_body_to_s
     opts = { threshold_size: 1024 }
-    body1 = Response::Body.new(Response.new(request, 200, {}), opts)
+    body1 = Response::Body.new(Response.new(request, 200, "2.0", {}), opts)
     assert body1.empty?, "body must be empty after initialization"
     body1.write("foo")
     assert body1 == "foo", "body must be updated"
@@ -32,7 +32,7 @@ class ResponseTest < Minitest::Test
     body1.write("bar")
     assert body1 == "foobar", "body must buffer subsequent chunks"
 
-    body3 = Response::Body.new(Response.new(request("head"), 200, {}), opts)
+    body3 = Response::Body.new(Response.new(request("head"), 200, "2.0", {}), opts)
     assert body3.empty?, "body must be empty after initialization"
     assert body3 == "", "HEAD requets body must be empty"
 
@@ -40,7 +40,7 @@ class ResponseTest < Minitest::Test
 
   def test_response_body_each
     opts = { threshold_size: 1024 }
-    body1 = Response::Body.new(Response.new(request, 200, {}), opts)
+    body1 = Response::Body.new(Response.new(request, 200, "2.0", {}), opts)
     body1.write("foo")
     assert body1.each.to_a == %w(foo), "must yield buffer"
     body1.write("foo")
@@ -59,6 +59,6 @@ class ResponseTest < Minitest::Test
   end
 
   def resource
-    @resource ||= Response.new(request, 200, {})
+    @resource ||= Response.new(request, 200, "2.0", {})
   end
 end

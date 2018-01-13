@@ -115,6 +115,11 @@ module HTTPX
       nil
     end
 
+    def upgrade_parser(protocol)
+      @parser.close if @parser
+      @parser = build_parser(protocol)
+    end
+
     private
     
     def connect
@@ -151,12 +156,14 @@ module HTTPX
     end
 
     def parser
-      @parser || begin
-        @parser = registry(@io.protocol).new(@write_buffer, @options)
-        @parser.on(:response, &@on_response)
-        @parser.on(:close) { throw(:close, self) }
-        @parser
-      end
+      @parser ||= build_parser 
+    end
+
+    def build_parser(protocol=@io.protocol)
+      parser = registry(protocol).new(@write_buffer, @options)
+      parser.on(:response, &@on_response)
+      parser.on(:close) { throw(:close, self) }
+      parser
     end
   end
 end

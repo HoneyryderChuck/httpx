@@ -24,7 +24,7 @@ class ClientTest < Minitest::Test
     assert request.headers.respond_to?(:foo), "headers methods haven't been added"
     assert request.headers.foo == "headers-foo", "headers method is unexpected"
     assert client.respond_to?(:response), "response constructor was added"
-    response = client.response(nil, 200, {})
+    response = client.response(nil, 200, "2.0", {})
     assert response.respond_to?(:foo), "response methods haven't been added" 
     assert response.foo == "response-foo", "response method is unexpected"
     assert request.headers.respond_to?(:foo), "headers methods haven't been added"

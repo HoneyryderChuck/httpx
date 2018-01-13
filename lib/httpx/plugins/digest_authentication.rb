@@ -12,66 +12,55 @@ module HTTPX
 
       module InstanceMethods
         def digest_authentication(user, password)
-          @_digest_auth_user = user
-          @_digest_auth_pass = password
-          @_digest = Digest.new
+          @_digest = Digest.new(user, password)
           self
         end
         alias :digest_auth :digest_authentication
 
-        def request(*args, **options)
+        def request(*args, keep_open: @keep_open, **options)
           return super unless @_digest
           begin
-            #keep_open = @keep_open
-            #@keep_open = true
-
             requests = __build_reqs(*args, **options)
-            responses = __send_reqs(*requests)
+            probe_request = requests.first
+            prev_response = __send_reqs(*probe_request).first
 
-            failed_requests = []
-            failed_responses_ids = responses.each_with_index.map do |response, index|
-              next unless response.status == 401
-              request = requests[index]
+            unless prev_response.status == 401
+              raise Error, "request doesn't require authentication (status: #{prev_response})"
+            end
 
-              token = @_digest.generate_header(@_digest_auth_user,
-                                               @_digest_auth_pass,
-                                               request,
-                                               response) 
+            probe_request.transition(:idle)
+            responses = []
 
+            requests.each do |request|
+              token = @_digest.generate_header(request, prev_response) 
               request.headers["authorization"] = "Digest #{token}"
-              request.transition(:idle)
-
-              failed_requests << request
-
-              index
-            end.compact
-
-            return responses if failed_requests.empty?
-
-            repeated_responses = __send_reqs(*failed_requests)
-            repeated_responses.each_with_index do |rep, index|
-              responses[index] = rep
+              response = __send_reqs(*request).first
+              responses << response
+              prev_response = response
             end
             return responses.first if responses.size == 1 
             responses
           ensure
-            #@keep_open = keep_open
+            close unless keep_open
           end
         end
       end
 
       class Digest
-        def initialize
+        def initialize(user, password)
+          @user = user
+          @password = password
           @nonce = 0
         end
 
-        def generate_header(user, password, request, response, iis = false)
+        def generate_header(request, response, iis = false)
           method = request.verb.to_s.upcase
           www = response.headers["www-authenticate"]
 
           # TODO: assert if auth-type is Digest
           auth_info = www[/^(\w+) (.*)/, 2]
 
+          uri = request.path
 
           params = Hash[ auth_info.scan(/(\w+)="(.*?)"/) ]
 
@@ -103,52 +92,33 @@ module HTTPX
           end
 
           a1 = if sess then
-            [ algorithm.hexdigest("#{user}:#{params["realm"]}:#{password}"),
+            [ algorithm.hexdigest("#{@user}:#{params["realm"]}:#{@password}"),
               nonce,
               cnonce,
             ].join ":"
           else
-            "#{user}:#{params["realm"]}:#{password}"
+            "#{@user}:#{params["realm"]}:#{@password}"
           end
 
           ha1 = algorithm.hexdigest(a1)
-          ha2 = algorithm.hexdigest("#{method}:#{request.path}")
-
+          ha2 = algorithm.hexdigest("#{method}:#{uri}")
           request_digest = [ha1, nonce]
           request_digest.push(nc, cnonce, qop) if qop
           request_digest << ha2
           request_digest = request_digest.join(":")
 
           header = [
-            "username=\"#{user}\"",
-            "response=\"#{algorithm.hexdigest(request_digest)}\"",
-            "uri=\"#{request.path}\"",
-            "nonce=\"#{nonce}\""
+            %[username="#{@user}"],
+            %[nonce="#{nonce}"],
+            %[uri="#{uri}"],
+            %[response="#{algorithm.hexdigest(request_digest)}"]
           ]
-          header << "realm=\"#{params["realm"]}\"" if params.key?("realm")
-          header << "opaque=\"#{params["opaque"]}\"" if params.key?("opaque")
-          header << "algorithm=#{params["algorithm"]}" if params.key?("algorithm")
-          header << "cnonce=#{cnonce}" if cnonce
-          header << "nc=#{nc}"
-          header << "qop=#{qop}" if qop
-  #          
-  #          if qop.nil? then
-  #          elsif iis then
-  #            "qop=\"#{qop}\""
-  #          else
-  #            "qop=#{qop}"
-  #          end,
-  #          if qop then
-  #            [
-  #              "nc=#{"%08x" % nonce}",
-  #              "cnonce=\"#{cnonce}\"",
-  #            ]
-  #          end,
-  #          if params.key?("opaque") then
-  #            "opaque=\"#{params["opaque"]}\""
-  #          end
-  #        ].compact
-
+          header << %[realm="#{params["realm"]}"] if params.key?("realm")
+          header << %[algorithm=#{params["algorithm"]}"] if params.key?("algorithm")
+          header << %[opaque="#{params["opaque"]}"] if params.key?("opaque")
+          header << %[cnonce="#{cnonce}"] if cnonce
+          header << %[nc=#{nc}]
+          header << %[qop=#{qop}] if qop
           header.join ", "
         end
 

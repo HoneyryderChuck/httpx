@@ -53,7 +53,7 @@ module HTTPX
           uri = parameters.uri
           io = TCP.new(uri.host, uri.port, @default_options)
           proxy_type = Parameters.registry(parameters.uri.scheme)
-          channel = proxy_type.new(io, parameters, @default_options, &@connection.method(:on_response))
+          channel = proxy_type.new(io, parameters, @default_options, &method(:on_response))
           @connection.__send__(:register_channel, channel)
           channel
         end
@@ -78,8 +78,8 @@ module HTTPX
   end
 
   class ProxyChannel < Channel
-    def initialize(io, parameters, options)
-      super(io, options)
+    def initialize(io, parameters, options, &blk)
+      super(io, options, &blk)
       @parameters = parameters
       @state = :idle
     end

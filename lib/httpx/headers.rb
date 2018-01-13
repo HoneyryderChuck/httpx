@@ -95,7 +95,7 @@ module HTTPX
     def each
       return enum_for(__method__) { @headers.size } unless block_given?
       @headers.each do |field, value|
-        yield(field, value.join(",")) unless value.empty?
+        yield(field, value.join(", ")) unless value.empty?
       end
     end
 

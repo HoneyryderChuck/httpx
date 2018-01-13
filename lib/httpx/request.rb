@@ -90,6 +90,10 @@ module HTTPX
       nil
     end
 
+    def inspect
+      "#<Request #{@verb.to_s.upcase} #{path} @headers=#{@headers.to_hash} @body=#{@body}>"
+    end
+
     class Body
       class << self
         def new(*, options)
@@ -161,7 +165,7 @@ module HTTPX
     def transition(nextstate)
       case nextstate
       when :idle
-
+        @response = nil
       when :headers
         return unless @state == :idle
       when :body
