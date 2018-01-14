@@ -89,7 +89,7 @@ module HTTPX
       transition(:closed)
       return true if hard
       unless pr && pr.empty?
-        connect
+        transition(:idle)
         @parser = pr
         parser.reenqueue!
         return false
