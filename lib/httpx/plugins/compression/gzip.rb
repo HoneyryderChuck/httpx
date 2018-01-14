@@ -4,13 +4,13 @@ module HTTPX
   module Plugins
     module Compression
       module GZIP
-
         def self.load_dependencies(*)
           require "zlib"
         end
 
         def self.configure(*)
           Transcoder.register "gzip", GZIPTranscoder
+          Compression.register "gzip", self 
         end
 
         module GZIPTranscoder
@@ -57,7 +57,6 @@ module HTTPX
             Zlib::GzipReader.new(io, window_size: 32 + Zlib::MAX_WBITS)
           end
         end
-
       end
     end
     register_plugin :"compression/gzip", Compression::GZIP 

@@ -12,6 +12,7 @@ module HTTPX
 
         def self.configure(*)
           Transcoder.register "br", BrotliTranscoder
+          Compression.register "br", self 
         end
 
         module ResponseBodyMethods

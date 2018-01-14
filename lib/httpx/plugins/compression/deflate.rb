@@ -4,7 +4,6 @@ module HTTPX
   module Plugins
     module Compression
       module Deflate 
-
         def self.load_dependencies(*)
           require "stringio"
           require "zlib"
@@ -12,6 +11,7 @@ module HTTPX
 
         def self.configure(*)
           Transcoder.register "deflate", DeflateTranscoder
+          Compression.register "deflate", self 
         end
 
         module DeflateTranscoder

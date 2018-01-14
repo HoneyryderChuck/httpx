@@ -3,19 +3,15 @@
 module HTTPX
   module Plugins
     module Compression
-      ACCEPT_ENCODING = %w[gzip deflate].freeze
-
+      extend Registry
       def self.configure(klass, *)
         klass.plugin(:"compression/gzip")
         klass.plugin(:"compression/deflate")
       end
 
-      module RequestMethods
-        def initialize(*)
-          super
-          ACCEPT_ENCODING.each do |enc|
-            @headers.add("accept-encoding", enc)
-          end
+      module InstanceMethods
+        def initialize(opts = {})
+          super(opts.merge(headers: {"accept-encoding" => Compression.registry.keys}))
         end
       end
 
@@ -78,10 +74,7 @@ module HTTPX
           # @buffer.close
         end
       end
-
     end
     register_plugin :compression, Compression
   end
-
-
 end
