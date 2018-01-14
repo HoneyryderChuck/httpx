@@ -18,7 +18,7 @@ module HTTPX
           module Encoder
             module_function
 
-            def compress(raw, buffer, chunk_size: 16_384)
+            def compress(raw, buffer, chunk_size: )
               return unless buffer.size.zero?
               raw.rewind
               begin
@@ -42,39 +42,12 @@ module HTTPX
 
           module_function
 
-          class Decoder
-            def initialize(io)
-              @io = io
-              @inflater = Zlib::Inflate.new(32 + Zlib::MAX_WBITS)
-              @buffer = StringIO.new
-            end
-           
-            def rewind
-              @buffer.rewind
-            end
-
-            def read(*args)
-              return @buffer.read(*args) if @io.eof?
-              chunk = @io.read(*args)
-              inflated_chunk = @inflater.inflate(chunk)
-              inflated_chunk << @inflater.finish if @io.eof?
-              @buffer << chunk
-              inflated_chunk
-            end
-
-            def close
-              @io.close
-              @io.unlink if @io.respond_to?(:unlink)
-              @inflater.close
-            end
-          end
-
           def encode(payload)
             CompressEncoder.new(payload, Encoder)
           end
 
-          def decode(io)
-            Decoder.new(io)
+          def decoder
+            Decoder.new(Zlib::Inflate.new(32 + Zlib::MAX_WBITS))
           end
         end
       end

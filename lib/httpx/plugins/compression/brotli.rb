@@ -15,17 +15,10 @@ module HTTPX
           Compression.register "br", self 
         end
 
-        module ResponseBodyMethods
-          def write(chunk)
-            chunk = decompress(chunk)
-            super(chunk)
-          end
-        end
-
         module Encoder
           module_function
 
-          def compress(raw, buffer, chunk_size: 16_384)
+          def compress(raw, buffer, chunk_size: )
             return unless buffer.size.zero?
             raw.rewind
             begin
@@ -38,15 +31,27 @@ module HTTPX
           end
         end
 
+        module BrotliWrapper
+          module_function
+          def inflate(text)
+            ::Brotli.inflate(text)
+          end
+          def close
+          end
+          def finish
+            ""
+          end
+        end
+
         module BrotliTranscoder
           module_function
           
           def encode(payload)
             CompressEncoder.new(payload, Encoder)
           end
-          
-          def decode(io)
-            ::Brotli.inflate(io)
+         
+          def decoder 
+            Decoder.new(BrotliWrapper)
           end
         end
       end

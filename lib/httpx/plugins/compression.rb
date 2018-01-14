@@ -19,16 +19,24 @@ module HTTPX
         def initialize(*)
           super
           @_decoders = @headers.get("content-encoding").map do |encoding|
-            Transcoder.registry(encoding)
+            Transcoder.registry(encoding).decoder
           end
+          @_compressed_length = if @headers.key?("content-length")
+                                  @headers["content-length"].to_i
+                                else
+                                  Float::INFINITY
+                                end
         end
 
-        def write(*)
+        def write(chunk)
+          @_compressed_length -= chunk.bytesize
+          chunk = decompress(chunk)
+          super(chunk)
+        end
+
+        def close
           super
-          if @length == @headers["content-length"].to_i
-            @buffer.rewind
-            @buffer = decompress(@buffer)
-          end
+          @_decoders.each(&:close)
         end
 
         private
@@ -36,9 +44,26 @@ module HTTPX
         def decompress(buffer)
           @_decoders.reverse_each do |decoder|
             buffer = decoder.decode(buffer)
+            buffer << decoder.finish if @_compressed_length <= 0
           end
           buffer
         end 
+      end
+        
+      class Decoder
+        extend Forwardable
+
+        def_delegator :@inflater, :finish
+        
+        def_delegator :@inflater, :close
+
+        def initialize(inflater) 
+          @inflater = inflater 
+        end
+
+        def decode(chunk)
+          @inflater.inflate(chunk)
+        end
       end
 
       class CompressEncoder
@@ -57,7 +82,7 @@ module HTTPX
             @buffer.rewind
             return @buffer.each(&blk)
           end
-          @encoder.compress(@raw, @buffer, &blk)
+          @encoder.compress(@raw, @buffer, chunk_size: 16_384, &blk)
         end
 
         def to_s
@@ -67,7 +92,7 @@ module HTTPX
         end
 
         def bytesize
-          @encoder.compress(@raw, @buffer)
+          @encoder.compress(@raw, @buffer, chunk_size: 16_384)
           @buffer.size
         end
 

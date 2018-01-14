@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "forwardable"
+
 module HTTPX
   module Plugins
     module Compression
@@ -15,7 +17,7 @@ module HTTPX
 
         module GZIPTranscoder
           class Encoder
-            def compress(raw, buffer, chunk_size: 16_384)
+            def compress(raw, buffer, chunk_size: )
               return unless buffer.size.zero?
               raw.rewind
               begin
@@ -46,15 +48,16 @@ module HTTPX
               @compressed_chunk = nil
             end
           end
-         
+
+
           module_function
           
           def encode(payload)
             CompressEncoder.new(payload, Encoder.new)
           end
-          
-          def decode(io)
-            Zlib::GzipReader.new(io, window_size: 32 + Zlib::MAX_WBITS)
+         
+          def decoder
+            Decoder.new(Zlib::Inflate.new(32 + Zlib::MAX_WBITS))
           end
         end
       end
