@@ -24,6 +24,11 @@ class ClientTest < Minitest::Test
     assert request.headers.respond_to?(:foo), "headers methods haven't been added"
     assert request.headers.foo == "headers-foo", "headers method is unexpected"
     assert client.respond_to?(:response), "response constructor was added"
+
+    req_body = request.body
+    assert req_body.respond_to?(:foo), "request body methods haven't been added" 
+    assert req_body.foo == "request-body-foo", "request body method is unexpected"
+
     response = client.response(nil, 200, "2.0", {})
     assert response.respond_to?(:foo), "response methods haven't been added" 
     assert response.foo == "response-foo", "response method is unexpected"
@@ -72,6 +77,16 @@ class ClientTest < Minitest::Test
       end
     end
     self::RequestMethods = Module.new do
+      def foo
+        self.class.foo
+      end
+    end
+    self::RequestBodyClassMethods = Module.new do
+      def foo
+        "request-body-foo"
+      end
+    end
+    self::RequestBodyMethods = Module.new do
       def foo
         self.class.foo
       end

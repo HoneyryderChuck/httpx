@@ -53,6 +53,7 @@ module HTTPX
         :request_class            => Class.new(Request),
         :response_class           => Class.new(Response),
         :headers_class            => Class.new(Headers),
+        :request_body_class       => Class.new(Request::Body),
         :response_body_class      => Class.new(Response::Body),
       }
 
@@ -86,7 +87,7 @@ module HTTPX
     %w[
       params form json body
       follow ssl http2_settings max_retries
-      request_class response_class headers_class response_body_class
+      request_class response_class headers_class request_body_class response_body_class
       io fallback_protocol debug debug_level
     ].each do |method_name|
       def_option(method_name)
@@ -122,6 +123,7 @@ module HTTPX
       dupped.request_class       = request_class.dup 
       dupped.response_class      = response_class.dup
       dupped.headers_class       = headers_class.dup
+      dupped.request_body_class  = request_body_class.dup
       dupped.response_body_class = response_body_class.dup
       yield(dupped) if block_given?
       dupped

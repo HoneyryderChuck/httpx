@@ -74,6 +74,7 @@ class OptionsSpec < Minitest::Test
       :request_class      => bar.request_class,
       :response_class     => bar.response_class,
       :headers_class      => bar.headers_class,
+      :request_body_class => bar.request_body_class,
       :response_body_class => bar.response_body_class,
     }, "options haven't merged correctly"
   end
