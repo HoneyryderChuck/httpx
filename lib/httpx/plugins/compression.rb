@@ -44,10 +44,11 @@ module HTTPX
       class CompressEncoder
         attr_reader :content_type
 
-        def initialize(raw)
+        def initialize(raw, encoder)
           @content_type = raw.content_type
           @raw = raw.respond_to?(:read) ? raw : StringIO.new(raw.to_s)
           @buffer = StringIO.new("".b, File::RDWR)
+          @encoder = encoder
         end
 
         def each(&blk)
@@ -56,7 +57,7 @@ module HTTPX
             @buffer.rewind
             return @buffer.each(&blk)
           end
-          compress(&blk)
+          @encoder.compress(@raw, @buffer, &blk)
         end
 
         def to_s
@@ -66,7 +67,7 @@ module HTTPX
         end
 
         def bytesize
-          compress
+          @encoder.compress(@raw, @buffer)
           @buffer.size
         end
 

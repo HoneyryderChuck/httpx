@@ -15,24 +15,24 @@ module HTTPX
         end
 
         module DeflateTranscoder
-          class Encoder < CompressEncoder
-            private
+          module Encoder
+            module_function
 
-            def compress
-              return unless @buffer.size.zero?
-              @raw.rewind
+            def compress(raw, buffer, chunk_size: 16_384)
+              return unless buffer.size.zero?
+              raw.rewind
               begin
                 deflater = Zlib::Deflate.new(Zlib::BEST_COMPRESSION,
                                              Zlib::MAX_WBITS,
                                              Zlib::MAX_MEM_LEVEL,
                                              Zlib::HUFFMAN_ONLY)
-                while chunk = @raw.read(16_384)
+                while chunk = raw.read(chunk_size)
                   compressed = deflater.deflate(chunk)
-                  @buffer << compressed
+                  buffer << compressed
                   yield compressed if block_given?
                 end
                 last = deflater.finish
-                @buffer << last
+                buffer << last
                 yield last if block_given?
               ensure
                 deflater.close
@@ -70,7 +70,7 @@ module HTTPX
           end
 
           def encode(payload)
-            Encoder.new(payload)
+            CompressEncoder.new(payload, Encoder)
           end
 
           def decode(io)
