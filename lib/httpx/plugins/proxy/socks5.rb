@@ -79,7 +79,7 @@ module HTTPX
               return unless @state == :negotiating
               @parser = nil
             end
-            log { "#{nextstate.to_s}: #{@write_buffer.to_s.inspect}" }
+            log(1, "SOCKS5: ") { "#{nextstate.to_s}: #{@write_buffer.to_s.inspect}" }
             super
           end
 

@@ -53,7 +53,7 @@ module HTTPX
               return unless @state == :connecting
               @parser = nil
             end
-            log { "#{nextstate.to_s}: #{@write_buffer.to_s.inspect}" }
+            log(1, "SOCKS4: ") { "#{nextstate.to_s}: #{@write_buffer.to_s.inspect}" }
             super
           end
         end
