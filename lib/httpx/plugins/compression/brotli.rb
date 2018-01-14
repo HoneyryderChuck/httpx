@@ -11,16 +11,13 @@ module HTTPX
         end
 
         def self.configure(*)
-          Transcoder.register "br", BrotliTranscoder
           Compression.register "br", self 
         end
 
         module Encoder
           module_function
 
-          def compress(raw, buffer, chunk_size: )
-            return unless buffer.size.zero?
-            raw.rewind
+          def deflate(raw, buffer, chunk_size: )
             begin
               while chunk = raw.read(chunk_size)
                 compressed = ::Brotli.deflate(chunk)
@@ -43,16 +40,14 @@ module HTTPX
           end
         end
 
-        module BrotliTranscoder
-          module_function
-          
-          def encode(payload)
-            CompressEncoder.new(payload, Encoder)
-          end
-         
-          def decoder 
-            Decoder.new(BrotliWrapper)
-          end
+        module_function
+        
+        def encoder
+          Encoder
+        end
+        
+        def decoder 
+          Decoder.new(BrotliWrapper)
         end
       end
     end

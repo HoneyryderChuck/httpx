@@ -11,54 +11,49 @@ module HTTPX
         end
 
         def self.configure(*)
-          Transcoder.register "gzip", GZIPTranscoder
           Compression.register "gzip", self 
         end
 
-        module GZIPTranscoder
-          class Encoder
-            def compress(raw, buffer, chunk_size: )
-              return unless buffer.size.zero?
-              raw.rewind
-              begin
-                gzip = Zlib::GzipWriter.new(self)
+        class Encoder
+          def deflate(raw, buffer, chunk_size: )
+            begin
+              gzip = Zlib::GzipWriter.new(self)
 
-                while chunk = raw.read(chunk_size)
-                  gzip.write(chunk)
-                  gzip.flush
-                  compressed = compressed_chunk
-                  buffer << compressed
-                  yield compressed if block_given?
-                end
-              ensure
-                gzip.close
+              while chunk = raw.read(chunk_size)
+                gzip.write(chunk)
+                gzip.flush
+                compressed = compressed_chunk
+                buffer << compressed
+                yield compressed if block_given?
               end
-            end
-           
-            private
-
-            def write(chunk)
-              @compressed_chunk = chunk
-            end
- 
-            def compressed_chunk
-              compressed = @compressed_chunk
-              compressed
             ensure
-              @compressed_chunk = nil
+              gzip.close
             end
-          end
-
-
-          module_function
-          
-          def encode(payload)
-            CompressEncoder.new(payload, Encoder.new)
           end
          
-          def decoder
-            Decoder.new(Zlib::Inflate.new(32 + Zlib::MAX_WBITS))
+          private
+
+          def write(chunk)
+            @compressed_chunk = chunk
           end
+ 
+          def compressed_chunk
+            compressed = @compressed_chunk
+            compressed
+          ensure
+            @compressed_chunk = nil
+          end
+        end
+
+
+        module_function
+        
+        def encoder
+          Encoder.new
+        end
+        
+        def decoder
+          Decoder.new(Zlib::Inflate.new(32 + Zlib::MAX_WBITS))
         end
       end
     end

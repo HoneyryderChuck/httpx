@@ -15,17 +15,28 @@ module HTTPX
         end
       end
 
+      module RequestBodyMethods
+        def initialize(*)
+          super
+          return if @body.nil?
+          @headers.get("content-encoding").each do |encoding|
+            @body = Encoder.new(@body, Compression.registry(encoding).encoder)
+          end
+          @headers["content-length"] = @body.bytesize unless chunked?
+        end
+      end
+
       module ResponseBodyMethods
         def initialize(*)
           super
           @_decoders = @headers.get("content-encoding").map do |encoding|
-            Transcoder.registry(encoding).decoder
+            Compression.registry(encoding).decoder
           end
           @_compressed_length = if @headers.key?("content-length")
-                                  @headers["content-length"].to_i
-                                else
-                                  Float::INFINITY
-                                end
+            @headers["content-length"].to_i
+          else
+            Float::INFINITY
+          end
         end
 
         def write(chunk)
@@ -49,7 +60,48 @@ module HTTPX
           buffer
         end 
       end
-        
+       
+      class Encoder
+        def initialize(body, deflater)
+          @body = body.respond_to?(:read) ? body : StringIO.new(body.to_s)
+          @buffer = StringIO.new("".b, File::RDWR)
+          @deflater = deflater 
+        end
+
+        def each(&blk)
+          return enum_for(__method__) unless block_given?
+          unless @buffer.size.zero?
+            @buffer.rewind
+            return @buffer.each(&blk)
+          end
+          deflate(&blk)
+        end
+
+        def bytesize
+          deflate
+          @buffer.size
+        end
+
+        def to_s
+          deflate
+          @buffer.rewind
+          @buffer.read
+        end
+
+        def close
+          @buffer.close
+          @body.close
+        end
+
+        private
+
+        def deflate(&blk)
+          return unless @buffer.size.zero?
+          @body.rewind
+          @deflater.deflate(@body, @buffer, chunk_size: 16_384, &blk)
+        end
+      end
+
       class Decoder
         extend Forwardable
 
@@ -63,41 +115,6 @@ module HTTPX
 
         def decode(chunk)
           @inflater.inflate(chunk)
-        end
-      end
-
-      class CompressEncoder
-        attr_reader :content_type
-
-        def initialize(raw, encoder)
-          @content_type = raw.content_type
-          @raw = raw.respond_to?(:read) ? raw : StringIO.new(raw.to_s)
-          @buffer = StringIO.new("".b, File::RDWR)
-          @encoder = encoder
-        end
-
-        def each(&blk)
-          return enum_for(__method__) unless block_given?
-          unless @buffer.size.zero?
-            @buffer.rewind
-            return @buffer.each(&blk)
-          end
-          @encoder.compress(@raw, @buffer, chunk_size: 16_384, &blk)
-        end
-
-        def to_s
-          compress
-          @buffer.rewind
-          @buffer.read
-        end
-
-        def bytesize
-          @encoder.compress(@raw, @buffer, chunk_size: 16_384)
-          @buffer.size
-        end
-
-        def close
-          # @buffer.close
         end
       end
     end
