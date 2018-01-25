@@ -19,6 +19,7 @@ gem "certificate_authority", git: "https://github.com/cchandler/certificate_auth
 
 gem "simplecov"
 
+gem "oga", require: false
 gem "minitest", require: false
 gem "minitest-proveit", require: false
 gem "rubocop", require: false
