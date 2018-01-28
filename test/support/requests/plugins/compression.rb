@@ -59,7 +59,7 @@ module Requests
         assert compressed_data.bytesize < 8012, "body hasn't been compressed"
       end
 
-      unless RUBY_ENGINE == "java"
+      unless RUBY_ENGINE == "jruby"
         def test_plugin_compression_brotli
           client = HTTPX.plugin(:"compression/brotli")
           response = client.get("http://httpbin.org/brotli")
