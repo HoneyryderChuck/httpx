@@ -2,7 +2,7 @@ before_script:
   - ruby -v
   - uname -v
   - apk update
-  - apk add git
+  - apk add git make g++
   - gem install bundler --no-doc
   - bundle install --jobs 4 
 
