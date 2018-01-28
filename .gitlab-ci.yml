@@ -1,0 +1,85 @@
+before_script:
+  - ruby -v
+  - uname -v
+  - source scripts/prepare_build.sh
+  - gem install bundler --no-doc
+  - bundle install --jobs 4 
+
+.with_ruby21: &ruby21
+  image: "ruby:2.1-alpine"
+  cache:
+    key: "ruby21"
+    paths: 
+      - vendor
+  only:
+    - master
+
+.with_ruby22: &ruby22
+  image: "ruby:2.2-alpine"
+  cache:
+    key: "ruby22"
+    paths: 
+      - vendor
+  only:
+    - master
+ 
+.with_ruby23: &ruby23
+  image: "ruby:2.3-alpine"
+  cache:
+    key: "ruby23"
+    paths: 
+      - vendor
+  only:
+    - master
+
+.with_ruby24: &ruby24
+  image: "ruby:2.4-alpine"
+  cache:
+    key: "ruby24"
+    paths: 
+      - vendor
+  only:
+    - master
+
+.with_ruby25: &ruby25
+  image: "ruby:2.5-alpine"
+  cache:
+    key: "ruby25"
+    paths: 
+      - vendor
+  only:
+    - master
+
+.with_jruby9000: &jruby
+  image: "jruby:9.1-alpine"
+  cache:
+    key: "jruby"
+    paths: 
+      - vendor
+  only:
+    - master
+
+.with_tests: &tests
+  script:
+    - PARALLEL=1 MT_HELL=1 bundle exec rake test
+    - PARALLEL=1 MT_HELL=1 NIO=1 bundle exec rake test
+    - bundle exec rake rubocop
+
+test:ruby21:
+  <<: *ruby21
+  <<: *tests
+test:ruby22:
+  <<: *ruby22
+  <<: *tests
+test:ruby23:
+  <<: *ruby23
+  <<: *tests
+test:ruby24:
+  <<: *ruby24
+  <<: *tests
+test:ruby25:
+  <<: *ruby25
+  <<: *tests
+test:jruby:
+  <<: *jruby
+  <<: *tests
