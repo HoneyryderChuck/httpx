@@ -32,9 +32,9 @@ module Requests
       io.close if io 
     end
 
-     def test_http_buffer_to_custom
-       uri = build_uri("/")
-       custom_body = Class.new do 
+    def test_http_buffer_to_custom
+      uri = build_uri("/")
+      custom_body = Class.new do 
         attr_reader :file
 
         def initialize(response, **)
@@ -52,7 +52,7 @@ module Requests
         end
       end
 
-      response = HTTPX.get(uri, response_body_class: custom_body)
+      response = HTTPX.with(response_body_class: custom_body).get(uri)
       verify_status(response.status, 200)
       assert response.body.is_a?(custom_body), "body should be from custom type"
       file = response.body.file

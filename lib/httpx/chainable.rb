@@ -9,7 +9,7 @@ module HTTPX
     end
 
     def request(verb, uri, **options)
-      branch(**options).request(verb, uri)
+      branch(default_options).request(verb, uri, **options)
     end
 
     def timeout(**args)
