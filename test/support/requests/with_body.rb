@@ -39,6 +39,41 @@ module Requests
         verify_uploaded(body, "data", "data")
       end
 
+      define_method :"test_#{meth}_body_ary_params" do
+        uri = build_uri("/#{meth}")
+        response = HTTPX.send(meth, uri, body: %w[d a t a])
+        verify_status(response.status, 200)
+        body = json_body(response)
+        verify_header(body["headers"], "Content-Type", "application/octet-stream")
+        verify_uploaded(body, "data", "data")
+      end
+
+      # TODO: nghttp not receiving chunked requests, investigate
+      # define_method :"test_#{meth}_body_enum_params" do
+      #   uri = build_uri("/#{meth}")
+      #   body = Enumerator.new do |y|
+      #     y << "d"
+      #     y << "a"
+      #     y << "t"
+      #     y << "a"
+      #   end
+      #   response = HTTPX.send(meth, uri, body: body)
+      #   verify_status(response.status, 200)
+      #   body = json_body(response)
+      #   verify_header(body["headers"], "Content-Type", "application/octet-stream")
+      #   verify_uploaded(body, "data", "data")
+      # end
+
+      define_method :"test_#{meth}_body_io_params" do
+        uri = build_uri("/#{meth}")
+        body = StringIO.new("data")
+        response = HTTPX.send(meth, uri, body: body)
+        verify_status(response.status, 200)
+        body = json_body(response)
+        verify_header(body["headers"], "Content-Type", "application/octet-stream")
+        verify_uploaded(body, "data", "data")
+      end
+
       define_method :"test_#{meth}_form_file_params" do
         uri = build_uri("/#{meth}")
         response = HTTPX.send(meth, uri, form: {image: HTTP::FormData::File.new(fixture_file_path)})
