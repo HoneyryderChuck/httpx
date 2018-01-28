@@ -1,7 +1,6 @@
 before_script:
   - ruby -v
   - uname -v
-  - source scripts/prepare_build.sh
   - gem install bundler --no-doc
   - bundle install --jobs 4 
 
