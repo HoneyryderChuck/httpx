@@ -11,18 +11,18 @@ module HTTPX
 
         attr_reader :uri, :username, :password
 
-        def initialize(uri: , username: nil, password: nil)
+        def initialize(uri:, username: nil, password: nil)
           @uri = uri.is_a?(URI::Generic) ? uri : URI(uri)
           @username = username || @uri.user
           @password = password || @uri.password
         end
 
         def authenticated?
-          @username && @password 
+          @username && @password
         end
 
         def token_authentication
-          Base64.strict_encode64("#{user}:#{password}") 
+          Base64.strict_encode64("#{user}:#{password}")
         end
       end
 
@@ -32,7 +32,7 @@ module HTTPX
         end
 
         private
-        
+
         def proxy_params(uri)
           return @options.proxy if @options.proxy
           uri = URI(uri).find_proxy
@@ -43,9 +43,9 @@ module HTTPX
         def find_channel(request)
           uri = URI(request.uri)
           proxy = proxy_params(uri)
-          return super unless proxy 
+          return super unless proxy
           @connection.find_channel(proxy) || begin
-            channel = build_proxy_channel(proxy) 
+            channel = build_proxy_channel(proxy)
             set_channel_callbacks(channel)
             channel
           end
@@ -71,7 +71,7 @@ module HTTPX
           end
         end
       end
- 
+
       def self.configure(klass, *)
         klass.plugin(:"proxy/http")
         klass.plugin(:"proxy/socks4")
@@ -105,4 +105,4 @@ module HTTPX
       @state = :connected
     end
   end
-end 
+end

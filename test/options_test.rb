@@ -18,19 +18,19 @@ class OptionsSpec < Minitest::Test
     define_method :"test_options_#{meth}" do
       opt1 = Options.new
       assert opt1.public_send(meth).nil?, "#{meth} shouldn't be set by default"
-      opt2 = Options.new(meth => {"foo" => "bar"}) 
-      assert opt2.public_send(meth) == {"foo" => "bar"}, "#{meth} was not set"
-      opt3 = opt1.public_send(:"with_#{meth}", {"foo" => "bar"})
-      assert opt3.public_send(meth) == {"foo" => "bar"}, "option was not set"
+      opt2 = Options.new(meth => { "foo" => "bar" })
+      assert opt2.public_send(meth) == { "foo" => "bar" }, "#{meth} was not set"
+      opt3 = opt1.public_send(:"with_#{meth}", "foo" => "bar")
+      assert opt3.public_send(meth) == { "foo" => "bar" }, "option was not set"
     end
   end
 
   def test_options_headers
     opt1 = Options.new
     assert opt1.headers.to_a.empty?, "headers should be empty"
-    opt2 = Options.new({:headers => {"accept" => "*/*"}})
+    opt2 = Options.new(:headers => { "accept" => "*/*" })
     assert opt2.headers.to_a == [%w[accept */*]], "headers are unexpected"
-    opt3 = opt1.with_headers({"accept" => "*/*"})
+    opt3 = opt1.with_headers("accept" => "*/*")
     assert opt3.headers.to_a == [%w[accept */*]], "headers are unexpected"
   end
 
@@ -43,14 +43,14 @@ class OptionsSpec < Minitest::Test
     assert opts.merge(opt2).body == "short", "options parameter hasn't been merged"
 
     foo = Options.new(
-      :form      => {:foo => "foo"},
-      :headers   => {:accept => "json", :foo => "foo"},
+      :form      => { :foo => "foo" },
+      :headers   => { :accept => "json", :foo => "foo" },
     )
 
     bar = Options.new(
-      :form       => {:bar => "bar"},
-      :headers            => {:accept => "xml", :bar => "bar"},
-      :ssl        => {:foo => "bar"},
+      :form => { :bar => "bar" },
+      :headers => { :accept => "xml", :bar => "bar" },
+      :ssl => { :foo => "bar" },
     )
 
     assert foo.merge(bar).to_hash == {
@@ -63,12 +63,12 @@ class OptionsSpec < Minitest::Test
       :follow             => nil,
       :window_size        => 16_384,
       :body_threshold_size => 114_688,
-      :form               => {:bar => "bar"},
+      :form               => { :bar => "bar" },
       :timeout            => Timeout.new,
-      :ssl                => {:foo => "bar" },
+      :ssl                => { :foo => "bar" },
       :http2_settings     => { :settings_enable_push => 0 },
       :fallback_protocol  => "http/1.1",
-      :headers            => {"Foo" => "foo", "Accept" => "xml", "Bar" => "bar"},
+      :headers            => { "Foo" => "foo", "Accept" => "xml", "Bar" => "bar" },
       :max_concurrent_requests => 100,
       :max_retries        => 3,
       :request_class      => bar.request_class,

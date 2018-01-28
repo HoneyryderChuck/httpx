@@ -15,7 +15,7 @@ module HTTPX
           @_digest = Digest.new(user, password)
           self
         end
-        alias :digest_auth :digest_authentication
+        alias_method :digest_auth, :digest_authentication
 
         def request(*args, keep_open: @keep_open, **options)
           return super unless @_digest
@@ -32,13 +32,13 @@ module HTTPX
             responses = []
 
             requests.each do |request|
-              token = @_digest.generate_header(request, prev_response) 
+              token = @_digest.generate_header(request, prev_response)
               request.headers["authorization"] = "Digest #{token}"
               response = __send_reqs(*request).first
               responses << response
               prev_response = response
             end
-            return responses.first if responses.size == 1 
+            return responses.first if responses.size == 1
             responses
           ensure
             close unless keep_open
@@ -53,7 +53,7 @@ module HTTPX
           @nonce = 0
         end
 
-        def generate_header(request, response, iis = false)
+        def generate_header(request, response, _iis = false)
           method = request.verb.to_s.upcase
           www = response.headers["www-authenticate"]
 
@@ -62,40 +62,39 @@ module HTTPX
 
           uri = request.path
 
-          params = Hash[ auth_info.scan(/(\w+)="(.*?)"/) ]
+          params = Hash[auth_info.scan(/(\w+)="(.*?)"/)]
 
           nonce = params["nonce"]
           nc = next_nonce
-          
+
           # verify qop
           qop = params["qop"]
 
           if params["algorithm"] =~ /(.*?)(-sess)?$/
-            algorithm = case $1
-            when "MD5"    then ::Digest::MD5
-            when "SHA1"   then ::Digest::SHA1
-            when "SHA2"   then ::Digest::SHA2
-            when "SHA256" then ::Digest::SHA256
-            when "SHA384" then ::Digest::SHA384
-            when "SHA512" then ::Digest::SHA512
-            when "RMD160" then ::Digest::RMD160
-            else raise DigestError, "unknown algorithm \"#{$1}\""
+            algorithm = case Regexp.last_match(1)
+                        when "MD5"    then ::Digest::MD5
+                        when "SHA1"   then ::Digest::SHA1
+                        when "SHA2"   then ::Digest::SHA2
+                        when "SHA256" then ::Digest::SHA256
+                        when "SHA384" then ::Digest::SHA384
+                        when "SHA512" then ::Digest::SHA512
+                        when "RMD160" then ::Digest::RMD160
+                        else raise DigestError, "unknown algorithm \"#{Regexp.last_match(1)}\""
             end
-            sess = $2
+            sess = Regexp.last_match(2)
           else
             algorithm = ::Digest::MD5
           end
-          
-          if qop or sess
-            cnonce = make_cnonce 
-            nc = "%08x" % nc
+
+          if qop || sess
+            cnonce = make_cnonce
+            nc = format("%08x", nc)
           end
 
-          a1 = if sess then
-            [ algorithm.hexdigest("#{@user}:#{params["realm"]}:#{@password}"),
-              nonce,
-              cnonce,
-            ].join ":"
+          a1 = if sess
+            [algorithm.hexdigest("#{@user}:#{params["realm"]}:#{@password}"),
+             nonce,
+             cnonce].join ":"
           else
             "#{@user}:#{params["realm"]}:#{@password}"
           end
@@ -108,17 +107,17 @@ module HTTPX
           request_digest = request_digest.join(":")
 
           header = [
-            %[username="#{@user}"],
-            %[nonce="#{nonce}"],
-            %[uri="#{uri}"],
-            %[response="#{algorithm.hexdigest(request_digest)}"]
+            %(username="#{@user}"),
+            %(nonce="#{nonce}"),
+            %(uri="#{uri}"),
+            %(response="#{algorithm.hexdigest(request_digest)}"),
           ]
-          header << %[realm="#{params["realm"]}"] if params.key?("realm")
-          header << %[algorithm=#{params["algorithm"]}"] if params.key?("algorithm")
-          header << %[opaque="#{params["opaque"]}"] if params.key?("opaque")
-          header << %[cnonce="#{cnonce}"] if cnonce
-          header << %[nc=#{nc}]
-          header << %[qop=#{qop}] if qop
+          header << %(realm="#{params["realm"]}") if params.key?("realm")
+          header << %(algorithm=#{params["algorithm"]}") if params.key?("algorithm")
+          header << %(opaque="#{params["opaque"]}") if params.key?("opaque")
+          header << %(cnonce="#{cnonce}") if cnonce
+          header << %(nc=#{nc})
+          header << %(qop=#{qop}) if qop
           header.join ", "
         end
 
@@ -131,7 +130,7 @@ module HTTPX
             SecureRandom.random_number(2**32),
           ].join ":"
         end
-        
+
         def next_nonce
           @nonce += 1
         end
@@ -140,4 +139,3 @@ module HTTPX
     register_plugin :digest_authentication, DigestAuthentication
   end
 end
-

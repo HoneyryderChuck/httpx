@@ -5,7 +5,7 @@ module Requests
     def test_http_copy_to_file
       file = Tempfile.new(%w[cat .jpeg])
       uri = build_uri("/image")
-      response = HTTPX.get(uri, headers: {"accept" => "image/jpeg"})
+      response = HTTPX.get(uri, headers: { "accept" => "image/jpeg" })
       verify_status(response.status, 200)
       verify_header(response.headers, "content-type", "image/jpeg")
       response.copy_to(file)
@@ -20,24 +20,24 @@ module Requests
     end
 
     def test_http_copy_to_io
-      io = StringIO.new 
+      io = StringIO.new
       uri = build_uri("/image")
-      response = HTTPX.get(uri, headers: {"accept" => "image/jpeg"})
+      response = HTTPX.get(uri, headers: { "accept" => "image/jpeg" })
       verify_status(response.status, 200)
       verify_header(response.headers, "content-type", "image/jpeg")
       response.copy_to(io)
       content_length = response.headers["content-length"].to_i
       assert io.size == content_length, "file should contain the content of response"
     ensure
-      io.close if io 
+      io.close if io
     end
 
     def test_http_buffer_to_custom
       uri = build_uri("/")
-      custom_body = Class.new do 
+      custom_body = Class.new do
         attr_reader :file
 
-        def initialize(response, **)
+        def initialize(_response, **)
           @file = Tempfile.new("httpx-test")
         end
 
@@ -63,4 +63,4 @@ module Requests
       response.close if response
     end
   end
-end 
+end

@@ -3,36 +3,34 @@
 module HTTPX
   module Plugins
     module Compression
-      module Deflate 
+      module Deflate
         def self.load_dependencies(*)
           require "stringio"
           require "zlib"
         end
 
         def self.configure(*)
-          Compression.register "deflate", self 
+          Compression.register "deflate", self
         end
 
         module Encoder
           module_function
 
-          def deflate(raw, buffer, chunk_size: )
-            begin
-              deflater = Zlib::Deflate.new(Zlib::BEST_COMPRESSION,
-                                           Zlib::MAX_WBITS,
-                                           Zlib::MAX_MEM_LEVEL,
-                                           Zlib::HUFFMAN_ONLY)
-              while chunk = raw.read(chunk_size)
-                compressed = deflater.deflate(chunk)
-                buffer << compressed
-                yield compressed if block_given?
-              end
-              last = deflater.finish
-              buffer << last
-              yield last if block_given?
-            ensure
-              deflater.close
+          def deflate(raw, buffer, chunk_size:)
+            deflater = Zlib::Deflate.new(Zlib::BEST_COMPRESSION,
+                                         Zlib::MAX_WBITS,
+                                         Zlib::MAX_MEM_LEVEL,
+                                         Zlib::HUFFMAN_ONLY)
+            while chunk = raw.read(chunk_size)
+              compressed = deflater.deflate(chunk)
+              buffer << compressed
+              yield compressed if block_given?
             end
+            last = deflater.finish
+            buffer << last
+            yield last if block_given?
+          ensure
+            deflater.close
           end
         end
 
@@ -50,4 +48,3 @@ module HTTPX
     register_plugin :"compression/deflate", Compression::Deflate
   end
 end
-

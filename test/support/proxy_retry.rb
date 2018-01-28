@@ -1,8 +1,8 @@
 module ProxyRetry
   def run(*)
-    return super unless self.name.include?("_proxy")
+    return super unless name.include?("_proxy")
     result = nil
-    3.times.each do |i|
+    3.times.each do |_i|
       result = super
       break if result.passed?
       self.failures = []

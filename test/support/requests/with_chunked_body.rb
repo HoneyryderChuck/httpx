@@ -11,7 +11,7 @@ module Requests
       #   body = json_body(response)
       #   verify_header(body["headers"], "Transfer-Encoding", "chunked")
       #   assert body.key?("data")
-      #   assert body["data"] == "thisisachunkedresponse" 
+      #   assert body["data"] == "thisisachunkedresponse"
       # end
     end
   end

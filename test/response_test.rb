@@ -13,7 +13,7 @@ class ResponseTest < Minitest::Test
   end
 
   def test_response_headers
-    assert resource.headers.is_a?(Headers), "headers should have been coerced" 
+    assert resource.headers.is_a?(Headers), "headers should have been coerced"
   end
 
   def test_response_body_write
@@ -35,17 +35,16 @@ class ResponseTest < Minitest::Test
     body3 = Response::Body.new(Response.new(request("head"), 200, "2.0", {}), opts)
     assert body3.empty?, "body must be empty after initialization"
     assert body3 == "", "HEAD requets body must be empty"
-
   end
 
   def test_response_body_each
     opts = { threshold_size: 1024 }
     body1 = Response::Body.new(Response.new(request, 200, "2.0", {}), opts)
     body1.write("foo")
-    assert body1.each.to_a == %w(foo), "must yield buffer"
+    assert body1.each.to_a == %w[foo], "must yield buffer"
     body1.write("foo")
     body1.write("bar")
-    assert body1.each.to_a == %w(foobar), "must yield buffers"
+    assert body1.each.to_a == %w[foobar], "must yield buffers"
   end
 
   def test_response_body_buffer
@@ -63,7 +62,7 @@ class ResponseTest < Minitest::Test
 
   private
 
-  def request(verb=:get, uri="http://google.com")
+  def request(verb = :get, uri = "http://google.com")
     Request.new(verb, uri)
   end
 

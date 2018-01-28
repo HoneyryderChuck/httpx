@@ -31,8 +31,8 @@ class HeadersTest < Minitest::Test
 
   def test_header_key?
     h1 = Headers.new("accept" => "text/html")
-    assert h1.key?("accept"), "header field should exist" 
-    assert !h1.key?("content-encoding"), "header field should no exist" 
+    assert h1.key?("accept"), "header field should exist"
+    assert !h1.key?("content-encoding"), "header field should no exist"
   end
 
   def test_header_each

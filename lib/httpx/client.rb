@@ -6,13 +6,13 @@ module HTTPX
     include Chainable
 
     def initialize(options = {})
-      @options = self.class.default_options.merge(options) 
+      @options = self.class.default_options.merge(options)
       @connection = Connection.new(@options)
       @responses = {}
       if block_given?
         begin
           @keep_open = true
-          yield self 
+          yield self
         ensure
           @keep_open = false
           close
@@ -27,7 +27,7 @@ module HTTPX
     def request(*args, keep_open: @keep_open, **options)
       requests = __build_reqs(*args, **options)
       responses = __send_reqs(*requests)
-      return responses.first if responses.size == 1 
+      return responses.first if responses.size == 1
       responses
     ensure
       close unless keep_open
@@ -48,10 +48,10 @@ module HTTPX
     def fetch_response(request)
       response = @responses.delete(request)
       if response.is_a?(ErrorResponse) && response.retryable?
-          channel = find_channel(request)
-          channel.send(request, retries: response.retries - 1)
-        return 
-      end 
+        channel = find_channel(request)
+        channel.send(request, retries: response.retries - 1)
+        return
+      end
       response
     end
 
@@ -83,7 +83,7 @@ module HTTPX
             __build_req(verb, uri, options)
           end
         else
-          [ __build_req(verb, uris, options) ]
+          [__build_req(verb, uris, options)]
         end
       else
         raise ArgumentError, "unsupported number of arguments"
@@ -108,9 +108,7 @@ module HTTPX
 
           break if requests.empty?
         rescue TimeoutError => e
-          while requests.shift
-            responses << ErrorResponse.new(e.message, 0)
-          end
+          responses << ErrorResponse.new(e.message, 0) while requests.shift
           break
         end
       end

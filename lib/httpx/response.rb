@@ -11,12 +11,12 @@ module HTTPX
 
     attr_reader :status, :headers, :body, :version
 
-    def_delegator :@body, :to_s 
-    
+    def_delegator :@body, :to_s
+
     def_delegator :@body, :read
-    
+
     def_delegator :@body, :copy_to
-    
+
     def_delegator :@body, :close
 
     def_delegator :@request, :uri
@@ -29,7 +29,7 @@ module HTTPX
       @headers = @options.headers_class.new(headers)
       @body = @options.response_body_class.new(self, threshold_size: @options.body_threshold_size,
                                                      window_size: @options.window_size)
-    end 
+    end
 
     def <<(data)
       @body.write(data)
@@ -37,11 +37,11 @@ module HTTPX
 
     def bodyless?
       @request.verb == :head ||
-      @status < 200 ||
-      @status == 201 ||
-      @status == 204 ||
-      @status == 205 ||
-      @status == 304
+        @status < 200 ||
+        @status == 201 ||
+        @status == 204 ||
+        @status == 205 ||
+        @status == 304
     end
 
     def content_type
@@ -53,17 +53,17 @@ module HTTPX
     end
 
     class Body
-      def initialize(response, threshold_size: , window_size: 1 << 14)
+      def initialize(response, threshold_size:, window_size: 1 << 14)
         @response = response
         @headers = response.headers
         @threshold_size = threshold_size
-        @window_size = window_size 
+        @window_size = window_size
         @encoding = response.content_type.charset || Encoding::BINARY
         @length = 0
-        @buffer = nil 
+        @buffer = nil
         @state = :idle
       end
-  
+
       def write(chunk)
         @length += chunk.bytesize
         transition
@@ -92,7 +92,7 @@ module HTTPX
           close
         end
       end
- 
+
       def to_s
         rewind
         return @buffer.read if @buffer
@@ -100,14 +100,14 @@ module HTTPX
       ensure
         close
       end
-  
+
       def empty?
-        @length.zero? 
+        @length.zero?
       end
- 
+
       def copy_to(dest)
         return unless @buffer
-        if dest.respond_to?(:path) and @buffer.respond_to?(:path)
+        if dest.respond_to?(:path) && @buffer.respond_to?(:path)
           FileUtils.mv(@buffer.path, dest.path)
         else
           @buffer.rewind
@@ -124,18 +124,18 @@ module HTTPX
         @length = 0
         @state = :idle
       end
-  
+
       def ==(other)
         to_s == other.to_s
       end
-  
+
       private
- 
+
       def rewind
         return if @state == :idle
         @buffer.rewind
       end
-  
+
       def transition
         case @state
         when :idle
@@ -160,7 +160,7 @@ module HTTPX
             @state = :buffer
           end
         end
-  
+
         return unless %i[memory buffer].include?(@state)
       end
     end
@@ -200,10 +200,9 @@ module HTTPX
   end
 
   class ErrorResponse
-
     attr_reader :error, :retries
 
-    alias :status :error
+    alias_method :status, :error
 
     def initialize(error, retries)
       @error = error
@@ -214,5 +213,4 @@ module HTTPX
       @retries.positive?
     end
   end
-
 end

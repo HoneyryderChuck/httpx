@@ -33,4 +33,4 @@ module Requests
       raise "#{uri.scheme}: unsupported scheme"
     end
   end
-end 
+end

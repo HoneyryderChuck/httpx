@@ -45,7 +45,7 @@ module HTTPX
             jar
           end
         end
-        alias :cookies :cookie_jar
+        alias_method :cookies, :cookie_jar
       end
 
       module OptionsMethods
@@ -56,8 +56,8 @@ module HTTPX
             cookies
           end
         end
-      end 
+      end
     end
-    register_plugin :cookies, Cookies 
+    register_plugin :cookies, Cookies
   end
 end

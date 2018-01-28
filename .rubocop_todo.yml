@@ -1,0 +1,40 @@
+Metrics/AbcSize:
+  Max: 185
+
+Metrics/CyclomaticComplexity:
+  Max: 60
+
+Metrics/PerceivedComplexity:
+  Max: 46
+
+Metrics/ClassLength:
+  Max: 325
+
+Metrics/ModuleLength:
+  Max: 325
+
+Metrics/BlockLength:
+  Max: 100
+
+  #Naming/MethodName:
+
+# TODO: remove this if min supported version of ruby is 2.3
+Layout/IndentHeredoc:
+  Enabled: false
+
+Style/SafeNavigation:
+  Enabled: false
+
+Security/Eval:
+  Enabled: false
+
+Style/ClassAndModuleChildren:
+  Enabled: false
+
+# TODO: remove this if min supported version of ruby is 2.3
+Style/HashSyntax:
+  Enabled: false
+
+Style/NumericPredicate:
+  Exclude:
+    - lib/palanca/extensions/*.rb

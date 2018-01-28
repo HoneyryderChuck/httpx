@@ -26,7 +26,7 @@ module HTTPX
 
       def def_option(name, &interpreter)
         defined_options << name.to_sym
-        interpreter ||= lambda { |v| v }
+        interpreter ||= ->(v) { v }
 
         attr_accessor name
         protected :"#{name}="
@@ -43,7 +43,7 @@ module HTTPX
         :debug_level              => (ENV["HTTPX_DEBUG"] || 1).to_i,
         :ssl                      => {},
         :http2_settings           => { settings_enable_push: 0 },
-        :fallback_protocol        => "http/1.1", 
+        :fallback_protocol        => "http/1.1",
         :timeout                  => Timeout.new,
         :headers                  => {},
         :max_concurrent_requests  => MAX_CONCURRENT_REQUESTS,
@@ -110,17 +110,17 @@ module HTTPX
     end
 
     def to_hash
-      hash_pairs = self.class.
-                   defined_options.
-                   flat_map { |opt_name| [opt_name, send(opt_name)] }
+      hash_pairs = self.class
+                       .defined_options
+                       .flat_map { |opt_name| [opt_name, send(opt_name)] }
       Hash[*hash_pairs]
     end
 
     def dup
       dupped = super
-      dupped.headers             = headers.dup 
-      dupped.ssl                 = ssl.dup 
-      dupped.request_class       = request_class.dup 
+      dupped.headers             = headers.dup
+      dupped.ssl                 = ssl.dup
+      dupped.request_class       = request_class.dup
       dupped.response_class      = response_class.dup
       dupped.headers_class       = headers_class.dup
       dupped.request_body_class  = request_body_class.dup

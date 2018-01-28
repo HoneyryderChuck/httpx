@@ -6,7 +6,7 @@ module Requests
       def test_plugin_basic_authentication
         no_auth_response = HTTPX.get(basic_auth_uri)
         verify_status(no_auth_response.status, 401)
-        verify_header(no_auth_response.headers, "www-authenticate", "Basic realm=\"Fake Realm\"") 
+        verify_header(no_auth_response.headers, "www-authenticate", "Basic realm=\"Fake Realm\"")
 
         client = HTTPX.plugin(:basic_authentication)
         response = client.basic_authentication(user, pass).get(basic_auth_uri)
@@ -34,7 +34,7 @@ module Requests
         build_uri("/basic-auth/#{user}/#{pass}")
       end
 
-      def digest_auth_uri(qop="auth")
+      def digest_auth_uri(qop = "auth")
         build_uri("/digest-auth/#{qop}/#{user}/#{pass}")
       end
 

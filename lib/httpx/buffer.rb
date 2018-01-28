@@ -9,13 +9,13 @@ module HTTPX
     def_delegator :@buffer, :<<
 
     def_delegator :@buffer, :to_s
-    
+
     def_delegator :@buffer, :to_str
-    
+
     def_delegator :@buffer, :empty?
-    
+
     def_delegator :@buffer, :slice!
-    
+
     def_delegator :@buffer, :clear
 
     def initialize(limit)

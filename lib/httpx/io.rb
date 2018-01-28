@@ -14,21 +14,21 @@ module HTTPX
       @state = :idle
       @options = Options.new(options)
       @fallback_protocol = @options.fallback_protocol
-      @ip = TCPSocket.getaddress(hostname) 
+      @ip = TCPSocket.getaddress(hostname)
       @port = port
       if @options.io
         @io = case @options.io
-        when Hash
-          @options.io[@ip] || @options.io["#{@ip}:#{@port}"]
-        else
-          @options.io
+              when Hash
+                @options.io[@ip] || @options.io["#{@ip}:#{@port}"]
+              else
+                @options.io
         end
         unless @io.nil?
-          @keep_open = true 
+          @keep_open = true
           @state = :connected
         end
       end
-      @io ||= build_socket 
+      @io ||= build_socket
     end
 
     def scheme
@@ -40,21 +40,20 @@ module HTTPX
     end
 
     def protocol
-      @fallback_protocol 
+      @fallback_protocol
     end
 
     def connect
       return unless closed?
       begin
         if @io.closed?
-          transition(:idle) 
+          transition(:idle)
           @io = build_socket
         end
         @io.connect_nonblock(Socket.sockaddr_in(@port, @ip))
       rescue Errno::EISCONN
       end
       transition(:connected)
-
     rescue Errno::EINPROGRESS,
            Errno::EALREADY,
            ::IO::WaitReadable
@@ -139,7 +138,7 @@ module HTTPX
   end
 
   class SSL < TCP
-    TLS_OPTIONS = OpenSSL::SSL::SSLContext.instance_methods.include?(:alpn_protocols) ? 
+    TLS_OPTIONS = OpenSSL::SSL::SSLContext.instance_methods.include?(:alpn_protocols) ?
         { alpn_protocols: %w[h2 http/1.1] } : {}
 
     def initialize(_, _, options)
@@ -155,7 +154,7 @@ module HTTPX
 
     def protocol
       @io.alpn_protocol
-    rescue
+    rescue StandardError
       super
     end
 
@@ -182,14 +181,13 @@ module HTTPX
       transition(:negotiated)
     end
 
-
     if RUBY_VERSION < "2.3"
       def read(*)
         super
       rescue ::IO::WaitWritable
         0
       end
-      
+
       def write(*)
         super
       rescue ::IO::WaitReadable

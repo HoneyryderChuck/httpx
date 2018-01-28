@@ -21,13 +21,13 @@ module HTTPX
     end
 
     def accept(type)
-      headers("accept" => String(type)) 
+      headers("accept" => String(type))
     end
 
     def plugin(*plugins)
       Class.new(Client).plugins(plugins).new
     end
-    alias :plugins :plugin
+    alias_method :plugins, :plugin
 
     def with(options)
       branch(default_options.merge(options))
@@ -41,9 +41,8 @@ module HTTPX
 
     # :nodoc:
     def branch(options)
-      return self.class.new(options) if self.is_a?(Client)
+      return self.class.new(options) if is_a?(Client)
       Client.new(options)
     end
   end
 end
-

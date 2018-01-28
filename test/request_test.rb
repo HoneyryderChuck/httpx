@@ -13,7 +13,7 @@ class RequestTest < Minitest::Test
   end
 
   def test_request_headers
-    assert resource.headers.is_a?(Headers), "headers should have been coerced" 
+    assert resource.headers.is_a?(Headers), "headers should have been coerced"
   end
 
   def test_request_scheme
@@ -49,18 +49,19 @@ class RequestTest < Minitest::Test
   end
 
   def test_request_body_form
-    req = Request.new(:post, "/", form: {"foo" => "bar"})
+    req = Request.new(:post, "/", form: { "foo" => "bar" })
     assert !req.body.empty?, "body should exist"
     assert req.headers["content-type"] == "application/x-www-form-urlencoded", "content type is wrong"
     assert req.headers["content-length"] == "7", "content length is wrong"
   end
 
   def test_request_body_json
-    req = Request.new(:post, "/", json: {"foo" => "bar"})
+    req = Request.new(:post, "/", json: { "foo" => "bar" })
     assert !req.body.empty?, "body should exist"
     assert req.headers["content-type"] == "application/json; charset=utf-8", "content type is wrong"
     assert req.headers["content-length"] == "13", "content length is wrong"
   end
+
   private
 
   def resource

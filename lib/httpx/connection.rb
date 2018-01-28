@@ -34,7 +34,7 @@ module HTTPX
         while ch = @channels.shift
           ch.close(true)
           @selector.deregister(ch)
-        end 
+        end
       end
     end
 
@@ -49,7 +49,7 @@ module HTTPX
     # maximize pipelining by opening as few channels as possible.
     #
     def find_channel(uri)
-      return @channels.find do |channel|
+      @channels.find do |channel|
         channel.match?(uri)
       end
     end

@@ -7,10 +7,9 @@ module HTTPX
     module Proxy
       module HTTP
         class HTTPProxyChannel < ProxyChannel
-
           private
 
-          def proxy_connect 
+          def proxy_connect
             req, _ = @pending.first
             # if the first request after CONNECT is to an https address, it is assumed that
             # all requests in the queue are not only ALL HTTPS, but they also share the certificate,
@@ -52,7 +51,7 @@ module HTTPX
             super
           end
 
-          def on_connect(request, response)
+          def on_connect(_request, response)
             if response.status == 200
               req, _ = @pending.first
               request_uri = req.uri
@@ -70,16 +69,16 @@ module HTTPX
 
         class ProxyParser < Channel::HTTP1
           def headline_uri(request)
-            "#{request.uri.to_s}"
+            request.uri.to_s
           end
-  
+
           def set_request_headers(request)
             super
             request.headers["proxy-connection"] = request.headers["connection"]
-            request.headers.delete("connection") 
+            request.headers.delete("connection")
           end
         end
-  
+
         class ConnectProxyParser < ProxyParser
           attr_reader :pending
 
@@ -91,7 +90,6 @@ module HTTPX
             tunnel
           end
         end
-
 
         class ConnectRequest < Request
           def initialize(uri, options = {})
@@ -105,7 +103,7 @@ module HTTPX
         end
 
         Parameters.register("http", HTTPProxyChannel)
-      end 
+      end
     end
     register_plugin :"proxy/http", Proxy::HTTP
   end

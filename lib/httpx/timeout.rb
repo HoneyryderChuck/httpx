@@ -17,54 +17,52 @@ module HTTPX
       reset_counter
     end
 
-     def timeout
-       @loop_timeout || @total_timeout
-     ensure
-       log_time
-     end
+    def timeout
+      @loop_timeout || @total_timeout
+    ensure
+      log_time
+    end
 
-     def ==(other)
+    def ==(other)
       if other.is_a?(Timeout)
         @loop_timeout == other.instance_variable_get(:@loop_timeout) &&
-        @total_timeout == other.instance_variable_get(:@total_timeout)
+          @total_timeout == other.instance_variable_get(:@total_timeout)
       else
         super
       end
-     end
+    end
 
-     def merge(other)
-       case other
-       when Hash
-         timeout = Timeout.new(other)
-         merge(timeout)
-       when Timeout
+    def merge(other)
+      case other
+      when Hash
+        timeout = Timeout.new(other)
+        merge(timeout)
+      when Timeout
         loop_timeout = other.instance_variable_get(:@loop_timeout) || @loop_timeout
         total_timeout = other.instance_variable_get(:@total_timeout) || @total_timeout
         Timeout.new(loop_timeout: loop_timeout, total_timeout: total_timeout)
-       else
-         raise ArgumentError, "can't merge with #{other.class}"
-       end
-     end
+      else
+        raise ArgumentError, "can't merge with #{other.class}"
+      end
+    end
 
-     private
+    private
 
-     def reset_counter
-       @time_left = @total_timeout
-     end
+    def reset_counter
+      @time_left = @total_timeout
+    end
 
-     def reset_timer
-       @started = Process.clock_gettime(Process::CLOCK_MONOTONIC) 
-     end
-    
-     def log_time
-       return unless @time_left
-       return reset_timer unless @started
-       @time_left -= (Process.clock_gettime(Process::CLOCK_MONOTONIC) - @started)
-       if @time_left <= 0
-         raise TimeoutError, "Timed out after #{@total_timeout} seconds"
-       end
+    def reset_timer
+      @started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    end
 
-       reset_timer
-     end
+    def log_time
+      return unless @time_left
+      return reset_timer unless @started
+      @time_left -= (Process.clock_gettime(Process::CLOCK_MONOTONIC) - @started)
+      raise TimeoutError, "Timed out after #{@total_timeout} seconds" if @time_left <= 0
+
+      reset_timer
+    end
   end
 end

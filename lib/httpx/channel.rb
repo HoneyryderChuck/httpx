@@ -24,8 +24,8 @@ module HTTPX
   #
   # A channel may also route requests for a different host for which the +io+ was connected
   # to, provided that the IP is the same and the port and scheme as well. This will allow to
-  # share the same socket to send HTTP/2 requests to different hosts. 
-  # TODO: For this to succeed, the certificates sent by the servers to the client must be 
+  # share the same socket to send HTTP/2 requests to different hosts.
+  # TODO: For this to succeed, the certificates sent by the servers to the client must be
   #       identical (or match both hosts).
   #
   class Channel
@@ -42,12 +42,12 @@ module HTTPX
     class << self
       def by(uri, options)
         io = case uri.scheme
-        when "http"
-          IO.registry("tcp").new(uri.host, uri.port, options)
-        when "https"
-          IO.registry("ssl").new(uri.host, uri.port, options)
-        else
-          raise Error, "#{uri.scheme}: unrecognized channel"
+             when "http"
+               IO.registry("tcp").new(uri.host, uri.port, options)
+             when "https"
+               IO.registry("ssl").new(uri.host, uri.port, options)
+             else
+               raise Error, "#{uri.scheme}: unrecognized channel"
         end
         new(io, options)
       end
@@ -71,8 +71,8 @@ module HTTPX
       ip = TCPSocket.getaddress(uri.host)
 
       ip == @io.ip &&
-      uri.port == @io.port &&
-      uri.scheme == @io.scheme
+        uri.port == @io.port &&
+        uri.scheme == @io.scheme
     end
 
     def to_io
@@ -84,7 +84,7 @@ module HTTPX
       @io.to_io
     end
 
-    def close(hard=false)
+    def close(hard = false)
       pr = @parser
       transition(:closed)
       return true if hard
@@ -127,7 +127,7 @@ module HTTPX
         siz = @io.read(wsize, @read_buffer)
         throw(:close, self) unless siz
         return if siz.zero?
-        log { "READ: #{siz} bytes..."}
+        log { "READ: #{siz} bytes..." }
         parser << @read_buffer
       end
     end
@@ -137,23 +137,23 @@ module HTTPX
         return if @write_buffer.empty?
         siz = @io.write(@write_buffer)
         throw(:close, self) unless siz
-        log { "WRITE: #{siz} bytes..."}
+        log { "WRITE: #{siz} bytes..." }
         return if siz.zero?
       end
     end
 
     def send_pending
       while !@write_buffer.full? && (req_args = @pending.shift)
-        request, args = req_args 
+        request, args = req_args
         parser.send(request, **args)
       end
     end
 
     def parser
-      @parser ||= build_parser 
+      @parser ||= build_parser
     end
 
-    def build_parser(protocol=@io.protocol)
+    def build_parser(protocol = @io.protocol)
       parser = registry(protocol).new(@write_buffer, @options)
       parser.inherit_callbacks(self)
       parser.on(:close) { throw(:close, self) }

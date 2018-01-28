@@ -12,10 +12,9 @@ module HTTPX
         def basic_authentication(user, password)
           authentication("Basic #{Base64.strict_encode64("#{user}:#{password}")}")
         end
-        alias :basic_auth :basic_authentication
+        alias_method :basic_auth, :basic_authentication
       end
     end
     register_plugin :basic_authentication, BasicAuthentication
   end
 end
-

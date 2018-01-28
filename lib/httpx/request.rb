@@ -36,9 +36,9 @@ module HTTPX
     attr_accessor :response
 
     def_delegator :@body, :<<
-    
+
     def_delegator :@body, :empty?
-    
+
     def_delegator :@body, :chunk!
 
     def initialize(verb, uri, options = {})
@@ -50,8 +50,8 @@ module HTTPX
 
       @headers = @options.headers_class.new(@options.headers)
       @headers["user-agent"] ||= USER_AGENT
-      @headers["accept"]     ||= "*/*" 
-      
+      @headers["accept"]     ||= "*/*"
+
       @body = @options.request_body_class.new(@headers, @options)
       @state = :idle
     end
@@ -106,12 +106,11 @@ module HTTPX
 
       def initialize(headers, options)
         @headers = headers
-        @body = case
-        when options.body
+        @body = if options.body
           Transcoder.registry("body").encode(options.body)
-        when options.form
+        elsif options.form
           Transcoder.registry("form").encode(options.form)
-        when options.json
+        elsif options.json
           Transcoder.registry("json").encode(options.json)
         end
         return if @body.nil?
@@ -151,14 +150,12 @@ module HTTPX
 
       def stream(body)
         encoded = body
-        if chunked?
-          encoded = Transcoder.registry("chunker").encode(body) 
-        end
+        encoded = Transcoder.registry("chunker").encode(body) if chunked?
         encoded
       end
 
       def unbounded_body?
-         chunked? || @body.bytesize == Float::INFINITY
+        chunked? || @body.bytesize == Float::INFINITY
       end
 
       def chunked?
@@ -204,7 +201,7 @@ module HTTPX
 
     def expects?
       @headers["expect"] == "100-continue" &&
-      @response && @response.status == 100
+        @response && @response.status == 100
     end
 
     private

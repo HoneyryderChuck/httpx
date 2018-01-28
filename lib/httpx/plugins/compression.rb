@@ -11,7 +11,7 @@ module HTTPX
 
       module InstanceMethods
         def initialize(opts = {})
-          super(opts.merge(headers: {"accept-encoding" => Compression.registry.keys}))
+          super(opts.merge(headers: { "accept-encoding" => Compression.registry.keys }))
         end
       end
 
@@ -58,14 +58,14 @@ module HTTPX
             buffer << decoder.finish if @_compressed_length <= 0
           end
           buffer
-        end 
+        end
       end
-       
+
       class Encoder
         def initialize(body, deflater)
           @body = body.respond_to?(:read) ? body : StringIO.new(body.to_s)
           @buffer = StringIO.new("".b, File::RDWR)
-          @deflater = deflater 
+          @deflater = deflater
         end
 
         def each(&blk)
@@ -106,11 +106,11 @@ module HTTPX
         extend Forwardable
 
         def_delegator :@inflater, :finish
-        
+
         def_delegator :@inflater, :close
 
-        def initialize(inflater) 
-          @inflater = inflater 
+        def initialize(inflater)
+          @inflater = inflater
         end
 
         def decode(chunk)

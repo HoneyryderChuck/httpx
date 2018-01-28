@@ -78,7 +78,6 @@ module Requests
         compressed_data = body["data"]
         assert body["data"].bytesize < 8012, "body hasn't been compressed"
       end
-
     end
   end
 end

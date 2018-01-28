@@ -42,7 +42,7 @@ module ProxyHelper
     proxies_list(parse_http_proxies)
       .map do |line|
         ip, port, _, _, _, _, https, _ = line.css("td").map(&:text)
-        [ip, port, https == "yes" ]
+        [ip, port, https == "yes"]
       end
   end
 
@@ -50,7 +50,7 @@ module ProxyHelper
     proxies_list(parse_socks_proxies)
       .map do |line|
         ip, port, _, _, version, _, https, _ = line.css("td").map(&:text)
-        [ip, port, version, https == "Yes" ]
+        [ip, port, version, https == "Yes"]
       end
   end
 

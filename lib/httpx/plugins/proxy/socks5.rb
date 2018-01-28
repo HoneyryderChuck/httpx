@@ -14,18 +14,17 @@ module HTTPX
         IPV6 = 4
         SUCCESS = 0
 
-        Error = Class.new(Error) 
+        Error = Class.new(Error)
 
         class Socks5ProxyChannel < ProxyChannel
-
           private
 
-          def proxy_connect 
+          def proxy_connect
             @parser = SocksParser.new(@write_buffer, @options)
             @parser.on(:packet, &method(:on_packet))
             transition(:negotiating)
           end
-          
+
           def on_packet(packet)
             case @state
             when :connecting
@@ -51,9 +50,7 @@ module HTTPX
               return on_error_response("socks5 negotiation error: #{reply}") unless reply == SUCCESS
               req, _ = @pending.first
               request_uri = req.uri
-              if request_uri.scheme == "https"
-                @io = ProxySSL.new(@io, request_uri, @options)
-              end
+              @io = ProxySSL.new(@io, request_uri, @options) if request_uri.scheme == "https"
               transition(:open)
               throw(:called)
             end
@@ -79,7 +76,7 @@ module HTTPX
               return unless @state == :negotiating
               @parser = nil
             end
-            log(1, "SOCKS5: ") { "#{nextstate.to_s}: #{@write_buffer.to_s.inspect}" }
+            log(1, "SOCKS5: ") { "#{nextstate}: #{@write_buffer.to_s.inspect}" }
             super
           end
 
@@ -88,7 +85,7 @@ module HTTPX
           end
 
           def on_error_response(error)
-            response = ErrorResponse.new(error, 0) 
+            response = ErrorResponse.new(error, 0)
             until @pending.empty?
               req, _ = @pending.shift
               emit(:response, req, response)
@@ -105,11 +102,9 @@ module HTTPX
             @options = Options.new(options)
           end
 
-          def close
-          end
+          def close; end
 
-          def consume(*)
-          end
+          def consume(*); end
 
           def empty?
             true
@@ -130,18 +125,18 @@ module HTTPX
             methods.unshift(VERSION)
             methods.pack("C*")
           end
-          
-          def authenticate(parameters) 
+
+          def authenticate(parameters)
             user = parameters.username
             pass = parameters.password
             [0x01, user.bytesize, user, pass.bytesize, password].pack("CCA*CA*")
           end
-          
+
           def connect(uri)
             packet = [VERSION, CONNECT, 0].pack("C*")
             begin
               ip = IPAddr.new(uri.host)
-              raise Error, "Socks4 connection to #{ip.to_s} not supported" unless ip.ipv4?
+              raise Error, "Socks4 connection to #{ip} not supported" unless ip.ipv4?
               packet << [IPV4, ip.to_i].pack("CN")
             rescue IPAddr::InvalidAddressError
               packet << [DOMAIN, uri.host.bytesize, uri.host].pack("CCA*")
@@ -155,5 +150,3 @@ module HTTPX
     register_plugin :"proxy/socks5", Proxy::Socks5
   end
 end
-
-

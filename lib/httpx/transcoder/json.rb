@@ -9,13 +9,13 @@ module HTTPX::Transcoder
 
     class Encoder
       extend Forwardable
-    
+
       def_delegator :@raw, :to_str
-      
+
       def_delegator :@raw, :to_s
-      
+
       def_delegator :@raw, :bytesize
-      
+
       def_delegator :@raw, :force_encoding
 
       def initialize(json)
@@ -32,5 +32,5 @@ module HTTPX::Transcoder
       Encoder.new(json)
     end
   end
-  register "json", JSON 
+  register "json", JSON
 end

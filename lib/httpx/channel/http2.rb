@@ -39,7 +39,7 @@ module HTTPX
       end
       unless stream = @streams[request]
         stream = @connection.new_stream
-        handle_stream(stream, request) 
+        handle_stream(stream, request)
         @streams[request] = stream
       end
       handle(request, stream)
@@ -66,9 +66,7 @@ module HTTPX
       request.path
     end
 
-    def set_request_headers(request)
-
-    end
+    def set_request_headers(request); end
 
     def handle(request, stream)
       catch(:buffer_full) do
@@ -107,7 +105,7 @@ module HTTPX
       headers[":scheme"]    = request.scheme
       headers[":method"]    = request.verb.to_s.upcase
       headers[":path"]      = headline_uri(request)
-      headers[":authority"] = request.authority 
+      headers[":authority"] = request.authority
       headers = headers.merge(request.headers)
       log(1, "#{stream.id}: ") do
         headers.map { |k, v| "-> HEADER: #{k}: #{v}" }.join("\n")
@@ -142,7 +140,7 @@ module HTTPX
       headers = @options.headers_class.new(h)
       response = @options.response_class.new(request, status, "2.0", headers, @options)
       request.response = response
-      @streams[request] = stream 
+      @streams[request] = stream
     end
 
     def on_stream_data(stream, request, data)
@@ -152,13 +150,10 @@ module HTTPX
     end
 
     def on_stream_close(stream, request, error)
-      if request.expects?
-        return handle(request, stream)
-      end
+      return handle(request, stream) if request.expects?
       response = request.response || ErrorResponse.new(error, @retries)
       emit(:response, request, response)
       log(2, "#{stream.id}: ") { "closing stream" }
-
 
       @streams.delete(request)
       send(@pending.shift) unless @pending.empty?
@@ -175,7 +170,7 @@ module HTTPX
     def on_close(*)
       return unless @connection.state == :closed && @connection.active_stream_count.zero?
       log { "connection closed" }
-      emit(:close) 
+      emit(:close)
     end
 
     def on_frame_sent(frame)

@@ -8,11 +8,11 @@ module HTTPX::Transcoder
 
     class Encoder
       extend Forwardable
-    
+
       CRLF = "\r\n"
 
       def initialize(body)
-        @raw = body 
+        @raw = body
       end
 
       def each
@@ -32,6 +32,5 @@ module HTTPX::Transcoder
       Encoder.new(chunks)
     end
   end
-  register "chunker", Chunker 
+  register "chunker", Chunker
 end
-

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Requests
-  module Timeouts 
+  module Timeouts
     # def test_http_timeouts_loop_timeout
     #   uri = build_uri("/delay/2")
     #   client = HTTPX.timeout(loop_timeout: 1)

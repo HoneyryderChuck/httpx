@@ -3,7 +3,6 @@
 module Requests
   module Plugins
     module Cookies
-
       def test_plugin_cookies_get
         client = HTTPX.plugin(:cookies)
         assert client.respond_to?(:cookies), "client should be cookie-enabled"

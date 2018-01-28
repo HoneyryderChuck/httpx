@@ -5,29 +5,29 @@ module Requests
     %w[post put patch delete].each do |meth|
       define_method :"test_#{meth}_query_params" do
         uri = build_uri("/#{meth}")
-        response = HTTPX.send(meth, uri, params: {"q" => "this is a test"})
+        response = HTTPX.send(meth, uri, params: { "q" => "this is a test" })
         verify_status(response.status, 200)
         body = json_body(response)
-        verify_uploaded(body, "args", {"q" => "this is a test"})
-        verify_uploaded(body, "url", build_uri("/#{meth}?q=this+is+a+test")) 
+        verify_uploaded(body, "args", "q" => "this is a test")
+        verify_uploaded(body, "url", build_uri("/#{meth}?q=this+is+a+test"))
       end
 
       define_method :"test_#{meth}_form_params" do
         uri = build_uri("/#{meth}")
-        response = HTTPX.send(meth, uri, form: {"foo" => "bar"})
+        response = HTTPX.send(meth, uri, form: { "foo" => "bar" })
         verify_status(response.status, 200)
         body = json_body(response)
         verify_header(body["headers"], "Content-Type", "application/x-www-form-urlencoded")
-        verify_uploaded(body, "form", {"foo" => "bar"})
+        verify_uploaded(body, "form", "foo" => "bar")
       end
 
       define_method :"test_#{meth}_json_params" do
         uri = build_uri("/#{meth}")
-        response = HTTPX.send(meth, uri, json: {"foo" => "bar"})
+        response = HTTPX.send(meth, uri, json: { "foo" => "bar" })
         verify_status(response.status, 200)
         body = json_body(response)
         verify_header(body["headers"], "Content-Type", "application/json")
-        verify_uploaded(body, "json", {"foo" => "bar"})
+        verify_uploaded(body, "json", "foo" => "bar")
       end
 
       define_method :"test_#{meth}_body_params" do
@@ -76,7 +76,7 @@ module Requests
 
       define_method :"test_#{meth}_form_file_params" do
         uri = build_uri("/#{meth}")
-        response = HTTPX.send(meth, uri, form: {image: HTTP::FormData::File.new(fixture_file_path)})
+        response = HTTPX.send(meth, uri, form: { image: HTTP::FormData::File.new(fixture_file_path) })
         verify_status(response.status, 200)
         body = json_body(response)
         verify_header(body["headers"], "Content-Type", "multipart/form-data")
@@ -86,7 +86,7 @@ module Requests
       define_method :"test_#{meth}_expect_100_form_file_params" do
         uri = build_uri("/#{meth}")
         response = HTTPX.headers("expect" => "100-continue")
-                        .send(meth, uri, form: {image: HTTP::FormData::File.new(fixture_file_path)})
+                        .send(meth, uri, form: { image: HTTP::FormData::File.new(fixture_file_path) })
         verify_status(response.status, 200)
         body = json_body(response)
         verify_header(body["headers"], "Content-Type", "multipart/form-data")

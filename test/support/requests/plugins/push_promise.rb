@@ -29,11 +29,10 @@ module Requests
       def push_html_uri
         "#{push_origin}/"
       end
-      
+
       def push_css_uri
-        "#{push_origin}/stylesheets/screen.css" 
+        "#{push_origin}/stylesheets/screen.css"
       end
     end
   end
 end
-

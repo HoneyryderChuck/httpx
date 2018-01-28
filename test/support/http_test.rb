@@ -7,7 +7,7 @@ class HTTPTest < Minitest::Spec
 
   private
 
-  def build_uri(suffix="/")
+  def build_uri(suffix = "/")
     "#{origin}#{suffix || "/"}"
   end
 

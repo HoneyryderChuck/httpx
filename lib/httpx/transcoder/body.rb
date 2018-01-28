@@ -52,5 +52,5 @@ module HTTPX::Transcoder
       Encoder.new(body)
     end
   end
-  register "body", Body 
+  register "body", Body
 end

@@ -16,15 +16,15 @@ module HTTPX
       @parser = HTTP::Parser.new(self)
       @parser.header_value_type = :arrays
       @buffer = buffer
-      @version = [1,1]
-      @pending = []  
+      @version = [1, 1]
+      @pending = []
       @requests = []
       @has_response = false
     end
 
-    def close 
+    def close
       @parser.reset!
-      @has_response = false 
+      @has_response = false
     end
 
     def empty?
@@ -64,7 +64,7 @@ module HTTPX
     # HTTP Parser callbacks
     #
     # must be public methods, or else they won't be reachable
-    
+
     def on_message_begin
       log(2) { "parsing begins" }
     end
@@ -81,9 +81,9 @@ module HTTPX
                                              @parser.status_code,
                                              @parser.http_version.join("."),
                                              headers, @options)
-      log { "-> HEADLINE: #{response.status} HTTP/#{@parser.http_version.join(".")}" } 
+      log { "-> HEADLINE: #{response.status} HTTP/#{@parser.http_version.join(".")}" }
       log { response.headers.each.map { |f, v| "-> HEADER: #{f}: #{v}" }.join("\n") }
-      
+
       request.response = response
       # parser can't say if it's parsing GET or HEAD,
       # call the completeness callback manually
@@ -111,7 +111,7 @@ module HTTPX
       emit(:response, request, response)
 
       if @parser.upgrade?
-        response << @parser.upgrade_data 
+        response << @parser.upgrade_data
         throw(:called)
       end
       close
@@ -121,7 +121,7 @@ module HTTPX
           @requests.map { |r| r.transition(:idle) }
           # server doesn't handle pipelining, and probably
           # doesn't support keep-alive. Fallback to send only
-          # 1 keep alive request. 
+          # 1 keep alive request.
           @max_concurrent_requests = 1
         end
         log(2) { "connection: close" }
@@ -132,11 +132,11 @@ module HTTPX
     private
 
     def set_request_headers(request)
-      request.headers["host"] ||= request.authority 
+      request.headers["host"] ||= request.authority
       request.headers["connection"] ||= "keep-alive"
       if !request.headers.key?("content-length") &&
-          request.body.bytesize == Float::INFINITY
-        request.chunk! 
+         request.body.bytesize == Float::INFINITY
+        request.chunk!
       end
     end
 
@@ -163,7 +163,7 @@ module HTTPX
       @buffer << buffer
       buffer.clear
       request.headers.each do |field, value|
-        buffer << "#{capitalized(field)}: #{value}" << CRLF 
+        buffer << "#{capitalized(field)}: #{value}" << CRLF
         log { "<- HEADER: #{buffer.chomp}" }
         @buffer << buffer
         buffer.clear
@@ -184,8 +184,8 @@ module HTTPX
 
     UPCASED = {
       "www-authenticate" => "WWW-Authenticate",
-      "http2-settings" => "HTTP2-Settings"
-    }
+      "http2-settings" => "HTTP2-Settings",
+    }.freeze
 
     def capitalized(field)
       UPCASED[field] || field.to_s.split("-").map(&:capitalize).join("-")
@@ -193,4 +193,3 @@ module HTTPX
   end
   Channel.register "http/1.1", Channel::HTTP1
 end
-

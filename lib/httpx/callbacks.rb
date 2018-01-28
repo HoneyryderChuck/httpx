@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module HTTPX 
+module HTTPX
   module Callbacks
     def on(type, &action)
       callbacks(type) << action
@@ -23,7 +23,7 @@ module HTTPX
       @callbacks = callbackable.callbacks
     end
 
-    def callbacks(type=nil)
+    def callbacks(type = nil)
       return @callbacks unless type
       @callbacks ||= Hash.new { |h, k| h[k] = [] }
       @callbacks[type]

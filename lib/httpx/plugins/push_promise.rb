@@ -4,7 +4,7 @@ module HTTPX
   module Plugins
     module PushPromise
       PUSH_OPTIONS = { http2_settings: { settings_enable_push: 1 },
-                       max_concurrent_requests: 1  }
+                       max_concurrent_requests: 1 }.freeze
 
       module RequestMethods
         def headers=(h)
@@ -15,7 +15,7 @@ module HTTPX
       module InstanceMethods
         def initialize(opts = {})
           super(PUSH_OPTIONS.merge(opts))
-          @promise_headers = {} 
+          @promise_headers = {}
         end
 
         private
@@ -59,4 +59,4 @@ module HTTPX
     end
     register_plugin(:push_promise, PushPromise)
   end
-end 
+end

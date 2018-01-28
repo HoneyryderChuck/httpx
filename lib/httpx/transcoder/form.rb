@@ -11,9 +11,9 @@ module HTTPX::Transcoder
       extend Forwardable
 
       def_delegator :@raw, :content_type
-     
+
       def_delegator :@raw, :to_s
-      
+
       def_delegator :@raw, :read
 
       def initialize(form)
@@ -27,10 +27,10 @@ module HTTPX::Transcoder
       def force_encoding(*args)
         @raw.to_s.force_encoding(*args)
       end
-      
+
       def to_str
         @raw.to_s
-      end 
+      end
     end
 
     def encode(form)

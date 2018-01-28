@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "thread"
-
 class HTTPX::Selector
   #
   # I/O monitor
@@ -103,9 +101,7 @@ class HTTPX::Selector
 
       readers, writers = IO.select(r, w, nil, interval)
 
-      if readers.nil? and writers.nil?
-        raise HTTPX::TimeoutError, "timed out while waiting on select"
-      end
+      raise HTTPX::TimeoutError, "timed out while waiting on select" if readers.nil? && writers.nil?
     rescue IOError, SystemCallError
       @lock.synchronize do
         @readers.reject! { |io, _| io.closed? }

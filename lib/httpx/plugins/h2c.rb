@@ -21,23 +21,23 @@ module HTTPX
             upgrade_request.headers["http2-settings"] = HTTP2::Client.settings_header(@options.http2_settings)
             # TODO: validate!
             upgrade_response = __send_reqs(*upgrade_request).first
-           
+
             if upgrade_response.status == 101
               channel = find_channel(upgrade_request)
               parser = channel.upgrade_parser("h2")
               parser.extend(UpgradeExtensions)
               parser.upgrade(upgrade_request, upgrade_response, **options)
               data = upgrade_response.to_s
-              parser << data 
+              parser << data
               responses = __send_reqs(*requests)
             else
               # proceed as usual
               responses = [upgrade_response] + __send_reqs(*requests[1..-1])
             end
             return responses.first if responses.size == 1
-            responses 
+            responses
           ensure
-            @_h2c_probed = true 
+            @_h2c_probed = true
             close unless keep_open
           end
         end
@@ -54,7 +54,7 @@ module HTTPX
       end
 
       module UpgradeExtensions
-        def upgrade(request, response, retries: @retries, **)
+        def upgrade(request, _response, retries: @retries, **)
           @connection.send_connection_preface
           # skip checks, it is assumed that this is the first
           # request in the connection
@@ -66,8 +66,9 @@ module HTTPX
 
       module FrameBuilder
         include HTTP2
+
         module_function
-      
+
         def settings_value(settings)
           frame = Framer.new.generate(type: :settings, stream: 0, payload: settings)
           Base64.urlsafe_encode64(frame[9..-1])

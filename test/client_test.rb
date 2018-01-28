@@ -16,16 +16,16 @@ class ClientTest < Minitest::Test
   def test_client_plugin
     klient_class = Class.new(Client)
     klient_class.plugin(TestPlugin)
-    client = klient_class.new 
+    client = klient_class.new
     assert client.respond_to?(:foo), "instance methods weren't added"
     assert client.foo == "client-foo", "instance method is unexpected"
     assert client.respond_to?(:bar), "load and configure didn't work"
     assert client.bar == "config-load-bar", "load and configure didn't work"
-    
+
     assert client.respond_to?(:options), "instance methods weren't added"
     assert client.options.respond_to?(:foo), "options methods weren't added"
     assert client.options.foo == "options-foo", "option method is unexpected"
-    
+
     request = client.options.request_class.new(:get, "/", client.options)
     assert request.respond_to?(:foo), "request methods haven't been added"
     assert request.foo == "request-foo", "request method is unexpected"
@@ -34,17 +34,17 @@ class ClientTest < Minitest::Test
     assert client.respond_to?(:response), "response constructor was added"
 
     req_body = request.body
-    assert req_body.respond_to?(:foo), "request body methods haven't been added" 
+    assert req_body.respond_to?(:foo), "request body methods haven't been added"
     assert req_body.foo == "request-body-foo", "request body method is unexpected"
 
     response = client.response(nil, 200, "2.0", {})
-    assert response.respond_to?(:foo), "response methods haven't been added" 
+    assert response.respond_to?(:foo), "response methods haven't been added"
     assert response.foo == "response-foo", "response method is unexpected"
     assert request.headers.respond_to?(:foo), "headers methods haven't been added"
     assert request.headers.foo == "headers-foo", "headers method is unexpected"
 
     body = response.body
-    assert body.respond_to?(:foo), "response body methods haven't been added" 
+    assert body.respond_to?(:foo), "response body methods haven't been added"
     assert body.foo == "response-body-foo", "response body method is unexpected"
   end
 
@@ -53,7 +53,7 @@ class ClientTest < Minitest::Test
   TestPlugin = Module.new do
     self::ClassMethods = Module.new do
       def foo
-        "client-foo" 
+        "client-foo"
       end
     end
     self::InstanceMethods = Module.new do
@@ -61,9 +61,7 @@ class ClientTest < Minitest::Test
         self.class.foo
       end
 
-      def options
-        @options
-      end
+      attr_reader :options
 
       def response(*args)
         @options.response_class.new(*args, @options)
@@ -71,17 +69,17 @@ class ClientTest < Minitest::Test
     end
     self::OptionsClassMethods = Module.new do
       def foo
-        "options-foo" 
+        "options-foo"
       end
     end
     self::OptionsMethods = Module.new do
       def foo
-        self.class.foo 
+        self.class.foo
       end
     end
     self::RequestClassMethods = Module.new do
-      def foo 
-        'request-foo'
+      def foo
+        "request-foo"
       end
     end
     self::RequestMethods = Module.new do
@@ -133,7 +131,7 @@ class ClientTest < Minitest::Test
     def self.load_dependencies(mod)
       mod.__send__(:include, Module.new do
         def bar
-          "load-bar" 
+          "load-bar"
         end
       end)
     end

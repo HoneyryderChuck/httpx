@@ -16,23 +16,21 @@ module HTTPX
         class Socks4ProxyChannel < ProxyChannel
           private
 
-          def proxy_connect 
+          def proxy_connect
             @parser = SocksParser.new(@write_buffer, @options)
             @parser.once(:packet, &method(:on_packet))
           end
-          
+
           def on_packet(packet)
             version, status, port, ip = packet.unpack("CCnN")
             if status == GRANTED
               req, _ = @pending.first
               request_uri = req.uri
-              if request_uri.scheme == "https"
-                @io = ProxySSL.new(@io, request_uri, @options)
-              end
+              @io = ProxySSL.new(@io, request_uri, @options) if request_uri.scheme == "https"
               transition(:open)
               throw(:called)
             else
-              response = ErrorResponse.new("socks error: #{status}", 0) 
+              response = ErrorResponse.new("socks error: #{status}", 0)
               until @pending.empty?
                 req, _ = @pending.shift
                 emit(:response, req, response)
@@ -54,7 +52,7 @@ module HTTPX
               return unless @state == :connecting
               @parser = nil
             end
-            log(1, "SOCKS4: ") { "#{nextstate.to_s}: #{@write_buffer.to_s.inspect}" }
+            log(1, "SOCKS4: ") { "#{nextstate}: #{@write_buffer.to_s.inspect}" }
             super
           end
         end
@@ -69,11 +67,9 @@ module HTTPX
             @options = Options.new(options)
           end
 
-          def close
-          end
+          def close; end
 
-          def consume(*)
-          end
+          def consume(*); end
 
           def empty?
             true
@@ -87,11 +83,11 @@ module HTTPX
         module Packet
           module_function
 
-          def connect(parameters, uri) 
+          def connect(parameters, uri)
             packet = [VERSION, CONNECT, uri.port].pack("CCn")
             begin
               ip = IPAddr.new(uri.host)
-              raise Error, "Socks4 connection to #{ip.to_s} not supported" unless ip.ipv4?
+              raise Error, "Socks4 connection to #{ip} not supported" unless ip.ipv4?
               packet << [ip.to_i].pack("N")
             rescue IPAddr::InvalidAddressError
               if parameters.uri.scheme == "socks4"
@@ -111,4 +107,3 @@ module HTTPX
     register_plugin :"proxy/socks4", Proxy::Socks4
   end
 end
-

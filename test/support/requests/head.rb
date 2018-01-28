@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Requests
-  module Head 
+  module Head
     def test_http_head
       uri = build_uri("/")
       response = HTTPX.head(uri)
