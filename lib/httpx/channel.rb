@@ -79,7 +79,6 @@ module HTTPX
       case @state
       when :idle
         transition(:open)
-      when :open
       end
       @io.to_io
     end
@@ -162,7 +161,7 @@ module HTTPX
 
     def transition(nextstate)
       case nextstate
-      when :idle
+      # when :idle
 
       when :open
         return if @state == :closed
@@ -171,7 +170,7 @@ module HTTPX
         send_pending
       when :closed
         return if @state == :idle
-        if pr = @parser
+        if (pr = @parser)
           pr.close
           @parser = nil
         end

@@ -18,7 +18,7 @@ module HTTPX
           def deflate(raw, buffer, chunk_size:)
             gzip = Zlib::GzipWriter.new(self)
 
-            while chunk = raw.read(chunk_size)
+            while (chunk = raw.read(chunk_size))
               gzip.write(chunk)
               gzip.flush
               compressed = compressed_chunk

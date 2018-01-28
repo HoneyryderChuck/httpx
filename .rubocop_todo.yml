@@ -38,3 +38,9 @@ Style/HashSyntax:
 Style/NumericPredicate:
   Exclude:
     - lib/palanca/extensions/*.rb
+
+Style/Documentation:
+  Enabled: false
+
+Naming/AccessorMethodName:
+  Enabled: false

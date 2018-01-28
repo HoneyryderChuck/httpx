@@ -12,6 +12,7 @@ AllCops:
     - 'examples/**/*'
     - '.bundle/**/*'
     - 'vendor/**/*'
+    - 'lib/httpx/extensions.rb'
 
 Metrics/LineLength:
   Max: 120

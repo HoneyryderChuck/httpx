@@ -48,8 +48,6 @@ class ClientTest < Minitest::Test
     assert body.foo == "response-body-foo", "response body method is unexpected"
   end
 
-  private
-
   TestPlugin = Module.new do
     self::ClassMethods = Module.new do
       def foo

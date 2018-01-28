@@ -17,7 +17,7 @@ module HTTPX
           module_function
 
           def deflate(raw, buffer, chunk_size:)
-            while chunk = raw.read(chunk_size)
+            while (chunk = raw.read(chunk_size))
               compressed = ::Brotli.deflate(chunk)
               buffer << compressed
               yield compressed if block_given?

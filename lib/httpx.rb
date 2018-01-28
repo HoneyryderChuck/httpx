@@ -18,6 +18,8 @@ require "httpx/response"
 require "httpx/chainable"
 require "httpx/client"
 
+# Top-Level Namespace
+#
 module HTTPX
   # All plugins should be stored under this module/namespace. Can register and load
   # plugins.

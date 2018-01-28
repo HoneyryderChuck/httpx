@@ -18,7 +18,7 @@ module HTTPX
 
     def next_tick(timeout: @timeout.timeout)
       @selector.select(timeout) do |monitor|
-        if channel = monitor.value
+        if (channel = monitor.value)
           consume(channel)
         end
       end
@@ -31,7 +31,7 @@ module HTTPX
           @selector.deregister(channel)
         end
       else
-        while ch = @channels.shift
+        while (ch = @channels.shift)
           ch.close(true)
           @selector.deregister(ch)
         end

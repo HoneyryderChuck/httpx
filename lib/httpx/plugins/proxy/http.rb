@@ -60,7 +60,7 @@ module HTTPX
               throw(:called)
             else
               pending = @parser.pending
-              while req = pending.shift
+              while (req = pending.shift)
                 @on_response.call(req, response)
               end
             end

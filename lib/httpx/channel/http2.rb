@@ -32,12 +32,12 @@ module HTTPX
       @connection << data
     end
 
-    def send(request, retries: @retries, **)
+    def send(request, **)
       if @connection.active_stream_count >= @max_concurrent_requests
         @pending << request
         return
       end
-      unless stream = @streams[request]
+      unless (stream = @streams[request])
         stream = @connection.new_stream
         handle_stream(stream, request)
         @streams[request] = stream
@@ -164,7 +164,8 @@ module HTTPX
     end
 
     def on_settings(*)
-      @max_concurrent_requests = [@max_concurrent_requests, @connection.remote_settings[:settings_max_concurrent_streams]].min
+      @max_concurrent_requests = [@max_concurrent_requests,
+                                  @connection.remote_settings[:settings_max_concurrent_streams]].min
     end
 
     def on_close(*)
@@ -206,6 +207,10 @@ module HTTPX
 
     def on_promise(stream)
       emit(:promise, self, stream)
+    end
+
+    def respond_to_missing?(meth, *args)
+      @connection.respond_to?(meth, *args) || super
     end
 
     def method_missing(meth, *args, &blk)

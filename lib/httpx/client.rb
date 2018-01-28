@@ -9,14 +9,13 @@ module HTTPX
       @options = self.class.default_options.merge(options)
       @connection = Connection.new(@options)
       @responses = {}
-      if block_given?
-        begin
-          @keep_open = true
-          yield self
-        ensure
-          @keep_open = false
-          close
-        end
+      return unless block_given?
+      begin
+        @keep_open = true
+        yield self
+      ensure
+        @keep_open = false
+        close
       end
     end
 
@@ -73,13 +72,13 @@ module HTTPX
       case args.size
       when 1
         reqs = args.first
-        requests = reqs.map do |verb, uri|
+        reqs.map do |verb, uri|
           __build_req(verb, uri, options)
         end
       when 2, 3
         verb, *uris = args
         if uris.respond_to?(:each)
-          requests = uris.map do |uri|
+          uris.map do |uri|
             __build_req(verb, uri, options)
           end
         else
@@ -101,7 +100,7 @@ module HTTPX
       loop do
         begin
           request = requests.first
-          @connection.next_tick until response = fetch_response(request)
+          @connection.next_tick until (response = fetch_response(request))
 
           responses << response
           requests.shift
@@ -146,16 +145,17 @@ module HTTPX
             options_klass.__send__(:include, pl::OptionsMethods) if defined?(pl::OptionsMethods)
             @default_options = options_klass.new
           end
-          default_options.request_class.__send__(:include, pl::RequestMethods) if defined?(pl::RequestMethods)
-          default_options.request_class.extend(pl::RequestClassMethods) if defined?(pl::RequestClassMethods)
-          default_options.response_class.__send__(:include, pl::ResponseMethods) if defined?(pl::ResponseMethods)
-          default_options.response_class.extend(pl::ResponseClassMethods) if defined?(pl::ResponseClassMethods)
-          default_options.headers_class.__send__(:include, pl::HeadersMethods) if defined?(pl::HeadersMethods)
-          default_options.headers_class.extend(pl::HeadersClassMethods) if defined?(pl::HeadersClassMethods)
-          default_options.request_body_class.__send__(:include, pl::RequestBodyMethods) if defined?(pl::RequestBodyMethods)
-          default_options.request_body_class.extend(pl::RequestBodyClassMethods) if defined?(pl::RequestBodyClassMethods)
-          default_options.response_body_class.__send__(:include, pl::ResponseBodyMethods) if defined?(pl::ResponseBodyMethods)
-          default_options.response_body_class.extend(pl::ResponseBodyClassMethods) if defined?(pl::ResponseBodyClassMethods)
+          opts = default_options
+          opts.request_class.__send__(:include, pl::RequestMethods) if defined?(pl::RequestMethods)
+          opts.request_class.extend(pl::RequestClassMethods) if defined?(pl::RequestClassMethods)
+          opts.response_class.__send__(:include, pl::ResponseMethods) if defined?(pl::ResponseMethods)
+          opts.response_class.extend(pl::ResponseClassMethods) if defined?(pl::ResponseClassMethods)
+          opts.headers_class.__send__(:include, pl::HeadersMethods) if defined?(pl::HeadersMethods)
+          opts.headers_class.extend(pl::HeadersClassMethods) if defined?(pl::HeadersClassMethods)
+          opts.request_body_class.__send__(:include, pl::RequestBodyMethods) if defined?(pl::RequestBodyMethods)
+          opts.request_body_class.extend(pl::RequestBodyClassMethods) if defined?(pl::RequestBodyClassMethods)
+          opts.response_body_class.__send__(:include, pl::ResponseBodyMethods) if defined?(pl::ResponseBodyMethods)
+          opts.response_body_class.extend(pl::ResponseBodyClassMethods) if defined?(pl::ResponseBodyClassMethods)
           pl.configure(self, *args, &block) if pl.respond_to?(:configure)
         end
         self

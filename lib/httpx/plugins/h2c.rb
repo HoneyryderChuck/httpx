@@ -54,7 +54,7 @@ module HTTPX
       end
 
       module UpgradeExtensions
-        def upgrade(request, _response, retries: @retries, **)
+        def upgrade(request, _response, **)
           @connection.send_connection_preface
           # skip checks, it is assumed that this is the first
           # request in the connection

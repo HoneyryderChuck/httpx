@@ -76,7 +76,7 @@ module HTTPX
     def query
       return @query if defined?(@query)
       query = []
-      if q = @options.params
+      if (q = @options.params)
         query << URI.encode_www_form(q)
       end
       query << @uri.query if @uri.query
@@ -203,8 +203,6 @@ module HTTPX
       @headers["expect"] == "100-continue" &&
         @response && @response.status == 100
     end
-
-    private
 
     class ProcIO
       def initialize(block)

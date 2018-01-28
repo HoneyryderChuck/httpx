@@ -38,7 +38,7 @@ module HTTPX
       dispatch if @has_response
     end
 
-    def send(request, retries: @retries, **)
+    def send(request, **)
       if @requests.size >= @max_concurrent_requests
         @pending << request
         return
@@ -116,17 +116,16 @@ module HTTPX
       end
       close
       send(@pending.shift) unless @pending.empty?
-      if response.headers["connection"] == "close"
-        unless @requests.empty?
-          @requests.map { |r| r.transition(:idle) }
-          # server doesn't handle pipelining, and probably
-          # doesn't support keep-alive. Fallback to send only
-          # 1 keep alive request.
-          @max_concurrent_requests = 1
-        end
-        log(2) { "connection: close" }
-        emit(:close)
+      return unless response.headers["connection"] == "close"
+      unless @requests.empty?
+        @requests.map { |r| r.transition(:idle) }
+        # server doesn't handle pipelining, and probably
+        # doesn't support keep-alive. Fallback to send only
+        # 1 keep alive request.
+        @max_concurrent_requests = 1
       end
+      log(2) { "connection: close" }
+      emit(:close)
     end
 
     private
@@ -174,7 +173,7 @@ module HTTPX
 
     def join_body(request)
       return if request.empty?
-      while chunk = request.drain_body
+      while (chunk = request.drain_body)
         log { "<- DATA: #{chunk.bytesize} bytes..." }
         log(2) { "<- #{chunk.inspect}" }
         @buffer << chunk

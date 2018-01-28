@@ -22,7 +22,7 @@ module HTTPX
           end
 
           def on_packet(packet)
-            version, status, port, ip = packet.unpack("CCnN")
+            _version, status, _port, _ip = packet.unpack("CCnN")
             if status == GRANTED
               req, _ = @pending.first
               request_uri = req.uri

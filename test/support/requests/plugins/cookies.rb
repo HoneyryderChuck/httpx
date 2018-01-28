@@ -21,15 +21,15 @@ module Requests
       def test_plugin_cookies_set
         client = HTTPX.plugin(:cookies)
         session_cookies = { "a" => "b", "c" => "d" }
-        session_uri = set_cookies_uri(session_cookies)
-        session_response = client.get(set_cookies_uri(session_cookies))
+        session_uri = cookies_set_uri(session_cookies)
+        session_response = client.get(cookies_set_uri(session_cookies))
         assert session_response.status == 302, "response should redirect"
 
         assert !session_response.cookies.nil?, "there should be cookies in the response"
         response_cookies = session_response.cookie_jar
         assert !response_cookies.empty?
         response_cookies.cookies(session_uri).each do |cookie|
-          assert session_cookies.one? { |k, v| k == cookie.name && v == cookie.value }
+          assert(session_cookies.one? { |k, v| k == cookie.name && v == cookie.value })
         end
 
         response = client.cookies(response_cookies).get(cookies_uri)
@@ -45,7 +45,7 @@ module Requests
         build_uri("/cookies")
       end
 
-      def set_cookies_uri(cookies)
+      def cookies_set_uri(cookies)
         build_uri("/cookies/set?" + URI.encode_www_form(cookies))
       end
     end

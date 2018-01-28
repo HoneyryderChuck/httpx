@@ -21,8 +21,6 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib"]
   gem.version       = HTTPX::VERSION
 
-  gem.required_ruby_version = ">= 2.1"
-
   gem.add_runtime_dependency "http-2", ">= 0.8.4"
   gem.add_runtime_dependency "http-form_data", ">= 2.0.0", "< 3"
   gem.add_runtime_dependency "http_parser.rb", ">= 0.6.0"

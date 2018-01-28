@@ -126,7 +126,7 @@ module HTTPX
 
     def transition(nextstate)
       case nextstate
-      when :idle
+      # when :idle
       when :connected
         return unless @state == :idle
       when :closed
@@ -138,8 +138,11 @@ module HTTPX
   end
 
   class SSL < TCP
-    TLS_OPTIONS = OpenSSL::SSL::SSLContext.instance_methods.include?(:alpn_protocols) ?
-        { alpn_protocols: %w[h2 http/1.1] } : {}
+    TLS_OPTIONS = if OpenSSL::SSL::SSLContext.instance_methods.include?(:alpn_protocols)
+      { alpn_protocols: %w[h2 http/1.1] }
+    else
+      {}
+    end
 
     def initialize(_, _, options)
       @ctx = OpenSSL::SSL::SSLContext.new

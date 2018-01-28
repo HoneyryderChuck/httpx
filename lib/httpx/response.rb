@@ -84,7 +84,7 @@ module HTTPX
         begin
           unless @state == :idle
             rewind
-            while chunk = @buffer.read(@window_size)
+            while (chunk = @buffer.read(@window_size))
               yield(chunk)
             end
           end

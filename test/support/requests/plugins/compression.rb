@@ -35,7 +35,7 @@ module Requests
         body = json_body(response)
         verify_header(body["headers"], "Content-Type", "application/octet-stream")
         compressed_data = body["data"]
-        assert body["data"].bytesize < 8012, "body hasn't been compressed"
+        assert compressed_data.bytesize < 8012, "body hasn't been compressed"
       end
 
       def test_plugin_compression_deflate
@@ -56,7 +56,7 @@ module Requests
         body = json_body(response)
         verify_header(body["headers"], "Content-Type", "application/octet-stream")
         compressed_data = body["data"]
-        assert body["data"].bytesize < 8012, "body hasn't been compressed"
+        assert compressed_data.bytesize < 8012, "body hasn't been compressed"
       end
 
       def test_plugin_compression_brotli
@@ -76,7 +76,7 @@ module Requests
         body = json_body(response)
         verify_header(body["headers"], "Content-Type", "application/octet-stream")
         compressed_data = body["data"]
-        assert body["data"].bytesize < 8012, "body hasn't been compressed"
+        assert compressed_data.bytesize < 8012, "body hasn't been compressed"
       end
     end
   end

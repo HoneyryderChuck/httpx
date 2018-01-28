@@ -8,21 +8,21 @@ module ProxyHelper
   private
 
   def socks4_proxy
-    ip, port, version, _ = socks_proxies_list.select do |_, _, version, https|
+    ip, port, _, _ = socks_proxies_list.select do |_, _, version, https|
       version == "Socks4" && https
     end.sample
     "socks4://#{ip}:#{port}"
   end
 
   def socks4a_proxy
-    ip, port, version, _ = socks_proxies_list.select do |_, _, version, https|
+    ip, port, _, _ = socks_proxies_list.select do |_, _, version, https|
       version == "Socks4" && https
     end.sample
     "socks4a://#{ip}:#{port}"
   end
 
   def socks5_proxy
-    ip, port, version, _ = socks_proxies_list.select do |_, _, version, https|
+    ip, port, _, _ = socks_proxies_list.select do |_, _, version, https|
       version == "Socks5" && https
     end.sample
     "socks5://#{ip}:#{port}"

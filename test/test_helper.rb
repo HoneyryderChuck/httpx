@@ -12,8 +12,6 @@ if ENV.key?("PARALLEL")
   end
 end
 
-$HTTPX_DEBUG = !!ENV["HTTPX_DEBUG"]
-
 require "httpx"
 
 Dir[File.join(".", "test", "support", "**", "*.rb")].each { |f| require f }

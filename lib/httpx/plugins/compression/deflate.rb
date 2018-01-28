@@ -21,7 +21,7 @@ module HTTPX
                                          Zlib::MAX_WBITS,
                                          Zlib::MAX_MEM_LEVEL,
                                          Zlib::HUFFMAN_ONLY)
-            while chunk = raw.read(chunk_size)
+            while (chunk = raw.read(chunk_size))
               compressed = deflater.deflate(chunk)
               buffer << compressed
               yield compressed if block_given?
