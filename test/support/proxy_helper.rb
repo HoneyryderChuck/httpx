@@ -61,7 +61,7 @@ module ProxyHelper
       next unless id
       id.value == "proxylisttable"
     end
-    row.css("tr")
+    row ? row.css("tr") : []
   end
 
   def parse_http_proxies
