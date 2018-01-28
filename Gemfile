@@ -4,6 +4,7 @@ source "https://rubygems.org"
 gemspec
 
 gem "rake", "~> 12.3"
+gem "simplecov", require: false
 
 platform :mri do
   gem "brotli", require: false

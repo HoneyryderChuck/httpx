@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "simplecov" if ENV.key?("CI")
+
 gem "minitest"
 require "minitest/autorun"
 
