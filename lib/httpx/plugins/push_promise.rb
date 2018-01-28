@@ -48,34 +48,12 @@ module HTTPX
         end
 
         def __on_promise_response(parser, stream, h)
-          log(1, "#{stream.id}(promise): ") do
-            h.map { |k, v| "<- HEADER: #{k}: #{v}" }.join("\n")
-          end
           request = @promise_headers.delete(stream)
           return unless request
-          _, status = h.shift
-          headers = @options.headers_class.new(h)
-          response = @options.response_class.new(request, status, "2.0", headers, @options)
-          request.response = response
+          parser.__send__(:on_stream_headers, stream, request, h)
           request.transition(:done)
-          parser.streams[request] = stream 
-          stream.on(:data) do |data|
-            log(1, "#{stream.id}(promise): ") { "<- DATA: #{data.bytesize} bytes..." }
-            log(2, "#{stream.id}(promise): ") { "<- #{data.inspect}" }
-            request.response << data
-          end
-          stream.on(:close) do |error|
-
-            if request.expects?
-              return handle(request, stream)
-            end
-            response = request.response || ErrorResponse.new(error, retries)
-            on_response(request, response)
-            log(2, "#{stream.id}(promise): ") { "closing stream" }
-
-
-            parser.streams.delete(request)
-          end
+          stream.on(:data, &parser.method(:on_stream_data).curry[stream, request])
+          stream.on(:close, &parser.method(:on_stream_close).curry[stream, request])
         end
       end
     end
