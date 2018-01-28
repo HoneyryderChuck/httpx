@@ -54,6 +54,7 @@ module HTTPX
         def build_proxy_channel(proxy)
           parameters = Parameters.new(**proxy)
           uri = parameters.uri
+          log { "proxy: #{uri}" }
           io = TCP.new(uri.host, uri.port, @options)
           proxy_type = Parameters.registry(parameters.uri.scheme)
           channel = proxy_type.new(io, parameters, @options, &method(:on_response))

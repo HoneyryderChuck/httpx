@@ -8,44 +8,34 @@ module ProxyHelper
   private
 
   def socks4_proxy
-    @socks4_proxy ||= begin
-      ip, port, version, _ = socks_proxies_list.select do |_, _, version, https|
-        version == "Socks4" && https
-      end.sample
-      "socks4://#{ip}:#{port}"
-    end
+    ip, port, version, _ = socks_proxies_list.select do |_, _, version, https|
+      version == "Socks4" && https
+    end.sample
+    "socks4://#{ip}:#{port}"
   end
 
   def socks4a_proxy
-    @socks4a_proxy ||= begin
-      ip, port, version, _ = socks_proxies_list.select do |_, _, version, https|
-        version == "Socks4" && https
-      end.sample
-      "socks4a://#{ip}:#{port}"
-    end
+    ip, port, version, _ = socks_proxies_list.select do |_, _, version, https|
+      version == "Socks4" && https
+    end.sample
+    "socks4a://#{ip}:#{port}"
   end
 
   def socks5_proxy
-    @socks5_proxy ||= begin
-      ip, port, version, _ = socks_proxies_list.select do |_, _, version, https|
-        version == "Socks5" && https
-      end.sample
-      "socks5://#{ip}:#{port}"
-    end
+    ip, port, version, _ = socks_proxies_list.select do |_, _, version, https|
+      version == "Socks5" && https
+    end.sample
+    "socks5://#{ip}:#{port}"
   end
 
   def http_proxy
-    @http_proxy ||= begin
-      ip, port, _ = http_proxies_list.sample
-      "http://#{ip}:#{port}"
-    end
+    ip, port, _ = http_proxies_list.sample
+    "http://#{ip}:#{port}"
   end
 
   def https_proxy
-    @https_proxy ||= begin
-      ip, port, _ = http_proxies_list.select { |_, _, https| https }.sample
-      "http://#{ip}:#{port}"
-    end
+    ip, port, _ = http_proxies_list.select { |_, _, https| https }.sample
+    "http://#{ip}:#{port}"
   end
 
   def http_proxies_list
