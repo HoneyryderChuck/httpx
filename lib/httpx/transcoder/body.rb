@@ -15,15 +15,15 @@ module HTTPX::Transcoder
         @raw = body
       end
 
-      def bytesize 
+      def bytesize
         if @raw.respond_to?(:bytesize)
           @raw.bytesize
         elsif @raw.respond_to?(:to_ary)
           @raw.map(&:bytesize).reduce(0, :+)
+        elsif @raw.respond_to?(:size)
+          @raw.size || Float::INFINITY
         elsif @raw.respond_to?(:each)
           Float::INFINITY
-        elsif @raw.respond_to?(:size)
-          @raw.size
         else
           raise Error, "cannot determine size of body: #{@raw.inspect}"
         end

@@ -28,8 +28,8 @@ module HTTPX::Transcoder
       end
     end
 
-    def encode(json)
-      Encoder.new(json)
+    def encode(chunks)
+      Encoder.new(chunks)
     end
   end
   register "chunker", Chunker 

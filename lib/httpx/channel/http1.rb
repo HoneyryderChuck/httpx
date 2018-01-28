@@ -134,6 +134,10 @@ module HTTPX
     def set_request_headers(request)
       request.headers["host"] ||= request.authority 
       request.headers["connection"] ||= "keep-alive"
+      if !request.headers.key?("content-length") &&
+          request.body.bytesize == Float::INFINITY
+        request.chunk! 
+      end
     end
 
     def headline_uri(request)

@@ -38,6 +38,8 @@ module HTTPX
     def_delegator :@body, :<<
     
     def_delegator :@body, :empty?
+    
+    def_delegator :@body, :chunk!
 
     def initialize(verb, uri, options = {})
       @verb    = verb.to_s.downcase.to_sym
@@ -114,7 +116,7 @@ module HTTPX
         end
         return if @body.nil?
         @headers["content-type"] ||= @body.content_type
-        @headers["content-length"] = @body.bytesize unless chunked?
+        @headers["content-length"] = @body.bytesize unless unbounded_body?
       end
 
       def each(&block)
@@ -132,6 +134,7 @@ module HTTPX
 
       def empty?
         return true if @body.nil?
+        return false if chunked?
         bytesize.zero?
       end
 
@@ -154,8 +157,16 @@ module HTTPX
         encoded
       end
 
+      def unbounded_body?
+         chunked? || @body.bytesize == Float::INFINITY
+      end
+
       def chunked?
         @headers["transfer-encoding"] == "chunked"
+      end
+
+      def chunk!
+        @headers.add("transfer-encoding", "chunked")
       end
     end
 
