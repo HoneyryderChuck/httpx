@@ -14,4 +14,5 @@ end
 
 require "httpx"
 
+Dir[File.join(".", "test", "support", "*.rb")].each { |f| require f }
 Dir[File.join(".", "test", "support", "**", "*.rb")].each { |f| require f }
