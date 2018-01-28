@@ -20,10 +20,6 @@ module HTTPX
       branch(default_options.with_headers(headers))
     end
 
-    def encoding(encoding)
-      branch(default_options.with_encoding(encoding))
-    end
-
     def accept(type)
       headers("accept" => String(type)) 
     end
