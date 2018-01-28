@@ -5,6 +5,14 @@ require_relative "test_helper"
 class ClientTest < Minitest::Test
   include HTTPX
 
+  def test_client_block
+    yielded = nil
+    Client.new do |cli|
+      yielded = cli
+    end
+    assert yielded.is_a?(Client), "client should have been yielded"
+  end
+
   def test_client_plugin
     klient_class = Class.new(Client)
     klient_class.plugin(TestPlugin)

@@ -48,6 +48,19 @@ class ResponseTest < Minitest::Test
     assert body1.each.to_a == %w(foobar), "must yield buffers"
   end
 
+  def test_response_body_buffer
+    opts = { threshold_size: 10 }
+    body = Response::Body.new(Response.new(request, 200, "2.0", {}), opts)
+    body.extend(Module.new do
+      attr_reader :buffer
+    end)
+    assert body.buffer.nil?, "body should not buffer anything"
+    body.write("hello")
+    assert body.buffer.is_a?(StringIO), "body should buffer to memory"
+    body.write(" world")
+    assert body.buffer.is_a?(Tempfile), "body should buffer to file after going over threshold"
+  end
+
   private
 
   def request(verb=:get, uri="http://google.com")
