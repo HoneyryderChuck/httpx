@@ -107,7 +107,7 @@ module HTTPX
  
       def copy_to(dest)
         return unless @buffer
-        if dest.is_a?(File) and @buffer.is_a?(File)
+        if dest.respond_to?(:path) and @buffer.respond_to?(:path)
           FileUtils.mv(@buffer.path, dest.path)
         else
           @buffer.rewind
@@ -135,19 +135,6 @@ module HTTPX
         return if @state == :idle
         @buffer.rewind
       end
-  
-      # def buffered?
-      #   return true if @response.bodyless?
-      #   if content_length = @headers["content-length"]
-      #     content_length = Integer(content_length)
-      #     @length >= content_length
-      #   elsif @headers["transfer-encoding"] == "chunked"
-      #     # dechunk
-      #     raise "TODO: implement de-chunking"
-      #   else
-      #     true
-      #   end
-      # end
   
       def transition
         case @state
