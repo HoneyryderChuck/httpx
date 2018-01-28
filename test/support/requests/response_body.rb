@@ -38,7 +38,7 @@ module Requests
         attr_reader :file
 
         def initialize(response, **)
-          @file = Tempfile.new
+          @file = Tempfile.new("httpx-test")
         end
 
         def write(data)

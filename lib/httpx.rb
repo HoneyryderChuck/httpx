@@ -2,6 +2,8 @@
 
 require "httpx/version"
 
+require "httpx/extensions"
+
 require "httpx/errors"
 require "httpx/callbacks"
 require "httpx/loggable"

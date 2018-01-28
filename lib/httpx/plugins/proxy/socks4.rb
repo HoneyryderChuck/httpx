@@ -33,7 +33,8 @@ module HTTPX
               throw(:called)
             else
               response = ErrorResponse.new("socks error: #{status}", 0) 
-              while (req, _ = @pending.shift)
+              until @pending.empty?
+                req, _ = @pending.shift
                 emit(:response, req, response)
               end
             end

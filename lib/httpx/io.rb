@@ -139,9 +139,12 @@ module HTTPX
   end
 
   class SSL < TCP
+    TLS_OPTIONS = OpenSSL::SSL::SSLContext.instance_methods.include?(:alpn_protocols) ? 
+        { alpn_protocols: %w[h2 http/1.1] } : {}
+
     def initialize(_, _, options)
       @ctx = OpenSSL::SSL::SSLContext.new
-      @ctx.set_params(options.ssl)
+      @ctx.set_params(TLS_OPTIONS.merge(options.ssl))
       super
       @state = :negotiated if @keep_open
     end

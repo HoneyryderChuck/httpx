@@ -89,7 +89,8 @@ module HTTPX
 
           def on_error_response(error)
             response = ErrorResponse.new(error, 0) 
-            while (req, _ = @pending.shift)
+            until @pending.empty?
+              req, _ = @pending.shift
               emit(:response, req, response)
             end
           end

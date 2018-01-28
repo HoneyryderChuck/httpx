@@ -17,7 +17,9 @@ class HTTP2Test < HTTPTest
   include Plugins::FollowRedirects
   include Plugins::Cookies
   include Plugins::Compression
-  include Plugins::PushPromise
+  if OpenSSL::SSL::SSLContext.instance_methods.include?(:alpn_protocols)
+    include Plugins::PushPromise
+  end
 
   private
 

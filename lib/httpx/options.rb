@@ -41,7 +41,7 @@ module HTTPX
       defaults = {
         :debug                    => ENV.key?("HTTPX_DEBUG") ? $stderr : nil,
         :debug_level              => (ENV["HTTPX_DEBUG"] || 1).to_i,
-        :ssl                      => { alpn_protocols: %w[h2 http/1.1] },
+        :ssl                      => {},
         :http2_settings           => { settings_enable_push: 0 },
         :fallback_protocol        => "http/1.1", 
         :timeout                  => Timeout.new,
