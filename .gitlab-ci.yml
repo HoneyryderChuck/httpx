@@ -1,6 +1,7 @@
 before_script:
   - ruby -v
   - uname -v
+  - apk add git
   - gem install bundler --no-doc
   - bundle install --jobs 4 
 
