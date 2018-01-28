@@ -3,7 +3,7 @@
 source "https://rubygems.org"
 gemspec
 
-gem "rake"
+gem "rake", "~> 12.3"
 
 platform :mri do
   gem "brotli", require: false
