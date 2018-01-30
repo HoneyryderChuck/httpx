@@ -146,7 +146,8 @@ module HTTPX
 
     def initialize(_, _, options)
       @ctx = OpenSSL::SSL::SSLContext.new
-      @ctx.set_params(TLS_OPTIONS.merge(options.ssl))
+      ctx_options = TLS_OPTIONS.merge(options.ssl)
+      @ctx.set_params(ctx_options) unless ctx_options.empty?
       super
       @state = :negotiated if @keep_open
     end
