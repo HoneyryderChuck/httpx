@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative "../test_helper"
 require_relative "assertion_helpers"
 
 class HTTPTest < Minitest::Spec
