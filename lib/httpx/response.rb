@@ -53,7 +53,7 @@ module HTTPX
     end
 
     def inspect
-      "#<Response @status=#{@status} @headers=#{@headers} @body=#{@body}>"
+      "#<Response:#{object_id} @status=#{@status} @headers=#{@headers}>"
     end
 
     class Body
