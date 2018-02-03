@@ -9,6 +9,8 @@ module HTTPX::Transcoder
     class Encoder
       extend Forwardable
 
+      def_delegator :@raw, :readpartial
+
       CRLF = "\r\n"
 
       def initialize(body)
