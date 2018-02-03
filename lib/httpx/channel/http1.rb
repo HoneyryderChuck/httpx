@@ -86,16 +86,18 @@ module HTTPX
       log { response.headers.each.map { |f, v| "-> HEADER: #{f}: #{v}" }.join("\n") }
 
       request.response = response
-      # parser can't say if it's parsing GET or HEAD,
-      # call the completeness callback manually
-      dispatch if request.verb == :head ||
-                  request.verb == :connect
+
+      @has_response = true if response.complete?
     end
 
     def on_body(chunk)
       log { "-> DATA: #{chunk.bytesize} bytes..." }
       log(2) { "-> #{chunk.inspect}" }
-      @requests.first.response << chunk
+      response = @requests.first.response
+
+      response << chunk
+
+      dispatch if response.complete?
     end
 
     def on_message_complete

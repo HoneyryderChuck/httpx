@@ -52,6 +52,10 @@ module HTTPX
       ContentType.parse(@headers["content-type"])
     end
 
+    def complete?
+      bodyless?
+    end
+
     def inspect
       "#<Response:#{object_id} @status=#{@status} @headers=#{@headers}>"
     end
