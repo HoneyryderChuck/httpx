@@ -99,11 +99,12 @@ module HTTPX
 
       def to_s
         rewind
-        return @buffer.read if @buffer
+        return @buffer.read.force_encoding(@encoding) if @buffer
         ""
       ensure
         close
       end
+      alias_method :to_str, :to_s
 
       def empty?
         @length.zero?
@@ -145,7 +146,7 @@ module HTTPX
         when :idle
           if @length > @threshold_size
             @state = :buffer
-            @buffer = Tempfile.new("httpx", encoding: Encoding::BINARY, mode: File::RDWR)
+            @buffer = Tempfile.new("httpx", encoding: @encoding, mode: File::RDWR)
           else
             @state = :memory
             @buffer = StringIO.new("".b, File::RDWR)
@@ -153,7 +154,7 @@ module HTTPX
         when :memory
           if @length > @threshold_size
             aux = @buffer
-            @buffer = Tempfile.new("palanca", encoding: Encoding::BINARY, mode: File::RDWR)
+            @buffer = Tempfile.new("palanca", encoding: @encoding, mode: File::RDWR)
             aux.rewind
             ::IO.copy_stream(aux, @buffer)
             # TODO: remove this if/when minor ruby is 2.3
