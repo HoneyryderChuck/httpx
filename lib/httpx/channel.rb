@@ -47,7 +47,7 @@ module HTTPX
              when "https"
                IO.registry("ssl").new(uri.host, uri.port, options)
              else
-               raise Error, "#{uri.scheme}: unrecognized channel"
+               raise Error, "#{uri}: #{uri.scheme}: unrecognized channel"
         end
         new(io, options)
       end
