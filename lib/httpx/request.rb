@@ -56,6 +56,10 @@ module HTTPX
       @state = :idle
     end
 
+    def merge_headers(h)
+      @headers = @headers.merge(h)
+    end
+
     def scheme
       @uri.scheme
     end

@@ -31,6 +31,10 @@ module HTTPX
                                                      window_size: @options.window_size)
     end
 
+    def merge_headers(h)
+      @headers = @headers.merge(h)
+    end
+
     def <<(data)
       @body.write(data)
     end
