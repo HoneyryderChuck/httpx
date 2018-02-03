@@ -45,6 +45,7 @@ module HTTPX
               @io.connect
               return if @io.closed?
               req, _ = @pending.first
+              return unless req
               request_uri = req.uri
               @write_buffer << Packet.connect(@parameters, request_uri)
               proxy_connect
