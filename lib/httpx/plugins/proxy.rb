@@ -40,24 +40,24 @@ module HTTPX
           { uri: uri }
         end
 
-        def find_channel(request)
+        def find_channel(request, **options)
           uri = URI(request.uri)
           proxy = proxy_params(uri)
           return super unless proxy
           @connection.find_channel(proxy) || begin
-            channel = build_proxy_channel(proxy)
+            channel = build_proxy_channel(proxy, **options)
             set_channel_callbacks(channel)
             channel
           end
         end
 
-        def build_proxy_channel(proxy)
+        def build_proxy_channel(proxy, **options)
           parameters = Parameters.new(**proxy)
           uri = parameters.uri
           log { "proxy: #{uri}" }
           io = TCP.new(uri.host, uri.port, @options)
           proxy_type = Parameters.registry(parameters.uri.scheme)
-          channel = proxy_type.new(io, parameters, @options, &method(:on_response))
+          channel = proxy_type.new(io, parameters, @options.merge(options), &method(:on_response))
           @connection.__send__(:register_channel, channel)
           channel
         end

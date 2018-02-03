@@ -25,7 +25,7 @@ module HTTPX
 
     def request(*args, keep_open: @keep_open, **options)
       requests = __build_reqs(*args, **options)
-      responses = __send_reqs(*requests)
+      responses = __send_reqs(*requests, **options)
       return responses.first if responses.size == 1
       responses
     ensure
@@ -54,10 +54,10 @@ module HTTPX
       response
     end
 
-    def find_channel(request)
+    def find_channel(request, **options)
       uri = URI(request.uri)
       @connection.find_channel(uri) || begin
-        channel = @connection.build_channel(uri)
+        channel = @connection.build_channel(uri, **options)
         set_channel_callbacks(channel)
         channel
       end
@@ -89,9 +89,9 @@ module HTTPX
       end
     end
 
-    def __send_reqs(*requests)
+    def __send_reqs(*requests, **options)
       requests.each do |request|
-        channel = find_channel(request)
+        channel = find_channel(request, **options)
         channel.send(request)
       end
       responses = []

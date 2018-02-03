@@ -38,8 +38,8 @@ module HTTPX
       end
     end
 
-    def build_channel(uri)
-      channel = Channel.by(uri, @options)
+    def build_channel(uri, **options)
+      channel = Channel.by(uri, @options.merge(options))
       register_channel(channel)
       channel
     end
