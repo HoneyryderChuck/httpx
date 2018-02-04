@@ -92,6 +92,9 @@ module HTTPX
         @parser = pr
         parser.reenqueue!
         return false
+      else
+        pr.close
+        @parser = nil
       end
       true
     end
@@ -170,10 +173,6 @@ module HTTPX
         send_pending
       when :closed
         return if @state == :idle
-        if (pr = @parser)
-          pr.close
-          @parser = nil
-        end
         @io.close
         @read_buffer.clear
         @write_buffer.clear
