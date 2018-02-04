@@ -14,19 +14,22 @@ module HTTPX
       @state = :idle
       @options = Options.new(options)
       @fallback_protocol = @options.fallback_protocol
-      @ip = TCPSocket.getaddress(hostname)
       @port = port
       if @options.io
         @io = case @options.io
               when Hash
+                @ip = TCPSocket.getaddress(hostname)
                 @options.io[@ip] || @options.io["#{@ip}:#{@port}"]
               else
+                @ip = hostname
                 @options.io
         end
         unless @io.nil?
           @keep_open = true
           @state = :connected
         end
+      else
+        @ip = TCPSocket.getaddress(hostname)
       end
       @io ||= build_socket
     end

@@ -68,7 +68,7 @@ module HTTPX
     end
 
     def match?(uri)
-      ip = TCPSocket.getaddress(uri.host)
+      ip = TCPSocket.getaddress(uri.host) rescue uri.host
 
       ip == @io.ip &&
         uri.port == @io.port &&
