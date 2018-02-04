@@ -76,7 +76,7 @@ module HTTPX
           __build_req(verb, uri, options)
         end
       when 2, 3
-        verb, *uris = args
+        verb, uris = args
         if uris.respond_to?(:each)
           uris.map do |uri|
             __build_req(verb, uri, options)

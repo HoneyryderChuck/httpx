@@ -4,7 +4,7 @@ module HTTPX
   module Chainable
     %i[head get post put delete trace options connect patch].each do |meth|
       define_method meth do |*uri, **options|
-        request(meth, *uri, **options)
+        request(meth, uri, **options)
       end
     end
 
