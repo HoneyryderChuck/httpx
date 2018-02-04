@@ -13,6 +13,8 @@ module HTTPX
     def_delegator :@buffer, :to_str
 
     def_delegator :@buffer, :empty?
+    
+    def_delegator :@buffer, :bytesize
 
     def_delegator :@buffer, :slice!
 
