@@ -25,7 +25,10 @@ module HTTPX
     end
 
     def plugin(*plugins)
-      Class.new(Client).plugins(plugins).new
+      klass = self.is_a?(Client) ? self.class : Client
+      klass = Class.new(klass)
+      klass.instance_variable_set(:@default_options, klass.default_options.merge(default_options))
+      klass.plugins(plugins).new
     end
     alias_method :plugins, :plugin
 
