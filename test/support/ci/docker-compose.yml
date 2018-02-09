@@ -1,0 +1,36 @@
+version: '3'
+services:
+  #httpx:
+    #build:
+      #context: .
+      #dockerfile: Dockerfile 
+    #depends_on:
+      #- squid
+      #- dante 
+    #volumes:
+      #- ./:/app
+    #command:
+      #"rake test"
+
+  dante:
+    image: vimagick/dante
+    ports:
+      - "1080:1080"
+    networks:
+      httpx:
+        aliases:
+          - dante 
+
+  squid:
+    image: sameersbn/squid:3.3.8-23
+    ports:
+      - "3128:3128"
+    networks:
+      httpx:
+        aliases:
+          - squid
+
+networks:
+  httpx:
+    external:
+      name: httpx 
