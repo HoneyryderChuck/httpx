@@ -1,16 +1,22 @@
 version: '3'
 services:
-  #httpx:
-    #build:
-      #context: .
-      #dockerfile: Dockerfile 
-    #depends_on:
-      #- squid
-      #- dante 
-    #volumes:
-      #- ./:/app
-    #command:
-      #"rake test"
+  httpx:
+    environment:
+      - PARALLEL=1
+      - CI=1
+    build:
+      context: .
+      dockerfile: Dockerfile 
+    depends_on:
+      - squid
+      - dante 
+    command:
+      "rake test"
+  
+      #  box:
+      #    image: busybox
+      #    volumes:
+      #      - /box
 
   dante:
     image: vimagick/dante
@@ -34,3 +40,5 @@ networks:
   httpx:
     external:
       name: httpx 
+volumes:
+  box:
