@@ -22,6 +22,6 @@ class HTTP2Test < HTTPTest
   private
 
   def origin
-    "https://nghttp2.org/httpbin"
+    "https://#{httpbins}"
   end
 end
