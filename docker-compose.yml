@@ -2,14 +2,19 @@ version: '3'
 services:
   httpx:
     environment:
+      - HTTPBIN_HOST=nghttp2:3000
       - PARALLEL=1
       - CI=1
     build:
       context: .
-      dockerfile: Dockerfile 
+      dockerfile: test/support/ci/Dockerfile 
     depends_on:
       - squid
-      - dante 
+      - dante
+      - nghttp2
+    volumes:
+      - ./lib:/httpx/lib
+      - ./test:/httpx/test
     command:
       "rake test"
   
@@ -22,23 +27,24 @@ services:
     image: vimagick/dante
     ports:
       - "1080:1080"
-    networks:
-      httpx:
-        aliases:
-          - dante 
 
   squid:
     image: sameersbn/squid:3.3.8-23
     ports:
       - "3128:3128"
-    networks:
-      httpx:
-        aliases:
-          - squid
 
-networks:
-  httpx:
-    external:
-      name: httpx 
-volumes:
-  box:
+  nghttp2:
+    image: dajobe/nghttpx
+    ports:
+      - 3000:3000
+    depends_on:
+      - httpbin
+    entrypoint:
+      "/usr/bin/nghttpx"
+    command:
+      accesslog-file=/dev/stdout errorlog-file=/dev/stdout --backend 'httpbin,8000' --frontend='0.0.0.0,3000;no-tls'
+          
+  httpbin:
+    image: citizenstig/httpbin
+    ports:
+      - 8000:8000
