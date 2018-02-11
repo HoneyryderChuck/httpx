@@ -3,8 +3,7 @@ services:
   httpx:
     environment:
       - SSL_CERT_FILE=/httpx/test/support/ci/certs/ca-bundle.crt
-      - HTTPBIN_HOST=nghttp2:3001
-      - HTTPBINS_HOST=nghttp2:3000
+      - HTTPBIN_HOST=nghttp2
       - PARALLEL=1
       - CI=1
     build:
@@ -36,19 +35,20 @@ services:
       - "3128:3128"
 
   nghttp2:
-    image: dajobe/nghttpx
+    build:
+      context: .
+      dockerfile: test/support/ci/Dockerfile.nghttp2
     ports:
-      - 3000:3000
-      - 3001:3001
+      - 80:80
+      - 443:443
     depends_on:
       - httpbin
     entrypoint:
-      "/usr/bin/nghttpx"
+      /usr/local/bin/nghttpx
     volumes:
       - ./test/support/ci:/home
     command:
       --conf /home/nghttp.conf --no-ocsp
-      #--accesslog-file /dev/stdout errorlog-file /dev/stdout --dh-param-file /home/dhparam.pem --backend 'httpbin,8000' --frontend '0.0.0.0,3001;no-tls' --frontend '0.0.0.0,3000' /home/server.key /home/server.crt
           
   httpbin:
     image: citizenstig/httpbin

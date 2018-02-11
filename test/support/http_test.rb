@@ -19,8 +19,4 @@ class HTTPTest < Minitest::Spec
   def httpbin
     ENV.fetch("HTTPBIN_HOST", "nghttp2.org/httpbin")
   end
-  
-  def httpbins
-    ENV.fetch("HTTPBINS_HOST", "nghttp2.org/httpbin")
-  end
 end
