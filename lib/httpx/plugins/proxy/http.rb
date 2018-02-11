@@ -59,9 +59,9 @@ module HTTPX
               transition(:open)
               throw(:called)
             else
-              pending = @parser.pending
+              pending = @pending.map(&:first) + @parser.pending
               while (req = pending.shift)
-                @on_response.call(req, response)
+                emit(:response, req, response)
               end
             end
           end
