@@ -4,6 +4,11 @@ services:
     environment:
       - SSL_CERT_FILE=/httpx/test/support/ci/certs/ca-bundle.crt
       - HTTPBIN_HOST=nghttp2
+      - HTTPX_HTTP_PROXY=http://http_proxy:3128
+      - HTTPX_HTTPS_PROXY=http://http_proxy:3128
+      - HTTPX_SOCKS4_PROXY=socks4://socks_proxy:8080
+      - HTTPX_SOCKS4A_PROXY=socks4a://socks_proxy:8080
+      - HTTPX_SOCKS5_PROXY=socks5://socks_proxy:8080
       - PARALLEL=1
       - CI=1
     build:
@@ -18,11 +23,6 @@ services:
       - ./test:/httpx/test
     command:
       "rake test"
-  
-      #  box:
-      #    image: busybox
-      #    volumes:
-      #      - /box
 
   dante:
     image: vimagick/dante
