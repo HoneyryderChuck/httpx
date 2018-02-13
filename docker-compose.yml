@@ -15,8 +15,8 @@ services:
       context: .
       dockerfile: test/support/ci/Dockerfile 
     depends_on:
-      - squid
-      - dante
+      - http_proxy 
+      - socks_proxy 
       - nghttp2
     volumes:
       - ./lib:/httpx/lib
@@ -24,12 +24,15 @@ services:
     command:
       "rake test"
 
-  dante:
-    image: vimagick/dante
+  socks_proxy:
+    image: qautomatron/docker-3proxy
     ports:
-      - "1080:1080"
+      - "8080:8080"
+      - "3129:3129"
+    volumes:
+      - ./test/support/ci:/etc/3proxy
 
-  squid:
+  http_proxy:
     image: sameersbn/squid:3.3.8-23
     ports:
       - "3128:3128"
