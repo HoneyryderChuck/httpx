@@ -1,0 +1,6 @@
+#!/bin/sh
+apk update && apk upgrade
+apk add --no-cache g++ make git bash
+cd /home && rm Gemfile.lock && bundle install && bundle exec rake test:ci
+
+
