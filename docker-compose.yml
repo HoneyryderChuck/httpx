@@ -22,7 +22,7 @@ services:
       - ./lib:/httpx/lib
       - ./test:/httpx/test
     command:
-      "rake test"
+      "rake test:ci"
 
   socks_proxy:
     image: qautomatron/docker-3proxy
