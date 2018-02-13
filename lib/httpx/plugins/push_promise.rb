@@ -14,7 +14,7 @@ module HTTPX
         def mark_as_pushed!
           @__pushed = true
         end
-      end 
+      end
 
       module InstanceMethods
         def initialize(opts = {})

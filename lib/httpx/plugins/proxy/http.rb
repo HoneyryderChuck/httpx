@@ -91,7 +91,7 @@ module HTTPX
           end
 
           def empty?
-            @requests.reject{ |r| r.verb == :connect }.empty? ||
+            @requests.reject { |r| r.verb == :connect }.empty? ||
               @requests.all? { |request| !request.response.nil? }
           end
         end

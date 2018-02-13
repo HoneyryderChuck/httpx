@@ -2,7 +2,7 @@
 
 module HTTPX
   module Plugins
-    module Stream 
+    module Stream
       module InstanceMethods
         def stream
           headers("accept" => "text/event-stream",
@@ -14,7 +14,7 @@ module HTTPX
         def complete?
           super ||
             stream? &&
-            @stream_complete
+              @stream_complete
         end
 
         def stream?
@@ -28,6 +28,6 @@ module HTTPX
         end
       end
     end
-    register_plugin :stream, Stream 
+    register_plugin :stream, Stream
   end
 end

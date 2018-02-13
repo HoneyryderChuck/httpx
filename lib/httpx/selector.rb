@@ -82,7 +82,7 @@ class HTTPX::Selector
           monitor = readable ? @readers[io] : Monitor.new(io, interests, self)
         end
         @writers[io] = monitor
-        @readers.delete(io) unless readable 
+        @readers.delete(io) unless readable
       end
       monitor
     end

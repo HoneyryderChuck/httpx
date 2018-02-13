@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "rake/testtask"
-require 'rubocop/rake_task'
+require "rubocop/rake_task"
 
 Rake::TestTask.new do |t|
   t.libs = %w[lib test]
@@ -9,10 +9,9 @@ Rake::TestTask.new do |t|
   t.warning = false
 end
 
-desc 'Run rubocop'
+desc "Run rubocop"
 task :rubocop do
   RuboCop::RakeTask.new
 end
 
-task :"test:ci" => [:test, :rubocop]
-
+task :"test:ci" => %i[test rubocop]

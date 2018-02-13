@@ -68,7 +68,11 @@ module HTTPX
     end
 
     def match?(uri)
-      ip = TCPSocket.getaddress(uri.host) rescue uri.host
+      ip = begin
+             TCPSocket.getaddress(uri.host)
+           rescue StandardError
+             uri.host
+           end
 
       ip == @io.ip &&
         uri.port == @io.port &&
@@ -87,14 +91,14 @@ module HTTPX
       pr = @parser
       transition(:closed)
       return true if hard
-      unless pr && pr.empty?
+      if pr && pr.empty?
+        pr.close
+        @parser = nil
+      else
         transition(:idle)
         @parser = pr
         parser.reenqueue!
         return false
-      else
-        pr.close
-        @parser = nil
       end
       true
     end

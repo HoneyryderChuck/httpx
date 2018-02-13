@@ -25,7 +25,7 @@ module HTTPX
     end
 
     def plugin(*plugins)
-      klass = self.is_a?(Client) ? self.class : Client
+      klass = is_a?(Client) ? self.class : Client
       klass = Class.new(klass)
       klass.instance_variable_set(:@default_options, klass.default_options.merge(default_options))
       klass.plugins(plugins).new
