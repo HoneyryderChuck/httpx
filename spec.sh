@@ -8,6 +8,8 @@ cleanup () {
   docker-compose -p ci rm -f --all
 }
 
+trap cleanup exit
+
 if [ -z $VERSION ]; then
   extra=""
 else
@@ -24,4 +26,3 @@ docker-compose -f docker-compose.yml ${extra} -p ci up \
 # TEST_EXIT_CODE=`docker wait ci_httpx_1`
 # docker run --env PARALLEL=1 COVERAGE=1 httpx rake test
 
-trap cleanup exit
