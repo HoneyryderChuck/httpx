@@ -11,7 +11,7 @@ services:
       - HTTPX_SOCKS5_PROXY=socks5://socksproxy:8080
       - PARALLEL=1
       - CI=1
-    image: ruby:2.4-alpine
+    image: ruby:latest-alpine
     depends_on:
       - httpproxy 
       - socksproxy 

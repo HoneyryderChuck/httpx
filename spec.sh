@@ -1,14 +1,21 @@
 #!/bin/sh
 
+RUBY=$1
+VERSION=$2
+
 cleanup () {
   docker-compose -p ci kill
   docker-compose -p ci rm -f --all
 }
 
-docker build -t httpx -f test/support/ci/Dockerfile .
+if [ -z $VERSION ]; then
+  extra=""
+else
+  extra="-f docker-compose-${RUBY}-${VERSION}.yml"
+fi
 
-docker-compose -f test/support/ci/docker-compose.yml -p ci build
-docker-compose -f test/support/ci/docker-compose.yml -p ci up httpx \
+docker-compose -f docker-compose.yml ${extra} -p ci build
+docker-compose -f docker-compose.yml ${extra} -p ci up \
   --exit-code-from httpx \
   --abort-on-container-exit
 
