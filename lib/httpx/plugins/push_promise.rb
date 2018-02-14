@@ -44,6 +44,7 @@ module HTTPX
           if request
             request.merge_headers(headers)
             @promise_headers[stream] = request
+            parser.pending.delete(request)
           else
             stream.refuse
           end

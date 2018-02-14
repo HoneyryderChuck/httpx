@@ -4,7 +4,7 @@ module Requests
   module Plugins
     module PushPromise
       def test_plugin_push_promise_get
-        client = HTTPX.with(debug_level: 2, debug: $stderr).plugin(:push_promise)
+        client = HTTPX.plugin(:push_promise)
         html, css = client.get(push_html_uri, push_css_uri)
         verify_status(html.status, 200)
         verify_status(css.status, 200)
