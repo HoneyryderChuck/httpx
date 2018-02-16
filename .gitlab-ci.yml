@@ -25,3 +25,4 @@ test_ruby25:
 test_jruby:
   script:
     ./spec.sh jruby 9.0.0.0
+  allow_failure: true
