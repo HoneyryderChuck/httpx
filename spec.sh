@@ -5,7 +5,7 @@ VERSION=$2
 
 cleanup () {
   docker-compose -p ci kill
-  docker-compose -p ci rm -f --all
+  docker-compose -p ci rm -f
 }
 
 trap cleanup exit
