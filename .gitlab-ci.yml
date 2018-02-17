@@ -8,21 +8,45 @@ before_script:
   - docker-compose --version
 
 test_ruby21:
+  stage: test
   script:
     ./spec.sh ruby 2.1
 test_ruby22:
+  stage: test
   script:
     ./spec.sh ruby 2.2
 test_ruby23:
+  stage: test
   script:
     ./spec.sh ruby 2.3
 test_ruby24:
+  stage: test
   script:
     ./spec.sh ruby 2.4
 test_ruby25:
+  stage: test
   script:
     ./spec.sh ruby 2.5
+  artifacts:
+    paths:
+      - coverage/
 test_jruby:
+  stage: test
   script:
     ./spec.sh jruby 9.0.0.0
   allow_failure: true
+
+pages:
+  stage: deploy 
+  dependencies:
+    - test_ruby25
+  script:
+    - mv coverage/ public/
+  artifacts:
+    paths:
+      - public
+    expire_in: 30 days
+  only:
+    - master
+
+
