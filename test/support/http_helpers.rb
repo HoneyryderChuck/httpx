@@ -3,7 +3,7 @@
 require_relative "../test_helper"
 require_relative "assertion_helpers"
 
-class HTTPTest < Minitest::Spec
+module HTTPHelpers
   include ResponseHelpers
 
   private
