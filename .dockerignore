@@ -1,0 +1,11 @@
+.DS_Store
+.git
+.gitignore
+.gitlab-ci.yml
+.bundle
+docker-compose.yml
+Gemfile.lock
+coverage
+tmp
+doc
+*.swp

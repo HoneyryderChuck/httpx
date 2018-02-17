@@ -160,7 +160,7 @@ module HTTPX
     end
 
     def protocol
-      @io.alpn_protocol
+      @io.alpn_protocol || super
     rescue StandardError
       super
     end

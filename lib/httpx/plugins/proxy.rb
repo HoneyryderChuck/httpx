@@ -93,7 +93,7 @@ module HTTPX
 
     def to_io
       transition(:connecting) if @state == :idle
-      super
+      @io.to_io
     end
   end
 

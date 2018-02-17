@@ -104,7 +104,7 @@ module HTTPX
       log(2) { "parsing complete" }
       request = @requests.first
       response = request.response
-   
+
       if !@parser_trailers && response.headers.key?("trailer")
         @parser_trailers = true
         # this is needed, because the parser can't accept further headers.

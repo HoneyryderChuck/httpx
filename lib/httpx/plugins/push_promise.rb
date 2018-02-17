@@ -14,7 +14,7 @@ module HTTPX
         def mark_as_pushed!
           @__pushed = true
         end
-      end 
+      end
 
       module InstanceMethods
         def initialize(opts = {})
@@ -44,6 +44,7 @@ module HTTPX
           if request
             request.merge_headers(headers)
             @promise_headers[stream] = request
+            parser.pending.delete(request)
           else
             stream.refuse
           end

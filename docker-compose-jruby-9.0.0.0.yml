@@ -1,0 +1,4 @@
+version: '3'
+services:
+  httpx:
+    image: jruby:9.1.15-alpine

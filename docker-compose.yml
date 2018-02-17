@@ -1,0 +1,56 @@
+version: '3'
+services:
+  httpx:
+    environment:
+      - SSL_CERT_FILE=/home/test/support/ci/certs/ca-bundle.crt
+      - HTTPBIN_HOST=nghttp2
+      - HTTPX_HTTP_PROXY=http://httpproxy:3128
+      - HTTPX_HTTPS_PROXY=http://httpproxy:3128
+      - HTTPX_SOCKS4_PROXY=socks4://socksproxy:8080
+      - HTTPX_SOCKS4A_PROXY=socks4a://socksproxy:8080
+      - HTTPX_SOCKS5_PROXY=socks5://socksproxy:8080
+      - PARALLEL=1
+      - CI=1
+    image: ruby:latest-alpine
+    depends_on:
+      - httpproxy 
+      - socksproxy 
+      - nghttp2
+    volumes:
+      - ./:/home
+    entrypoint:
+      /home/test/support/ci/build.sh
+
+  socksproxy:
+    image: qautomatron/docker-3proxy
+    ports:
+      - "8080:8080"
+      - "3129:3129"
+    volumes:
+      - ./test/support/ci:/etc/3proxy
+
+  httpproxy:
+    image: sameersbn/squid:3.3.8-23
+    ports:
+      - "3128:3128"
+
+  nghttp2:
+    build:
+      context: .
+      dockerfile: test/support/ci/Dockerfile.nghttp2
+    ports:
+      - 80:80
+      - 443:443
+    depends_on:
+      - httpbin
+    entrypoint:
+      /usr/local/bin/nghttpx
+    volumes:
+      - ./test/support/ci:/home
+    command:
+      --conf /home/nghttp.conf --no-ocsp
+          
+  httpbin:
+    image: citizenstig/httpbin
+    ports:
+      - 8000:8000

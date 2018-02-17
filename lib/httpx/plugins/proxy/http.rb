@@ -59,9 +59,9 @@ module HTTPX
               transition(:open)
               throw(:called)
             else
-              pending = @parser.pending
+              pending = @pending.map(&:first) + @parser.pending
               while (req = pending.shift)
-                @on_response.call(req, response)
+                emit(:response, req, response)
               end
             end
           end
@@ -88,6 +88,11 @@ module HTTPX
             tunnel = "#{uri.hostname}:#{uri.port}"
             log { "establishing HTTP proxy tunnel to #{tunnel}" }
             tunnel
+          end
+
+          def empty?
+            @requests.reject { |r| r.verb == :connect }.empty? ||
+              @requests.all? { |request| !request.response.nil? }
           end
         end
 

@@ -1,14 +1,13 @@
 # frozen_string_literal: true
 
-require_relative "support/http_test"
+require_relative "support/http_helpers"
 
-class HTTP1Test < HTTPTest
+class HTTPSTest < Minitest::Test
+  include HTTPHelpers
   include Requests
-  include Head
   include Get
-  include ChunkedGet
+  include Head
   include WithBody
-  include WithChunkedBody
   include Headers
   include ResponseBody
   include IO
@@ -19,11 +18,11 @@ class HTTP1Test < HTTPTest
   include Plugins::FollowRedirects
   include Plugins::Cookies
   include Plugins::Compression
-  include Plugins::H2C
+  include Plugins::PushPromise if OpenSSL::SSL::SSLContext.instance_methods.include?(:alpn_protocols)
 
   private
 
   def origin
-    "http://nghttp2.org/httpbin"
+    "https://#{httpbin}"
   end
 end

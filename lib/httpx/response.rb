@@ -53,7 +53,7 @@ module HTTPX
     end
 
     def complete?
-      bodyless?
+      bodyless? || (@request.verb == :connect && @status == 200)
     end
 
     def inspect
