@@ -21,6 +21,7 @@ module HTTPX
         if (channel = monitor.value)
           consume(channel)
         end
+        monitor.interests = channel.interests
       end
     end
 
@@ -57,7 +58,7 @@ module HTTPX
     private
 
     def register_channel(channel)
-      monitor = @selector.register(channel, :rw)
+      monitor = @selector.register(channel, :w)
       monitor.value = channel
       @channels << channel
     end

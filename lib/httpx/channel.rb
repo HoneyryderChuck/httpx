@@ -61,7 +61,7 @@ module HTTPX
       @io = io
       @options = Options.new(options)
       @window_size = @options.window_size
-      @read_buffer = "".b
+      @read_buffer = Buffer.new(BUFFER_SIZE)
       @write_buffer = Buffer.new(BUFFER_SIZE)
       @pending = []
       @state = :idle
@@ -77,6 +77,17 @@ module HTTPX
       ip == @io.ip &&
         uri.port == @io.port &&
         uri.scheme == @io.scheme
+    end
+
+    def interests
+      return :w if @state == :idle
+      readable = !@read_buffer.full?
+      writable = !@write_buffer.empty?
+      if readable
+        writable ? :rw : :r
+      else
+        writable ? :w : :r
+      end
     end
 
     def to_io
@@ -134,7 +145,7 @@ module HTTPX
         throw(:close, self) unless siz
         return if siz.zero?
         log { "READ: #{siz} bytes..." }
-        parser << @read_buffer
+        parser << @read_buffer.to_s
       end
     end
 
