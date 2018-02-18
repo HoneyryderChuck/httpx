@@ -1,5 +1,8 @@
 image: tmaier/docker-compose
 
+variables:
+  JEKYLL_ENV: production
+
 services:
   - docker:dind
 
