@@ -1,0 +1,22 @@
+-
+  name: HTTPX (Classes and Modules)
+  path: HTTPX.html
+-
+  name: HTTPX::Request
+  path: HTTPX/Request.html
+-
+  name: HTTPX::Response
+  path: HTTPX/Response.html
+-
+  name: HTTPX::Headers
+  path: HTTPX/Headers.html
+-
+  name: HTTPX::Client
+  path: HTTPX/Client.html
+-
+  name: HTTPX::Options
+  path: HTTPX/Options.html
+-
+  name: HTTPX::Chainable
+  path: HTTPX/Chainable.html
+

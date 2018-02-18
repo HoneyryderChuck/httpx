@@ -12,6 +12,7 @@ AllCops:
     - 'examples/**/*'
     - '.bundle/**/*'
     - 'vendor/**/*'
+    - 'www/**/*'
     - 'lib/httpx/extensions.rb'
 
 Metrics/LineLength:
