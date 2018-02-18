@@ -43,6 +43,7 @@ pages:
   script:
     - mv coverage/ public/coverage/
     - mv rdoc/ public/rdoc/
+    - cd www && bundle exec jekyll build -d ../public
   artifacts:
     paths:
       - public
