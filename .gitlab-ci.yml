@@ -41,7 +41,7 @@ pages:
   dependencies:
     - test_ruby25
   script:
-    - mv coverage/ public/
+    - mv coverage/ public/coverage/
   artifacts:
     paths:
       - public
