@@ -19,25 +19,25 @@ task :"test:ci" => %i[test rubocop rdoc]
 
 # Doc
 
-RDOC_OPTS = ["--line-numbers", "--inline-source", "--title", "Roda: Routing tree web toolkit"].freeze
+rdoc_opts = ["--line-numbers", "--inline-source", "--title", "Roda: Routing tree web toolkit"]
 
 begin
   gem "hanna-nouveau"
-  RDOC_OPTS.concat(["-f", "hanna"])
+  rdoc_opts.concat(["-f", "hanna"])
 rescue Gem::LoadError
 end
 
-RDOC_OPTS.concat(["--main", "README.rdoc"])
+rdoc_opts.concat(["--main", "README.rdoc"])
 RDOC_FILES = %w[README.md CHANGELOG.md lib/**/*.rb] + Dir["doc/*.rdoc"] + Dir["doc/release_notes/*.txt"]
 
 RDoc::Task.new do |rdoc|
   rdoc.rdoc_dir = "rdoc"
-  rdoc.options += RDOC_OPTS
+  rdoc.options += rdoc_opts
   rdoc.rdoc_files.add RDOC_FILES
 end
 
 RDoc::Task.new(:website_rdoc) do |rdoc|
   rdoc.rdoc_dir = "www/public/rdoc"
-  rdoc.options += RDOC_OPTS
+  rdoc.options += rdoc_opts
   rdoc.rdoc_files.add RDOC_FILES
 end
