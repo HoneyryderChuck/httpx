@@ -14,7 +14,7 @@ Gem::Specification.new do |gem|
   gem.homepage      = "https://gitlab.com/honeyryderchuck/httpx"
   gem.licenses      = ["Apache 2.0"]
 
-  gem.files = DIR["LICENSE.txt", "README.md", "lib/**/*.rb", "doc/*.md"]
+  gem.files = Dir["LICENSE.txt", "README.md", "lib/**/*.rb", "doc/*.md"]
 
   gem.name          = "httpx"
   gem.require_paths = ["lib"]

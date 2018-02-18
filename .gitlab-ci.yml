@@ -42,6 +42,7 @@ pages:
     - test_ruby25
   script:
     - mv coverage/ public/coverage/
+    - mv rdoc/ public/rdoc/
   artifacts:
     paths:
       - public
