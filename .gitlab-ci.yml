@@ -47,8 +47,9 @@ pages:
   script:
     - echo pwd
     - ls
-    - mv coverage/ public/coverage/
-    - mv rdoc/ public/rdoc/
+    - mkdir public
+    - mv coverage public/
+    - mv rdoc/ public/
     - cd www && bundle exec jekyll build -d ../public
   artifacts:
     paths:
