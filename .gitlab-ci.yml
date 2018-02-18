@@ -10,6 +10,11 @@ before_script:
   - docker info
   - docker-compose --version
 
+test_jruby:
+  stage: test
+  script:
+    ./spec.sh jruby 9.0.0.0
+  allow_failure: true
 test_ruby21:
   stage: test
   script:
@@ -33,17 +38,15 @@ test_ruby25:
   artifacts:
     paths:
       - coverage/
-test_jruby:
-  stage: test
-  script:
-    ./spec.sh jruby 9.0.0.0
-  allow_failure: true
+      - rdoc/
 
 pages:
   stage: deploy 
   dependencies:
     - test_ruby25
   script:
+    - echo pwd
+    - ls
     - mv coverage/ public/coverage/
     - mv rdoc/ public/rdoc/
     - cd www && bundle exec jekyll build -d ../public
