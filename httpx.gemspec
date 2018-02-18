@@ -14,14 +14,15 @@ Gem::Specification.new do |gem|
   gem.homepage      = "https://gitlab.com/honeyryderchuck/httpx"
   gem.licenses      = ["Apache 2.0"]
 
-  gem.files = %w[LICENSE.txt README.md Rakefile] + Dir["doc/**/*.{rdoc,txt}"] + Dir["{lib}/**/*.{rb,RB}"]
+  gem.files = DIR["LICENSE.txt", "README.md", "lib/**/*.rb", "doc/*.md"]
 
   gem.name          = "httpx"
   gem.require_paths = ["lib"]
   gem.version       = HTTPX::VERSION
 
-  gem.add_runtime_dependency "http-2", ">= 0.9.0"
-  gem.add_runtime_dependency "http-form_data", ">= 2.0.0", "< 3"
-  gem.add_runtime_dependency "http_parser.rb", ">= 0.6.0"
-  gem.add_development_dependency "http-cookie",    "~> 1.0"
+  gem.add_runtime_dependency "http-2",          ">= 0.9.0"
+  gem.add_runtime_dependency "http-form_data",  ">= 2.0.0", "< 3"
+  gem.add_runtime_dependency "http_parser.rb",  ">= 0.6.0"
+
+  gem.add_development_dependency "http-cookie", "~> 1.0"
 end
