@@ -46,9 +46,6 @@ pages:
   dependencies:
     - test_ruby25
   script:
-    - echo pwd
-    - ls
-    - mkdir public
     - mv coverage public/
     - mv rdoc/ public/
   artifacts:
