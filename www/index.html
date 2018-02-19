@@ -5,6 +5,14 @@
   <div class="container">
     <div>
       <h1>{{ site.title }} (v{{ site.data.versions[0][0].name }})</h1>
+      <div>
+        <a class="badge" href="{{ '/pipelines' | prepend: site.repourl }}">
+          <img src="{{ '/badges/master/pipeline.svg' | prepend: site.repourl }}" />
+        </a>
+        <a class="badge" href="/coverage/#_AllFiles">
+          <img src="{{ '/badges/master/coverage.svg' | prepend: site.repourl }}" />
+        </a>
+      </div>
       <p><span class="text">{{ site.description }}</span></p>
     </div>
     <a class="btn" href="{{ '/rdoc/files/README_md.html' | prepend: site.baseurl }}">
