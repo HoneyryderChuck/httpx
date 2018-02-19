@@ -39,6 +39,7 @@ test_ruby25:
     paths:
       - coverage/
       - rdoc/
+      - public/
 
 pages:
   stage: deploy 
@@ -50,7 +51,6 @@ pages:
     - mkdir public
     - mv coverage public/
     - mv rdoc/ public/
-    - cd www && bundle exec jekyll build -d ../public
   artifacts:
     paths:
       - public
