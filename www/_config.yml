@@ -4,7 +4,7 @@ baseurl: "/httpx"
 url: honeyryderchuck.gitlab.io
 markdown: kramdown
 destination: build
-gems:
+plugins:
   - jemoji
 exclude:
   - Gemfile
