@@ -37,8 +37,8 @@ test_ruby25:
     ./spec.sh ruby 2.5
   artifacts:
     paths:
-      - coverage/
       - public/
+      - www/coverage/
       - www/rdoc/
 
 pages:
@@ -46,7 +46,7 @@ pages:
   dependencies:
     - test_ruby25
   script:
-    - mv coverage public/
+    - mv www/coverage public/
     - mv www/rdoc/ public/
   artifacts:
     paths:
