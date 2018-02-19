@@ -7,7 +7,7 @@
     <title>{{ site.title }}</title>
     <meta name="description" content="{{ site.description }}">
     <link rel="icon" href="{{ '/images/favicon.ico' | prepend: site.baseurl }}">
-    <link rel="canonical" href="{{ page.url | remove:'index.html' | prepend: site.baseurl | prepend: site.url }}">
+    <link rel="canonical" href="{{ page.url | remove: 'index.html' | prepend: site.baseurl | prepend: site.url }}">
     <link rel="stylesheet" href="{{ '/styles/main.css' | prepend: site.baseurl }}">
 
     <style>
@@ -44,7 +44,7 @@
   </head>
   <body>
     <!--  -->
-    <a href='https://gitlab.com/honeyryderchuck/httpx' class="ribbon">Fork me</a>
+    <a href='{{ site.repourl }}' class="ribbon">Fork me</a>
 
     {{ content }}
   </body>
