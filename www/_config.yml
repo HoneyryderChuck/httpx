@@ -5,8 +5,6 @@ repourl: https://gitlab.com/honeyryderchuck/httpx
 url: honeyryderchuck.gitlab.io/httpx
 markdown: kramdown
 destination: build
-plugins:
-  - jemoji
 exclude:
   - Gemfile
   - Gemfile.lock
