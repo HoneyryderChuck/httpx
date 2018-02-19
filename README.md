@@ -66,17 +66,17 @@ puts body #=> #<HTTPX::Response ...
 
 In Ruby, HTTP client implementations are a known cheap commodity. So why this one?
 
-1. Concurrency
+* Concurrency
 
 This library supports HTTP/2 seamlessly (which means, if the request is secure, and the server support ALPN negotiation AND HTTP/2, the request will be made through HTTP/2). If you pass multiple URIs, and they can utilize the same connection, they will run concurrently in it. 
 
 However if the server supports HTTP/1.1, it will try to use HTTP pipelining, falling back to 1 request at a time if the server doesn't support it (if the server support Keep-Alive connections, it will reuse the same connection).
 
-2. Clean API
+* Clean API
 
 `HTTPX` acknowledges the ease-of-use of the [http gem](https://github.com/httprb/http) API (itself inspired by python [requests](http://docs.python-requests.org/en/latest/) library). It therefore aims at using the same facade, extending it for the use cases which the http gem doesn't support.
 
-3. Lightweight
+* Lightweight
 
 It ships with a plugin system similar to the ones used by [sequel](https://github.com/jeremyevans/sequel), [roda](https://github.com/jeremyevans/roda) or [shrine](https://github.com/janko-m/shrine).
 
