@@ -37,15 +37,16 @@ test_ruby25:
     ./spec.sh ruby 2.5
   artifacts:
     paths:
-      - public/
       - www/coverage/
       - www/rdoc/
+      - www/public/
 
 pages:
   stage: deploy 
   dependencies:
     - test_ruby25
   script:
+    - mv www/public .
     - mv www/coverage public/
     - mv www/rdoc/ public/
   artifacts:

@@ -6,6 +6,6 @@ cd /home && touch Gemfile.lock && \
   bundle install && \
   bundle exec rake test:ci && \
   cd www && bundle install && \
-  bundle exec jekyll build -d ../public
+  bundle exec jekyll build -d public
 
 
