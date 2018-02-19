@@ -38,8 +38,8 @@ test_ruby25:
   artifacts:
     paths:
       - coverage/
-      - rdoc/
       - public/
+      - www/rdoc/
 
 pages:
   stage: deploy 
@@ -47,7 +47,7 @@ pages:
     - test_ruby25
   script:
     - mv coverage public/
-    - mv rdoc/ public/
+    - mv www/rdoc/ public/
   artifacts:
     paths:
       - public

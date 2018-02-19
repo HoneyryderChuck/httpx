@@ -15,7 +15,7 @@ task :rubocop do
   RuboCop::RakeTask.new
 end
 
-task :"test:ci" => %i[test rubocop rdoc]
+task :"test:ci" => %i[test rubocop website_rdoc]
 
 # Doc
 
@@ -37,7 +37,7 @@ RDoc::Task.new do |rdoc|
 end
 
 RDoc::Task.new(:website_rdoc) do |rdoc|
-  rdoc.rdoc_dir = "www/public/rdoc"
+  rdoc.rdoc_dir = "www/rdoc"
   rdoc.options += rdoc_opts
   rdoc.rdoc_files.add RDOC_FILES
 end
