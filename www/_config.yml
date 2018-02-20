@@ -2,7 +2,8 @@ title: HTTPX
 description: A client library for making HTTP requests from Ruby.
 authorurl: https://gitlab.com/honeyryderchuck
 repourl: https://gitlab.com/honeyryderchuck/httpx
-url: honeyryderchuck.gitlab.io/httpx
+baseurl: /httpx
+url: honeyryderchuck.gitlab.io
 markdown: kramdown
 destination: build
 exclude:
