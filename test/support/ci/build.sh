@@ -7,7 +7,9 @@ cd /home && touch Gemfile.lock && \
   bundle exec rake test:ci
 
 
-RUBY_VERSION=$(ruby -e 'puts RUBY_VERSION')
+RUBY_VERSION=`ruby -e 'puts RUBY_VERSION'`
+
+echo "RUBY $RUBY_VERSION"
 
 if [[ $RUBY_VERSION = "2.5"* ]] ;
 then
