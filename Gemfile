@@ -5,6 +5,7 @@ ruby RUBY_VERSION
 source "https://rubygems.org"
 gemspec
 
+gem "hanna-nouveau", require: false
 gem "rake", "~> 12.3"
 gem "rubocop", require: false
 gem "simplecov", require: false
