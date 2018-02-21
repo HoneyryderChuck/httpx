@@ -47,11 +47,16 @@ pages:
     - test_ruby25
   script:
     - mv www/public .
+    - ls public
+    - echo "#"
+    - ls public/rdoc
+    - echo "#"
+    - ls public/coverage
       #- ls public
       #- echo "#"
       #- ls www/coverage
       #- mv www/coverage public/
-    - mv www/rdoc/ public/
+      #- mv www/rdoc/ public/
   artifacts:
     paths:
       - public
