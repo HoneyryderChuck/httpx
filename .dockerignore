@@ -7,5 +7,4 @@ docker-compose.yml
 Gemfile.lock
 coverage
 tmp
-doc
 *.swp
