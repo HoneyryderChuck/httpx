@@ -51,7 +51,7 @@ pages:
       #- echo "#"
       #- ls www/coverage
       #- mv www/coverage public/
-      #- mv www/rdoc/ public/
+    - mv www/rdoc/ public/
   artifacts:
     paths:
       - public
