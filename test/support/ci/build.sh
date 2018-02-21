@@ -6,6 +6,7 @@ cd /home && touch Gemfile.lock && \
   bundle install && \
   bundle exec rake test:ci
 
+RET=$?
 
 RUBY_VERSION=`ruby -e 'puts RUBY_VERSION'`
 
@@ -17,4 +18,5 @@ if [[ ${RUBY_VERSION:0:3} = "2.5" ]]; then
   bundle exec jekyll build -d public
 fi
 
+exit $RET
 
