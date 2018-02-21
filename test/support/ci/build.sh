@@ -8,15 +8,9 @@ cd /home && touch Gemfile.lock && \
 
 RET=$?
 
-echo "rdoc..."
-ls www/rdoc
-echo "..."
 RUBY_VERSION=`ruby -e 'puts RUBY_VERSION'`
 
-echo "RUBY $RUBY_VERSION"
-
 if [[ ${RUBY_VERSION:0:3} = "2.5" ]]; then
-  echo "we're in"
   cd www && bundle install && \
   bundle exec jekyll build -d public
 fi
