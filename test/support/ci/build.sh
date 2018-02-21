@@ -8,6 +8,9 @@ cd /home && touch Gemfile.lock && \
 
 RET=$?
 
+echo "rdoc..."
+ls www/rdoc
+echo "..."
 RUBY_VERSION=`ruby -e 'puts RUBY_VERSION'`
 
 echo "RUBY $RUBY_VERSION"
