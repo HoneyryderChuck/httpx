@@ -1,5 +1,6 @@
 #!/bin/sh
 apk --update add g++ make git bash
+gem install bundler -v="1.16.1" --no-doc --conservative
 cd /home && touch Gemfile.lock && \
   rm Gemfile.lock && \
   bundle install && \
