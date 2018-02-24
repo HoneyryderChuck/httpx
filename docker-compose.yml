@@ -12,7 +12,7 @@ services:
       - PARALLEL=1
       - CI=1
       - JEKYLL_ENV=production
-    image: ruby:latest-alpine
+    image: ruby:alpine
     depends_on:
       - httpproxy 
       - socksproxy 
