@@ -180,6 +180,10 @@ module HTTPX
       end
       # parser.inherit_callbacks(self)
       parser.on(:complete) { throw(:close, self) }
+      parser.on(:close) do
+        transition(:closed)
+        emit(:close)
+      end
       parser
     end
 

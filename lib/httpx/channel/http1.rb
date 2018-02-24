@@ -22,9 +22,14 @@ module HTTPX
       @has_response = false
     end
 
-    def close
+    def reset
       @parser.reset!
       @has_response = false
+    end
+
+    def close
+      reset
+      emit(:close)
     end
 
     def empty?
