@@ -20,6 +20,8 @@ module HTTPX
 
     def_delegator :@buffer, :clear
 
+    def_delegator :@buffer, :replace
+
     def initialize(limit)
       @buffer = "".b
       @limit = limit
