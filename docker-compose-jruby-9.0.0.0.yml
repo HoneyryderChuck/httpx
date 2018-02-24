@@ -2,3 +2,5 @@ version: '3'
 services:
   httpx:
     image: jruby:9.1.16-alpine
+    environment:
+      - JRUBY_OPTS=--debug
