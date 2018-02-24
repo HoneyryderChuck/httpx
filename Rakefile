@@ -15,7 +15,7 @@ task :rubocop do
   RuboCop::RakeTask.new
 end
 
-task :"test:ci" => %i[test rubocop website_rdoc]
+task :"test:ci" => %i[test rubocop]
 
 # Doc
 

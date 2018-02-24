@@ -11,6 +11,7 @@ RET=$?
 RUBY_VERSION=`ruby -e 'puts RUBY_VERSION'`
 
 if [[ ${RUBY_VERSION:0:3} = "2.5" ]]; then
+  bundle exec rake website_rdoc && \
   cd www && bundle install && \
   bundle exec jekyll build -d public
 fi
