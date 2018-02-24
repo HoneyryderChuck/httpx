@@ -146,8 +146,7 @@ module HTTPX
         # 1 keep alive request.
         @max_concurrent_requests = 1
       end
-      log(2) { "connection: close" }
-      emit(:close)
+      emit(:complete)
     end
 
     private

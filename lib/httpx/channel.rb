@@ -172,8 +172,14 @@ module HTTPX
 
     def build_parser(protocol = @io.protocol)
       parser = registry(protocol).new(@write_buffer, @options)
-      parser.inherit_callbacks(self)
-      parser.on(:close) { throw(:close, self) }
+      parser.on(:response) do |*args|
+        emit(:response, *args)
+      end
+      parser.on(:promise) do |*args|
+        emit(:promise, *args)
+      end
+      # parser.inherit_callbacks(self)
+      parser.on(:complete) { throw(:close, self) }
       parser
     end
 
