@@ -18,10 +18,6 @@ end
 # gem "nokogiri",    :require => false
 gem "pry", :require => false
 
-gem "certificate_authority", git: "https://github.com/cchandler/certificate_authority.git",
-                             branch: "master",
-                             require: false
-
 gem "minitest", require: false
 gem "minitest-proveit", require: false
 gem "oga", require: false
