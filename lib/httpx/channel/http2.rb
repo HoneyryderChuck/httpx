@@ -170,8 +170,7 @@ module HTTPX
 
     def on_close(*)
       return unless @connection.state == :closed && @connection.active_stream_count.zero?
-      log { "connection closed" }
-      emit(:close)
+      emit(:complete)
     end
 
     def on_frame_sent(frame)

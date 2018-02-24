@@ -22,9 +22,14 @@ module HTTPX
       @has_response = false
     end
 
-    def close
+    def reset
       @parser.reset!
       @has_response = false
+    end
+
+    def close
+      reset
+      emit(:close)
     end
 
     def empty?
@@ -146,8 +151,7 @@ module HTTPX
         # 1 keep alive request.
         @max_concurrent_requests = 1
       end
-      log(2) { "connection: close" }
-      emit(:close)
+      emit(:complete)
     end
 
     private
