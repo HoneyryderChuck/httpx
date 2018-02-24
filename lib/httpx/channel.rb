@@ -112,6 +112,12 @@ module HTTPX
       end
     end
 
+    def reset
+      transition(:closing)
+      transition(:closed)
+      emit(:close)
+    end
+
     def send(request, **args)
       if @parser && !@write_buffer.full?
         parser.send(request, **args)
@@ -139,7 +145,7 @@ module HTTPX
     end
 
     def upgrade_parser(protocol)
-      @parser.close if @parser
+      @parser.reset if @parser
       @parser = build_parser(protocol)
     end
 

@@ -34,6 +34,10 @@ module HTTPX
       end
     end
 
+    def reset
+      @channels.each(&:reset)
+    end
+
     def build_channel(uri, **options)
       channel = Channel.by(uri, @options.merge(options))
       register_channel(channel)
