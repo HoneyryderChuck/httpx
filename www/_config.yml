@@ -9,6 +9,9 @@ destination: build
 exclude:
   - Gemfile
   - Gemfile.lock
+plugins:
+  - jekyll-gzip
+  - jekyll-brotli
 defaults:
   -
     scope:
