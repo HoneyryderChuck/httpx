@@ -29,6 +29,11 @@ module HTTPX
               parser.upgrade(upgrade_request, upgrade_response, **options)
               data = upgrade_response.to_s
               parser << data
+              response = upgrade_request.response
+              if response.status == 200
+                requests.delete(upgrade_request)
+                return response if requests.empty?
+              end
               responses = __send_reqs(*requests)
             else
               # proceed as usual
