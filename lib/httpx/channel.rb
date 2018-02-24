@@ -100,18 +100,16 @@ module HTTPX
 
     def close(hard = false)
       pr = @parser
-      transition(:closed)
-      return true if hard
-      if pr && pr.empty?
+      transition(:closing)
+      if hard || (pr && pr.empty?)
         pr.close
         @parser = nil
       else
         transition(:idle)
         @parser = pr
         parser.reenqueue!
-        return false
+        return
       end
-      true
     end
 
     def send(request, **args)
@@ -123,11 +121,19 @@ module HTTPX
     end
 
     def call
-      return if @state == :closed
-      catch(:called) do
-        dread
+      case @state
+      when :closed
+        return
+      when :closing
         dwrite
-        parser.consume
+        transition(:closed)
+        emit(:close)
+      else
+        catch(:called) do
+          dread
+          dwrite
+          parser.consume
+        end
       end
       nil
     end
@@ -196,11 +202,13 @@ module HTTPX
         @io.connect
         return if @io.closed?
         send_pending
+      when :closing
+        return unless @state == :open
       when :closed
-        return if @state == :idle
+        return unless @state == :closing
+        return unless @write_buffer.empty?
         @io.close
         @read_buffer.clear
-        @write_buffer.clear
       end
       @state = nextstate
     end
