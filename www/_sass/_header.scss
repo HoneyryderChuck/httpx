@@ -37,3 +37,13 @@
   }
 }
 
+.code-preview {
+  margin-bottom: 25px;
+  code {
+    border-radius: 10px;
+    padding: 10px 50px;
+    font-weight: bold;
+    background-color: black;
+    color: white;
+  }
+}
