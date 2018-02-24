@@ -23,26 +23,6 @@ And among others
 * H2C Upgrade
 * Redirect following
 
-## Installation
-
-Add this line to your Gemfile:
-
-```ruby
-gem "httpx"
-```
-
-or install yourself:
-
-```
-> gem install httpx
-```
-
-and then just require in your program:
-
-```ruby
-require "httpx"
-```
-
 ## How
 
 Here are some simple examples:
@@ -62,35 +42,70 @@ body = response.body
 puts body #=> #<HTTPX::Response ...
 ``` 
 
+You can also send as many requests as you want simultaneously:
+
+```ruby
+page1, page2, page3 = HTTPX.get("https://news.ycombinator.com/news", "https://news.ycombinator.com/news?p=2", "https://news.ycombinator.com/news?p=3")
+```
+
+## Installation
+
+Add this line to your Gemfile:
+
+```ruby
+gem "httpx"
+```
+
+or install it in your system:
+
+```
+> gem install httpx
+```
+
+and then just require it in your program:
+
+```ruby
+require "httpx"
+```
+
 ## Why Should I care?
 
-In Ruby, HTTP client implementations are a known cheap commodity. So why this one?
+In Ruby, HTTP client implementations are a known cheap commodity. Why this one?
 
-* Concurrency
+### Concurrency
 
 This library supports HTTP/2 seamlessly (which means, if the request is secure, and the server support ALPN negotiation AND HTTP/2, the request will be made through HTTP/2). If you pass multiple URIs, and they can utilize the same connection, they will run concurrently in it. 
 
 However if the server supports HTTP/1.1, it will try to use HTTP pipelining, falling back to 1 request at a time if the server doesn't support it (if the server support Keep-Alive connections, it will reuse the same connection).
 
-* Clean API
+### Clean API
 
-`HTTPX` acknowledges the ease-of-use of the [http gem](https://github.com/httprb/http) API (itself inspired by python [requests](http://docs.python-requests.org/en/latest/) library). It therefore aims at using the same facade, extending it for the use cases which the http gem doesn't support.
+`HTTPX` acknowledges the ease-of-use of the [http gem](https://github.com/httprb/http) API (itself inspired by python [requests](http://docs.python-requests.org/en/latest/) library). It therefore aims at reusing the same facade, extending it for the use cases which the http gem doesn't support.
 
-* Lightweight
+### Lightweight
 
 It ships with a plugin system similar to the ones used by [sequel](https://github.com/jeremyevans/sequel), [roda](https://github.com/jeremyevans/roda) or [shrine](https://github.com/janko-m/shrine).
 
-It means that it requires the minimum functionality by default, and the user has to explicitly load the features he/she needs.
+It means that it loads the bare minimum to perform requests, and the user has to explicitly load the plugins, in order to get the features he/she needs.
 
-It also means that it ships with the minimum amount of dependencies (namely the HTTP parsers).
+It also means that it ships with the minimum amount of dependencies.
 
 ## Supported Rubies
 
 All Rubies greater or equal to 2.1, and always latest JRuby.
 
+## Resources
+
+| Website       | https://honeyryderchuck.gitlab.io/httpx/            |
+| Documentation | https://honeyryderchuck.gitlab.io/httpx/rdoc/       |
+| Wiki          | https://gitlab.com/honeyryderchuck/httpx/wikis/home |
+| CI            | https://gitlab.com/honeyryderchuck/httpx/pipelines  |
+
 ## Caveats
 
-`HTTPS` TLS backend is ruby's own `openssl` gem. If your requirement is to run requests over HTTP/2 and TLS, make sure you run a version of the gem which compiles OpenSSL 1.0.2 (Ruby 2.3 and higher are guaranteed to).
+`HTTPS` TLS backend is ruby's own `openssl` gem.
+
+If your requirement is to run requests over HTTP/2 and TLS, make sure you run a version of the gem which compiles OpenSSL 1.0.2 (Ruby 2.3 and higher are guaranteed to).
 
 JRuby's `openssl` is based on Bouncy Castle, which is massively outdated and still doesn't implement ALPN. So HTTP/2 over TLS/ALPN negotiation is off until JRuby figures this out.
 
