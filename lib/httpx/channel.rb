@@ -100,18 +100,22 @@ module HTTPX
 
     def close(hard = false)
       pr = @parser
-      transition(:closed)
-      return true if hard
-      if pr && pr.empty?
+      transition(:closing)
+      if hard || (pr && pr.empty?)
         pr.close
         @parser = nil
       else
         transition(:idle)
         @parser = pr
         parser.reenqueue!
-        return false
+        return
       end
-      true
+    end
+
+    def reset
+      transition(:closing)
+      transition(:closed)
+      emit(:close)
     end
 
     def send(request, **args)
@@ -123,17 +127,25 @@ module HTTPX
     end
 
     def call
-      return if @state == :closed
-      catch(:called) do
-        dread
+      case @state
+      when :closed
+        return
+      when :closing
         dwrite
-        parser.consume
+        transition(:closed)
+        emit(:close)
+      else
+        catch(:called) do
+          dread
+          dwrite
+          parser.consume
+        end
       end
       nil
     end
 
     def upgrade_parser(protocol)
-      @parser.close if @parser
+      @parser.reset if @parser
       @parser = build_parser(protocol)
     end
 
@@ -172,8 +184,18 @@ module HTTPX
 
     def build_parser(protocol = @io.protocol)
       parser = registry(protocol).new(@write_buffer, @options)
-      parser.inherit_callbacks(self)
-      parser.on(:close) { throw(:close, self) }
+      parser.on(:response) do |*args|
+        emit(:response, *args)
+      end
+      parser.on(:promise) do |*args|
+        emit(:promise, *args)
+      end
+      # parser.inherit_callbacks(self)
+      parser.on(:complete) { throw(:close, self) }
+      parser.on(:close) do
+        transition(:closed)
+        emit(:close)
+      end
       parser
     end
 
@@ -186,11 +208,13 @@ module HTTPX
         @io.connect
         return if @io.closed?
         send_pending
+      when :closing
+        return unless @state == :open
       when :closed
-        return if @state == :idle
+        return unless @state == :closing
+        return unless @write_buffer.empty?
         @io.close
         @read_buffer.clear
-        @write_buffer.clear
       end
       @state = nextstate
     end

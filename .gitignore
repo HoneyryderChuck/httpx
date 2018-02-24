@@ -12,5 +12,6 @@ pkg
 rdoc
 spec/reports
 tmp
+www/public
 www/build
 www/.sass-cache

@@ -27,16 +27,15 @@ module HTTPX
 
     def close(channel = nil)
       if channel
-        if channel.close
-          @channels.delete(channel)
-          @selector.deregister(channel)
-        end
+        channel.close
       else
-        while (ch = @channels.shift)
-          ch.close(true)
-          @selector.deregister(ch)
-        end
+        @channels.each(&:close)
+        next_tick until @selector.empty?
       end
+    end
+
+    def reset
+      @channels.each(&:reset)
     end
 
     def build_channel(uri, **options)
@@ -60,6 +59,10 @@ module HTTPX
     def register_channel(channel)
       monitor = @selector.register(channel, :w)
       monitor.value = channel
+      channel.on(:close) do
+        @channels.delete(channel)
+        @selector.deregister(channel)
+      end
       @channels << channel
     end
 
