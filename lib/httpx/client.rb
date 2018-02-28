@@ -112,7 +112,7 @@ module HTTPX
           break
         end
       end
-      requests.size == 1 ? responses.first : responses
+      responses
     end
 
     def __build_req(verb, uri, options = {})
