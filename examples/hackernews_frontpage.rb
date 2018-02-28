@@ -1,7 +1,6 @@
 require "httpx"
 require "oga"
 
-
 frontpage = HTTPX.get("https://news.ycombinator.com").to_s
 
 html = Oga.parse_html(frontpage)

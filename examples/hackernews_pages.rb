@@ -16,8 +16,7 @@ HTTPX.get(*pages).each_with_index.map do |response, i|
   page_links = html.css('.itemlist a.storylink').map{|link| link.get('href') }
   puts "page(#{i+1}): #{page_links.size}"
   if page_links.size == 0
-    puts "error(#{response.status})"
-    puts response.to_s 
+    puts "error(#{response.status}) on page #{i+1}"
   end
   links << page_links
 end
