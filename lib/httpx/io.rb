@@ -12,6 +12,7 @@ module HTTPX
 
     def initialize(hostname, port, options)
       @state = :idle
+      @hostname = hostname
       @options = Options.new(options)
       @fallback_protocol = @options.fallback_protocol
       @port = port
