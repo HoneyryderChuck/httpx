@@ -7,7 +7,7 @@ pages = PAGES.times.map do |page|
 end
 
 links = []
-HTTPX.get(*pages).each_with_index.map do |response, i|
+HTTPX.plugin(:compression).get(*pages).each_with_index.map do |response, i|
   if response.is_a?(HTTPX::ErrorResponse)
     puts "error: #{response.error}"
     next
