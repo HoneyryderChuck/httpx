@@ -102,7 +102,7 @@ module HTTPX
       pr = @parser
       transition(:closing)
       if hard || (pr && pr.empty?)
-        pr.close
+        pr.close if pr
         @parser = nil
       else
         transition(:idle)
@@ -217,6 +217,10 @@ module HTTPX
         @read_buffer.clear
       end
       @state = nextstate
+    rescue => e
+      while (request, _ = @pending.shift)
+        request.response = ErrorResponse.new(e, 0)
+      end
     end
   end
 end

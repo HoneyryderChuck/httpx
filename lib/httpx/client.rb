@@ -107,7 +107,9 @@ module HTTPX
 
           break if requests.empty?
         rescue TimeoutError => e
-          responses << ErrorResponse.new(e.message, 0) while requests.shift
+          while (request = requests.shift)
+            responses << ( request.response || ErrorResponse.new(e.message, 0) )
+          end
           @connection.reset
           break
         end

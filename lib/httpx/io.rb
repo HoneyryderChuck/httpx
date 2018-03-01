@@ -12,7 +12,7 @@ module HTTPX
 
     def initialize(hostname, port, options)
       @state = :idle
-      @hostname = hostname
+#      @hostname = hostname
       @options = Options.new(options)
       @fallback_protocol = @options.fallback_protocol
       @port = port
@@ -187,6 +187,10 @@ module HTTPX
       @io.sync_close = true
       @io.connect
       transition(:negotiated)
+    rescue OpenSSL::SSL::SSLError => e
+      # SSL handshake error
+      close 
+      raise e
     end
 
     if RUBY_VERSION < "2.3"
