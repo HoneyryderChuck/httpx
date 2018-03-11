@@ -98,18 +98,9 @@ module HTTPX
       @io.to_io
     end
 
-    def close(hard = false)
-      pr = @parser
+    def close
+      @parser.close
       transition(:closing)
-      if hard || (pr && pr.empty?)
-        pr.close
-        @parser = nil
-      else
-        transition(:idle)
-        @parser = pr
-        parser.reenqueue!
-        return
-      end
     end
 
     def reset
