@@ -154,7 +154,10 @@ module HTTPX
     def dread(wsize = @window_size)
       loop do
         siz = @io.read(wsize, @read_buffer)
-        throw(:close, self) unless siz
+        unless siz
+          emit(:close)
+          return
+        end
         return if siz.zero?
         log { "READ: #{siz} bytes..." }
         parser << @read_buffer.to_s
@@ -165,7 +168,10 @@ module HTTPX
       loop do
         return if @write_buffer.empty?
         siz = @io.write(@write_buffer)
-        throw(:close, self) unless siz
+        unless siz
+          emit(:close)
+          return
+        end
         log { "WRITE: #{siz} bytes..." }
         return if siz.zero?
       end
@@ -190,11 +196,8 @@ module HTTPX
       parser.on(:promise) do |*args|
         emit(:promise, *args)
       end
-      # parser.inherit_callbacks(self)
-      parser.on(:complete) { throw(:close, self) }
       parser.on(:close) do
-        transition(:closed)
-        emit(:close)
+        transition(:closing)
       end
       parser
     end

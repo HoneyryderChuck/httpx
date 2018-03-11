@@ -34,7 +34,7 @@ module HTTPX
               return if @io.closed?
               @parser = ConnectProxyParser.new(@write_buffer, @options.merge(max_concurrent_requests: 1))
               @parser.once(:response, &method(:on_connect))
-              @parser.on(:complete) { throw(:close, self) }
+              @parser.on(:close) { transition(:closing) }
               proxy_connect
               return if @state == :open
             when :open
