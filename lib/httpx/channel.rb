@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "resolv"
 require "forwardable"
 require "httpx/io"
 require "httpx/buffer"
@@ -68,13 +69,13 @@ module HTTPX
     end
 
     def match?(uri)
-      ip = begin
-             TCPSocket.getaddress(uri.host)
-           rescue StandardError
-             uri.host
-           end
+      ips = begin
+        Resolv.getaddresses(uri.host)
+      rescue StandardError
+        [uri.host]
+      end
 
-      ip == @io.ip &&
+      ips.include?(@io.ip) &&
         uri.port == @io.port &&
         uri.scheme == @io.scheme
     end
