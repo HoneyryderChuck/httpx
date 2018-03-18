@@ -100,7 +100,7 @@ module HTTPX
     end
 
     def close
-      @parser.close
+      @parser.close if @parser
       transition(:closing)
     end
 
