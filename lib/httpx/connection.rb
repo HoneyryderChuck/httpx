@@ -19,19 +19,15 @@ module HTTPX
     def next_tick(timeout: @timeout.timeout)
       @selector.select(timeout) do |monitor|
         if (channel = monitor.value)
-          consume(channel)
+          channel.call
         end
         monitor.interests = channel.interests
       end
     end
 
-    def close(channel = nil)
-      if channel
-        channel.close
-      else
-        @channels.each(&:close)
-        next_tick until @selector.empty?
-      end
+    def close
+      @channels.each(&:close)
+      next_tick until @channels.empty?
     end
 
     def reset
@@ -64,11 +60,6 @@ module HTTPX
         @selector.deregister(channel)
       end
       @channels << channel
-    end
-
-    def consume(channel)
-      ch = catch(:close) { channel.call }
-      close(ch) if ch
     end
   end
 end

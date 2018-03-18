@@ -90,6 +90,10 @@ It means that it loads the bare minimum to perform requests, and the user has to
 
 It also means that it ships with the minimum amount of dependencies.
 
+## Easy to test
+
+The test suite runs against [httpbin proxied over nghttp2](https://nghttp2.org/httpbin/), so there is no mocking/stubbing going on. The test suite uses [minitest](https://github.com/seattlerb/minitest), but its matchers usage is limit to assert (assert is all you need).
+
 ## Supported Rubies
 
 All Rubies greater or equal to 2.1, and always latest JRuby.

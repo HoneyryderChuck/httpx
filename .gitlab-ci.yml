@@ -20,14 +20,20 @@ test_ruby21:
   script:
     ./spec.sh ruby 2.1
 test_ruby22:
+  only:
+    - master
   stage: test
   script:
     ./spec.sh ruby 2.2
 test_ruby23:
+  only:
+    - master
   stage: test
   script:
     ./spec.sh ruby 2.3
 test_ruby24:
+  only:
+    - master
   stage: test
   script:
     ./spec.sh ruby 2.4
