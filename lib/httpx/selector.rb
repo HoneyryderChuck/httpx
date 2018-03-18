@@ -48,10 +48,6 @@ class HTTPX::Selector
     @closed = false
   end
 
-  def empty?
-    @readers.empty? && @writers.empty?
-  end
-
   # deregisters +io+ from selectables.
   def deregister(io)
     @lock.synchronize do

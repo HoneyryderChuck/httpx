@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "resolv"
 require "socket"
 require "openssl"
 require "ipaddr"
@@ -19,7 +20,7 @@ module HTTPX
       if @options.io
         @io = case @options.io
               when Hash
-                @ip = TCPSocket.getaddress(hostname)
+                @ip = Resolv.getaddress(@hostname)
                 @options.io[@ip] || @options.io["#{@ip}:#{@port}"]
               else
                 @ip = hostname
@@ -30,7 +31,7 @@ module HTTPX
           @state = :connected
         end
       else
-        @ip = TCPSocket.getaddress(hostname)
+        @ip = Resolv.getaddress(@hostname)
       end
       @io ||= build_socket
     end

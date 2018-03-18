@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "resolv"
 require "forwardable"
 require "httpx/io"
 require "httpx/buffer"
@@ -68,13 +69,13 @@ module HTTPX
     end
 
     def match?(uri)
-      ip = begin
-             TCPSocket.getaddress(uri.host)
-           rescue StandardError
-             uri.host
-           end
+      ips = begin
+        Resolv.getaddresses(uri.host)
+      rescue StandardError
+        [uri.host]
+      end
 
-      ip == @io.ip &&
+      ips.include?(@io.ip) &&
         uri.port == @io.port &&
         uri.scheme == @io.scheme
     end
@@ -98,18 +99,9 @@ module HTTPX
       @io.to_io
     end
 
-    def close(hard = false)
-      pr = @parser
+    def close
+      @parser.close
       transition(:closing)
-      if hard || (pr && pr.empty?)
-        pr.close
-        @parser = nil
-      else
-        transition(:idle)
-        @parser = pr
-        parser.reenqueue!
-        return
-      end
     end
 
     def reset
@@ -154,7 +146,10 @@ module HTTPX
     def dread(wsize = @window_size)
       loop do
         siz = @io.read(wsize, @read_buffer)
-        throw(:close, self) unless siz
+        unless siz
+          emit(:close)
+          return
+        end
         return if siz.zero?
         log { "READ: #{siz} bytes..." }
         parser << @read_buffer.to_s
@@ -165,7 +160,10 @@ module HTTPX
       loop do
         return if @write_buffer.empty?
         siz = @io.write(@write_buffer)
-        throw(:close, self) unless siz
+        unless siz
+          emit(:close)
+          return
+        end
         log { "WRITE: #{siz} bytes..." }
         return if siz.zero?
       end
@@ -190,11 +188,8 @@ module HTTPX
       parser.on(:promise) do |*args|
         emit(:promise, *args)
       end
-      # parser.inherit_callbacks(self)
-      parser.on(:complete) { throw(:close, self) }
       parser.on(:close) do
-        transition(:closed)
-        emit(:close)
+        transition(:closing)
       end
       parser
     end
