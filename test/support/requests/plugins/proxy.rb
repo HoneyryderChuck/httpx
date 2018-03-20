@@ -9,7 +9,7 @@ module Requests
         client = HTTPX.plugin(:proxy).with_proxy(uri: http_proxy)
         uri = build_uri("/get")
         response = client.get(uri)
-        verify_status(response.status, 200)
+        verify_status(response, 200)
         verify_body_length(response)
       end
 
@@ -17,7 +17,7 @@ module Requests
         client = HTTPX.plugin(:proxy).with_proxy(uri: socks4_proxy)
         uri = build_uri("/get")
         response = client.get(uri)
-        verify_status(response.status, 200)
+        verify_status(response, 200)
         verify_body_length(response)
       end
 
@@ -25,7 +25,7 @@ module Requests
         client = HTTPX.plugin(:proxy).with_proxy(uri: socks4a_proxy)
         uri = build_uri("/get")
         response = client.get(uri)
-        verify_status(response.status, 200)
+        verify_status(response, 200)
         verify_body_length(response)
       end
 
@@ -33,7 +33,7 @@ module Requests
         client = HTTPX.plugin(:proxy).with_proxy(uri: socks5_proxy)
         uri = build_uri("/get")
         response = client.get(uri)
-        verify_status(response.status, 200)
+        verify_status(response, 200)
         verify_body_length(response)
       end
     end

@@ -6,7 +6,7 @@ module Requests
       file = Tempfile.new(%w[cat .jpeg])
       uri = build_uri("/image")
       response = HTTPX.get(uri, headers: { "accept" => "image/jpeg" })
-      verify_status(response.status, 200)
+      verify_status(response, 200)
       verify_header(response.headers, "content-type", "image/jpeg")
       response.copy_to(file)
       verify_body_length(response)
@@ -23,7 +23,7 @@ module Requests
       io = StringIO.new
       uri = build_uri("/image")
       response = HTTPX.get(uri, headers: { "accept" => "image/jpeg" })
-      verify_status(response.status, 200)
+      verify_status(response, 200)
       verify_header(response.headers, "content-type", "image/jpeg")
       response.copy_to(io)
       content_length = response.headers["content-length"].to_i
@@ -53,7 +53,7 @@ module Requests
       end
 
       response = HTTPX.with(response_body_class: custom_body).get(uri)
-      verify_status(response.status, 200)
+      verify_status(response, 200)
       assert response.body.is_a?(custom_body), "body should be from custom type"
       file = response.body.file
       file.rewind

@@ -23,7 +23,7 @@ module Requests
         session_cookies = { "a" => "b", "c" => "d" }
         session_uri = cookies_set_uri(session_cookies)
         session_response = client.get(cookies_set_uri(session_cookies))
-        assert session_response.status == 302, "response should redirect"
+        assert session_response == 302, "response should redirect"
 
         assert !session_response.cookies.nil?, "there should be cookies in the response"
         response_cookies = session_response.cookie_jar

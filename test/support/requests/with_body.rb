@@ -6,7 +6,7 @@ module Requests
       define_method :"test_#{meth}_query_params" do
         uri = build_uri("/#{meth}")
         response = HTTPX.send(meth, uri, params: { "q" => "this is a test" })
-        verify_status(response.status, 200)
+        verify_status(response, 200)
         body = json_body(response)
         verify_uploaded(body, "args", "q" => "this is a test")
         verify_uploaded(body, "url", build_uri("/#{meth}?q=this+is+a+test"))
@@ -15,7 +15,7 @@ module Requests
       define_method :"test_#{meth}_form_params" do
         uri = build_uri("/#{meth}")
         response = HTTPX.send(meth, uri, form: { "foo" => "bar" })
-        verify_status(response.status, 200)
+        verify_status(response, 200)
         body = json_body(response)
         verify_header(body["headers"], "Content-Type", "application/x-www-form-urlencoded")
         verify_uploaded(body, "form", "foo" => "bar")
@@ -24,7 +24,7 @@ module Requests
       define_method :"test_#{meth}_json_params" do
         uri = build_uri("/#{meth}")
         response = HTTPX.send(meth, uri, json: { "foo" => "bar" })
-        verify_status(response.status, 200)
+        verify_status(response, 200)
         body = json_body(response)
         verify_header(body["headers"], "Content-Type", "application/json")
         verify_uploaded(body, "json", "foo" => "bar")
@@ -33,7 +33,7 @@ module Requests
       define_method :"test_#{meth}_body_params" do
         uri = build_uri("/#{meth}")
         response = HTTPX.send(meth, uri, body: "data")
-        verify_status(response.status, 200)
+        verify_status(response, 200)
         body = json_body(response)
         verify_header(body["headers"], "Content-Type", "application/octet-stream")
         verify_uploaded(body, "data", "data")
@@ -42,7 +42,7 @@ module Requests
       define_method :"test_#{meth}_body_ary_params" do
         uri = build_uri("/#{meth}")
         response = HTTPX.send(meth, uri, body: %w[d a t a])
-        verify_status(response.status, 200)
+        verify_status(response, 200)
         body = json_body(response)
         verify_header(body["headers"], "Content-Type", "application/octet-stream")
         verify_uploaded(body, "data", "data")
@@ -58,7 +58,7 @@ module Requests
       #     y << "a"
       #   end
       #   response = HTTPX.send(meth, uri, body: body)
-      #   verify_status(response.status, 200)
+      #   verify_status(response, 200)
       #   body = json_body(response)
       #   verify_header(body["headers"], "Content-Type", "application/octet-stream")
       #   verify_uploaded(body, "data", "data")
@@ -68,7 +68,7 @@ module Requests
         uri = build_uri("/#{meth}")
         body = StringIO.new("data")
         response = HTTPX.send(meth, uri, body: body)
-        verify_status(response.status, 200)
+        verify_status(response, 200)
         body = json_body(response)
         verify_header(body["headers"], "Content-Type", "application/octet-stream")
         verify_uploaded(body, "data", "data")
@@ -77,7 +77,7 @@ module Requests
       define_method :"test_#{meth}_form_file_params" do
         uri = build_uri("/#{meth}")
         response = HTTPX.send(meth, uri, form: { image: HTTP::FormData::File.new(fixture_file_path) })
-        verify_status(response.status, 200)
+        verify_status(response, 200)
         body = json_body(response)
         verify_header(body["headers"], "Content-Type", "multipart/form-data")
         verify_uploaded_image(body)
@@ -87,7 +87,7 @@ module Requests
         uri = build_uri("/#{meth}")
         response = HTTPX.headers("expect" => "100-continue")
                         .send(meth, uri, form: { image: HTTP::FormData::File.new(fixture_file_path) })
-        verify_status(response.status, 200)
+        verify_status(response, 200)
         body = json_body(response)
         verify_header(body["headers"], "Content-Type", "multipart/form-data")
         verify_header(body["headers"], "Expect", "100-continue")

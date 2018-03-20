@@ -7,13 +7,13 @@ module Requests
         url = "https://github.com"
         response1 = HTTPX.get(url)
         skip if response1.status == 429
-        verify_status(response1.status, 200)
+        verify_status(response1, 200)
         assert !response1.headers.key?("content-encoding"), "response should come in plain text"
 
         client = HTTPX.plugin(:compression)
         response = client.get(url)
-        skip if response.status == 429
-        verify_status(response.status, 200)
+        skip if response == 429
+        verify_status(response, 200)
         verify_header(response.headers, "content-encoding", "gzip")
       end
 
@@ -21,7 +21,7 @@ module Requests
         client = HTTPX.plugin(:compression)
         uri = build_uri("/gzip")
         response = client.get(uri)
-        verify_status(response.status, 200)
+        verify_status(response, 200)
         body = json_body(response)
         assert body["gzipped"], "response should be gzipped"
       end
@@ -31,7 +31,7 @@ module Requests
         uri = build_uri("/post")
         response = client.headers("content-encoding" => "gzip")
                          .post(uri, body: "a" * 8012)
-        verify_status(response.status, 200)
+        verify_status(response, 200)
         body = json_body(response)
         verify_header(body["headers"], "Content-Type", "application/octet-stream")
         compressed_data = body["data"]
@@ -42,7 +42,7 @@ module Requests
         client = HTTPX.plugin(:compression)
         uri = build_uri("/deflate")
         response = client.get(uri)
-        verify_status(response.status, 200)
+        verify_status(response, 200)
         body = json_body(response)
         assert body["deflated"], "response should be deflated"
       end
@@ -52,7 +52,7 @@ module Requests
         uri = build_uri("/post")
         response = client.headers("content-encoding" => "deflate")
                          .post(uri, body: "a" * 8012)
-        verify_status(response.status, 200)
+        verify_status(response, 200)
         body = json_body(response)
         verify_header(body["headers"], "Content-Type", "application/octet-stream")
         compressed_data = body["data"]
@@ -63,7 +63,7 @@ module Requests
         def test_plugin_compression_brotli
           client = HTTPX.plugin(:"compression/brotli")
           response = client.get("http://httpbin.org/brotli")
-          verify_status(response.status, 200)
+          verify_status(response, 200)
           body = json_body(response)
           assert body["brotli"], "response should be deflated"
         end
@@ -73,7 +73,7 @@ module Requests
           uri = build_uri("/post")
           response = client.headers("content-encoding" => "br")
                            .post(uri, body: "a" * 8012)
-          verify_status(response.status, 200)
+          verify_status(response, 200)
           body = json_body(response)
           verify_header(body["headers"], "Content-Type", "application/octet-stream")
           compressed_data = body["data"]

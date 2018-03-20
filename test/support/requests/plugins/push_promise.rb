@@ -6,8 +6,8 @@ module Requests
       def test_plugin_push_promise_get
         client = HTTPX.plugin(:push_promise)
         html, css = client.get(push_html_uri, push_css_uri)
-        verify_status(html.status, 200)
-        verify_status(css.status, 200)
+        verify_status(html, 200)
+        verify_status(css, 200)
         verify_header(css.headers, "x-http2-push", "1")
       end
 
@@ -15,8 +15,8 @@ module Requests
         client = HTTPX.plugin(:push_promise)
                       .with(max_concurrent_requests: 100)
         html, css = client.get(push_html_uri, push_css_uri)
-        verify_status(html.status, 200)
-        verify_status(css.status, 200)
+        verify_status(html, 200)
+        verify_status(css, 200)
         verify_no_header(css.headers, "x-http2-push")
       end
 

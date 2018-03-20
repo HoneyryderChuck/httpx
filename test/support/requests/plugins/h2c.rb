@@ -6,7 +6,7 @@ module Requests
       def test_plugin_h2c_disabled
         uri = build_uri("/get")
         response = HTTPX.get(uri)
-        verify_status(response.status, 200)
+        verify_status(response, 200)
         assert response.version == "1.1", "http requests should be by default in HTTP/1.1"
       end
 
@@ -14,7 +14,7 @@ module Requests
         client = HTTPX.plugin(:h2c)
         uri = build_uri("/get")
         response = client.get(uri)
-        verify_status(response.status, 200)
+        verify_status(response, 200)
         assert response.version == "2.0", "http h2c requests should be in HTTP/2"
       end
     end

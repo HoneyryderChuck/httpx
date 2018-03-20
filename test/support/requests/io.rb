@@ -6,7 +6,7 @@ module Requests
       io = origin_io
       uri = build_uri("/")
       response = HTTPX.get(uri, io: io)
-      verify_status(response.status, 200)
+      verify_status(response, 200)
       verify_body_length(response)
       assert !io.closed?, "io should have been left open"
     ensure

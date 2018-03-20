@@ -3,8 +3,9 @@
 module ResponseHelpers
   private
 
-  def verify_status(value, expect)
-    assert value == expect, "status assertion failed: #{value} (expected: #{expect})"
+  def verify_status(response, expect)
+    raise response.status if response.is_a?(HTTPX::ErrorResponse)
+    assert response.status == expect, "status assertion failed: #{response.status} (expected: #{expect})"
   end
 
   %w[header param].each do |meth|
