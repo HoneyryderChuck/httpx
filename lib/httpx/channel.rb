@@ -69,6 +69,7 @@ module HTTPX
     end
 
     def match?(uri)
+      return false if @state == :closing
       ips = begin
         Resolv.getaddresses(uri.host)
       rescue StandardError
