@@ -209,13 +209,17 @@ module HTTPX
   end
 
   class ErrorResponse
+    include Loggable
+
     attr_reader :error, :retries
 
     alias_method :status, :error
 
-    def initialize(error, retries)
+    def initialize(error, retries, options)
       @error = error
       @retries = retries
+      @options = Options.new(options)
+      log { caller.join("\n") }
     end
 
     def retryable?
