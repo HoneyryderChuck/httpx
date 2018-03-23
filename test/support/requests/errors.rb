@@ -5,7 +5,7 @@ module Requests
       unavailable_host.port = next_available_port
       response = HTTPX.get(unavailable_host.to_s)
       assert response.is_a?(HTTPX::ErrorResponse), "response should contain errors"
-      assert response.status =~ /Connection refused/, "connection should have been refused"
+      assert response.status =~ /Connection refused/, "connection should have been refused (#{response.error.class}: #{response.status})"
     end
 
     private
