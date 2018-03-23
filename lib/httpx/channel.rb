@@ -221,7 +221,7 @@ module HTTPX
 
     def emit_error(e)
       response = ErrorResponse.new(e, 0, @options)
-      @pending.each do |request, _|
+      @pending.each do |request, _| # rubocop:disable Performance/HashEachMethods
         emit(:response, request, response)
       end
     end

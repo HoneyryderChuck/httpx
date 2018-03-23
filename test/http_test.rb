@@ -25,7 +25,7 @@ class HTTPTest < Minitest::Test
 
   private
 
-  def origin(orig=httpbin)
+  def origin(orig = httpbin)
     "http://#{orig}"
   end
 end

@@ -6,7 +6,6 @@ module HTTPX
   TimeoutError = Class.new(Error)
 
   HTTPError = Class.new(Error) do
-
     attr_reader :status
 
     def initialize(status)

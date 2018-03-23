@@ -32,7 +32,7 @@ class ResponseTest < Minitest::Test
     r4 = Response.new(request, 500, "2.0", {})
     assert_raises(HTTPX::HTTPError) { r4.raise_for_status }
   end
-  
+
   def test_response_body_to_s
     opts = { threshold_size: 1024 }
     body1 = Response::Body.new(Response.new(request, 200, "2.0", {}), opts)
