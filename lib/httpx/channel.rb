@@ -213,6 +213,17 @@ module HTTPX
         @read_buffer.clear
       end
       @state = nextstate
+    rescue Errno::ECONNREFUSED => e
+      emit_error(e)
+      @state = :closed
+      emit(:close)
+    end
+
+    def emit_error(e)
+      response = ErrorResponse.new(e, 0, @options)
+      @pending.each do |request, _|
+        emit(:response, request, response)
+      end
     end
   end
 end
