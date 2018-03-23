@@ -14,6 +14,7 @@ class HTTPTest < Minitest::Test
   include ResponseBody
   include IO
   include Timeouts
+  include Errors
 
   include Plugins::Proxy
   include Plugins::Authentication
@@ -24,7 +25,7 @@ class HTTPTest < Minitest::Test
 
   private
 
-  def origin
-    "http://#{httpbin}"
+  def origin(orig=httpbin)
+    "http://#{orig}"
   end
 end
