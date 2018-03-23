@@ -213,13 +213,15 @@ module HTTPX
 
     attr_reader :error, :retries
 
-    alias_method :status, :error
-
     def initialize(error, retries, options)
       @error = error
       @retries = retries
       @options = Options.new(options)
       log { caller.join("\n") }
+    end
+
+    def status
+      @error.message
     end
 
     def retryable?

@@ -151,7 +151,7 @@ module HTTPX
 
     def on_stream_close(stream, request, error)
       return handle(request, stream) if request.expects?
-      response = request.response || ErrorResponse.new(error, @retries, @options)
+      response = request.response || ErrorResponse.new(Error.new(error), @retries, @options)
       emit(:response, request, response)
       log(2, "#{stream.id}: ") { "closing stream" }
 
