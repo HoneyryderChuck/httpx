@@ -22,7 +22,7 @@ module HTTPX
               end
               parser.send(connect_request)
             else
-              transition(:open)
+              transition(:connected)
             end
           end
 
@@ -31,13 +31,14 @@ module HTTPX
             when :connecting
               return unless @state == :idle
               @io.connect
-              return if @io.closed?
+              return unless @io.connected?
               @parser = ConnectProxyParser.new(@write_buffer, @options.merge(max_concurrent_requests: 1))
               @parser.once(:response, &method(:on_connect))
               @parser.on(:close) { transition(:closing) }
               proxy_connect
-              return if @state == :open
-            when :open
+              return if @state == :connected
+            when :connected
+              return unless @state == :idle || @state == :connecting
               case @state
               when :connecting
                 @parser.close
@@ -56,7 +57,7 @@ module HTTPX
               req, _ = @pending.first
               request_uri = req.uri
               @io = ProxySSL.new(@io, request_uri, @options)
-              transition(:open)
+              transition(:connected)
               throw(:called)
             else
               pending = @pending.map(&:first) + @parser.pending

@@ -127,12 +127,8 @@ module HTTPX
         dwrite
         transition(:closed)
         emit(:close)
-      else
-        catch(:called) do
-          dread
-          dwrite
-          parser.consume
-        end
+      when :open
+        consume
       end
       nil
     end
@@ -143,6 +139,14 @@ module HTTPX
     end
 
     private
+
+    def consume
+      catch(:called) do
+        dread
+        dwrite
+        parser.consume
+      end
+    end
 
     def dread(wsize = @window_size)
       loop do
@@ -202,7 +206,7 @@ module HTTPX
       when :open
         return if @state == :closed
         @io.connect
-        return if @io.closed?
+        return unless @io.connected?
         send_pending
       when :closing
         return unless @state == :open

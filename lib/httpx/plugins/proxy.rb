@@ -92,8 +92,21 @@ module HTTPX
     end
 
     def to_io
-      transition(:connecting) if @state == :idle
+      case @state
+      when :idle
+        transition(:connecting)
+      when :connected
+        transition(:open)
+      end
       @io.to_io
+    end
+
+    def call
+      super
+      case @state
+      when :connecting
+        consume
+      end
     end
   end
 
