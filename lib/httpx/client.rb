@@ -9,16 +9,18 @@ module HTTPX
       @options = self.class.default_options.merge(options)
       @connection = Connection.new(@options)
       @responses = {}
+      @keep_open = false
       wrap(&blk) if block_given?
     end
 
     def wrap
       return unless block_given?
       begin
+        prev_keep_open = @keep_open
         @keep_open = true
         yield self
       ensure
-        @keep_open = false
+        @keep_open = prev_keep_open
         close
       end
     end
