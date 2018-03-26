@@ -217,7 +217,8 @@ module HTTPX
         @read_buffer.clear
       end
       @state = nextstate
-    rescue Errno::ECONNREFUSED => e
+    rescue Errno::ECONNREFUSED,
+           Errno::EADDRNOTAVAIL => e
       emit_error(e)
       @state = :closed
       emit(:close)
