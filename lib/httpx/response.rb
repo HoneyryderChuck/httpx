@@ -60,6 +60,11 @@ module HTTPX
       "#<Response:#{object_id} @status=#{@status} @headers=#{@headers}>"
     end
 
+    def raise_for_status
+      return if @status < 400
+      raise HTTPError, @status
+    end
+
     class Body
       def initialize(response, threshold_size:, window_size: 1 << 14)
         @response = response
@@ -213,13 +218,20 @@ module HTTPX
 
     attr_reader :error, :retries
 
-    alias_method :status, :error
-
     def initialize(error, retries, options)
       @error = error
       @retries = retries
       @options = Options.new(options)
+      log { "#{error.class}: #{error}" }
       log { caller.join("\n") }
+    end
+
+    def status
+      @error.message
+    end
+
+    def raise_for_status
+      raise @error
     end
 
     def retryable?

@@ -22,6 +22,17 @@ class ResponseTest < Minitest::Test
     assert resource.body == "data", "body should have been updated"
   end
 
+  def test_raise_for_status
+    r1 = Response.new(request, 200, "2.0", {})
+    r1.raise_for_status
+    r2 = Response.new(request, 302, "2.0", {})
+    r2.raise_for_status
+    r3 = Response.new(request, 404, "2.0", {})
+    assert_raises(HTTPX::HTTPError) { r3.raise_for_status }
+    r4 = Response.new(request, 500, "2.0", {})
+    assert_raises(HTTPX::HTTPError) { r4.raise_for_status }
+  end
+
   def test_response_body_to_s
     opts = { threshold_size: 1024 }
     body1 = Response::Body.new(Response.new(request, 200, "2.0", {}), opts)

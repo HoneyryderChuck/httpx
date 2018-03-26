@@ -175,6 +175,10 @@ module HTTPX
       @negotiated = false
     end
 
+    def connected?
+      @state == :negotiated
+    end
+
     def connect
       super
       if @keep_open
@@ -183,11 +187,16 @@ module HTTPX
       end
       return if @state == :negotiated ||
                 @state != :connected
-      @io = OpenSSL::SSL::SSLSocket.new(@io, @ctx)
-      @io.hostname = @hostname
-      @io.sync_close = true
-      @io.connect
+      unless @io.is_a?(OpenSSL::SSL::SSLSocket)
+        @io = OpenSSL::SSL::SSLSocket.new(@io, @ctx)
+        @io.hostname = @hostname
+        @io.sync_close = true
+      end
+      # TODO: this might block it all
+      @io.connect_nonblock
       transition(:negotiated)
+    rescue ::IO::WaitReadable,
+           ::IO::WaitWritable
     end
 
     if RUBY_VERSION < "2.3"

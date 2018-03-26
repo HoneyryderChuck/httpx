@@ -192,7 +192,7 @@ module HTTPX
             # deallocate
             @response = nil
           when 417
-            @response = ErrorResponse.new("Expectation Failed", 0, @options)
+            @response = @response
             return
           end
         end

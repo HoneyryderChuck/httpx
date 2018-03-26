@@ -17,6 +17,16 @@ module HTTPX
         Error = Class.new(Error)
 
         class Socks5ProxyChannel < ProxyChannel
+          def call
+            super
+            case @state
+            when :connecting,
+                 :negotiating,
+                 :authenticating
+              consume
+            end
+          end
+
           private
 
           def proxy_connect
@@ -51,7 +61,7 @@ module HTTPX
               req, _ = @pending.first
               request_uri = req.uri
               @io = ProxySSL.new(@io, request_uri, @options) if request_uri.scheme == "https"
-              transition(:open)
+              transition(:connected)
               throw(:called)
             end
           end
@@ -61,7 +71,7 @@ module HTTPX
             when :connecting
               return unless @state == :idle
               @io.connect
-              return if @io.closed?
+              return unless @io.connected?
               @write_buffer << Packet.negotiate(@parameters)
               proxy_connect
             when :authenticating
@@ -72,7 +82,7 @@ module HTTPX
               req, _ = @pending.first
               request_uri = req.uri
               @write_buffer << Packet.connect(request_uri)
-            when :open
+            when :connected
               return unless @state == :negotiating
               @parser = nil
             end
@@ -85,7 +95,7 @@ module HTTPX
           end
 
           def on_error_response(error)
-            response = ErrorResponse.new(error, 0, @options)
+            response = ErrorResponse.new(Error.new(error), 0, @options)
             until @pending.empty?
               req, _ = @pending.shift
               emit(:response, req, response)

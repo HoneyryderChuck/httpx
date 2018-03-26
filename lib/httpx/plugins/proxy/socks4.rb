@@ -27,10 +27,10 @@ module HTTPX
               req, _ = @pending.first
               request_uri = req.uri
               @io = ProxySSL.new(@io, request_uri, @options) if request_uri.scheme == "https"
-              transition(:open)
+              transition(:connected)
               throw(:called)
             else
-              response = ErrorResponse.new("socks error: #{status}", 0, @options)
+              response = ErrorResponse.new(Error.new("socks error: #{status}"), 0, @options)
               until @pending.empty?
                 req, _ = @pending.shift
                 emit(:response, req, response)
@@ -43,13 +43,13 @@ module HTTPX
             when :connecting
               return unless @state == :idle
               @io.connect
-              return if @io.closed?
+              return unless @io.connected?
               req, _ = @pending.first
               return unless req
               request_uri = req.uri
               @write_buffer << Packet.connect(@parameters, request_uri)
               proxy_connect
-            when :open
+            when :connected
               return unless @state == :connecting
               @parser = nil
             end
