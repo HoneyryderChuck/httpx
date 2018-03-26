@@ -5,10 +5,14 @@ module HTTPX
     include Loggable
     include Chainable
 
-    def initialize(options = {})
+    def initialize(options = {}, &blk)
       @options = self.class.default_options.merge(options)
       @connection = Connection.new(@options)
       @responses = {}
+      wrap(&blk) if block_given?
+    end
+
+    def wrap
       return unless block_given?
       begin
         @keep_open = true
