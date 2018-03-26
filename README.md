@@ -92,14 +92,15 @@ It also means that it ships with the minimum amount of dependencies.
 
 ## Easy to test
 
-The test suite runs against [httpbin proxied over nghttp2](https://nghttp2.org/httpbin/), so there is no mocking/stubbing going on. The test suite uses [minitest](https://github.com/seattlerb/minitest), but its matchers usage is limit to assert (assert is all you need).
+The test suite runs against [httpbin proxied over nghttp2](https://nghttp2.org/httpbin/), so there are no mocking/stubbing false positives. The test suite uses [minitest](https://github.com/seattlerb/minitest), but its matchers usage is (almost) limited to `#assert` (`assert` is all you need).
 
 ## Supported Rubies
 
 All Rubies greater or equal to 2.1, and always latest JRuby.
 
 ## Resources
-
+|               |                                                     |
+| ------------- | --------------------------------------------------- |
 | Website       | https://honeyryderchuck.gitlab.io/httpx/            |
 | Documentation | https://honeyryderchuck.gitlab.io/httpx/rdoc/       |
 | Wiki          | https://gitlab.com/honeyryderchuck/httpx/wikis/home |
