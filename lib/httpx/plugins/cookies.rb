@@ -37,9 +37,9 @@ module HTTPX
 
       module ResponseMethods
         def cookie_jar
-          return @cookies if defined?(@cookies)
+          return @cookie_jar if defined?(@cookie_jar)
           return nil unless headers.key?("set-cookie")
-          @cookies ||= begin
+          @cookie_jar ||= begin
             jar = HTTP::CookieJar.new
             jar.parse(headers["set-cookie"], @request.uri)
             jar

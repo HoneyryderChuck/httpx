@@ -52,7 +52,10 @@ Lint/RescueException:
 Style/Alias:
   EnforcedStyle: prefer_alias_method
 
-Style/TrailingCommaInLiteral:
+Style/TrailingCommaInHashLiteral:
+  EnforcedStyleForMultiline: comma
+
+Style/TrailingCommaInArrayLiteral:
   EnforcedStyleForMultiline: comma
 
 Style/StringLiterals:

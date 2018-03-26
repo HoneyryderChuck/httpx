@@ -5,16 +5,16 @@ module HTTPX
     EMPTY = [].freeze # :nodoc:
 
     class << self
-      def new(h = nil)
-        return h if h.is_a?(self)
+      def new(headers = nil)
+        return headers if headers.is_a?(self)
         super
       end
     end
 
-    def initialize(h = nil)
+    def initialize(headers = nil)
       @headers = {}
-      return unless h
-      h.each do |field, value|
+      return unless headers
+      headers.each do |field, value|
         array_value(value).each do |v|
           add(downcased(field), v)
         end

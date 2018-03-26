@@ -75,7 +75,7 @@ module ProxyHelper
   end
 
   def parse_http_proxies
-    @__http__proxies ||= Oga.parse_html(fetch_http_proxies)
+    @parse_http_proxies ||= Oga.parse_html(fetch_http_proxies)
   end
 
   def fetch_http_proxies
@@ -83,7 +83,7 @@ module ProxyHelper
   end
 
   def parse_socks_proxies
-    @__socks__proxies ||= Oga.parse_html(fetch_socks_proxies)
+    @parse_socks_proxies ||= Oga.parse_html(fetch_socks_proxies)
   end
 
   def fetch_socks_proxies
