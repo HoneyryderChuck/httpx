@@ -17,7 +17,7 @@ module HTTPX
       return unless @options.debug
       return unless @options.debug_level >= level
       message = (+label << msg.call << "\n")
-      message = "\e[#{COLORS[color]}m#{message}\e[0m" if color
+      message = "\e[#{COLORS[color]}m#{message}\e[0m" if color && @options.debug.isatty
       @options.debug << message
     end
   end
