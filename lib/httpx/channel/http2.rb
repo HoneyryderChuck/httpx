@@ -107,7 +107,7 @@ module HTTPX
       headers[":path"]      = headline_uri(request)
       headers[":authority"] = request.authority
       headers = headers.merge(request.headers)
-      log(level: 1, label: "#{stream.id}: ") do
+      log(level: 1, label: "#{stream.id}: ", color: :yellow) do
         headers.map { |k, v| "-> HEADER: #{k}: #{v}" }.join("\n")
       end
       stream.headers(headers, end_stream: request.empty?)
@@ -117,8 +117,8 @@ module HTTPX
       chunk = @drains.delete(request) || request.drain_body
       while chunk
         next_chunk = request.drain_body
-        log(level: 1, label: "#{stream.id}: ") { "-> DATA: #{chunk.bytesize} bytes..." }
-        log(level: 2, label: "#{stream.id}: ") { "-> #{chunk.inspect}" }
+        log(level: 1, label: "#{stream.id}: ", color: :green) { "-> DATA: #{chunk.bytesize} bytes..." }
+        log(level: 2, label: "#{stream.id}: ", color: :green) { "-> #{chunk.inspect}" }
         stream.data(chunk, end_stream: !next_chunk)
         if next_chunk && @buffer.full?
           @drains[request] = next_chunk
@@ -133,7 +133,7 @@ module HTTPX
     ######
 
     def on_stream_headers(stream, request, h)
-      log(label: "#{stream.id}:") do
+      log(label: "#{stream.id}:", color: :yellow) do
         h.map { |k, v| "<- HEADER: #{k}: #{v}" }.join("\n")
       end
       _, status = h.shift
@@ -144,8 +144,8 @@ module HTTPX
     end
 
     def on_stream_data(stream, request, data)
-      log(level: 1, label: "#{stream.id}: ") { "<- DATA: #{data.bytesize} bytes..." }
-      log(level: 2, label: "#{stream.id}: ") { "<- #{data.inspect}" }
+      log(level: 1, label: "#{stream.id}: ", color: :green) { "<- DATA: #{data.bytesize} bytes..." }
+      log(level: 2, label: "#{stream.id}: ", color: :green) { "<- #{data.inspect}" }
       request.response << data
     end
 
@@ -175,12 +175,10 @@ module HTTPX
 
     def on_frame_sent(frame)
       log(level: 2, label: "#{frame[:stream]}: ") { "frame was sent!" }
-      log(level: 2, label: "#{frame[:stream]}: ") do
+      log(level: 2, label: "#{frame[:stream]}: ", color: :blue) do
         case frame[:type]
         when :data
           frame.merge(payload: frame[:payload].bytesize).inspect
-        when :headers
-          "\e[33m#{frame.inspect}\e[0m"
         else
           frame.inspect
         end
@@ -189,7 +187,7 @@ module HTTPX
 
     def on_frame_received(frame)
       log(level: 2, label: "#{frame[:stream]}: ") { "frame was received!" }
-      log(level: 2, label: "#{frame[:stream]}: ") do
+      log(level: 2, label: "#{frame[:stream]}: ", color: :magenta) do
         case frame[:type]
         when :data
           frame.merge(payload: frame[:payload].bytesize).inspect
