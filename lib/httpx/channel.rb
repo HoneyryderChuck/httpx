@@ -218,7 +218,10 @@ module HTTPX
       end
       @state = nextstate
     rescue Errno::ECONNREFUSED,
-           Errno::EADDRNOTAVAIL => e
+           Errno::ENETUNREACH,
+           Errno::EADDRNOTAVAIL,
+           OpenSSL::SSL::SSLError => e
+      # connect errors, exit gracefully
       emit_error(e)
       @state = :closed
       emit(:close)

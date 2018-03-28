@@ -92,7 +92,7 @@ module HTTPX
     def handle_stream(stream, request)
       stream.on(:close, &method(:on_stream_close).curry[stream, request])
       stream.on(:half_close) do
-        log(2, "#{stream.id}: ") { "waiting for response..." }
+        log(level: 2, label: "#{stream.id}: ") { "waiting for response..." }
       end
       # stream.on(:altsvc)
       stream.on(:headers, &method(:on_stream_headers).curry[stream, request])
@@ -107,7 +107,7 @@ module HTTPX
       headers[":path"]      = headline_uri(request)
       headers[":authority"] = request.authority
       headers = headers.merge(request.headers)
-      log(1, "#{stream.id}: ") do
+      log(level: 1, label: "#{stream.id}: ", color: :yellow) do
         headers.map { |k, v| "-> HEADER: #{k}: #{v}" }.join("\n")
       end
       stream.headers(headers, end_stream: request.empty?)
@@ -117,8 +117,8 @@ module HTTPX
       chunk = @drains.delete(request) || request.drain_body
       while chunk
         next_chunk = request.drain_body
-        log(1, "#{stream.id}: ") { "-> DATA: #{chunk.bytesize} bytes..." }
-        log(2, "#{stream.id}: ") { "-> #{chunk.inspect}" }
+        log(level: 1, label: "#{stream.id}: ", color: :green) { "-> DATA: #{chunk.bytesize} bytes..." }
+        log(level: 2, label: "#{stream.id}: ", color: :green) { "-> #{chunk.inspect}" }
         stream.data(chunk, end_stream: !next_chunk)
         if next_chunk && @buffer.full?
           @drains[request] = next_chunk
@@ -133,7 +133,7 @@ module HTTPX
     ######
 
     def on_stream_headers(stream, request, h)
-      log(stream.id) do
+      log(label: "#{stream.id}:", color: :yellow) do
         h.map { |k, v| "<- HEADER: #{k}: #{v}" }.join("\n")
       end
       _, status = h.shift
@@ -144,8 +144,8 @@ module HTTPX
     end
 
     def on_stream_data(stream, request, data)
-      log(1, "#{stream.id}: ") { "<- DATA: #{data.bytesize} bytes..." }
-      log(2, "#{stream.id}: ") { "<- #{data.inspect}" }
+      log(level: 1, label: "#{stream.id}: ", color: :green) { "<- DATA: #{data.bytesize} bytes..." }
+      log(level: 2, label: "#{stream.id}: ", color: :green) { "<- #{data.inspect}" }
       request.response << data
     end
 
@@ -153,7 +153,7 @@ module HTTPX
       return handle(request, stream) if request.expects?
       response = request.response || ErrorResponse.new(Error.new(error), @retries, @options)
       emit(:response, request, response)
-      log(2, "#{stream.id}: ") { "closing stream" }
+      log(level: 2, label: "#{stream.id}: ") { "closing stream" }
 
       @streams.delete(request)
       send(@pending.shift) unless @pending.empty?
@@ -174,13 +174,11 @@ module HTTPX
     end
 
     def on_frame_sent(frame)
-      log(2, "#{frame[:stream]}: ") { "frame was sent!" }
-      log(2, "#{frame[:stream]}: ") do
+      log(level: 2, label: "#{frame[:stream]}: ") { "frame was sent!" }
+      log(level: 2, label: "#{frame[:stream]}: ", color: :blue) do
         case frame[:type]
         when :data
           frame.merge(payload: frame[:payload].bytesize).inspect
-        when :headers
-          "\e[33m#{frame.inspect}\e[0m"
         else
           frame.inspect
         end
@@ -188,8 +186,8 @@ module HTTPX
     end
 
     def on_frame_received(frame)
-      log(2, "#{frame[:stream]}: ") { "frame was received!" }
-      log(2, "#{frame[:stream]}: ") do
+      log(level: 2, label: "#{frame[:stream]}: ") { "frame was received!" }
+      log(level: 2, label: "#{frame[:stream]}: ", color: :magenta) do
         case frame[:type]
         when :data
           frame.merge(payload: frame[:payload].bytesize).inspect
@@ -200,8 +198,8 @@ module HTTPX
     end
 
     def on_altsvc(frame)
-      log(2, "#{frame[:stream]}: ") { "altsvc frame was received" }
-      log(2, "#{frame[:stream]}: ") { frame.inspect }
+      log(level: 2, label: "#{frame[:stream]}: ") { "altsvc frame was received" }
+      log(level: 2, label: "#{frame[:stream]}: ") { frame.inspect }
     end
 
     def on_promise(stream)
