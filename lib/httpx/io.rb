@@ -137,7 +137,7 @@ module HTTPX
       when :closed
         return unless @state == :connected
       end
-      log(1, "#{inspect}: ") { nextstate.to_s }
+      log(level: 1, label: "#{inspect}: ") { nextstate.to_s }
       @state = nextstate
     end
   end

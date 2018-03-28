@@ -45,7 +45,7 @@ module HTTPX
     end
 
     def on_promise(_, stream)
-      log(2, "#{stream.id}: ") { "refusing stream!" }
+      log(level: 2, label: "#{stream.id}: ") { "refusing stream!" }
       stream.refuse
       # TODO: policy for handling promises
     end

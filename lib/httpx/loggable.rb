@@ -2,10 +2,11 @@
 
 module HTTPX
   module Loggable
-    def log(level = @options.debug_level, label = "", &msg)
+    def log(level: @options.debug_level, label: "", color: nil, &msg)
       return unless @options.debug
       return unless @options.debug_level >= level
-      @options.debug << (+label << msg.call << "\n")
+      message = (+label << msg.call << "\n")
+      @options.debug << message
     end
   end
 end

@@ -71,7 +71,7 @@ module HTTPX
     # must be public methods, or else they won't be reachable
 
     def on_message_begin
-      log(2) { "parsing begins" }
+      log(level: 2) { "parsing begins" }
     end
 
     def on_headers_complete(h)
@@ -81,7 +81,7 @@ module HTTPX
       request = @requests.first
       return if request.response
 
-      log(2) { "headers received" }
+      log(level: 2) { "headers received" }
       headers = @options.headers_class.new(h)
       response = @options.response_class.new(@requests.last,
                                              @parser.status_code,
@@ -97,7 +97,7 @@ module HTTPX
 
     def on_body(chunk)
       log { "-> DATA: #{chunk.bytesize} bytes..." }
-      log(2) { "-> #{chunk.inspect}" }
+      log(level: 2) { "-> #{chunk.inspect}" }
       response = @requests.first.response
 
       response << chunk
@@ -106,7 +106,7 @@ module HTTPX
     end
 
     def on_message_complete
-      log(2) { "parsing complete" }
+      log(level: 2) { "parsing complete" }
       request = @requests.first
       response = request.response
 
@@ -201,7 +201,7 @@ module HTTPX
       return if request.empty?
       while (chunk = request.drain_body)
         log { "<- DATA: #{chunk.bytesize} bytes..." }
-        log(2) { "<- #{chunk.inspect}" }
+        log(level: 2) { "<- #{chunk.inspect}" }
         @buffer << chunk
         throw(:buffer_full, request) if @buffer.full?
       end
