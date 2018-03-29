@@ -151,13 +151,12 @@ module HTTPX
     private
 
     def disable_concurrency
-      unless @requests.empty?
-        @requests.each { |r| r.transition(:idle) }
-        # server doesn't handle pipelining, and probably
-        # doesn't support keep-alive. Fallback to send only
-        # 1 keep alive request.
-        @max_concurrent_requests = 1
-      end
+      return if @requests.empty?
+      @requests.each { |r| r.transition(:idle) }
+      # server doesn't handle pipelining, and probably
+      # doesn't support keep-alive. Fallback to send only
+      # 1 keep alive request.
+      @max_concurrent_requests = 1
     end
 
     def set_request_headers(request)
