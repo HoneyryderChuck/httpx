@@ -6,11 +6,15 @@ module HTTPX
   TimeoutError = Class.new(Error)
 
   HTTPError = Class.new(Error) do
-    attr_reader :status
+    attr_reader :response
 
-    def initialize(status)
-      @status = status
-      super("HTTP Error: #{status}")
+    def initialize(response)
+      @response = response
+      super("HTTP Error: #{@response.status}")
+    end
+
+    def status
+      @response.status
     end
   end
 end

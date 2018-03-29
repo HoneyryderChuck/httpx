@@ -62,7 +62,7 @@ module HTTPX
 
     def raise_for_status
       return if @status < 400
-      raise HTTPError, @status
+      raise HTTPError, self
     end
 
     class Body
