@@ -144,17 +144,21 @@ module HTTPX
       close
       send(@pending.shift) unless @pending.empty?
       return unless response.headers["connection"] == "close"
+      disable_concurrency
+      emit(:reset)
+    end
+
+    private
+
+    def disable_concurrency
       unless @requests.empty?
-        @requests.map { |r| r.transition(:idle) }
+        @requests.each { |r| r.transition(:idle) }
         # server doesn't handle pipelining, and probably
         # doesn't support keep-alive. Fallback to send only
         # 1 keep alive request.
         @max_concurrent_requests = 1
       end
-      emit(:close)
     end
-
-    private
 
     def set_request_headers(request)
       request.headers["host"] ||= request.authority

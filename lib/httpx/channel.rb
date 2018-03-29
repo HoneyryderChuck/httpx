@@ -196,6 +196,14 @@ module HTTPX
       parser.on(:close) do
         transition(:closing)
       end
+      parser.on(:reset) do
+        transition(:closing)
+        unless parser.empty?
+          transition(:closed)
+          transition(:idle)
+          transition(:open)
+        end
+      end
       parser
     end
 
