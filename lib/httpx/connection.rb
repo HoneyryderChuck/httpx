@@ -16,22 +16,25 @@ module HTTPX
       !@channels.empty?
     end
 
-    def next_tick(timeout: @timeout.timeout)
-      @selector.select(timeout) do |monitor|
-        if (channel = monitor.value)
-          channel.call
+    def next_tick
+      begin
+        timeout = @timeout.timeout
+        @selector.select(timeout) do |monitor|
+          if (channel = monitor.value)
+            channel.call
+          end
+          monitor.interests = channel.interests
         end
-        monitor.interests = channel.interests
+      rescue TimeoutError => ex
+        @channels.each do |ch|
+          ch.emit(:error, ex)
+        end
       end
     end
 
     def close
       @channels.each(&:close)
       next_tick until @channels.empty?
-    end
-
-    def reset
-      @channels.each(&:reset)
     end
 
     def build_channel(uri, **options)

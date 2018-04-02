@@ -204,6 +204,10 @@ module HTTPX
           transition(:open)
         end
       end
+      parser.on(:error) do |request, ex|
+        response = ErrorResponse.new(ex, 0, @options)
+        emit(:response, request, response)
+      end
       parser
     end
 
@@ -230,12 +234,13 @@ module HTTPX
            Errno::EADDRNOTAVAIL,
            OpenSSL::SSL::SSLError => e
       # connect errors, exit gracefully
-      emit_error(e)
+      handle_error(e)
       @state = :closed
       emit(:close)
     end
 
-    def emit_error(e)
+    def handle_error(e)
+      parser.handle_error(e)
       response = ErrorResponse.new(e, 0, @options)
       @pending.each do |request, _|
         emit(:response, request, response)

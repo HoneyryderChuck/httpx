@@ -111,11 +111,7 @@ module HTTPX
           responses << response
           requests.shift
 
-          break if requests.empty?
-        rescue TimeoutError => e
-          responses << ErrorResponse.new(e, 0, @options) while requests.shift
-          @connection.reset
-          break
+          break if requests.empty? || !@connection.running?
         end
       end
       responses

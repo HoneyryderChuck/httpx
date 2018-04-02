@@ -60,6 +60,12 @@ module HTTPX
       end
     end
 
+    def handle_error(ex)
+      @streams.each_key do |request|
+        emit(:error, request, ex)
+      end
+    end
+
     private
 
     def headline_uri(request)
@@ -151,8 +157,12 @@ module HTTPX
 
     def on_stream_close(stream, request, error)
       return handle(request, stream) if request.expects?
-      response = request.response || ErrorResponse.new(Error.new(error), @retries, @options)
-      emit(:response, request, response)
+      if error
+        emit(:error, request, error)
+      else
+        response = request.response
+        emit(:response, request, response)
+      end
       log(level: 2, label: "#{stream.id}: ") { "closing stream" }
 
       @streams.delete(request)

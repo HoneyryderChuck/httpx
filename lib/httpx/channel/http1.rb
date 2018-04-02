@@ -148,8 +148,6 @@ module HTTPX
       emit(:reset)
     end
 
-    private
-
     def disable_concurrency
       return if @requests.empty?
       @requests.each { |r| r.transition(:idle) }
@@ -158,6 +156,14 @@ module HTTPX
       # 1 keep alive request.
       @max_concurrent_requests = 1
     end
+
+    def handle_error(ex)
+      @requests.each do |request|
+        emit(:error, request, ex)
+      end
+    end
+
+    private
 
     def set_request_headers(request)
       request.headers["host"] ||= request.authority
