@@ -12,7 +12,6 @@ module HTTPX
     def initialize(buffer, options)
       @options = Options.new(options)
       @max_concurrent_requests = @options.max_concurrent_requests
-      @retries = options.max_retries
       @parser = HTTP::Parser.new(self)
       @parser.header_value_type = :arrays
       @buffer = buffer
@@ -141,11 +140,17 @@ module HTTPX
         response << @parser.upgrade_data
         throw(:called)
       end
-      close
+      reset
       send(@pending.shift) unless @pending.empty?
       return unless response.headers["connection"] == "close"
       disable_concurrency
       emit(:reset)
+    end
+
+    def handle_error(ex)
+      @requests.each do |request|
+        emit(:error, request, ex)
+      end
     end
 
     private
