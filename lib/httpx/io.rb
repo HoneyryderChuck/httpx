@@ -137,6 +137,10 @@ module HTTPX
       when :closed
         return unless @state == :connected
       end
+      do_transition(nextstate)
+    end
+
+    def do_transition(nextstate)
       log(level: 1, label: "#{inspect}: ") { nextstate.to_s }
       @state = nextstate
     end
@@ -240,7 +244,7 @@ module HTTPX
         return unless @state == :negotiated ||
                       @state == :connected
       end
-      super
+      do_transition(nextstate)
     end
   end
   module IO
