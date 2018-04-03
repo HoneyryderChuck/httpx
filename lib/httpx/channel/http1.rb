@@ -140,7 +140,7 @@ module HTTPX
         response << @parser.upgrade_data
         throw(:called)
       end
-      close
+      reset
       send(@pending.shift) unless @pending.empty?
       return unless response.headers["connection"] == "close"
       disable_concurrency
