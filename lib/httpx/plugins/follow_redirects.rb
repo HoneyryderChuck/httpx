@@ -6,6 +6,7 @@ module HTTPX
       module InstanceMethods
         MAX_REDIRECTS = 3
         REDIRECT_STATUS = 300..399
+        REFUSE_INSECURE_REDIRECTS = false
 
         def max_redirects(n)
           branch(default_options.with_max_redirects(n.to_i))
@@ -17,6 +18,7 @@ module HTTPX
           @keep_open = true
 
           max_redirects = @options.max_redirects || MAX_REDIRECTS
+          refuse_insecure_redirects = @options.refuse_insecure_redirects || REFUSE_INSECURE_REDIRECTS
           requests = __build_reqs(*args, **options)
           responses = __send_reqs(*requests)
 
@@ -64,6 +66,9 @@ module HTTPX
         def self.included(klass)
           super
           klass.def_option(:max_redirects)
+          klass.def_option(:refuse_insecure_redirects) do |bool = true|
+            self.refuse_insecure_redirects = !!bool
+          end
         end
       end
     end
