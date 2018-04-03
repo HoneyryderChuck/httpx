@@ -62,6 +62,11 @@ class RequestTest < Minitest::Test
     assert req.headers["content-length"] == "13", "content length is wrong"
   end
 
+  def test_uri
+    req = Request.new(:get, "http://google.com/?q=bang dang")
+    assert req.uri.to_s == "http://google.com/?q=bang%20dang", "uri not encoded"
+  end
+
   private
 
   def resource
