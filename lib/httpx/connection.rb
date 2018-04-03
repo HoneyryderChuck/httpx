@@ -17,18 +17,16 @@ module HTTPX
     end
 
     def next_tick
-      begin
-        timeout = @timeout.timeout
-        @selector.select(timeout) do |monitor|
-          if (channel = monitor.value)
-            channel.call
-          end
-          monitor.interests = channel.interests
+      timeout = @timeout.timeout
+      @selector.select(timeout) do |monitor|
+        if (channel = monitor.value)
+          channel.call
         end
-      rescue TimeoutError => ex
-        @channels.each do |ch|
-          ch.emit(:error, ex)
-        end
+        monitor.interests = channel.interests
+      end
+    rescue TimeoutError => ex
+      @channels.each do |ch|
+        ch.emit(:error, ex)
       end
     end
 
