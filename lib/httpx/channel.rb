@@ -66,6 +66,7 @@ module HTTPX
       @write_buffer = Buffer.new(BUFFER_SIZE)
       @pending = []
       @state = :idle
+      on(:error) { |ex| on_error(ex) }
     end
 
     def match?(uri)
@@ -237,6 +238,11 @@ module HTTPX
       handle_error(e)
       @state = :closed
       emit(:close)
+    end
+
+    def on_error(ex)
+      handle_error(ex)
+      reset
     end
 
     def handle_error(e)
