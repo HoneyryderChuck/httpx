@@ -13,7 +13,6 @@ module HTTPX
       @options = Options.new(options)
       @max_concurrent_requests = @options.max_concurrent_requests
       init_connection
-      @retries = options.max_retries
       @pending = []
       @streams = {}
       @drains  = {}
