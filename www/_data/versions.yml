@@ -1,4 +1,16 @@
 -
   -
+    name: "0.0.5"
+    path: "0_0_5_md.html"
+  -
+    name: "0.0.4"
+    path: "0_0_4_md.html"
+  -
+    name: "0.0.3"
+    path: "0_0_3_md.html"
+  -
+    name: "0.0.2"
+    path: "0_0_2_md.html"
+  -
     name: "0.0.1"
     path: "0_0_1_md.html"
