@@ -38,6 +38,8 @@ module Requests
         verify_status(response, 302)
       end
 
+      def test_plugin_follow_redirects_insecure; end
+
       private
 
       def redirect_uri
