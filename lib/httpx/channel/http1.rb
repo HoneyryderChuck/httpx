@@ -101,7 +101,7 @@ module HTTPX
 
       response << chunk
 
-      # dispatch if response.complete?
+      @has_response = response.complete?
     end
 
     def on_message_complete
