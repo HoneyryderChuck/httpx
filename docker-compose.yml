@@ -36,9 +36,7 @@ services:
       - "3128:3128"
 
   nghttp2:
-    build:
-      context: .
-      dockerfile: test/support/ci/Dockerfile.nghttp2
+    image: registry.gitlab.com/honeyryderchuck/httpx/nghttp2:latest
     ports:
       - 80:80
       - 443:443
