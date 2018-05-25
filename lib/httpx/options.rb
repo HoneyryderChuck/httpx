@@ -55,6 +55,8 @@ module HTTPX
         :headers_class            => Class.new(Headers),
         :request_body_class       => Class.new(Request::Body),
         :response_body_class      => Class.new(Response::Body),
+        :transport                => nil,
+        :transport_options        => nil
       }
 
       defaults.merge!(options)
@@ -84,11 +86,17 @@ module HTTPX
       self.body_threshold_size = Integer(num)
     end
 
+    def_option(:transport) do |tr|
+      transport = tr.to_s
+      raise Error, "#{transport} is an unsupported transport type" unless IO.registry.keys.include?(transport)
+      self.transport = transport
+    end
+
     %w[
       params form json body
       follow ssl http2_settings max_retries
       request_class response_class headers_class request_body_class response_body_class
-      io fallback_protocol debug debug_level
+      io fallback_protocol debug debug_level transport_options
     ].each do |method_name|
       def_option(method_name)
     end
