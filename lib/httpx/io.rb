@@ -11,19 +11,21 @@ module HTTPX
 
     attr_reader :ip, :port
 
-    def initialize(hostname, port, options)
+    alias_method :host, :ip
+
+    def initialize(uri, options)
       @state = :idle
-      @hostname = hostname
+      @hostname = uri.host
       @options = Options.new(options)
       @fallback_protocol = @options.fallback_protocol
-      @port = port
+      @port = uri.port
       if @options.io
         @io = case @options.io
               when Hash
                 @ip = Resolv.getaddress(@hostname)
                 @options.io[@ip] || @options.io["#{@ip}:#{@port}"]
               else
-                @ip = hostname
+                @ip = @hostname
                 @options.io
         end
         unless @io.nil?
@@ -153,7 +155,7 @@ module HTTPX
       {}
     end
 
-    def initialize(_, _, options)
+    def initialize(_, options)
       @ctx = OpenSSL::SSL::SSLContext.new
       ctx_options = TLS_OPTIONS.merge(options.ssl)
       @ctx.set_params(ctx_options) unless ctx_options.empty?
