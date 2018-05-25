@@ -250,8 +250,10 @@ module HTTPX
     end
   end
   module IO
+    require "httpx/io/unix"
     extend Registry
     register "tcp", TCP
     register "ssl", SSL
+    register "unix", HTTPX::UNIX
   end
 end
