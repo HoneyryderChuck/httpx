@@ -44,11 +44,11 @@ module HTTPX
       def by(uri, options)
         type = options.transport || begin
           case uri.scheme
-           when "http" then "tcp"
-           when "https" then "ssl"
-           else
-             raise Error, "#{uri}: #{uri.scheme}: unrecognized channel"
-           end
+          when "http" then "tcp"
+          when "https" then "ssl"
+          else
+            raise Error, "#{uri}: #{uri.scheme}: unrecognized channel"
+          end
         end
         io = IO.registry(type).new(uri, options)
         new(io, options)

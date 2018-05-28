@@ -77,7 +77,7 @@ class OptionsTest < Minitest::Test
       :request_body_class => bar.request_body_class,
       :response_body_class => bar.response_body_class,
       :transport          => nil,
-      :transport_options  => nil
+      :transport_options  => nil,
     }, "options haven't merged correctly"
   end
 

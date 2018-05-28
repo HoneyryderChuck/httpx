@@ -46,6 +46,7 @@ module HTTPX
            Errno::EALREADY,
            ::IO::WaitReadable
     end
+
     private
 
     def build_socket

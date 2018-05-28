@@ -56,7 +56,7 @@ module HTTPX
         :request_body_class       => Class.new(Request::Body),
         :response_body_class      => Class.new(Response::Body),
         :transport                => nil,
-        :transport_options        => nil
+        :transport_options        => nil,
       }
 
       defaults.merge!(options)
