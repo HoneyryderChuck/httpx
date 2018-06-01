@@ -66,6 +66,21 @@ module HTTPX
           @connection.__send__(:register_channel, channel)
           channel
         end
+
+        def fetch_response(request)
+          response = super
+          if response.is_a?(ErrorResponse) &&
+             # either it was a timeout error connecting, or it was a proxy error
+             ((response.error.is_a?(TimeoutError) && request.state == :idle) ||
+              response.error.is_a?(Error)) &&
+             !@_proxy_uris.empty?
+            log { "failed connecting to proxy, trying next..." }
+            channel = find_channel(request)
+            channel.send(request)
+            return
+          end
+          response
+        end
       end
 
       module OptionsMethods
