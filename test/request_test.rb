@@ -39,6 +39,8 @@ class RequestTest < Minitest::Test
     assert r2.path == "/path", "unexpected path (#{r2.path})"
     r3 = Request.new(:get, "http://google.com/path?q=bang&region=eu-west-1")
     assert r3.path == "/path?q=bang&region=eu-west-1", "unexpected path (#{r3.path})"
+    r4 = Request.new(:get, "https://google.com?q=bang bang")
+    assert r4.path == "/?q=bang%20bang", "must replace unsafe characters"
   end
 
   def test_request_body_raw

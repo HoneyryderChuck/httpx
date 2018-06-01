@@ -43,7 +43,7 @@ module HTTPX
 
     def initialize(verb, uri, options = {})
       @verb    = verb.to_s.downcase.to_sym
-      @uri     = URI(uri)
+      @uri     = URI(URI.encode(uri.to_s))
       @options = Options.new(options)
 
       raise(Error, "unknown method: #{verb}") unless METHODS.include?(@verb)
@@ -65,7 +65,7 @@ module HTTPX
     end
 
     def path
-      path = uri.path
+      path = uri.path.dup
       path << "/" if path.empty?
       path << "?#{query}" unless query.empty?
       path
