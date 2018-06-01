@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "cgi"
-
 module Requests
   module Plugins
     module FollowRedirects
@@ -41,7 +39,7 @@ module Requests
       private
 
       def redirect_uri
-        build_uri("/redirect-to?url=" + CGI.escape(redirect_location))
+        build_uri("/redirect-to?url=" + redirect_location)
       end
 
       def max_redirect_uri(n)
