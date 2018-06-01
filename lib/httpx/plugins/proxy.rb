@@ -34,10 +34,15 @@ module HTTPX
         private
 
         def proxy_params(uri)
-          return @options.proxy if @options.proxy
-          uri = URI(uri).find_proxy
-          return unless uri
-          { uri: uri }
+          @_proxy_uris ||= begin
+            uris = @options.proxy ? Array(@options.proxy[:uri]) : []
+            if uris.empty?
+              uri = URI(uri).find_proxy
+              uris << uri if uri
+            end
+            uris
+          end
+          @options.proxy.merge(uri: @_proxy_uris.shift) unless @_proxy_uris.empty?
         end
 
         def find_channel(request, **options)
