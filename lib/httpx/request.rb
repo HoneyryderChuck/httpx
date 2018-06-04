@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "cgi"
 require "forwardable"
 
 module HTTPX
@@ -43,7 +44,7 @@ module HTTPX
 
     def initialize(verb, uri, options = {})
       @verb    = verb.to_s.downcase.to_sym
-      @uri     = URI(URI.encode(uri.to_s))
+      @uri     = URI(CGI.escape(uri.to_s))
       @options = Options.new(options)
 
       raise(Error, "unknown method: #{verb}") unless METHODS.include?(@verb)
