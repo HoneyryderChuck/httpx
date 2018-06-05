@@ -20,7 +20,7 @@ task :"test:ci" => %i[test rubocop]
 
 # Doc
 
-rdoc_opts = ["--line-numbers", "--inline-source", "--title", "Roda: Routing tree web toolkit"]
+rdoc_opts = ["--line-numbers", "--inline-source", "--title", "HTTPX: An HTTP client library for ruby"]
 
 begin
   gem "hanna-nouveau"
