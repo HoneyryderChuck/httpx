@@ -59,7 +59,7 @@ module HTTPX
                redirect_uri.scheme == "http"
               error = InsecureRedirectError.new(redirect_uri.to_s)
               error.set_backtrace(caller)
-              response = ErrorResponse.new(error, 0, @options)
+              response = ErrorResponse.new(error, @options)
             end
           end
           response
