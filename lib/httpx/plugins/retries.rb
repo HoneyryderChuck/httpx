@@ -4,6 +4,7 @@ module HTTPX
   module Plugins
     module Retries
       MAX_RETRIES = 3
+      IDEMPOTENT_METHODS = [:get, :options, :head, :put, :delete]
 
       module InstanceMethods
         def max_retries(n)
@@ -15,7 +16,8 @@ module HTTPX
         def fetch_response(request)
           response = super
           if response.is_a?(ErrorResponse) &&
-              request.retries > 0
+              request.retries > 0 &&
+              IDEMPOTENT_METHODS.include?(request.verb)
             request.retries -= 1
             channel = find_channel(request)
             channel.send(request)
