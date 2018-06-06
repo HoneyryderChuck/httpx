@@ -36,6 +36,20 @@ module Requests
         verify_status(response, 302)
       end
 
+      def test_plugin_follow_insecure_no_insecure_downgrade
+        return unless origin.start_with?("https")
+
+        client = HTTPX.plugin(:follow_redirects).max_redirects(1)
+        response = client.get(insecure_redirect_uri)
+        assert response.is_a?(HTTPX::ErrorResponse), "request should not follow insecure URLs"
+
+        insecure_client = HTTPX.plugin(:follow_redirects)
+                               .max_redirects(1)
+                               .with(follow_insecure_redirects: true)
+        insecure_response = insecure_client.get(insecure_redirect_uri)
+        verify_status(insecure_response, 200)
+      end
+
       private
 
       def redirect_uri
@@ -44,6 +58,10 @@ module Requests
 
       def max_redirect_uri(n)
         build_uri("/redirect/#{n}")
+      end
+
+      def insecure_redirect_uri
+        build_uri("/redirect-to?url=http://www.google.com")
       end
 
       def redirect_location
