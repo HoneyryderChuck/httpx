@@ -216,11 +216,10 @@ module HTTPX
   class ErrorResponse
     include Loggable
 
-    attr_reader :error, :retries
+    attr_reader :error
 
-    def initialize(error, retries, options)
+    def initialize(error, options)
       @error = error
-      @retries = retries
       @options = Options.new(options)
       log { "#{error.class}: #{error}" }
       log { caller.join("\n") }
@@ -232,10 +231,6 @@ module HTTPX
 
     def raise_for_status
       raise @error
-    end
-
-    def retryable?
-      @retries.positive?
     end
   end
 end

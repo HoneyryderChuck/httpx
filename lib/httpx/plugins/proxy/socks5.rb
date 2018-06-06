@@ -95,7 +95,7 @@ module HTTPX
           end
 
           def on_error_response(error)
-            response = ErrorResponse.new(Error.new(error), 0, @options)
+            response = ErrorResponse.new(Error.new(error), @options)
             until @pending.empty?
               req, _ = @pending.shift
               emit(:response, req, response)

@@ -51,13 +51,14 @@ module HTTPX
     end
 
     def fetch_response(request)
-      response = @responses.delete(request)
-      if response.is_a?(ErrorResponse) && response.retryable?
-        channel = find_channel(request)
-        channel.send(request, retries: response.retries - 1)
-        return
-      end
-      response
+      @responses.delete(request)
+      #response = @responses.delete(request)
+      #if response.is_a?(ErrorResponse)
+      #  channel = find_channel(request)
+      #  channel.send(request)
+      #  return
+      #end
+      #response
     end
 
     def find_channel(request, **options)

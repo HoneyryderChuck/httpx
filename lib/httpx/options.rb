@@ -3,7 +3,6 @@
 module HTTPX
   class Options
     MAX_CONCURRENT_REQUESTS = 100
-    MAX_RETRIES = 3
     WINDOW_SIZE = 1 << 14 # 16K
     MAX_BODY_THRESHOLD_SIZE = (1 << 10) * 112 # 112K
 
@@ -47,7 +46,6 @@ module HTTPX
         :timeout                  => Timeout.new,
         :headers                  => {},
         :max_concurrent_requests  => MAX_CONCURRENT_REQUESTS,
-        :max_retries              => MAX_RETRIES,
         :window_size              => WINDOW_SIZE,
         :body_threshold_size      => MAX_BODY_THRESHOLD_SIZE,
         :request_class            => Class.new(Request),
@@ -86,7 +84,7 @@ module HTTPX
 
     %w[
       params form json body
-      follow ssl http2_settings max_retries
+      follow ssl http2_settings
       request_class response_class headers_class request_body_class response_body_class
       io fallback_protocol debug debug_level
     ].each do |method_name|

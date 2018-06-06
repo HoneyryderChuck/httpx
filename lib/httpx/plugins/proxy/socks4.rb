@@ -30,7 +30,7 @@ module HTTPX
               transition(:connected)
               throw(:called)
             else
-              response = ErrorResponse.new(Error.new("socks error: #{status}"), 0, @options)
+              response = ErrorResponse.new(Error.new("socks error: #{status}"), @options)
               until @pending.empty?
                 req, _ = @pending.shift
                 emit(:response, req, response)
