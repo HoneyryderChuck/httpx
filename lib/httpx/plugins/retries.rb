@@ -4,7 +4,7 @@ module HTTPX
   module Plugins
     module Retries
       MAX_RETRIES = 3
-      IDEMPOTENT_METHODS = [:get, :options, :head, :put, :delete]
+      IDEMPOTENT_METHODS = %i[get options head put delete].freeze
 
       module InstanceMethods
         def max_retries(n)
@@ -16,8 +16,8 @@ module HTTPX
         def fetch_response(request)
           response = super
           if response.is_a?(ErrorResponse) &&
-              request.retries > 0 &&
-              IDEMPOTENT_METHODS.include?(request.verb)
+             request.retries.positive? &&
+             IDEMPOTENT_METHODS.include?(request.verb)
             request.retries -= 1
             channel = find_channel(request)
             channel.send(request)
@@ -29,7 +29,7 @@ module HTTPX
 
       module RequestMethods
         attr_accessor :retries
-        
+
         def initialize(*args)
           super
           @retries = @options.max_retries || MAX_RETRIES
@@ -47,6 +47,6 @@ module HTTPX
         end
       end
     end
-    register_plugin :retries, Retries 
+    register_plugin :retries, Retries
   end
 end
