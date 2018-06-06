@@ -47,7 +47,7 @@ module Requests
                                .max_redirects(1)
                                .with(follow_insecure_redirects: true)
         insecure_response = insecure_client.get(insecure_redirect_uri)
-        verify_status(insecure_response, 200)
+        assert insecure_response.is_a?(HTTPX::Response), "request should follow insecure URLs"
       end
 
       private
