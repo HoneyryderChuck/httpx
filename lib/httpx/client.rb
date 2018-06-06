@@ -52,13 +52,6 @@ module HTTPX
 
     def fetch_response(request)
       @responses.delete(request)
-      #response = @responses.delete(request)
-      #if response.is_a?(ErrorResponse)
-      #  channel = find_channel(request)
-      #  channel.send(request)
-      #  return
-      #end
-      #response
     end
 
     def find_channel(request, **options)
