@@ -42,14 +42,15 @@ module HTTPX
 
     class << self
       def by(uri, options)
-        io = case uri.scheme
-             when "http"
-               IO.registry("tcp").new(uri.host, uri.port, options)
-             when "https"
-               IO.registry("ssl").new(uri.host, uri.port, options)
-             else
-               raise Error, "#{uri}: #{uri.scheme}: unrecognized channel"
+        type = options.transport || begin
+          case uri.scheme
+          when "http" then "tcp"
+          when "https" then "ssl"
+          else
+            raise Error, "#{uri}: #{uri.scheme}: unrecognized channel"
+          end
         end
+        io = IO.registry(type).new(uri, options)
         new(io, options)
       end
     end

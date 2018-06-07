@@ -2,7 +2,7 @@
 
 require_relative "test_helper"
 
-class OptionsSpec < Minitest::Test
+class OptionsTest < Minitest::Test
   include HTTPX
 
   def test_options_body
@@ -75,6 +75,8 @@ class OptionsSpec < Minitest::Test
       :headers_class      => bar.headers_class,
       :request_body_class => bar.request_body_class,
       :response_body_class => bar.response_body_class,
+      :transport          => nil,
+      :transport_options  => nil,
     }, "options haven't merged correctly"
   end
 
