@@ -45,6 +45,7 @@ module HTTPX
     def build_channel(uri, **options)
       channel = Channel.by(uri, @options.merge(options))
       resolve_channel(channel)
+      @channels << channel
       channel
     end
 
@@ -70,8 +71,16 @@ module HTTPX
       end
     end
 
-    def on_resolver_channel(channel)
-      register_channel(channel)
+    def on_resolver_channel(channel, addresses)
+      found_channel = @channels.find do |ch|
+        next if ch == channel
+        ch.mergeable?(channel, addresses)
+      end
+      if found_channel
+        found_channel.merge(channel)
+      else
+        register_channel(channel)
+      end
     end
 
     def on_resolver_close
@@ -88,7 +97,6 @@ module HTTPX
         @channels.delete(channel)
         @selector.deregister(channel)
       end
-      @channels << channel
     end
   end
 end

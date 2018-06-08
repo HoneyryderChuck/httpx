@@ -63,6 +63,7 @@ module HTTPX
     def initialize(type, uri, options)
       @type = type
       @uri = uri
+      @hostnames = [@uri.host]
       @options = Options.new(options)
       @window_size = @options.window_size
       @read_buffer = Buffer.new(BUFFER_SIZE)
@@ -76,17 +77,24 @@ module HTTPX
       @io = IO.registry(@type).new(@uri, addrs, @options)
     end
 
+    def mergeable?(channel, addresses)
+      return false if @state == :closing
+      !(@io.addresses & addresses).empty? &&
+        @uri.port == channel.uri.port &&
+        @uri.scheme == channel.uri.scheme
+    end
+
+    def merge(channel)
+      @hostnames += channel.instance_variable_get(:@hostnames)
+      @pending += channel.instance_variable_get(:@pending)
+    end
+
     def match?(uri)
       return false if @state == :closing
-      ips = begin
-        Resolv.getaddresses(uri.host)
-      rescue StandardError
-        [uri.host]
-      end
 
-      !(@io.addresses.map(&:to_s) & ips).empty? &&
-        uri.port == @io.port &&
-        uri.scheme == @io.scheme
+      @hostnames.include?(uri.host) &&
+        uri.port == @uri.port &&
+        uri.scheme == @uri.scheme
     end
 
     def interests

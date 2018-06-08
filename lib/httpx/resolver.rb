@@ -26,7 +26,6 @@ module HTTPX
       @read_buffer = Buffer.new(MAX_PACKET_SIZE)
       @write_buffer = Buffer.new(MAX_PACKET_SIZE)
       @state = :open
-      @nameservers = Resolv::DNS::Config.default_config_hash[:nameserver]
     end
 
     def close
@@ -173,7 +172,7 @@ module HTTPX
       end
       log(label: "resolver: ") { "answer #{channel.uri.host}: #{addresses.inspect}" }
       channel.addresses = addresses
-      emit(:resolve, channel)
+      emit(:resolve, channel, addresses)
     end
 
     def system_resolve(hostname)
@@ -193,7 +192,8 @@ module HTTPX
 
     def build_socket
       return if @io
-      nameserver = IPAddr.new(@nameservers.first)
+      nameservers = Resolv::DNS::Config.default_config_hash[:nameserver]
+      nameserver = IPAddr.new(nameservers.first)
       log(label: "resolver: ") { "Name Server: #{nameserver}..." }
       @io = UDP.new(nameserver.to_s, DNS_PORT, nameserver.family)
     end
@@ -211,10 +211,12 @@ module HTTPX
 
       def cached_lookup(hostname)
         @lookup_mutex.synchronize { @lookups[hostname] }
+        # @lookups[hostname]
       end
 
       def cached_lookup_set(hostname, addresses)
         @lookup_mutex.synchronize { @lookups[hostname] = addresses }
+        # @lookups[hostname] = addresses
       end
     end
   end
