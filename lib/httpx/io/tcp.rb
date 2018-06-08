@@ -9,18 +9,21 @@ module HTTPX
 
     attr_reader :ip, :port
 
+    attr_reader :addresses
+
     alias_method :host, :ip
 
-    def initialize(uri, options)
+    def initialize(uri, addresses, options)
       @state = :idle
       @hostname = uri.host
+      @addresses = addresses
       @options = Options.new(options)
       @fallback_protocol = @options.fallback_protocol
       @port = uri.port
       if @options.io
         @io = case @options.io
               when Hash
-                @ip = Resolv.getaddress(@hostname)
+                @ip = @addresses.first
                 @options.io[@ip] || @options.io["#{@ip}:#{@port}"]
               else
                 @ip = @hostname
@@ -31,7 +34,7 @@ module HTTPX
           @state = :connected
         end
       else
-        @ip = Resolv.getaddress(@hostname)
+        @ip = @addresses.first
       end
       @io ||= build_socket
     end
@@ -55,7 +58,7 @@ module HTTPX
           transition(:idle)
           @io = build_socket
         end
-        @io.connect_nonblock(Socket.sockaddr_in(@port, @ip))
+        @io.connect_nonblock(Socket.sockaddr_in(@port, @ip.to_s))
       rescue Errno::EISCONN
       end
       transition(:connected)
@@ -125,8 +128,7 @@ module HTTPX
     private
 
     def build_socket
-      addr = IPAddr.new(@ip)
-      Socket.new(addr.family, :STREAM, 0)
+      Socket.new(@ip.family, :STREAM, 0)
     end
 
     def transition(nextstate)

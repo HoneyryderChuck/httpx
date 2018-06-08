@@ -4,6 +4,7 @@ require "socket"
 require "httpx/io/tcp"
 require "httpx/io/ssl"
 require "httpx/io/unix"
+require "httpx/io/udp"
 
 module HTTPX
   module IO

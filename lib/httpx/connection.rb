@@ -2,14 +2,18 @@
 
 require "httpx/selector"
 require "httpx/channel"
+require "httpx/resolver"
 
 module HTTPX
   class Connection
     def initialize(options)
       @options = Options.new(options)
       @timeout = options.timeout
+      @resolver = Resolver.new(@options)
       @selector = Selector.new
       @channels = []
+      @resolver.on(:resolve, &method(:on_resolver_channel))
+      @resolver.on(:close, &method(:on_resolver_close))
     end
 
     def running?
@@ -40,7 +44,7 @@ module HTTPX
 
     def build_channel(uri, **options)
       channel = Channel.by(uri, @options.merge(options))
-      register_channel(channel)
+      resolve_channel(channel)
       channel
     end
 
@@ -55,6 +59,27 @@ module HTTPX
     end
 
     private
+
+    def resolve_channel(channel)
+      @resolver << channel
+      return if @resolver.empty?
+      @resolver_monitor ||= begin
+        monitor = @selector.register(@resolver, :w)
+        monitor.value = @resolver
+        monitor
+      end
+    end
+
+    def on_resolver_channel(channel)
+      register_channel(channel)
+    end
+
+    def on_resolver_close
+      @timeout.next_timeout # disconnect resolve timeout
+      @selector.deregister(@resolver)
+      @resolver_monitor = nil
+      @resolver.close
+    end
 
     def register_channel(channel)
       monitor = @selector.register(channel, :w)

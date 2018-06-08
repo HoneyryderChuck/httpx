@@ -5,6 +5,8 @@ module HTTPX
 
   TimeoutError = Class.new(Error)
 
+  ResolveError = Class.new(Error)
+
   HTTPError = Class.new(Error) do
     attr_reader :response
 

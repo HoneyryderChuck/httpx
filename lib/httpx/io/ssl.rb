@@ -10,7 +10,7 @@ module HTTPX
       {}
     end
 
-    def initialize(_, options)
+    def initialize(_, _, options)
       @ctx = OpenSSL::SSL::SSLContext.new
       ctx_options = TLS_OPTIONS.merge(options.ssl)
       @ctx.set_params(ctx_options) unless ctx_options.empty?

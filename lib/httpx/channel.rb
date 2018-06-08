@@ -50,8 +50,7 @@ module HTTPX
             raise Error, "#{uri}: #{uri.scheme}: unrecognized channel"
           end
         end
-        io = IO.registry(type).new(uri, options)
-        new(io, options)
+        new(type, uri, options)
       end
     end
 
@@ -59,8 +58,11 @@ module HTTPX
 
     def_delegator :@write_buffer, :empty?
 
-    def initialize(io, options)
-      @io = io
+    attr_reader :uri
+
+    def initialize(type, uri, options)
+      @type = type
+      @uri = uri
       @options = Options.new(options)
       @window_size = @options.window_size
       @read_buffer = Buffer.new(BUFFER_SIZE)
@@ -68,6 +70,10 @@ module HTTPX
       @pending = []
       @state = :idle
       on(:error) { |ex| on_error(ex) }
+    end
+
+    def addresses=(addrs)
+      @io = IO.registry(@type).new(@uri, addrs, @options)
     end
 
     def match?(uri)
@@ -78,7 +84,7 @@ module HTTPX
         [uri.host]
       end
 
-      ips.include?(@io.ip) &&
+      !(@io.addresses.map(&:to_s) & ips).empty? &&
         uri.port == @io.port &&
         uri.scheme == @io.scheme
     end
@@ -251,7 +257,7 @@ module HTTPX
     end
 
     def handle_error(e)
-      parser.handle_error(e) if parser.respond_to?(:handle_error)
+      parser.handle_error(e) if @parser && parser.respond_to?(:handle_error)
       response = ErrorResponse.new(e, @options)
       @pending.each do |request, _|
         emit(:response, request, response)
