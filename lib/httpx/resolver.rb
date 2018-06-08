@@ -45,6 +45,14 @@ module HTTPX
       @io.to_io
     end
 
+    def call
+      case @state
+      when :open
+        consume
+      end
+      nil
+    end
+
     def interests
       readable = !@read_buffer.full?
       writable = !@write_buffer.empty?
@@ -57,21 +65,21 @@ module HTTPX
 
     def <<(channel)
       hostname = channel.uri.host
+      return emit_addresses(channel, [hostname]) if check_if_ip?(hostname)
       if (addresses = self.class.cached_lookup(hostname) || system_resolve(hostname))
         return emit_addresses(channel, addresses)
       end
       @channels << channel
     end
 
-    def call
-      case @state
-      when :open
-        consume
-      end
-      nil
-    end
-
     private
+
+    def check_if_ip?(name)
+      IPAddr.new(name)
+      true
+    rescue ArgumentError
+      false
+    end
 
     def consume
       dread
