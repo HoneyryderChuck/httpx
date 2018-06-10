@@ -23,7 +23,7 @@ module HTTPX
       if @options.io
         @io = case @options.io
               when Hash
-                @ip = @addresses.first
+                @ip = @addresses.last
                 @options.io[@ip] || @options.io["#{@ip}:#{@port}"]
               else
                 @ip = @hostname
@@ -34,7 +34,7 @@ module HTTPX
           @state = :connected
         end
       else
-        @ip = @addresses.first
+        @ip = @addresses.last
       end
       @io ||= build_socket
     end

@@ -252,6 +252,7 @@ module HTTPX
     rescue Errno::ECONNREFUSED,
            Errno::ENETUNREACH,
            Errno::EADDRNOTAVAIL,
+           Errno::EHOSTUNREACH,
            OpenSSL::SSL::SSLError => e
       # connect errors, exit gracefully
       handle_error(e)

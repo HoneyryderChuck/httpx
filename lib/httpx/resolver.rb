@@ -188,7 +188,7 @@ module HTTPX
       Resolv::DNS::Message.new.tap do |query|
         query.id = self.class.generate_id
         query.rd = 1
-        query.add_question hostname, Resolv::DNS::Resource::IN::ANY
+        query.add_question hostname, Resolv::DNS::Resource::IN::A
       end
     end
 
