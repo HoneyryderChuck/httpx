@@ -55,6 +55,7 @@ module HTTPX
         :response_body_class      => Class.new(Response::Body),
         :transport                => nil,
         :transport_options        => nil,
+        :dns_uri                  => URI("udp://system:53"),
       }
 
       defaults.merge!(options)
@@ -90,6 +91,9 @@ module HTTPX
       self.transport = transport
     end
 
+    def_option(:dns_uri) do |uri|
+      self.dns_uri = URI(uri.to_s)
+    end
     %w[
       params form json body
       follow ssl http2_settings

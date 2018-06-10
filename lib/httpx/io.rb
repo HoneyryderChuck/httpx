@@ -11,6 +11,7 @@ module HTTPX
     extend Registry
     register "tcp", TCP
     register "ssl", SSL
+    register "udp", UDP
     register "unix", HTTPX::UNIX
   end
 end

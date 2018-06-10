@@ -8,6 +8,7 @@ module HTTPX
   class Connection
     def initialize(options)
       @options = Options.new(options)
+      @dns_url = @options.dns_uri
       @timeout = options.timeout
       @resolver = Resolver.new(@options)
       @selector = Selector.new

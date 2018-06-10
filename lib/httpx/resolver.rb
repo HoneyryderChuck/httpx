@@ -18,6 +18,7 @@ module HTTPX
 
     def initialize(options)
       @options = Options.new(options)
+      @uri = @options.dns_uri
       @timeouts = Hash.new(0)
       @timeout = @options.timeout
       @resolve_time = 0
@@ -25,13 +26,11 @@ module HTTPX
       @queries = {}
       @read_buffer = Buffer.new(MAX_PACKET_SIZE)
       @write_buffer = Buffer.new(MAX_PACKET_SIZE)
-      @state = :open
+      @state = :idle
     end
 
     def close
-      return if @state == :closed
-      @io.close if @io
-      @state = :closed
+      transition(:closed)
     end
 
     def closed?
@@ -39,8 +38,11 @@ module HTTPX
     end
 
     def to_io
+      case @state
+      when :idle
+        transition(:open)
+      end
       resolve if @queries.empty?
-      build_socket
       @io.to_io
     end
 
@@ -186,16 +188,41 @@ module HTTPX
       Resolv::DNS::Message.new.tap do |query|
         query.id = self.class.generate_id
         query.rd = 1
-        query.add_question hostname, Resolv::DNS::Resource::IN::A
+        query.add_question hostname, Resolv::DNS::Resource::IN::ANY
       end
     end
 
     def build_socket
       return if @io
-      nameservers = Resolv::DNS::Config.default_config_hash[:nameserver]
-      nameserver = IPAddr.new(nameservers.first)
-      log(label: "resolver: ") { "Name Server: #{nameserver}..." }
-      @io = UDP.new(nameserver.to_s, DNS_PORT, nameserver.family)
+      uri = @uri.dup
+      type = IO.registry(uri.scheme)
+      ip = case uri.host
+           when "system"
+             nameservers = Resolv::DNS::Config.default_config_hash[:nameserver]
+             nameserver = nameservers.first
+             nameserver
+           else
+             # assume IP
+             uri.host
+           end
+      uri.host = ip
+      uri.port ||= DNS_PORT
+      log(label: "resolver: ") { "server: #{uri}..." }
+      @io = type.new(uri, [IPAddr.new(ip)], @options)
+    end
+
+    def transition(nextstate)
+      case nextstate
+      when :open
+        return unless @state == :idle
+        build_socket
+        @io.connect
+        return unless @io.connected?
+      when :closed
+        return unless @state == :open
+        @io.close if @io
+      end
+      @state = nextstate
     end
 
     @identifier_mutex = Mutex.new
