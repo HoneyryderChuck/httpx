@@ -62,11 +62,9 @@ module HTTPX
           parameters = Parameters.new(**proxy)
           uri = parameters.uri
           log { "proxy: #{uri}" }
-          addresses = Resolv.getaddresses(uri.host).map { |ip| IPAddr.new(ip) }
           proxy_type = Parameters.registry(parameters.uri.scheme)
           channel = proxy_type.new("tcp", uri, parameters, @options.merge(options), &method(:on_response))
-          channel.addresses = addresses
-          @connection.__send__(:register_channel, channel)
+          @connection.__send__(:resolve_channel, channel)
           channel
         end
 
