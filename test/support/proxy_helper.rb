@@ -8,49 +8,49 @@ module ProxyHelper
   private
 
   def socks4_proxy
-    (ENV["HTTPX_SOCKS4_PROXY"] || begin
+    Array(ENV["HTTPX_SOCKS4_PROXY"] || begin
       socks_proxies_list.select do |_, _, version, https|
         version == "Socks4" && https
       end.map do |ip, port, _, _|
         "socks4://#{ip}:#{port}"
       end
-    end).to_a
+    end)
   end
 
   def socks4a_proxy
-    (ENV["HTTPX_SOCKS4A_PROXY"] || begin
+    Array(ENV["HTTPX_SOCKS4A_PROXY"] || begin
       socks_proxies_list.select do |_, _, version, https|
         version == "Socks4" && https
       end.map do |ip, port, _, _|
         "socks4a://#{ip}:#{port}"
       end
-    end).to_a
+    end)
   end
 
   def socks5_proxy
-    (ENV["HTTPX_SOCKS5_PROXY"] || begin
+    Array(ENV["HTTPX_SOCKS5_PROXY"] || begin
       socks_proxies_list.select do |_, _, version, https|
         version == "Socks5" && https
       end.map do |ip, port, _, _|
         "socks5://#{ip}:#{port}"
       end
-    end).to_a
+    end)
   end
 
   def http_proxy
-    (ENV["HTTPX_HTTP_PROXY"] || begin
+    Array(ENV["HTTPX_HTTP_PROXY"] || begin
       http_proxies_list.map do |ip, port, _|
         "http://#{ip}:#{port}"
       end
-    end).to_a
+    end)
   end
 
   def https_proxy
-    (ENV["HTTPX_HTTPS_PROXY"] || begin
+    Array(ENV["HTTPX_HTTPS_PROXY"] || begin
       http_proxies_list.select { |_, _, https| https }.map do |ip, port, _|
         "http://#{ip}:#{port}"
       end
-    end).to_a
+    end)
   end
 
   def http_proxies_list
