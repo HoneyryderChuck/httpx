@@ -4,7 +4,7 @@ gem install bundler -v="1.16.1" --no-doc --conservative
 cd /home && touch Gemfile.lock && \
   rm Gemfile.lock && \
   bundle install --quiet --jobs 4 && \
-  bundle exec rake test:ci
+  PARALLEL=1 CI=1 bundle exec rake test:ci
 
 RET=$?
 
