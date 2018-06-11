@@ -111,6 +111,10 @@ module HTTPX
       true
     end
 
+    def send(request, **args)
+      @pending << [request, args]
+    end
+
     def to_io
       case @state
       when :idle
