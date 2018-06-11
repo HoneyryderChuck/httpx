@@ -34,10 +34,15 @@ module HTTPX
         private
 
         def proxy_params(uri)
-          return @options.proxy if @options.proxy
-          uri = URI(uri).find_proxy
-          return unless uri
-          { uri: uri }
+          @_proxy_uris ||= begin
+            uris = @options.proxy ? Array(@options.proxy[:uri]) : []
+            if uris.empty?
+              uri = URI(uri).find_proxy
+              uris << uri if uri
+            end
+            uris
+          end
+          @options.proxy.merge(uri: @_proxy_uris.shift) unless @_proxy_uris.empty?
         end
 
         def find_channel(request, **options)
@@ -60,6 +65,21 @@ module HTTPX
           channel = proxy_type.new(io, parameters, @options.merge(options), &method(:on_response))
           @connection.__send__(:register_channel, channel)
           channel
+        end
+
+        def fetch_response(request)
+          response = super
+          if response.is_a?(ErrorResponse) &&
+             # either it was a timeout error connecting, or it was a proxy error
+             ((response.error.is_a?(TimeoutError) && request.state == :idle) ||
+              response.error.is_a?(Error)) &&
+             !@_proxy_uris.empty?
+            log { "failed connecting to proxy, trying next..." }
+            channel = find_channel(request)
+            channel.send(request)
+            return
+          end
+          response
         end
       end
 
@@ -89,6 +109,10 @@ module HTTPX
 
     def match?(*)
       true
+    end
+
+    def send(request, **args)
+      @pending << [request, args]
     end
 
     def to_io
