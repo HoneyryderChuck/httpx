@@ -9,31 +9,22 @@ module ProxyHelper
 
   def socks4_proxy
     Array(ENV["HTTPX_SOCKS4_PROXY"] || begin
-      socks_proxies_list.select do |_, _, version, https|
-        version == "Socks4" && https
-      end.map do |ip, port, _, _|
-        "socks4://#{ip}:#{port}"
-      end
+      socks_proxies_list.select { |_, _, version, https| version == "Socks4" && https }
+                        .map { |ip, port, _, _| "socks4://#{ip}:#{port}" }
     end)
   end
 
   def socks4a_proxy
     Array(ENV["HTTPX_SOCKS4A_PROXY"] || begin
-      socks_proxies_list.select do |_, _, version, https|
-        version == "Socks4" && https
-      end.map do |ip, port, _, _|
-        "socks4a://#{ip}:#{port}"
-      end
+      socks_proxies_list.select { |_, _, version, https| version == "Socks4" && https }
+                        .map { |ip, port, _, _| "socks4a://#{ip}:#{port}" }
     end)
   end
 
   def socks5_proxy
     Array(ENV["HTTPX_SOCKS5_PROXY"] || begin
-      socks_proxies_list.select do |_, _, version, https|
-        version == "Socks5" && https
-      end.map do |ip, port, _, _|
-        "socks5://#{ip}:#{port}"
-      end
+      socks_proxies_list.select { |_, _, version, https| version == "Socks5" && https }
+                        .map { |ip, port, _, _| "socks5://#{ip}:#{port}" }
     end)
   end
 
@@ -58,8 +49,7 @@ module ProxyHelper
       .map do |line|
         ip, port, _, _, _, _, https, _ = line.css("td").map(&:text)
         [ip, port, https == "yes"]
-      end
-      .select { |ip, port, _| ip && port }
+      end.select { |ip, port, _| ip && port } # rubocop:disable Style/MultilineBlockChain
   end
 
   def socks_proxies_list
@@ -67,8 +57,7 @@ module ProxyHelper
       .map do |line|
         ip, port, _, _, version, _, https, _ = line.css("td").map(&:text)
         [ip, port, version, https == "Yes"]
-      end
-      .select { |ip, port, _, _| ip && port }
+      end.select { |ip, port, _, _| ip && port } # rubocop:disable Style/MultilineBlockChain
   end
 
   def proxies_list(document)
