@@ -1,10 +1,12 @@
 #!/bin/sh
 apk --update add g++ make git bash
+export PATH=$GEM_HOME/bin:$BUNDLE_PATH/gems/bin:$PATH
+mkdir -p "$GEM_HOME" && chmod 777 "$GEM_HOME"
 gem install bundler -v="1.16.1" --no-doc --conservative
 cd /home && touch Gemfile.lock && \
   rm Gemfile.lock && \
   bundle install --quiet --jobs 4 && \
-  PARALLEL=1 CI=1 bundle exec rake test:ci
+  bundle exec rake test:ci
 
 RET=$?
 
