@@ -53,8 +53,8 @@ module HTTPX
         @io.hostname = @hostname
         @io.sync_close = true
       end
-      # TODO: this might block it all
       @io.connect_nonblock
+      @io.post_connection_check(@hostname) if @ctx.verify_mode != OpenSSL::SSL::VERIFY_NONE
       transition(:negotiated)
     rescue ::IO::WaitReadable,
            ::IO::WaitWritable
