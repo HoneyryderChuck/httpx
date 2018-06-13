@@ -8,9 +8,8 @@ module HTTPX
   class Connection
     def initialize(options)
       @options = Options.new(options)
-      @dns_url = @options.dns_uri
       @timeout = options.timeout
-      @resolver = Resolver.new(@options)
+      @resolver = @options.resolver_class.new(@options, **@options.resolver_options)
       @selector = Selector.new
       @channels = []
       @resolver.on(:resolve, &method(:on_resolver_channel))

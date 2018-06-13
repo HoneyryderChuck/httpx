@@ -11,14 +11,13 @@ module HTTPX
 
     DNS_PORT = 53
     MAX_PACKET_SIZE = 512
-    BUFFER_SIZE = 1 << 14
     MAX_RETRIES = 3
 
     def_delegator :@channels, :empty?
 
-    def initialize(options)
+    def initialize(options, uri: options.resolver_options[:uri])
       @options = Options.new(options)
-      @uri = @options.dns_uri
+      @uri = uri
       @timeouts = Hash.new(0)
       @timeout = @options.timeout
       @resolve_time = 0
