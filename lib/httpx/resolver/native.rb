@@ -242,7 +242,8 @@ module HTTPX
           @lookups[hostname] = @lookups[hostname].select do |address|
             address[:expires] > now
           end
-          @lookups[hostname].map { |address| address[:ip] }
+          ips = @lookups[hostname].map { |address| address[:ip] }
+          ips unless ips.empty?
         end
       end
 

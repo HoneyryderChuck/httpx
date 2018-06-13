@@ -46,7 +46,7 @@ class NativeResolverTest < Minitest::Test
     assert ips == ["IP"]
     sleep 2
     ips = Resolver::Native.cached_lookup("test.com")
-    assert ips.empty?
+    assert ips.nil?
   end
 
   private
