@@ -39,6 +39,16 @@ class NativeResolverTest < Minitest::Test
     assert !write_buffer.empty?, "there should be a DNS query ready to be sent"
   end
 
+  def test_cached_lookups
+    dns_entry = OpenStruct.new(address: "IP", ttl: 2)
+    Resolver::Native.cached_lookup_set("test.com", [dns_entry])
+    ips = Resolver::Native.cached_lookup("test.com")
+    assert ips == ["IP"]
+    sleep 2
+    ips = Resolver::Native.cached_lookup("test.com")
+    assert ips.empty?
+  end
+
   private
 
   def resolver(options = Options.new)

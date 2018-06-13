@@ -144,14 +144,14 @@ module HTTPX
       message = Resolv::DNS::Message.decode(buffer)
       addresses = []
       message.each_answer do |_, _, value|
-        addresses << value.address if value.respond_to?(:address)
+        addresses << value if value.respond_to?(:address)
       end
       return if addresses.empty?
       channel = @queries.delete(message.id)
       return unless channel # probably a retried query for which there's an answer
       @channels.delete(channel)
       self.class.cached_lookup_set(channel.uri.host, addresses)
-      emit_addresses(channel, addresses)
+      emit_addresses(channel, addresses.map(&:address))
       return emit(:close) if @channels.empty?
       resolve
     end
@@ -236,13 +236,24 @@ module HTTPX
       end
 
       def cached_lookup(hostname)
-        @lookup_mutex.synchronize { @lookups[hostname] }
-        # @lookups[hostname]
+        now = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+        @lookup_mutex.synchronize do
+          return unless @lookups.key?(hostname)
+          @lookups[hostname] = @lookups[hostname].select do |address|
+            address[:expires] > now
+          end
+          @lookups[hostname].map { |address| address[:ip] }
+        end
       end
 
-      def cached_lookup_set(hostname, addresses)
-        @lookup_mutex.synchronize { @lookups[hostname] = addresses }
-        # @lookups[hostname] = addresses
+      def cached_lookup_set(hostname, entries)
+        now = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+        @lookup_mutex.synchronize do
+          addresses = entries.map do |entry|
+            { ip: entry.address, expires: (now + entry.ttl) }
+          end
+          @lookups[hostname] = addresses
+        end
       end
     end
   end
