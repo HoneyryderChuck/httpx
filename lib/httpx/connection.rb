@@ -9,7 +9,9 @@ module HTTPX
     def initialize(options)
       @options = Options.new(options)
       @timeout = options.timeout
-      @resolver = @options.resolver_class.new(@options, **@options.resolver_options)
+      resolver_type = @options.resolver_class
+      resolver_type = Resolver.registry(resolver_type) if resolver_type.is_a?(Symbol)
+      @resolver = resolver_type.new(@options, **@options.resolver_options)
       @selector = Selector.new
       @channels = []
       @resolver.on(:resolve, &method(:on_resolver_channel))
@@ -64,7 +66,7 @@ module HTTPX
     def resolve_channel(channel)
       @resolver << channel
       return if @resolver.empty?
-      @resolver_monitor ||= begin
+      @_resolver_monitor ||= begin # rubocop:disable Naming/MemoizedInstanceVariableName
         monitor = @selector.register(@resolver, :w)
         monitor.value = @resolver
         monitor
@@ -86,7 +88,7 @@ module HTTPX
     def on_resolver_close
       @timeout.next_timeout # disconnect resolve timeout
       @selector.deregister(@resolver)
-      @resolver_monitor = nil
+      @_resolver_monitor = nil
       @resolver.close
     end
 

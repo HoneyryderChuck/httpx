@@ -55,8 +55,8 @@ module HTTPX
         :response_body_class      => Class.new(Response::Body),
         :transport                => nil,
         :transport_options        => nil,
-        :resolver_class           => Resolver,
-        :resolver_options         => { uri: URI("udp://system:53") }
+        :resolver_class           => (ENV["HTTPX_RESOLVER"] || :native).to_sym,
+        :resolver_options         => { uri: URI("udp://system:53") },
       }
 
       defaults.merge!(options)

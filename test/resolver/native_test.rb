@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require "ostruct"
-require_relative "test_helper"
+require_relative "../test_helper"
 
-class ResolverTest < Minitest::Test
+class NativeResolverTest < Minitest::Test
   include HTTPX
 
   def test_append_ipv4
@@ -42,7 +42,7 @@ class ResolverTest < Minitest::Test
   private
 
   def resolver(options = Options.new)
-    @resolver ||= Resolver.new(options)
+    @resolver ||= Resolver::Native.new(options)
   end
 
   def write_buffer

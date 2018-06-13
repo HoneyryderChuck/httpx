@@ -78,7 +78,7 @@ class OptionsTest < Minitest::Test
       :transport          => nil,
       :transport_options  => nil,
       :resolver_class     => bar.resolver_class,
-      :resolver_options   => bar.resolver_options
+      :resolver_options   => bar.resolver_options,
     }, "options haven't merged correctly"
   end
 
