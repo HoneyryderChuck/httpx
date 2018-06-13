@@ -15,8 +15,7 @@ module HTTPX
 
     def_delegator :@channels, :empty?
 
-    def initialize(selector, options, uri: options.resolver_options[:uri])
-      @selector = selector
+    def initialize(options, uri: options.resolver_options[:uri])
       @options = Options.new(options)
       @uri = uri
       @timeouts = Hash.new(0)
@@ -71,11 +70,6 @@ module HTTPX
         return emit_addresses(channel, addresses)
       end
       @channels << channel
-      @_resolver_monitor ||= begin # rubocop:disable Naming/MemoizedInstanceVariableName
-        monitor = @selector.register(self, :w)
-        monitor.value = self
-        monitor
-      end
     end
 
     private

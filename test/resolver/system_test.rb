@@ -36,7 +36,7 @@ class SystemResolverTest < Minitest::Test
   private
 
   def resolver(options = Options.new)
-    @resolver ||= Resolver::System.new(nil, options)
+    @resolver ||= Resolver::System.new(options)
   end
 
   def build_channel(uri)

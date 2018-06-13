@@ -52,7 +52,7 @@ class NativeResolverTest < Minitest::Test
   private
 
   def resolver(options = Options.new)
-    @resolver ||= Resolver::Native.new(Selector.new, options)
+    @resolver ||= Resolver::Native.new(options)
   end
 
   def write_buffer
