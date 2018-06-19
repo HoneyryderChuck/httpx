@@ -4,6 +4,7 @@ require "timeout"
 
 module HTTPX
   class Timeout
+    CONNECT_TIMEOUT = 5
     LOOP_TIMEOUT = 5
 
     def self.new(opts = {})
@@ -11,7 +12,8 @@ module HTTPX
       super
     end
 
-    def initialize(loop_timeout: LOOP_TIMEOUT, total_timeout: nil)
+    def initialize(connect_timeout: CONNECT_TIMEOUT, loop_timeout: LOOP_TIMEOUT, total_timeout: nil)
+      @connect_timeout = connect_timeout
       @loop_timeout = loop_timeout
       @total_timeout = total_timeout
       reset_counter
