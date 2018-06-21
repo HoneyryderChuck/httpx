@@ -13,9 +13,9 @@ services:
       - CI=1
       - JEKYLL_ENV=production
       - GEM_HOME=/usr/local/bundle
-      - BUNDLE_PATH=$GEM_HOME
+      - BUNDLE_PATH=/usr/local/bundle
       - BUNDLE_SILENCE_ROOT_WARNING=1
-      - BUNDLE_APP_CONFIG=$GEM_HOME
+      - BUNDLE_APP_CONFIG=/usr/local/bundle
     image: ruby:alpine
     depends_on:
       - httpproxy 
