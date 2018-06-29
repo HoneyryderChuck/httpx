@@ -154,7 +154,9 @@ module HTTPX
       loop do
         siz = @io.read(wsize, @read_buffer)
         unless siz
-          emit(:close)
+          ex = EOFError.new("descriptor closed")
+          ex.set_backtrace(caller)
+          on_error(ex)
           return
         end
         return if siz.zero?
@@ -168,7 +170,9 @@ module HTTPX
         return if @write_buffer.empty?
         siz = @io.write(@write_buffer)
         unless siz
-          emit(:close)
+          ex = EOFError.new("descriptor closed")
+          ex.set_backtrace(caller)
+          on_error(ex)
           return
         end
         log { "WRITE: #{siz} bytes..." }
