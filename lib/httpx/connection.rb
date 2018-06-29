@@ -24,7 +24,10 @@ module HTTPX
         end
         monitor.interests = channel.interests
       end
-    rescue TimeoutError => ex
+    rescue TimeoutError,
+           Errno::ECONNRESET,
+           Errno::ECONNABORTED,
+           Errno::EPIPE => ex
       @channels.each do |ch|
         ch.emit(:error, ex)
       end
