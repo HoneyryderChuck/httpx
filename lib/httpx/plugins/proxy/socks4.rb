@@ -53,8 +53,6 @@ module HTTPX
             super
           end
 
-          private
-
           def on_socks_error(message)
             ex = Error.new(message)
             ex.set_backtrace(caller)

@@ -132,6 +132,13 @@ module HTTPX
         consume
       end
     end
+
+    def reset
+      @state = :open
+      transition(:closing)
+      transition(:closed)
+      emit(:close)
+    end
   end
 
   class ProxySSL < SSL
