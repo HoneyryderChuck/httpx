@@ -222,7 +222,6 @@ module HTTPX
       @error = error
       @options = Options.new(options)
       log { "#{error.class}: #{error}" }
-      log { caller.join("\n") }
     end
 
     def status

@@ -71,7 +71,7 @@ module HTTPX
           response = super
           if response.is_a?(ErrorResponse) &&
              # either it was a timeout error connecting, or it was a proxy error
-             ((response.error.is_a?(TimeoutError) && request.state == :idle) ||
+             (((response.error.is_a?(TimeoutError) || response.error.is_a?(IOError)) && request.state == :idle) ||
               response.error.is_a?(Error)) &&
              !@_proxy_uris.empty?
             log { "failed connecting to proxy, trying next..." }
@@ -131,6 +131,13 @@ module HTTPX
       when :connecting
         consume
       end
+    end
+
+    def reset
+      @state = :open
+      transition(:closing)
+      transition(:closed)
+      emit(:close)
     end
   end
 

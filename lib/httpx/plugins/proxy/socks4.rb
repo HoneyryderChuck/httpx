@@ -30,11 +30,7 @@ module HTTPX
               transition(:connected)
               throw(:called)
             else
-              response = ErrorResponse.new(Error.new("socks error: #{status}"), @options)
-              until @pending.empty?
-                req, _ = @pending.shift
-                emit(:response, req, response)
-              end
+              on_socks_error("socks error: #{status}")
             end
           end
 
@@ -55,6 +51,13 @@ module HTTPX
             end
             log(level: 1, label: "SOCKS4: ") { "#{nextstate}: #{@write_buffer.to_s.inspect}" } unless nextstate == :open
             super
+          end
+
+          def on_socks_error(message)
+            ex = Error.new(message)
+            ex.set_backtrace(caller)
+            on_error(ex)
+            throw(:called)
           end
         end
         Parameters.register("socks4", Socks4ProxyChannel)
