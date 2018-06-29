@@ -251,7 +251,7 @@ module HTTPX
     end
 
     def handle_error(e)
-      parser.handle_error(e)
+      parser.handle_error(e) if parser.respond_to?(:handle_error)
       response = ErrorResponse.new(e, @options)
       @pending.each do |request, _|
         emit(:response, request, response)
