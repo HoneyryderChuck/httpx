@@ -29,7 +29,7 @@ Naming/FileName:
     - Gemfile
     - Rakefile
 
-Lint/EndAlignment:
+Layout/EndAlignment:
   EnforcedStyleAlignWith: variable
 
 Lint/HandleExceptions:
