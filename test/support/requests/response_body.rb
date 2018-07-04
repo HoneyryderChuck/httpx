@@ -33,7 +33,7 @@ module Requests
     end
 
     def test_http_buffer_to_custom
-      uri = build_uri("/")
+      uri = build_uri("/get")
       custom_body = Class.new do
         attr_reader :file
 

@@ -3,7 +3,7 @@
 module Requests
   module Get
     def test_http_get
-      uri = build_uri("/")
+      uri = build_uri("/get")
       response = HTTPX.get(uri)
       verify_status(response, 200)
       verify_body_length(response)

@@ -4,7 +4,7 @@ module Requests
   module IO
     def test_http_io
       io = origin_io
-      uri = build_uri("/")
+      uri = build_uri("/get")
       response = HTTPX.get(uri, io: io)
       verify_status(response, 200)
       verify_body_length(response)
