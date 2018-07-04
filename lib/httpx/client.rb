@@ -165,5 +165,7 @@ module HTTPX
         self
       end
     end
+
+    plugin(:proxy) unless ENV.grep(/https?_proxy$/i).empty?
   end
 end
