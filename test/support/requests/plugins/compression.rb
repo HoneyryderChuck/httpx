@@ -62,7 +62,7 @@ module Requests
       unless RUBY_ENGINE == "jruby"
         def test_plugin_compression_brotli
           client = HTTPX.plugin(:"compression/brotli")
-          response = client.get("http://httpbin.org/brotli")
+          response = client.get("/brotli")
           verify_status(response, 200)
           body = json_body(response)
           assert body["brotli"], "response should be deflated"
