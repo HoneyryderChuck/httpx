@@ -7,6 +7,12 @@ module HTTPX
     include Callbacks
     include Loggable
 
+    Error = Class.new(Error) do
+      def initialize(id, code)
+        super("stream #{id} closed with error: #{code}")
+      end
+    end
+
     attr_reader :streams, :pending
 
     def initialize(buffer, options)
@@ -157,7 +163,9 @@ module HTTPX
     def on_stream_close(stream, request, error)
       return handle(request, stream) if request.expects?
       if error
-        emit(:error, request, error)
+        ex = Error.new(stream.id, error)
+        ex.set_backtrace(caller)
+        emit(:error, request, ex)
       else
         response = request.response
         emit(:response, request, response)
@@ -177,7 +185,12 @@ module HTTPX
                                   @connection.remote_settings[:settings_max_concurrent_streams]].min
     end
 
-    def on_close(*)
+    def on_close(error)
+      if error
+        ex = Error.new(0, error)
+        ex.set_backtrace(caller)
+        emit(:error, request, ex)
+      end
       return unless @connection.state == :closed && @connection.active_stream_count.zero?
       emit(:close)
     end
