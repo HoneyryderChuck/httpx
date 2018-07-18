@@ -54,6 +54,6 @@ services:
       --conf /home/nghttp.conf --no-ocsp
           
   httpbin:
-    image: citizenstig/httpbin
+    image: kennethreitz/httpbin
     ports:
-      - 8000:8000
+      - 8000:80
