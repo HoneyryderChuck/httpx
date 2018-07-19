@@ -66,7 +66,7 @@ module HTTPX
     def <<(channel)
       hostname = channel.uri.host
       return emit_addresses(channel, [hostname]) if check_if_ip?(hostname)
-      if (addresses = self.class.cached_lookup(hostname) || system_resolve(hostname))
+      if (addresses = Resolver.cached_lookup(hostname) || system_resolve(hostname))
         return emit_addresses(channel, addresses)
       end
       @channels << channel
@@ -150,8 +150,11 @@ module HTTPX
       channel = @queries.delete(message.id)
       return unless channel # probably a retried query for which there's an answer
       @channels.delete(channel)
-      self.class.cached_lookup_set(channel.uri.host, addresses)
-      emit_addresses(channel, addresses.map(&:address))
+      addresses = addresses.map do |address|
+        { ip: address.address, ttl: address.ttl }
+      end
+      Resolver.cached_lookup_set(channel.uri.host, addresses)
+      emit_addresses(channel, addresses.map { |addr| addr[:ip] })
       return emit(:close) if @channels.empty?
       resolve
     end
@@ -227,34 +230,9 @@ module HTTPX
     @identifier_mutex = Mutex.new
     @identifier = 1
 
-    @lookup_mutex = Mutex.new
-    @lookups = {}
-
     class << self
       def generate_id
         @identifier_mutex.synchronize { @identifier = (@identifier + 1) & 0xFFFF }
-      end
-
-      def cached_lookup(hostname)
-        now = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-        @lookup_mutex.synchronize do
-          return unless @lookups.key?(hostname)
-          @lookups[hostname] = @lookups[hostname].select do |address|
-            address[:expires] > now
-          end
-          ips = @lookups[hostname].map { |address| address[:ip] }
-          ips unless ips.empty?
-        end
-      end
-
-      def cached_lookup_set(hostname, entries)
-        now = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-        @lookup_mutex.synchronize do
-          addresses = entries.map do |entry|
-            { ip: entry.address, expires: (now + entry.ttl) }
-          end
-          @lookups[hostname] = addresses
-        end
       end
     end
   end
