@@ -15,7 +15,7 @@ module HTTPX
 
     def_delegator :@channels, :empty?
 
-    def initialize(options, uri: options.resolver_options[:uri])
+    def initialize(_, options, uri: options.resolver_options[:uri])
       @options = Options.new(options)
       @uri = uri
       @timeouts = Hash.new(0)

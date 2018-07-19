@@ -8,7 +8,7 @@ module HTTPX
     include Loggable
     include Callbacks
 
-    def initialize(options, **)
+    def initialize(_, options, **)
       @options = Options.new(options)
       @timeouts = Hash.new(0)
       @timeout = @options.timeout

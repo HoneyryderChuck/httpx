@@ -11,9 +11,9 @@ module HTTPX
       @timeout = options.timeout
       resolver_type = @options.resolver_class
       resolver_type = Resolver.registry(resolver_type) if resolver_type.is_a?(Symbol)
-      @resolver = resolver_type.new(@options, **@options.resolver_options)
       @selector = Selector.new
       @channels = []
+      @resolver = resolver_type.new(self, @options, **@options.resolver_options)
       @resolver.on(:resolve, &method(:on_resolver_channel))
       @resolver.on(:close, &method(:on_resolver_close))
     end
