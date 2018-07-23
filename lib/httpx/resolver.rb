@@ -12,6 +12,7 @@ module HTTPX
 
     register :system, :System
     register :native, :Native
+    register :https,  :HTTPS
 
     @lookup_mutex = Mutex.new
     @lookups = {}
