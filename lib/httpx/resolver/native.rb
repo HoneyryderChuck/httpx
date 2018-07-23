@@ -6,8 +6,7 @@ require "resolv"
 module HTTPX
   class Resolver::Native
     extend Forwardable
-    include Loggable
-    include Callbacks
+    include Resolver::ResolverMixin
 
     DNS_PORT = 53
     MAX_PACKET_SIZE = 512
@@ -64,22 +63,12 @@ module HTTPX
     end
 
     def <<(channel)
-      hostname = channel.uri.host
-      return emit_addresses(channel, [hostname]) if check_if_ip?(hostname)
-      if (addresses = Resolver.cached_lookup(hostname) || system_resolve(hostname))
-        return emit_addresses(channel, addresses)
+      early_resolve(channel) || begin
+        @channels << channel
       end
-      @channels << channel
     end
 
     private
-
-    def check_if_ip?(name)
-      IPAddr.new(name)
-      true
-    rescue ArgumentError
-      false
-    end
 
     def consume
       dread
@@ -171,19 +160,7 @@ module HTTPX
 
     def emit_addresses(channel, addresses)
       @resolve_time = 0
-      addresses.map! do |address|
-        address.is_a?(IPAddr) ? address : IPAddr.new(address.to_s)
-      end
-      log(label: "resolver: ") { "answer #{channel.uri.host}: #{addresses.inspect}" }
-      channel.addresses = addresses
-      emit(:resolve, channel, addresses)
-    end
-
-    def system_resolve(hostname)
-      @system_resolver ||= Resolv::Hosts.new
-      ips = @system_resolver.getaddresses(hostname)
-      return if ips.empty?
-      ips.map { |ip| IPAddr.new(ip) }
+      super
     end
 
     def build_query(hostname)

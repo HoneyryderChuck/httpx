@@ -2,9 +2,12 @@
 
 module HTTPX
   module Resolver
+    autoload :ResolverMixin, "httpx/resolver/resolver_mixin"
     autoload :System, "httpx/resolver/system"
     autoload :Native, "httpx/resolver/native"
+    autoload :HTTPS, "httpx/resolver/https"
 
+	
     extend Registry
 
     register :system, :System
