@@ -5,14 +5,19 @@ require "resolv"
 
 module HTTPX
   class Resolver::System
-    include Loggable
-    include Callbacks
+    include Resolver::ResolverMixin
 
-    def initialize(_, options, **)
+    DEFAULTS = {
+      config_info: nil
+    }
+
+    def initialize(_, options)
       @options = Options.new(options)
-      @timeouts = Hash.new(0)
+      @resolver_options = Resolver::Options.new(DEFAULTS.merge(@options.resolver_options))
       @timeout = @options.timeout
       @state = :idle
+      @resolver = Resolv::DNS.new(@resolver_options.config_info)
+      @resolver.timeouts = @timeout.resolve_timeout
     end
 
     def closed?
@@ -24,28 +29,7 @@ module HTTPX
     end
 
     def <<(channel)
-      hostname = channel.uri.host
-      return emit_addresses(channel, [hostname]) if check_if_ip?(hostname)
-      addresses = Resolv.getaddresses(hostname)
-      emit_addresses(channel, addresses)
-    end
-
-    private
-
-    def check_if_ip?(name)
-      IPAddr.new(name)
-      true
-    rescue ArgumentError
-      false
-    end
-
-    def emit_addresses(channel, addresses)
-      addresses.map! do |address|
-        address.is_a?(IPAddr) ? address : IPAddr.new(address.to_s)
-      end
-      log(label: "resolver: ") { "answer #{channel.uri.host}: #{addresses.inspect}" }
-      channel.addresses = addresses
-      emit(:resolve, channel, addresses)
+      emit_addresses(channel, Resolv.getaddresses(channel.uri.host))
     end
   end
 end

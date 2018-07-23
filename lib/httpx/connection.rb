@@ -13,7 +13,7 @@ module HTTPX
       resolver_type = Resolver.registry(resolver_type) if resolver_type.is_a?(Symbol)
       @selector = Selector.new
       @channels = []
-      @resolver = resolver_type.new(self, @options, **@options.resolver_options)
+      @resolver = resolver_type.new(self, @options)
       @resolver.on(:resolve, &method(:on_resolver_channel))
       @resolver.on(:close, &method(:on_resolver_close))
     end

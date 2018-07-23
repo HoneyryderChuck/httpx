@@ -8,22 +8,28 @@ module HTTPX
     extend Forwardable
     include Resolver::ResolverMixin
 
+    DEFAULTS = {
+      uri: "udp://system:53",
+      packet_size: 512
+    }
+
     DNS_PORT = 53
     MAX_PACKET_SIZE = 512
     MAX_RETRIES = 3
 
     def_delegator :@channels, :empty?
 
-    def initialize(_, options, uri: options.resolver_options[:uri])
+    def initialize(_, options)
       @options = Options.new(options)
-      @uri = uri
+      @resolver_options = Resolver::Options.new(DEFAULTS.merge(@options.resolver_options))
+      @uri = URI(@resolver_options.uri)
       @timeouts = Hash.new(0)
       @timeout = @options.timeout
       @resolve_time = 0
       @channels = []
       @queries = {}
-      @read_buffer = Buffer.new(MAX_PACKET_SIZE)
-      @write_buffer = Buffer.new(MAX_PACKET_SIZE)
+      @read_buffer = Buffer.new(@resolver_options.packet_size)
+      @write_buffer = Buffer.new(@resolver_options.packet_size)
       @state = :idle
     end
 

@@ -4,7 +4,7 @@ require "timeout"
 
 module HTTPX
   class Timeout
-    RESOLVE_TIMEOUT = 2
+    RESOLVE_TIMEOUT = 5
     LOOP_TIMEOUT = 5
 
     def self.new(opts = {})
