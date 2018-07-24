@@ -15,6 +15,7 @@ module HTTPX
       @channels = []
       @resolver = resolver_type.new(self, @options)
       @resolver.on(:resolve, &method(:on_resolver_channel))
+      @resolver.on(:error, &method(:on_resolver_error))
       @resolver.on(:close, &method(:on_resolver_close))
     end
 
@@ -83,6 +84,13 @@ module HTTPX
       else
         register_channel(channel)
       end
+    end
+
+    def on_resolver_error(error)
+      @channels.each do |ch|
+        ch.emit(error)
+      end
+      on_resolver_close
     end
 
     def on_resolver_close
