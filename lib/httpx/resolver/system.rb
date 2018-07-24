@@ -29,7 +29,9 @@ module HTTPX
     end
 
     def <<(channel)
-      emit_addresses(channel, Resolv.getaddresses(channel.uri.host))
+      hostname = channel.uri.host
+      addresses = ip_resolve(hostname) || @resolver.getaddresses(hostname)
+      emit_addresses(channel, addresses)
     end
   end
 end
