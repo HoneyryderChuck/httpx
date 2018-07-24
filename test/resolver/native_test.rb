@@ -40,7 +40,7 @@ class NativeResolverTest < Minitest::Test
   end
 
   def test_cached_lookups
-    dns_entry = { ip: "IP", ttl: 2 }
+    dns_entry = { "data" => "IP", "TTL" => 2, "name" => "test.com" }
     Resolver.cached_lookup_set("test.com", [dns_entry])
     ips = Resolver.cached_lookup("test.com")
     assert ips == ["IP"]

@@ -136,20 +136,13 @@ module HTTPX
     end
 
     def parse(buffer)
-      message = Resolv::DNS::Message.decode(buffer)
-      addresses = []
-      message.each_answer do |_, _, value|
-        addresses << value if value.respond_to?(:address)
-      end
+      addresses = Resolver.decode_dns_answer(buffer)
       return if addresses.empty?
-      channel = @queries.delete(message.id)
+      channel = @queries.delete(addresses.first["name"])
       return unless channel # probably a retried query for which there's an answer
       @channels.delete(channel)
-      addresses = addresses.map do |address|
-        { ip: address.address, ttl: address.ttl }
-      end
       Resolver.cached_lookup_set(channel.uri.host, addresses)
-      emit_addresses(channel, addresses.map { |addr| addr[:ip] })
+      emit_addresses(channel, addresses.map { |addr| addr["data"] })
       return emit(:close) if @channels.empty?
       resolve
     end
@@ -160,8 +153,8 @@ module HTTPX
       hostname = channel.uri.host
       log(label: "resolver: ") { "query #{hostname}" }
       message = build_query(hostname)
-      @queries[message.id] = channel
-      @write_buffer << message.encode
+      @queries[hostname] = channel
+      @write_buffer << Resolver.encode_dns_query(hostname)
     end
 
     def emit_addresses(channel, addresses)

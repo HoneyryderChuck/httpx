@@ -16,6 +16,9 @@ module HTTPX
     @lookup_mutex = Mutex.new
     @lookups = {}
 
+    @identifier_mutex = Mutex.new
+    @identifier = 1
+
     module_function
 
     def cached_lookup(hostname)
@@ -23,21 +26,47 @@ module HTTPX
       @lookup_mutex.synchronize do
         return unless @lookups.key?(hostname)
         @lookups[hostname] = @lookups[hostname].select do |address|
-          address[:expires] > now
+          address["TTL"] > now
         end
-        ips = @lookups[hostname].map { |address| address[:ip] }
+        ips = @lookups[hostname].map { |address| address["data"] }
         ips unless ips.empty?
       end
     end
 
     def cached_lookup_set(hostname, entries)
       now = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      @lookup_mutex.synchronize do
-        addresses = entries.map do |entry|
-          { ip: entry[:ip], expires: (now + entry[:ttl]) }
-        end
-        @lookups[hostname] = addresses
+      entries.each do |entry|
+        entry["TTL"] += now
       end
+      @lookup_mutex.synchronize do
+        @lookups[hostname] = entries
+      end
+    end
+
+    def generate_id
+      @identifier_mutex.synchronize { @identifier = (@identifier + 1) & 0xFFFF }
+    end
+
+    def encode_dns_query(hostname)
+      Resolv::DNS::Message.new.tap do |query|
+        query.id = generate_id
+        query.rd = 1
+        query.add_question(hostname, Resolv::DNS::Resource::IN::A)
+      end.encode
+    end
+
+    def decode_dns_answer(payload)
+      message = Resolv::DNS::Message.decode(payload)
+      addresses = []
+      message.each_answer do |question, _, value|
+        next unless value.respond_to?(:address)
+        addresses << {
+          "name" => question.to_s,
+          "TTL"  => value.ttl,
+          "data" => value.address.to_s,
+        }
+      end
+      addresses
     end
   end
 end

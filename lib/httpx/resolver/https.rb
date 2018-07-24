@@ -64,15 +64,11 @@ module HTTPX
       return if answers.empty?
       answers.each do |hostname, addresses|
         hostname = hostname[0..-2] if hostname.end_with?(".")
-        ip_addresses = addresses.map do |addr|
-          { ip: addr["data"], ttl: addr["TTL"] }
-        end
-        Resolver.cached_lookup_set(hostname, ip_addresses)
-
         channel = @queries.delete(hostname)
         next unless channel # probably a retried query for which there's an answer
         @channels.delete(channel)
-        emit_addresses(channel, ip_addresses.map { |addr| addr[:ip] })
+        Resolver.cached_lookup_set(hostname, addresses)
+        emit_addresses(channel, addresses.map { |addr| addr["data"] })
         return emit(:close) if @channels.empty?
       end
     end
@@ -87,12 +83,8 @@ module HTTPX
         uri.query = URI.encode_www_form(params)
         request = rklass.new("GET", uri)
       else
-        body = Resolv::DNS::Message.new.tap do |query|
-          query.id = 1
-          query.rd = 1
-          query.add_question hostname, Resolv::DNS::Resource::IN::AAAA
-        end.encode
-        request = rklass.new("POST", uri, body: [body])
+        payload = Resolver.encode_dns_query(hostname)
+        request = rklass.new("POST", uri, body: [payload])
         request.headers["content-type"] = "application/dns-udpwireformat"
       end
       request.headers["accept"] = "application/dns-json"
@@ -105,17 +97,7 @@ module HTTPX
         payload = JSON.parse(response.to_s)
         payload["Answer"]
       when "application/dns-udpwireformat"
-        message = Resolv::DNS::Message.decode(response.to_s)
-        addresses = []
-        message.each_answer do |question, _, value|
-          next unless value.respond_to?(:address)
-          addresses << {
-            "name" => question.to_s,
-            "TTL"  => value.ttl,
-            "data" => value.address.to_s,
-          }
-        end
-        addresses
+        Resolver.decode_dns_answer(response.to_s)
       end
     end
   end
