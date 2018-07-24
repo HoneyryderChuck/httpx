@@ -8,8 +8,8 @@ module HTTPX
     include Resolver::ResolverMixin
 
     DEFAULTS = {
-      config_info: nil
-    }
+      config_info: nil,
+    }.freeze
 
     def initialize(_, options)
       @options = Options.new(options)

@@ -7,7 +7,6 @@ module HTTPX
     autoload :Native, "httpx/resolver/native"
     autoload :HTTPS, "httpx/resolver/https"
 
-	
     extend Registry
 
     register :system, :System

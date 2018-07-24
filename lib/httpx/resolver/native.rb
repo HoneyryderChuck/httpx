@@ -10,8 +10,8 @@ module HTTPX
 
     DEFAULTS = {
       uri: "udp://system:53",
-      packet_size: 512
-    }
+      packet_size: 512,
+    }.freeze
 
     DNS_PORT = 53
     MAX_PACKET_SIZE = 512

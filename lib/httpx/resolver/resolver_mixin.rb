@@ -22,9 +22,9 @@ module HTTPX
 
       def early_resolve(channel)
         hostname = channel.uri.host
-        if (addresses = ip_resolve(hostname) || Resolver.cached_lookup(hostname) || system_resolve(hostname))
-          emit_addresses(channel, addresses)
-        end
+        addresses = ip_resolve(hostname) || Resolver.cached_lookup(hostname) || system_resolve(hostname)
+        return unless addresses
+        emit_addresses(channel, addresses)
       end
 
       def ip_resolve(hostname)

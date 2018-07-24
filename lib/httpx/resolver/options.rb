@@ -3,7 +3,7 @@
 module HTTPX
   class Resolver::Options
     def initialize(options = {})
-      @options = options 
+      @options = options
     end
 
     def method_missing(m, *args, &block)
@@ -11,7 +11,11 @@ module HTTPX
         @options[m]
       else
         super
-      end 
+      end
+    end
+
+    def respond_to_missing?(m)
+      @options.key?(m) || super
     end
   end
 end
