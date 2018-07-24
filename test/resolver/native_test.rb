@@ -40,19 +40,22 @@ class NativeResolverTest < Minitest::Test
   end
 
   def test_cached_lookups
-    dns_entry = OpenStruct.new(address: "IP", ttl: 2)
-    Resolver::Native.cached_lookup_set("test.com", [dns_entry])
-    ips = Resolver::Native.cached_lookup("test.com")
+    dns_entry = { ip: "IP", ttl: 2 }
+    Resolver.cached_lookup_set("test.com", [dns_entry])
+    ips = Resolver.cached_lookup("test.com")
     assert ips == ["IP"]
     sleep 2
-    ips = Resolver::Native.cached_lookup("test.com")
+    ips = Resolver.cached_lookup("test.com")
     assert ips.nil?
   end
 
   private
 
   def resolver(options = Options.new)
-    @resolver ||= Resolver::Native.new(options)
+    @resolver ||= begin
+      connection = Minitest::Mock.new
+      Resolver::Native.new(connection, options)
+    end
   end
 
   def write_buffer
