@@ -9,20 +9,19 @@ module HTTPX
     include Resolver::ResolverMixin
 
     DEFAULTS = {
-      uri: "udp://system:53",
+      **Resolv::DNS::Config.default_config_hash,
       packet_size: 512,
     }.freeze
 
     DNS_PORT = 53
-    MAX_PACKET_SIZE = 512
     MAX_RETRIES = 3
 
     def_delegator :@channels, :empty?
 
     def initialize(_, options)
       @options = Options.new(options)
+      @ns_index = 0
       @resolver_options = Resolver::Options.new(DEFAULTS.merge(@options.resolver_options))
-      @uri = URI(@resolver_options.uri)
       @timeouts = Hash.new(0)
       @timeout = @options.timeout
       @resolve_time = 0
@@ -80,6 +79,16 @@ module HTTPX
       dread
       do_retry
       dwrite
+    rescue Errno::EHOSTUNREACH
+      @ns_index += 1
+      if @ns_index < @resolver_options.nameserver.size
+        transition(:idle)
+      else
+        e = $ERROR_INFO
+        ex = ResolvError.new(e.message)
+        ex.set_backtrace(e.backtrace)
+        raise ex
+      end
     end
 
     def do_retry
@@ -91,11 +100,7 @@ module HTTPX
         _, channel = query
         host = channel.uri.host
         if @timeouts[host] >= MAX_RETRIES
-          error = ResolveError.new("Can't resolve #{host}")
-          error.set_backtrace(caller)
-          @channels.delete(channel)
-          channel.emit(:error, error)
-          emit(:close) if @channels.empty?
+          emit_resolve_error(host)
           return
         else
           @timeouts[host] += 1
@@ -113,9 +118,7 @@ module HTTPX
       loop do
         siz = @io.read(wsize, @read_buffer)
         unless siz
-          ex = EOFError.new("descriptor closed")
-          ex.set_backtrace(caller)
-          emit(:error, ex)
+          emit(:close)
           return
         end
         return if siz.zero?
@@ -129,9 +132,7 @@ module HTTPX
         return if @write_buffer.empty?
         siz = @io.write(@write_buffer)
         unless siz
-          ex = EOFError.new("descriptor closed")
-          ex.set_backtrace(caller)
-          emit(:error, ex)
+          emit(:close)
           return
         end
         log(label: "resolver: ") { "WRITE: #{siz} bytes..." }
@@ -141,7 +142,11 @@ module HTTPX
 
     def parse(buffer)
       addresses = Resolver.decode_dns_answer(buffer)
-      return if addresses.empty?
+      if addresses.empty?
+        hostname = @queries.keys.first
+        emit_resolve_error(hostname)
+        return
+      end
       channel = @queries.delete(addresses.first["name"])
       return unless channel # probably a retried query for which there's an answer
       @channels.delete(channel)
@@ -156,7 +161,6 @@ module HTTPX
       return unless @write_buffer.empty?
       hostname = channel.uri.host
       log(label: "resolver: ") { "query #{hostname}" }
-      message = build_query(hostname)
       @queries[hostname] = channel
       @write_buffer << Resolver.encode_dns_query(hostname)
     end
@@ -166,35 +170,24 @@ module HTTPX
       super
     end
 
-    def build_query(hostname)
-      Resolv::DNS::Message.new.tap do |query|
-        query.id = self.class.generate_id
-        query.rd = 1
-        query.add_question hostname, Resolv::DNS::Resource::IN::A
-      end
-    end
-
     def build_socket
       return if @io
-      uri = @uri.dup
+      ip, port = @resolver_options.nameserver[@ns_index]
+      port ||= DNS_PORT
+      uri = URI::Generic.build(scheme: "udp", port: port)
+      uri.hostname = ip
       type = IO.registry(uri.scheme)
-      ip = case uri.host
-           when "system"
-             nameservers = Resolv::DNS::Config.default_config_hash[:nameserver]
-             nameserver = nameservers.first
-             nameserver
-           else
-             # assume IP
-             uri.host
-      end
-      uri.host = ip
-      uri.port ||= DNS_PORT
       log(label: "resolver: ") { "server: #{uri}..." }
       @io = type.new(uri, [IPAddr.new(ip)], @options)
     end
 
     def transition(nextstate)
       case nextstate
+      when :idle
+        if @io
+          @io.close
+          @io = nil
+        end
       when :open
         return unless @state == :idle
         build_socket
