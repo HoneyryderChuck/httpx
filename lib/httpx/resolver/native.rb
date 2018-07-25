@@ -22,6 +22,7 @@ module HTTPX
       @options = Options.new(options)
       @ns_index = 0
       @resolver_options = Resolver::Options.new(DEFAULTS.merge(@options.resolver_options))
+      @nameserver = @resolver_options.nameserver
       @timeouts = Hash.new(0)
       @timeout = @options.timeout
       @resolve_time = 0
@@ -55,6 +56,16 @@ module HTTPX
         consume
       end
       nil
+    rescue Errno::EHOSTUNREACH
+      @ns_index += 1
+      if @ns_index < @nameserver.size
+        transition(:idle)
+      else
+        e = $!
+        ex = ResolvError.new(e.message)
+        ex.set_backtrace(e.backtrace)
+        raise ex
+      end
     end
 
     def interests
@@ -68,9 +79,8 @@ module HTTPX
     end
 
     def <<(channel)
-      early_resolve(channel) || begin
-        @channels << channel
-      end
+      return if early_resolve(channel)
+      @channels << channel
     end
 
     private
@@ -79,16 +89,6 @@ module HTTPX
       dread
       do_retry
       dwrite
-    rescue Errno::EHOSTUNREACH
-      @ns_index += 1
-      if @ns_index < @resolver_options.nameserver.size
-        transition(:idle)
-      else
-        e = $ERROR_INFO
-        ex = ResolvError.new(e.message)
-        ex.set_backtrace(e.backtrace)
-        raise ex
-      end
     end
 
     def do_retry
@@ -172,7 +172,7 @@ module HTTPX
 
     def build_socket
       return if @io
-      ip, port = @resolver_options.nameserver[@ns_index]
+      ip, port = @nameserver[@ns_index]
       port ||= DNS_PORT
       uri = URI::Generic.build(scheme: "udp", port: port)
       uri.hostname = ip
