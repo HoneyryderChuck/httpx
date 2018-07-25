@@ -38,6 +38,12 @@ module HTTPX
         ips.map { |ip| IPAddr.new(ip) }
       end
 
+      def emit_resolve_error(hostname)
+        error = ResolveError.new("Can't resolve #{hostname}")
+        error.set_backtrace(caller)
+        emit(:error, error)
+      end
+
       def check_if_ip?(name)
         IPAddr.new(name)
         true
