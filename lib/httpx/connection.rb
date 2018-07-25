@@ -48,7 +48,6 @@ module HTTPX
     def build_channel(uri, **options)
       channel = Channel.by(uri, @options.merge(options))
       resolve_channel(channel)
-      @channels << channel
       channel
     end
 
@@ -65,6 +64,7 @@ module HTTPX
     private
 
     def resolve_channel(channel)
+      @channels << channel
       @resolver << channel
       return if @resolver.empty?
       @_resolver_monitor ||= begin # rubocop:disable Naming/MemoizedInstanceVariableName
