@@ -100,7 +100,7 @@ module HTTPX
         _, channel = query
         host = channel.uri.host
         if @timeouts[host] >= MAX_RETRIES
-          emit_resolve_error(host)
+          emit_resolve_error(channel, host)
           return
         else
           @timeouts[host] += 1
@@ -143,15 +143,16 @@ module HTTPX
     def parse(buffer)
       addresses = Resolver.decode_dns_answer(buffer)
       if addresses.empty?
-        hostname = @queries.keys.first
-        emit_resolve_error(hostname)
+        hostname, channel = @queries.first
+        emit_resolve_error(channel, hostname)
         return
+      else
+        channel = @queries.delete(addresses.first["name"])
+        return unless channel # probably a retried query for which there's an answer
+        @channels.delete(channel)
+        Resolver.cached_lookup_set(channel.uri.host, addresses)
+        emit_addresses(channel, addresses.map { |addr| addr["data"] })
       end
-      channel = @queries.delete(addresses.first["name"])
-      return unless channel # probably a retried query for which there's an answer
-      @channels.delete(channel)
-      Resolver.cached_lookup_set(channel.uri.host, addresses)
-      emit_addresses(channel, addresses.map { |addr| addr["data"] })
       return emit(:close) if @channels.empty?
       resolve
     end

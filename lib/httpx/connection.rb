@@ -86,13 +86,10 @@ module HTTPX
       end
     end
 
-    def on_resolver_error(error)
-      @channels.each do |ch|
-        ch.emit(:error, error)
-        # must remove channel by hand, hasn't been started yet
-        unregister_channel(ch)
-      end
-      on_resolver_close
+    def on_resolver_error(ch, error)
+      ch.emit(:error, error)
+      # must remove channel by hand, hasn't been started yet
+      unregister_channel(ch)
     end
 
     def on_resolver_close
