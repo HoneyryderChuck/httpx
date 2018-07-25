@@ -88,7 +88,9 @@ module HTTPX
 
     def on_resolver_error(error)
       @channels.each do |ch|
-        ch.emit(error)
+        ch.emit(:error, error)
+        # must remove channel by hand, hasn't been started yet
+        unregister_channel(ch)
       end
       on_resolver_close
     end
@@ -97,16 +99,20 @@ module HTTPX
       @timeout.next_timeout # disconnect resolve timeout
       @selector.deregister(@resolver)
       @_resolver_monitor = nil
-      @resolver.close
+      @resolver.close unless @resolver.closed?
     end
 
     def register_channel(channel)
       monitor = @selector.register(channel, :w)
       monitor.value = channel
       channel.on(:close) do
-        @channels.delete(channel)
-        @selector.deregister(channel)
+        unregister_channel(channel)
       end
+    end
+
+    def unregister_channel(channel)
+      @channels.delete(channel)
+      @selector.deregister(channel)
     end
   end
 end
