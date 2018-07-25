@@ -128,7 +128,9 @@ module HTTPX
     end
 
     def send(request, **args)
-      if @parser && !@write_buffer.full?
+      if @error_response
+        emit(:response, request, @error_response)
+      elsif @parser && !@write_buffer.full?
         parser.send(request, **args)
       else
         @pending << [request, args]
@@ -234,7 +236,8 @@ module HTTPX
     def transition(nextstate)
       case nextstate
       # when :idle
-
+      when :idle
+        @error_response = nil
       when :open
         return if @state == :closed
         @io.connect
@@ -267,9 +270,9 @@ module HTTPX
 
     def handle_error(e)
       parser.handle_error(e) if @parser && parser.respond_to?(:handle_error)
-      response = ErrorResponse.new(e, @options)
+      @error_response = ErrorResponse.new(e, @options)
       @pending.each do |request, _|
-        emit(:response, request, response)
+        emit(:response, request, @error_response)
       end
     end
   end
