@@ -7,16 +7,12 @@ module HTTPX
   class Resolver::System
     include Resolver::ResolverMixin
 
-    DEFAULTS = {
-      config_info: nil,
-    }.freeze
-
     def initialize(_, options)
       @options = Options.new(options)
-      @resolver_options = Resolver::Options.new(DEFAULTS.merge(@options.resolver_options))
+      roptions = @options.resolver_options
       @timeout = @options.timeout
       @state = :idle
-      @resolver = Resolv::DNS.new(@resolver_options.config_info)
+      @resolver = Resolv::DNS.new(roptions.empty? ? nil : roptions)
       @resolver.timeouts = @timeout.resolve_timeout
     end
 
