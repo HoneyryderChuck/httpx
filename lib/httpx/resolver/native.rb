@@ -2,7 +2,6 @@
 
 require "forwardable"
 require "resolv"
-require "english"
 
 module HTTPX
   class Resolver::Native
@@ -57,12 +56,11 @@ module HTTPX
         consume
       end
       nil
-    rescue Errno::EHOSTUNREACH
+    rescue Errno::EHOSTUNREACH => e
       @ns_index += 1
       if @ns_index < @nameserver.size
         transition(:idle)
       else
-        e = $ERROR_INFO
         ex = ResolvError.new(e.message)
         ex.set_backtrace(e.backtrace)
         raise ex
