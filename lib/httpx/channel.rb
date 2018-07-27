@@ -78,7 +78,7 @@ module HTTPX
     end
 
     def mergeable?(channel, addresses)
-      return false if @state == :closing
+      return false if @state == :closing || !@io
       !(@io.addresses & addresses).empty? &&
         @uri.port == channel.uri.port &&
         @uri.scheme == channel.uri.scheme
