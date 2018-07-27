@@ -143,8 +143,19 @@ module HTTPX
     end
 
     def do_transition(nextstate)
-      log(level: 1, label: "#{inspect}: ") { nextstate.to_s }
+      log(level: 1) do
+        log_transition_state(nextstate)
+      end
       @state = nextstate
+    end
+
+    def log_transition_state(nextstate)
+      case nextstate
+      when :connected
+        "Connected to #{@hostname} (#{@ip}) port #{@port} (##{@io.fileno})"
+      else
+        "#{@ip}:#{@port} #{@state} -> #{nextstate}"
+      end
     end
   end
 end

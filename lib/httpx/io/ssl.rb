@@ -103,5 +103,17 @@ module HTTPX
       end
       do_transition(nextstate)
     end
+
+    def log_transition_state(nextstate)
+      return super unless nextstate == :negotiated
+      server_cert = @io.peer_cert
+      "SSL connection using #{@io.ssl_version} / #{@io.cipher.first}\n" \
+        "ALPN, server accepted to use #{protocol}\n" \
+        "Server certificate:\n" \
+        " subject: #{server_cert.subject}\n" \
+        " start date: #{server_cert.not_before}\n" \
+        " start date: #{server_cert.not_after}\n" \
+        " issuer: #{server_cert.issuer}"
+    end
   end
 end
