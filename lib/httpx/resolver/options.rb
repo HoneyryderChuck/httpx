@@ -17,5 +17,9 @@ module HTTPX
     def respond_to_missing?(m)
       @options.key?(m) || super
     end
+
+    def to_h
+      @options
+    end
   end
 end
