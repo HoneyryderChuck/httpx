@@ -8,9 +8,12 @@ module HTTPX
     extend Forwardable
     include Resolver::ResolverMixin
 
+    RESOLVE_TIMEOUT = 5
+
     DEFAULTS = {
       **Resolv::DNS::Config.default_config_hash,
       packet_size: 512,
+      timeouts: RESOLVE_TIMEOUT,
     }.freeze
 
     DNS_PORT = 53
