@@ -17,7 +17,6 @@ module HTTPX
     }.freeze
 
     DNS_PORT = 53
-    MAX_RETRIES = 3
 
     def_delegator :@channels, :empty?
 
@@ -26,9 +25,8 @@ module HTTPX
       @ns_index = 0
       @resolver_options = Resolver::Options.new(DEFAULTS.merge(@options.resolver_options))
       @nameserver = @resolver_options.nameserver
-      @timeouts = Hash.new(0)
-      @timeout = @options.timeout
-      @resolve_time = 0
+      @_timeouts = Array(@resolver_options.timeouts)
+      @timeouts = Hash.new { |timeouts, host| timeouts[host] = @_timeouts.dup }
       @channels = []
       @queries = {}
       @read_buffer = Buffer.new(@resolver_options.packet_size)
@@ -85,6 +83,12 @@ module HTTPX
       @channels << channel
     end
 
+    def timeout
+      @start_timeout = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      hosts = @queries.keys
+      @timeouts.values_at(*hosts).reject(&:empty?).map(&:first).min
+    end
+
     private
 
     def consume
@@ -95,25 +99,31 @@ module HTTPX
 
     def do_retry
       return if @queries.empty?
-      @resolve_time += @timeout.elapsed_time
-      return unless @resolve_time > @timeout.resolve_timeout
+      loop_time = Process.clock_gettime(Process::CLOCK_MONOTONIC) - @start_timeout
       channels = []
+      queries = {}
       while (query = @queries.shift)
-        _, channel = query
+        h, channel = query
         host = channel.uri.host
-        if @timeouts[host] >= MAX_RETRIES
+        timeout = (@timeouts[host][0] -= loop_time)
+        unless timeout.negative?
+          queries[h] = channel
+          next
+        end
+        @timeouts[host].shift
+        if @timeouts[host].empty?
+          @timeouts.delete(host)
           emit_resolve_error(channel, host)
           return
         else
-          @timeouts[host] += 1
           channels << channel
           log(label: "resolver: ") do
-            "timeout after #{@resolve_time}s, retry(#{@timeouts[host]}) #{host}..."
+            "timeout after #{prev_timeout}s, retry(#{timeouts.first}) #{host}..."
           end
         end
       end
+      @queries = queries
       channels.each { |ch| resolve(ch) }
-      @resolve_time = 0
     end
 
     def dread(wsize = @read_buffer.limit)
@@ -168,11 +178,6 @@ module HTTPX
       @write_buffer << Resolver.encode_dns_query(hostname)
     end
 
-    def emit_addresses(channel, addresses)
-      @resolve_time = 0
-      super
-    end
-
     def build_socket
       return if @io
       ip, port = @nameserver[@ns_index]
@@ -191,6 +196,7 @@ module HTTPX
           @io.close
           @io = nil
         end
+        @timeouts.clear
       when :open
         return unless @state == :idle
         build_socket

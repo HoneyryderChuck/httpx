@@ -24,8 +24,7 @@ module HTTPX
     end
 
     def next_tick
-      timeout = @timeout.timeout
-      @selector.select(timeout) do |monitor|
+      @selector.select(next_timeout) do |monitor|
         if (channel = monitor.value)
           channel.call
         end
@@ -93,7 +92,6 @@ module HTTPX
     end
 
     def on_resolver_close
-      @timeout.next_timeout # disconnect resolve timeout
       @selector.deregister(@resolver)
       @_resolver_monitor = nil
       @resolver.close unless @resolver.closed?
@@ -110,6 +108,12 @@ module HTTPX
     def unregister_channel(channel)
       @channels.delete(channel)
       @selector.deregister(channel)
+    end
+
+    def next_timeout
+      timeout = @timeout.timeout # force log time
+      return (@resolver.timeout || timeout) unless @resolver.closed?
+      timeout
     end
   end
 end

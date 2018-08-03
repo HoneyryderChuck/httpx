@@ -4,7 +4,6 @@ require "timeout"
 
 module HTTPX
   class Timeout
-    RESOLVE_TIMEOUT = 5
     LOOP_TIMEOUT = 5
 
     def self.new(opts = {})
@@ -12,26 +11,16 @@ module HTTPX
       super
     end
 
-    attr_reader :elapsed_time, :resolve_timeout
-
-    def initialize(resolve_timeout: RESOLVE_TIMEOUT, loop_timeout: LOOP_TIMEOUT, total_timeout: nil)
-      @resolve_timeout = resolve_timeout
+    def initialize(loop_timeout: LOOP_TIMEOUT, total_timeout: nil)
       @loop_timeout = loop_timeout
       @total_timeout = total_timeout
       reset_counter
     end
 
     def timeout
-      @timeout
+      @loop_timeout || @total_timeout
     ensure
       log_time
-    end
-
-    def next_timeout
-      case @state
-      when :resolving
-        @timeout = @loop_timeout
-      end
     end
 
     def ==(other)
@@ -60,10 +49,7 @@ module HTTPX
     private
 
     def reset_counter
-      @state = :resolving
-      @timeout = @resolve_timeout
       @time_left = @total_timeout
-      @elapsed_time = 0
     end
 
     def reset_timer
@@ -71,12 +57,9 @@ module HTTPX
     end
 
     def log_time
-      loop_over = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      @elapsed_time = loop_over - @loop_started if @loop_started
-      @loop_started = loop_over
       return unless @time_left
       return reset_timer unless @started
-      @time_left -= @elapsed_time
+      @time_left -= (Process.clock_gettime(Process::CLOCK_MONOTONIC) - @started)
       raise TimeoutError, "Timed out after #{@total_timeout} seconds" if @time_left <= 0
 
       reset_timer

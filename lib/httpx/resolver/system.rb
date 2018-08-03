@@ -10,10 +10,9 @@ module HTTPX
     def initialize(_, options)
       @options = Options.new(options)
       roptions = @options.resolver_options
-      @timeout = @options.timeout
       @state = :idle
       @resolver = Resolv::DNS.new(roptions.empty? ? nil : roptions)
-      @resolver.timeouts = @timeout.resolve_timeout
+      @resolver.timeouts = roptions[:timeouts]
     end
 
     def closed?
