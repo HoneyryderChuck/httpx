@@ -17,13 +17,14 @@ module HTTPX
       @state = :idle
       @hostname = uri.host
       @addresses = addresses
+      @ip_index = @addresses.size - 1
       @options = Options.new(options)
       @fallback_protocol = @options.fallback_protocol
       @port = uri.port
       if @options.io
         @io = case @options.io
               when Hash
-                @ip = @addresses.last
+                @ip = @addresses[@ip_index]
                 @options.io[@ip] || @options.io["#{@ip}:#{@port}"]
               else
                 @ip = @hostname
@@ -34,7 +35,7 @@ module HTTPX
           @state = :connected
         end
       else
-        @ip = @addresses.last
+        @ip = @addresses[@ip_index]
       end
       @io ||= build_socket
     end
@@ -62,6 +63,10 @@ module HTTPX
       rescue Errno::EISCONN
       end
       transition(:connected)
+    rescue Errno::EHOSTUNREACH => e
+      raise e if @ip_index <= 0
+      @ip_index -= 1
+      retry
     rescue Errno::EINPROGRESS,
            Errno::EALREADY,
            ::IO::WaitReadable
