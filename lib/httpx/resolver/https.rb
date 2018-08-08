@@ -9,6 +9,11 @@ module HTTPX
     extend Forwardable
     include Resolver::ResolverMixin
 
+    RECORD_TYPES = {
+      "AAAA" => Resolv::DNS::Resource::IN::AAAA,
+      "A" => Resolv::DNS::Resource::IN::A,
+    }.freeze
+
     DEFAULTS = {
       uri: "https://1.1.1.1/dns-query",
       use_get: false,
@@ -16,12 +21,13 @@ module HTTPX
 
     def_delegator :@channels, :empty?
 
-    def_delegators :@resolver_channel, :to_io, :call, :interests, :closed?, :close
+    def_delegators :@resolver_channel, :to_io, :call, :interests, :close
 
     def initialize(connection, options)
       @connection = connection
       @options = Options.new(options)
       @resolver_options = Resolver::Options.new(DEFAULTS.merge(@options.resolver_options))
+      @_record_types = Hash.new { |types, host| types[host] = RECORD_TYPES.keys.dup }
       @queries = {}
       @channels = []
       @uri = URI(@resolver_options.uri)
@@ -31,10 +37,20 @@ module HTTPX
       early_resolve(channel) || schedule_resolve(channel)
     end
 
+    def timeout
+      timeout = @options.timeout
+      timeout.timeout
+    end
+
+    def closed?
+      return true unless @resolver_channel
+      @resolver_channel.closed?
+    end
+
     private
 
-    def schedule_resolve(channel)
-      hostname = channel.uri.host
+    def schedule_resolve(channel = @channels.first, hostname = nil)
+      hostname = hostname || @queries.key(channel) || channel.uri.host
       request = build_request(hostname)
       @resolver_channel ||= find_channel(@uri, @options)
       @resolver_channel.send(request)
@@ -57,33 +73,56 @@ module HTTPX
 
     def on_response(_request, response)
       # TODO: handle error
-      payload = decode_response_body(response)
-      answers = payload.group_by do |value|
-        value["name"]
+      answers = decode_response_body(response)
+      if answers.empty?
+        host, channel = @queries.first
+        if @_record_types[host].empty?
+          emit_resolve_error(channel, host)
+          return
+        end
+      else
+        answers = answers.group_by { |answer| answer["name"] }
+        answers.each do |hostname, addresses|
+          addresses = addresses.flat_map do |address|
+            if address.key?("alias")
+              alias_address = answers[address["alias"]]
+              if alias_address.nil?
+                channel = @queries[hostname]
+                @queries.delete(address["name"])
+                schedule_resolve(channel, address["alias"])
+                return # rubocop:disable Lint/NonLocalExitFromIterator
+              else
+                alias_address
+              end
+            else
+              address
+            end
+          end.compact
+          next if addresses.empty?
+          hostname = hostname[0..-2] if hostname.end_with?(".")
+          channel = @queries.delete(hostname)
+          next unless channel # probably a retried query for which there's an answer
+          @channels.delete(channel)
+          Resolver.cached_lookup_set(hostname, addresses)
+          emit_addresses(channel, addresses.map { |addr| addr["data"] })
+        end
       end
-      return if answers.empty?
-      answers.each do |hostname, addresses|
-        hostname = hostname[0..-2] if hostname.end_with?(".")
-        channel = @queries.delete(hostname)
-        next unless channel # probably a retried query for which there's an answer
-        @channels.delete(channel)
-        Resolver.cached_lookup_set(hostname, addresses)
-        emit_addresses(channel, addresses.map { |addr| addr["data"] })
-        return emit(:close) if @channels.empty?
-      end
+      return emit(:close) if @channels.empty?
+      schedule_resolve
     end
 
     def build_request(hostname)
       uri = @uri.dup
       rklass = @options.request_class
+      type = @_record_types[hostname].shift
       if @resolver_options.use_get
         params = URI.decode_www_form(uri.query.to_s)
-        params << %w[type AAAA]
+        params << ["type", type]
         params << ["name", CGI.escape(hostname)]
         uri.query = URI.encode_www_form(params)
         request = rklass.new("GET", uri)
       else
-        payload = Resolver.encode_dns_query(hostname)
+        payload = Resolver.encode_dns_query(hostname, type: RECORD_TYPES[type])
         request = rklass.new("POST", uri, body: [payload])
         request.headers["content-type"] = "application/dns-udpwireformat"
       end
