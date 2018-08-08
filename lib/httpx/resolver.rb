@@ -24,12 +24,7 @@ module HTTPX
     def cached_lookup(hostname)
       now = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       @lookup_mutex.synchronize do
-        return unless @lookups.key?(hostname)
-        @lookups[hostname] = @lookups[hostname].select do |address|
-          address["TTL"] > now
-        end
-        ips = @lookups[hostname].map { |address| address["data"] }
-        ips unless ips.empty?
+        lookup(hostname, now)
       end
     end
 
@@ -41,6 +36,22 @@ module HTTPX
       @lookup_mutex.synchronize do
         @lookups[hostname] = entries
       end
+    end
+
+    # do not use directly!
+    def lookup(hostname, ttl)
+      return unless @lookups.key?(hostname)
+      @lookups[hostname] = @lookups[hostname].select do |address|
+        address["TTL"] > ttl
+      end
+      ips = @lookups[hostname].flat_map do |address|
+        if address.key?("alias")
+          lookup(address["alias"])
+        else
+          address["data"]
+        end
+      end
+      ips unless ips.empty?
     end
 
     def generate_id
@@ -59,12 +70,21 @@ module HTTPX
       message = Resolv::DNS::Message.decode(payload)
       addresses = []
       message.each_answer do |question, _, value|
-        next unless value.respond_to?(:address)
-        addresses << {
-          "name" => question.to_s,
-          "TTL"  => value.ttl,
-          "data" => value.address.to_s,
-        }
+        case value
+        when Resolv::DNS::Resource::IN::CNAME
+          addresses << {
+            "name" => question.to_s,
+            "TTL"  => value.ttl,
+            "alias" => value.name.to_s,
+          }
+        when Resolv::DNS::Resource::IN::A,
+             Resolv::DNS::Resource::IN::AAAA
+          addresses << {
+            "name" => question.to_s,
+            "TTL"  => value.ttl,
+            "data" => value.address.to_s,
+          }
+        end
       end
       addresses
     end

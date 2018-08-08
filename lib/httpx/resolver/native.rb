@@ -166,9 +166,15 @@ module HTTPX
         address = addresses.first
         channel = @queries.delete(address["name"])
         return unless channel # probably a retried query for which there's an answer
+        if address.key?("alias") # CNAME
+          resolve(channel, address["alias"])
+          @queries.delete(address["name"])
+          return
+        else
           @channels.delete(channel)
           Resolver.cached_lookup_set(channel.uri.host, addresses)
           emit_addresses(channel, addresses.map { |addr| addr["data"] })
+        end
       end
       return emit(:close) if @channels.empty?
       resolve
@@ -177,7 +183,7 @@ module HTTPX
     def resolve(channel = @channels.first, hostname = nil)
       raise Error, "no URI to resolve" unless channel
       return unless @write_buffer.empty?
-      hostname = channel.uri.host
+      hostname = hostname || @queries.key(channel) || channel.uri.host
       @queries[hostname] = channel
       type = @_record_types[hostname].shift
       log(label: "resolver: ") { "query #{type} for #{hostname}" }
