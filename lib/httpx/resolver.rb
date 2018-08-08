@@ -47,11 +47,11 @@ module HTTPX
       @identifier_mutex.synchronize { @identifier = (@identifier + 1) & 0xFFFF }
     end
 
-    def encode_dns_query(hostname)
+    def encode_dns_query(hostname, type: Resolv::DNS::Resource::IN::A)
       Resolv::DNS::Message.new.tap do |query|
         query.id = generate_id
         query.rd = 1
-        query.add_question(hostname, Resolv::DNS::Resource::IN::A)
+        query.add_question(hostname, type)
       end.encode
     end
 

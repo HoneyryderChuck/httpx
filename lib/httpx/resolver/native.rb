@@ -9,6 +9,7 @@ module HTTPX
     include Resolver::ResolverMixin
 
     RESOLVE_TIMEOUT = 5
+    RECORD_TYPES = [Resolv::DNS::Resource::IN::AAAA, Resolv::DNS::Resource::IN::A].freeze
 
     DEFAULTS = {
       **Resolv::DNS::Config.default_config_hash,
@@ -27,6 +28,7 @@ module HTTPX
       @nameserver = @resolver_options.nameserver
       @_timeouts = Array(@resolver_options.timeouts)
       @timeouts = Hash.new { |timeouts, host| timeouts[host] = @_timeouts.dup }
+      @_record_types = Hash.new { |types, host| types[host] = RECORD_TYPES.dup }
       @channels = []
       @queries = {}
       @read_buffer = Buffer.new(@resolver_options.packet_size)
@@ -156,26 +158,30 @@ module HTTPX
       addresses = Resolver.decode_dns_answer(buffer)
       if addresses.empty?
         hostname, channel = @queries.first
-        emit_resolve_error(channel, hostname)
-        return
+        if @_record_types[hostname].empty?
+          emit_resolve_error(channel, hostname)
+          return
+        end
       else
-        channel = @queries.delete(addresses.first["name"])
+        address = addresses.first
+        channel = @queries.delete(address["name"])
         return unless channel # probably a retried query for which there's an answer
-        @channels.delete(channel)
-        Resolver.cached_lookup_set(channel.uri.host, addresses)
-        emit_addresses(channel, addresses.map { |addr| addr["data"] })
+          @channels.delete(channel)
+          Resolver.cached_lookup_set(channel.uri.host, addresses)
+          emit_addresses(channel, addresses.map { |addr| addr["data"] })
       end
       return emit(:close) if @channels.empty?
       resolve
     end
 
-    def resolve(channel = @channels.first)
+    def resolve(channel = @channels.first, hostname = nil)
       raise Error, "no URI to resolve" unless channel
       return unless @write_buffer.empty?
       hostname = channel.uri.host
-      log(label: "resolver: ") { "query #{hostname}" }
       @queries[hostname] = channel
-      @write_buffer << Resolver.encode_dns_query(hostname)
+      type = @_record_types[hostname].shift
+      log(label: "resolver: ") { "query #{type} for #{hostname}" }
+      @write_buffer << Resolver.encode_dns_query(hostname, type: type)
     end
 
     def build_socket
