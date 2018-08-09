@@ -28,6 +28,15 @@ module ResolverHelpers
     channel
   end
 
+  module ResolverExtensions
+    def self.extended(obj)
+      obj.singleton_class.class_eval do
+        attr_reader :queries
+        public :parse
+      end
+    end
+  end
+
   module ChannelExtensions
     attr_reader :addresses
 

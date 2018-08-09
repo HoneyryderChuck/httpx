@@ -16,6 +16,8 @@ AllCops:
     - 'lib/httpx/extensions.rb'
 
 Metrics/LineLength:
+  Exclude:
+    - 'test/resolver/native_test.rb'
   Max: 120
 
 Metrics/MethodLength:
