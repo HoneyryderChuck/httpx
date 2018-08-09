@@ -46,7 +46,7 @@ module HTTPX
       end
       ips = @lookups[hostname].flat_map do |address|
         if address.key?("alias")
-          lookup(address["alias"])
+          lookup(address["alias"], ttl)
         else
           address["data"]
         end
