@@ -22,14 +22,6 @@ class NativeResolverTest < Minitest::Test
     assert resolver.empty?
   end
 
-  def test_append_hostname
-    channel = build_channel("https://news.ycombinator.com")
-    resolver << channel
-    assert channel.addresses.nil?, "there should be no direct IP"
-    resolver.resolve
-    assert !write_buffer.empty?, "there should be a DNS query ready to be sent"
-  end
-
   def test_parse_no_record
     @has_error = false
     resolver.on(:error) { @has_error = true }
@@ -60,7 +52,6 @@ class NativeResolverTest < Minitest::Test
 
   def resolver(options = Options.new)
     @resolver ||= begin
-      connection = Minitest::Mock.new
       resolver = Resolver::Native.new(connection, options)
       resolver.extend(ResolverHelpers::ResolverExtensions)
       resolver

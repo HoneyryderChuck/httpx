@@ -22,14 +22,6 @@ class HTTPSResolverTest < Minitest::Test
     assert resolver.empty?
   end
 
-  def test_append_external_name
-    channel = build_channel("https://news.ycombinator.com")
-    connection.expect(:find_channel, channel, [URI::HTTPS])
-    resolver << channel
-    assert channel.addresses.nil?, "there should be no direct IP"
-    assert !resolver.empty?
-    connection.verify
-
   def test_parse_no_record
     @has_error = false
     resolver.on(:error) { @has_error = true }
@@ -57,8 +49,18 @@ class HTTPSResolverTest < Minitest::Test
 
   private
 
+  def build_channel(*)
+    channel = super
+    connection.expect(:find_channel, channel, [URI::HTTP])
+    channel
+  end
+
   def resolver(options = Options.new)
-    @resolver ||= Resolver::HTTPS.new(connection, options)
+    @resolver ||= begin
+      resolver = Resolver::HTTPS.new(connection, options)
+      resolver.extend(ResolverHelpers::ResolverExtensions)
+      resolver
+    end
   end
 
   def connection

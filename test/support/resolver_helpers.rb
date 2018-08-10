@@ -63,6 +63,15 @@ module ResolverHelpers
     assert resolver.queries.key?("ipv4.tlund.se")
   end
 
+  def test_append_hostname
+    return unless resolver.respond_to?(:resolve)
+    channel = build_channel("https://news.ycombinator.com")
+    resolver << channel
+    assert channel.addresses.nil?, "there should be no direct IP"
+    resolver.resolve
+    assert !write_buffer.empty?, "there should be a DNS query ready to be sent"
+  end
+
   private
 
   def build_channel(uri)
