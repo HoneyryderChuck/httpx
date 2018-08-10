@@ -36,7 +36,7 @@ module HTTPX
     end
 
     def <<(channel)
-      early_resolve(channel) || schedule_resolve(channel)
+      early_resolve(channel) || resolve(channel)
     end
 
     def timeout
@@ -51,7 +51,7 @@ module HTTPX
 
     private
 
-    def schedule_resolve(channel = @channels.first, hostname = nil)
+    def resolve(channel = @channels.first, hostname = nil)
       hostname = hostname || @queries.key(channel) || channel.uri.host
       request = build_request(hostname)
       @resolver_channel ||= find_channel(@uri, @options)
@@ -75,6 +75,10 @@ module HTTPX
 
     def on_response(_request, response)
       # TODO: handle error
+      parse(response)
+    end
+
+    def parse(response)
       answers = decode_response_body(response)
       if answers.empty?
         host, channel = @queries.first
@@ -91,7 +95,7 @@ module HTTPX
               if alias_address.nil?
                 channel = @queries[hostname]
                 @queries.delete(address["name"])
-                schedule_resolve(channel, address["alias"])
+                resolve(channel, address["alias"])
                 return # rubocop:disable Lint/NonLocalExitFromIterator
               else
                 alias_address
@@ -110,7 +114,7 @@ module HTTPX
         end
       end
       return emit(:close) if @channels.empty?
-      schedule_resolve
+      resolve
     end
 
     def build_request(hostname)
@@ -134,11 +138,13 @@ module HTTPX
 
     def decode_response_body(response)
       case response.headers["content-type"]
-      when "application/dns-json"
+      when "application/dns-json",
+           "application/json"
         payload = JSON.parse(response.to_s)
         payload["Answer"]
       when "application/dns-udpwireformat"
         Resolver.decode_dns_answer(response.to_s)
+      # TODO: what about non-supported?
       end
     end
   end
