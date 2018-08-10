@@ -6,7 +6,7 @@ require_relative "../test_helper"
 class NativeResolverTest < Minitest::Test
   include ResolverHelpers
   include HTTPX
- 
+
   def test_append_ipv4
     super
     assert resolver.empty?

@@ -144,7 +144,7 @@ module HTTPX
         payload["Answer"]
       when "application/dns-udpwireformat"
         Resolver.decode_dns_answer(response.to_s)
-      # TODO: what about non-supported?
+        # TODO: what about non-supported?
       end
     end
   end

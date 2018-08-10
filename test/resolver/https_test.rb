@@ -73,22 +73,24 @@ class HTTPSResolverTest < Minitest::Test
   end
 
   MockResponse = Struct.new(:headers, :body) do
-    def to_s ; body ; end
+    def to_s
+      body
+    end
   end
 
   def a_record
-    MockResponse.new({'content-type' => 'application/dns-udpwireformat'}, super)
+    MockResponse.new({ "content-type" => "application/dns-udpwireformat" }, super)
   end
-  
+
   def aaaa_record
-    MockResponse.new({'content-type' => 'application/dns-udpwireformat'}, super)
+    MockResponse.new({ "content-type" => "application/dns-udpwireformat" }, super)
   end
 
   def cname_record
-    MockResponse.new({'content-type' => 'application/dns-udpwireformat'}, super)
+    MockResponse.new({ "content-type" => "application/dns-udpwireformat" }, super)
   end
 
   def no_record
-    MockResponse.new({'content-type' => 'application/dns-udpwireformat'}, super)
+    MockResponse.new({ "content-type" => "application/dns-udpwireformat" }, super)
   end
 end

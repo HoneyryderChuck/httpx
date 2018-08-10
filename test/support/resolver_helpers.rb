@@ -36,7 +36,6 @@ module ResolverHelpers
     assert resolver.respond_to?(:close)
   end
 
-
   def test_parse_a_record
     return unless resolver.respond_to?(:parse)
     channel = build_channel("http://ipv4.tlund.se/")
@@ -79,7 +78,6 @@ module ResolverHelpers
     channel.extend(ChannelExtensions)
     channel
   end
-
 
   def a_record
     "\x00\x03\x81\x80\x00\x01\x00\x01\x00\x03\x00\x06\x04ipv4\x05tlund\x02se\x00\x00\x01\x00\x01\xC0\f\x00" \
