@@ -29,6 +29,9 @@ class HTTPSResolverTest < Minitest::Test
     assert channel.addresses.nil?, "there should be no direct IP"
     assert !resolver.empty?
     connection.verify
+
+  def test_io_api
+    __test_io_api
   end
 
   private

@@ -111,6 +111,10 @@ class NativeResolverTest < Minitest::Test
     assert @has_error, "resolver should have failed"
   end
 
+  def test_io_api
+    __test_io_api
+  end
+
   private
 
   def resolver(options = Options.new)
@@ -120,6 +124,10 @@ class NativeResolverTest < Minitest::Test
       resolver.extend(ResolverHelpers::ResolverExtensions)
       resolver
     end
+  end
+
+  def connection
+    @connection ||= Minitest::Mock.new
   end
 
   def write_buffer
