@@ -220,14 +220,5 @@ module HTTPX
       end
       @state = nextstate
     end
-
-    @identifier_mutex = Mutex.new
-    @identifier = 1
-
-    class << self
-      def generate_id
-        @identifier_mutex.synchronize { @identifier = (@identifier + 1) & 0xFFFF }
-      end
-    end
   end
 end
