@@ -28,5 +28,7 @@ module HTTPX
       addresses = ip_resolve(hostname) || system_resolve(hostname) || @resolver.getaddresses(hostname)
       addresses.empty? ? emit_resolve_error(channel, hostname) : emit_addresses(channel, addresses)
     end
+
+    def uncache(*); end
   end
 end

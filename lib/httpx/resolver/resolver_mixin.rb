@@ -9,6 +9,11 @@ module HTTPX
       include Callbacks
       include Loggable
 
+      def uncache(channel)
+        hostname = hostname || @queries.key(channel) || channel.uri.host
+        Resolver.uncache(hostname)
+      end
+
       private
 
       def emit_addresses(channel, addresses)
