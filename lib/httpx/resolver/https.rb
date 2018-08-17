@@ -151,7 +151,8 @@ module HTTPX
            "application/json"
         payload = JSON.parse(response.to_s)
         payload["Answer"]
-      when "application/dns-udpwireformat"
+      when "application/dns-udpwireformat",
+           "application/dns-message"
         Resolver.decode_dns_answer(response.to_s)
         # TODO: what about non-supported?
       end
