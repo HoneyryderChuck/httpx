@@ -46,24 +46,34 @@ module HTTPX
 
     def closed?
       return true unless @resolver_channel
-      @resolver_channel.closed?
+      resolver_channel.closed?
     end
 
     private
 
-    def resolve(channel = @channels.first, hostname = nil)
-      hostname = hostname || @queries.key(channel) || channel.uri.host
-      request = build_request(hostname)
+    def resolver_channel
       @resolver_channel ||= find_channel(@uri, @options)
-      @resolver_channel.send(request)
+    end
+
+    def resolve(channel = @channels.first, hostname = nil)
+      return if @building_channel
+      hostname = hostname || @queries.key(channel) || channel.uri.host
+      type = @_record_types[hostname].shift
+      log(label: "resolver: ") { "query #{type} for #{hostname}" }
+      request = build_request(hostname, type)
+      resolver_channel.send(request)
       @queries[hostname] = channel
       @channels << channel
     end
 
     def find_channel(_request, **options)
       @connection.find_channel(@uri) || begin
+        @building_channel = true
+        addresses = Resolv.getaddresses(@uri.host)
         channel = @connection.build_channel(@uri, **options)
+        emit_addresses(channel, addresses)
         set_channel_callbacks(channel)
+        @building_channel = false
         channel
       end
     end
@@ -117,10 +127,9 @@ module HTTPX
       resolve
     end
 
-    def build_request(hostname)
+    def build_request(hostname, type)
       uri = @uri.dup
       rklass = @options.request_class
-      type = @_record_types[hostname].shift
       if @resolver_options.use_get
         params = URI.decode_www_form(uri.query.to_s)
         params << ["type", type]
