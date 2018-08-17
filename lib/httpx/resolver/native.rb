@@ -9,12 +9,16 @@ module HTTPX
     include Resolver::ResolverMixin
 
     RESOLVE_TIMEOUT = 5
-    RECORD_TYPES = [Resolv::DNS::Resource::IN::AAAA, Resolv::DNS::Resource::IN::A].freeze
+    RECORD_TYPES = {
+      "AAAA" => Resolv::DNS::Resource::IN::AAAA,
+      "A" => Resolv::DNS::Resource::IN::A,
+    }.freeze
 
     DEFAULTS = {
       **Resolv::DNS::Config.default_config_hash,
       packet_size: 512,
       timeouts: RESOLVE_TIMEOUT,
+      record_types: RECORD_TYPES.keys,
     }.freeze
 
     DNS_PORT = 53
@@ -28,7 +32,7 @@ module HTTPX
       @nameserver = @resolver_options.nameserver
       @_timeouts = Array(@resolver_options.timeouts)
       @timeouts = Hash.new { |timeouts, host| timeouts[host] = @_timeouts.dup }
-      @_record_types = Hash.new { |types, host| types[host] = RECORD_TYPES.dup }
+      @_record_types = Hash.new { |types, host| types[host] = @resolver_options.record_types.dup }
       @channels = []
       @queries = {}
       @read_buffer = Buffer.new(@resolver_options.packet_size)
@@ -47,6 +51,9 @@ module HTTPX
     def to_io
       case @state
       when :idle
+        transition(:open)
+      when :closed
+        transition(:idle)
         transition(:open)
       end
       resolve if @queries.empty?
@@ -187,7 +194,7 @@ module HTTPX
       @queries[hostname] = channel
       type = @_record_types[hostname].shift
       log(label: "resolver: ") { "query #{type} for #{hostname}" }
-      @write_buffer << Resolver.encode_dns_query(hostname, type: type)
+      @write_buffer << Resolver.encode_dns_query(hostname, type: RECORD_TYPES[type])
     end
 
     def build_socket

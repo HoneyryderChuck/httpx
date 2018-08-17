@@ -24,11 +24,13 @@ module HTTPX
     end
 
     def next_tick
-      @selector.select(next_timeout) do |monitor|
-        if (channel = monitor.value)
-          channel.call
+      catch(:jump_tick) do
+        @selector.select(next_timeout) do |monitor|
+          if (channel = monitor.value)
+            channel.call
+          end
+          monitor.interests = channel.interests
         end
-        monitor.interests = channel.interests
       end
     rescue TimeoutError,
            Errno::ECONNRESET,
@@ -47,6 +49,10 @@ module HTTPX
     def build_channel(uri, **options)
       channel = Channel.by(uri, @options.merge(options))
       resolve_channel(channel)
+      channel.once(:unreachable) do
+        @resolver.uncache(channel)
+        resolve_channel(channel)
+      end
       channel
     end
 
@@ -63,7 +69,7 @@ module HTTPX
     private
 
     def resolve_channel(channel)
-      @channels << channel
+      @channels << channel unless @channels.include?(channel)
       @resolver << channel
       return if @resolver.empty?
       @_resolver_monitor ||= begin # rubocop:disable Naming/MemoizedInstanceVariableName

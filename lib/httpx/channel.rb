@@ -252,8 +252,12 @@ module HTTPX
         @read_buffer.clear
       end
       @state = nextstate
+    rescue Errno::EHOSTUNREACH
+      # at this point, all addresses from the IO object have failed
+      reset
+      emit(:unreachable)
+      throw(:jump_tick)
     rescue Errno::ECONNREFUSED,
-           Errno::ENETUNREACH,
            Errno::EADDRNOTAVAIL,
            Errno::EHOSTUNREACH,
            OpenSSL::SSL::SSLError => e
