@@ -142,10 +142,10 @@ module HTTPX
         params << ["type", type]
         params << ["name", CGI.escape(hostname)]
         uri.query = URI.encode_www_form(params)
-        request = rklass.new("GET", uri)
+        request = rklass.new("GET", uri, @options)
       else
         payload = Resolver.encode_dns_query(hostname, type: RECORD_TYPES[type])
-        request = rklass.new("POST", uri, body: [payload])
+        request = rklass.new("POST", uri, @options.merge(body: [payload]))
         request.headers["content-type"] = "application/dns-udpwireformat"
       end
       request.headers["accept"] = "application/dns-json"
