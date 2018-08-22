@@ -15,6 +15,7 @@ module HTTPX
     }.freeze
 
     DEFAULTS = {
+      nameserver: nil,
       **Resolv::DNS::Config.default_config_hash,
       packet_size: 512,
       timeouts: RESOLVE_TIMEOUT,
@@ -89,7 +90,13 @@ module HTTPX
 
     def <<(channel)
       return if early_resolve(channel)
-      @channels << channel
+      if @nameserver.nil?
+        ex = ResolveError.new("Can't resolve #{channel.uri.host}")
+        ex.set_backtrace(caller)
+        emit(:error, channel, ex)
+      else
+        @channels << channel
+      end
     end
 
     def timeout

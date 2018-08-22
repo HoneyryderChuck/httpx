@@ -33,10 +33,18 @@ module HTTPX
       @queries = {}
       @channels = []
       @uri = URI(@resolver_options.uri)
+      @uri_addresses = nil
     end
 
     def <<(channel)
-      early_resolve(channel) || resolve(channel)
+      @uri_addresses ||= Resolv.getaddresses(@uri.host)
+      if @uri_addresses.empty?
+        ex = ResolveError.new("Can't resolve #{channel.uri.host}")
+        ex.set_backtrace(caller)
+        emit(:error, channel, ex)
+      else
+        early_resolve(channel) || resolve(channel)
+      end
     end
 
     def timeout
@@ -69,9 +77,8 @@ module HTTPX
     def find_channel(_request, **options)
       @connection.find_channel(@uri) || begin
         @building_channel = true
-        addresses = Resolv.getaddresses(@uri.host)
         channel = @connection.build_channel(@uri, **options)
-        emit_addresses(channel, addresses)
+        emit_addresses(channel, @uri_addresses)
         set_channel_callbacks(channel)
         @building_channel = false
         channel
