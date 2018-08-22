@@ -29,7 +29,7 @@ module HTTPX
     def initialize(_, options)
       @options = Options.new(options)
       @ns_index = 0
-      @resolver_options = Resolver::Options.new(DEFAULTS.merge(@options.resolver_options))
+      @resolver_options = Resolver::Options.new(DEFAULTS.merge(@options.resolver_options || {}))
       @nameserver = @resolver_options.nameserver
       @_timeouts = Array(@resolver_options.timeouts)
       @timeouts = Hash.new { |timeouts, host| timeouts[host] = @_timeouts.dup }

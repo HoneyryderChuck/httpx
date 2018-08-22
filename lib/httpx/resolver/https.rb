@@ -28,7 +28,7 @@ module HTTPX
     def initialize(connection, options)
       @connection = connection
       @options = Options.new(options)
-      @resolver_options = Resolver::Options.new(DEFAULTS.merge(@options.resolver_options))
+      @resolver_options = Resolver::Options.new(DEFAULTS.merge(@options.resolver_options || {}))
       @_record_types = Hash.new { |types, host| types[host] = RECORD_TYPES.keys.dup }
       @queries = {}
       @channels = []

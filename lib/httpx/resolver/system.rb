@@ -11,8 +11,8 @@ module HTTPX
       @options = Options.new(options)
       roptions = @options.resolver_options
       @state = :idle
-      @resolver = Resolv::DNS.new(roptions.empty? ? nil : roptions)
-      @resolver.timeouts = roptions[:timeouts]
+      @resolver = Resolv::DNS.new(roptions.nil? ? nil : roptions)
+      @resolver.timeouts = roptions[:timeouts] if roptions
     end
 
     def closed?

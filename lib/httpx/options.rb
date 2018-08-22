@@ -56,7 +56,6 @@ module HTTPX
         :transport                => nil,
         :transport_options        => nil,
         :resolver_class           => (ENV["HTTPX_RESOLVER"] || :native).to_sym,
-        :resolver_options         => {},
       }
 
       defaults.merge!(options)
