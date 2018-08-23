@@ -12,8 +12,8 @@ module HTTPX
     NAMESERVER = "https://1.1.1.1/dns-query"
 
     RECORD_TYPES = {
-      "AAAA" => Resolv::DNS::Resource::IN::AAAA,
       "A" => Resolv::DNS::Resource::IN::A,
+      "AAAA" => Resolv::DNS::Resource::IN::AAAA,
     }.freeze
 
     DEFAULTS = {

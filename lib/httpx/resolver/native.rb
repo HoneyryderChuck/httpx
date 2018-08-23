@@ -10,8 +10,8 @@ module HTTPX
 
     RESOLVE_TIMEOUT = 5
     RECORD_TYPES = {
-      "AAAA" => Resolv::DNS::Resource::IN::AAAA,
       "A" => Resolv::DNS::Resource::IN::A,
+      "AAAA" => Resolv::DNS::Resource::IN::AAAA,
     }.freeze
 
     DEFAULTS = {
