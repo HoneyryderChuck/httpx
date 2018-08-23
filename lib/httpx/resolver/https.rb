@@ -159,22 +159,24 @@ module HTTPX
       else
         payload = Resolver.encode_dns_query(hostname, type: RECORD_TYPES[type])
         request = rklass.new("POST", uri, @options.merge(body: [payload]))
-        request.headers["content-type"] = "application/dns-udpwireformat"
+        request.headers["content-type"] = "application/dns-message"
+        request.headers["accept"] = "application/dns-message"
       end
-      request.headers["accept"] = "application/dns-json"
       request
     end
 
     def decode_response_body(response)
       case response.headers["content-type"]
       when "application/dns-json",
-           "application/json"
+           "application/json",
+           /^application\/x\-javascript/ # because google...
         payload = JSON.parse(response.to_s)
         payload["Answer"]
       when "application/dns-udpwireformat",
            "application/dns-message"
         Resolver.decode_dns_answer(response.to_s)
-        # TODO: what about non-supported?
+
+      # TODO: what about the rest?
       end
     end
   end
