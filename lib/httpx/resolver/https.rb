@@ -31,6 +31,7 @@ module HTTPX
       @resolver_options = Resolver::Options.new(DEFAULTS.merge(@options.resolver_options || {}))
       @_record_types = Hash.new { |types, host| types[host] = RECORD_TYPES.keys.dup }
       @queries = {}
+      @requests = {}
       @channels = []
       @uri = URI(@resolver_options.uri)
       @uri_addresses = nil
@@ -69,6 +70,7 @@ module HTTPX
       type = @_record_types[hostname].shift
       log(label: "resolver: ") { "query #{type} for #{hostname}" }
       request = build_request(hostname, type)
+      @requests[request] = channel
       resolver_channel.send(request)
       @queries[hostname] = channel
       @channels << channel
@@ -90,9 +92,20 @@ module HTTPX
       channel.on(:promise, &method(:on_response))
     end
 
-    def on_response(_request, response)
-      # TODO: handle error
-      parse(response)
+    def on_response(request, response)
+      begin
+        response.raise_for_status
+      rescue Error => ex
+        channel = @requests[request]
+        hostname = @queries.key(channel)
+        error = ResolveError.new("Can't resolve #{hostname}: #{ex.message}")
+        error.set_backtrace(ex.backtrace)
+        emit(:error, channel, error)
+      else
+        parse(response)
+      ensure
+        @requests.delete(request)
+      end
     end
 
     def parse(response)
