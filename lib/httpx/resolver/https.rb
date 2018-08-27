@@ -93,19 +93,17 @@ module HTTPX
     end
 
     def on_response(request, response)
-      begin
-        response.raise_for_status
-      rescue Error => ex
-        channel = @requests[request]
-        hostname = @queries.key(channel)
-        error = ResolveError.new("Can't resolve #{hostname}: #{ex.message}")
-        error.set_backtrace(ex.backtrace)
-        emit(:error, channel, error)
-      else
-        parse(response)
-      ensure
-        @requests.delete(request)
-      end
+      response.raise_for_status
+    rescue Error => ex
+      channel = @requests[request]
+      hostname = @queries.key(channel)
+      error = ResolveError.new("Can't resolve #{hostname}: #{ex.message}")
+      error.set_backtrace(ex.backtrace)
+      emit(:error, channel, error)
+    else
+      parse(response)
+    ensure
+      @requests.delete(request)
     end
 
     def parse(response)
@@ -169,14 +167,14 @@ module HTTPX
       case response.headers["content-type"]
       when "application/dns-json",
            "application/json",
-           /^application\/x\-javascript/ # because google...
+           %r{^application\/x\-javascript} # because google...
         payload = JSON.parse(response.to_s)
         payload["Answer"]
       when "application/dns-udpwireformat",
            "application/dns-message"
         Resolver.decode_dns_answer(response.to_s)
 
-      # TODO: what about the rest?
+        # TODO: what about the rest?
       end
     end
   end
