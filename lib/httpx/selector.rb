@@ -14,12 +14,18 @@ class HTTPX::Selector
       @closed = false
     end
 
+    READABLE = %i[rw r].freeze
+    WRITABLE = %i[rw w].freeze
+
+    private_constant :READABLE
+    private_constant :WRITABLE
+
     def readable?
-      @interests == :rw || @interests == :r
+      READABLE.include?(@interests)
     end
 
     def writable?
-      @interests == :rw || @interests == :w
+      WRITABLE.include?(@interests)
     end
 
     # closes +@io+, deregisters from reactor (unless +deregister+ is false)
@@ -60,8 +66,8 @@ class HTTPX::Selector
 
   # register +io+ for +interests+ events.
   def register(io, interests)
-    readable = interests == :r || interests == :rw
-    writable = interests == :w || interests == :rw
+    readable = READABLE.include?(interests)
+    writable = WRITABLE.include?(interests)
     @lock.synchronize do
       if readable
         monitor = @readers[io]

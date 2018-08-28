@@ -9,6 +9,15 @@ module HTTPX
       include Callbacks
       include Loggable
 
+      CHECK_IF_IP = proc do |name|
+        begin
+          IPAddr.new(name)
+          true
+        rescue ArgumentError
+          false
+        end
+      end
+
       def uncache(channel)
         hostname = hostname || @queries.key(channel) || channel.uri.host
         Resolver.uncache(hostname)
@@ -33,7 +42,7 @@ module HTTPX
       end
 
       def ip_resolve(hostname)
-        [hostname] if ResolverMixin.check_if_ip?(hostname)
+        [hostname] if CHECK_IF_IP[hostname]
       end
 
       def system_resolve(hostname)
@@ -48,14 +57,6 @@ module HTTPX
         error.set_backtrace(caller)
         emit(:error, channel, error)
       end
-
-      def check_if_ip?(name)
-        IPAddr.new(name)
-        true
-      rescue ArgumentError
-        false
-      end
-      module_function :check_if_ip?
     end
   end
 end

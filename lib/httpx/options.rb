@@ -87,7 +87,7 @@ module HTTPX
 
     def_option(:transport) do |tr|
       transport = tr.to_s
-      raise Error, "#{transport} is an unsupported transport type" unless IO.registry.keys.include?(transport)
+      raise Error, "#{transport} is an unsupported transport type" unless IO.registry.key?(transport)
       self.transport = transport
     end
 

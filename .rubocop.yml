@@ -4,6 +4,8 @@ AllCops:
   TargetRubyVersion: 2.3
   DisplayCopNames: true
   Include:
+    - lib/**/*.rb
+    - test/**/*.rb
     - Rakefile
     - palanca.gemspec
   Exclude:
