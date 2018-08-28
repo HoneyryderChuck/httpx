@@ -1,6 +1,12 @@
 # frozen_string_literal: true
 
 class HTTPX::Selector
+  READABLE = %i[rw r].freeze
+  WRITABLE = %i[rw w].freeze
+
+  private_constant :READABLE
+  private_constant :WRITABLE
+
   #
   # I/O monitor
   #
@@ -13,12 +19,6 @@ class HTTPX::Selector
       @reactor = reactor
       @closed = false
     end
-
-    READABLE = %i[rw r].freeze
-    WRITABLE = %i[rw w].freeze
-
-    private_constant :READABLE
-    private_constant :WRITABLE
 
     def readable?
       READABLE.include?(@interests)
