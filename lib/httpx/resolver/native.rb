@@ -14,13 +14,22 @@ module HTTPX
       "AAAA" => Resolv::DNS::Resource::IN::AAAA,
     }.freeze
 
-    DEFAULTS = {
-      nameserver: nil,
-      **Resolv::DNS::Config.default_config_hash,
-      packet_size: 512,
-      timeouts: RESOLVE_TIMEOUT,
-      record_types: RECORD_TYPES.keys,
-    }.freeze
+    DEFAULTS = if RUBY_VERSION < "2.2"
+      {
+        **Resolv::DNS::Config.default_config_hash,
+        packet_size: 512,
+        timeouts: RESOLVE_TIMEOUT,
+        record_types: RECORD_TYPES.keys,
+      }.freeze
+    else
+      {
+        nameserver: nil,
+        **Resolv::DNS::Config.default_config_hash,
+        packet_size: 512,
+        timeouts: RESOLVE_TIMEOUT,
+        record_types: RECORD_TYPES.keys,
+      }.freeze
+    end
 
     DNS_PORT = 53
 
