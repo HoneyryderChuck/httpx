@@ -129,9 +129,7 @@ module HTTPX
 
       reset
       send(@pending.shift) unless @pending.empty?
-      return unless response.headers["connection"] == "close"
-      disable_concurrency
-      emit(:reset)
+      manage_connection(response)
     end
 
     def handle_error(ex)
@@ -141,6 +139,15 @@ module HTTPX
     end
 
     private
+
+    def manage_connection(response)
+      connection = response.headers["connection"]
+      case connection
+      when /close/i, nil
+        disable_pipelining
+        emit(:reset)
+      end
+    end
 
     def disable_concurrency
       return if @requests.empty?
