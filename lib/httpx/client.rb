@@ -70,22 +70,22 @@ module HTTPX
 
     def __build_reqs(*args, **options)
       requests = case args.size
-      when 1
-        reqs = args.first
-        reqs.map do |verb, uri|
-          __build_req(verb, uri, options)
-        end
-      when 2, 3
-        verb, uris = args
-        if uris.respond_to?(:each)
-          uris.map do |uri|
-            __build_req(verb, uri, options)
-          end
-        else
-          [__build_req(verb, uris, options)]
-        end
-      else
-        raise ArgumentError, "unsupported number of arguments"
+                 when 1
+                   reqs = args.first
+                   reqs.map do |verb, uri|
+                     __build_req(verb, uri, options)
+                   end
+                 when 2, 3
+                   verb, uris = args
+                   if uris.respond_to?(:each)
+                     uris.map do |uri|
+                       __build_req(verb, uri, options)
+                     end
+                   else
+                     [__build_req(verb, uris, options)]
+                   end
+                 else
+                   raise ArgumentError, "unsupported number of arguments"
       end
       raise ArgumentError, "wrong number of URIs (given 0, expect 1..+1)" if requests.empty?
       requests
