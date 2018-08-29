@@ -69,7 +69,7 @@ module HTTPX
     end
 
     def __build_reqs(*args, **options)
-      case args.size
+      requests = case args.size
       when 1
         reqs = args.first
         reqs.map do |verb, uri|
@@ -87,6 +87,8 @@ module HTTPX
       else
         raise ArgumentError, "unsupported number of arguments"
       end
+      raise ArgumentError, "wrong number of URIs (given 0, expect 1..+1)" if requests.empty?
+      requests
     end
 
     def __send_reqs(*requests, **options)
