@@ -50,8 +50,7 @@ module HTTPX
             raise Error, "#{uri}: #{uri.scheme}: unrecognized channel"
           end
         end
-        io = IO.registry(type).new(uri, options)
-        new(io, options)
+        new(type, uri, options)
       end
     end
 
@@ -59,8 +58,12 @@ module HTTPX
 
     def_delegator :@write_buffer, :empty?
 
-    def initialize(io, options)
-      @io = io
+    attr_reader :uri
+
+    def initialize(type, uri, options)
+      @type = type
+      @uri = uri
+      @hostnames = [@uri.host]
       @options = Options.new(options)
       @window_size = @options.window_size
       @read_buffer = Buffer.new(BUFFER_SIZE)
@@ -70,17 +73,28 @@ module HTTPX
       on(:error) { |ex| on_error(ex) }
     end
 
+    def addresses=(addrs)
+      @io = IO.registry(@type).new(@uri, addrs, @options)
+    end
+
+    def mergeable?(channel, addresses)
+      return false if @state == :closing || !@io
+      !(@io.addresses & addresses).empty? &&
+        @uri.port == channel.uri.port &&
+        @uri.scheme == channel.uri.scheme
+    end
+
+    def merge(channel)
+      @hostnames += channel.instance_variable_get(:@hostnames)
+      @pending += channel.instance_variable_get(:@pending)
+    end
+
     def match?(uri)
       return false if @state == :closing
-      ips = begin
-        Resolv.getaddresses(uri.host)
-      rescue StandardError
-        [uri.host]
-      end
 
-      ips.include?(@io.ip) &&
-        uri.port == @io.port &&
-        uri.scheme == @io.scheme
+      @hostnames.include?(uri.host) &&
+        uri.port == @uri.port &&
+        uri.scheme == @uri.scheme
     end
 
     def interests
@@ -114,7 +128,9 @@ module HTTPX
     end
 
     def send(request, **args)
-      if @parser && !@write_buffer.full?
+      if @error_response
+        emit(:response, request, @error_response)
+      elsif @parser && !@write_buffer.full?
         parser.send(request, **args)
       else
         @pending << [request, args]
@@ -220,7 +236,8 @@ module HTTPX
     def transition(nextstate)
       case nextstate
       # when :idle
-
+      when :idle
+        @error_response = nil
       when :open
         return if @state == :closed
         @io.connect
@@ -235,9 +252,14 @@ module HTTPX
         @read_buffer.clear
       end
       @state = nextstate
+    rescue Errno::EHOSTUNREACH
+      # at this point, all addresses from the IO object have failed
+      reset
+      emit(:unreachable)
+      throw(:jump_tick)
     rescue Errno::ECONNREFUSED,
-           Errno::ENETUNREACH,
            Errno::EADDRNOTAVAIL,
+           Errno::EHOSTUNREACH,
            OpenSSL::SSL::SSLError => e
       # connect errors, exit gracefully
       handle_error(e)
@@ -251,10 +273,10 @@ module HTTPX
     end
 
     def handle_error(e)
-      parser.handle_error(e) if parser.respond_to?(:handle_error)
-      response = ErrorResponse.new(e, @options)
+      parser.handle_error(e) if @parser && parser.respond_to?(:handle_error)
+      @error_response = ErrorResponse.new(e, @options)
       @pending.each do |request, _|
-        emit(:response, request, response)
+        emit(:response, request, @error_response)
       end
     end
   end

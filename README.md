@@ -90,6 +90,10 @@ It means that it loads the bare minimum to perform requests, and the user has to
 
 It also means that it ships with the minimum amount of dependencies.
 
+### DNS-over-HTTPS
+
+`HTTPX` ships with custom DNS resolver implementations, including a DNS-over-HTTPS resolver.
+
 ## Easy to test
 
 The test suite runs against [httpbin proxied over nghttp2](https://nghttp2.org/httpbin/), so there are no mocking/stubbing false positives. The test suite uses [minitest](https://github.com/seattlerb/minitest), but its matchers usage is (almost) limited to `#assert` (`assert` is all you need).

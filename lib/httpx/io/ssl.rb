@@ -10,7 +10,7 @@ module HTTPX
       {}
     end
 
-    def initialize(_, options)
+    def initialize(_, _, options)
       @ctx = OpenSSL::SSL::SSLContext.new
       ctx_options = TLS_OPTIONS.merge(options.ssl)
       @ctx.set_params(ctx_options) unless ctx_options.empty?
@@ -102,6 +102,18 @@ module HTTPX
                       @state == :connected
       end
       do_transition(nextstate)
+    end
+
+    def log_transition_state(nextstate)
+      return super unless nextstate == :negotiated
+      server_cert = @io.peer_cert
+      "SSL connection using #{@io.ssl_version} / #{@io.cipher.first}\n" \
+        "ALPN, server accepted to use #{protocol}\n" \
+        "Server certificate:\n" \
+        " subject: #{server_cert.subject}\n" \
+        " start date: #{server_cert.not_before}\n" \
+        " start date: #{server_cert.not_after}\n" \
+        " issuer: #{server_cert.issuer}"
     end
   end
 end

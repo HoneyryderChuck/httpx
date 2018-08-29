@@ -11,7 +11,7 @@ module HTTPX
       super
     end
 
-    def initialize(loop_timeout: 5, total_timeout: nil)
+    def initialize(loop_timeout: LOOP_TIMEOUT, total_timeout: nil)
       @loop_timeout = loop_timeout
       @total_timeout = total_timeout
       reset_counter

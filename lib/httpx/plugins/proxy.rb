@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "resolv"
+require "ipaddr"
 require "forwardable"
 
 module HTTPX
@@ -60,10 +62,9 @@ module HTTPX
           parameters = Parameters.new(**proxy)
           uri = parameters.uri
           log { "proxy: #{uri}" }
-          io = TCP.new(uri, @options)
           proxy_type = Parameters.registry(parameters.uri.scheme)
-          channel = proxy_type.new(io, parameters, @options.merge(options), &method(:on_response))
-          @connection.__send__(:register_channel, channel)
+          channel = proxy_type.new("tcp", uri, parameters, @options.merge(options), &method(:on_response))
+          @connection.__send__(:resolve_channel, channel)
           channel
         end
 
@@ -102,8 +103,8 @@ module HTTPX
   end
 
   class ProxyChannel < Channel
-    def initialize(io, parameters, options, &blk)
-      super(io, options, &blk)
+    def initialize(type, uri, parameters, options, &blk)
+      super(type, uri, options, &blk)
       @parameters = parameters
     end
 
@@ -144,7 +145,7 @@ module HTTPX
   class ProxySSL < SSL
     def initialize(tcp, request_uri, options)
       @io = tcp.to_io
-      super(tcp, options)
+      super(request_uri, tcp.addresses, options)
       @hostname = request_uri.host
       @state = :connected
     end

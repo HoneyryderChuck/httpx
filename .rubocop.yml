@@ -4,6 +4,8 @@ AllCops:
   TargetRubyVersion: 2.3
   DisplayCopNames: true
   Include:
+    - lib/**/*.rb
+    - test/**/*.rb
     - Rakefile
     - palanca.gemspec
   Exclude:
@@ -16,6 +18,8 @@ AllCops:
     - 'lib/httpx/extensions.rb'
 
 Metrics/LineLength:
+  Exclude:
+    - 'test/resolver/native_test.rb'
   Max: 120
 
 Metrics/MethodLength:
