@@ -43,7 +43,10 @@ module HTTPX
         @pending << request
         return
       end
-      @requests << request unless @requests.include?(request)
+      unless @requests.include?(request)
+        @requests << request
+        @pipelining = true if @requests.size > 1
+      end
       handle(request)
     end
 
@@ -133,8 +136,14 @@ module HTTPX
     end
 
     def handle_error(ex)
-      @requests.each do |request|
-        emit(:error, request, ex)
+      if @pipelining
+        disable_pipelining
+        emit(:reset)
+        throw(:called)
+      else
+        @requests.each do |request|
+          emit(:error, request, ex)
+        end
       end
     end
 
@@ -149,13 +158,14 @@ module HTTPX
       end
     end
 
-    def disable_concurrency
+    def disable_pipelining
       return if @requests.empty?
       @requests.each { |r| r.transition(:idle) }
       # server doesn't handle pipelining, and probably
       # doesn't support keep-alive. Fallback to send only
       # 1 keep alive request.
       @max_concurrent_requests = 1
+      @pipelining = false
     end
 
     def set_request_headers(request)
