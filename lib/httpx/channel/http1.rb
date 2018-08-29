@@ -12,6 +12,7 @@ module HTTPX
     def initialize(buffer, options)
       @options = Options.new(options)
       @max_concurrent_requests = @options.max_concurrent_requests
+      @max_requests = Float::INFINITY
       @parser = Parser::HTTP1.new(self)
       @buffer = buffer
       @version = [1, 1]
@@ -39,7 +40,8 @@ module HTTPX
     end
 
     def send(request, **)
-      if @requests.size >= @max_concurrent_requests
+      if @max_requests.positive? &&
+         @requests.size >= @max_concurrent_requests
         @pending << request
         return
       end
@@ -131,6 +133,7 @@ module HTTPX
       end
 
       reset
+      @max_requests -= 1
       send(@pending.shift) unless @pending.empty?
       manage_connection(response)
     end
@@ -152,8 +155,18 @@ module HTTPX
     def manage_connection(response)
       connection = response.headers["connection"]
       case connection
+      when /keep\-alive/i
+        keep_alive = response.headers["keep-alive"]
+        return unless keep_alive
+        parameters = Hash[keep_alive.split(/ *, */).map do |pair|
+          pair.split(/ *= */)
+        end]
+        @max_requests = parameters["max"].to_i if parameters.key?("max")
+        @keep_alive_timeout = parameters["timeout"].to_i if parameters.key?("timeout")
+        # TODO: on keep alive timeout, reset
       when /close/i, nil
         disable_pipelining
+        @max_requests = Float::INFINITY
         emit(:reset)
       end
     end
