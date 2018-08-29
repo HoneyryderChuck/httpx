@@ -2,7 +2,7 @@
 
 module Requests
   module ResponseBody
-    def test_http_copy_to_file
+    def test_http_response_copy_to_file
       file = Tempfile.new(%w[cat .jpeg])
       uri = build_uri("/image")
       response = HTTPX.get(uri, headers: { "accept" => "image/jpeg" })
@@ -19,7 +19,7 @@ module Requests
       end
     end
 
-    def test_http_copy_to_io
+    def test_http_response_copy_to_io
       io = StringIO.new
       uri = build_uri("/image")
       response = HTTPX.get(uri, headers: { "accept" => "image/jpeg" })
@@ -32,8 +32,8 @@ module Requests
       io.close if io
     end
 
-    def test_http_buffer_to_custom
-      uri = build_uri("/get")
+    def test_http_response_buffer_to_custom
+      uri = build_uri("/")
       custom_body = Class.new do
         attr_reader :file
 

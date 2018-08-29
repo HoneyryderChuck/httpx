@@ -2,14 +2,21 @@
 
 require "httpx/selector"
 require "httpx/channel"
+require "httpx/resolver"
 
 module HTTPX
   class Connection
     def initialize(options)
       @options = Options.new(options)
       @timeout = options.timeout
+      resolver_type = @options.resolver_class
+      resolver_type = Resolver.registry(resolver_type) if resolver_type.is_a?(Symbol)
       @selector = Selector.new
       @channels = []
+      @resolver = resolver_type.new(self, @options)
+      @resolver.on(:resolve, &method(:on_resolver_channel))
+      @resolver.on(:error, &method(:on_resolver_error))
+      @resolver.on(:close, &method(:on_resolver_close))
     end
 
     def running?
@@ -17,12 +24,13 @@ module HTTPX
     end
 
     def next_tick
-      timeout = @timeout.timeout
-      @selector.select(timeout) do |monitor|
-        if (channel = monitor.value)
-          channel.call
+      catch(:jump_tick) do
+        @selector.select(next_timeout) do |monitor|
+          if (channel = monitor.value)
+            channel.call
+          end
+          monitor.interests = channel.interests
         end
-        monitor.interests = channel.interests
       end
     rescue TimeoutError,
            Errno::ECONNRESET,
@@ -40,7 +48,11 @@ module HTTPX
 
     def build_channel(uri, **options)
       channel = Channel.by(uri, @options.merge(options))
-      register_channel(channel)
+      resolve_channel(channel)
+      channel.once(:unreachable) do
+        @resolver.uncache(channel)
+        resolve_channel(channel)
+      end
       channel
     end
 
@@ -56,14 +68,58 @@ module HTTPX
 
     private
 
+    def resolve_channel(channel)
+      @channels << channel unless @channels.include?(channel)
+      @resolver << channel
+      return if @resolver.empty?
+      @_resolver_monitor ||= begin # rubocop:disable Naming/MemoizedInstanceVariableName
+        monitor = @selector.register(@resolver, :w)
+        monitor.value = @resolver
+        monitor
+      end
+    end
+
+    def on_resolver_channel(channel, addresses)
+      found_channel = @channels.find do |ch|
+        next if ch == channel
+        ch.mergeable?(channel, addresses)
+      end
+      if found_channel
+        found_channel.merge(channel)
+      else
+        register_channel(channel)
+      end
+    end
+
+    def on_resolver_error(ch, error)
+      ch.emit(:error, error)
+      # must remove channel by hand, hasn't been started yet
+      unregister_channel(ch)
+    end
+
+    def on_resolver_close
+      @selector.deregister(@resolver)
+      @_resolver_monitor = nil
+      @resolver.close unless @resolver.closed?
+    end
+
     def register_channel(channel)
       monitor = @selector.register(channel, :w)
       monitor.value = channel
       channel.on(:close) do
-        @channels.delete(channel)
-        @selector.deregister(channel)
+        unregister_channel(channel)
       end
-      @channels << channel
+    end
+
+    def unregister_channel(channel)
+      @channels.delete(channel)
+      @selector.deregister(channel)
+    end
+
+    def next_timeout
+      timeout = @timeout.timeout # force log time
+      return (@resolver.timeout || timeout) unless @resolver.closed?
+      timeout
     end
   end
 end

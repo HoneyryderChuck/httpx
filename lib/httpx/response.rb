@@ -108,7 +108,14 @@ module HTTPX
 
       def to_s
         rewind
-        return @buffer.read.force_encoding(@encoding) if @buffer
+        if @buffer
+          content = @buffer.read
+          begin
+            return content.force_encoding(@encoding)
+          rescue ArgumentError # ex: unknown encoding name - utf
+            return content
+          end
+        end
         ""
       ensure
         close

@@ -1,6 +1,6 @@
 module Requests
   module Errors
-    def test_connection_refused
+    def test_errors_connection_refused
       skip if RUBY_ENGINE == "jruby"
       unavailable_host = URI(origin("localhost"))
       unavailable_host.port = next_available_port

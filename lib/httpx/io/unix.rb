@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "forwardable"
 
 module HTTPX
@@ -6,8 +8,9 @@ module HTTPX
 
     def_delegator :@uri, :port, :scheme
 
-    def initialize(uri, options)
+    def initialize(uri, addresses, options)
       @uri = uri
+      @addresses = addresses
       @state = :idle
       @options = Options.new(options)
       @path = @options.transport_options[:path]

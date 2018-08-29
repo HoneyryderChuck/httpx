@@ -55,6 +55,7 @@ module HTTPX
         :response_body_class      => Class.new(Response::Body),
         :transport                => nil,
         :transport_options        => nil,
+        :resolver_class           => (ENV["HTTPX_RESOLVER"] || :native).to_sym,
       }
 
       defaults.merge!(options)
@@ -86,7 +87,7 @@ module HTTPX
 
     def_option(:transport) do |tr|
       transport = tr.to_s
-      raise Error, "#{transport} is an unsupported transport type" unless IO.registry.keys.include?(transport)
+      raise Error, "#{transport} is an unsupported transport type" unless IO.registry.key?(transport)
       self.transport = transport
     end
 
@@ -94,7 +95,7 @@ module HTTPX
       params form json body
       follow ssl http2_settings
       request_class response_class headers_class request_body_class response_body_class
-      io fallback_protocol debug debug_level transport_options
+      io fallback_protocol debug debug_level transport_options resolver_class resolver_options
     ].each do |method_name|
       def_option(method_name)
     end

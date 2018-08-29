@@ -9,18 +9,22 @@ module HTTPX
 
     attr_reader :ip, :port
 
+    attr_reader :addresses
+
     alias_method :host, :ip
 
-    def initialize(uri, options)
+    def initialize(uri, addresses, options)
       @state = :idle
       @hostname = uri.host
+      @addresses = addresses
+      @ip_index = @addresses.size - 1
       @options = Options.new(options)
       @fallback_protocol = @options.fallback_protocol
       @port = uri.port
       if @options.io
         @io = case @options.io
               when Hash
-                @ip = Resolv.getaddress(@hostname)
+                @ip = @addresses[@ip_index]
                 @options.io[@ip] || @options.io["#{@ip}:#{@port}"]
               else
                 @ip = @hostname
@@ -31,7 +35,7 @@ module HTTPX
           @state = :connected
         end
       else
-        @ip = Resolv.getaddress(@hostname)
+        @ip = @addresses[@ip_index]
       end
       @io ||= build_socket
     end
@@ -55,10 +59,14 @@ module HTTPX
           transition(:idle)
           @io = build_socket
         end
-        @io.connect_nonblock(Socket.sockaddr_in(@port, @ip))
+        @io.connect_nonblock(Socket.sockaddr_in(@port, @ip.to_s))
       rescue Errno::EISCONN
       end
       transition(:connected)
+    rescue Errno::EHOSTUNREACH => e
+      raise e if @ip_index <= 0
+      @ip_index -= 1
+      retry
     rescue Errno::EINPROGRESS,
            Errno::EALREADY,
            ::IO::WaitReadable
@@ -125,8 +133,7 @@ module HTTPX
     private
 
     def build_socket
-      addr = IPAddr.new(@ip)
-      Socket.new(addr.family, :STREAM, 0)
+      Socket.new(@ip.family, :STREAM, 0)
     end
 
     def transition(nextstate)
@@ -141,8 +148,19 @@ module HTTPX
     end
 
     def do_transition(nextstate)
-      log(level: 1, label: "#{inspect}: ") { nextstate.to_s }
+      log(level: 1) do
+        log_transition_state(nextstate)
+      end
       @state = nextstate
+    end
+
+    def log_transition_state(nextstate)
+      case nextstate
+      when :connected
+        "Connected to #{@hostname} (#{@ip}) port #{@port} (##{@io.fileno})"
+      else
+        "#{@ip}:#{@port} #{@state} -> #{nextstate}"
+      end
     end
   end
 end

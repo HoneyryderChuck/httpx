@@ -30,6 +30,14 @@ class RequestTest < Minitest::Test
     assert r2.authority == "google.com", "unexpected authority (#{r2.authority})"
     r3 = Request.new(:get, "http://app.dev:8080/path")
     assert r3.authority == "app.dev:8080", "unexpected authority (#{r3.authority})"
+    r4 = Request.new(:get, "http://127.0.0.1:80/path")
+    assert r4.authority == "127.0.0.1", "unexpected authority (#{r4.authority})"
+    r5 = Request.new(:get, "https://[::1]:443/path")
+    assert r5.authority == "[::1]", "unexpected authority (#{r5.authority})"
+    r6 = Request.new(:get, "http://127.0.0.1:81/path")
+    assert r6.authority == "127.0.0.1:81", "unexpected authority (#{r6.authority})"
+    r7 = Request.new(:get, "https://[::1]:444/path")
+    assert r7.authority == "[::1]:444", "unexpected authority (#{r7.authority})"
   end
 
   def test_request_path
