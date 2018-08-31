@@ -92,7 +92,10 @@ module HTTPX
 
     def merge(channel)
       @hostnames += channel.instance_variable_get(:@hostnames)
-      @pending += channel.instance_variable_get(:@pending)
+      pending = channel.instance_variable_get(:@pending)
+      pending.each do |req, args|
+        send(req, args)
+      end
     end
 
     def match?(uri)
