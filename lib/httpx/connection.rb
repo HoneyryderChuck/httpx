@@ -42,6 +42,7 @@ module HTTPX
     end
 
     def close
+      @resolver.close unless @resolver.closed?
       @channels.each(&:close)
       next_tick until @channels.empty?
     end

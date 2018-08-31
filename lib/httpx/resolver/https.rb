@@ -141,7 +141,7 @@ module HTTPX
           emit_addresses(channel, addresses.map { |addr| addr["data"] })
         end
       end
-      return emit(:close) if @channels.empty?
+      return if @channels.empty?
       resolve
     end
 
