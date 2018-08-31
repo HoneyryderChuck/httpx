@@ -14,7 +14,7 @@ module HTTPX
     register :https,  :HTTPS
 
     @lookup_mutex = Mutex.new
-    @lookups = {}
+    @lookups = Hash.new { |h, k| h[k] = [] }
 
     @identifier_mutex = Mutex.new
     @identifier = 1
@@ -34,7 +34,10 @@ module HTTPX
         entry["TTL"] += now
       end
       @lookup_mutex.synchronize do
-        @lookups[hostname] = entries
+        @lookups[hostname] += entries
+        entries.each do |entry|
+          @lookups[entry["name"]] << entry if entry["name"] != hostname
+        end
       end
     end
 
@@ -80,7 +83,7 @@ module HTTPX
         when Resolv::DNS::Resource::IN::CNAME
           addresses << {
             "name" => question.to_s,
-            "TTL"  => value.ttl,
+            "TTL" => value.ttl,
             "alias" => value.name.to_s,
           }
         when Resolv::DNS::Resource::IN::A,

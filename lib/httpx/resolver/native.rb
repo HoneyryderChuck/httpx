@@ -190,9 +190,13 @@ module HTTPX
         channel = @queries.delete(address["name"])
         return unless channel # probably a retried query for which there's an answer
         if address.key?("alias") # CNAME
-          resolve(channel, address["alias"])
-          @queries.delete(address["name"])
-          return
+          if early_resolve(channel, hostname: address["alias"])
+            @channels.delete(channel)
+          else
+            resolve(channel, address["alias"])
+            @queries.delete(address["name"])
+            return
+          end
         else
           @channels.delete(channel)
           Resolver.cached_lookup_set(channel.uri.host, addresses)
