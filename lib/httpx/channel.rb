@@ -79,9 +79,15 @@ module HTTPX
 
     def mergeable?(channel, addresses)
       return false if @state == :closing || !@io
-      !(@io.addresses & addresses).empty? &&
-        @uri.port == channel.uri.port &&
-        @uri.scheme == channel.uri.scheme
+      return false if (@io.addresses & addresses).empty?
+
+      if @io.protocol == "h2" && @uri.scheme == "https"
+        @io.verify_hostname(channel.uri.host)
+      else
+        @uri.host == channel.uri.host &&
+          @uri.port == channel.uri.port &&
+          @uri.scheme == channel.uri.scheme
+      end
     end
 
     def merge(channel)
