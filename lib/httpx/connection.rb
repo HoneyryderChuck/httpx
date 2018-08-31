@@ -87,6 +87,7 @@ module HTTPX
       end
       if found_channel
         found_channel.merge(channel)
+        @channels.delete(channel)
       else
         register_channel(channel)
       end
