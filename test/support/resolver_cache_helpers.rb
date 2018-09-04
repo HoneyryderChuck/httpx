@@ -5,7 +5,7 @@ module ResolverCachePurge
     @lookup_mutex.synchronize do
       @lookups.clear
     end
-  end 
+  end
 end
 
 HTTPX::Resolver.extend(ResolverCachePurge)
