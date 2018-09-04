@@ -58,7 +58,7 @@ module HTTPX
 
     def_delegator :@write_buffer, :empty?
 
-    attr_reader :uri
+    attr_reader :uri, :state
 
     def initialize(type, uri, options)
       @type = type
@@ -77,10 +77,14 @@ module HTTPX
       @io = IO.registry(@type).new(@uri, addrs, @options)
     end
 
-    def mergeable?(channel, addresses)
+    def mergeable?(addresses)
       return false if @state == :closing || !@io
-      return false if (@io.addresses & addresses).empty?
+      !(@io.addresses & addresses).empty?
+    end
 
+    # coalescable channels need to be mergeable!
+    # but internally, #mergeable? is called before #coalescable?
+    def coalescable?(channel)
       if @io.protocol == "h2" && @uri.scheme == "https"
         @io.verify_hostname(channel.uri.host)
       else
@@ -252,6 +256,7 @@ module HTTPX
         @io.connect
         return unless @io.connected?
         send_pending
+        emit(:open)
       when :closing
         return unless @state == :open
       when :closed
