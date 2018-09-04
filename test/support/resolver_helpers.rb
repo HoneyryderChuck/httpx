@@ -56,6 +56,7 @@ module ResolverHelpers
     return unless resolver.respond_to?(:parse)
     channel = build_channel("http://ipv4c.tlund.se/")
     resolver.queries["ipv4c.tlund.se"] = channel
+    # require "pry-byebug"; binding.pry
     resolver.parse(cname_record)
     assert channel.addresses.nil?
     assert !resolver.queries.key?("ipv4c.tlund.se")
@@ -72,6 +73,11 @@ module ResolverHelpers
   end
 
   private
+
+  def setup
+    super
+    HTTPX::Resolver.purge_lookup_cache
+  end
 
   def build_channel(uri)
     channel = HTTPX::Channel.by(URI(uri), HTTPX::Options.new)

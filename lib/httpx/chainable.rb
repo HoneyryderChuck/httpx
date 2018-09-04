@@ -32,8 +32,8 @@ module HTTPX
     end
     alias_method :plugins, :plugin
 
-    def with(options)
-      branch(default_options.merge(options))
+    def with(options, &blk)
+      branch(default_options.merge(options), &blk)
     end
 
     private
@@ -43,9 +43,9 @@ module HTTPX
     end
 
     # :nodoc:
-    def branch(options)
-      return self.class.new(options) if is_a?(Client)
-      Client.new(options)
+    def branch(options, &blk)
+      return self.class.new(options, &blk) if is_a?(Client)
+      Client.new(options, &blk)
     end
   end
 end

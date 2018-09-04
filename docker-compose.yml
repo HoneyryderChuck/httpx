@@ -25,6 +25,8 @@ services:
       - ./:/home
     entrypoint:
       /home/test/support/ci/build.sh
+    links:
+      - "nghttp2:another"
 
   socksproxy:
     image: qautomatron/docker-3proxy

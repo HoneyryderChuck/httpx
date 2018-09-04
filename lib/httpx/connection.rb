@@ -42,6 +42,7 @@ module HTTPX
     end
 
     def close
+      @resolver.close unless @resolver.closed?
       @channels.each(&:close)
       next_tick until @channels.empty?
     end
@@ -81,13 +82,15 @@ module HTTPX
 
     def on_resolver_channel(channel, addresses)
       found_channel = @channels.find do |ch|
-        next if ch == channel
-        ch.mergeable?(channel, addresses)
+        ch != channel && ch.mergeable?(addresses)
       end
-      if found_channel
-        found_channel.merge(channel)
+      return register_channel(channel) unless found_channel
+      if found_channel.state == :open
+        coalesce_channels(found_channel, channel)
       else
-        register_channel(channel)
+        found_channel.once(:open) do
+          coalesce_channels(found_channel, channel)
+        end
       end
     end
 
@@ -120,6 +123,15 @@ module HTTPX
       timeout = @timeout.timeout # force log time
       return (@resolver.timeout || timeout) unless @resolver.closed?
       timeout
+    end
+
+    def coalesce_channels(ch1, ch2)
+      if ch1.coalescable?(ch2)
+        ch1.merge(ch2)
+        @channels.delete(ch2)
+      else
+        register_channel(ch2)
+      end
     end
   end
 end
