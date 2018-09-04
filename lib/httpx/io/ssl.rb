@@ -28,6 +28,12 @@ module HTTPX
       super
     end
 
+    def verify_hostname(host)
+      return false if @ctx.verify_mode == OpenSSL::SSL::VERIFY_NONE
+      return false if @io.peer_cert.nil?
+      OpenSSL::SSL.verify_certificate_identity(@io.peer_cert, host)
+    end
+
     def close
       super
       # allow reconnections
