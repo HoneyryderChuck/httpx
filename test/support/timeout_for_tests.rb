@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module TimeoutForTest
   # our own subclass so we never confused different timeouts
   class TestTimeout < Timeout::Error
