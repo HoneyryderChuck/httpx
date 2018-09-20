@@ -102,6 +102,19 @@ module HTTPX
       end
     end
 
+    def unmerge(channel)
+      @hostnames -= channel.instance_variable_get(:@hostnames)
+      [@parser.pending, @pending].each do |pending|
+        pending.reject! do |request|
+          request.uri == channel.uri && begin
+            request.transition(:idle)
+            channel.send(request)
+            true
+          end
+        end
+      end
+    end
+
     def match?(uri)
       return false if @state == :closing
 

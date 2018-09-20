@@ -51,11 +51,13 @@ module HTTPX
           uri = URI(request.uri)
           proxy = proxy_params(uri)
           return super unless proxy
-          @connection.find_channel(proxy) || begin
-            channel = build_proxy_channel(proxy, **options)
-            set_channel_callbacks(channel)
-            channel
-          end
+          @connection.find_channel(proxy) || build_channel(proxy, options)
+        end
+
+        def build_channel(proxy, options)
+          channel = build_proxy_channel(proxy, **options)
+          set_channel_callbacks(channel, options)
+          channel
         end
 
         def build_proxy_channel(proxy, **options)

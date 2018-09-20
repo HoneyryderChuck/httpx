@@ -56,16 +56,22 @@ module HTTPX
 
     def find_channel(request, **options)
       uri = URI(request.uri)
-      @connection.find_channel(uri) || begin
-        channel = @connection.build_channel(uri, **options)
-        set_channel_callbacks(channel)
-        channel
+      @connection.find_channel(uri) || build_channel(uri, options)
+    end
+
+    def set_channel_callbacks(channel, options)
+      channel.on(:response, &method(:on_response))
+      channel.on(:promise, &method(:on_promise))
+      channel.on(:uncoalesce) do |uncoalesced_uri|
+        other_channel = build_channel(uncoalesced_uri, options)
+        channel.unmerge(other_channel)
       end
     end
 
-    def set_channel_callbacks(channel)
-      channel.on(:response, &method(:on_response))
-      channel.on(:promise, &method(:on_promise))
+    def build_channel(uri, options)
+      channel = @connection.build_channel(uri, **options)
+      set_channel_callbacks(channel, options)
+      channel
     end
 
     def __build_reqs(*args, **options)
