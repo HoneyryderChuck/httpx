@@ -168,7 +168,13 @@ module HTTPX
         emit(:error, request, ex)
       else
         response = request.response
-        emit(:response, request, response)
+        if response.status == 421
+          ex = MisdirectedRequestError.new(response)
+          ex.set_backtrace(caller)
+          emit(:error, request, ex)
+        else
+          emit(:response, request, response)
+        end
       end
       log(level: 2, label: "#{stream.id}: ") { "closing stream" }
 
