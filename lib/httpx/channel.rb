@@ -240,8 +240,13 @@ module HTTPX
         end
       end
       parser.on(:error) do |request, ex|
-        response = ErrorResponse.new(ex, @options)
-        emit(:response, request, response)
+        case ex
+        when MisdirectedRequestError
+          emit(:uncoalesce, request.uri)
+        else
+          response = ErrorResponse.new(ex, @options)
+          emit(:response, request, response)
+        end
       end
       parser
     end
