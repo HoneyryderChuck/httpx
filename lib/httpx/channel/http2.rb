@@ -191,7 +191,7 @@ module HTTPX
                                   @connection.remote_settings[:settings_max_concurrent_streams]].min
     end
 
-    def on_close(error)
+    def on_close(_last_frame, error, _payload)
       if error
         ex = Error.new(0, error)
         ex.set_backtrace(caller)
