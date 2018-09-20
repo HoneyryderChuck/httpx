@@ -19,4 +19,6 @@ module HTTPX
       @response.status
     end
   end
+
+  MisdirectedRequestError = Class.new(HTTPError)
 end
