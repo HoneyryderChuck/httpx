@@ -10,7 +10,7 @@ module HTTPX
 
       module InstanceMethods
         def basic_authentication(user, password)
-          authentication("Basic #{Base64.strict_encode64("#{user}:#{password}")}")
+          authentication("Basic #{Base64.strict_encode64("#{URI.escape(user)}:#{URI.escape(password)}")}")
         end
         alias_method :basic_auth, :basic_authentication
       end
