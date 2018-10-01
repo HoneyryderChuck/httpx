@@ -13,7 +13,7 @@ module HTTPX
     end
 
     def timeout(**args)
-      branch(timeout: args)
+      branch(default_options.with_timeout(args))
     end
 
     def headers(headers)
