@@ -5,7 +5,15 @@ module HTTPX
 
   UnsupportedSchemeError = Class.new(Error)
 
-  TimeoutError = Class.new(Error)
+  TimeoutError = Class.new(Error) do
+    def to_connection_error
+      ex = ConnectTimeoutError.new(message)
+      ex.set_backtrace(backtrace)
+      ex
+    end
+  end
+
+  ConnectTimeoutError = Class.new(TimeoutError)
 
   ResolveError = Class.new(Error)
 

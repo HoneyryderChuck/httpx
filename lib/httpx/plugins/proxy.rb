@@ -119,6 +119,10 @@ module HTTPX
       @pending << [request, args]
     end
 
+    def connecting?
+      super || @state == :connecting || @state == :connected
+    end
+
     def to_io
       case @state
       when :idle

@@ -141,6 +141,10 @@ module HTTPX
       end
     end
 
+    def connecting?
+      @state == :idle
+    end
+
     def interests
       return :w if @state == :idle
       readable = !@read_buffer.full?

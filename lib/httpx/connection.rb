@@ -32,8 +32,13 @@ module HTTPX
           monitor.interests = channel.interests
         end
       end
-    rescue TimeoutError,
-           Errno::ECONNRESET,
+    rescue TimeoutError => timeout_error
+      @channels.each do |ch|
+        error = timeout_error
+        error = error.to_connection_error if ch.connecting?
+        ch.emit(:error, error)
+      end
+    rescue Errno::ECONNRESET,
            Errno::ECONNABORTED,
            Errno::EPIPE => ex
       @channels.each do |ch|
