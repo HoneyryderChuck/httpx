@@ -105,7 +105,7 @@ module HTTPX
       stream.on(:half_close) do
         log(level: 2, label: "#{stream.id}: ") { "waiting for response..." }
       end
-      # stream.on(:altsvc)
+      stream.on(:altsvc, &method(:on_altsvc).curry[request.authority])
       stream.on(:headers, &method(:on_stream_headers).curry[stream, request])
       stream.on(:data, &method(:on_stream_data).curry[stream, request])
     end
@@ -225,9 +225,17 @@ module HTTPX
       end
     end
 
-    def on_altsvc(frame)
+    def on_altsvc(origin, frame)
       log(level: 2, label: "#{frame[:stream]}: ") { "altsvc frame was received" }
       log(level: 2, label: "#{frame[:stream]}: ") { frame.inspect }
+      origin ||= frame[:origin]
+      alt_proto = frame[:proto]
+      alt_host = frame[:host]
+      alt_port = frame[:port]
+      alt_uri = URI.parse("#{alt_proto}://#{alt_host}:#{alt_port}")
+      log(level: 1, label: "#{frame[:stream]} ") { "#{origin} alt-svc: #{alt_uri}" }
+      params = { "ma" => frame[:max_age] }
+      emit(:alternate_service, alt_uri, origin, params)
     end
 
     def on_promise(stream)
