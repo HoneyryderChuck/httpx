@@ -102,6 +102,8 @@ The test suite runs against [httpbin proxied over nghttp2](https://nghttp2.org/h
 
 All Rubies greater or equal to 2.1, and always latest JRuby.
 
+**Note**: This gem is tested against all latest patch versions, i.e. if you're using 2.2.0 and you experience some issue, please test it against 2.2.10 (latest patch version of 2.2) before creating an issue.
+
 ## Resources
 |               |                                                     |
 | ------------- | --------------------------------------------------- |
@@ -112,11 +114,17 @@ All Rubies greater or equal to 2.1, and always latest JRuby.
 
 ## Caveats
 
+### ALPN support
+
 `HTTPS` TLS backend is ruby's own `openssl` gem.
 
 If your requirement is to run requests over HTTP/2 and TLS, make sure you run a version of the gem which compiles OpenSSL 1.0.2 (Ruby 2.3 and higher are guaranteed to).
 
 JRuby's `openssl` is based on Bouncy Castle, which is massively outdated and still doesn't implement ALPN. So HTTP/2 over TLS/ALPN negotiation is off until JRuby figures this out.
+
+### Known bugs
+
+Doesn't work with ruby 2.4.0 for Windows (see [#36](https://gitlab.com/honeyryderchuck/httpx/issues/36)).
 
 ## Contributing
 
