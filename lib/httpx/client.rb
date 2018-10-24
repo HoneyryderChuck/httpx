@@ -84,8 +84,8 @@ module HTTPX
                  when 2, 3
                    verb, uris = args
                    if uris.respond_to?(:each)
-                     uris.map do |uri|
-                       __build_req(verb, uri, options)
+                     uris.map do |uri, **opts|
+                       __build_req(verb, uri, options.merge(opts))
                      end
                    else
                      [__build_req(verb, uris, options)]
