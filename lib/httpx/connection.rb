@@ -119,12 +119,6 @@ module HTTPX
       @selector.deregister(channel)
     end
 
-    def next_timeout
-      timeout = @timeout.timeout # force log time
-      return (@resolver.timeout || timeout) unless @resolver.closed?
-      timeout
-    end
-
     def coalesce_channels(ch1, ch2)
       if ch1.coalescable?(ch2)
         ch1.merge(ch2)
@@ -132,6 +126,12 @@ module HTTPX
       else
         register_channel(ch2)
       end
+    end
+
+    def next_timeout
+      timeout = @timeout.timeout # force log time
+      return (@resolver.timeout || timeout) unless @resolver.closed?
+      timeout
     end
   end
 end

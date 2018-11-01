@@ -65,12 +65,37 @@ module HTTPX
         other_channel = build_channel(uncoalesced_uri, options)
         channel.unmerge(other_channel)
       end
+      channel.on(:alternative_service) do |alt_uri, origin, params|
+        build_alternative_channel(channel, alt_uri, origin, params, options)
+      end
     end
 
     def build_channel(uri, options)
       channel = @connection.build_channel(uri, **options)
       set_channel_callbacks(channel, options)
       channel
+    end
+
+    def build_alternative_channel(existing_channel, alt_uri, origin, params, options)
+      altsvc = AltSvc.cached_lookup(origin) ||
+        AltSvc.cached_lookup_set(origin, params.merge("origin" => alt_uri))
+
+      # altsvc already exists, somehow it wasn't advertised, probably noop
+      return unless altsvc
+
+      channel = build_channel(alt_uri, options)
+      return if channel == existing_channel
+
+
+      log(level: 1) { "#{origin} alt-svc: #{alt_uri}" }
+      # get uninitialized requests
+      existing_channel.pending.reject do |request, _|
+        request.origin == origin && request.state == :idle
+      end.each do |request, args|
+        channel.send(request, args)
+      end
+    rescue UnsupportedSchemeError
+      altsvc["noop"] = true
     end
 
     def __build_reqs(*args, **options)

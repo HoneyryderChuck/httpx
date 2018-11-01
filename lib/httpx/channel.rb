@@ -44,8 +44,13 @@ module HTTPX
       def by(uri, options)
         type = options.transport || begin
           case uri.scheme
-          when "http" then "tcp"
-          when "https" then "ssl"
+          when "http"
+            "tcp"
+          when "https"
+            "ssl"
+          when "h2"
+            options = options.merge(ssl: { alpn_protocols: %[h2]})
+            "ssl"
           else
             raise UnsupportedSchemeError, "#{uri}: #{uri.scheme}: unsupported URI scheme"
           end
@@ -58,7 +63,7 @@ module HTTPX
 
     def_delegator :@write_buffer, :empty?
 
-    attr_reader :uri, :state
+    attr_reader :uri, :state, :pending
 
     def initialize(type, uri, options)
       @type = type
@@ -118,9 +123,18 @@ module HTTPX
     def match?(uri)
       return false if @state == :closing
 
-      @hostnames.include?(uri.host) &&
+      (@hostnames.include?(uri.host) &&
         uri.port == @uri.port &&
-        uri.scheme == @uri.scheme
+        uri.scheme == @uri.scheme) || match_alternative_service?(uri)
+    end
+
+    def match_alternative_service?(uri)
+      AltSvc.cached_lookup(@uri.host).any? do |altsvc|
+        origin = altsvc["origin"]
+        uri.host == origin.host &&
+        uri.port == origin.port &&
+        uri.scheme == origin.scheme
+      end
     end
 
     def interests
