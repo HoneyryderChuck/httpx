@@ -77,6 +77,10 @@ module HTTPX
       "#{host}#{port_string}"
     end
 
+    def origin
+      "#{scheme}://#{authority}"
+    end
+
     def query
       return @query if defined?(@query)
       query = []
