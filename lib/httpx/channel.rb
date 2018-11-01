@@ -47,7 +47,7 @@ module HTTPX
           when "http" then "tcp"
           when "https" then "ssl"
           else
-            raise Error, "#{uri}: #{uri.scheme}: unsupported URI scheme"
+            raise UnsupportedSchemeError, "#{uri}: #{uri.scheme}: unsupported URI scheme"
           end
         end
         new(type, uri, options)
