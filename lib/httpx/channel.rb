@@ -238,6 +238,7 @@ module HTTPX
     def build_parser(protocol = @io.protocol)
       parser = registry(protocol).new(@write_buffer, @options)
       parser.on(:response) do |*args|
+        parse_alternative_services(*args)
         emit(:response, *args)
       end
       parser.on(:promise) do |*args|
@@ -299,6 +300,17 @@ module HTTPX
       handle_error(e)
       @state = :closed
       emit(:close)
+    end
+
+    def parse_alternative_services(request, response)
+      # Alt-Svc
+      return if not response.headers.key?("alt-svc")
+      origin = request.origin
+      host = request.authority
+      Utils.parse_altsvc(response.headers["alt-svc"]) do |alt_uri, params|
+        alt_uri.host ||= host
+        emit(:alternative_service, alt_uri, origin, params)
+      end
     end
 
     def on_error(ex)

@@ -127,19 +127,6 @@ module HTTPX
         throw(:called)
       end
 
-      # Alt-Svc
-      if response.headers.key?("alt-svc")
-        origin = request.authority
-        alt_uri, *params = response.headers["alt-svc"].split(/ *; */)
-        alt_proto, alt_uri = alt_uri.split("=")
-        alt_uri = alt_uri[1..-2] if alt_uri.start_with?("\"") && alt_uri.end_with?("\"")
-        alt_uri = URI.parse("#{alt_proto}://#{alt_uri}")
-        alt_uri.host ||= request.authority
-        params = Hash[params.split(/ *, */).map { |field| field.split("=") }]
-        log(level: 1) { "#{origin} alt-svc: #{alt_uri}" }
-        emit(:alternative_service, alt_uri, origin, params)
-      end
-
       reset
       send(@pending.shift) unless @pending.empty?
       return unless response.headers["connection"] == "close"
