@@ -25,7 +25,7 @@ module HTTPX
     end
 
     def lookup(origin, ttl)
-      return unless @lookups.key?(origin)
+      return [] unless @lookups.key?(origin)
       @lookups[origin] = @lookups[origin].select do |entry|
         !entry.key?("TTL") || entry["TTL"] > ttl
       end
