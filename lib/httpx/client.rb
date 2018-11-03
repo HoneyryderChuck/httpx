@@ -82,7 +82,7 @@ module HTTPX
       # altsvc already exists, somehow it wasn't advertised, probably noop
       return unless altsvc
 
-      channel = build_channel(alt_origin, options)
+      channel = @connection.find_channel(alt_origin) || build_channel(alt_origin, options)
       # advertised altsvc is the same origin being used, ignore
       return if channel == existing_channel
 
