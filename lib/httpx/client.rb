@@ -65,8 +65,8 @@ module HTTPX
         other_channel = build_channel(uncoalesced_uri, options)
         channel.unmerge(other_channel)
       end
-      channel.on(:alternative_service) do |alt_uri, origin, params|
-        build_alternative_channel(channel, alt_uri, origin, params, options)
+      channel.on(:altsvc) do |alt_origin, origin, alt_params|
+        build_altsvc_channel(channel, alt_origin, origin, alt_params, options)
       end
     end
 
@@ -76,22 +76,28 @@ module HTTPX
       channel
     end
 
-    def build_alternative_channel(existing_channel, alt_uri, origin, params, options)
-      altsvc = AltSvc.cached_lookup(origin) ||
-               AltSvc.cached_lookup_set(origin, params.merge("origin" => alt_uri))
+    def build_altsvc_channel(existing_channel, alt_origin, origin, alt_params, options)
+      altsvc = AltSvc.cached_altsvc_set(origin, alt_params.merge("origin" => alt_origin))
 
       # altsvc already exists, somehow it wasn't advertised, probably noop
       return unless altsvc
 
-      channel = build_channel(alt_uri, options)
+      channel = build_channel(alt_origin, options)
+      # advertised altsvc is the same origin being used, ignore
       return if channel == existing_channel
 
-      log(level: 1) { "#{origin} alt-svc: #{alt_uri}" }
+      log(level: 1) { "#{origin} alt-svc: #{alt_origin}" }
+
       # get uninitialized requests
-      existing_channel.pending.reject do |request, _|
-        request.origin == origin && request.state == :idle
-      end.each do |request, args|
-        channel.send(request, args)
+      # incidentally, all requests will be re-routed to the first
+      # advertised alt-svc, which incidentally follows the spec.
+      existing_channel.pending.delete_if do |request, args|
+        is_idle = request.origin == origin && request.state == :idle
+        if is_idle
+          log(level: 1) { "#{origin} alt-svc: sending #{request.uri} to #{alt_origin}" }
+          channel.send(request, args)
+        end
+        is_idle
       end
     rescue UnsupportedSchemeError
       altsvc["noop"] = true

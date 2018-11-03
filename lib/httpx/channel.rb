@@ -123,11 +123,13 @@ module HTTPX
     def match?(uri)
       return false if @state == :closing
 
-      @origins.include?(uri.origin) || match_alternative_service?(uri)
+      @origins.include?(uri.origin) || match_altsvcs?(uri)
     end
 
-    def match_alternative_service?(uri)
-      AltSvc.cached_lookup(@uri.host).any? do |altsvc|
+    # checks if this is channel is an alternative service of
+    # +uri+
+    def match_altsvcs?(uri)
+      AltSvc.cached_altsvc(@uri.origin).any? do |altsvc|
         origin = altsvc["origin"]
         uri.origin == origin.to_s
       end
@@ -248,7 +250,9 @@ module HTTPX
     def build_parser(protocol = @io.protocol)
       parser = registry(protocol).new(@write_buffer, @options)
       parser.on(:response) do |*args|
-        parse_alternative_services(*args)
+        AltSvc.emit(*args) do |alt_origin, origin, alt_params|
+          emit(:altsvc, alt_origin, origin, alt_params)
+        end
         emit(:response, *args)
       end
       parser.on(:promise) do |*args|
@@ -310,17 +314,6 @@ module HTTPX
       handle_error(e)
       @state = :closed
       emit(:close)
-    end
-
-    def parse_alternative_services(request, response)
-      # Alt-Svc
-      return unless response.headers.key?("alt-svc")
-      origin = request.origin
-      host = request.authority
-      Utils.parse_altsvc(response.headers["alt-svc"]) do |alt_uri, params|
-        alt_uri.host ||= host
-        emit(:alternative_service, alt_uri, origin, params)
-      end
     end
 
     def on_error(ex)
