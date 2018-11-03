@@ -91,8 +91,10 @@ module HTTPX
       # get uninitialized requests
       # incidentally, all requests will be re-routed to the first
       # advertised alt-svc, which incidentally follows the spec.
-        is_idle = request.origin == origin && request.state == :idle
       existing_channel.purge_pending do |request, args|
+        is_idle = request.origin == origin &&
+                  request.state == :idle &&
+                  !request.headers.key?("alt-used")
         if is_idle
           log(level: 1) { "#{origin} alt-svc: sending #{request.uri} to #{alt_origin}" }
           channel.send(request, args)

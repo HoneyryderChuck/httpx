@@ -175,6 +175,7 @@ module HTTPX
       if @error_response
         emit(:response, request, @error_response)
       elsif @parser && !@write_buffer.full?
+        request.headers["alt-used"] = @uri.authority if match_altsvcs?(request.uri)
         parser.send(request, **args)
       else
         @pending << [request, args]
