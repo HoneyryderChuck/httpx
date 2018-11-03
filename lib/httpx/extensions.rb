@@ -64,6 +64,20 @@ module HTTPX
       def origin
         "#{scheme}://#{authority}"
       end
+
+      def altsvc_match?(uri)
+        uri = URI.parse(uri)
+        self == uri || begin
+          case scheme
+          when 'h2'
+            uri.scheme == "https" &&
+            host == uri.host &&
+            (port || default_port) == (uri.port || uri.default_port)
+          else
+            false
+          end
+        end
+      end
     end
   end
 end

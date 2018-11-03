@@ -137,7 +137,7 @@ module HTTPX
     def match_altsvcs?(uri)
       AltSvc.cached_altsvc(@uri.origin).any? do |altsvc|
         origin = altsvc["origin"]
-        uri.origin == origin.to_s
+        origin.altsvc_match?(uri.origin)
       end
     end
 
