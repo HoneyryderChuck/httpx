@@ -109,13 +109,19 @@ module HTTPX
 
     def unmerge(channel)
       @origins -= channel.instance_variable_get(:@origins)
+      purge_pending do |request, arsgs|
+        request.uri == channel.uri && begin
+          request.transition(:idle)
+          channel.send(request, *args)
+          true
+        end
+      end
+    end
+
+    def purge_pending
       [@parser.pending, @pending].each do |pending|
-        pending.reject! do |request|
-          request.uri == channel.uri && begin
-            request.transition(:idle)
-            channel.send(request)
-            true
-          end
+        pending.reject! do |request, *args|
+          yield(request, args)
         end
       end
     end
