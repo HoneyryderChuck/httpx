@@ -78,14 +78,13 @@ module HTTPX
 
     def build_alternative_channel(existing_channel, alt_uri, origin, params, options)
       altsvc = AltSvc.cached_lookup(origin) ||
-        AltSvc.cached_lookup_set(origin, params.merge("origin" => alt_uri))
+               AltSvc.cached_lookup_set(origin, params.merge("origin" => alt_uri))
 
       # altsvc already exists, somehow it wasn't advertised, probably noop
       return unless altsvc
 
       channel = build_channel(alt_uri, options)
       return if channel == existing_channel
-
 
       log(level: 1) { "#{origin} alt-svc: #{alt_uri}" }
       # get uninitialized requests

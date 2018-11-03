@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module HTTPX
-  module AltSvc 
+  module AltSvc
     @lookup_mutex = Mutex.new
     @lookups = Hash.new { |h, k| h[k] = [] }
 
@@ -29,11 +29,8 @@ module HTTPX
       @lookups[origin] = @lookups[origin].select do |entry|
         !entry.key?("TTL") || entry["TTL"] > ttl
       end
-      @lookups[origin].select do |entry|
-        !entry["noop"]
-      end.find do |entry|
-        entry["origin"] == origin
-      end
+      @lookups[origin].reject { |entry| entry["noop"] }
+                      .find { |entry| entry["origin"] == origin }
     end
   end
 end

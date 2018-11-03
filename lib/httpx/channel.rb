@@ -49,7 +49,7 @@ module HTTPX
           when "https"
             "ssl"
           when "h2"
-            options = options.merge(ssl: { alpn_protocols: %[h2]})
+            options = options.merge(ssl: { alpn_protocols: %(h2) })
             "ssl"
           else
             raise UnsupportedSchemeError, "#{uri}: #{uri.scheme}: unsupported URI scheme"
@@ -318,7 +318,7 @@ module HTTPX
 
     def parse_alternative_services(request, response)
       # Alt-Svc
-      return if not response.headers.key?("alt-svc")
+      return unless response.headers.key?("alt-svc")
       origin = request.origin
       host = request.authority
       Utils.parse_altsvc(response.headers["alt-svc"]) do |alt_uri, params|

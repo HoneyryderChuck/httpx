@@ -4,7 +4,7 @@ module HTTPX
   Error = Class.new(StandardError)
 
   UnsupportedSchemeError = Class.new(Error)
-  
+
   TimeoutError = Class.new(Error)
 
   ResolveError = Class.new(Error)
