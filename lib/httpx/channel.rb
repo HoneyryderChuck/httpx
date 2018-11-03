@@ -255,6 +255,10 @@ module HTTPX
         end
         emit(:response, *args)
       end
+      parser.on(:altsvc) do |alt_origin, origin, alt_params|
+        emit(:altsvc, alt_origin, origin, alt_params)
+      end
+
       parser.on(:promise) do |*args|
         emit(:promise, *args)
       end
