@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
-require "http_parser"
+# require "http_parser"
+require "httpx/parser/http1"
 
 module HTTPX
   class Channel::HTTP1
@@ -12,8 +13,9 @@ module HTTPX
     def initialize(buffer, options)
       @options = Options.new(options)
       @max_concurrent_requests = @options.max_concurrent_requests
-      @parser = HTTP::Parser.new(self)
-      @parser.header_value_type = :arrays
+      # @parser = HTTP::Parser.new(self)
+      @parser = Parser::HTTP1.new
+      # @parser.header_value_type = :arrays
       @buffer = buffer
       @version = [1, 1]
       @pending = []
@@ -38,7 +40,7 @@ module HTTPX
     end
 
     def <<(data)
-      @parser << data
+      @parser.parse(data)
       dispatch if @has_response
     end
 
@@ -115,7 +117,7 @@ module HTTPX
         # we need to reset it and artificially move it to receive headers state,
         # hence the bogus headline
         #
-        @parser.reset!
+        # @parser.reset!
         @parser << "#{request.verb.to_s.upcase} #{request.path} HTTP/#{response.version}#{CRLF}"
       else
         @has_response = true
