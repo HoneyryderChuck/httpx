@@ -5,6 +5,7 @@ require "forwardable"
 module HTTPX
   class Request
     extend Forwardable
+    using URIExtensions
 
     METHODS = [
       # RFC 2616: Hypertext Transfer Protocol -- HTTP/1.1
@@ -71,14 +72,14 @@ module HTTPX
       path
     end
 
+    # https://bugs.ruby-lang.org/issues/15278
     def authority
-      host = @uri.host
-      port_string = @uri.port == @uri.default_port ? nil : ":#{@uri.port}"
-      "#{host}#{port_string}"
+      @uri.authority
     end
 
+    # https://bugs.ruby-lang.org/issues/15278
     def origin
-      "#{scheme}://#{authority}"
+      @uri.origin
     end
 
     def query

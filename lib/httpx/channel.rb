@@ -35,6 +35,8 @@ module HTTPX
     include Loggable
     include Callbacks
 
+    using URIExtensions
+
     require "httpx/channel/http2"
     require "httpx/channel/http1"
 
@@ -68,7 +70,7 @@ module HTTPX
     def initialize(type, uri, options)
       @type = type
       @uri = uri
-      @hostnames = [@uri.host]
+      @origins = [@uri.origin]
       @options = Options.new(options)
       @window_size = @options.window_size
       @read_buffer = Buffer.new(BUFFER_SIZE)
@@ -93,14 +95,12 @@ module HTTPX
       if @io.protocol == "h2" && @uri.scheme == "https"
         @io.verify_hostname(channel.uri.host)
       else
-        @uri.host == channel.uri.host &&
-          @uri.port == channel.uri.port &&
-          @uri.scheme == channel.uri.scheme
+        @uri.origin == channel.uri.origin
       end
     end
 
     def merge(channel)
-      @hostnames += channel.instance_variable_get(:@hostnames)
+      @origins += channel.instance_variable_get(:@origins)
       pending = channel.instance_variable_get(:@pending)
       pending.each do |req, args|
         send(req, args)
@@ -108,7 +108,7 @@ module HTTPX
     end
 
     def unmerge(channel)
-      @hostnames -= channel.instance_variable_get(:@hostnames)
+      @origins -= channel.instance_variable_get(:@origins)
       [@parser.pending, @pending].each do |pending|
         pending.reject! do |request|
           request.uri == channel.uri && begin
@@ -123,17 +123,13 @@ module HTTPX
     def match?(uri)
       return false if @state == :closing
 
-      (@hostnames.include?(uri.host) &&
-        uri.port == @uri.port &&
-        uri.scheme == @uri.scheme) || match_alternative_service?(uri)
+      @origins.include?(uri.origin) || match_alternative_service?(uri)
     end
 
     def match_alternative_service?(uri)
       AltSvc.cached_lookup(@uri.host).any? do |altsvc|
         origin = altsvc["origin"]
-        uri.host == origin.host &&
-        uri.port == origin.port &&
-        uri.scheme == origin.scheme
+        uri.origin == origin.to_s
       end
     end
 
