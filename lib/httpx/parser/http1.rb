@@ -6,7 +6,6 @@ module HTTPX
 
     class HTTP1
       include Callbacks
-      CRLF = "\r\n".b
 
       attr_reader :status_code, :http_version, :headers
 
@@ -45,14 +44,14 @@ module HTTPX
       end
 
       def parse_headline
-        idx = @buffer.index(CRLF)
+        idx = @buffer.index("\n")
         return unless idx
         (m = /\AHTTP(?:\/(\d+\.\d+))?\s+(\d\d\d)(?:\s+(.*))?/in.match(@buffer)) ||
           raise(Error, "wrong head line format")
         version, code, _ = m.captures
         @http_version = version.split(".").map(&:to_i)
         @status_code = code.to_i
-        @buffer.slice!(0, idx + 2)
+        @buffer.slice!(0, idx + 1)
         nextstate(:headers)
         # TODO: verify
       end
@@ -60,8 +59,8 @@ module HTTPX
       def parse_headers
         headers = {}
         key = value = nil
-        while idx = @buffer.index(CRLF)
-          line = @buffer.slice!(0, idx + 2).sub(/\s+\z/, "")
+        while idx = @buffer.index("\n")
+          line = @buffer.slice!(0, idx + 1).sub(/\s+\z/, "")
           if line.empty?
             case @state
             when :headers
