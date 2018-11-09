@@ -26,6 +26,14 @@ module HTTPX
         @buffer.clear
       end
 
+      def upgrade?
+        @upgrade
+      end
+
+      def upgrade_data
+        @buffer
+      end
+      
       private
 
       def parse
@@ -119,6 +127,8 @@ module HTTPX
       end
 
       def prepare_data(headers)
+        @upgrade = headers.key?('upgrade')
+
         @_has_trailers = headers.key?('trailer')
 
         if tr_encodings = headers['transfer-encoding']
