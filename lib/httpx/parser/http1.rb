@@ -93,7 +93,7 @@ module HTTPX
           @buffer.each do |chunk|
             emit(:data, chunk)
           end
-        else
+        elsif @content_length
           if @buffer.bytesize > @content_length
             @content_length -= @buffer.bytesize
             emit(:data, @buffer)
@@ -104,6 +104,9 @@ module HTTPX
             emit(:data, data)
             data.clear
           end
+        else
+          emit(:data, @buffer)
+          @buffer.clear
         end
         if no_more_data?
           @buffer = @buffer.to_s
@@ -128,15 +131,19 @@ module HTTPX
             end
           end
         else
-          @content_length = headers["content-length"][0].to_i
+          if headers.key?("content-length")
+            @content_length = headers["content-length"][0].to_i
+          end
         end
       end
 
       def no_more_data?
         if @content_length
           @content_length <= 0
-        else
+        elsif @buffer.respond_to?(:finished)
           @buffer.finished?
+        else
+          false
         end
       end
 
