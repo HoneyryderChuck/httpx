@@ -15,6 +15,7 @@ module HTTPX
       @parser = Parser::HTTP1.new
       @parser.on(:start, &method(:on_message_begin))
       @parser.on(:headers, &method(:on_headers_complete))
+      @parser.on(:trailers, &method(:on_trailer_headers_complete))
       @parser.on(:data, &method(:on_body))
       @parser.on(:complete, &method(:on_message_complete))
       @buffer = buffer
@@ -77,7 +78,6 @@ module HTTPX
     end
 
     def on_headers_complete(h)
-      return on_trailer_headers_complete(h) if @parser_trailers
       # Wait for fix: https://github.com/tmm1/http_parser.rb/issues/52
       # callback is called 2 times when chunked
       request = @requests.first
@@ -113,13 +113,6 @@ module HTTPX
       response = request.response
 
       if !@parser_trailers && response.headers.key?("trailer")
-        @parser_trailers = true
-        # this is needed, because the parser can't accept further headers.
-        # we need to reset it and artificially move it to receive headers state,
-        # hence the bogus headline
-        #
-        # @parser.reset!
-        @parser << "#{request.verb.to_s.upcase} #{request.path} HTTP/#{response.version}#{CRLF}"
       else
         @has_response = true
       end
