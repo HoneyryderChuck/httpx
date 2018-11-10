@@ -79,7 +79,6 @@ module HTTPX
               emit(:headers, headers)
               prepare_data(headers)
               nextstate(:data)
-              nextstate(:complete) if bodyless?
               headers.clear
             when :trailers
               emit(:trailers, headers)
@@ -129,15 +128,6 @@ module HTTPX
             nextstate(:complete)
           end
         end
-      end
-
-      def bodyless?
-        (100..199).cover?(@status_code) ||
-          @status_code == 304 ||
-          @status_code == 204 ||
-          @status_code == 205 ||
-          (@content_length && @content_length.zero?) ||
-          (!@content_length && !@headers.key?("transfer-encoding"))
       end
 
       def prepare_data(headers)

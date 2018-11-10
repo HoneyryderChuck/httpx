@@ -90,7 +90,7 @@ module HTTPX
       log(color: :yellow) { response.headers.each.map { |f, v| "-> HEADER: #{f}: #{v}" }.join("\n") }
 
       @request.response = response
-      on_message_complete if @request.verb == :head
+      on_message_complete if response.complete?
     end
 
     def on_trailer_headers_complete(h)
