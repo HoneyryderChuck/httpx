@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# require "http_parser"
 require "httpx/parser/http1"
 
 module HTTPX
@@ -13,9 +12,11 @@ module HTTPX
     def initialize(buffer, options)
       @options = Options.new(options)
       @max_concurrent_requests = @options.max_concurrent_requests
-      # @parser = HTTP::Parser.new(self)
       @parser = Parser::HTTP1.new
-      # @parser.header_value_type = :arrays
+      @parser.on(:start, &method(:on_message_begin))
+      @parser.on(:headers, &method(:on_headers_complete))
+      @parser.on(:data, &method(:on_body))
+      @parser.on(:complete, &method(:on_message_complete))
       @buffer = buffer
       @version = [1, 1]
       @pending = []
@@ -40,7 +41,7 @@ module HTTPX
     end
 
     def <<(data)
-      @parser.parse(data)
+      @parser << data
       dispatch if @has_response
     end
 
@@ -132,7 +133,10 @@ module HTTPX
 
     def dispatch
       request = @requests.first
-      return handle(request) if request.expects?
+      if request.expects?
+        reset
+        return handle(request)
+      end
 
       @requests.shift
       response = request.response
@@ -180,7 +184,7 @@ module HTTPX
     end
 
     def handle(request)
-      @has_response = false
+      @has_response = false # TODO: maybe erase?
       set_request_headers(request)
       catch(:buffer_full) do
         request.transition(:headers)
