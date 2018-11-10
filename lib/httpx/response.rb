@@ -179,7 +179,7 @@ module HTTPX
         when :memory
           if @length > @threshold_size
             aux = @buffer
-            @buffer = Tempfile.new("palanca", encoding: @encoding, mode: File::RDWR)
+            @buffer = Tempfile.new("httpx", encoding: @encoding, mode: File::RDWR)
             aux.rewind
             ::IO.copy_stream(aux, @buffer)
             # TODO: remove this if/when minor ruby is 2.3
