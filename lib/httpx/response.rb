@@ -65,9 +65,9 @@ module HTTPX
 
     def no_data?
       @status < 200 ||
-      @status == 204 ||
-      @status == 205 ||
-      @status == 304 || begin
+        @status == 204 ||
+        @status == 205 ||
+        @status == 304 || begin
         content_length = @headers["content-length"]
         return false if content_length.nil?
         content_length == "0"

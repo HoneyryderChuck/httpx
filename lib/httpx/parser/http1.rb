@@ -77,8 +77,12 @@ module HTTPX
             case @state
             when :headers
               emit(:headers, headers)
-              prepare_data(headers)
-              nextstate(:data)
+              if @state == :headers
+                # state might have been reset
+                # in the :headers callback
+                prepare_data(headers)
+                nextstate(:data)
+              end
               headers.clear
             when :trailers
               emit(:trailers, headers)
