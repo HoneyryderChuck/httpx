@@ -36,6 +36,8 @@ module HTTPX::Transcoder
 
       def_delegator :@buffer, :<<
 
+      def_delegator :@buffer, :clear
+
       def initialize(buffer)
         @buffer = buffer
         @chunk_length = nil
