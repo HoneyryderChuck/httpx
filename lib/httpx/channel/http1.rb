@@ -22,12 +22,10 @@ module HTTPX
       @version = [1, 1]
       @pending = []
       @requests = []
-      @has_response = false
     end
 
     def reset
       @parser.reset!
-      @has_response = false
     end
 
     def close
@@ -43,7 +41,6 @@ module HTTPX
 
     def <<(data)
       @parser << data
-      dispatch if @has_response
     end
 
     def send(request, **)
@@ -93,8 +90,15 @@ module HTTPX
       log(color: :yellow) { response.headers.each.map { |f, v| "-> HEADER: #{f}: #{v}" }.join("\n") }
 
       request.response = response
+      dispatch if request.verb == :head
+    end
 
-      @has_response = true if response.complete?
+    def on_trailer_headers_complete(h)
+      response = @requests.first.response
+      log(level: 2) { "trailer headers received" }
+
+      log(color: :yellow) { h.each.map { |f, v| "-> HEADER: #{f}: #{v}" }.join("\n") }
+      response.merge_headers(h)
     end
 
     def on_body(chunk)
@@ -103,26 +107,13 @@ module HTTPX
       response = @requests.first.response
 
       response << chunk
-
-      @has_response = response.complete?
     end
 
     def on_message_complete
       log(level: 2) { "parsing complete" }
-      request = @requests.first
-      response = request.response
-
-      if !@parser_trailers && response.headers.key?("trailer")
-      else
-        @has_response = true
-      end
+      dispatch
     end
 
-    def on_trailer_headers_complete(h)
-      response = @requests.first.response
-
-      response.merge_headers(h)
-    end
 
     def dispatch
       request = @requests.first
@@ -177,7 +168,6 @@ module HTTPX
     end
 
     def handle(request)
-      @has_response = false # TODO: maybe erase?
       set_request_headers(request)
       catch(:buffer_full) do
         request.transition(:headers)
