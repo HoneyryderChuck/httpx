@@ -58,11 +58,16 @@ module HTTPX
         (m = /\AHTTP(?:\/(\d+\.\d+))?\s+(\d\d\d)(?:\s+(.*))?/in.match(@buffer)) ||
           raise(Error, "wrong head line format")
         version, code, _ = m.captures
+        unless version == "1.0" || version == "1.1"
+          raise(Error, "unsupported HTTP version (HTTP/#{version})")
+        end
         @http_version = version.split(".").map(&:to_i)
         @status_code = code.to_i
+        unless (100..599).include?(@status_code)
+          raise(Error, "wrong status code (#{@status_code})")
+        end
         @buffer.slice!(0, idx + 1)
         nextstate(:headers)
-        # TODO: verify
       end
 
       def parse_headers
