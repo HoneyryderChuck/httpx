@@ -7,6 +7,8 @@ module HTTPX
     class HTTP1
       include Callbacks
 
+      VERSIONS = %w[0.9 1.0 1.1].freeze
+
       attr_reader :status_code, :http_version, :headers
 
       def initialize(header_separator: ":")
@@ -58,7 +60,7 @@ module HTTPX
         (m = /\AHTTP(?:\/(\d+\.\d+))?\s+(\d\d\d)(?:\s+(.*))?/in.match(@buffer)) ||
           raise(Error, "wrong head line format")
         version, code, _ = m.captures
-        raise(Error, "unsupported HTTP version (HTTP/#{version})") unless version == "1.0" || version == "1.1"
+        raise(Error, "unsupported HTTP version (HTTP/#{version})") unless VERSIONS.include?(version)
         @http_version = version.split(".").map(&:to_i)
         @status_code = code.to_i
         raise(Error, "wrong status code (#{@status_code})") unless (100..599).cover?(@status_code)
