@@ -75,8 +75,8 @@ module HTTPX::Transcoder
               nextstate(:data)
             end
           when :data
-            @chunk_buffer << @buffer.slice!(0, @chunk_length)
-            @chunk_length -= @chunk_buffer.bytesize
+            @chunk_buffer << (slice = @buffer.slice!(0, @chunk_length))
+            @chunk_length -= slice.bytesize
             if @chunk_length.zero?
               yield @chunk_buffer unless @chunk_buffer.empty?
               @chunk_buffer.clear
