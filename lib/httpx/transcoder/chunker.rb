@@ -11,7 +11,6 @@ module HTTPX::Transcoder
 
       def_delegator :@raw, :readpartial
 
-
       def initialize(body)
         @raw = body
       end
@@ -51,7 +50,7 @@ module HTTPX::Transcoder
       end
 
       def each
-        loop do 
+        loop do
           case @state
           when :length
             index = @buffer.index(CRLF)
@@ -66,8 +65,8 @@ module HTTPX::Transcoder
           when :crlf
             crlf_size = @finished ? 4 : 2
             # consume CRLF
-            return if @buffer.bytesize < crlf_size 
-            raise Error, "wrong chunked encoding format" unless @buffer.start_with?(CRLF)
+            return if @buffer.bytesize < crlf_size
+            raise Error, "wrong chunked encoding format" unless @buffer.start_with?(CRLF * (crlf_size / 2))
             @buffer.slice!(0, crlf_size)
             if @chunk_length.nil?
               nextstate(:length)
