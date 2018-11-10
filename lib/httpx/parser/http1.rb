@@ -57,7 +57,7 @@ module HTTPX
       def parse_headline
         idx = @buffer.index("\n")
         return unless idx
-        (m = /\AHTTP(?:\/(\d+\.\d+))?\s+(\d\d\d)(?:\s+(.*))?/in.match(@buffer)) ||
+        (m = %r{\AHTTP(?:\/(\d+\.\d+))?\s+(\d\d\d)(?:\s+(.*))?}in.match(@buffer)) ||
           raise(Error, "wrong head line format")
         version, code, _ = m.captures
         raise(Error, "unsupported HTTP version (HTTP/#{version})") unless VERSIONS.include?(version)
@@ -70,19 +70,17 @@ module HTTPX
 
       def parse_headers
         headers = @headers
-        key = value = nil
-        while idx = @buffer.index("\n")
+        while (idx = @buffer.index("\n"))
           line = @buffer.slice!(0, idx + 1).sub(/\s+\z/, "")
           if line.empty?
             case @state
             when :headers
+              prepare_data(headers)
               emit(:headers, headers)
-              if @state == :headers
-                # state might have been reset
-                # in the :headers callback
-                prepare_data(headers)
-                nextstate(:data)
-              end
+              return unless @state == :headers
+              # state might have been reset
+              # in the :headers callback
+              nextstate(:data)
               headers.clear
             when :trailers
               emit(:trailers, headers)
@@ -124,13 +122,12 @@ module HTTPX
           emit(:data, @buffer)
           @buffer.clear
         end
-        if no_more_data?
-          @buffer = @buffer.to_s
-          if @_has_trailers
-            nextstate(:trailers)
-          else
-            nextstate(:complete)
-          end
+        return unless no_more_data?
+        @buffer = @buffer.to_s
+        if @_has_trailers
+          nextstate(:trailers)
+        else
+          nextstate(:complete)
         end
       end
 
@@ -139,7 +136,7 @@ module HTTPX
 
         @_has_trailers = headers.key?("trailer")
 
-        if tr_encodings = headers["transfer-encoding"]
+        if (tr_encodings = headers["transfer-encoding"])
           tr_encodings.reverse_each do |tr_encoding|
             tr_encoding.split(/ *, */).each do |encoding|
               case encoding

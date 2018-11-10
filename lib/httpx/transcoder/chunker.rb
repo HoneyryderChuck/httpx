@@ -54,7 +54,7 @@ module HTTPX::Transcoder
           case @state
           when :length
             index = @buffer.index(CRLF)
-            return unless index && index > 0
+            return unless index && index.positive?
             # Read hex-length
             hexlen = @buffer.slice!(0, index)
             hexlen[/\h/] || raise(Error, "wrong chunk size line: #{hexlen}")
