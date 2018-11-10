@@ -77,24 +77,25 @@ module HTTPX
     def on_headers_complete(h)
       # Wait for fix: https://github.com/tmm1/http_parser.rb/issues/52
       # callback is called 2 times when chunked
-      request = @requests.first
-      return if request.response
+      @request = @requests.first
+      return if @request.response
 
       log(level: 2) { "headers received" }
       headers = @options.headers_class.new(h)
-      response = @options.response_class.new(@requests.last,
+      response = @options.response_class.new(@request,
                                              @parser.status_code,
                                              @parser.http_version.join("."),
                                              headers, @options)
       log(color: :yellow) { "-> HEADLINE: #{response.status} HTTP/#{@parser.http_version.join(".")}" }
       log(color: :yellow) { response.headers.each.map { |f, v| "-> HEADER: #{f}: #{v}" }.join("\n") }
 
-      request.response = response
-      dispatch if request.verb == :head
+      @request.response = response
+      on_message_complete if @request.verb == :head
     end
 
     def on_trailer_headers_complete(h)
-      response = @requests.first.response
+      return unless @request
+      response = @request.response
       log(level: 2) { "trailer headers received" }
 
       log(color: :yellow) { h.each.map { |f, v| "-> HEADER: #{f}: #{v}" }.join("\n") }
@@ -102,25 +103,28 @@ module HTTPX
     end
 
     def on_body(chunk)
+      return unless @request
       log(color: :green) { "-> DATA: #{chunk.bytesize} bytes..." }
       log(level: 2, color: :green) { "-> #{chunk.inspect}" }
-      response = @requests.first.response
+      response = @request.response
 
       response << chunk
     end
 
     def on_message_complete
+      return unless @request
       log(level: 2) { "parsing complete" }
       dispatch
     end
 
     def dispatch
-      request = @requests.first
-      if request.expects?
+      if @request.expects?
         reset
-        return handle(request)
+        return handle(@request)
       end
 
+      request = @request
+      @request = nil
       @requests.shift
       response = request.response
       emit(:response, request, response)
