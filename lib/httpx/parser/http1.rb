@@ -82,9 +82,7 @@ module HTTPX
               prepare_data(headers)
               headers.clear
               nextstate(:data)
-              if @content_length
-                nextstate(:complete) if @content_length.zero?
-              end
+              nextstate(:complete) if bodyless?
             when :trailers
               emit(:trailers, headers)
               headers.clear
@@ -135,6 +133,14 @@ module HTTPX
         end
       end
 
+      def bodyless?
+        (100..199).include?(@status_code) ||
+        @status_code == 304 ||
+        @status_code == 204 ||
+        @status_code == 205 ||
+        (@content_length && @content_length.zero?)
+      end
+
       def prepare_data(headers)
         @upgrade = headers.key?("upgrade")
 
@@ -165,13 +171,13 @@ module HTTPX
       end
 
       def nextstate(state)
+        @state = state
         case state
         when :headers
           emit(:start)
         when :complete
           emit(:complete)
         end
-        @state = state
       end
     end
   end
