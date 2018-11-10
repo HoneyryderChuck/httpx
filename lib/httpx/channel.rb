@@ -204,6 +204,7 @@ module HTTPX
         return if siz.zero?
         log { "READ: #{siz} bytes..." }
         parser << @read_buffer.to_s
+        return if @state == :closing || @state == :closed
       end
     end
 
@@ -219,6 +220,7 @@ module HTTPX
         end
         log { "WRITE: #{siz} bytes..." }
         return if siz.zero?
+        return if @state == :closing || @state == :closed
       end
     end
 
