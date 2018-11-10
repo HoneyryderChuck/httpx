@@ -13,7 +13,7 @@ module HTTPX
         @state = :idle
         @header_separator = header_separator
         @buffer = "".b
-        @trailers = {}
+        @headers = {}
       end
 
       def <<(chunk)
@@ -23,6 +23,7 @@ module HTTPX
 
       def reset!
         @state = :idle
+        @headers.clear
         @buffer.clear
       end
 
@@ -33,7 +34,7 @@ module HTTPX
       def upgrade_data
         @buffer
       end
-      
+
       private
 
       def parse
@@ -65,7 +66,7 @@ module HTTPX
       end
 
       def parse_headers
-        headers = {}
+        headers = @headers
         key = value = nil
         while idx = @buffer.index("\n")
           line = @buffer.slice!(0, idx + 1).sub(/\s+\z/, "")
@@ -86,10 +87,10 @@ module HTTPX
             return
           end
           separator_index = line.index(@header_separator)
-          key = line[0..separator_index-1]
-          raise Error, "wrong header format" if key.start_with?(?\s) || key.start_with?(?\t)
+          key = line[0..separator_index - 1]
+          raise Error, "wrong header format" if key.start_with?("\s", "\t")
           key.strip!
-          value = line[separator_index+1..-1]
+          value = line[separator_index + 1..-1]
           value.strip!
           raise Error, "wrong header format" if value.nil?
           (headers[key.downcase] ||= []) << value
@@ -127,30 +128,28 @@ module HTTPX
       end
 
       def prepare_data(headers)
-        @upgrade = headers.key?('upgrade')
+        @upgrade = headers.key?("upgrade")
 
-        @_has_trailers = headers.key?('trailer')
+        @_has_trailers = headers.key?("trailer")
 
-        if tr_encodings = headers['transfer-encoding']
+        if tr_encodings = headers["transfer-encoding"]
           tr_encodings.reverse_each do |tr_encoding|
             tr_encoding.split(/ *, */).each do |encoding|
               case encoding
-              when 'chunked'
-                @buffer = Transcoder::Chunker::Decoder.new(@buffer)                
+              when "chunked"
+                @buffer = Transcoder::Chunker::Decoder.new(@buffer)
               end
             end
           end
         else
-          if headers.key?("content-length")
-            @content_length = headers["content-length"][0].to_i
-          end
+          @content_length = headers["content-length"][0].to_i if headers.key?("content-length")
         end
       end
 
       def no_more_data?
         if @content_length
           @content_length <= 0
-        elsif @buffer.respond_to?(:finished)
+        elsif @buffer.respond_to?(:finished?)
           @buffer.finished?
         else
           false
