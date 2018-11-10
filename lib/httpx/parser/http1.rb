@@ -58,14 +58,10 @@ module HTTPX
         (m = /\AHTTP(?:\/(\d+\.\d+))?\s+(\d\d\d)(?:\s+(.*))?/in.match(@buffer)) ||
           raise(Error, "wrong head line format")
         version, code, _ = m.captures
-        unless version == "1.0" || version == "1.1"
-          raise(Error, "unsupported HTTP version (HTTP/#{version})")
-        end
+        raise(Error, "unsupported HTTP version (HTTP/#{version})") unless version == "1.0" || version == "1.1"
         @http_version = version.split(".").map(&:to_i)
         @status_code = code.to_i
-        unless (100..599).include?(@status_code)
-          raise(Error, "wrong status code (#{@status_code})")
-        end
+        raise(Error, "wrong status code (#{@status_code})") unless (100..599).cover?(@status_code)
         @buffer.slice!(0, idx + 1)
         nextstate(:headers)
       end
@@ -134,11 +130,11 @@ module HTTPX
       end
 
       def bodyless?
-        (100..199).include?(@status_code) ||
-        @status_code == 304 ||
-        @status_code == 204 ||
-        @status_code == 205 ||
-        (@content_length && @content_length.zero?)
+        (100..199).cover?(@status_code) ||
+          @status_code == 304 ||
+          @status_code == 204 ||
+          @status_code == 205 ||
+          (@content_length && @content_length.zero?)
       end
 
       def prepare_data(headers)

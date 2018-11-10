@@ -114,7 +114,6 @@ module HTTPX
       dispatch
     end
 
-
     def dispatch
       request = @requests.first
       if request.expects?
