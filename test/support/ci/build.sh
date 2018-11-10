@@ -2,10 +2,10 @@
 
 RUBY_PLATFORM=`ruby -e 'puts RUBY_PLATFORM'`
 
-if [[ $RUBY_PLATFORM = "java" ]]; then
-	apk --update add g++ make git bash
+if [[ "$RUBY_PLATFORM" = "java" ]]; then
+  apk --update add git bash
 else
-	apk --update add git bash
+  apk --update add g++ make git bash
 fi
 
 export PATH=$GEM_HOME/bin:$BUNDLE_PATH/gems/bin:$PATH
