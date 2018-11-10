@@ -13,6 +13,7 @@ gem "simplecov", require: false
 platform :mri do
   gem "brotli", require: false
   gem "pry-byebug", require: false
+  gem "benchmark-ips", require: false
 end
 # gem "guard-rspec", :require => false
 # gem "nokogiri",    :require => false
@@ -21,3 +22,4 @@ gem "pry", :require => false
 gem "minitest", require: false
 gem "minitest-proveit", require: false
 gem "oga", require: false
+gem "http_parser.rb", require: false
