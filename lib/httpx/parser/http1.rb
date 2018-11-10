@@ -77,6 +77,9 @@ module HTTPX
               prepare_data(headers)
               headers.clear
               nextstate(:data)
+              if @content_length
+                nextstate(:complete) if @content_length.zero?
+              end
             when :trailers
               emit(:trailers, headers)
               headers.clear
@@ -103,13 +106,13 @@ module HTTPX
             emit(:data, chunk)
           end
         elsif @content_length
-          if @buffer.bytesize > @content_length
+          if @buffer.bytesize >= @content_length
             @content_length -= @buffer.bytesize
             emit(:data, @buffer)
             @buffer.clear
           else
             data = @buffer.slice!(0, @content_length)
-            @content_length -= @buffer.bytesize
+            @content_length -= data.bytesize
             emit(:data, data)
             data.clear
           end
