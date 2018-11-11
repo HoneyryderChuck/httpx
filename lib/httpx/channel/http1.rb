@@ -12,12 +12,7 @@ module HTTPX
     def initialize(buffer, options)
       @options = Options.new(options)
       @max_concurrent_requests = @options.max_concurrent_requests
-      @parser = Parser::HTTP1.new
-      @parser.on(:start, &method(:on_message_begin))
-      @parser.on(:headers, &method(:on_headers_complete))
-      @parser.on(:trailers, &method(:on_trailer_headers_complete))
-      @parser.on(:data, &method(:on_body))
-      @parser.on(:complete, &method(:on_message_complete))
+      @parser = Parser::HTTP1.new(self)
       @buffer = buffer
       @version = [1, 1]
       @pending = []
@@ -70,13 +65,11 @@ module HTTPX
     #
     # must be public methods, or else they won't be reachable
 
-    def on_message_begin
+    def on_start
       log(level: 2) { "parsing begins" }
     end
 
-    def on_headers_complete(h)
-      # Wait for fix: https://github.com/tmm1/http_parser.rb/issues/52
-      # callback is called 2 times when chunked
+    def on_headers(h)
       @request = @requests.first
       return if @request.response
 
@@ -90,10 +83,10 @@ module HTTPX
       log(color: :yellow) { response.headers.each.map { |f, v| "-> HEADER: #{f}: #{v}" }.join("\n") }
 
       @request.response = response
-      on_message_complete if response.complete?
+      on_complete if response.complete?
     end
 
-    def on_trailer_headers_complete(h)
+    def on_trailers(h)
       return unless @request
       response = @request.response
       log(level: 2) { "trailer headers received" }
@@ -102,7 +95,7 @@ module HTTPX
       response.merge_headers(h)
     end
 
-    def on_body(chunk)
+    def on_data(chunk)
       return unless @request
       log(color: :green) { "-> DATA: #{chunk.bytesize} bytes..." }
       log(level: 2, color: :green) { "-> #{chunk.inspect}" }
@@ -111,7 +104,7 @@ module HTTPX
       response << chunk
     end
 
-    def on_message_complete
+    def on_complete
       return unless @request
       log(level: 2) { "parsing complete" }
       dispatch

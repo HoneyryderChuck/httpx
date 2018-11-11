@@ -5,13 +5,12 @@ module HTTPX
     Error = Class.new(Error)
 
     class HTTP1
-      include Callbacks
-
       VERSIONS = %w[0.9 1.0 1.1].freeze
 
       attr_reader :status_code, :http_version, :headers
 
-      def initialize(header_separator: ":")
+      def initialize(observer, header_separator: ":")
+        @observer = observer
         @state = :idle
         @header_separator = header_separator
         @buffer = "".b
@@ -76,14 +75,14 @@ module HTTPX
             case @state
             when :headers
               prepare_data(headers)
-              emit(:headers, headers)
+              @observer.on_headers(headers)
               return unless @state == :headers
               # state might have been reset
               # in the :headers callback
               nextstate(:data)
               headers.clear
             when :trailers
-              emit(:trailers, headers)
+              @observer.on_trailers(headers)
               headers.clear
               nextstate(:complete)
             else
@@ -105,21 +104,21 @@ module HTTPX
       def parse_data
         if @buffer.respond_to?(:each)
           @buffer.each do |chunk|
-            emit(:data, chunk)
+            @observer.on_data(chunk)
           end
         elsif @content_length
           if @buffer.bytesize >= @content_length
             @content_length -= @buffer.bytesize
-            emit(:data, @buffer)
+            @observer.on_data(@buffer)
             @buffer.clear
           else
             data = @buffer.slice!(0, @content_length)
             @content_length -= data.bytesize
-            emit(:data, data)
+            @observer.on_data(data)
             data.clear
           end
         else
-          emit(:data, @buffer)
+          @observer.on_data(@buffer)
           @buffer.clear
         end
         return unless no_more_data?
@@ -164,9 +163,9 @@ module HTTPX
         @state = state
         case state
         when :headers
-          emit(:start)
+          @observer.on_start
         when :complete
-          emit(:complete)
+          @observer.on_complete
         end
       end
     end
