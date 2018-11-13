@@ -44,6 +44,7 @@ module HTTPX
     end
 
     def parse(altsvc)
+      return enum_for(__method__, altsvc) unless block_given?
       alt_origins, *alt_params = altsvc.split(/ *; */)
       alt_params = Hash[alt_params.map { |field| field.split("=") }]
       alt_origins.split(/ *, */).each do |alt_origin|
