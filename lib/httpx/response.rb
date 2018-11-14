@@ -41,11 +41,7 @@ module HTTPX
 
     def bodyless?
       @request.verb == :head ||
-        @status < 200 ||
-        @status == 201 ||
-        @status == 204 ||
-        @status == 205 ||
-        @status == 304
+        no_data?
     end
 
     def content_type
@@ -63,6 +59,19 @@ module HTTPX
     def raise_for_status
       return if @status < 400
       raise HTTPError, self
+    end
+
+    private
+
+    def no_data?
+      @status < 200 ||
+        @status == 204 ||
+        @status == 205 ||
+        @status == 304 || begin
+        content_length = @headers["content-length"]
+        return false if content_length.nil?
+        content_length == "0"
+      end
     end
 
     class Body
@@ -170,7 +179,7 @@ module HTTPX
         when :memory
           if @length > @threshold_size
             aux = @buffer
-            @buffer = Tempfile.new("palanca", encoding: @encoding, mode: File::RDWR)
+            @buffer = Tempfile.new("httpx", encoding: @encoding, mode: File::RDWR)
             aux.rewind
             ::IO.copy_stream(aux, @buffer)
             # TODO: remove this if/when minor ruby is 2.3

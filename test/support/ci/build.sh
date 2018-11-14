@@ -1,8 +1,16 @@
 #!/bin/sh
-apk --update add g++ make git bash
+
+RUBY_PLATFORM=`ruby -e 'puts RUBY_PLATFORM'`
+
+if [[ "$RUBY_PLATFORM" = "java" ]]; then
+  apk --update add git bash
+else
+  apk --update add g++ make git bash
+fi
+
 export PATH=$GEM_HOME/bin:$BUNDLE_PATH/gems/bin:$PATH
 mkdir -p "$GEM_HOME" && chmod 777 "$GEM_HOME"
-gem install bundler -v="1.16.1" --no-doc --conservative
+gem install bundler -v="1.17.0" --no-doc --conservative
 cd /home && bundle install --quiet --jobs 4 && \
   bundle exec rake test:ci
 
