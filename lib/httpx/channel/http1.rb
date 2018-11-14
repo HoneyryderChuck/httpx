@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "http_parser"
+require "httpx/parser/http1"
 
 module HTTPX
   class Channel::HTTP1
@@ -12,18 +12,15 @@ module HTTPX
     def initialize(buffer, options)
       @options = Options.new(options)
       @max_concurrent_requests = @options.max_concurrent_requests
-      @parser = HTTP::Parser.new(self)
-      @parser.header_value_type = :arrays
+      @parser = Parser::HTTP1.new(self)
       @buffer = buffer
       @version = [1, 1]
       @pending = []
       @requests = []
-      @has_response = false
     end
 
     def reset
       @parser.reset!
-      @has_response = false
     end
 
     def close
@@ -39,7 +36,6 @@ module HTTPX
 
     def <<(data)
       @parser << data
-      dispatch if @has_response
     end
 
     def send(request, **)
@@ -69,69 +65,59 @@ module HTTPX
     #
     # must be public methods, or else they won't be reachable
 
-    def on_message_begin
+    def on_start
       log(level: 2) { "parsing begins" }
     end
 
-    def on_headers_complete(h)
-      return on_trailer_headers_complete(h) if @parser_trailers
-      # Wait for fix: https://github.com/tmm1/http_parser.rb/issues/52
-      # callback is called 2 times when chunked
-      request = @requests.first
-      return if request.response
+    def on_headers(h)
+      @request = @requests.first
+      return if @request.response
 
       log(level: 2) { "headers received" }
       headers = @options.headers_class.new(h)
-      response = @options.response_class.new(@requests.last,
+      response = @options.response_class.new(@request,
                                              @parser.status_code,
                                              @parser.http_version.join("."),
                                              headers, @options)
       log(color: :yellow) { "-> HEADLINE: #{response.status} HTTP/#{@parser.http_version.join(".")}" }
       log(color: :yellow) { response.headers.each.map { |f, v| "-> HEADER: #{f}: #{v}" }.join("\n") }
 
-      request.response = response
-
-      @has_response = true if response.complete?
+      @request.response = response
+      on_complete if response.complete?
     end
 
-    def on_body(chunk)
-      log(color: :green) { "-> DATA: #{chunk.bytesize} bytes..." }
-      log(level: 2, color: :green) { "-> #{chunk.inspect}" }
-      response = @requests.first.response
+    def on_trailers(h)
+      return unless @request
+      response = @request.response
+      log(level: 2) { "trailer headers received" }
 
-      response << chunk
-
-      @has_response = response.complete?
-    end
-
-    def on_message_complete
-      log(level: 2) { "parsing complete" }
-      request = @requests.first
-      response = request.response
-
-      if !@parser_trailers && response.headers.key?("trailer")
-        @parser_trailers = true
-        # this is needed, because the parser can't accept further headers.
-        # we need to reset it and artificially move it to receive headers state,
-        # hence the bogus headline
-        #
-        @parser.reset!
-        @parser << "#{request.verb.to_s.upcase} #{request.path} HTTP/#{response.version}#{CRLF}"
-      else
-        @has_response = true
-      end
-    end
-
-    def on_trailer_headers_complete(h)
-      response = @requests.first.response
-
+      log(color: :yellow) { h.each.map { |f, v| "-> HEADER: #{f}: #{v}" }.join("\n") }
       response.merge_headers(h)
     end
 
-    def dispatch
-      request = @requests.first
-      return handle(request) if request.expects?
+    def on_data(chunk)
+      return unless @request
+      log(color: :green) { "-> DATA: #{chunk.bytesize} bytes..." }
+      log(level: 2, color: :green) { "-> #{chunk.inspect}" }
+      response = @request.response
 
+      response << chunk
+    end
+
+    def on_complete
+      return unless @request
+      log(level: 2) { "parsing complete" }
+      dispatch
+    end
+
+    def dispatch
+      if @request.expects?
+        reset
+        return handle(@request)
+      end
+
+      request = @request
+      @request = nil
       @requests.shift
       response = request.response
       emit(:response, request, response)
@@ -178,7 +164,6 @@ module HTTPX
     end
 
     def handle(request)
-      @has_response = false
       set_request_headers(request)
       catch(:buffer_full) do
         request.transition(:headers)

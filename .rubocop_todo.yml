@@ -16,6 +16,9 @@ Metrics/ModuleLength:
 Metrics/BlockLength:
   Max: 100
 
+Metrics/BlockNesting:
+  Enabled: False
+
   #Naming/MethodName:
 
 # TODO: remove this if min supported version of ruby is 2.3

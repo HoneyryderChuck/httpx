@@ -55,6 +55,7 @@ module HTTPX
         end
 
         def build_channel(proxy, options)
+          return super if proxy.is_a?(URI::Generic)
           channel = build_proxy_channel(proxy, **options)
           set_channel_callbacks(channel, options)
           channel
