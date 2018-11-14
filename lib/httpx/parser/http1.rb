@@ -25,7 +25,8 @@ module HTTPX
       def reset!
         @state = :idle
         @headers.clear
-        @buffer.clear
+        @content_length = nil
+        @_has_trailers = nil
       end
 
       def upgrade?
@@ -91,6 +92,7 @@ module HTTPX
             return
           end
           separator_index = line.index(@header_separator)
+          raise Error, "wrong header format" unless separator_index
           key = line[0..separator_index - 1]
           raise Error, "wrong header format" if key.start_with?("\s", "\t")
           key.strip!
@@ -160,6 +162,7 @@ module HTTPX
           @observer.on_start
         when :complete
           @observer.on_complete
+          reset!
           nextstate(:idle) unless @buffer.empty?
         end
       end
