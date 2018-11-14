@@ -107,16 +107,10 @@ module HTTPX
             @observer.on_data(chunk)
           end
         elsif @content_length
-          if @buffer.bytesize >= @content_length
-            @content_length -= @buffer.bytesize
-            @observer.on_data(@buffer)
-            @buffer.clear
-          else
-            data = @buffer.slice!(0, @content_length)
-            @content_length -= data.bytesize
-            @observer.on_data(data)
-            data.clear
-          end
+          data = @buffer.slice!(0, @content_length)
+          @content_length -= data.bytesize
+          @observer.on_data(data)
+          data.clear
         else
           @observer.on_data(@buffer)
           @buffer.clear
