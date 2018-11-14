@@ -37,12 +37,13 @@ module HTTPX::Transcoder
 
       def_delegator :@buffer, :clear
 
-      def initialize(buffer)
+      def initialize(buffer, trailers = false)
         @buffer = buffer
         @chunk_length = nil
         @chunk_buffer = "".b
         @finished = false
         @state = :length
+        @trailers = trailers
       end
 
       def to_s
@@ -63,7 +64,7 @@ module HTTPX::Transcoder
             @finished = @chunk_length.zero?
             nextstate(:crlf)
           when :crlf
-            crlf_size = @finished ? 4 : 2
+            crlf_size = @finished && !@trailers ? 4 : 2
             # consume CRLF
             return if @buffer.bytesize < crlf_size
             raise Error, "wrong chunked encoding format" unless @buffer.start_with?(CRLF * (crlf_size / 2))

@@ -134,7 +134,7 @@ module HTTPX
             tr_encoding.split(/ *, */).each do |encoding|
               case encoding
               when "chunked"
-                @buffer = Transcoder::Chunker::Decoder.new(@buffer)
+                @buffer = Transcoder::Chunker::Decoder.new(@buffer, @_has_trailers)
               end
             end
           end
