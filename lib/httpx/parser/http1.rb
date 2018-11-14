@@ -160,6 +160,7 @@ module HTTPX
           @observer.on_start
         when :complete
           @observer.on_complete
+          nextstate(:idle) unless @buffer.empty?
         end
       end
     end
