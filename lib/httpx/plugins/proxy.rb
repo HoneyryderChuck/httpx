@@ -50,7 +50,7 @@ module HTTPX
         def find_channel(request, **options)
           uri = URI(request.uri)
           proxy = proxy_params(uri)
-          return super unless proxy
+          raise Error, "Failed to connect to proxy" unless proxy
           @connection.find_channel(proxy) || build_channel(proxy, options)
         end
 
