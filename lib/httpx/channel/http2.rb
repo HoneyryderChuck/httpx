@@ -7,6 +7,20 @@ module HTTPX
     include Callbacks
     include Loggable
 
+    module HTTP2Extensions
+      refine ::HTTP2::Client do
+        def receive(*)
+          send_connection_preface
+          super
+        end
+
+        def <<(*args)
+          receive(*args)
+        end
+      end
+    end
+    using HTTP2Extensions
+
     Error = Class.new(Error) do
       def initialize(id, code)
         super("stream #{id} closed with error: #{code}")
@@ -18,11 +32,11 @@ module HTTPX
     def initialize(buffer, options)
       @options = Options.new(options)
       @max_concurrent_requests = @options.max_concurrent_requests
-      init_connection
       @pending = []
       @streams = {}
       @drains  = {}
       @buffer = buffer
+      init_connection
     end
 
     def close
@@ -38,7 +52,8 @@ module HTTPX
     end
 
     def send(request, **)
-      if @connection.active_stream_count >= @max_concurrent_requests
+      if @connection.state != :connected ||
+         @connection.active_stream_count >= @max_concurrent_requests
         @pending << request
         return
       end
@@ -48,6 +63,7 @@ module HTTPX
         @streams[request] = stream
       end
       handle(request, stream)
+      true
     end
 
     def reenqueue!
@@ -72,6 +88,12 @@ module HTTPX
     end
 
     private
+
+    def send_pending
+      while (request = @pending.shift)
+        break unless send(request)
+      end
+    end
 
     def headline_uri(request)
       request.path
@@ -189,6 +211,7 @@ module HTTPX
     def on_settings(*)
       @max_concurrent_requests = [@max_concurrent_requests,
                                   @connection.remote_settings[:settings_max_concurrent_streams]].min
+      send_pending
     end
 
     def on_close(_last_frame, error, _payload)
