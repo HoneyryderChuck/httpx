@@ -48,10 +48,28 @@ module HTTPX
       alt_origins, *alt_params = altsvc.split(/ *; */)
       alt_params = Hash[alt_params.map { |field| field.split("=") }]
       alt_origins.split(/ *, */).each do |alt_origin|
+        yield(parse_altsvc_origin(alt_origin), alt_params)
+      end
+    end
+
+    if RUBY_VERSION < "2.2"
+      def parse_altsvc_origin(alt_origin)
         alt_proto, alt_origin = alt_origin.split("=")
         alt_origin = alt_origin[1..-2] if alt_origin.start_with?("\"") && alt_origin.end_with?("\"")
-        alt_origin = URI.parse("#{alt_proto}://#{alt_origin}")
-        yield(alt_origin, alt_params)
+        if alt_origin.start_with?(":")
+          alt_origin = "dummy#{alt_origin}"
+          uri = URI.parse(alt_origin)
+          uri.host = nil
+          uri
+        else
+          URI.parse("#{alt_proto}://#{alt_origin}")
+        end
+      end
+    else
+      def parse_altsvc_origin(alt_origin)
+        alt_proto, alt_origin = alt_origin.split("=")
+        alt_origin = alt_origin[1..-2] if alt_origin.start_with?("\"") && alt_origin.end_with?("\"")
+        URI.parse("#{alt_proto}://#{alt_origin}")
       end
     end
   end
