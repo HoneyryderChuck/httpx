@@ -29,8 +29,9 @@ module HTTPX
       reset_counter
     end
 
-    def timeout
-      @operation_timeout || @total_timeout
+    def timeout(connecting: false)
+      tout = connecting ? @connect_timeout : @operation_timeout
+      tout || @total_timeout
     ensure
       log_time
     end

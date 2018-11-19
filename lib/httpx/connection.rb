@@ -13,6 +13,7 @@ module HTTPX
       resolver_type = Resolver.registry(resolver_type) if resolver_type.is_a?(Symbol)
       @selector = Selector.new
       @channels = []
+      @connected_channels = 0
       @resolver = resolver_type.new(self, @options)
       @resolver.on(:resolve, &method(:on_resolver_channel))
       @resolver.on(:error, &method(:on_resolver_error))
@@ -53,6 +54,9 @@ module HTTPX
     def build_channel(uri, **options)
       channel = Channel.by(uri, @options.merge(options))
       resolve_channel(channel)
+      channel.once(:open) do
+        @connected_channels += 1
+      end
       channel.once(:unreachable) do
         @resolver.uncache(channel)
         resolve_channel(channel)
@@ -120,6 +124,7 @@ module HTTPX
     def unregister_channel(channel)
       @channels.delete(channel)
       @selector.deregister(channel)
+      @connected_channels -= 1
     end
 
     def coalesce_channels(ch1, ch2)
@@ -132,7 +137,8 @@ module HTTPX
     end
 
     def next_timeout
-      timeout = @timeout.timeout # force log time
+      connecting = @channels.empty? || (@channels.size != @connected_channels)
+      timeout = @timeout.timeout(connecting: connecting) # force log time
       return (@resolver.timeout || timeout) unless @resolver.closed?
       timeout
     end
