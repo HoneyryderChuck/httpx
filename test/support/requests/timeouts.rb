@@ -2,9 +2,9 @@
 
 module Requests
   module Timeouts
-    # def test_http_timeouts_loop_timeout
+    # def test_http_timeouts_operation_timeout
     #   uri = build_uri("/delay/2")
-    #   client = HTTPX.timeout(loop_timeout: 1)
+    #   client = HTTPX.timeout(operation_timeout: 1)
     #   response = client.get(uri)
     #   assert response.is_a?(HTTPX::ErrorResponse), "response should have failed"
     #   assert response.error =~ /timed out while waiting/, "response should have timed out"
@@ -12,10 +12,18 @@ module Requests
 
     def test_http_timeouts_total_timeout
       uri = build_uri("/delay/3")
-      client = HTTPX.timeout(loop_timeout: 1, total_timeout: 2)
+      client = HTTPX.timeout(operation_timeout: 1, total_timeout: 2)
       response = client.get(uri)
       assert response.is_a?(HTTPX::ErrorResponse), "response should have failed"
       assert response.status =~ /timed out after 2 seconds/i, "response should have timed out"
     end
+
+    # def test_http_timeout_connect_timeout
+    #   uri = build_uri("/delay/3")
+    #   client = HTTPX.timeout(connect_timeout: 0.5, operation_timeout: 30, total_timeout: 2)
+    #   response = client.get(uri)
+    #   assert response.is_a?(HTTPX::ErrorResponse), "response should have failed"
+    #   assert response.error.is_a?(HTTPX::ConnectTimeoutError), "response should have failed on connection"
+    # end
   end
 end

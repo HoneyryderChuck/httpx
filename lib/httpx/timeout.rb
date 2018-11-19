@@ -6,28 +6,39 @@ module HTTPX
   class Timeout
     CONNECT_TIMEOUT = 5
     LOOP_TIMEOUT = 5
+    include Loggable
 
     def self.new(opts = {})
       return opts if opts.is_a?(Timeout)
       super
     end
 
-    def initialize(connect_timeout: CONNECT_TIMEOUT, loop_timeout: LOOP_TIMEOUT, total_timeout: nil)
+    attr_reader :connect_timeout, :operation_timeout
+
+    def initialize(connect_timeout: CONNECT_TIMEOUT,
+                   operation_timeout: OPERATION_TIMEOUT,
+                   total_timeout: nil,
+                   loop_timeout: nil)
       @connect_timeout = connect_timeout
-      @loop_timeout = loop_timeout
+      @operation_timeout = operation_timeout
       @total_timeout = total_timeout
+      if loop_timeout
+        log { ":loop_timeout is deprecated, use :operation_timeout instead" }
+        @operation_timeout = loop_timeout
+      end
       reset_counter
     end
 
     def timeout
-      @loop_timeout || @total_timeout
+      @operation_timeout || @total_timeout
     ensure
       log_time
     end
 
     def ==(other)
       if other.is_a?(Timeout)
-        @loop_timeout == other.instance_variable_get(:@loop_timeout) &&
+        @connect_timeout == other.instance_variable_get(:@connect_timeout) &&
+          @operation_timeout == other.instance_variable_get(:@operation_timeout) &&
           @total_timeout == other.instance_variable_get(:@total_timeout)
       else
         super
@@ -40,9 +51,12 @@ module HTTPX
         timeout = Timeout.new(other)
         merge(timeout)
       when Timeout
-        loop_timeout = other.instance_variable_get(:@loop_timeout) || @loop_timeout
+        connect_timeout = other.instance_variable_get(:@connect_timeout) || @connect_timeout
+        operation_timeout = other.instance_variable_get(:@operation_timeout) || @operation_timeout
         total_timeout = other.instance_variable_get(:@total_timeout) || @total_timeout
-        Timeout.new(loop_timeout: loop_timeout, total_timeout: total_timeout)
+        Timeout.new(connect_timeout: connect_timeout,
+                    operation_timeout: operation_timeout,
+                    total_timeout: total_timeout)
       else
         raise ArgumentError, "can't merge with #{other.class}"
       end
