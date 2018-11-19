@@ -34,9 +34,7 @@ module HTTPX
       end
     rescue TimeoutError => timeout_error
       @channels.each do |ch|
-        error = timeout_error
-        error = error.to_connection_error if ch.connecting?
-        ch.emit(:error, error)
+        ch.handle_timeout_error(timeout_error)
       end
     rescue Errno::ECONNRESET,
            Errno::ECONNABORTED,

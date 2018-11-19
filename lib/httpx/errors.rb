@@ -6,8 +6,15 @@ module HTTPX
   UnsupportedSchemeError = Class.new(Error)
 
   TimeoutError = Class.new(Error) do
+    attr_reader :timeout
+
+    def initialize(timeout, message)
+      @timeout = timeout
+      super(message)
+    end
+
     def to_connection_error
-      ex = ConnectTimeoutError.new(message)
+      ex = ConnectTimeoutError.new(@timeout, message)
       ex.set_backtrace(backtrace)
       ex
     end

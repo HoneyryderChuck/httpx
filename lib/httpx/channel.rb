@@ -76,8 +76,9 @@ module HTTPX
       @read_buffer = Buffer.new(BUFFER_SIZE)
       @write_buffer = Buffer.new(BUFFER_SIZE)
       @pending = []
-      @state = :idle
+      @timeout_manager = @options.timeout
       on(:error) { |ex| on_error(ex) }
+      transition(:idle)
     end
 
     def addresses=(addrs)
@@ -205,6 +206,17 @@ module HTTPX
       @parser = build_parser(protocol)
     end
 
+    def handle_timeout_error(e)
+      return emit(:error, e) unless @timeout
+      @timeout -= e.timeout
+      return unless @timeout <= 0
+      if connecting?
+        emit(:error, e.to_connection_error)
+      else
+        emit(:error, e)
+      end
+    end
+
     private
 
     def consume
@@ -301,11 +313,13 @@ module HTTPX
       # when :idle
       when :idle
         @error_response = nil
+        @timeout = @timeout_manager.connect_timeout
       when :open
         return if @state == :closed
         @io.connect
         return unless @io.connected?
         send_pending
+        @timeout = nil
         emit(:open)
       when :closing
         return unless @state == :open
