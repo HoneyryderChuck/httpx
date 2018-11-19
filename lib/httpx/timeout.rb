@@ -4,9 +4,9 @@ require "timeout"
 
 module HTTPX
   class Timeout
-    CONNECT_TIMEOUT = 5
-    LOOP_TIMEOUT = 5
     include Loggable
+    CONNECT_TIMEOUT = 60
+    OPERATION_TIMEOUT = 60
 
     def self.new(opts = {})
       return opts if opts.is_a?(Timeout)
