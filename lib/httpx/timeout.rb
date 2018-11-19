@@ -77,7 +77,7 @@ module HTTPX
       return unless @time_left
       return reset_timer unless @started
       @time_left -= (Process.clock_gettime(Process::CLOCK_MONOTONIC) - @started)
-      raise TimeoutError, "Timed out after #{@total_timeout} seconds" if @time_left <= 0
+      raise TimeoutError.new(@total_timeout, "Timed out after #{@total_timeout} seconds") if @time_left <= 0
 
       reset_timer
     end
