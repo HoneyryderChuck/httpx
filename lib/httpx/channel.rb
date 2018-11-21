@@ -76,7 +76,6 @@ module HTTPX
       @read_buffer = Buffer.new(BUFFER_SIZE)
       @write_buffer = Buffer.new(BUFFER_SIZE)
       @pending = []
-      @timeout_manager = @options.timeout
       on(:error) { |ex| on_error(ex) }
       transition(:idle)
     end
@@ -188,6 +187,7 @@ module HTTPX
     end
 
     def call
+      @timeout = @timeout_threshold
       case @state
       when :closed
         return
@@ -313,13 +313,15 @@ module HTTPX
       # when :idle
       when :idle
         @error_response = nil
-        @timeout = @timeout_manager.connect_timeout
+        @timeout_threshold = @options.timeout.connect_timeout
+        @timeout = @timeout_threshold
       when :open
         return if @state == :closed
         @io.connect
         return unless @io.connected?
         send_pending
-        @timeout = nil
+        @timeout_threshold = @options.timeout.operation_timeout
+        @timeout = @timeout_threshold
         emit(:open)
       when :closing
         return unless @state == :open
