@@ -54,8 +54,12 @@ module HTTPX
     def build_channel(uri, **options)
       channel = Channel.by(uri, @options.merge(options))
       resolve_channel(channel)
-      channel.once(:open) do
+      channel.on(:open) do
         @connected_channels += 1
+        @timeout.transition(:open) if @channels.size == @connected_channels
+      end
+      channel.on(:reset) do
+        @timeout.transition(:idle)
       end
       channel.once(:unreachable) do
         @resolver.uncache(channel)
@@ -114,6 +118,7 @@ module HTTPX
     end
 
     def register_channel(channel)
+      @timeout.transition(:idle)
       monitor = @selector.register(channel, :w)
       monitor.value = channel
       channel.on(:close) do
@@ -137,8 +142,7 @@ module HTTPX
     end
 
     def next_timeout
-      connecting = @channels.empty? || (@channels.size != @connected_channels)
-      timeout = @timeout.timeout(connecting: connecting) # force log time
+      timeout = @timeout.timeout
       return (@resolver.timeout || timeout) unless @resolver.closed?
       timeout
     end
