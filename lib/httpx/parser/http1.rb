@@ -5,7 +5,7 @@ module HTTPX
     Error = Class.new(Error)
 
     class HTTP1
-      VERSIONS = %w[0.9 1.0 1.1].freeze
+      VERSIONS = %w[1.0 1.1].freeze
 
       attr_reader :status_code, :http_version, :headers
 

@@ -228,23 +228,6 @@
     "strict": true
   },
   {
-    "name": "http version 0.9",
-    "type": "HTTP_RESPONSE",
-    "raw": "HTTP/0.9 200 OK\r\n\r\n",
-    "should_keep_alive": false,
-    "message_complete_on_eof": true,
-    "http_major": 0,
-    "http_minor": 9,
-    "status_code": 200,
-    "status": "OK",
-    "num_headers": 0,
-    "headers": {
-
-    },
-    "body": "",
-    "strict": true
-  },
-  {
     "name": "neither content-length nor transfer-encoding response",
     "type": "HTTP_RESPONSE",
     "raw": "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nhello world",
