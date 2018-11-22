@@ -7,19 +7,21 @@ module HTTPX
     include Callbacks
     include Loggable
 
-    module HTTP2Extensions
-      refine ::HTTP2::Client do
-        def receive(*)
-          send_connection_preface
-          super
-        end
+    if HTTP2::VERSION < "0.10.1"
+      module HTTP2Extensions
+        refine ::HTTP2::Client do
+          def receive(*)
+            send_connection_preface
+            super
+          end
 
-        def <<(*args)
-          receive(*args)
+          def <<(*args)
+            receive(*args)
+          end
         end
       end
+      using HTTP2Extensions
     end
-    using HTTP2Extensions
 
     Error = Class.new(Error) do
       def initialize(id, code)
