@@ -162,7 +162,10 @@ module HTTPX
           pair.split(/ *= */)
         end]
         @max_requests = parameters["max"].to_i if parameters.key?("max")
-        @keep_alive_timeout = parameters["timeout"].to_i if parameters.key?("timeout")
+        if parameters.key?("timeout")
+          keep_alive_timeout = parameters["timeout"].to_i
+          emit(:timeout, keep_alive_timeout)
+        end
         # TODO: on keep alive timeout, reset
       when /close/i, nil
         disable_pipelining
