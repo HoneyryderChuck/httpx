@@ -297,6 +297,9 @@ module HTTPX
           transition(:open)
         end
       end
+      parser.on(:timeout) do |timeout|
+        @timeout = timeout
+      end
       parser.on(:error) do |request, ex|
         case ex
         when MisdirectedRequestError

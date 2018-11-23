@@ -12,6 +12,7 @@ module HTTPX
     def initialize(buffer, options)
       @options = Options.new(options)
       @max_concurrent_requests = @options.max_concurrent_requests
+      @max_requests = Float::INFINITY
       @parser = Parser::HTTP1.new(self)
       @buffer = buffer
       @version = [1, 1]
@@ -39,11 +40,15 @@ module HTTPX
     end
 
     def send(request, **)
-      if @requests.size >= @max_concurrent_requests
+      if @max_requests.positive? &&
+         @requests.size >= @max_concurrent_requests
         @pending << request
         return
       end
-      @requests << request unless @requests.include?(request)
+      unless @requests.include?(request)
+        @requests << request
+        @pipelining = true if @requests.size > 1
+      end
       handle(request)
     end
 
@@ -128,27 +133,55 @@ module HTTPX
       end
 
       reset
+      @max_requests -= 1
       send(@pending.shift) unless @pending.empty?
-      return unless response.headers["connection"] == "close"
-      disable_concurrency
-      emit(:reset)
+      manage_connection(response)
     end
 
     def handle_error(ex)
-      @requests.each do |request|
-        emit(:error, request, ex)
+      if @pipelining
+        disable_pipelining
+        emit(:reset)
+        throw(:called)
+      else
+        @requests.each do |request|
+          emit(:error, request, ex)
+        end
       end
     end
 
     private
 
-    def disable_concurrency
+    def manage_connection(response)
+      connection = response.headers["connection"]
+      case connection
+      when /keep\-alive/i
+        keep_alive = response.headers["keep-alive"]
+        return unless keep_alive
+        parameters = Hash[keep_alive.split(/ *, */).map do |pair|
+          pair.split(/ *= */)
+        end]
+        @max_requests = parameters["max"].to_i if parameters.key?("max")
+        if parameters.key?("timeout")
+          keep_alive_timeout = parameters["timeout"].to_i
+          emit(:timeout, keep_alive_timeout)
+        end
+        # TODO: on keep alive timeout, reset
+      when /close/i, nil
+        disable_pipelining
+        @max_requests = Float::INFINITY
+        emit(:reset)
+      end
+    end
+
+    def disable_pipelining
       return if @requests.empty?
       @requests.each { |r| r.transition(:idle) }
       # server doesn't handle pipelining, and probably
       # doesn't support keep-alive. Fallback to send only
       # 1 keep alive request.
       @max_concurrent_requests = 1
+      @pipelining = false
     end
 
     def set_request_headers(request)
