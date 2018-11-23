@@ -23,6 +23,7 @@ class HTTPTest < Minitest::Test
   include Plugins::Compression
   include Plugins::H2C
   include Plugins::Retries
+  include Plugins::Multipart
 
   private
 

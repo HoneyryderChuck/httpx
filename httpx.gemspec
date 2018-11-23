@@ -20,8 +20,7 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib"]
   gem.version       = HTTPX::VERSION
 
-  gem.add_runtime_dependency "http-2",          ">= 0.9.0"
-  gem.add_runtime_dependency "http-form_data",  ">= 2.0.0", "< 3"
-
-  gem.add_development_dependency "http-cookie", "~> 1.0"
+  gem.add_runtime_dependency "http-2",              ">= 0.9.0"
+  gem.add_development_dependency "http-form_data",  ">= 2.0.0", "< 3"
+  gem.add_development_dependency "http-cookie",     "~> 1.0"
 end
