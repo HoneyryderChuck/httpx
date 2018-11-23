@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "forwardable"
-require "http/form_data"
+require "uri"
 
 module HTTPX::Transcoder
   module Form
@@ -10,22 +10,18 @@ module HTTPX::Transcoder
     class Encoder
       extend Forwardable
 
-      def_delegator :@raw, :content_type
-
       def_delegator :@raw, :to_s
 
-      def_delegator :@raw, :read
+      def_delegator :@raw, :bytesize
+
+      def_delegator :@raw, :force_encoding
 
       def initialize(form)
-        @raw = HTTP::FormData.create(form)
+        @raw = URI.encode_www_form(form)
       end
 
-      def bytesize
-        @raw.content_length
-      end
-
-      def force_encoding(*args)
-        @raw.to_s.force_encoding(*args)
+      def content_type
+        "application/x-www-form-urlencoded"
       end
 
       def to_str
