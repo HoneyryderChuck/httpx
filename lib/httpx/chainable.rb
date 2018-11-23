@@ -24,6 +24,10 @@ module HTTPX
       headers("accept" => String(type))
     end
 
+    def wrap(&blk)
+      branch(default_options).wrap(&blk)
+    end
+
     def plugin(*plugins)
       klass = is_a?(Client) ? self.class : Client
       klass = Class.new(klass)
