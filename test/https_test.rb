@@ -21,6 +21,7 @@ class HTTPSTest < Minitest::Test
   include Plugins::Compression
   include Plugins::PushPromise if OpenSSL::SSL::SSLContext.instance_methods.include?(:alpn_protocols)
   include Plugins::Retries
+  include Plugins::Multipart
 
   private
 
