@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "io/wait"
 require "http/2"
 
 module HTTPX
@@ -38,6 +39,7 @@ module HTTPX
       @streams = {}
       @drains  = {}
       @buffer = buffer
+      @handshake_completed = false
       init_connection
     end
 
@@ -54,7 +56,7 @@ module HTTPX
     end
 
     def send(request, **)
-      if @connection.state != :connected ||
+      if !@handshake_completed ||
          @connection.active_stream_count >= @max_concurrent_requests
         @pending << request
         return
@@ -122,6 +124,13 @@ module HTTPX
       @connection.on(:altsvc) { |frame| on_altsvc(frame[:origin], frame) }
       @connection.on(:settings_ack, &method(:on_settings))
       @connection.on(:goaway, &method(:on_close))
+      #
+      # Some servers initiate HTTP/2 negotiation right away, some don't.
+      # As such, we have to check the socket buffer. If there is something
+      # to read, the server initiated the negotiation. If not, we have to
+      # initiate it.
+      #
+      @connection.send_connection_preface
     end
 
     def handle_stream(stream, request)
@@ -211,6 +220,7 @@ module HTTPX
     end
 
     def on_settings(*)
+      @handshake_completed = true
       @max_concurrent_requests = [@max_concurrent_requests,
                                   @connection.remote_settings[:settings_max_concurrent_streams]].min
       send_pending
