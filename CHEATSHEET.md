@@ -50,12 +50,19 @@ HTTP.put("https://myapi.com/users/1")
 HTTP.delete("https://myapi.com/users/1")
 ```
 
-## Basic Auth
+## HTTP Authentication
 
 ```ruby
 require "httpx"
 
-response = HTTPX.basic_authentication("username", "password").get("https://google.com")
+# Basic Auth
+response = HTTPX.plugin(:basic_authentication).basic_authentication("username", "password").get("https://google.com")
+
+# Digest Auth
+response = HTTPX.plugin(:digest_authentication).digest_authentication("username", "password").get("https://google.com")
+
+# Token Auth
+response = HTTPX.plugin(:authentication).authentication("eyrandomtoken").get("https://google.com")
 ```
 
 
@@ -137,7 +144,7 @@ end
 require "httpx"
 
 response = HTTPX.plugin(:compression).get("https://www.google.com")
-puts response.headers["content-encoding"] #=> 
+puts response.headers["content-encoding"] #=> "gzip" 
 
 ```
 
@@ -147,6 +154,36 @@ puts response.headers["content-encoding"] #=>
 require "httpx"
 
 HTTPX.plugin(:proxy).with_proxy(uri: "http://myproxy.com:8080", username: "proxy_user", password: "proxy_pass").get("https://google.com")
+
+# also supports SOCKS4, SOCKS4a, SOCKS5 proxy:
+HTTPX.plugin(:proxy).with_proxy(uri: "socks5://socksproxyexample.com:8888").get("https://google.com")
+```
+
+## DNS-over-HTTPS
+
+```ruby
+# export HTTPX_RESOLVER=https before opening the console
+require "httpx"
+HTTPX.get("https://google.com")
+
+# OR
+
+require "httpx"
+HTTPX.with(resolver_class: :https).get("https://google.com")
+
+
+# by default it uses cloudflare DoH server.
+# This example switches the resolver to Quad9's DoH server
+
+HTTPX.with(resolver_class: :https, resolver_options: {uri: "https://9.9.9.9/dns-query"}).get("https://google.com")
+```
+
+## Follow Redirects
+
+```ruby
+require "httpx"
+
+HTTPX.plugin(:follow_redirects).with(follow_insecure_redirects: false, max_redirects: 4).get("https://www.google.com")
 ```
 
 ## Timeouts
@@ -157,10 +194,20 @@ require "httpx"
 HTTPX.with(timeout: {connect_timeout: 10, operation_timeout: 3}).get("https://google.com")
 ```
 
+## Retries
+
+
+```ruby
+require "httpx"
+HTTPX.plugin(:retries).max_retries(5).get("https://www.google.com")
+```
+
 ## Logging/Debugging
 
 ```ruby
 # export HTTPX_DEBUG=1 before opening the console
+require "httpx"
+
 HTTPX.get("https://google.com") #=>  udp://10.0.1.2:53...
 
 # OR
