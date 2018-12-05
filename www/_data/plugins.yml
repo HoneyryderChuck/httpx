@@ -34,3 +34,7 @@
   name: Stream
   path: Stream.html
   description: "API and support for Stream (mime-type: `text/event-stream`) responses."
+-
+  name: Multipart Uploads
+  path: Multipart.html
+  description: "API and support for multipart uploads (using `http-form_data`)."
