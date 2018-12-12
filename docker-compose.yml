@@ -9,6 +9,7 @@ services:
       - HTTPX_SOCKS4_PROXY=socks4://socksproxy:8080
       - HTTPX_SOCKS4A_PROXY=socks4a://socksproxy:8080
       - HTTPX_SOCKS5_PROXY=socks5://socksproxy:8080
+      - HTTPX_SSH_PROXY=ssh://sshproxy:22
       - PARALLEL=1
       - CI=1
       - JEKYLL_ENV=production
@@ -20,6 +21,7 @@ services:
     depends_on:
       - httpproxy 
       - socksproxy 
+      - sshproxy
       - nghttp2
     volumes:
       - ./:/home
@@ -27,6 +29,15 @@ services:
       /home/test/support/ci/build.sh
     links:
       - "nghttp2:another"
+
+  sshproxy:
+    build:
+      context: .
+      dockerfile: ./test/support/ssh/Dockerfile
+    volumes:
+      - ./test/support/ssh:/config
+    depends_on:
+      - nghttp2
 
   socksproxy:
     image: qautomatron/docker-3proxy
