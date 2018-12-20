@@ -44,6 +44,14 @@ module ProxyHelper
     end)
   end
 
+  def ssh_proxy
+    Array(ENV["HTTPX_SSH_PROXY"] || begin
+      http_proxies_list.select { |_, _, https| https }.map do |ip, port, _|
+        "ssh://#{ip}:#{port}"
+      end
+    end)
+  end
+
   def http_proxies_list
     proxies_list(parse_http_proxies)
       .map do |line|
