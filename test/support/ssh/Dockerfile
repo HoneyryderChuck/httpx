@@ -11,7 +11,9 @@ PermitTTY yes\n\
 LogLevel VERBOSE\n\
 AllowTcpForwarding yes\n\
 PermitEmptyPasswords yes\n\
+UsePAM no\n\
 PasswordAuthentication no\n\
+RSAAuthentication yes\n\
 PubkeyAuthentication yes\n' >> /etc/ssh/sshd_config 
 
 RUN usermod --shell /bin/sh root
