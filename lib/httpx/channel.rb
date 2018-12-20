@@ -320,7 +320,6 @@ module HTTPX
 
     def transition(nextstate)
       case nextstate
-      # when :idle
       when :idle
         @error_response = nil
         @timeout_threshold = @options.timeout.connect_timeout
