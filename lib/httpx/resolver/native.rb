@@ -190,7 +190,9 @@ module HTTPX
 
       if addresses.empty?
         hostname, channel = @queries.first
+        @_record_types[hostname].shift
         if @_record_types[hostname].empty?
+          @_record_types.delete(hostname)
           emit_resolve_error(channel, hostname)
           return
         end
@@ -221,7 +223,7 @@ module HTTPX
       return unless @write_buffer.empty?
       hostname = hostname || @queries.key(channel) || channel.uri.host
       @queries[hostname] = channel
-      type = @_record_types[hostname].shift
+      type = @_record_types[hostname].first
       log(label: "resolver: ") { "query #{type} for #{hostname}" }
       begin
         @write_buffer << Resolver.encode_dns_query(hostname, type: RECORD_TYPES[type])

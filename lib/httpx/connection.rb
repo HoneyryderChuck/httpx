@@ -61,7 +61,7 @@ module HTTPX
       channel.on(:reset) do
         @timeout.transition(:idle)
       end
-      channel.once(:unreachable) do
+      channel.on(:unreachable) do
         @resolver.uncache(channel)
         resolve_channel(channel)
       end

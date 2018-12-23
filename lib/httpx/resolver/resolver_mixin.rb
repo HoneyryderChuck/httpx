@@ -21,6 +21,7 @@ module HTTPX
       def uncache(channel)
         hostname = hostname || @queries.key(channel) || channel.uri.host
         Resolver.uncache(hostname)
+        @_record_types[hostname].shift
       end
 
       private
