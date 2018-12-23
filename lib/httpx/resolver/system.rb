@@ -27,6 +27,8 @@ module HTTPX
       hostname = channel.uri.host
       addresses = ip_resolve(hostname) || system_resolve(hostname) || @resolver.getaddresses(hostname)
       addresses.empty? ? emit_resolve_error(channel, hostname) : emit_addresses(channel, addresses)
+    rescue Errno::EHOSTUNREACH
+      emit_resolve_error(channel, hostname)
     end
 
     def uncache(*); end
