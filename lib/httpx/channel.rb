@@ -94,15 +94,8 @@ module HTTPX
       @io ||= IO.registry(@type).new(@uri, addrs, @options) # rubocop:disable Naming/MemoizedInstanceVariableName
     end
 
-    if RUBY_VERSION > "2.2"
-      def addresses
-        @io&.addresses
-      end
-    else
-      def addresses
-        return unless @io
-        @io.addresses
-      end
+    def addresses
+      @io && @io.addresses
     end
 
     def mergeable?(addresses)
