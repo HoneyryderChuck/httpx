@@ -81,9 +81,9 @@ module HTTPX
       if @ns_index < @nameserver.size
         transition(:idle)
       else
-        ex = ResolvError.new(e.message)
-        ex.set_backtrace(e.backtrace)
-        raise ex
+        @queries.each do |host, channel|
+          emit_resolve_error(channel, host, e)
+        end
       end
     end
 
@@ -100,7 +100,7 @@ module HTTPX
     def <<(channel)
       return if early_resolve(channel)
       if @nameserver.nil?
-        ex = ResolveError.new("Can't resolve #{channel.uri.host}")
+        ex = ResolveError.new("Can't resolve #{channel.uri.host}: no nameserver")
         ex.set_backtrace(caller)
         emit(:error, channel, ex)
       else
