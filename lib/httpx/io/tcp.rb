@@ -17,24 +17,25 @@ module HTTPX
       @state = :idle
       @hostname = uri.host
       @addresses = addresses
-      @ip_index = @addresses.size - 1
       @options = Options.new(options)
       @fallback_protocol = @options.fallback_protocol
       @port = uri.port
       if @options.io
         @io = case @options.io
               when Hash
-                @ip = @addresses[@ip_index]
-                @options.io[@ip] || @options.io["#{@ip}:#{@port}"]
+                @options.io[uri.authority]
               else
-                @ip = @hostname
                 @options.io
         end
+        _, _, _, @ip = @io.addr
+        @addresses ||= [@ip]
+        @ip_index = @addresses.size - 1
         unless @io.nil?
           @keep_open = true
           @state = :connected
         end
       else
+        @ip_index = @addresses.size - 1
         @ip = @addresses[@ip_index]
       end
       @io ||= build_socket

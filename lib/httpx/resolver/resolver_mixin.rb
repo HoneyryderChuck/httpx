@@ -36,7 +36,10 @@ module HTTPX
       end
 
       def early_resolve(channel, hostname: channel.uri.host)
-        addresses = ip_resolve(hostname) || Resolver.cached_lookup(hostname) || system_resolve(hostname)
+        addresses = channel.addresses ||
+                    ip_resolve(hostname) ||
+                    Resolver.cached_lookup(hostname) ||
+                    system_resolve(hostname)
         return unless addresses
 
         emit_addresses(channel, addresses)
