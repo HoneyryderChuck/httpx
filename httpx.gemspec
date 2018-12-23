@@ -23,7 +23,4 @@ Gem::Specification.new do |gem|
   gem.add_runtime_dependency "http-2",              ">= 0.9.0"
   gem.add_development_dependency "http-form_data",  ">= 2.0.0", "< 3"
   gem.add_development_dependency "http-cookie",     "~> 1.0"
-  gem.add_development_dependency "net-ssh-gateway"
-  gem.add_development_dependency "ed25519"
-  gem.add_development_dependency "bcrypt_pbkdf"
 end
