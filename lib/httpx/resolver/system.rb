@@ -30,7 +30,10 @@ module HTTPX
 
     def <<(channel)
       hostname = channel.uri.host
-      addresses = ip_resolve(hostname) || system_resolve(hostname) || @resolver.getaddresses(hostname)
+      addresses = channel.addresses ||
+                  ip_resolve(hostname) ||
+                  system_resolve(hostname) ||
+                  @resolver.getaddresses(hostname)
       return emit_resolve_error(channel, hostname) if addresses.empty?
 
       emit_addresses(channel, addresses)
