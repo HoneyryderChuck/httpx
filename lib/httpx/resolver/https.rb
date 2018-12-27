@@ -69,11 +69,15 @@ module HTTPX
       hostname = hostname || @queries.key(channel) || channel.uri.host
       type = @_record_types[hostname].shift
       log(label: "resolver: ") { "query #{type} for #{hostname}" }
-      request = build_request(hostname, type)
-      @requests[request] = channel
-      resolver_channel.send(request)
-      @queries[hostname] = channel
-      @channels << channel
+      begin
+        request = build_request(hostname, type)
+        @requests[request] = channel
+        resolver_channel.send(request)
+        @queries[hostname] = channel
+        @channels << channel
+      rescue Resolv::DNS::EncodeError, JSON::JSONError => e
+        emit_resolve_error(channel, hostname, e)
+      end
     end
 
     def find_channel(_request, **options)
@@ -107,7 +111,15 @@ module HTTPX
     end
 
     def parse(response)
-      answers = decode_response_body(response)
+      answers = begin
+        decode_response_body(response)
+      rescue Resolv::DNS::DecodeError, JSON::JSONError => e
+        host, channel = @queries.first
+        if @_record_types[host].empty?
+          emit_resolve_error(channel, host, e)
+          return
+        end
+      end
       if answers.empty?
         host, channel = @queries.first
         if @_record_types[host].empty?
@@ -173,7 +185,6 @@ module HTTPX
       when "application/dns-udpwireformat",
            "application/dns-message"
         Resolver.decode_dns_answer(response.to_s)
-
         # TODO: what about the rest?
       end
     end
