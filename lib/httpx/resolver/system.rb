@@ -7,6 +7,11 @@ module HTTPX
   class Resolver::System
     include Resolver::ResolverMixin
 
+    RESOLV_ERRORS = [Resolv::ResolvError,
+                     Resolv::DNS::Requester::RequestError,
+                     Resolv::DNS::EncodeError,
+                     Resolv::DNS::DecodeError].freeze
+
     def initialize(_, options)
       @options = Options.new(options)
       roptions = @options.resolver_options
@@ -26,8 +31,9 @@ module HTTPX
     def <<(channel)
       hostname = channel.uri.host
       addresses = ip_resolve(hostname) || system_resolve(hostname) || @resolver.getaddresses(hostname)
-      addresses.empty? ? emit_resolve_error(channel, hostname) : emit_addresses(channel, addresses)
-    rescue Errno::EHOSTUNREACH => e
+      return emit_resolve_error(channel, hostname) if addresses.empty?
+      emit_addresses(channel, addresses)
+    rescue Errno::EHOSTUNREACH, *RESOLV_ERRORS => e
       emit_resolve_error(channel, hostname, e)
     end
 
