@@ -52,7 +52,8 @@ module HTTPX
       end
 
       def emit_resolve_error(channel, hostname, ex = nil)
-        error = ResolveError.new("Can't resolve #{hostname}")
+        message = ex ? ex.message : "Can't resolve #{hostname}"
+        error = ResolveError.new(message)
         error.set_backtrace(ex ? ex.backtrace : caller)
         emit(:error, channel, error)
       end
