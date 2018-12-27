@@ -67,7 +67,7 @@ module HTTPX
     def resolve(channel = @channels.first, hostname = nil)
       return if @building_channel
       hostname = hostname || @queries.key(channel) || channel.uri.host
-      type = @_record_types[hostname].shift
+      type = @_record_types[hostname].first
       log(label: "resolver: ") { "query #{type} for #{hostname}" }
       begin
         request = build_request(hostname, type)
@@ -122,7 +122,9 @@ module HTTPX
       end
       if answers.empty?
         host, channel = @queries.first
+        @_record_types[host].shift
         if @_record_types[host].empty?
+          @_record_types.delete(host)
           emit_resolve_error(channel, host)
           return
         end
