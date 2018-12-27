@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "resolv"
+
 module HTTPX
   module Resolver
     autoload :ResolverMixin, "httpx/resolver/resolver_mixin"
