@@ -81,9 +81,9 @@ module HTTPX
       if @ns_index < @nameserver.size
         transition(:idle)
       else
-        ex = ResolvError.new(e.message)
-        ex.set_backtrace(e.backtrace)
-        raise ex
+        @queries.each do |host, channel|
+          emit_resolve_error(channel, host, e)
+        end
       end
     end
 
@@ -100,7 +100,7 @@ module HTTPX
     def <<(channel)
       return if early_resolve(channel)
       if @nameserver.nil?
-        ex = ResolveError.new("Can't resolve #{channel.uri.host}")
+        ex = ResolveError.new("Can't resolve #{channel.uri.host}: no nameserver")
         ex.set_backtrace(caller)
         emit(:error, channel, ex)
       else
@@ -178,7 +178,16 @@ module HTTPX
     end
 
     def parse(buffer)
-      addresses = Resolver.decode_dns_answer(buffer)
+      addresses = begin
+        Resolver.decode_dns_answer(buffer)
+      rescue Resolv::DNS::DecodeError => e
+        hostname, channel = @queries.first
+        if @_record_types[hostname].empty?
+          emit_resolve_error(channel, hostname, e)
+          return
+        end
+      end
+
       if addresses.empty?
         hostname, channel = @queries.first
         if @_record_types[hostname].empty?
@@ -214,7 +223,11 @@ module HTTPX
       @queries[hostname] = channel
       type = @_record_types[hostname].shift
       log(label: "resolver: ") { "query #{type} for #{hostname}" }
-      @write_buffer << Resolver.encode_dns_query(hostname, type: RECORD_TYPES[type])
+      begin
+        @write_buffer << Resolver.encode_dns_query(hostname, type: RECORD_TYPES[type])
+      rescue Resolv::DNS::EncodeError => e
+        emit_resolve_error(channel, hostname, e)
+      end
     end
 
     def build_socket

@@ -51,9 +51,10 @@ module HTTPX
         ips.map { |ip| IPAddr.new(ip) }
       end
 
-      def emit_resolve_error(channel, hostname)
-        error = ResolveError.new("Can't resolve #{hostname}")
-        error.set_backtrace(caller)
+      def emit_resolve_error(channel, hostname, ex = nil)
+        message = ex ? ex.message : "Can't resolve #{hostname}"
+        error = ResolveError.new(message)
+        error.set_backtrace(ex ? ex.backtrace : caller)
         emit(:error, channel, error)
       end
     end
