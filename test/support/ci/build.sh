@@ -22,7 +22,7 @@ if [[ $RET = 0 ]] && [[ ${RUBY_VERSION:0:3} = "2.6" ]]; then
 	RUBYOPT="--jit" bundle exec rake test:ci
 fi
 
-if [[ $RET = 0 ]] && [[ ${RUBY_VERSION:0:3} = "2.5" ]]; then
+if [[ $RET = 0 ]] && [[ ${RUBY_VERSION:0:3} = "2.6" ]]; then
   bundle exec rake website_rdoc && \
   cd www && bundle install && \
   bundle exec jekyll build -d public
