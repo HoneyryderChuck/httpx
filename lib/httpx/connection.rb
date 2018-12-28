@@ -133,6 +133,7 @@ module HTTPX
         unregister_channel(channel)
       end
       return if channel.state == :open
+
       @timeout.transition(:idle)
     end
 
