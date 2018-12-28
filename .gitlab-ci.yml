@@ -38,9 +38,15 @@ test_ruby24:
   script:
     ./spec.sh ruby 2.4
 test_ruby25:
+  only:
+    - master
   stage: test
   script:
     ./spec.sh ruby 2.5
+test_ruby26:
+  stage: test
+  script:
+    ./spec.sh ruby 2.6
   artifacts:
     paths:
       - www/coverage/
@@ -50,7 +56,7 @@ test_ruby25:
 pages:
   stage: deploy 
   dependencies:
-    - test_ruby25
+    - test_ruby26
   script:
     - mv www/public .
     - ls public

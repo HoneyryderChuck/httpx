@@ -18,6 +18,10 @@ RET=$?
 
 RUBY_VERSION=`ruby -e 'puts RUBY_VERSION'`
 
+if [[ $RET = 0 ]] && [[ ${RUBY_VERSION:0:3} = "2.6" ]]; then
+	RUBYOPT="--jit" bundle exec rake test:ci
+fi
+
 if [[ $RET = 0 ]] && [[ ${RUBY_VERSION:0:3} = "2.5" ]]; then
   bundle exec rake website_rdoc && \
   cd www && bundle install && \
