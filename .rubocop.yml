@@ -71,12 +71,6 @@ Style/StringLiteralsInInterpolation:
 Style/GlobalVars:
   AllowedVariables: [$PALANCA_DEBUG]
 
-  #Style/SpaceAroundOperators:
-  #  Enabled: false
-
-  #Style/ExtraSpacing:
-  #  Enabled: false
-
 Style/ClassVars:
   Exclude:
     # header field transformation caches
@@ -84,9 +78,6 @@ Style/ClassVars:
     - lib/palanca/http1/headers.rb
 
 Style/SignalException:
-  Enabled: false
-
-Style/FrozenStringLiteralComment:
   Enabled: false
 
 Style/ParallelAssignment:

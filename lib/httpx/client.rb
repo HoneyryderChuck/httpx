@@ -34,6 +34,7 @@ module HTTPX
       requests = __build_reqs(*args, **options)
       responses = __send_reqs(*requests, **options)
       return responses.first if responses.size == 1
+
       responses
     ensure
       close unless keep_open

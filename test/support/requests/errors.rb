@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Requests
   module Errors
     def test_errors_connection_refused

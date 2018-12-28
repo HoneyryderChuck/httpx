@@ -11,9 +11,11 @@ Rake::TestTask.new do |t|
   t.warning = false
 end
 
+RUBY_MAJOR_MINOR = RUBY_VERSION.split(/\./).first(2).join(".")
+
 desc "Run rubocop"
-task :rubocop do
-  RuboCop::RakeTask.new
+RuboCop::RakeTask.new(:rubocop) do |task|
+  task.options += %W[-c.rubocop-#{RUBY_MAJOR_MINOR}.yml]
 end
 
 task :"test:ci" => %i[test rubocop]

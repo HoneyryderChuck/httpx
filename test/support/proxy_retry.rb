@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module ProxyRetry
   def run(*)
     return super unless name.include?("_proxy")

@@ -1,0 +1,14 @@
+inherit_from: .rubocop.yml
+
+# Because this cop doesn't work well with frozen regexes
+Style/RedundantFreeze:
+  Enabled: false
+
+Style/FrozenStringLiteralComment:
+  Enabled: false
+
+Layout/IndentHeredoc:
+  Enabled: false
+
+Style/HashSyntax:
+  Enabled: false

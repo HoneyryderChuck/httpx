@@ -10,7 +10,7 @@ gem "rake", "~> 12.3"
 gem "simplecov", require: false
 
 if RUBY_VERSION < "2.2"
-  gem "rubocop", "~> 0.57.2", require: false
+  gem "rubocop", "~> 0.57.0", require: false
 else
   gem "rubocop", "~> 0.61.1", require: false
 end

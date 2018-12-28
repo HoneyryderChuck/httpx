@@ -182,14 +182,14 @@ module HTTPX
     end
 
     def parse(buffer)
-      addresses = begin
-        Resolver.decode_dns_answer(buffer)
-                  rescue Resolv::DNS::DecodeError => e
-                    hostname, channel = @queries.first
-                    if @_record_types[hostname].empty?
-                      emit_resolve_error(channel, hostname, e)
-                      return
-                    end
+      begin
+        addresses = Resolver.decode_dns_answer(buffer)
+      rescue Resolv::DNS::DecodeError => e
+        hostname, channel = @queries.first
+        if @_record_types[hostname].empty?
+          emit_resolve_error(channel, hostname, e)
+          return
+        end
       end
 
       if addresses.empty?

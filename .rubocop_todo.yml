@@ -21,10 +21,6 @@ Metrics/BlockNesting:
 
   #Naming/MethodName:
 
-# TODO: remove this if min supported version of ruby is 2.3
-Layout/IndentHeredoc:
-  Enabled: false
-
 Style/SafeNavigation:
   Enabled: false
 
@@ -32,10 +28,6 @@ Security/Eval:
   Enabled: false
 
 Style/ClassAndModuleChildren:
-  Enabled: false
-
-# TODO: remove this if min supported version of ruby is 2.3
-Style/HashSyntax:
   Enabled: false
 
 Style/NumericPredicate:

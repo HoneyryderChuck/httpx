@@ -114,14 +114,14 @@ module HTTPX
     end
 
     def parse(response)
-      answers = begin
-        decode_response_body(response)
-                rescue Resolv::DNS::DecodeError, JSON::JSONError => e
-                  host, channel = @queries.first
-                  if @_record_types[host].empty?
-                    emit_resolve_error(channel, host, e)
-                    return
-                  end
+      begin
+        answers = decode_response_body(response)
+      rescue Resolv::DNS::DecodeError, JSON::JSONError => e
+        host, channel = @queries.first
+        if @_record_types[host].empty?
+          emit_resolve_error(channel, host, e)
+          return
+        end
       end
       if answers.empty?
         host, channel = @queries.first
