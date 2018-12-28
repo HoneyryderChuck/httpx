@@ -31,6 +31,7 @@ module HTTPX
     def verify_hostname(host)
       return false if @ctx.verify_mode == OpenSSL::SSL::VERIFY_NONE
       return false if @io.peer_cert.nil?
+
       OpenSSL::SSL.verify_certificate_identity(@io.peer_cert, host)
     end
 
@@ -54,6 +55,7 @@ module HTTPX
       end
       return if @state == :negotiated ||
                 @state != :connected
+
       unless @io.is_a?(OpenSSL::SSL::SSLSocket)
         @io = OpenSSL::SSL::SSLSocket.new(@io, @ctx)
         @io.hostname = @hostname
@@ -112,6 +114,7 @@ module HTTPX
 
     def log_transition_state(nextstate)
       return super unless nextstate == :negotiated
+
       server_cert = @io.peer_cert
       "SSL connection using #{@io.ssl_version} / #{@io.cipher.first}\n" \
         "ALPN, server accepted to use #{protocol}\n" \

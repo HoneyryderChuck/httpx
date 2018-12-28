@@ -53,6 +53,7 @@ module HTTPX
         def __on_promise_response(parser, stream, h)
           request = @promise_headers.delete(stream)
           return unless request
+
           parser.__send__(:on_stream_headers, stream, request, h)
           request.transition(:done)
           response = request.response

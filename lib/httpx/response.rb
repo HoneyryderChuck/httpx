@@ -58,6 +58,7 @@ module HTTPX
 
     def raise_for_status
       return if @status < 400
+
       raise HTTPError, self
     end
 
@@ -70,6 +71,7 @@ module HTTPX
         @status == 304 || begin
         content_length = @headers["content-length"]
         return false if content_length.nil?
+
         content_length == "0"
       end
     end
@@ -94,6 +96,7 @@ module HTTPX
 
       def read(*args)
         return unless @buffer
+
         @buffer.read(*args)
       end
 
@@ -103,6 +106,7 @@ module HTTPX
 
       def each
         return enum_for(__method__) unless block_given?
+
         begin
           unless @state == :idle
             rewind
@@ -137,6 +141,7 @@ module HTTPX
 
       def copy_to(dest)
         return unless @buffer
+
         if dest.respond_to?(:path) && @buffer.respond_to?(:path)
           FileUtils.mv(@buffer.path, dest.path)
         else
@@ -148,6 +153,7 @@ module HTTPX
       # closes/cleans the buffer, resets everything
       def close
         return if @state == :idle
+
         @buffer.close
         @buffer.unlink if @buffer.respond_to?(:unlink)
         @buffer = nil
@@ -163,6 +169,7 @@ module HTTPX
 
       def rewind
         return if @state == :idle
+
         @buffer.rewind
       end
 
@@ -197,8 +204,8 @@ module HTTPX
   end
 
   class ContentType
-    MIME_TYPE_RE = %r{^([^/]+/[^;]+)(?:$|;)}
-    CHARSET_RE   = /;\s*charset=([^;]+)/i
+    MIME_TYPE_RE = %r{^([^/]+/[^;]+)(?:$|;)}.freeze
+    CHARSET_RE   = /;\s*charset=([^;]+)/i.freeze
 
     attr_reader :mime_type, :charset
 

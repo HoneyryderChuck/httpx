@@ -7,7 +7,7 @@ gemspec
 
 gem "hanna-nouveau", require: false
 gem "rake", "~> 12.3"
-gem "rubocop", "~> 0.57.0", require: false
+gem "rubocop", "~> 0.61.1", require: false
 gem "simplecov", require: false
 
 platform :mri do

@@ -19,6 +19,7 @@ module HTTPX
         def initialize(*)
           super
           return if @body.nil?
+
           @headers.get("content-encoding").each do |encoding|
             @body = Encoder.new(@body, Compression.registry(encoding).encoder)
           end
@@ -70,6 +71,7 @@ module HTTPX
 
         def each(&blk)
           return enum_for(__method__) unless block_given?
+
           unless @buffer.size.zero?
             @buffer.rewind
             return @buffer.each(&blk)
@@ -97,6 +99,7 @@ module HTTPX
 
         def deflate(&blk)
           return unless @buffer.size.zero?
+
           @body.rewind
           @deflater.deflate(@body, @buffer, chunk_size: 16_384, &blk)
         end

@@ -31,6 +31,7 @@ class HTTPX::Selector
     # closes +@io+, deregisters from reactor (unless +deregister+ is false)
     def close(deregister = true)
       return if @closed
+
       @closed = true
       @reactor.deregister(@io) if deregister
     end
@@ -125,6 +126,7 @@ class HTTPX::Selector
       else
         monitor = io.closed? ? @readers.delete(io) : @readers[io]
         next unless monitor
+
         monitor.readiness = writers.delete(io) ? :rw : :r
         yield monitor
       end
@@ -133,6 +135,7 @@ class HTTPX::Selector
     writers.each do |io|
       monitor = io.closed? ? @writers.delete(io) : @writers[io]
       next unless monitor
+
       # don't double run this, the last iteration might have run this task already
       monitor.readiness = :w
       yield monitor
@@ -143,6 +146,7 @@ class HTTPX::Selector
   #
   def close
     return if @closed
+
     @__r__.close
     @__w__.close
   rescue IOError

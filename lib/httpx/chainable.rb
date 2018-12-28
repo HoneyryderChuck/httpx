@@ -49,6 +49,7 @@ module HTTPX
     # :nodoc:
     def branch(options, &blk)
       return self.class.new(options, &blk) if is_a?(Client)
+
       Client.new(options, &blk)
     end
   end

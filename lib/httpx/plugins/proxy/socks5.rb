@@ -53,6 +53,7 @@ module HTTPX
               version, status = packet.unpack("CC")
               check_version(version)
               return transition(:negotiating) if status == SUCCESS
+
               on_socks_error("socks authentication error: #{status}")
             when :negotiating
               version, reply, = packet.unpack("CC")
@@ -70,20 +71,25 @@ module HTTPX
             case nextstate
             when :connecting
               return unless @state == :idle
+
               @io.connect
               return unless @io.connected?
+
               @write_buffer << Packet.negotiate(@parameters)
               proxy_connect
             when :authenticating
               return unless @state == :connecting
+
               @write_buffer << Packet.authenticate(@parameters)
             when :negotiating
               return unless @state == :connecting || @state == :authenticating
+
               req, _ = @pending.first
               request_uri = req.uri
               @write_buffer << Packet.connect(request_uri)
             when :connected
               return unless @state == :negotiating
+
               @parser = nil
             end
             log(level: 1, label: "SOCKS5: ") { "#{nextstate}: #{@write_buffer.to_s.inspect}" } unless nextstate == :open
@@ -147,6 +153,7 @@ module HTTPX
             begin
               ip = IPAddr.new(uri.host)
               raise Error, "Socks4 connection to #{ip} not supported" unless ip.ipv4?
+
               packet << [IPV4, ip.to_i].pack("CN")
             rescue IPAddr::InvalidAddressError
               packet << [DOMAIN, uri.host.bytesize, uri.host].pack("CCA*")

@@ -63,8 +63,10 @@ module ProxyHelper
   def proxies_list(document)
     row = document.enum_for(:each_node).find do |node|
       next unless node.is_a?(Oga::XML::Element)
+
       id = node.attribute("id")
       next unless id
+
       id.value == "proxylisttable"
     end
     row ? row.css("tr") : []

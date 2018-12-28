@@ -30,8 +30,10 @@ module HTTPX
             case nextstate
             when :connecting
               return unless @state == :idle
+
               @io.connect
               return unless @io.connected?
+
               @parser = ConnectProxyParser.new(@write_buffer, @options.merge(max_concurrent_requests: 1))
               @parser.once(:response, &method(:on_connect))
               @parser.on(:close) { transition(:closing) }
@@ -39,6 +41,7 @@ module HTTPX
               return if @state == :connected
             when :connected
               return unless @state == :idle || @state == :connecting
+
               case @state
               when :connecting
                 @parser.close
@@ -85,6 +88,7 @@ module HTTPX
 
           def headline_uri(request)
             return super unless request.verb == :connect
+
             uri = request.uri
             tunnel = "#{uri.hostname}:#{uri.port}"
             log { "establishing HTTP proxy tunnel to #{tunnel}" }

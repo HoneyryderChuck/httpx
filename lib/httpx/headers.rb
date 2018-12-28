@@ -7,6 +7,7 @@ module HTTPX
     class << self
       def new(headers = nil)
         return headers if headers.is_a?(self)
+
         super
       end
     end
@@ -14,6 +15,7 @@ module HTTPX
     def initialize(headers = nil)
       @headers = {}
       return unless headers
+
       headers.each do |field, value|
         array_value(value).each do |v|
           add(downcased(field), v)
@@ -64,6 +66,7 @@ module HTTPX
     #
     def []=(field, value)
       return unless value
+
       @headers[downcased(field)] = array_value(value)
     end
 
@@ -94,6 +97,7 @@ module HTTPX
     #
     def each
       return enum_for(__method__) { @headers.size } unless block_given?
+
       @headers.each do |field, value|
         yield(field, value.join(", ")) unless value.empty?
       end

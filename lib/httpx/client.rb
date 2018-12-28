@@ -15,6 +15,7 @@ module HTTPX
 
     def wrap
       return unless block_given?
+
       begin
         prev_keep_open = @keep_open
         @keep_open = true
@@ -125,6 +126,7 @@ module HTTPX
                    raise ArgumentError, "unsupported number of arguments"
       end
       raise ArgumentError, "wrong number of URIs (given 0, expect 1..+1)" if requests.empty?
+
       requests
     end
 

@@ -38,6 +38,7 @@ module ResolverHelpers
 
   def test_parse_a_record
     return unless resolver.respond_to?(:parse)
+
     channel = build_channel("http://ipv4.tlund.se/")
     resolver.queries["ipv4.tlund.se"] = channel
     resolver.parse(a_record)
@@ -46,6 +47,7 @@ module ResolverHelpers
 
   def test_parse_aaaa_record
     return unless resolver.respond_to?(:parse)
+
     channel = build_channel("http://ipv6.tlund.se/")
     resolver.queries["ipv6.tlund.se"] = channel
     resolver.parse(aaaa_record)
@@ -54,6 +56,7 @@ module ResolverHelpers
 
   def test_parse_cname_record
     return unless resolver.respond_to?(:parse)
+
     channel = build_channel("http://ipv4c.tlund.se/")
     resolver.queries["ipv4c.tlund.se"] = channel
     # require "pry-byebug"; binding.pry
@@ -65,6 +68,7 @@ module ResolverHelpers
 
   def test_append_hostname
     return unless resolver.respond_to?(:resolve)
+
     channel = build_channel("https://news.ycombinator.com")
     resolver << channel
     assert channel.addresses.nil?, "there should be no direct IP"

@@ -10,11 +10,13 @@ module HTTPX
       module InstanceMethods
         def request(*args, keep_open: @keep_open, **options)
           return super if @_h2c_probed
+
           begin
             requests = __build_reqs(*args, **options)
 
             upgrade_request = requests.first
             return super unless valid_h2c_upgrade_request?(upgrade_request)
+
             upgrade_request.headers["upgrade"] = "h2c"
             upgrade_request.headers.add("connection", "upgrade")
             upgrade_request.headers.add("connection", "http2-settings")
@@ -40,6 +42,7 @@ module HTTPX
               responses = [upgrade_response] + __send_reqs(*requests[1..-1])
             end
             return responses.first if responses.size == 1
+
             responses
           ensure
             @_h2c_probed = true

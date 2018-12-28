@@ -18,6 +18,7 @@ module HTTPX::Transcoder
 
       def each
         return enum_for(__method__) unless block_given?
+
         @raw.each do |chunk|
           yield "#{chunk.bytesize.to_s(16)}#{CRLF}#{chunk}#{CRLF}"
         end
@@ -57,6 +58,7 @@ module HTTPX::Transcoder
           when :length
             index = @buffer.index(CRLF)
             return unless index && index.positive?
+
             # Read hex-length
             hexlen = @buffer.slice!(0, index)
             hexlen[/\h/] || raise(Error, "wrong chunk size line: #{hexlen}")
@@ -69,11 +71,13 @@ module HTTPX::Transcoder
             # consume CRLF
             return if @buffer.bytesize < crlf_size
             raise Error, "wrong chunked encoding format" unless @buffer.start_with?(CRLF * (crlf_size / 2))
+
             @buffer.slice!(0, crlf_size)
             if @chunk_length.nil?
               nextstate(:length)
             else
               return if @finished
+
               nextstate(:data)
             end
           when :data

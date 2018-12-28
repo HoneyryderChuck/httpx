@@ -36,6 +36,7 @@ module HTTPX
 
     def connect
       return unless closed?
+
       begin
         if @io.closed?
           transition(:idle)

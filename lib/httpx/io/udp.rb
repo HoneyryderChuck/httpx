@@ -48,6 +48,7 @@ module HTTPX
         ret = @io.recvfrom_nonblock(size, 0, buffer, exception: false)
         return 0 if ret == :wait_readable
         return if ret.nil?
+
         buffer.bytesize
       rescue IOError
       end

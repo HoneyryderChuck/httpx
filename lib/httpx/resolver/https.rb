@@ -56,6 +56,7 @@ module HTTPX
 
     def closed?
       return true unless @resolver_channel
+
       resolver_channel.closed?
     end
 
@@ -67,6 +68,7 @@ module HTTPX
 
     def resolve(channel = @channels.first, hostname = nil)
       return if @building_channel
+
       hostname = hostname || @queries.key(channel) || channel.uri.host
       type = @_record_types[hostname].first
       log(label: "resolver: ") { "query #{type} for #{hostname}" }
@@ -114,12 +116,12 @@ module HTTPX
     def parse(response)
       answers = begin
         decode_response_body(response)
-      rescue Resolv::DNS::DecodeError, JSON::JSONError => e
-        host, channel = @queries.first
-        if @_record_types[host].empty?
-          emit_resolve_error(channel, host, e)
-          return
-        end
+                rescue Resolv::DNS::DecodeError, JSON::JSONError => e
+                  host, channel = @queries.first
+                  if @_record_types[host].empty?
+                    emit_resolve_error(channel, host, e)
+                    return
+                  end
       end
       if answers.empty?
         host, channel = @queries.first
@@ -148,15 +150,18 @@ module HTTPX
             end
           end.compact
           next if addresses.empty?
+
           hostname = hostname[0..-2] if hostname.end_with?(".")
           channel = @queries.delete(hostname)
           next unless channel # probably a retried query for which there's an answer
+
           @channels.delete(channel)
           Resolver.cached_lookup_set(hostname, addresses)
           emit_addresses(channel, addresses.map { |addr| addr["data"] })
         end
       end
       return if @channels.empty?
+
       resolve
     end
 

@@ -25,6 +25,7 @@ module HTTPX
 
     def callbacks(type = nil)
       return @callbacks unless type
+
       @callbacks ||= Hash.new { |h, k| h[k] = [] }
       @callbacks[type]
     end

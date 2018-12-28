@@ -42,6 +42,7 @@ module HTTPX
           klass.def_option(:max_retries) do |num|
             num = Integer(num)
             raise Error, ":max_retries must be positive" unless num.positive?
+
             num
           end
         end

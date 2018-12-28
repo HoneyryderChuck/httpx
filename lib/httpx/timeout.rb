@@ -9,6 +9,7 @@ module HTTPX
 
     def self.new(opts = {})
       return opts if opts.is_a?(Timeout)
+
       super
     end
 
@@ -65,6 +66,7 @@ module HTTPX
 
     def transition(nextstate)
       return if @state == nextstate
+
       case nextstate
       # when :idle
       when :idle
@@ -88,6 +90,7 @@ module HTTPX
     def log_time
       return unless @time_left
       return reset_timer unless @started
+
       @time_left -= (Process.clock_gettime(Process::CLOCK_MONOTONIC) - @started)
       raise TimeoutError.new(@total_timeout, "Timed out after #{@total_timeout} seconds") if @time_left <= 0
 

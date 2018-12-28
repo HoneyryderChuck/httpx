@@ -18,6 +18,7 @@ module HTTPX
       now = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       @altsvc_mutex.synchronize do
         return if @altsvcs[origin].any? { |altsvc| altsvc["origin"] == entry["origin"] }
+
         entry["TTL"] = Integer(entry["ma"]) + now if entry.key?("ma")
         @altsvcs[origin] << entry
         entry
@@ -26,6 +27,7 @@ module HTTPX
 
     def lookup(origin, ttl)
       return [] unless @altsvcs.key?(origin)
+
       @altsvcs[origin] = @altsvcs[origin].select do |entry|
         !entry.key?("TTL") || entry["TTL"] > ttl
       end
@@ -35,6 +37,7 @@ module HTTPX
     def emit(request, response)
       # Alt-Svc
       return unless response.headers.key?("alt-svc")
+
       origin = request.origin
       host = request.uri.host
       parse(response.headers["alt-svc"]) do |alt_origin, alt_params|
@@ -45,6 +48,7 @@ module HTTPX
 
     def parse(altsvc)
       return enum_for(__method__, altsvc) unless block_given?
+
       alt_origins, *alt_params = altsvc.split(/ *; */)
       alt_params = Hash[alt_params.map { |field| field.split("=") }]
       alt_origins.split(/ *, */).each do |alt_origin|

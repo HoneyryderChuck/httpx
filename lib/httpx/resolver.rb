@@ -52,6 +52,7 @@ module HTTPX
     # do not use directly!
     def lookup(hostname, ttl)
       return unless @lookups.key?(hostname)
+
       @lookups[hostname] = @lookups[hostname].select do |address|
         address["TTL"] > ttl
       end
@@ -92,7 +93,7 @@ module HTTPX
              Resolv::DNS::Resource::IN::AAAA
           addresses << {
             "name" => question.to_s,
-            "TTL"  => value.ttl,
+            "TTL" => value.ttl,
             "data" => value.address.to_s,
           }
         end

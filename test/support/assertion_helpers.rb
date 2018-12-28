@@ -5,6 +5,7 @@ module ResponseHelpers
 
   def verify_status(response, expect)
     raise response.status if response.is_a?(HTTPX::ErrorResponse)
+
     assert response.status == expect, "status assertion failed: #{response.status} (expected: #{expect})"
   end
 

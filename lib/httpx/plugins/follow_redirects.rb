@@ -6,7 +6,7 @@ module HTTPX
     module FollowRedirects
       module InstanceMethods
         MAX_REDIRECTS = 3
-        REDIRECT_STATUS = 300..399
+        REDIRECT_STATUS = (300..399).freeze
 
         def max_redirects(n)
           branch(default_options.with_max_redirects(n.to_i))
@@ -25,6 +25,7 @@ module HTTPX
             redirect_requests = []
             indexes = responses.each_with_index.map do |response, index|
               next unless REDIRECT_STATUS.include?(response.status)
+
               request = requests[index]
               retry_request = __build_redirect_req(request, response, options)
               redirect_requests << retry_request
@@ -32,6 +33,7 @@ module HTTPX
             end.compact
             break if redirect_requests.empty?
             break if max_redirects <= 0
+
             max_redirects -= 1
 
             redirect_responses = __send_reqs(*redirect_requests)
@@ -42,6 +44,7 @@ module HTTPX
           end
 
           return responses.first if responses.size == 1
+
           responses
         ensure
           @keep_open = keep_open
@@ -88,6 +91,7 @@ module HTTPX
           klass.def_option(:max_redirects) do |num|
             num = Integer(num)
             raise Error, ":max_redirects must be positive" unless num.positive?
+
             num
           end
 

@@ -47,6 +47,7 @@ module Requests
 
         def close
           return unless @file
+
           @file.close
           @file.unlink
         end

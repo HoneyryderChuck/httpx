@@ -99,6 +99,7 @@ module HTTPX
 
     def <<(channel)
       return if early_resolve(channel)
+
       if @nameserver.nil?
         ex = ResolveError.new("Can't resolve #{channel.uri.host}: no nameserver")
         ex.set_backtrace(caller)
@@ -124,6 +125,7 @@ module HTTPX
 
     def do_retry
       return if @queries.empty?
+
       loop_time = Process.clock_gettime(Process::CLOCK_MONOTONIC) - @start_timeout
       channels = []
       queries = {}
@@ -159,6 +161,7 @@ module HTTPX
           return
         end
         return if siz.zero?
+
         log(label: "resolver: ") { "READ: #{siz} bytes..." }
         parse(@read_buffer.to_s)
       end
@@ -167,6 +170,7 @@ module HTTPX
     def dwrite
       loop do
         return if @write_buffer.empty?
+
         siz = @io.write(@write_buffer)
         unless siz
           emit(:close)
@@ -180,12 +184,12 @@ module HTTPX
     def parse(buffer)
       addresses = begin
         Resolver.decode_dns_answer(buffer)
-      rescue Resolv::DNS::DecodeError => e
-        hostname, channel = @queries.first
-        if @_record_types[hostname].empty?
-          emit_resolve_error(channel, hostname, e)
-          return
-        end
+                  rescue Resolv::DNS::DecodeError => e
+                    hostname, channel = @queries.first
+                    if @_record_types[hostname].empty?
+                      emit_resolve_error(channel, hostname, e)
+                      return
+                    end
       end
 
       if addresses.empty?
@@ -200,6 +204,7 @@ module HTTPX
         address = addresses.first
         channel = @queries.delete(address["name"])
         return unless channel # probably a retried query for which there's an answer
+
         if address.key?("alias") # CNAME
           if early_resolve(channel, hostname: address["alias"])
             @channels.delete(channel)
@@ -215,12 +220,14 @@ module HTTPX
         end
       end
       return emit(:close) if @channels.empty?
+
       resolve
     end
 
     def resolve(channel = @channels.first, hostname = nil)
       raise Error, "no URI to resolve" unless channel
       return unless @write_buffer.empty?
+
       hostname = hostname || @queries.key(channel) || channel.uri.host
       @queries[hostname] = channel
       type = @_record_types[hostname].first
@@ -234,6 +241,7 @@ module HTTPX
 
     def build_socket
       return if @io
+
       ip, port = @nameserver[@ns_index]
       port ||= DNS_PORT
       uri = URI::Generic.build(scheme: "udp", port: port)
@@ -253,11 +261,13 @@ module HTTPX
         @timeouts.clear
       when :open
         return unless @state == :idle
+
         build_socket
         @io.connect
         return unless @io.connected?
       when :closed
         return unless @state == :open
+
         @io.close if @io
       end
       @state = nextstate

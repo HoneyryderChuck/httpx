@@ -38,15 +38,19 @@ module HTTPX
             case nextstate
             when :connecting
               return unless @state == :idle
+
               @io.connect
               return unless @io.connected?
+
               req, _ = @pending.first
               return unless req
+
               request_uri = req.uri
               @write_buffer << Packet.connect(@parameters, request_uri)
               proxy_connect
             when :connected
               return unless @state == :connecting
+
               @parser = nil
             end
             log(level: 1, label: "SOCKS4: ") { "#{nextstate}: #{@write_buffer.to_s.inspect}" } unless nextstate == :open
@@ -92,6 +96,7 @@ module HTTPX
             begin
               ip = IPAddr.new(uri.host)
               raise Error, "Socks4 connection to #{ip} not supported" unless ip.ipv4?
+
               packet << [ip.to_i].pack("N")
             rescue IPAddr::InvalidAddressError
               if parameters.uri.scheme == "socks4"

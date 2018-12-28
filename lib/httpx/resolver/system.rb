@@ -32,6 +32,7 @@ module HTTPX
       hostname = channel.uri.host
       addresses = ip_resolve(hostname) || system_resolve(hostname) || @resolver.getaddresses(hostname)
       return emit_resolve_error(channel, hostname) if addresses.empty?
+
       emit_addresses(channel, addresses)
     rescue Errno::EHOSTUNREACH, *RESOLV_ERRORS => e
       emit_resolve_error(channel, hostname, e)

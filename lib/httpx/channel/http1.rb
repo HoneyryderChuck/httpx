@@ -93,6 +93,7 @@ module HTTPX
 
     def on_trailers(h)
       return unless @request
+
       response = @request.response
       log(level: 2) { "trailer headers received" }
 
@@ -102,6 +103,7 @@ module HTTPX
 
     def on_data(chunk)
       return unless @request
+
       log(color: :green) { "-> DATA: #{chunk.bytesize} bytes..." }
       log(level: 2, color: :green) { "-> #{chunk.inspect}" }
       response = @request.response
@@ -111,6 +113,7 @@ module HTTPX
 
     def on_complete
       return unless @request
+
       log(level: 2) { "parsing complete" }
       dispatch
     end
@@ -158,6 +161,7 @@ module HTTPX
       when /keep\-alive/i
         keep_alive = response.headers["keep-alive"]
         return unless keep_alive
+
         parameters = Hash[keep_alive.split(/ *, */).map do |pair|
           pair.split(/ *= */)
         end]
@@ -176,6 +180,7 @@ module HTTPX
 
     def disable_pipelining
       return if @requests.empty?
+
       @requests.each { |r| r.transition(:idle) }
       # server doesn't handle pipelining, and probably
       # doesn't support keep-alive. Fallback to send only
@@ -226,6 +231,7 @@ module HTTPX
 
     def join_body(request)
       return if request.empty?
+
       while (chunk = request.drain_body)
         log(color: :green) { "<- DATA: #{chunk.bytesize} bytes..." }
         log(level: 2, color: :green) { "<- #{chunk.inspect}" }

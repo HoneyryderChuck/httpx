@@ -16,6 +16,7 @@ module HTTPX
         # let enhanced options go through
         return options if self == Options && options.class > self
         return options if options.is_a?(self)
+
         super
       end
 
@@ -38,24 +39,24 @@ module HTTPX
 
     def initialize(options = {})
       defaults = {
-        :debug                    => ENV.key?("HTTPX_DEBUG") ? $stderr : nil,
-        :debug_level              => (ENV["HTTPX_DEBUG"] || 1).to_i,
-        :ssl                      => {},
-        :http2_settings           => { settings_enable_push: 0 },
-        :fallback_protocol        => "http/1.1",
-        :timeout                  => Timeout.new,
-        :headers                  => {},
-        :max_concurrent_requests  => MAX_CONCURRENT_REQUESTS,
-        :window_size              => WINDOW_SIZE,
-        :body_threshold_size      => MAX_BODY_THRESHOLD_SIZE,
-        :request_class            => Class.new(Request),
-        :response_class           => Class.new(Response),
-        :headers_class            => Class.new(Headers),
-        :request_body_class       => Class.new(Request::Body),
-        :response_body_class      => Class.new(Response::Body),
-        :transport                => nil,
-        :transport_options        => nil,
-        :resolver_class           => (ENV["HTTPX_RESOLVER"] || :native).to_sym,
+        :debug => ENV.key?("HTTPX_DEBUG") ? $stderr : nil,
+        :debug_level => (ENV["HTTPX_DEBUG"] || 1).to_i,
+        :ssl => {},
+        :http2_settings => { settings_enable_push: 0 },
+        :fallback_protocol => "http/1.1",
+        :timeout => Timeout.new,
+        :headers => {},
+        :max_concurrent_requests => MAX_CONCURRENT_REQUESTS,
+        :window_size => WINDOW_SIZE,
+        :body_threshold_size => MAX_BODY_THRESHOLD_SIZE,
+        :request_class => Class.new(Request),
+        :response_class => Class.new(Response),
+        :headers_class => Class.new(Headers),
+        :request_body_class => Class.new(Request::Body),
+        :response_body_class => Class.new(Response::Body),
+        :transport => nil,
+        :transport_options => nil,
+        :resolver_class => (ENV["HTTPX_RESOLVER"] || :native).to_sym,
       }
 
       defaults.merge!(options)
@@ -74,6 +75,7 @@ module HTTPX
     def_option(:max_concurrent_requests) do |num|
       max = Integer(num)
       raise Error, ":max_concurrent_requests must be positive" unless max.positive?
+
       self.max_concurrent_requests = max
     end
 
@@ -88,6 +90,7 @@ module HTTPX
     def_option(:transport) do |tr|
       transport = tr.to_s
       raise Error, "#{transport} is an unsupported transport type" unless IO.registry.key?(transport)
+
       self.transport = transport
     end
 

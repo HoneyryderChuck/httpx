@@ -86,6 +86,7 @@ module HTTPX
 
     def mergeable?(addresses)
       return false if @state == :closing || !@io
+
       !(@io.addresses & addresses).empty?
     end
 
@@ -147,6 +148,7 @@ module HTTPX
 
     def interests
       return :w if @state == :idle
+
       readable = !@read_buffer.full?
       writable = !@write_buffer.empty?
       if readable
@@ -208,8 +210,10 @@ module HTTPX
 
     def handle_timeout_error(e)
       return emit(:error, e) unless @timeout
+
       @timeout -= e.timeout
       return unless @timeout <= 0
+
       if connecting?
         emit(:error, e.to_connection_error)
       else
@@ -237,6 +241,7 @@ module HTTPX
           return
         end
         return if siz.zero?
+
         log { "READ: #{siz} bytes..." }
         parser << @read_buffer.to_s
         return if @state == :closing || @state == :closed
@@ -246,6 +251,7 @@ module HTTPX
     def dwrite
       loop do
         return if @write_buffer.empty?
+
         siz = @io.write(@write_buffer)
         unless siz
           ex = EOFError.new("descriptor closed")
@@ -321,8 +327,10 @@ module HTTPX
         @timeout = @timeout_threshold
       when :open
         return if @state == :closed
+
         @io.connect
         return unless @io.connected?
+
         send_pending
         @timeout_threshold = @options.timeout.operation_timeout
         @timeout = @timeout_threshold
@@ -332,6 +340,7 @@ module HTTPX
       when :closed
         return unless @state == :closing
         return unless @write_buffer.empty?
+
         @io.close
         @read_buffer.clear
       end

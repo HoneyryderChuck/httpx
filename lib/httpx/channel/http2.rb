@@ -195,6 +195,7 @@ module HTTPX
 
     def on_stream_close(stream, request, error)
       return handle(request, stream) if request.expects?
+
       if error
         ex = Error.new(stream.id, error)
         ex.set_backtrace(caller)
@@ -233,6 +234,7 @@ module HTTPX
         emit(:error, request, ex)
       end
       return unless @connection.state == :closed && @connection.active_stream_count.zero?
+
       emit(:close)
     end
 

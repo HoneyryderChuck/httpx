@@ -84,6 +84,7 @@ module HTTPX
 
     def query
       return @query if defined?(@query)
+
       query = []
       if (q = @options.params)
         query << URI.encode_www_form(q)
@@ -94,6 +95,7 @@ module HTTPX
 
     def drain_body
       return nil if @body.nil?
+
       @drainer ||= @body.each
       chunk = @drainer.next
       chunk.dup
@@ -109,6 +111,7 @@ module HTTPX
       class << self
         def new(*, options)
           return options.body if options.body.is_a?(self)
+
           super
         end
       end
@@ -123,6 +126,7 @@ module HTTPX
           Transcoder.registry("json").encode(options.json)
         end
         return if @body.nil?
+
         @headers["content-type"] ||= @body.content_type
         @headers["content-length"] = @body.bytesize unless unbounded_body?
       end
@@ -130,6 +134,7 @@ module HTTPX
       def each(&block)
         return enum_for(__method__) unless block_given?
         return if @body.nil?
+
         body = stream(@body)
         if body.respond_to?(:read)
           ::IO.copy_stream(body, ProcIO.new(block))
@@ -143,11 +148,13 @@ module HTTPX
       def empty?
         return true if @body.nil?
         return false if chunked?
+
         bytesize.zero?
       end
 
       def bytesize
         return 0 if @body.nil?
+
         if @body.respond_to?(:bytesize)
           @body.bytesize
         elsif @body.respond_to?(:size)

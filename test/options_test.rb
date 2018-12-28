@@ -43,8 +43,8 @@ class OptionsTest < Minitest::Test
     assert opts.merge(opt2).body == "short", "options parameter hasn't been merged"
 
     foo = Options.new(
-      :form      => { :foo => "foo" },
-      :headers   => { :accept => "json", :foo => "foo" },
+      :form => { :foo => "foo" },
+      :headers => { :accept => "json", :foo => "foo" },
     )
 
     bar = Options.new(
@@ -54,31 +54,31 @@ class OptionsTest < Minitest::Test
     )
 
     assert foo.merge(bar).to_hash == {
-      :io                 => ENV.key?("HTTPX_DEBUG") ? $stderr : nil,
-      :debug              => nil,
-      :debug_level        => 1,
-      :params             => nil,
-      :json               => nil,
-      :body               => nil,
-      :follow             => nil,
-      :window_size        => 16_384,
+      :io => ENV.key?("HTTPX_DEBUG") ? $stderr : nil,
+      :debug => nil,
+      :debug_level => 1,
+      :params => nil,
+      :json => nil,
+      :body => nil,
+      :follow => nil,
+      :window_size => 16_384,
       :body_threshold_size => 114_688,
-      :form               => { :bar => "bar" },
-      :timeout            => Timeout.new,
-      :ssl                => { :foo => "bar" },
-      :http2_settings     => { :settings_enable_push => 0 },
-      :fallback_protocol  => "http/1.1",
-      :headers            => { "Foo" => "foo", "Accept" => "xml", "Bar" => "bar" },
+      :form => { :bar => "bar" },
+      :timeout => Timeout.new,
+      :ssl => { :foo => "bar" },
+      :http2_settings => { :settings_enable_push => 0 },
+      :fallback_protocol => "http/1.1",
+      :headers => { "Foo" => "foo", "Accept" => "xml", "Bar" => "bar" },
       :max_concurrent_requests => 100,
-      :request_class      => bar.request_class,
-      :response_class     => bar.response_class,
-      :headers_class      => bar.headers_class,
+      :request_class => bar.request_class,
+      :response_class => bar.response_class,
+      :headers_class => bar.headers_class,
       :request_body_class => bar.request_body_class,
       :response_body_class => bar.response_body_class,
-      :transport          => nil,
-      :transport_options  => nil,
-      :resolver_class     => bar.resolver_class,
-      :resolver_options   => bar.resolver_options,
+      :transport => nil,
+      :transport_options => nil,
+      :resolver_class => bar.resolver_class,
+      :resolver_options => bar.resolver_options,
     }, "options haven't merged correctly"
   end
 

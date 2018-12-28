@@ -57,13 +57,16 @@ module HTTPX
       def parse_headline
         idx = @buffer.index("\n")
         return unless idx
+
         (m = %r{\AHTTP(?:\/(\d+\.\d+))?\s+(\d\d\d)(?:\s+(.*))?}in.match(@buffer)) ||
           raise(Error, "wrong head line format")
         version, code, _ = m.captures
         raise(Error, "unsupported HTTP version (HTTP/#{version})") unless VERSIONS.include?(version)
+
         @http_version = version.split(".").map(&:to_i)
         @status_code = code.to_i
         raise(Error, "wrong status code (#{@status_code})") unless (100..599).cover?(@status_code)
+
         @buffer.slice!(0, idx + 1)
         nextstate(:headers)
       end
@@ -78,6 +81,7 @@ module HTTPX
               prepare_data(headers)
               @observer.on_headers(headers)
               return unless @state == :headers
+
               # state might have been reset
               # in the :headers callback
               nextstate(:data)
@@ -93,12 +97,15 @@ module HTTPX
           end
           separator_index = line.index(@header_separator)
           raise Error, "wrong header format" unless separator_index
+
           key = line[0..separator_index - 1]
           raise Error, "wrong header format" if key.start_with?("\s", "\t")
+
           key.strip!
           value = line[separator_index + 1..-1]
           value.strip!
           raise Error, "wrong header format" if value.nil?
+
           (headers[key.downcase] ||= []) << value
         end
       end
@@ -118,6 +125,7 @@ module HTTPX
           @buffer.clear
         end
         return unless no_more_data?
+
         @buffer = @buffer.to_s
         if @_has_trailers
           nextstate(:trailers)

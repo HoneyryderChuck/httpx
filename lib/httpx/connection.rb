@@ -84,6 +84,7 @@ module HTTPX
       @channels << channel unless @channels.include?(channel)
       @resolver << channel
       return if @resolver.empty?
+
       @_resolver_monitor ||= begin # rubocop:disable Naming/MemoizedInstanceVariableName
         monitor = @selector.register(@resolver, :w)
         monitor.value = @resolver
@@ -96,6 +97,7 @@ module HTTPX
         ch != channel && ch.mergeable?(addresses)
       end
       return register_channel(channel) unless found_channel
+
       if found_channel.state == :open
         coalesce_channels(found_channel, channel)
       else
@@ -144,6 +146,7 @@ module HTTPX
     def next_timeout
       timeout = @timeout.timeout
       return (@resolver.timeout || timeout) unless @resolver.closed?
+
       timeout
     end
   end

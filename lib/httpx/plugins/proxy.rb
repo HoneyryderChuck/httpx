@@ -51,11 +51,13 @@ module HTTPX
           uri = URI(request.uri)
           proxy = proxy_params(uri)
           raise Error, "Failed to connect to proxy" unless proxy
+
           @connection.find_channel(proxy) || build_channel(proxy, options)
         end
 
         def build_channel(proxy, options)
           return super if proxy.is_a?(URI::Generic)
+
           channel = build_proxy_channel(proxy, **options)
           set_channel_callbacks(channel, options)
           channel

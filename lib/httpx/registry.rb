@@ -58,8 +58,10 @@ module HTTPX
       def registry(tag = nil)
         @registry ||= {}
         return @registry if tag.nil?
+
         handler = @registry.fetch(tag)
         raise(Error, "#{tag} is not registered in #{self}") unless handler
+
         case handler
         when Symbol, String
           const_get(handler)

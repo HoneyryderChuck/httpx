@@ -19,6 +19,7 @@ module HTTPX
 
         def request(*args, keep_open: @keep_open, **options)
           return super unless @_digest
+
           begin
             requests = __build_reqs(*args, **options)
             probe_request = requests.first
@@ -39,6 +40,7 @@ module HTTPX
               prev_response = response
             end
             return responses.first if responses.size == 1
+
             responses
           ensure
             close unless keep_open

@@ -23,6 +23,7 @@ module HTTPX
       module HeadersMethods
         def cookies(jar, request)
           return unless jar
+
           unless jar.is_a?(HTTP::CookieJar)
             jar = jar.each_with_object(HTTP::CookieJar.new) do |(k, v), j|
               cookie = k.is_a?(HTTP::Cookie) ? v : HTTP::Cookie.new(k.to_s, v.to_s)
@@ -39,6 +40,7 @@ module HTTPX
         def cookie_jar
           return @cookie_jar if defined?(@cookie_jar)
           return nil unless headers.key?("set-cookie")
+
           @cookie_jar ||= begin
             jar = HTTP::CookieJar.new
             jar.parse(headers["set-cookie"], @request.uri)

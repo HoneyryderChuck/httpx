@@ -54,6 +54,7 @@ module HTTPX
 
     def connect
       return unless closed?
+
       begin
         if @io.closed?
           transition(:idle)
@@ -65,6 +66,7 @@ module HTTPX
       transition(:connected)
     rescue Errno::EHOSTUNREACH => e
       raise e if @ip_index <= 0
+
       @ip_index -= 1
       retry
     rescue Errno::EINPROGRESS,
@@ -96,6 +98,7 @@ module HTTPX
         ret = @io.read_nonblock(size, buffer, exception: false)
         return 0 if ret == :wait_readable
         return if ret.nil?
+
         buffer.bytesize
       end
 
@@ -103,6 +106,7 @@ module HTTPX
         siz = @io.write_nonblock(buffer, exception: false)
         return 0 if siz == :wait_writable
         return if siz.nil?
+
         buffer.slice!(0, siz)
         siz
       end
@@ -110,6 +114,7 @@ module HTTPX
 
     def close
       return if @keep_open || closed?
+
       begin
         @io.close
       ensure

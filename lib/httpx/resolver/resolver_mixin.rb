@@ -38,6 +38,7 @@ module HTTPX
       def early_resolve(channel, hostname: channel.uri.host)
         addresses = ip_resolve(hostname) || Resolver.cached_lookup(hostname) || system_resolve(hostname)
         return unless addresses
+
         emit_addresses(channel, addresses)
       end
 
@@ -49,6 +50,7 @@ module HTTPX
         @system_resolver ||= Resolv::Hosts.new
         ips = @system_resolver.getaddresses(hostname)
         return if ips.empty?
+
         ips.map { |ip| IPAddr.new(ip) }
       end
 
