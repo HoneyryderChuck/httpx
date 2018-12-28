@@ -7,8 +7,13 @@ gemspec
 
 gem "hanna-nouveau", require: false
 gem "rake", "~> 12.3"
-gem "rubocop", "~> 0.61.1", require: false
 gem "simplecov", require: false
+
+if RUBY_VERSION < "2.2"
+  gem "rubocop", "~> 0.57.2", require: false
+else
+  gem "rubocop", "~> 0.61.1", require: false
+end
 
 platform :mri do
   gem "brotli", require: false
