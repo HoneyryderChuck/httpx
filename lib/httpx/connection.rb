@@ -120,12 +120,21 @@ module HTTPX
     end
 
     def register_channel(channel)
-      @timeout.transition(:idle)
-      monitor = @selector.register(channel, :w)
+      monitor = if channel.state == :open
+        # if open, an IO was passed upstream, therefore
+        # consider it connected already.
+        @connected_channels += 1
+        @selector.register(channel, :rw)
+      else
+        @selector.register(channel, :w)
+      end
       monitor.value = channel
       channel.on(:close) do
         unregister_channel(channel)
       end
+      return if channel.state == :open
+
+      @timeout.transition(:idle)
     end
 
     def unregister_channel(channel)

@@ -19,6 +19,14 @@ platform :mri do
   gem "brotli", require: false
   gem "pry-byebug", require: false
   gem "benchmark-ips", require: false
+  gem "net-ssh-gateway", require: false
+  gem "ed25519", require: false
+  gem "bcrypt_pbkdf", require: false
+end
+
+platform :mri_21 do
+  gem "rbnacl", require: false
+  gem "rbnacl-libsodium", require: false
 end
 # gem "guard-rspec", :require => false
 # gem "nokogiri",    :require => false

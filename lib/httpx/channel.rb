@@ -77,11 +77,25 @@ module HTTPX
       @write_buffer = Buffer.new(BUFFER_SIZE)
       @pending = []
       on(:error) { |ex| on_error(ex) }
-      transition(:idle)
+      if @options.io
+        # if there's an already open IO, get its
+        # peer address, and force-initiate the parser
+        transition(:already_open)
+        @io = IO.registry(@type).new(@uri, nil, @options)
+        parser
+      else
+        transition(:idle)
+      end
     end
 
+    # this is a semi-private method, to be used by the resolver
+    # to initiate the io object.
     def addresses=(addrs)
-      @io = IO.registry(@type).new(@uri, addrs, @options)
+      @io ||= IO.registry(@type).new(@uri, addrs, @options) # rubocop:disable Naming/MemoizedInstanceVariableName
+    end
+
+    def addresses
+      @io && @io.addresses
     end
 
     def mergeable?(addresses)
@@ -320,7 +334,6 @@ module HTTPX
 
     def transition(nextstate)
       case nextstate
-      # when :idle
       when :idle
         @error_response = nil
         @timeout_threshold = @options.timeout.connect_timeout
@@ -343,6 +356,11 @@ module HTTPX
 
         @io.close
         @read_buffer.clear
+      when :already_open
+        nextstate = :open
+        send_pending
+        @timeout_threshold = @options.timeout.operation_timeout
+        @timeout = @timeout_threshold
       end
       @state = nextstate
     rescue Errno::EHOSTUNREACH
