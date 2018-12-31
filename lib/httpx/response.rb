@@ -244,7 +244,7 @@ module HTTPX
     def initialize(error, options)
       @error = error
       @options = Options.new(options)
-      log { "#{error.class}: #{error}" }
+      log_exception(@error)
     end
 
     def status
@@ -254,5 +254,15 @@ module HTTPX
     def raise_for_status
       raise @error
     end
+
+    # rubocop:disable Style/MissingRespondToMissing
+    def method_missing(meth, *, &block)
+      if Response.public_method_defined?(meth)
+        raise NoMethodError, "undefined response method `#{meth}' for error response"
+      end
+
+      super
+    end
+    # rubocop:enable Style/MissingRespondToMissing
   end
 end
