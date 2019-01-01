@@ -28,11 +28,9 @@ platform :mri_21 do
   gem "rbnacl", require: false
   gem "rbnacl-libsodium", require: false
 end
-# gem "guard-rspec", :require => false
-# gem "nokogiri",    :require => false
+
 gem "pry", :require => false
 
 gem "minitest", require: false
 gem "minitest-proveit", require: false
 gem "oga", require: false
-gem "http_parser.rb", require: false
