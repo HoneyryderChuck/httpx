@@ -22,21 +22,33 @@ module Requests
         client = HTTPX.plugin(:cookies)
         session_cookies = { "a" => "b", "c" => "d" }
         session_uri = cookies_set_uri(session_cookies)
-        session_response = client.get(cookies_set_uri(session_cookies))
-        assert session_response.status == 302, "response should redirect"
+        session_response = client.get(session_uri)
+        verify_status(session_response, 302)
+        verify_cookies(session_response.cookies, session_cookies)
 
-        assert !session_response.cookies.nil?, "there should be cookies in the response"
-        response_cookies = session_response.cookie_jar
-        assert !response_cookies.empty?
-        response_cookies.cookies(session_uri).each do |cookie|
-          assert(session_cookies.one? { |k, v| k == cookie.name && v == cookie.value })
-        end
-
-        response = client.cookies(response_cookies).get(cookies_uri)
+        # first iteration sets the session
+        response = client.get(cookies_uri)
         body = json_body(response)
         assert body.key?("cookies")
-        assert body["cookies"]["a"] == "b"
-        assert body["cookies"]["c"] == "d"
+        verify_cookies(body["cookies"], session_cookies)
+
+        extra_cookie_response = client.cookies("c" => "d").get(cookies_uri)
+        body = json_body(extra_cookie_response)
+        assert body.key?("cookies")
+        verify_cookies(body["cookies"], session_cookies.merge("c" => "d"))
+      end
+
+      def test_plugin_cookies_follow
+        client = HTTPX.plugins(:follow_redirects, :cookies)
+        session_cookies = { "a" => "b", "c" => "d" }
+        session_uri = cookies_set_uri(session_cookies)
+
+        response = client.get(session_uri)
+        verify_status(response, 200)
+        assert response.uri.to_s == cookies_uri
+        body = json_body(response)
+        assert body.key?("cookies")
+        verify_cookies(body["cookies"], session_cookies)
       end
 
       private
@@ -47,6 +59,19 @@ module Requests
 
       def cookies_set_uri(cookies)
         build_uri("/cookies/set?" + URI.encode_www_form(cookies))
+      end
+
+      def verify_cookies(jar, cookies)
+        assert !jar.nil? && !jar.empty?, "there should be cookies in the response"
+        assert jar.all? { |cookie|
+          case cookie
+          when HTTP::Cookie
+            cookies.one? { |k, v| k == cookie.name && v == cookie.value }
+          else
+            cookie_name, cookie_value = cookie
+            cookies.one? { |k, v| k == cookie_name && v == cookie_value }
+          end
+        }, "jar should contain all expected cookies"
       end
     end
   end
