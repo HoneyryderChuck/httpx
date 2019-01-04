@@ -8,15 +8,27 @@ module HTTPX
       end
 
       module InstanceMethods
+        def initialize(*)
+          @cookies_store = {}
+          super
+        end
+
         def cookies(cookies)
           branch(default_options.with_cookies(cookies))
         end
-      end
 
-      module RequestMethods
-        def initialize(*)
+        private
+
+        def on_response(request, response)
+          @cookies_store[request.origin] = response.cookies
           super
-          @headers.cookies(@options.cookies, self)
+        end
+
+        def __build_req(*)
+          request = super
+          request.headers.cookies(@cookies_store[request.origin], request)
+          request.headers.cookies(@options.cookies, request)
+          request
         end
       end
 
@@ -25,14 +37,16 @@ module HTTPX
           return unless jar
 
           unless jar.is_a?(HTTP::CookieJar)
-            jar = jar.each_with_object(HTTP::CookieJar.new) do |(k, v), j|
-              cookie = k.is_a?(HTTP::Cookie) ? v : HTTP::Cookie.new(k.to_s, v.to_s)
-              cookie.domain = request.authority
-              cookie.path = request.path
+            jar = jar.each_with_object(HTTP::CookieJar.new) do |(cookie, v), j|
+              unless cookie.is_a?(HTTP::Cookie)
+                cookie = HTTP::Cookie.new(cookie.to_s, v.to_s)
+                cookie.domain = request.authority
+                cookie.path = request.path
+              end
               j.add(cookie)
             end
           end
-          self["cookie"] = HTTP::Cookie.cookie_value(jar.cookies)
+          add("cookie", HTTP::Cookie.cookie_value(jar.cookies(request.uri)))
         end
       end
 
@@ -41,7 +55,7 @@ module HTTPX
           return @cookie_jar if defined?(@cookie_jar)
           return nil unless headers.key?("set-cookie")
 
-          @cookie_jar ||= begin
+          @cookie_jar = begin
             jar = HTTP::CookieJar.new
             jar.parse(headers["set-cookie"], @request.uri)
             jar
