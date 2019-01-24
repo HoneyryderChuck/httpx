@@ -5,14 +5,12 @@ module Requests
     module Cookies
       def test_plugin_cookies_get
         client = HTTPX.plugin(:cookies)
-        assert client.respond_to?(:cookies), "client should be cookie-enabled"
         response = client.get(cookies_uri)
-        assert response.respond_to?(:cookies), "response should have cookies"
         body = json_body(response)
         assert body.key?("cookies")
         assert body["cookies"].empty?
 
-        session_response = client.cookies("abc" => "def").get(cookies_uri)
+        session_response = client.with_cookies("abc" => "def").get(cookies_uri)
         body = json_body(session_response)
         assert body.key?("cookies")
         assert body["cookies"]["abc"] == "def", "abc wasn't properly set"
@@ -24,18 +22,24 @@ module Requests
         session_uri = cookies_set_uri(session_cookies)
         session_response = client.get(session_uri)
         verify_status(session_response, 302)
-        verify_cookies(session_response.cookies, session_cookies)
+        verify_cookies(client.cookies_store[URI(session_uri)], session_cookies)
 
-        # first iteration sets the session
+        # first request sets the session
         response = client.get(cookies_uri)
         body = json_body(response)
         assert body.key?("cookies")
         verify_cookies(body["cookies"], session_cookies)
 
-        extra_cookie_response = client.cookies("c" => "d").get(cookies_uri)
+        # second request reuses the session
+        extra_cookie_response = client.with_cookies("e" => "f").get(cookies_uri)
         body = json_body(extra_cookie_response)
         assert body.key?("cookies")
-        verify_cookies(body["cookies"], session_cookies.merge("c" => "d"))
+        verify_cookies(body["cookies"], session_cookies.merge("e" => "f"))
+
+        # redirect to a different origin only uses the option cookies
+        other_origin_response = client.with_cookies("e" => "f").get(redirect_uri(origin("google.com")))
+        verify_status(other_origin_response, 302)
+        assert !other_origin_response.headers.key?("set-cookie"), "cookies should not transition to next origin"
       end
 
       def test_plugin_cookies_follow
