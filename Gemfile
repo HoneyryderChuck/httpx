@@ -29,6 +29,7 @@ platform :mri_21 do
   gem "rbnacl-libsodium", require: false
 end
 
+gem "faraday", :require => false
 gem "pry", :require => false
 
 gem "minitest", require: false
