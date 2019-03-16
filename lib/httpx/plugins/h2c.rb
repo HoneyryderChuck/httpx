@@ -21,7 +21,6 @@ module HTTPX
             upgrade_request.headers.add("connection", "upgrade")
             upgrade_request.headers.add("connection", "http2-settings")
             upgrade_request.headers["http2-settings"] = HTTP2::Client.settings_header(@options.http2_settings)
-            # TODO: validate!
             upgrade_response = __send_reqs(*upgrade_request, **options).first
 
             if upgrade_response.status == 101

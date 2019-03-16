@@ -170,7 +170,6 @@ module HTTPX
           keep_alive_timeout = parameters["timeout"].to_i
           emit(:timeout, keep_alive_timeout)
         end
-        # TODO: on keep alive timeout, reset
       when /close/i, nil
         disable_pipelining
         @max_requests = Float::INFINITY

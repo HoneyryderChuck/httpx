@@ -59,7 +59,7 @@ module HTTPX
           method = request.verb.to_s.upcase
           www = response.headers["www-authenticate"]
 
-          # TODO: assert if auth-type is Digest
+          # discard first token, it's Digest
           auth_info = www[/^(\w+) (.*)/, 2]
 
           uri = request.path

@@ -193,7 +193,8 @@ module HTTPX
       when "application/dns-udpwireformat",
            "application/dns-message"
         Resolver.decode_dns_answer(response.to_s)
-        # TODO: what about the rest?
+      else
+        raise Error, "unsupported DNS mime-type (#{response.headers["content-type"]})"
       end
     end
   end
