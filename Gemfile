@@ -11,13 +11,14 @@ gem "simplecov", require: false
 
 if RUBY_VERSION < "2.2"
   gem "rubocop", "~> 0.57.0", require: false
+  gem "pry-byebug", "~> 3.4.3", require: false
 else
   gem "rubocop", "~> 0.61.1", require: false
+  gem "pry-byebug", require: false
 end
 
 platform :mri do
   gem "brotli", require: false
-  gem "pry-byebug", require: false
   gem "benchmark-ips", require: false
   gem "net-ssh-gateway", require: false
   gem "ed25519", require: false
