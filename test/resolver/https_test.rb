@@ -79,18 +79,18 @@ class HTTPSResolverTest < Minitest::Test
   end
 
   def a_record
-    MockResponse.new({ "content-type" => "application/dns-udpwireformat" }, super)
+    MockResponse.new({ "content-type" => "application/dns-message" }, super)
   end
 
   def aaaa_record
-    MockResponse.new({ "content-type" => "application/dns-udpwireformat" }, super)
+    MockResponse.new({ "content-type" => "application/dns-message" }, super)
   end
 
   def cname_record
-    MockResponse.new({ "content-type" => "application/dns-udpwireformat" }, super)
+    MockResponse.new({ "content-type" => "application/dns-message" }, super)
   end
 
   def no_record
-    MockResponse.new({ "content-type" => "application/dns-udpwireformat" }, super)
+    MockResponse.new({ "content-type" => "application/dns-message" }, super)
   end
 end
