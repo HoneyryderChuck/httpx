@@ -10,8 +10,8 @@ fi
 
 export PATH=$GEM_HOME/bin:$BUNDLE_PATH/gems/bin:$PATH
 mkdir -p "$GEM_HOME" && chmod 777 "$GEM_HOME"
-gem install bundler -v="1.17.0" --no-doc --conservative
-cd /home && bundle install --quiet --jobs 4 && \
+gem install bundler -v="1.17.3" --no-doc --conservative
+cd /home && bundle install --jobs 4 && \
   bundle exec rake test:ci
 
 RET=$?

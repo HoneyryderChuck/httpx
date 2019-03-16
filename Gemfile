@@ -17,11 +17,15 @@ end
 
 platform :mri do
   gem "brotli", require: false
-  gem "pry-byebug", require: false
   gem "benchmark-ips", require: false
   gem "net-ssh-gateway", require: false
   gem "ed25519", require: false
   gem "bcrypt_pbkdf", require: false
+  if RUBY_VERSION < "2.2"
+    gem "pry-byebug", "~> 3.4.3", require: false
+  else
+    gem "pry-byebug", require: false
+  end
 end
 
 platform :mri_21 do
@@ -29,6 +33,7 @@ platform :mri_21 do
   gem "rbnacl-libsodium", require: false
 end
 
+gem "faraday", :require => false
 gem "pry", :require => false
 
 gem "minitest", require: false

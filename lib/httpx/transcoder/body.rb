@@ -4,6 +4,8 @@ require "forwardable"
 
 module HTTPX::Transcoder
   module Body
+    Error = Class.new(HTTPX::Error)
+
     module_function
 
     class Encoder
@@ -22,6 +24,8 @@ module HTTPX::Transcoder
           @raw.map(&:bytesize).reduce(0, :+)
         elsif @raw.respond_to?(:size)
           @raw.size || Float::INFINITY
+        elsif @raw.respond_to?(:length)
+          @raw.length || Float::INFINITY
         elsif @raw.respond_to?(:each)
           Float::INFINITY
         else

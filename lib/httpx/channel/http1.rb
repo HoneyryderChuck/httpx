@@ -175,6 +175,7 @@ module HTTPX
         disable_pipelining
         @max_requests = Float::INFINITY
         emit(:reset)
+        throw(:called)
       end
     end
 

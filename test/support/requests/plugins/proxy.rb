@@ -38,6 +38,7 @@ module Requests
       end
 
       def test_plugin_ssh_proxy
+        skip if RUBY_ENGINE == "jruby"
         client = HTTPX.plugin(:"proxy/ssh").with_proxy(uri: ssh_proxy,
                                                        username: "root",
                                                        auth_methods: %w[publickey],
