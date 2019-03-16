@@ -13,7 +13,7 @@ module Requests
 
       def test_plugin_push_promise_concurrent
         session = HTTPX.plugin(:push_promise)
-                      .with(max_concurrent_requests: 100)
+                       .with(max_concurrent_requests: 100)
         html, css = session.get(push_html_uri, push_css_uri)
         verify_status(html, 200)
         verify_status(css, 200)

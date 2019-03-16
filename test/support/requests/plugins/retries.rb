@@ -9,9 +9,9 @@ module Requests
         assert no_retries_response.is_a?(HTTPX::ErrorResponse)
         assert no_retries_session.calls == 1, "expect request to be built 1 times (was #{no_retries_session.calls})"
         retries_session = HTTPX
-                         .plugin(RequestInspector)
-                         .plugin(:retries)
-                         .timeout(total_timeout: 3)
+                          .plugin(RequestInspector)
+                          .plugin(:retries)
+                          .timeout(total_timeout: 3)
         retries_response = retries_session.get(build_uri("/delay/10"))
         assert retries_response.is_a?(HTTPX::ErrorResponse)
         # we're comparing against max-retries + 1, because the calls increment will happen
@@ -21,10 +21,10 @@ module Requests
 
       def test_plugin_retries_max_retries
         retries_session = HTTPX
-                         .plugin(RequestInspector)
-                         .plugin(:retries)
-                         .timeout(total_timeout: 3)
-                         .max_retries(2)
+                          .plugin(RequestInspector)
+                          .plugin(:retries)
+                          .timeout(total_timeout: 3)
+                          .max_retries(2)
         retries_response = retries_session.get(build_uri("/delay/10"))
         assert retries_response.is_a?(HTTPX::ErrorResponse)
         # we're comparing against max-retries + 1, because the calls increment will happen

@@ -71,7 +71,6 @@ module HTTPX
         def __build_redirect_req(request, response, options)
           redirect_uri = __get_location_from_response(response)
 
-          # TODO: integrate cookies in the next request
           # redirects are **ALWAYS** GET
           retry_options = options.merge(headers: request.headers,
                                         body: request.body)

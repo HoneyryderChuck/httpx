@@ -40,10 +40,10 @@ module Requests
       def test_plugin_ssh_proxy
         skip if RUBY_ENGINE == "jruby"
         session = HTTPX.plugin(:"proxy/ssh").with_proxy(uri: ssh_proxy,
-                                                       username: "root",
-                                                       auth_methods: %w[publickey],
-                                                       host_key: "ssh-rsa",
-                                                       keys: %w[test/support/ssh/ssh_host_ed25519_key])
+                                                        username: "root",
+                                                        auth_methods: %w[publickey],
+                                                        host_key: "ssh-rsa",
+                                                        keys: %w[test/support/ssh/ssh_host_ed25519_key])
         uri = build_uri("/get")
         response = session.get(uri)
         verify_status(response, 200)
