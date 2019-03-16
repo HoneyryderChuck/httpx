@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module HTTPX
-  class Client
+  class Session
     include Loggable
     include Chainable
 

@@ -29,7 +29,7 @@ module HTTPX
     end
 
     def plugin(*plugins)
-      klass = is_a?(Client) ? self.class : Client
+      klass = is_a?(Session) ? self.class : Session
       klass = Class.new(klass)
       klass.instance_variable_set(:@default_options, klass.default_options.merge(default_options))
       klass.plugins(plugins).new
@@ -48,9 +48,9 @@ module HTTPX
 
     # :nodoc:
     def branch(options, &blk)
-      return self.class.new(options, &blk) if is_a?(Client)
+      return self.class.new(options, &blk) if is_a?(Session)
 
-      Client.new(options, &blk)
+      Session.new(options, &blk)
     end
   end
 end

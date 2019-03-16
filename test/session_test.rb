@@ -2,42 +2,42 @@
 
 require_relative "test_helper"
 
-class ClientTest < Minitest::Test
+class SessionTest < Minitest::Test
   include HTTPX
 
-  def test_client_block
+  def test_session_block
     yielded = nil
-    Client.new do |cli|
+    Session.new do |cli|
       yielded = cli
     end
-    assert yielded.is_a?(Client), "client should have been yielded"
+    assert yielded.is_a?(Session), "session should have been yielded"
   end
 
-  def test_client_plugin
-    klient_class = Class.new(Client)
+  def test_session_plugin
+    klient_class = Class.new(Session)
     klient_class.plugin(TestPlugin)
-    client = klient_class.new
-    assert client.respond_to?(:foo), "instance methods weren't added"
-    assert client.foo == "client-foo", "instance method is unexpected"
-    assert client.respond_to?(:bar), "load and configure didn't work"
-    assert client.bar == "config-load-bar", "load and configure didn't work"
+    session = klient_class.new
+    assert session.respond_to?(:foo), "instance methods weren't added"
+    assert session.foo == "session-foo", "instance method is unexpected"
+    assert session.respond_to?(:bar), "load and configure didn't work"
+    assert session.bar == "config-load-bar", "load and configure didn't work"
 
-    assert client.respond_to?(:options), "instance methods weren't added"
-    assert client.options.respond_to?(:foo), "options methods weren't added"
-    assert client.options.foo == "options-foo", "option method is unexpected"
+    assert session.respond_to?(:options), "instance methods weren't added"
+    assert session.options.respond_to?(:foo), "options methods weren't added"
+    assert session.options.foo == "options-foo", "option method is unexpected"
 
-    request = client.options.request_class.new(:get, "/", client.options)
+    request = session.options.request_class.new(:get, "/", session.options)
     assert request.respond_to?(:foo), "request methods haven't been added"
     assert request.foo == "request-foo", "request method is unexpected"
     assert request.headers.respond_to?(:foo), "headers methods haven't been added"
     assert request.headers.foo == "headers-foo", "headers method is unexpected"
-    assert client.respond_to?(:response), "response constructor was added"
+    assert session.respond_to?(:response), "response constructor was added"
 
     req_body = request.body
     assert req_body.respond_to?(:foo), "request body methods haven't been added"
     assert req_body.foo == "request-body-foo", "request body method is unexpected"
 
-    response = client.response(nil, 200, "2.0", {})
+    response = session.response(nil, 200, "2.0", {})
     assert response.respond_to?(:foo), "response methods haven't been added"
     assert response.foo == "response-foo", "response method is unexpected"
     assert request.headers.respond_to?(:foo), "headers methods haven't been added"
@@ -51,7 +51,7 @@ class ClientTest < Minitest::Test
   TestPlugin = Module.new do
     self::ClassMethods = Module.new do
       def foo
-        "client-foo"
+        "session-foo"
       end
     end
     self::InstanceMethods = Module.new do

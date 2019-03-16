@@ -4,50 +4,50 @@ module Requests
   module Plugins
     module Cookies
       def test_plugin_cookies_get
-        client = HTTPX.plugin(:cookies)
-        response = client.get(cookies_uri)
+        session = HTTPX.plugin(:cookies)
+        response = session.get(cookies_uri)
         body = json_body(response)
         assert body.key?("cookies")
         assert body["cookies"].empty?
 
-        session_response = client.with_cookies("abc" => "def").get(cookies_uri)
+        session_response = session.with_cookies("abc" => "def").get(cookies_uri)
         body = json_body(session_response)
         assert body.key?("cookies")
         assert body["cookies"]["abc"] == "def", "abc wasn't properly set"
       end
 
       def test_plugin_cookies_set
-        client = HTTPX.plugin(:cookies)
+        session = HTTPX.plugin(:cookies)
         session_cookies = { "a" => "b", "c" => "d" }
         session_uri = cookies_set_uri(session_cookies)
-        session_response = client.get(session_uri)
+        session_response = session.get(session_uri)
         verify_status(session_response, 302)
-        verify_cookies(client.cookies_store[URI(session_uri)], session_cookies)
+        verify_cookies(session.cookies_store[URI(session_uri)], session_cookies)
 
         # first request sets the session
-        response = client.get(cookies_uri)
+        response = session.get(cookies_uri)
         body = json_body(response)
         assert body.key?("cookies")
         verify_cookies(body["cookies"], session_cookies)
 
         # second request reuses the session
-        extra_cookie_response = client.with_cookies("e" => "f").get(cookies_uri)
+        extra_cookie_response = session.with_cookies("e" => "f").get(cookies_uri)
         body = json_body(extra_cookie_response)
         assert body.key?("cookies")
         verify_cookies(body["cookies"], session_cookies.merge("e" => "f"))
 
         # redirect to a different origin only uses the option cookies
-        other_origin_response = client.with_cookies("e" => "f").get(redirect_uri(origin("google.com")))
+        other_origin_response = session.with_cookies("e" => "f").get(redirect_uri(origin("google.com")))
         verify_status(other_origin_response, 302)
         assert !other_origin_response.headers.key?("set-cookie"), "cookies should not transition to next origin"
       end
 
       def test_plugin_cookies_follow
-        client = HTTPX.plugins(:follow_redirects, :cookies)
+        session = HTTPX.plugins(:follow_redirects, :cookies)
         session_cookies = { "a" => "b", "c" => "d" }
         session_uri = cookies_set_uri(session_cookies)
 
-        response = client.get(session_uri)
+        response = session.get(session_uri)
         verify_status(response, 200)
         assert response.uri.to_s == cookies_uri
         body = json_body(response)

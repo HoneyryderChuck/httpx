@@ -21,7 +21,7 @@ module Faraday
 
       include RequestMixin
 
-      class Client < ::HTTPX::Client
+      class Session < ::HTTPX::Session
         plugin(:compression)
 
         module ReasonPlugin
@@ -93,7 +93,7 @@ module Faraday
         include RequestMixin
 
         def initialize
-          @client = Client.new
+          @session = Session.new
           @handlers = []
         end
 
@@ -119,10 +119,10 @@ module Faraday
 
           proxy_options = { uri: env.request.proxy }
 
-          client = @client.with(options)
-          client = client.plugin(:proxy).with_proxy(proxy_options) if env.request.proxy
+          session = @session.with(options)
+          session = session.plugin(:proxy).with_proxy(proxy_options) if env.request.proxy
 
-          responses = client.request(requests)
+          responses = session.request(requests)
           responses.each_with_index do |response, index|
             handler = @handlers[index]
             handler.on_response.call(response)
@@ -141,7 +141,7 @@ module Faraday
 
       def initialize(app)
         super(app)
-        @client = Client.new
+        @session = Session.new
       end
 
       def call(env)
@@ -169,9 +169,9 @@ module Faraday
 
         proxy_options = { uri: env.request.proxy }
 
-        client = @client.with(options)
-        client = client.plugin(:proxy).with_proxy(proxy_options) if env.request.proxy
-        response = client.__send__(*request_options)
+        session = @session.with(options)
+        session = session.plugin(:proxy).with_proxy(proxy_options) if env.request.proxy
+        response = session.__send__(*request_options)
         response.raise_for_status unless response.is_a?(::HTTPX::Response)
         save_response(env, response.status, response.body, response.headers, response.reason) do |response_headers|
           response_headers.merge!(response.headers)
