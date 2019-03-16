@@ -3,20 +3,82 @@
 module HTTPX
   module Plugins
     module Cookies
+      using URIExtensions
+
+      class Store
+        def initialize(cookies = nil)
+          @store = Hash.new { |hash, origin| hash[origin] = HTTP::CookieJar.new }
+          return unless cookies
+
+          cookies = cookies.split(/ *; */) if cookies.is_a?(String)
+          @default_cookies = cookies.map do |cookie, v|
+            if cookie.is_a?(HTTP::Cookie)
+              cookie
+            else
+              HTTP::Cookie.new(cookie.to_s, v.to_s)
+            end
+          end
+        end
+
+        def set(origin, cookies)
+          return unless cookies
+
+          @store[origin].parse(cookies, origin)
+        end
+
+        def [](uri)
+          store = @store[uri.origin]
+          @default_cookies.each do |cookie|
+            c = cookie.dup
+            c.domain ||= uri.authority
+            c.path ||= uri.path
+            store.add(c)
+          end if @default_cookies
+          store
+        end
+      end
+
       def self.load_dependencies(*)
         require "http/cookie"
       end
 
       module InstanceMethods
-        def cookies(cookies)
-          branch(default_options.with_cookies(cookies))
-        end
-      end
+        attr_reader :cookies_store
 
-      module RequestMethods
         def initialize(*)
           super
-          @headers.cookies(@options.cookies, self)
+          @cookies_store = @options.cookies || Store.new
+        end
+
+        def with_cookies(cookies)
+          branch(default_options.with_cookies(cookies))
+        end
+
+        def wrap
+          return unless block_given?
+
+          super do |client|
+            old_cookies_store = @cookies_store
+            @cookies_store = old_cookies_store.dup
+            begin
+              yield client
+            ensure
+              @cookies_store = old_cookies_store
+            end
+          end
+        end
+
+        private
+
+        def on_response(request, response)
+          @cookies_store.set(request.origin, response.headers["set-cookie"])
+          super
+        end
+
+        def __build_req(*)
+          request = super
+          request.headers.cookies(@cookies_store[request.uri], request)
+          request
         end
       end
 
@@ -24,38 +86,20 @@ module HTTPX
         def cookies(jar, request)
           return unless jar
 
-          unless jar.is_a?(HTTP::CookieJar)
-            jar = jar.each_with_object(HTTP::CookieJar.new) do |(k, v), j|
-              cookie = k.is_a?(HTTP::Cookie) ? v : HTTP::Cookie.new(k.to_s, v.to_s)
-              cookie.domain = request.authority
-              cookie.path = request.path
-              j.add(cookie)
-            end
-          end
-          self["cookie"] = HTTP::Cookie.cookie_value(jar.cookies)
-        end
-      end
+          cookie_value = HTTP::Cookie.cookie_value(jar.cookies(request.uri))
+          return if cookie_value.empty?
 
-      module ResponseMethods
-        def cookie_jar
-          return @cookie_jar if defined?(@cookie_jar)
-          return nil unless headers.key?("set-cookie")
-
-          @cookie_jar ||= begin
-            jar = HTTP::CookieJar.new
-            jar.parse(headers["set-cookie"], @request.uri)
-            jar
-          end
+          add("cookie", cookie_value)
         end
-        alias_method :cookies, :cookie_jar
       end
 
       module OptionsMethods
         def self.included(klass)
           super
           klass.def_option(:cookies) do |cookies|
-            cookies.split(/ *; */) if cookies.is_a?(String)
-            cookies
+            return cookies if cookies.is_a?(Store)
+
+            Store.new(cookies)
           end
         end
       end
