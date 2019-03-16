@@ -11,10 +11,8 @@ gem "simplecov", require: false
 
 if RUBY_VERSION < "2.2"
   gem "rubocop", "~> 0.57.0", require: false
-  gem "pry-byebug", "~> 3.4.3", require: false
 else
   gem "rubocop", "~> 0.61.1", require: false
-  gem "pry-byebug", require: false
 end
 
 platform :mri do
@@ -23,6 +21,11 @@ platform :mri do
   gem "net-ssh-gateway", require: false
   gem "ed25519", require: false
   gem "bcrypt_pbkdf", require: false
+  if RUBY_VERSION < "2.2"
+    gem "pry-byebug", "~> 3.4.3", require: false
+  else
+    gem "pry-byebug", require: false
+  end
 end
 
 platform :mri_21 do
