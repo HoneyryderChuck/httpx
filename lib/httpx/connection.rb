@@ -26,8 +26,6 @@ module HTTPX
   # A connection may also route requests for a different host for which the +io+ was connected
   # to, provided that the IP is the same and the port and scheme as well. This will allow to
   # share the same socket to send HTTP/2 requests to different hosts.
-  # TODO: For this to succeed, the certificates sent by the servers to the client must be
-  #       identical (or match both hosts).
   #
   class Connection
     extend Forwardable
