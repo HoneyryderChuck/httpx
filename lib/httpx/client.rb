@@ -7,7 +7,7 @@ module HTTPX
 
     def initialize(options = {}, &blk)
       @options = self.class.default_options.merge(options)
-      @connection = Connection.new(@options)
+      @pool = Pool.new(@options)
       @responses = {}
       @keep_open = false
       wrap(&blk) if block_given?
@@ -27,7 +27,7 @@ module HTTPX
     end
 
     def close
-      @connection.close
+      @pool.close
     end
 
     def request(*args, keep_open: @keep_open, **options)
@@ -57,7 +57,7 @@ module HTTPX
 
     def find_channel(request, **options)
       uri = URI(request.uri)
-      @connection.find_channel(uri) || build_channel(uri, options)
+      @pool.find_channel(uri) || build_channel(uri, options)
     end
 
     def set_channel_callbacks(channel, options)
@@ -73,7 +73,7 @@ module HTTPX
     end
 
     def build_channel(uri, options)
-      channel = @connection.build_channel(uri, **options)
+      channel = @pool.build_channel(uri, **options)
       set_channel_callbacks(channel, options)
       channel
     end
@@ -84,7 +84,7 @@ module HTTPX
       # altsvc already exists, somehow it wasn't advertised, probably noop
       return unless altsvc
 
-      channel = @connection.find_channel(alt_origin) || build_channel(alt_origin, options)
+      channel = @pool.find_channel(alt_origin) || build_channel(alt_origin, options)
       # advertised altsvc is the same origin being used, ignore
       return if channel == existing_channel
 
@@ -142,12 +142,12 @@ module HTTPX
       loop do
         begin
           request = requests.first
-          @connection.next_tick until (response = fetch_response(request))
+          @pool.next_tick until (response = fetch_response(request))
 
           responses << response
           requests.shift
 
-          break if requests.empty? || !@connection.running?
+          break if requests.empty? || !@pool.running?
         end
       end
       responses

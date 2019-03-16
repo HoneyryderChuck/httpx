@@ -5,7 +5,7 @@ require "httpx/channel"
 require "httpx/resolver"
 
 module HTTPX
-  class Connection
+  class Pool
     def initialize(options)
       @options = Options.new(options)
       @timeout = options.timeout
