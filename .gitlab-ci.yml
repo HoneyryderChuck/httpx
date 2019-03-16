@@ -6,6 +6,12 @@ variables:
 services:
   - docker:dind
 
+# Cache gems in between builds
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - vendor/ruby
+
 before_script:
   - docker info
   - docker-compose --version
