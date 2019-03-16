@@ -6,30 +6,30 @@ require "httpx/io"
 require "httpx/buffer"
 
 module HTTPX
-  # The Channel entity can be watched for IO events.
+  # The Connection can be watched for IO events.
   #
   # It contains the +io+ object to read/write from, and knows what to do when it can.
   #
   # It defers connecting until absolutely necessary. Connection should be triggered from
   # the IO selector (until then, any request will be queued).
   #
-  # A channel boots up its parser after connection is established. All pending requests
+  # A connection boots up its parser after connection is established. All pending requests
   # will be redirected there after connection.
   #
-  # A channel can be prevented from closing by the parser, that is, if there are pending
-  # requests. This will signal that the channel was prematurely closed, due to a possible
+  # A connection can be prevented from closing by the parser, that is, if there are pending
+  # requests. This will signal that the connection was prematurely closed, due to a possible
   # number of conditions:
   #
   # * Remote peer closed the connection ("Connection: close");
   # * Remote peer doesn't support pipelining;
   #
-  # A channel may also route requests for a different host for which the +io+ was connected
+  # A connection may also route requests for a different host for which the +io+ was connected
   # to, provided that the IP is the same and the port and scheme as well. This will allow to
   # share the same socket to send HTTP/2 requests to different hosts.
   # TODO: For this to succeed, the certificates sent by the servers to the client must be
   #       identical (or match both hosts).
   #
-  class Channel
+  class Connection
     extend Forwardable
     include Registry
     include Loggable
@@ -37,8 +37,8 @@ module HTTPX
 
     using URIExtensions
 
-    require "httpx/channel/http2"
-    require "httpx/channel/http1"
+    require "httpx/connection/http2"
+    require "httpx/connection/http1"
 
     BUFFER_SIZE = 1 << 14
 
@@ -104,30 +104,30 @@ module HTTPX
       !(@io.addresses & addresses).empty?
     end
 
-    # coalescable channels need to be mergeable!
+    # coalescable connections need to be mergeable!
     # but internally, #mergeable? is called before #coalescable?
-    def coalescable?(channel)
+    def coalescable?(connection)
       if @io.protocol == "h2" && @uri.scheme == "https"
-        @io.verify_hostname(channel.uri.host)
+        @io.verify_hostname(connection.uri.host)
       else
-        @uri.origin == channel.uri.origin
+        @uri.origin == connection.uri.origin
       end
     end
 
-    def merge(channel)
-      @origins += channel.instance_variable_get(:@origins)
-      pending = channel.instance_variable_get(:@pending)
+    def merge(connection)
+      @origins += connection.instance_variable_get(:@origins)
+      pending = connection.instance_variable_get(:@pending)
       pending.each do |req, args|
         send(req, args)
       end
     end
 
-    def unmerge(channel)
-      @origins -= channel.instance_variable_get(:@origins)
+    def unmerge(connection)
+      @origins -= connection.instance_variable_get(:@origins)
       purge_pending do |request, args|
-        request.uri == channel.uri && begin
+        request.uri == connection.uri && begin
           request.transition(:idle)
-          channel.send(request, *args)
+          connection.send(request, *args)
           true
         end
       end
@@ -147,7 +147,7 @@ module HTTPX
       @origins.include?(uri.origin) || match_altsvcs?(uri)
     end
 
-    # checks if this is channel is an alternative service of
+    # checks if this is connection is an alternative service of
     # +uri+
     def match_altsvcs?(uri)
       AltSvc.cached_altsvc(@uri.origin).any? do |altsvc|
