@@ -9,23 +9,23 @@ module ResolverHelpers
 
   def test_append_localhost
     ips = [IPAddr.new("127.0.0.1"), IPAddr.new("::1")]
-    channel = build_channel("https://localhost")
-    resolver << channel
-    assert (channel.addresses - ips).empty?, "localhost interfaces should have been attributed"
+    connection = build_connection("https://localhost")
+    resolver << connection
+    assert (connection.addresses - ips).empty?, "localhost interfaces should have been attributed"
   end
 
   def test_append_ipv4
     ip = IPAddr.new("255.255.0.1")
-    channel = build_channel("https://255.255.0.1")
-    resolver << channel
-    assert channel.addresses == [ip], "#{ip} should have been statically resolved"
+    connection = build_connection("https://255.255.0.1")
+    resolver << connection
+    assert connection.addresses == [ip], "#{ip} should have been statically resolved"
   end
 
   def test_append_ipv6
     ip = IPAddr.new("fe80::1")
-    channel = build_channel("https://[fe80::1]")
-    resolver << channel
-    assert channel.addresses == [ip], "#{ip} should have been statically resolved"
+    connection = build_connection("https://[fe80::1]")
+    resolver << connection
+    assert connection.addresses == [ip], "#{ip} should have been statically resolved"
   end
 
   def __test_io_api
@@ -39,29 +39,28 @@ module ResolverHelpers
   def test_parse_a_record
     return unless resolver.respond_to?(:parse)
 
-    channel = build_channel("http://ipv4.tlund.se/")
-    resolver.queries["ipv4.tlund.se"] = channel
+    connection = build_connection("http://ipv4.tlund.se/")
+    resolver.queries["ipv4.tlund.se"] = connection
     resolver.parse(a_record)
-    assert channel.addresses.include?("193.15.228.195")
+    assert connection.addresses.include?("193.15.228.195")
   end
 
   def test_parse_aaaa_record
     return unless resolver.respond_to?(:parse)
 
-    channel = build_channel("http://ipv6.tlund.se/")
-    resolver.queries["ipv6.tlund.se"] = channel
+    connection = build_connection("http://ipv6.tlund.se/")
+    resolver.queries["ipv6.tlund.se"] = connection
     resolver.parse(aaaa_record)
-    assert channel.addresses.include?("2a00:801:f::195")
+    assert connection.addresses.include?("2a00:801:f::195")
   end
 
   def test_parse_cname_record
     return unless resolver.respond_to?(:parse)
 
-    channel = build_channel("http://ipv4c.tlund.se/")
-    resolver.queries["ipv4c.tlund.se"] = channel
-    # require "pry-byebug"; binding.pry
+    connection = build_connection("http://ipv4c.tlund.se/")
+    resolver.queries["ipv4c.tlund.se"] = connection
     resolver.parse(cname_record)
-    assert channel.addresses.nil?
+    assert connection.addresses.nil?
     assert !resolver.queries.key?("ipv4c.tlund.se")
     assert resolver.queries.key?("ipv4.tlund.se")
   end
@@ -69,9 +68,9 @@ module ResolverHelpers
   def test_append_hostname
     return unless resolver.respond_to?(:resolve)
 
-    channel = build_channel("https://news.ycombinator.com")
-    resolver << channel
-    assert channel.addresses.nil?, "there should be no direct IP"
+    connection = build_connection("https://news.ycombinator.com")
+    resolver << connection
+    assert connection.addresses.nil?, "there should be no direct IP"
     resolver.resolve
     assert !write_buffer.empty?, "there should be a DNS query ready to be sent"
   end
@@ -83,10 +82,10 @@ module ResolverHelpers
     HTTPX::Resolver.purge_lookup_cache
   end
 
-  def build_channel(uri)
-    channel = HTTPX::Channel.by(URI(uri), HTTPX::Options.new)
-    channel.extend(ChannelExtensions)
-    channel
+  def build_connection(uri)
+    connection = HTTPX::Connection.by(URI(uri), HTTPX::Options.new)
+    connection.extend(ConnectionExtensions)
+    connection
   end
 
   def a_record
@@ -140,7 +139,7 @@ module ResolverHelpers
     end
   end
 
-  module ChannelExtensions
+  module ConnectionExtensions
     attr_reader :addresses
 
     def addresses=(addrs)

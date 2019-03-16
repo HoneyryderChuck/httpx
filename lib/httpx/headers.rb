@@ -46,7 +46,6 @@ module HTTPX
     # ignore what the +other+ headers has. Otherwise, set
     #
     def merge(other)
-      # TODO: deep-copy
       headers = dup
       other.each do |field, value|
         headers[field] = value

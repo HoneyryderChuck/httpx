@@ -25,20 +25,20 @@ class HTTPSResolverTest < Minitest::Test
   def test_parse_no_record
     @has_error = false
     resolver.on(:error) { @has_error = true }
-    channel = build_channel("https://idontthinkthisexists.org/")
-    resolver << channel
-    resolver.queries["idontthinkthisexists.org"] = channel
+    connection = build_connection("https://idontthinkthisexists.org/")
+    resolver << connection
+    resolver.queries["idontthinkthisexists.org"] = connection
 
     # this is only here to drain
     write_buffer.clear
     resolver.parse(no_record)
-    assert channel.addresses.nil?
+    assert connection.addresses.nil?
     assert resolver.queries.key?("idontthinkthisexists.org")
     assert !@has_error, "resolver should still be able to resolve AAAA"
     # A type
     write_buffer.clear
     resolver.parse(no_record)
-    assert channel.addresses.nil?
+    assert connection.addresses.nil?
     assert resolver.queries.key?("idontthinkthisexists.org")
     assert @has_error, "resolver should have failed"
   end
@@ -49,26 +49,26 @@ class HTTPSResolverTest < Minitest::Test
 
   private
 
-  def build_channel(*)
-    channel = super
-    connection.expect(:find_channel, channel, [URI::HTTP])
-    channel
+  def build_connection(*)
+    connection = super
+    pool.expect(:find_connection, connection, [URI::HTTP])
+    connection
   end
 
   def resolver(options = Options.new)
     @resolver ||= begin
-      resolver = Resolver::HTTPS.new(connection, options)
+      resolver = Resolver::HTTPS.new(pool, options)
       resolver.extend(ResolverHelpers::ResolverExtensions)
       resolver
     end
   end
 
-  def connection
-    @connection ||= Minitest::Mock.new
+  def pool
+    @pool ||= Minitest::Mock.new
   end
 
   def write_buffer
-    resolver.instance_variable_get(:@resolver_channel)
+    resolver.instance_variable_get(:@resolver_connection)
             .instance_variable_get(:@pending)
   end
 
@@ -79,18 +79,18 @@ class HTTPSResolverTest < Minitest::Test
   end
 
   def a_record
-    MockResponse.new({ "content-type" => "application/dns-udpwireformat" }, super)
+    MockResponse.new({ "content-type" => "application/dns-message" }, super)
   end
 
   def aaaa_record
-    MockResponse.new({ "content-type" => "application/dns-udpwireformat" }, super)
+    MockResponse.new({ "content-type" => "application/dns-message" }, super)
   end
 
   def cname_record
-    MockResponse.new({ "content-type" => "application/dns-udpwireformat" }, super)
+    MockResponse.new({ "content-type" => "application/dns-message" }, super)
   end
 
   def no_record
-    MockResponse.new({ "content-type" => "application/dns-udpwireformat" }, super)
+    MockResponse.new({ "content-type" => "application/dns-message" }, super)
   end
 end

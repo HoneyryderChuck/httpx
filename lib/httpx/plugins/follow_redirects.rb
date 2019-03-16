@@ -13,7 +13,7 @@ module HTTPX
         end
 
         def request(*args, **options)
-          # do not needlessly close channels
+          # do not needlessly close connections
           keep_open = @keep_open
           @keep_open = true
 
@@ -71,7 +71,6 @@ module HTTPX
         def __build_redirect_req(request, response, options)
           redirect_uri = __get_location_from_response(response)
 
-          # TODO: integrate cookies in the next request
           # redirects are **ALWAYS** GET
           retry_options = options.merge(headers: request.headers,
                                         body: request.body)

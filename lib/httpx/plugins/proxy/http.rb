@@ -6,7 +6,7 @@ module HTTPX
   module Plugins
     module Proxy
       module HTTP
-        class HTTPProxyChannel < ProxyChannel
+        class HTTPProxyConnection < ProxyConnection
           private
 
           def proxy_connect
@@ -71,7 +71,7 @@ module HTTPX
           end
         end
 
-        class ProxyParser < Channel::HTTP1
+        class ProxyParser < Connection::HTTP1
           def headline_uri(request)
             request.uri.to_s
           end
@@ -112,7 +112,7 @@ module HTTPX
           end
         end
 
-        Parameters.register("http", HTTPProxyChannel)
+        Parameters.register("http", HTTPProxyConnection)
       end
     end
     register_plugin :"proxy/http", Proxy::HTTP

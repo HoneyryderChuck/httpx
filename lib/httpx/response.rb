@@ -189,10 +189,9 @@ module HTTPX
             @buffer = Tempfile.new("httpx", encoding: @encoding, mode: File::RDWR)
             aux.rewind
             ::IO.copy_stream(aux, @buffer)
-            # TODO: remove this if/when minor ruby is 2.3
-            # (this looks like a bug from older versions)
-            @buffer.pos = aux.pos #######################
-            #############################################
+            # (this looks like a bug from Ruby < 2.3
+            @buffer.pos = aux.pos ##################
+            ########################################
             aux.close
             @state = :buffer
           end

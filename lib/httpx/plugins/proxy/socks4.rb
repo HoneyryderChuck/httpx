@@ -13,7 +13,7 @@ module HTTPX
 
         Error = Class.new(Error)
 
-        class Socks4ProxyChannel < ProxyChannel
+        class Socks4ProxyConnection < ProxyConnection
           private
 
           def proxy_connect
@@ -64,8 +64,8 @@ module HTTPX
             throw(:called)
           end
         end
-        Parameters.register("socks4", Socks4ProxyChannel)
-        Parameters.register("socks4a", Socks4ProxyChannel)
+        Parameters.register("socks4", Socks4ProxyConnection)
+        Parameters.register("socks4a", Socks4ProxyConnection)
 
         class SocksParser
           include Callbacks

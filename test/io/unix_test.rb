@@ -6,14 +6,14 @@ require_relative "../test_helper"
 class UnixTest < Minitest::Test
   include HTTPX
 
-  def test_unix_client
+  def test_unix_session
     on_unix_server do |path|
-      client = Client.new(transport: "unix", transport_options: { path: path })
-      response = client.get("http://unix.com/ping")
+      session = Session.new(transport: "unix", transport_options: { path: path })
+      response = session.get("http://unix.com/ping")
       assert response.status == 200, "unexpected code (#{response.status})"
       assert response.to_s == "pong", "unexpected body (#{response})"
       response.close
-      client.close
+      session.close
     end
   end
 

@@ -57,11 +57,11 @@ module HTTPX
         def wrap
           return unless block_given?
 
-          super do |client|
+          super do |session|
             old_cookies_store = @cookies_store
             @cookies_store = old_cookies_store.dup
             begin
-              yield client
+              yield session
             ensure
               @cookies_store = old_cookies_store
             end

@@ -16,7 +16,7 @@ module HTTPX
 
         Error = Class.new(Error)
 
-        class Socks5ProxyChannel < ProxyChannel
+        class Socks5ProxyConnection < ProxyConnection
           def call
             super
             case @state
@@ -108,7 +108,7 @@ module HTTPX
           end
         end
 
-        Parameters.register("socks5", Socks5ProxyChannel)
+        Parameters.register("socks5", Socks5ProxyConnection)
 
         class SocksParser
           include Callbacks

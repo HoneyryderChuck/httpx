@@ -12,12 +12,12 @@ require "httpx/registry"
 require "httpx/transcoder"
 require "httpx/options"
 require "httpx/timeout"
-require "httpx/connection"
+require "httpx/pool"
 require "httpx/headers"
 require "httpx/request"
 require "httpx/response"
 require "httpx/chainable"
-require "httpx/client"
+require "httpx/session"
 
 # Top-Level Namespace
 #
@@ -45,6 +45,12 @@ module HTTPX
     def self.register_plugin(name, mod)
       @plugins[name] = mod
     end
+  end
+
+  def self.const_missing(const_name)
+    super unless const_name == :Client
+    warn "DEPRECATION WARNING: the class #{self}::Client is deprecated. Use #{self}::Session instead."
+    Session
   end
 
   extend Chainable

@@ -47,30 +47,30 @@ module HTTPX
           @options.proxy.merge(uri: @_proxy_uris.shift) unless @_proxy_uris.empty?
         end
 
-        def find_channel(request, **options)
+        def find_connection(request, **options)
           uri = URI(request.uri)
           proxy = proxy_params(uri)
           raise Error, "Failed to connect to proxy" unless proxy
 
-          @connection.find_channel(proxy) || build_channel(proxy, options)
+          @pool.find_connection(proxy) || build_connection(proxy, options)
         end
 
-        def build_channel(proxy, options)
+        def build_connection(proxy, options)
           return super if proxy.is_a?(URI::Generic)
 
-          channel = build_proxy_channel(proxy, **options)
-          set_channel_callbacks(channel, options)
-          channel
+          connection = build_proxy_connection(proxy, **options)
+          set_connection_callbacks(connection, options)
+          connection
         end
 
-        def build_proxy_channel(proxy, **options)
+        def build_proxy_connection(proxy, **options)
           parameters = Parameters.new(**proxy)
           uri = parameters.uri
           log { "proxy: #{uri}" }
           proxy_type = Parameters.registry(parameters.uri.scheme)
-          channel = proxy_type.new("tcp", uri, parameters, @options.merge(options), &method(:on_response))
-          @connection.__send__(:resolve_channel, channel)
-          channel
+          connection = proxy_type.new("tcp", uri, parameters, @options.merge(options), &method(:on_response))
+          @pool.__send__(:resolve_connection, connection)
+          connection
         end
 
         def fetch_response(request)
@@ -81,8 +81,8 @@ module HTTPX
               response.error.is_a?(Error)) &&
              !@_proxy_uris.empty?
             log { "failed connecting to proxy, trying next..." }
-            channel = find_channel(request)
-            channel.send(request)
+            connection = find_connection(request)
+            connection.send(request)
             return
           end
           response
@@ -107,7 +107,7 @@ module HTTPX
     register_plugin :proxy, Proxy
   end
 
-  class ProxyChannel < Channel
+  class ProxyConnection < Connection
     def initialize(type, uri, parameters, options, &blk)
       super(type, uri, options, &blk)
       @parameters = parameters

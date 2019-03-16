@@ -3,7 +3,7 @@
 require "httpx/parser/http1"
 
 module HTTPX
-  class Channel::HTTP1
+  class Connection::HTTP1
     include Callbacks
     include Loggable
 
@@ -170,7 +170,6 @@ module HTTPX
           keep_alive_timeout = parameters["timeout"].to_i
           emit(:timeout, keep_alive_timeout)
         end
-        # TODO: on keep alive timeout, reset
       when /close/i, nil
         disable_pipelining
         @max_requests = Float::INFINITY
@@ -250,5 +249,5 @@ module HTTPX
       UPCASED[field] || field.to_s.split("-").map(&:capitalize).join("-")
     end
   end
-  Channel.register "http/1.1", Channel::HTTP1
+  Connection.register "http/1.1", Connection::HTTP1
 end
