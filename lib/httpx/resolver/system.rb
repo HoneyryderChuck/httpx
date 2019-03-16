@@ -28,17 +28,17 @@ module HTTPX
       true
     end
 
-    def <<(channel)
-      hostname = channel.uri.host
-      addresses = channel.addresses ||
+    def <<(connection)
+      hostname = connection.uri.host
+      addresses = connection.addresses ||
                   ip_resolve(hostname) ||
                   system_resolve(hostname) ||
                   @resolver.getaddresses(hostname)
-      return emit_resolve_error(channel, hostname) if addresses.empty?
+      return emit_resolve_error(connection, hostname) if addresses.empty?
 
-      emit_addresses(channel, addresses)
+      emit_addresses(connection, addresses)
     rescue Errno::EHOSTUNREACH, *RESOLV_ERRORS => e
-      emit_resolve_error(channel, hostname, e)
+      emit_resolve_error(connection, hostname, e)
     end
 
     def uncache(*); end

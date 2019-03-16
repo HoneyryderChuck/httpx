@@ -8,9 +8,9 @@ class SystemResolverTest < Minitest::Test
   include HTTPX
 
   def test_append_external_name
-    channel = build_channel("https://news.ycombinator.com")
-    resolver << channel
-    assert !channel.addresses.empty?, "name should have been resolved immediately"
+    connection = build_connection("https://news.ycombinator.com")
+    resolver << connection
+    assert !connection.addresses.empty?, "name should have been resolved immediately"
   end
 
   private

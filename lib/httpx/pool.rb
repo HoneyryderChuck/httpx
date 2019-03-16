@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "httpx/selector"
-require "httpx/channel"
+require "httpx/connection"
 require "httpx/resolver"
 
 module HTTPX
@@ -12,77 +12,77 @@ module HTTPX
       resolver_type = @options.resolver_class
       resolver_type = Resolver.registry(resolver_type) if resolver_type.is_a?(Symbol)
       @selector = Selector.new
-      @channels = []
-      @connected_channels = 0
+      @connections = []
+      @connected_connections = 0
       @resolver = resolver_type.new(self, @options)
-      @resolver.on(:resolve, &method(:on_resolver_channel))
+      @resolver.on(:resolve, &method(:on_resolver_connection))
       @resolver.on(:error, &method(:on_resolver_error))
       @resolver.on(:close, &method(:on_resolver_close))
     end
 
     def running?
-      !@channels.empty?
+      !@connections.empty?
     end
 
     def next_tick
       catch(:jump_tick) do
         @selector.select(next_timeout) do |monitor|
-          if (channel = monitor.value)
-            channel.call
+          if (connection = monitor.value)
+            connection.call
           end
-          monitor.interests = channel.interests
+          monitor.interests = connection.interests
         end
       end
     rescue TimeoutError => timeout_error
-      @channels.each do |ch|
+      @connections.each do |ch|
         ch.handle_timeout_error(timeout_error)
       end
     rescue Errno::ECONNRESET,
            Errno::ECONNABORTED,
            Errno::EPIPE => ex
-      @channels.each do |ch|
+      @connections.each do |ch|
         ch.emit(:error, ex)
       end
     end
 
     def close
       @resolver.close unless @resolver.closed?
-      @channels.each(&:close)
-      next_tick until @channels.empty?
+      @connections.each(&:close)
+      next_tick until @connections.empty?
     end
 
-    def build_channel(uri, **options)
-      channel = Channel.by(uri, @options.merge(options))
-      resolve_channel(channel)
-      channel.on(:open) do
-        @connected_channels += 1
-        @timeout.transition(:open) if @channels.size == @connected_channels
+    def build_connection(uri, **options)
+      connection = Connection.by(uri, @options.merge(options))
+      resolve_connection(connection)
+      connection.on(:open) do
+        @connected_connections += 1
+        @timeout.transition(:open) if @connections.size == @connected_connections
       end
-      channel.on(:reset) do
+      connection.on(:reset) do
         @timeout.transition(:idle)
       end
-      channel.on(:unreachable) do
-        @resolver.uncache(channel)
-        resolve_channel(channel)
+      connection.on(:unreachable) do
+        @resolver.uncache(connection)
+        resolve_connection(connection)
       end
-      channel
+      connection
     end
 
-    # opens a channel to the IP reachable through +uri+.
+    # opens a connection to the IP reachable through +uri+.
     # Many hostnames are reachable through the same IP, so we try to
-    # maximize pipelining by opening as few channels as possible.
+    # maximize pipelining by opening as few connections as possible.
     #
-    def find_channel(uri)
-      @channels.find do |channel|
-        channel.match?(uri)
+    def find_connection(uri)
+      @connections.find do |connection|
+        connection.match?(uri)
       end
     end
 
     private
 
-    def resolve_channel(channel)
-      @channels << channel unless @channels.include?(channel)
-      @resolver << channel
+    def resolve_connection(connection)
+      @connections << connection unless @connections.include?(connection)
+      @resolver << connection
       return if @resolver.empty?
 
       @_resolver_monitor ||= begin # rubocop:disable Naming/MemoizedInstanceVariableName
@@ -92,25 +92,25 @@ module HTTPX
       end
     end
 
-    def on_resolver_channel(channel, addresses)
-      found_channel = @channels.find do |ch|
-        ch != channel && ch.mergeable?(addresses)
+    def on_resolver_connection(connection, addresses)
+      found_connection = @connections.find do |ch|
+        ch != connection && ch.mergeable?(addresses)
       end
-      return register_channel(channel) unless found_channel
+      return register_connection(connection) unless found_connection
 
-      if found_channel.state == :open
-        coalesce_channels(found_channel, channel)
+      if found_connection.state == :open
+        coalesce_connections(found_connection, connection)
       else
-        found_channel.once(:open) do
-          coalesce_channels(found_channel, channel)
+        found_connection.once(:open) do
+          coalesce_connections(found_connection, connection)
         end
       end
     end
 
     def on_resolver_error(ch, error)
       ch.emit(:error, error)
-      # must remove channel by hand, hasn't been started yet
-      unregister_channel(ch)
+      # must remove connection by hand, hasn't been started yet
+      unregister_connection(ch)
     end
 
     def on_resolver_close
@@ -119,36 +119,36 @@ module HTTPX
       @resolver.close unless @resolver.closed?
     end
 
-    def register_channel(channel)
-      monitor = if channel.state == :open
+    def register_connection(connection)
+      monitor = if connection.state == :open
         # if open, an IO was passed upstream, therefore
         # consider it connected already.
-        @connected_channels += 1
-        @selector.register(channel, :rw)
+        @connected_connections += 1
+        @selector.register(connection, :rw)
       else
-        @selector.register(channel, :w)
+        @selector.register(connection, :w)
       end
-      monitor.value = channel
-      channel.on(:close) do
-        unregister_channel(channel)
+      monitor.value = connection
+      connection.on(:close) do
+        unregister_connection(connection)
       end
-      return if channel.state == :open
+      return if connection.state == :open
 
       @timeout.transition(:idle)
     end
 
-    def unregister_channel(channel)
-      @channels.delete(channel)
-      @selector.deregister(channel)
-      @connected_channels -= 1
+    def unregister_connection(connection)
+      @connections.delete(connection)
+      @selector.deregister(connection)
+      @connected_connections -= 1
     end
 
-    def coalesce_channels(ch1, ch2)
+    def coalesce_connections(ch1, ch2)
       if ch1.coalescable?(ch2)
         ch1.merge(ch2)
-        @channels.delete(ch2)
+        @connections.delete(ch2)
       else
-        register_channel(ch2)
+        register_connection(ch2)
       end
     end
 

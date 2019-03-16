@@ -4,7 +4,7 @@ require "io/wait"
 require "http/2"
 
 module HTTPX
-  class Channel::HTTP2
+  class Connection::HTTP2
     include Callbacks
     include Loggable
 
@@ -286,5 +286,5 @@ module HTTPX
       end
     end
   end
-  Channel.register "h2", Channel::HTTP2
+  Connection.register "h2", Connection::HTTP2
 end

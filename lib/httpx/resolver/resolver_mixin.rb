@@ -18,31 +18,31 @@ module HTTPX
         end
       end
 
-      def uncache(channel)
-        hostname = hostname || @queries.key(channel) || channel.uri.host
+      def uncache(connection)
+        hostname = hostname || @queries.key(connection) || connection.uri.host
         Resolver.uncache(hostname)
         @_record_types[hostname].shift
       end
 
       private
 
-      def emit_addresses(channel, addresses)
+      def emit_addresses(connection, addresses)
         addresses.map! do |address|
           address.is_a?(IPAddr) ? address : IPAddr.new(address.to_s)
         end
-        log(label: "resolver: ") { "answer #{channel.uri.host}: #{addresses.inspect}" }
-        channel.addresses = addresses
-        emit(:resolve, channel, addresses)
+        log(label: "resolver: ") { "answer #{connection.uri.host}: #{addresses.inspect}" }
+        connection.addresses = addresses
+        emit(:resolve, connection, addresses)
       end
 
-      def early_resolve(channel, hostname: channel.uri.host)
-        addresses = channel.addresses ||
+      def early_resolve(connection, hostname: connection.uri.host)
+        addresses = connection.addresses ||
                     ip_resolve(hostname) ||
                     Resolver.cached_lookup(hostname) ||
                     system_resolve(hostname)
         return unless addresses
 
-        emit_addresses(channel, addresses)
+        emit_addresses(connection, addresses)
       end
 
       def ip_resolve(hostname)
@@ -57,11 +57,11 @@ module HTTPX
         ips.map { |ip| IPAddr.new(ip) }
       end
 
-      def emit_resolve_error(channel, hostname, ex = nil)
+      def emit_resolve_error(connection, hostname, ex = nil)
         message = ex ? ex.message : "Can't resolve #{hostname}"
         error = ResolveError.new(message)
         error.set_backtrace(ex ? ex.backtrace : caller)
-        emit(:error, channel, error)
+        emit(:error, connection, error)
       end
     end
   end

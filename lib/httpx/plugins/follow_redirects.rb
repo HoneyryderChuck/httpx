@@ -13,7 +13,7 @@ module HTTPX
         end
 
         def request(*args, **options)
-          # do not needlessly close channels
+          # do not needlessly close connections
           keep_open = @keep_open
           @keep_open = true
 

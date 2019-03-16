@@ -22,30 +22,30 @@ module HTTPX
       use_get: false,
     }.freeze
 
-    def_delegator :@channels, :empty?
+    def_delegator :@connections, :empty?
 
-    def_delegators :@resolver_channel, :to_io, :call, :interests, :close
+    def_delegators :@resolver_connection, :to_io, :call, :interests, :close
 
-    def initialize(connection, options)
-      @connection = connection
+    def initialize(pool, options)
+      @pool = pool
       @options = Options.new(options)
       @resolver_options = Resolver::Options.new(DEFAULTS.merge(@options.resolver_options || {}))
       @_record_types = Hash.new { |types, host| types[host] = RECORD_TYPES.keys.dup }
       @queries = {}
       @requests = {}
-      @channels = []
+      @connections = []
       @uri = URI(@resolver_options.uri)
       @uri_addresses = nil
     end
 
-    def <<(channel)
+    def <<(connection)
       @uri_addresses ||= Resolv.getaddresses(@uri.host)
       if @uri_addresses.empty?
-        ex = ResolveError.new("Can't resolve #{channel.uri.host}")
+        ex = ResolveError.new("Can't resolve #{connection.uri.host}")
         ex.set_backtrace(caller)
-        emit(:error, channel, ex)
+        emit(:error, connection, ex)
       else
-        early_resolve(channel) || resolve(channel)
+        early_resolve(connection) || resolve(connection)
       end
     end
 
@@ -55,58 +55,58 @@ module HTTPX
     end
 
     def closed?
-      return true unless @resolver_channel
+      return true unless @resolver_connection
 
-      resolver_channel.closed?
+      resolver_connection.closed?
     end
 
     private
 
-    def resolver_channel
-      @resolver_channel ||= find_channel(@uri, @options)
+    def resolver_connection
+      @resolver_connection ||= find_connection(@uri, @options)
     end
 
-    def resolve(channel = @channels.first, hostname = nil)
-      return if @building_channel
+    def resolve(connection = @connections.first, hostname = nil)
+      return if @building_connection
 
-      hostname = hostname || @queries.key(channel) || channel.uri.host
+      hostname = hostname || @queries.key(connection) || connection.uri.host
       type = @_record_types[hostname].first
       log(label: "resolver: ") { "query #{type} for #{hostname}" }
       begin
         request = build_request(hostname, type)
-        @requests[request] = channel
-        resolver_channel.send(request)
-        @queries[hostname] = channel
-        @channels << channel
+        @requests[request] = connection
+        resolver_connection.send(request)
+        @queries[hostname] = connection
+        @connections << connection
       rescue Resolv::DNS::EncodeError, JSON::JSONError => e
-        emit_resolve_error(channel, hostname, e)
+        emit_resolve_error(connection, hostname, e)
       end
     end
 
-    def find_channel(_request, **options)
-      @connection.find_channel(@uri) || begin
-        @building_channel = true
-        channel = @connection.build_channel(@uri, **options)
-        emit_addresses(channel, @uri_addresses)
-        set_channel_callbacks(channel)
-        @building_channel = false
-        channel
+    def find_connection(_request, **options)
+      @pool.find_connection(@uri) || begin
+        @building_connection = true
+        connection = @pool.build_connection(@uri, **options)
+        emit_addresses(connection, @uri_addresses)
+        set_connection_callbacks(connection)
+        @building_connection = false
+        connection
       end
     end
 
-    def set_channel_callbacks(channel)
-      channel.on(:response, &method(:on_response))
-      channel.on(:promise, &method(:on_response))
+    def set_connection_callbacks(connection)
+      connection.on(:response, &method(:on_response))
+      connection.on(:promise, &method(:on_response))
     end
 
     def on_response(request, response)
       response.raise_for_status
     rescue Error => ex
-      channel = @requests[request]
-      hostname = @queries.key(channel)
+      connection = @requests[request]
+      hostname = @queries.key(connection)
       error = ResolveError.new("Can't resolve #{hostname}: #{ex.message}")
       error.set_backtrace(ex.backtrace)
-      emit(:error, channel, error)
+      emit(:error, connection, error)
     else
       parse(response)
     ensure
@@ -117,18 +117,18 @@ module HTTPX
       begin
         answers = decode_response_body(response)
       rescue Resolv::DNS::DecodeError, JSON::JSONError => e
-        host, channel = @queries.first
+        host, connection = @queries.first
         if @_record_types[host].empty?
-          emit_resolve_error(channel, host, e)
+          emit_resolve_error(connection, host, e)
           return
         end
       end
       if answers.empty?
-        host, channel = @queries.first
+        host, connection = @queries.first
         @_record_types[host].shift
         if @_record_types[host].empty?
           @_record_types.delete(host)
-          emit_resolve_error(channel, host)
+          emit_resolve_error(connection, host)
           return
         end
       else
@@ -138,9 +138,9 @@ module HTTPX
             if address.key?("alias")
               alias_address = answers[address["alias"]]
               if alias_address.nil?
-                channel = @queries[hostname]
+                connection = @queries[hostname]
                 @queries.delete(address["name"])
-                resolve(channel, address["alias"])
+                resolve(connection, address["alias"])
                 return # rubocop:disable Lint/NonLocalExitFromIterator
               else
                 alias_address
@@ -152,15 +152,15 @@ module HTTPX
           next if addresses.empty?
 
           hostname = hostname[0..-2] if hostname.end_with?(".")
-          channel = @queries.delete(hostname)
-          next unless channel # probably a retried query for which there's an answer
+          connection = @queries.delete(hostname)
+          next unless connection # probably a retried query for which there's an answer
 
-          @channels.delete(channel)
+          @connections.delete(connection)
           Resolver.cached_lookup_set(hostname, addresses)
-          emit_addresses(channel, addresses.map { |addr| addr["data"] })
+          emit_addresses(connection, addresses.map { |addr| addr["data"] })
         end
       end
-      return if @channels.empty?
+      return if @connections.empty?
 
       resolve
     end

@@ -19,8 +19,8 @@ module HTTPX
              request.retries.positive? &&
              IDEMPOTENT_METHODS.include?(request.verb)
             request.retries -= 1
-            channel = find_channel(request)
-            channel.send(request)
+            connection = find_connection(request)
+            connection.send(request)
             return
           end
           response

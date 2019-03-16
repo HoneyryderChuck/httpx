@@ -25,21 +25,21 @@ class NativeResolverTest < Minitest::Test
   def test_parse_no_record
     @has_error = false
     resolver.on(:error) { @has_error = true }
-    channel = build_channel("https://idontthinkthisexists.org/")
-    resolver << channel
+    connection = build_connection("https://idontthinkthisexists.org/")
+    resolver << connection
     resolver.resolve
-    resolver.queries["idontthinkthisexists.org"] = channel
+    resolver.queries["idontthinkthisexists.org"] = connection
 
     # this is only here to drain
     write_buffer.clear
     resolver.parse(no_record)
-    assert channel.addresses.nil?
+    assert connection.addresses.nil?
     assert resolver.queries.key?("idontthinkthisexists.org")
     assert !@has_error, "resolver should still be able to resolve A"
     # A type
     write_buffer.clear
     resolver.parse(no_record)
-    assert channel.addresses.nil?
+    assert connection.addresses.nil?
     assert resolver.queries.key?("idontthinkthisexists.org")
     assert @has_error, "resolver should have failed"
   end

@@ -3,7 +3,7 @@
 require "httpx/parser/http1"
 
 module HTTPX
-  class Channel::HTTP1
+  class Connection::HTTP1
     include Callbacks
     include Loggable
 
@@ -250,5 +250,5 @@ module HTTPX
       UPCASED[field] || field.to_s.split("-").map(&:capitalize).join("-")
     end
   end
-  Channel.register "http/1.1", Channel::HTTP1
+  Connection.register "http/1.1", Connection::HTTP1
 end

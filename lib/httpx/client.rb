@@ -55,51 +55,51 @@ module HTTPX
       @responses.delete(request)
     end
 
-    def find_channel(request, **options)
+    def find_connection(request, **options)
       uri = URI(request.uri)
-      @pool.find_channel(uri) || build_channel(uri, options)
+      @pool.find_connection(uri) || build_connection(uri, options)
     end
 
-    def set_channel_callbacks(channel, options)
-      channel.on(:response, &method(:on_response))
-      channel.on(:promise, &method(:on_promise))
-      channel.on(:uncoalesce) do |uncoalesced_uri|
-        other_channel = build_channel(uncoalesced_uri, options)
-        channel.unmerge(other_channel)
+    def set_connection_callbacks(connection, options)
+      connection.on(:response, &method(:on_response))
+      connection.on(:promise, &method(:on_promise))
+      connection.on(:uncoalesce) do |uncoalesced_uri|
+        other_connection = build_connection(uncoalesced_uri, options)
+        connection.unmerge(other_connection)
       end
-      channel.on(:altsvc) do |alt_origin, origin, alt_params|
-        build_altsvc_channel(channel, alt_origin, origin, alt_params, options)
+      connection.on(:altsvc) do |alt_origin, origin, alt_params|
+        build_altsvc_connection(connection, alt_origin, origin, alt_params, options)
       end
     end
 
-    def build_channel(uri, options)
-      channel = @pool.build_channel(uri, **options)
-      set_channel_callbacks(channel, options)
-      channel
+    def build_connection(uri, options)
+      connection = @pool.build_connection(uri, **options)
+      set_connection_callbacks(connection, options)
+      connection
     end
 
-    def build_altsvc_channel(existing_channel, alt_origin, origin, alt_params, options)
+    def build_altsvc_connection(existing_connection, alt_origin, origin, alt_params, options)
       altsvc = AltSvc.cached_altsvc_set(origin, alt_params.merge("origin" => alt_origin))
 
       # altsvc already exists, somehow it wasn't advertised, probably noop
       return unless altsvc
 
-      channel = @pool.find_channel(alt_origin) || build_channel(alt_origin, options)
+      connection = @pool.find_connection(alt_origin) || build_connection(alt_origin, options)
       # advertised altsvc is the same origin being used, ignore
-      return if channel == existing_channel
+      return if connection == existing_connection
 
       log(level: 1) { "#{origin} alt-svc: #{alt_origin}" }
 
       # get uninitialized requests
       # incidentally, all requests will be re-routed to the first
       # advertised alt-svc, which incidentally follows the spec.
-      existing_channel.purge_pending do |request, args|
+      existing_connection.purge_pending do |request, args|
         is_idle = request.origin == origin &&
                   request.state == :idle &&
                   !request.headers.key?("alt-used")
         if is_idle
           log(level: 1) { "#{origin} alt-svc: sending #{request.uri} to #{alt_origin}" }
-          channel.send(request, args)
+          connection.send(request, args)
         end
         is_idle
       end
@@ -133,8 +133,8 @@ module HTTPX
 
     def __send_reqs(*requests, **options)
       requests.each do |request|
-        channel = find_channel(request, **options)
-        channel.send(request)
+        connection = find_connection(request, **options)
+        connection.send(request)
       end
       responses = []
 
