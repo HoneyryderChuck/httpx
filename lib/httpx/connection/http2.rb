@@ -158,6 +158,8 @@ module HTTPX
     end
 
     def join_body(stream, request)
+      return if request.empty?
+
       chunk = @drains.delete(request) || request.drain_body
       while chunk
         next_chunk = request.drain_body
