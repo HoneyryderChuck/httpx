@@ -63,7 +63,7 @@ module HTTPX
 
     def_delegator :@write_buffer, :empty?
 
-    attr_reader :uri, :state, :pending
+    attr_reader :uri, :state, :pending, :options
 
     def initialize(type, uri, options)
       @type = type
