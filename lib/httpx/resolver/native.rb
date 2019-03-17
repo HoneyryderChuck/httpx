@@ -106,6 +106,7 @@ module HTTPX
         emit(:error, connection, ex)
       else
         @connections << connection
+        resolve
       end
     end
 
