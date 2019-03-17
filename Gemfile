@@ -39,3 +39,6 @@ gem "pry", :require => false
 gem "minitest", require: false
 gem "minitest-proveit", require: false
 gem "oga", require: false
+
+
+gem "stripe", require: false

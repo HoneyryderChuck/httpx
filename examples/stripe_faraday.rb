@@ -15,10 +15,12 @@ conn.ssl.verify_mode = 0
 
 client = Stripe::StripeClient.new(conn)
 
-response = Stripe::Charge.create({
-  amount: 100,
-  currency: "usd",
-  source: "src_123"
-}, {client: client})
-
-puts "response: #{response.status}"
+2.times.each do
+  response = Stripe::Charge.create({
+    amount: 100,
+    currency: "usd",
+    source: "src_123"
+  }, {client: client})
+  puts "response: #{response.status}"
+  sleep 60 * 3
+end
