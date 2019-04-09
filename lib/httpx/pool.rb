@@ -6,9 +6,7 @@ require "httpx/resolver"
 
 module HTTPX
   class Pool
-    def initialize(options)
-      @options = Options.new(options)
-      @timeout = options.timeout
+    def initialize
       @resolvers = {}
       @_resolver_monitors = {}
       @selector = Selector.new
@@ -30,14 +28,14 @@ module HTTPX
         end
       end
     rescue TimeoutError => timeout_error
-      @connections.each do |ch|
-        ch.handle_timeout_error(timeout_error)
+      @connections.each do |connection|
+        connection.handle_timeout_error(timeout_error)
       end
     rescue Errno::ECONNRESET,
            Errno::ECONNABORTED,
            Errno::EPIPE => ex
-      @connections.each do |ch|
-        ch.emit(:error, ex)
+      @connections.each do |connection|
+        connection.emit(:error, ex)
       end
     end
 
@@ -54,10 +52,6 @@ module HTTPX
       resolve_connection(connection)
       connection.on(:open) do
         @connected_connections += 1
-        @timeout.transition(:open) if @connections.size == @connected_connections
-      end
-      connection.on(:reset) do
-        @timeout.transition(:idle)
       end
       connection.on(:unreachable) do
         resolver = find_resolver_for(connection)
@@ -139,8 +133,6 @@ module HTTPX
         unregister_connection(connection)
       end
       return if connection.state == :open
-
-      @timeout.transition(:idle)
     end
 
     def unregister_connection(connection)
@@ -159,7 +151,7 @@ module HTTPX
     end
 
     def next_timeout
-      @resolvers.values.reject(&:closed?).map(&:timeout).min || @timeout.timeout
+      @resolvers.values.reject(&:closed?).map(&:timeout).min || @connections.map(&:timeout).min
     end
 
     def find_resolver_for(connection)
