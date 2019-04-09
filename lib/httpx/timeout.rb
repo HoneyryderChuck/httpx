@@ -27,12 +27,10 @@ module HTTPX
         @operation_timeout = loop_timeout
       end
       reset_counter
-      @state = :idle # this is here not to trigger the log
-      transition(:idle)
     end
 
-    def timeout
-      @timeout || @total_timeout
+    def total_timeout
+      @total_timeout
     ensure
       log_time
     end
@@ -64,17 +62,6 @@ module HTTPX
       end
     end
 
-    def transition(nextstate)
-      return if @state == nextstate
-
-      case nextstate
-      # when :idle
-      when :idle
-        @timeout = @connect_timeout
-      when :open
-        @timeout = @operation_timeout
-      end
-      @state = nextstate
     def no_time_left?
       @time_left <= 0
     end

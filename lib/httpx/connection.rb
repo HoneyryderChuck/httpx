@@ -65,6 +65,8 @@ module HTTPX
 
     attr_reader :uri, :state, :pending, :options
 
+    attr_reader :timeout
+
     def initialize(type, uri, options)
       @type = type
       @uri = uri
