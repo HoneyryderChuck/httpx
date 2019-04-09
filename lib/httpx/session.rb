@@ -31,8 +31,8 @@ module HTTPX
     end
 
     def request(*args, keep_open: @keep_open, **options)
-      requests = __build_reqs(*args, **options)
-      responses = __send_reqs(*requests, **options)
+      requests = __build_reqs(*args, options)
+      responses = __send_reqs(*requests, options)
       return responses.first if responses.size == 1
 
       responses
@@ -51,11 +51,11 @@ module HTTPX
       stream.refuse
     end
 
-    def fetch_response(request)
+    def fetch_response(request, _)
       @responses.delete(request)
     end
 
-    def find_connection(request, **options)
+    def find_connection(request, options)
       uri = URI(request.uri)
       @pool.find_connection(uri) || build_connection(uri, options)
     end
@@ -73,7 +73,7 @@ module HTTPX
     end
 
     def build_connection(uri, options)
-      connection = @pool.build_connection(uri, **options)
+      connection = @pool.build_connection(uri, options)
       set_connection_callbacks(connection, options)
       connection
     end
@@ -107,21 +107,23 @@ module HTTPX
       altsvc["noop"] = true
     end
 
-    def __build_reqs(*args, **options)
+    def __build_reqs(*args, options)
+      request_options = @options.merge(options)
+
       requests = case args.size
                  when 1
                    reqs = args.first
                    reqs.map do |verb, uri|
-                     __build_req(verb, uri, options)
+                     __build_req(verb, uri, request_options)
                    end
                  when 2, 3
                    verb, uris = args
                    if uris.respond_to?(:each)
                      uris.map do |uri, **opts|
-                       __build_req(verb, uri, options.merge(opts))
+                       __build_req(verb, uri, request_options.merge(opts))
                      end
                    else
-                     [__build_req(verb, uris, options)]
+                     [__build_req(verb, uris, request_options)]
                    end
                  else
                    raise ArgumentError, "unsupported number of arguments"
@@ -131,9 +133,11 @@ module HTTPX
       requests
     end
 
-    def __send_reqs(*requests, **options)
+    def __send_reqs(*requests, options)
+      request_options = @options.merge(options)
+
       requests.each do |request|
-        connection = find_connection(request, **options)
+        connection = find_connection(request, request_options)
         connection.send(request)
       end
       responses = []
@@ -142,7 +146,7 @@ module HTTPX
       loop do
         begin
           request = requests.first
-          @pool.next_tick until (response = fetch_response(request))
+          @pool.next_tick until (response = fetch_response(request, request_options))
 
           responses << response
           requests.shift
@@ -153,7 +157,7 @@ module HTTPX
       responses
     end
 
-    def __build_req(verb, uri, options = {})
+    def __build_req(verb, uri, options)
       rklass = @options.request_class
       rklass.new(verb, uri, @options.merge(options))
     end

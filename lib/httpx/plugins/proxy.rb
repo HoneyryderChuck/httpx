@@ -35,21 +35,21 @@ module HTTPX
 
         private
 
-        def proxy_params(uri)
+        def proxy_params(uri, options)
           @_proxy_uris ||= begin
-            uris = @options.proxy ? Array(@options.proxy[:uri]) : []
+            uris = options.proxy ? Array(options.proxy[:uri]) : []
             if uris.empty?
               uri = URI(uri).find_proxy
               uris << uri if uri
             end
             uris
           end
-          @options.proxy.merge(uri: @_proxy_uris.shift) unless @_proxy_uris.empty?
+          options.proxy.merge(uri: @_proxy_uris.shift) unless @_proxy_uris.empty?
         end
 
-        def find_connection(request, **options)
+        def find_connection(request, options)
           uri = URI(request.uri)
-          proxy = proxy_params(uri)
+          proxy = proxy_params(uri, options)
           raise Error, "Failed to connect to proxy" unless proxy
 
           @pool.find_connection(proxy) || build_connection(proxy, options)
@@ -58,22 +58,22 @@ module HTTPX
         def build_connection(proxy, options)
           return super if proxy.is_a?(URI::Generic)
 
-          connection = build_proxy_connection(proxy, **options)
+          connection = build_proxy_connection(proxy, options)
           set_connection_callbacks(connection, options)
           connection
         end
 
-        def build_proxy_connection(proxy, **options)
+        def build_proxy_connection(proxy, options)
           parameters = Parameters.new(**proxy)
           uri = parameters.uri
           log { "proxy: #{uri}" }
           proxy_type = Parameters.registry(parameters.uri.scheme)
-          connection = proxy_type.new("tcp", uri, parameters, @options.merge(options), &method(:on_response))
+          connection = proxy_type.new("tcp", uri, parameters, options, &method(:on_response))
           @pool.__send__(:resolve_connection, connection)
           connection
         end
 
-        def fetch_response(request)
+        def fetch_response(request, options)
           response = super
           if response.is_a?(ErrorResponse) &&
              # either it was a timeout error connecting, or it was a proxy error
@@ -81,7 +81,7 @@ module HTTPX
               response.error.is_a?(Error)) &&
              !@_proxy_uris.empty?
             log { "failed connecting to proxy, trying next..." }
-            connection = find_connection(request)
+            connection = find_connection(request, options)
             connection.send(request)
             return
           end

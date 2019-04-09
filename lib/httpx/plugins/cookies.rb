@@ -75,7 +75,7 @@ module HTTPX
           super
         end
 
-        def __build_req(*)
+        def __build_req(*, _)
           request = super
           request.headers.cookies(@cookies_store[request.uri], request)
           request

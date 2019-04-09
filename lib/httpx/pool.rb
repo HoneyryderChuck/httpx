@@ -49,8 +49,8 @@ module HTTPX
       next_tick until @connections.empty?
     end
 
-    def build_connection(uri, **options)
-      connection = Connection.by(uri, @options.merge(options))
+    def build_connection(uri, options)
+      connection = Connection.by(uri, options)
       resolve_connection(connection)
       connection.on(:open) do
         @connected_connections += 1
