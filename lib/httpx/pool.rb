@@ -18,9 +18,11 @@ module HTTPX
       !@connections.empty?
     end
 
-    def next_tick
+    def next_tick(timeout = nil)
       catch(:jump_tick) do
-        @selector.select(next_timeout) do |monitor|
+        tout = timeout.total_timeout if timeout
+
+        @selector.select(next_timeout || tout) do |monitor|
           if (connection = monitor.value)
             connection.call
           end
