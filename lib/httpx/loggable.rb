@@ -17,9 +17,11 @@ module HTTPX
       return unless @options.debug
       return unless @options.debug_level >= level
 
+      debug_stream = @options.debug
+
       message = (+label << msg.call << "\n")
-      message = "\e[#{COLORS[color]}m#{message}\e[0m" if color && @options.debug.isatty
-      @options.debug << message
+      message = "\e[#{COLORS[color]}m#{message}\e[0m" if debug_stream.respond_to?(:isatty) && debug_stream.isatty
+      debug_stream << message
     end
 
     if !Exception.instance_methods.include?(:full_message)
