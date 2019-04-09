@@ -13,13 +13,15 @@ module HTTPX
         end
 
         def request(*args, **options)
+          request_options = @options.merge(options)
+
           # do not needlessly close connections
           keep_open = @keep_open
           @keep_open = true
 
-          max_redirects = @options.max_redirects || MAX_REDIRECTS
-          requests = __build_reqs(*args, **options)
-          responses = __send_reqs(*requests)
+          max_redirects = request_options.max_redirects || MAX_REDIRECTS
+          requests = __build_reqs(*args, options)
+          responses = __send_reqs(*requests, options)
 
           loop do
             redirect_requests = []
@@ -36,7 +38,7 @@ module HTTPX
 
             max_redirects -= 1
 
-            redirect_responses = __send_reqs(*redirect_requests)
+            redirect_responses = __send_reqs(*redirect_requests, options)
             indexes.each_with_index do |index, i2|
               requests[index] = redirect_requests[i2]
               responses[index] = redirect_responses[i2]
@@ -52,17 +54,17 @@ module HTTPX
 
         private
 
-        def fetch_response(request)
+        def fetch_response(request, options)
           response = super
           if response &&
              REDIRECT_STATUS.include?(response.status) &&
-             !@options.follow_insecure_redirects
+             !options.follow_insecure_redirects
             redirect_uri = __get_location_from_response(response)
             if response.uri.scheme == "https" &&
                redirect_uri.scheme == "http"
               error = InsecureRedirectError.new(redirect_uri.to_s)
               error.set_backtrace(caller)
-              response = ErrorResponse.new(error, @options)
+              response = ErrorResponse.new(error, options)
             end
           end
           response

@@ -21,9 +21,9 @@ module HTTPX
           return super unless @_digest
 
           begin
-            requests = __build_reqs(*args, **options)
+            requests = __build_reqs(*args, options)
             probe_request = requests.first
-            prev_response = __send_reqs(*probe_request).first
+            prev_response = __send_reqs(*probe_request, options).first
 
             unless prev_response.status == 401
               raise Error, "request doesn't require authentication (status: #{prev_response})"
@@ -35,7 +35,7 @@ module HTTPX
             requests.each do |request|
               token = @_digest.generate_header(request, prev_response)
               request.headers["authorization"] = "Digest #{token}"
-              response = __send_reqs(*request).first
+              response = __send_reqs(*request, options).first
               responses << response
               prev_response = response
             end
