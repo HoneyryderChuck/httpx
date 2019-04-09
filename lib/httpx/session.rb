@@ -7,7 +7,7 @@ module HTTPX
 
     def initialize(options = {}, &blk)
       @options = self.class.default_options.merge(options)
-      @pool = Pool.new(@options)
+      @pool = Pool.new
       @responses = {}
       @keep_open = false
       wrap(&blk) if block_given?
@@ -135,6 +135,7 @@ module HTTPX
 
     def __send_reqs(*requests, options)
       request_options = @options.merge(options)
+      timeout = request_options.timeout
 
       requests.each do |request|
         connection = find_connection(request, request_options)
@@ -146,7 +147,7 @@ module HTTPX
       loop do
         begin
           request = requests.first
-          @pool.next_tick until (response = fetch_response(request, request_options))
+          @pool.next_tick(timeout) until (response = fetch_response(request, request_options))
 
           responses << response
           requests.shift

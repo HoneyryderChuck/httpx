@@ -223,15 +223,22 @@ module HTTPX
     end
 
     def handle_timeout_error(e)
-      return emit(:error, e) unless @timeout
+      case e
+      when TotalTimeoutError
+        return unless @options.timeout.no_time_left?
 
-      @timeout -= e.timeout
-      return unless @timeout <= 0
-
-      if connecting?
-        emit(:error, e.to_connection_error)
-      else
         emit(:error, e)
+      when TimeoutError
+        return emit(:error, e) unless @timeout
+
+        @timeout -= e.timeout
+        return unless @timeout <= 0
+
+        if connecting?
+          emit(:error, e.to_connection_error)
+        else
+          emit(:error, e)
+        end
       end
     end
 
