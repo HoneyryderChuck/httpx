@@ -20,6 +20,8 @@ module HTTPX
     end
   end
 
+  TotalTimeoutError = Class.new(TimeoutError)
+
   ConnectTimeoutError = Class.new(TimeoutError)
 
   ResolveError = Class.new(Error)
