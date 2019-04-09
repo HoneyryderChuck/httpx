@@ -15,7 +15,7 @@ module Requests
       session = HTTPX.timeout(operation_timeout: 1, total_timeout: 2)
       response = session.get(uri)
       assert response.is_a?(HTTPX::ErrorResponse), "response should have failed"
-      assert response.status =~ /timed out after 2 seconds/i, "response should have timed out"
+      assert response.status =~ /timed out after \d+ seconds/i, "response should have timed out"
     end
 
     # def test_http_timeout_connect_timeout
