@@ -25,8 +25,8 @@ module HTTPX
       end
     end
 
-    def close
-      @pool.close
+    def close(*args)
+      @pool.close(*args)
     end
 
     def request(*args, **options)
@@ -131,13 +131,16 @@ module HTTPX
     end
 
     def __send_reqs(*requests, options)
+      connections = []
       request_options = @options.merge(options)
       timeout = request_options.timeout
 
       requests.each do |request|
         connection = find_connection(request, request_options)
+        connections << connection unless connections.include?(connection)
         connection.send(request)
       end
+
       responses = []
 
       begin
@@ -155,7 +158,7 @@ module HTTPX
         end
         responses
       ensure
-        close unless @keep_open
+        close(connections) unless @keep_open
       end
     end
 
