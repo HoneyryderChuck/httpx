@@ -41,12 +41,12 @@ module HTTPX
       end
     end
 
-    def close
+    def close(connections = @connections)
+      connections.each(&:close)
+      next_tick until connections.none? { |c| @connections.include?(c) }
       @resolvers.each_value do |resolver|
         resolver.close unless resolver.closed?
-      end
-      @connections.each(&:close)
-      next_tick until @connections.empty?
+      end if @connections.empty?
     end
 
     def build_connection(uri, options)
