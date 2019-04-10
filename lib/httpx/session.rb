@@ -22,7 +22,6 @@ module HTTPX
         yield self
       ensure
         @keep_open = prev_keep_open
-        close
       end
     end
 
@@ -30,14 +29,12 @@ module HTTPX
       @pool.close
     end
 
-    def request(*args, keep_open: @keep_open, **options)
+    def request(*args, **options)
       requests = __build_reqs(*args, options)
       responses = __send_reqs(*requests, options)
       return responses.first if responses.size == 1
 
       responses
-    ensure
-      close unless keep_open
     end
 
     private
@@ -143,19 +140,23 @@ module HTTPX
       end
       responses = []
 
-      # guarantee ordered responses
-      loop do
-        begin
-          request = requests.first
-          @pool.next_tick(timeout) until (response = fetch_response(request, request_options))
+      begin
+        # guarantee ordered responses
+        loop do
+          begin
+            request = requests.first
+            @pool.next_tick(timeout) until (response = fetch_response(request, request_options))
 
-          responses << response
-          requests.shift
+            responses << response
+            requests.shift
 
-          break if requests.empty? || !@pool.running?
+            break if requests.empty? || !@pool.running?
+          end
         end
+        responses
+      ensure
+        close unless @keep_open
       end
-      responses
     end
 
     def __build_req(verb, uri, options)
