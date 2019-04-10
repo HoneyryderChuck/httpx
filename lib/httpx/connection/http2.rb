@@ -233,7 +233,9 @@ module HTTPX
       if error
         ex = Error.new(0, error)
         ex.set_backtrace(caller)
-        emit(:error, request, ex)
+        @streams.each_key do |request|
+          emit(:error, request, ex)
+        end
       end
       return unless @connection.state == :closed && @connection.active_stream_count.zero?
 
