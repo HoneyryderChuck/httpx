@@ -16,40 +16,37 @@ module HTTPX
           request_options = @options.merge(options)
 
           # do not needlessly close connections
-          keep_open = @keep_open
-          @keep_open = true
+          wrap do
+            max_redirects = request_options.max_redirects || MAX_REDIRECTS
+            requests = __build_reqs(*args, options)
+            responses = __send_reqs(*requests, options)
 
-          max_redirects = request_options.max_redirects || MAX_REDIRECTS
-          requests = __build_reqs(*args, options)
-          responses = __send_reqs(*requests, options)
+            loop do
+              redirect_requests = []
+              indexes = responses.each_with_index.map do |response, index|
+                next unless REDIRECT_STATUS.include?(response.status)
 
-          loop do
-            redirect_requests = []
-            indexes = responses.each_with_index.map do |response, index|
-              next unless REDIRECT_STATUS.include?(response.status)
+                request = requests[index]
+                retry_request = __build_redirect_req(request, response, options)
+                redirect_requests << retry_request
+                index
+              end.compact
+              break if redirect_requests.empty?
+              break if max_redirects <= 0
 
-              request = requests[index]
-              retry_request = __build_redirect_req(request, response, options)
-              redirect_requests << retry_request
-              index
-            end.compact
-            break if redirect_requests.empty?
-            break if max_redirects <= 0
+              max_redirects -= 1
 
-            max_redirects -= 1
-
-            redirect_responses = __send_reqs(*redirect_requests, options)
-            indexes.each_with_index do |index, i2|
-              requests[index] = redirect_requests[i2]
-              responses[index] = redirect_responses[i2]
+              redirect_responses = __send_reqs(*redirect_requests, options)
+              indexes.each_with_index do |index, i2|
+                requests[index] = redirect_requests[i2]
+                responses[index] = redirect_responses[i2]
+              end
             end
+
+            return responses.first if responses.size == 1
+
+            responses
           end
-
-          return responses.first if responses.size == 1
-
-          responses
-        ensure
-          @keep_open = keep_open
         end
 
         private

@@ -21,7 +21,7 @@ module HTTPX
             upgrade_request.headers.add("connection", "upgrade")
             upgrade_request.headers.add("connection", "http2-settings")
             upgrade_request.headers["http2-settings"] = HTTP2::Client.settings_header(upgrade_request.http2_settings)
-            upgrade_response = wrap {__send_reqs(*upgrade_request, options).first }
+            upgrade_response = wrap { __send_reqs(*upgrade_request, options).first }
 
             if upgrade_response.status == 101
               connection = find_connection(upgrade_request, upgrade_request.options)
