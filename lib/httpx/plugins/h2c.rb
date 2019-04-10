@@ -8,7 +8,7 @@ module HTTPX
       end
 
       module InstanceMethods
-        def request(*args, keep_open: @keep_open, **options)
+        def request(*args, **options)
           return super if @_h2c_probed
 
           begin
@@ -45,7 +45,7 @@ module HTTPX
             responses
           ensure
             @_h2c_probed = true
-            close unless keep_open
+            # close unless keep_open
           end
         end
 
