@@ -188,10 +188,10 @@ module HTTPX
           include(pl::InstanceMethods) if defined?(pl::InstanceMethods)
           extend(pl::ClassMethods) if defined?(pl::ClassMethods)
           if defined?(pl::OptionsMethods) || defined?(pl::OptionsClassMethods)
-            options_klass = Class.new(@default_options.class)
+            options_klass = Class.new(default_options.class)
             options_klass.extend(pl::OptionsClassMethods) if defined?(pl::OptionsClassMethods)
             options_klass.__send__(:include, pl::OptionsMethods) if defined?(pl::OptionsMethods)
-            @default_options = options_klass.new
+            @default_options = options_klass.new(default_options)
           end
           opts = default_options
           opts.request_class.__send__(:include, pl::RequestMethods) if defined?(pl::RequestMethods)
