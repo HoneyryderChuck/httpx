@@ -14,8 +14,8 @@ module HTTPX
       @connected_connections = 0
     end
 
-    def running?
-      !@connections.empty?
+    def empty?
+      @connections.empty?
     end
 
     def next_tick(timeout = nil)
