@@ -4,75 +4,53 @@ module HTTPX
   InsecureRedirectError = Class.new(Error)
   module Plugins
     module FollowRedirects
+      MAX_REDIRECTS = 3
+      REDIRECT_STATUS = (300..399).freeze
+
       module InstanceMethods
-        MAX_REDIRECTS = 3
-        REDIRECT_STATUS = (300..399).freeze
 
         def max_redirects(n)
           branch(default_options.with_max_redirects(n.to_i))
         end
 
-        def request(*args, **options)
-          request_options = @options.merge(options)
-
-          # do not needlessly close connections
-          wrap do
-            max_redirects = request_options.max_redirects || MAX_REDIRECTS
-            requests = __build_reqs(*args, options)
-            responses = __send_reqs(*requests, options)
-
-            loop do
-              redirect_requests = []
-              indexes = responses.each_with_index.map do |response, index|
-                next unless REDIRECT_STATUS.include?(response.status)
-
-                request = requests[index]
-                retry_request = __build_redirect_req(request, response, options)
-                redirect_requests << retry_request
-                index
-              end.compact
-              break if redirect_requests.empty?
-              break if max_redirects <= 0
-
-              max_redirects -= 1
-
-              redirect_responses = __send_reqs(*redirect_requests, options)
-              indexes.each_with_index do |index, i2|
-                requests[index] = redirect_requests[i2]
-                responses[index] = redirect_responses[i2]
-              end
-            end
-
-            return responses.first if responses.size == 1
-
-            responses
-          end
-        end
-
         private
 
-        def fetch_response(request, options)
-          response = super
-          if response &&
-             REDIRECT_STATUS.include?(response.status) &&
-             !options.follow_insecure_redirects
-            redirect_uri = __get_location_from_response(response)
-            if response.uri.scheme == "https" &&
-               redirect_uri.scheme == "http"
-              error = InsecureRedirectError.new(redirect_uri.to_s)
-              error.set_backtrace(caller)
-              response = ErrorResponse.new(error, options)
-            end
+        def fetch_response(request, connections, options)
+          redirect_request = request.redirect_request
+          response = super(redirect_request, connections, options)
+          return unless response
+
+          max_redirects = redirect_request.max_redirects
+
+          return response unless REDIRECT_STATUS.include?(response.status)
+          return response unless max_redirects.positive?
+
+          retry_request = __build_redirect_req(redirect_request, response, options)
+
+          request.redirect_request = retry_request
+
+          if !options.follow_insecure_redirects &&
+             response.uri.scheme == "https" &&
+             retry_request.uri.scheme == "http"
+            error = InsecureRedirectError.new(retry_request.uri.to_s)
+            error.set_backtrace(caller)
+            return ErrorResponse.new(error, options)
           end
-          response
+
+          connection = find_connection(retry_request, options)
+          connections << connection unless connections.include?(connection)
+          connection.send(retry_request)
+          nil
         end
 
         def __build_redirect_req(request, response, options)
           redirect_uri = __get_location_from_response(response)
+          max_redirects = request.max_redirects
 
           # redirects are **ALWAYS** GET
           retry_options = options.merge(headers: request.headers,
-                                        body: request.body)
+                                        body: request.body,
+                                        max_redirects: max_redirects - 1)
           __build_req(:get, redirect_uri, retry_options)
         end
 
@@ -80,6 +58,20 @@ module HTTPX
           location_uri = URI(response.headers["location"])
           location_uri = response.uri.merge(location_uri) if location_uri.relative?
           location_uri
+        end
+      end
+
+      module RequestMethods
+        def self.included(klass)
+          klass.attr_writer :redirect_request
+        end
+
+        def redirect_request
+          @redirect_request || self
+        end
+
+        def max_redirects
+          @options.max_redirects || MAX_REDIRECTS
         end
       end
 
