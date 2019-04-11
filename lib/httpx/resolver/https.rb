@@ -26,8 +26,7 @@ module HTTPX
 
     def_delegators :@resolver_connection, :to_io, :call, :interests, :close
 
-    def initialize(pool, options)
-      @pool = pool
+    def initialize(options)
       @options = Options.new(options)
       @resolver_options = Resolver::Options.new(DEFAULTS.merge(@options.resolver_options || {}))
       @_record_types = Hash.new { |types, host| types[host] = RECORD_TYPES.keys.dup }
@@ -62,6 +61,10 @@ module HTTPX
 
     private
 
+    def pool
+      Thread.current[:httpx_connection_pool] ||= Pool.new
+    end
+
     def resolver_connection
       @resolver_connection ||= find_connection(@uri, @options)
     end
@@ -84,9 +87,9 @@ module HTTPX
     end
 
     def find_connection(_request, **options)
-      @pool.find_connection(@uri) || begin
+      pool.find_connection(@uri) || begin
         @building_connection = true
-        connection = @pool.build_connection(@uri, **options)
+        connection = pool.build_connection(@uri, **options)
         emit_addresses(connection, @uri_addresses)
         set_connection_callbacks(connection)
         @building_connection = false

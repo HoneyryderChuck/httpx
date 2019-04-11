@@ -5,16 +5,16 @@ require_relative "support/http_helpers"
 class HTTPTest < Minitest::Test
   include HTTPHelpers
   include Requests
-  include Head
   include Get
-  include ChunkedGet
+  include Head
   include WithBody
-  include WithChunkedBody
   include Headers
   include ResponseBody
   include IO
   include Timeouts
   include Errors
+  include ChunkedGet
+  include WithChunkedBody
 
   include Plugins::Proxy
   include Plugins::Authentication

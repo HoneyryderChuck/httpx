@@ -7,7 +7,6 @@ module HTTPX
 
     def initialize(options = {}, &blk)
       @options = self.class.default_options.merge(options)
-      @pool = Pool.new
       @responses = {}
       @keep_open = false
       wrap(&blk) if block_given?
@@ -26,7 +25,7 @@ module HTTPX
     end
 
     def close(*args)
-      @pool.close(*args)
+      pool.close(*args)
     end
 
     def request(*args, **options)
@@ -38,6 +37,10 @@ module HTTPX
     end
 
     private
+
+    def pool
+      Thread.current[:httpx_connection_pool] ||= Pool.new
+    end
 
     def on_response(request, response)
       @responses[request] = response
@@ -54,7 +57,7 @@ module HTTPX
 
     def find_connection(request, options)
       uri = URI(request.uri)
-      @pool.find_connection(uri) || build_connection(uri, options)
+      pool.find_connection(uri) || build_connection(uri, options)
     end
 
     def set_connection_callbacks(connection, options)
@@ -70,7 +73,7 @@ module HTTPX
     end
 
     def build_connection(uri, options)
-      connection = @pool.build_connection(uri, options)
+      connection = pool.build_connection(uri, options)
       set_connection_callbacks(connection, options)
       connection
     end
@@ -81,7 +84,7 @@ module HTTPX
       # altsvc already exists, somehow it wasn't advertised, probably noop
       return unless altsvc
 
-      connection = @pool.find_connection(alt_origin) || build_connection(alt_origin, options)
+      connection = pool.find_connection(alt_origin) || build_connection(alt_origin, options)
       # advertised altsvc is the same origin being used, ignore
       return if connection == existing_connection
 
@@ -153,7 +156,7 @@ module HTTPX
             responses << response
             requests.shift
 
-            break if requests.empty? || @pool.empty?
+            break if requests.empty? || pool.empty?
           end
         end
         responses
