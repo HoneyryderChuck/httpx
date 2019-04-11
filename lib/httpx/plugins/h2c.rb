@@ -24,12 +24,17 @@ module HTTPX
             upgrade_response = wrap { __send_reqs(*upgrade_request, options).first }
 
             if upgrade_response.status == 101
-              connection = find_connection(upgrade_request, upgrade_request.options)
+              # if 101, assume that connection exists and was kept open
+              connection = find_connection(upgrade_request, options)
               parser = connection.upgrade_parser("h2")
               parser.extend(UpgradeExtensions)
               parser.upgrade(upgrade_request, upgrade_response, **upgrade_request.options)
+
+              # clean up data left behind in the buffer, if the server started
+              # sending frames
               data = upgrade_response.to_s
               parser << data
+
               response = upgrade_request.response
               if response.status == 200
                 requests.delete(upgrade_request)
@@ -40,12 +45,12 @@ module HTTPX
               # proceed as usual
               responses = [upgrade_response] + __send_reqs(*requests[1..-1], options)
             end
+
             return responses.first if responses.size == 1
 
             responses
           ensure
             @_h2c_probed = true
-            # close unless keep_open
           end
         end
 
