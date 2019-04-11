@@ -73,7 +73,7 @@ module HTTPX
           connection
         end
 
-        def fetch_response(request, options)
+        def fetch_response(request, connections, options)
           response = super
           if response.is_a?(ErrorResponse) &&
              # either it was a timeout error connecting, or it was a proxy error
@@ -82,6 +82,7 @@ module HTTPX
              !@_proxy_uris.empty?
             log { "failed connecting to proxy, trying next..." }
             connection = find_connection(request, options)
+            connections << connection unless connections.include?(connection)
             connection.send(request)
             return
           end
