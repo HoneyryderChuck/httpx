@@ -13,13 +13,14 @@ module HTTPX
 
         private
 
-        def fetch_response(request, options)
+        def fetch_response(request, connections, options)
           response = super
           if response.is_a?(ErrorResponse) &&
              request.retries.positive? &&
              IDEMPOTENT_METHODS.include?(request.verb)
             request.retries -= 1
             connection = find_connection(request, options)
+            connections << connection unless connections.include?(connection)
             connection.send(request)
             return
           end

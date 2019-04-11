@@ -48,7 +48,7 @@ module HTTPX
       stream.refuse
     end
 
-    def fetch_response(request, _)
+    def fetch_response(request, _, _)
       @responses.delete(request)
     end
 
@@ -148,7 +148,7 @@ module HTTPX
         loop do
           begin
             request = requests.first
-            @pool.next_tick(timeout) until (response = fetch_response(request, request_options))
+            pool.next_tick(timeout) until (response = fetch_response(request, connections, request_options))
 
             responses << response
             requests.shift
