@@ -153,7 +153,7 @@ module HTTPX
             responses << response
             requests.shift
 
-            break if requests.empty? || !@pool.running?
+            break if requests.empty? || @pool.empty?
           end
         end
         responses
