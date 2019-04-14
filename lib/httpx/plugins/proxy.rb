@@ -67,7 +67,7 @@ module HTTPX
           proxy_params = proxy_params(uri, options)
           raise Error, "Failed to connect to proxy" unless proxy_params
 
-          @pool.find_connection(proxy_params[:uri]) || build_connection(proxy_params, options)
+          @pool.find_connection(URI(proxy_params[:uri])) || build_connection(proxy_params, options)
         end
 
         def build_connection(proxy, options)
