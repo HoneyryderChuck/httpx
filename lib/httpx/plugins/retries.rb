@@ -6,6 +6,17 @@ module HTTPX
       MAX_RETRIES = 3
       IDEMPOTENT_METHODS = %i[get options head put delete].freeze
 
+      def self.extra_options(options)
+        Class.new(options.class) do
+          def_option(:max_retries) do |num|
+            num = Integer(num)
+            raise Error, ":max_retries must be positive" unless num.positive?
+
+            num
+          end
+        end.new(options)
+      end
+
       module InstanceMethods
         def max_retries(n)
           branch(default_options.with_max_retries(n.to_i))
@@ -34,18 +45,6 @@ module HTTPX
         def initialize(*args)
           super
           @retries = @options.max_retries || MAX_RETRIES
-        end
-      end
-
-      module OptionsMethods
-        def self.included(klass)
-          super
-          klass.def_option(:max_retries) do |num|
-            num = Integer(num)
-            raise Error, ":max_retries must be positive" unless num.positive?
-
-            num
-          end
         end
       end
     end

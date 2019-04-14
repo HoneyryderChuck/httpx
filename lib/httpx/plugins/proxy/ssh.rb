@@ -11,6 +11,14 @@ module HTTPX
           require "net/ssh/gateway"
         end
 
+        def self.extra_options(options)
+          Class.new(options.class) do
+            def_option(:proxy) do |pr|
+              Hash[pr]
+            end
+          end.new(options)
+        end
+
         module InstanceMethods
           def with_proxy(*args)
             branch(default_options.with_proxy(*args))
@@ -58,15 +66,6 @@ module HTTPX
               TCPSocket.open("localhost", port)
             else
               raise Error, "unexpected scheme: #{request_uri.scheme}"
-            end
-          end
-        end
-
-        module OptionsMethods
-          def self.included(klass)
-            super
-            klass.def_option(:proxy) do |pr|
-              Hash[pr]
             end
           end
         end
