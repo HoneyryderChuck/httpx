@@ -9,10 +9,8 @@ module HTTPX
         klass.plugin(:"compression/deflate")
       end
 
-      module InstanceMethods
-        def initialize(opts = {})
-          super(opts.merge(headers: { "accept-encoding" => Compression.registry.keys }))
-        end
+      def self.extra_options(options)
+        options.merge(headers: { "accept-encoding" => Compression.registry.keys })
       end
 
       module RequestBodyMethods
