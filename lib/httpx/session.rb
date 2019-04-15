@@ -185,22 +185,26 @@ module HTTPX
         unless @plugins.include?(pl)
           @plugins << pl
           pl.load_dependencies(self, *args, &block) if pl.respond_to?(:load_dependencies)
+          @default_options = @default_options.dup
           @default_options = pl.extra_options(@default_options) if pl.respond_to?(:extra_options)
 
           include(pl::InstanceMethods) if defined?(pl::InstanceMethods)
           extend(pl::ClassMethods) if defined?(pl::ClassMethods)
 
-          @default_options.request_class.__send__(:include, pl::RequestMethods) if defined?(pl::RequestMethods)
-          @default_options.request_class.extend(pl::RequestClassMethods) if defined?(pl::RequestClassMethods)
-          @default_options.response_class.__send__(:include, pl::ResponseMethods) if defined?(pl::ResponseMethods)
-          @default_options.response_class.extend(pl::ResponseClassMethods) if defined?(pl::ResponseClassMethods)
-          @default_options.headers_class.__send__(:include, pl::HeadersMethods) if defined?(pl::HeadersMethods)
-          @default_options.headers_class.extend(pl::HeadersClassMethods) if defined?(pl::HeadersClassMethods)
-          @default_options.request_body_class.__send__(:include, pl::RequestBodyMethods) if defined?(pl::RequestBodyMethods)
-          @default_options.request_body_class.extend(pl::RequestBodyClassMethods) if defined?(pl::RequestBodyClassMethods)
-          @default_options.response_body_class.__send__(:include, pl::ResponseBodyMethods) if defined?(pl::ResponseBodyMethods)
-          @default_options.response_body_class.extend(pl::ResponseBodyClassMethods) if defined?(pl::ResponseBodyClassMethods)
+          opts = @default_options
+          opts.request_class.__send__(:include, pl::RequestMethods) if defined?(pl::RequestMethods)
+          opts.request_class.extend(pl::RequestClassMethods) if defined?(pl::RequestClassMethods)
+          opts.response_class.__send__(:include, pl::ResponseMethods) if defined?(pl::ResponseMethods)
+          opts.response_class.extend(pl::ResponseClassMethods) if defined?(pl::ResponseClassMethods)
+          opts.headers_class.__send__(:include, pl::HeadersMethods) if defined?(pl::HeadersMethods)
+          opts.headers_class.extend(pl::HeadersClassMethods) if defined?(pl::HeadersClassMethods)
+          opts.request_body_class.__send__(:include, pl::RequestBodyMethods) if defined?(pl::RequestBodyMethods)
+          opts.request_body_class.extend(pl::RequestBodyClassMethods) if defined?(pl::RequestBodyClassMethods)
+          opts.response_body_class.__send__(:include, pl::ResponseBodyMethods) if defined?(pl::ResponseBodyMethods)
+          opts.response_body_class.extend(pl::ResponseBodyClassMethods) if defined?(pl::ResponseBodyClassMethods)
           pl.configure(self, *args, &block) if pl.respond_to?(:configure)
+
+          @default_options.freeze
         end
         self
       end
