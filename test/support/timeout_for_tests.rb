@@ -13,8 +13,7 @@ HTTPX::Timeout.extend(TestTimeoutDefaults)
 
 module TimeoutForTest
   # our own subclass so we never confused different timeouts
-  class TestTimeout < Timeout::Error
-  end
+  TestTimeout = Class.new(Timeout::Error)
 
   def run(*)
     ::Timeout.timeout(RUBY_ENGINE == "jruby" ? 60 : 30, TestTimeout) { super }
