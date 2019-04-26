@@ -16,8 +16,15 @@ module TimeoutForTest
   TestTimeout = Class.new(Timeout::Error)
 
   def run(*)
+    (Thread.current[:passed_tests] ||= []) << name
     ::Timeout.timeout(RUBY_ENGINE == "jruby" ? 60 : 30, TestTimeout) { super }
+  ensure
+    if !Thread.current[:tests_already_failed] && self.failures.size > 0
+      Thread.current[:tests_already_failed] = true
+      puts "this thread executed: #{Thread.current[:passed_tests].join(", ")}"
+    end
   end
 end
 
 Minitest::Test.prepend(TimeoutForTest) unless ENV.key?("HTTPX_DEBUG")
+
