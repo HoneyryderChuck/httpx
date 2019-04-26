@@ -19,10 +19,6 @@ module HTTPX
 
     protected
 
-    def inherit_callbacks(callbackable)
-      @callbacks = callbackable.callbacks
-    end
-
     def callbacks(type = nil)
       return @callbacks unless type
 
