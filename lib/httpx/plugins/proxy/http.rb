@@ -48,7 +48,7 @@ module HTTPX
                 @parser = nil
               when :idle
                 @parser = ProxyParser.new(@write_buffer, @options)
-                @parser.inherit_callbacks(self)
+                set_parser_callbacks(@parser)
                 @parser.on(:close) { transition(:closing) }
               end
             end

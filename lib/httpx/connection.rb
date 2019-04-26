@@ -299,6 +299,11 @@ module HTTPX
 
     def build_parser(protocol = @io.protocol)
       parser = registry(protocol).new(@write_buffer, @options)
+      set_parser_callbacks(parser)
+      parser
+    end
+
+    def set_parser_callbacks(parser)
       parser.on(:response) do |*args|
         AltSvc.emit(*args) do |alt_origin, origin, alt_params|
           emit(:altsvc, alt_origin, origin, alt_params)
@@ -336,7 +341,6 @@ module HTTPX
           emit(:response, request, response)
         end
       end
-      parser
     end
 
     def transition(nextstate)
