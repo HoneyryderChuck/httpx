@@ -171,6 +171,7 @@ module HTTPX
     end
 
     @default_options = Options.new
+    @default_options.freeze
     @plugins = []
 
     class << self
@@ -178,7 +179,7 @@ module HTTPX
 
       def inherited(klass)
         super
-        klass.instance_variable_set(:@default_options, @default_options.dup)
+        klass.instance_variable_set(:@default_options, @default_options)
         klass.instance_variable_set(:@plugins, @plugins.dup)
       end
 
