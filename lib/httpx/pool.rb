@@ -42,6 +42,7 @@ module HTTPX
     end
 
     def close(connections = @connections)
+      connections = connections.reject(&:inflight?)
       connections.each(&:close)
       next_tick until connections.none? { |c| @connections.include?(c) }
       @resolvers.each_value do |resolver|

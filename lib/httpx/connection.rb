@@ -160,6 +160,10 @@ module HTTPX
       @state == :idle
     end
 
+    def inflight?
+      @state == :open && @parser && !@parser.empty?
+    end
+
     def interests
       return :w if @state == :idle
 
@@ -225,7 +229,7 @@ module HTTPX
     def handle_timeout_error(e)
       case e
       when TotalTimeoutError
-        return unless @options.timeout.no_time_left?
+        # return unless @options.timeout.no_time_left?
 
         emit(:error, e)
       when TimeoutError
@@ -304,11 +308,11 @@ module HTTPX
     end
 
     def set_parser_callbacks(parser)
-      parser.on(:response) do |*args|
-        AltSvc.emit(*args) do |alt_origin, origin, alt_params|
+      parser.on(:response) do |request, response|
+        AltSvc.emit(request, response) do |alt_origin, origin, alt_params|
           emit(:altsvc, alt_origin, origin, alt_params)
         end
-        emit(:response, *args)
+        emit(:response, request, response)
       end
       parser.on(:altsvc) do |alt_origin, origin, alt_params|
         emit(:altsvc, alt_origin, origin, alt_params)
