@@ -8,11 +8,11 @@ module HTTPX
       end
 
       module InstanceMethods
-        def request(*args, keep_open: @keep_open, **options)
+        def request(*args, **options)
           return super if @_h2c_probed
 
           begin
-            requests = __build_reqs(*args, **options)
+            requests = __build_reqs(*args, options)
 
             upgrade_request = requests.first
             return super unless valid_h2c_upgrade_request?(upgrade_request)
@@ -20,32 +20,37 @@ module HTTPX
             upgrade_request.headers["upgrade"] = "h2c"
             upgrade_request.headers.add("connection", "upgrade")
             upgrade_request.headers.add("connection", "http2-settings")
-            upgrade_request.headers["http2-settings"] = HTTP2::Client.settings_header(@options.http2_settings)
-            upgrade_response = __send_reqs(*upgrade_request, **options).first
+            upgrade_request.headers["http2-settings"] = HTTP2::Client.settings_header(upgrade_request.http2_settings)
+            upgrade_response = wrap { __send_reqs(*upgrade_request, options).first }
 
             if upgrade_response.status == 101
-              connection = find_connection(upgrade_request)
+              # if 101, assume that connection exists and was kept open
+              connection = find_connection(upgrade_request, options)
               parser = connection.upgrade_parser("h2")
               parser.extend(UpgradeExtensions)
-              parser.upgrade(upgrade_request, upgrade_response, **options)
+              parser.upgrade(upgrade_request, upgrade_response, **upgrade_request.options)
+
+              # clean up data left behind in the buffer, if the server started
+              # sending frames
               data = upgrade_response.to_s
               parser << data
+
               response = upgrade_request.response
               if response.status == 200
                 requests.delete(upgrade_request)
                 return response if requests.empty?
               end
-              responses = __send_reqs(*requests)
+              responses = __send_reqs(*requests, options)
             else
               # proceed as usual
-              responses = [upgrade_response] + __send_reqs(*requests[1..-1])
+              responses = [upgrade_response] + __send_reqs(*requests[1..-1], options)
             end
+
             return responses.first if responses.size == 1
 
             responses
           ensure
             @_h2c_probed = true
-            close unless keep_open
           end
         end
 
@@ -57,6 +62,13 @@ module HTTPX
         def valid_h2c_upgrade_request?(request)
           VALID_H2C_METHODS.include?(request.verb) &&
             request.scheme == "http"
+        end
+      end
+
+      module RequestMethods
+        def self.included(klass)
+          klass.__send__(:attr_reader, :options)
+          klass.def_delegator :@options, :http2_settings
         end
       end
 

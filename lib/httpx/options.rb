@@ -32,7 +32,9 @@ module HTTPX
         protected :"#{name}="
 
         define_method(:"with_#{name}") do |value|
-          dup { |opts| opts.send(:"#{name}=", instance_exec(value, &interpreter)) }
+          other = dup
+          other.send(:"#{name}=", other.instance_exec(value, &interpreter))
+          other
         end
       end
     end
@@ -126,17 +128,26 @@ module HTTPX
       Hash[*hash_pairs]
     end
 
-    def dup
-      dupped = super
-      dupped.headers             = headers.dup
-      dupped.ssl                 = ssl.dup
-      dupped.request_class       = request_class.dup
-      dupped.response_class      = response_class.dup
-      dupped.headers_class       = headers_class.dup
-      dupped.request_body_class  = request_body_class.dup
-      dupped.response_body_class = response_body_class.dup
-      yield(dupped) if block_given?
-      dupped
+    def initialize_dup(other)
+      self.headers             = other.headers.dup
+      self.ssl                 = other.ssl.dup
+      self.request_class       = other.request_class.dup
+      self.response_class      = other.response_class.dup
+      self.headers_class       = other.headers_class.dup
+      self.request_body_class  = other.request_body_class.dup
+      self.response_body_class = other.response_body_class.dup
+    end
+
+    def freeze
+      super
+
+      headers.freeze
+      ssl.freeze
+      request_class.freeze
+      response_class.freeze
+      headers_class.freeze
+      request_body_class.freeze
+      response_body_class.freeze
     end
 
     protected

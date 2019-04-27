@@ -6,27 +6,23 @@ require "httpx/resolver"
 
 module HTTPX
   class Pool
-    def initialize(options)
-      @options = Options.new(options)
-      @timeout = options.timeout
-      resolver_type = @options.resolver_class
-      resolver_type = Resolver.registry(resolver_type) if resolver_type.is_a?(Symbol)
+    def initialize
+      @resolvers = {}
+      @_resolver_monitors = {}
       @selector = Selector.new
       @connections = []
       @connected_connections = 0
-      @resolver = resolver_type.new(self, @options)
-      @resolver.on(:resolve, &method(:on_resolver_connection))
-      @resolver.on(:error, &method(:on_resolver_error))
-      @resolver.on(:close, &method(:on_resolver_close))
     end
 
-    def running?
-      !@connections.empty?
+    def empty?
+      @connections.empty?
     end
 
-    def next_tick
+    def next_tick(timeout = nil)
       catch(:jump_tick) do
-        @selector.select(next_timeout) do |monitor|
+        tout = timeout.total_timeout if timeout
+
+        @selector.select(next_timeout || tout) do |monitor|
           if (connection = monitor.value)
             connection.call
           end
@@ -34,35 +30,35 @@ module HTTPX
         end
       end
     rescue TimeoutError => timeout_error
-      @connections.each do |ch|
-        ch.handle_timeout_error(timeout_error)
+      @connections.each do |connection|
+        connection.handle_timeout_error(timeout_error)
       end
     rescue Errno::ECONNRESET,
            Errno::ECONNABORTED,
            Errno::EPIPE => ex
-      @connections.each do |ch|
-        ch.emit(:error, ex)
+      @connections.each do |connection|
+        connection.emit(:error, ex)
       end
     end
 
-    def close
-      @resolver.close unless @resolver.closed?
-      @connections.each(&:close)
-      next_tick until @connections.empty?
+    def close(connections = @connections)
+      connections = connections.reject(&:inflight?)
+      connections.each(&:close)
+      next_tick until connections.none? { |c| @connections.include?(c) }
+      @resolvers.each_value do |resolver|
+        resolver.close unless resolver.closed?
+      end if @connections.empty?
     end
 
-    def build_connection(uri, **options)
-      connection = Connection.by(uri, @options.merge(options))
+    def build_connection(uri, options)
+      connection = Connection.by(uri, options)
       resolve_connection(connection)
       connection.on(:open) do
         @connected_connections += 1
-        @timeout.transition(:open) if @connections.size == @connected_connections
-      end
-      connection.on(:reset) do
-        @timeout.transition(:idle)
       end
       connection.on(:unreachable) do
-        @resolver.uncache(connection)
+        resolver = find_resolver_for(connection)
+        resolver.uncache(connection) if resolver
         resolve_connection(connection)
       end
       connection
@@ -82,12 +78,13 @@ module HTTPX
 
     def resolve_connection(connection)
       @connections << connection unless @connections.include?(connection)
-      @resolver << connection
-      return if @resolver.empty?
+      resolver = find_resolver_for(connection)
+      resolver << connection
+      return if resolver.empty?
 
-      @_resolver_monitor ||= begin # rubocop:disable Naming/MemoizedInstanceVariableName
-        monitor = @selector.register(@resolver, :w)
-        monitor.value = @resolver
+      @_resolver_monitors[resolver] ||= begin
+        monitor = @selector.register(resolver, :w)
+        monitor.value = resolver
         monitor
       end
     end
@@ -113,10 +110,16 @@ module HTTPX
       unregister_connection(ch)
     end
 
-    def on_resolver_close
-      @selector.deregister(@resolver)
-      @_resolver_monitor = nil
-      @resolver.close unless @resolver.closed?
+    def on_resolver_close(resolver)
+      resolver_type = resolver.class
+      return unless @resolvers[resolver_type] == resolver
+
+      @resolvers.delete(resolver_type)
+
+      @selector.deregister(resolver)
+      monitor = @_resolver_monitors.delete(resolver)
+      monitor.close if monitor
+      resolver.close unless resolver.closed?
     end
 
     def register_connection(connection)
@@ -133,8 +136,6 @@ module HTTPX
         unregister_connection(connection)
       end
       return if connection.state == :open
-
-      @timeout.transition(:idle)
     end
 
     def unregister_connection(connection)
@@ -153,10 +154,21 @@ module HTTPX
     end
 
     def next_timeout
-      timeout = @timeout.timeout
-      return (@resolver.timeout || timeout) unless @resolver.closed?
+      @resolvers.values.reject(&:closed?).map(&:timeout).min || @connections.map(&:timeout).min
+    end
 
-      timeout
+    def find_resolver_for(connection)
+      connection_options = connection.options
+      resolver_type = connection_options.resolver_class
+      resolver_type = Resolver.registry(resolver_type) if resolver_type.is_a?(Symbol)
+
+      @resolvers[resolver_type] ||= begin
+        resolver = resolver_type.new(self, connection_options)
+        resolver.on(:resolve, &method(:on_resolver_connection))
+        resolver.on(:error, &method(:on_resolver_error))
+        resolver.on(:close) { on_resolver_close(resolver) }
+        resolver
+      end
     end
   end
 end

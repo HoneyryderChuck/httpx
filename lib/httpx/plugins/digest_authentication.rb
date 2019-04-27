@@ -17,34 +17,36 @@ module HTTPX
         end
         alias_method :digest_auth, :digest_authentication
 
-        def request(*args, keep_open: @keep_open, **options)
+        def request(*args, **options)
           return super unless @_digest
 
-          begin
-            requests = __build_reqs(*args, **options)
-            probe_request = requests.first
-            prev_response = __send_reqs(*probe_request).first
+          requests = __build_reqs(*args, options)
+          probe_request = requests.first
+          prev_response = wrap { __send_reqs(*probe_request, options).first }
 
-            unless prev_response.status == 401
-              raise Error, "request doesn't require authentication (status: #{prev_response})"
-            end
-
-            probe_request.transition(:idle)
-            responses = []
-
-            requests.each do |request|
-              token = @_digest.generate_header(request, prev_response)
-              request.headers["authorization"] = "Digest #{token}"
-              response = __send_reqs(*request).first
-              responses << response
-              prev_response = response
-            end
-            return responses.first if responses.size == 1
-
-            responses
-          ensure
-            close unless keep_open
+          unless prev_response.status == 401
+            raise Error, "request doesn't require authentication (status: #{prev_response})"
           end
+
+          probe_request.transition(:idle)
+
+          responses = []
+
+          while (request = requests.shift)
+            token = @_digest.generate_header(request, prev_response)
+            request.headers["authorization"] = "Digest #{token}"
+            response = if requests.empty?
+              __send_reqs(*request, options).first
+            else
+              wrap { __send_reqs(*request, options).first }
+            end
+            responses << response
+            prev_response = response
+          end
+
+          return responses.first if responses.size == 1
+
+          responses
         end
       end
 

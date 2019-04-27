@@ -55,35 +55,26 @@ module HTTPX
   end
 
   module URIExtensions
-    URI_KLASSES = case RUBY_ENGINE
-    when "jruby"
-      [URI::Generic, URI::HTTP, URI::HTTPS]
-    else
-      [URI::Generic]
-    end
+    refine URI::Generic do
+      def authority
+        port_string = port == default_port ? nil : ":#{port}"
+        "#{host}#{port_string}"
+      end
 
-    URI_KLASSES.each do |klass|
-      refine klass do
-        def authority
-          port_string = port == default_port ? nil : ":#{port}"
-          "#{host}#{port_string}"
-        end
+      def origin
+        "#{scheme}://#{authority}"
+      end
 
-        def origin
-          "#{scheme}://#{authority}"
-        end
-
-        def altsvc_match?(uri)
-          uri = URI.parse(uri)
-          self == uri || begin
-            case scheme
-            when 'h2'
-              uri.scheme == "https" &&
-              host == uri.host &&
-              (port || default_port) == (uri.port || uri.default_port)
-            else
-              false
-            end
+      def altsvc_match?(uri)
+        uri = URI.parse(uri)
+        self == uri || begin
+          case scheme
+          when 'h2'
+            uri.scheme == "https" &&
+            host == uri.host &&
+            (port || default_port) == (uri.port || uri.default_port)
+          else
+            false
           end
         end
       end

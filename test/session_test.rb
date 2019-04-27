@@ -65,16 +65,6 @@ class SessionTest < Minitest::Test
         @options.response_class.new(*args, @options)
       end
     end
-    self::OptionsClassMethods = Module.new do
-      def foo
-        "options-foo"
-      end
-    end
-    self::OptionsMethods = Module.new do
-      def foo
-        self.class.foo
-      end
-    end
     self::RequestClassMethods = Module.new do
       def foo
         "request-foo"
@@ -132,6 +122,12 @@ class SessionTest < Minitest::Test
           "load-bar"
         end
       end)
+    end
+
+    def self.extra_options(options)
+      Class.new(options.class) do
+        def_option(:foo)
+      end.new(options).merge(foo: "options-foo")
     end
 
     def self.configure(mod)

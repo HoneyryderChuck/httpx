@@ -63,7 +63,9 @@ module HTTPX
 
     def_delegator :@write_buffer, :empty?
 
-    attr_reader :uri, :state, :pending
+    attr_reader :uri, :state, :pending, :options
+
+    attr_reader :timeout
 
     def initialize(type, uri, options)
       @type = type
@@ -158,6 +160,10 @@ module HTTPX
       @state == :idle
     end
 
+    def inflight?
+      @parser && !@parser.empty?
+    end
+
     def interests
       return :w if @state == :idle
 
@@ -221,15 +227,22 @@ module HTTPX
     end
 
     def handle_timeout_error(e)
-      return emit(:error, e) unless @timeout
+      case e
+      when TotalTimeoutError
+        # return unless @options.timeout.no_time_left?
 
-      @timeout -= e.timeout
-      return unless @timeout <= 0
-
-      if connecting?
-        emit(:error, e.to_connection_error)
-      else
         emit(:error, e)
+      when TimeoutError
+        return emit(:error, e) unless @timeout
+
+        @timeout -= e.timeout
+        return unless @timeout <= 0
+
+        if connecting?
+          emit(:error, e.to_connection_error)
+        else
+          emit(:error, e)
+        end
       end
     end
 
@@ -290,11 +303,16 @@ module HTTPX
 
     def build_parser(protocol = @io.protocol)
       parser = registry(protocol).new(@write_buffer, @options)
-      parser.on(:response) do |*args|
-        AltSvc.emit(*args) do |alt_origin, origin, alt_params|
+      set_parser_callbacks(parser)
+      parser
+    end
+
+    def set_parser_callbacks(parser)
+      parser.on(:response) do |request, response|
+        AltSvc.emit(request, response) do |alt_origin, origin, alt_params|
           emit(:altsvc, alt_origin, origin, alt_params)
         end
-        emit(:response, *args)
+        emit(:response, request, response)
       end
       parser.on(:altsvc) do |alt_origin, origin, alt_params|
         emit(:altsvc, alt_origin, origin, alt_params)
@@ -327,7 +345,6 @@ module HTTPX
           emit(:response, request, response)
         end
       end
-      parser
     end
 
     def transition(nextstate)

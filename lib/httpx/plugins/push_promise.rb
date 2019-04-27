@@ -6,6 +6,10 @@ module HTTPX
       PUSH_OPTIONS = { http2_settings: { settings_enable_push: 1 },
                        max_concurrent_requests: 1 }.freeze
 
+      def self.extra_options(options)
+        options.merge(PUSH_OPTIONS)
+      end
+
       module ResponseMethods
         def pushed?
           @__pushed
@@ -17,12 +21,11 @@ module HTTPX
       end
 
       module InstanceMethods
-        def initialize(opts = {})
-          super(PUSH_OPTIONS.merge(opts))
-          @promise_headers = {}
-        end
-
         private
+
+        def promise_headers
+          @promise_headers ||= {}
+        end
 
         def on_promise(parser, stream)
           stream.on(:promise_headers) do |h|
@@ -43,7 +46,7 @@ module HTTPX
           request = parser.pending.find { |r| r.authority == authority && r.path == path }
           if request
             request.merge_headers(headers)
-            @promise_headers[stream] = request
+            promise_headers[stream] = request
             parser.pending.delete(request)
           else
             stream.refuse
@@ -51,7 +54,7 @@ module HTTPX
         end
 
         def __on_promise_response(parser, stream, h)
-          request = @promise_headers.delete(stream)
+          request = promise_headers.delete(stream)
           return unless request
 
           parser.__send__(:on_stream_headers, stream, request, h)
