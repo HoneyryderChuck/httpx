@@ -2,9 +2,31 @@ image: tmaier/docker-compose
 
 variables:
   JEKYLL_ENV: production
+  SSL_CERT_FILE: test/support/ci/certs/ca-bundle.crt
+  HTTPBIN_HOST: nghttp2
+  HTTPX_HTTP_PROXY: http://httpproxy:3128
+  HTTPX_HTTPS_PROXY: http://httpproxy:3128
+  HTTPX_SOCKS4_PROXY: socks4://socksproxy:8080
+  HTTPX_SOCKS4A_PROXY: socks4a://socksproxy:8080
+  HTTPX_SOCKS5_PROXY: socks5://socksproxy:8080
+  HTTPX_SSH_PROXY: ssh://sshproxy:22
+  PARALLEL: 1
+  CI: 1
+  JEKYLL_ENV: production
 
 services:
-  - docker:dind
+- name: citizenstig/httpbin:latest
+  alias: httpbin
+- name: registry.gitlab.com/honeyryderchuck/httpx/nghttp2:latest
+  alias: nghttp2
+- name: registry.gitlab.com/honeyryderchuck/httpx/nghttp2:latest
+  alias: another
+- name: qautomatron/docker-3proxy
+  alias: socksproxy
+- name: sameersbn/squid:3.3.8-23
+  alias: httpproxy
+- name: registry.gitlab.com/honeyryderchuck/httpx/sshproxy:latest
+  alias: sshproxy
 
 # Cache gems in between builds
 cache:
@@ -12,74 +34,84 @@ cache:
   paths:
     - vendor/ruby
 
-before_script:
-  - docker info
-  - docker-compose --version
+# before_script:
+#   - docker info
+#   - docker-compose --version
 
-test_jruby:
+test:2.6:
+  image: ruby:2.6-alpine
   stage: test
+  before_script:
+    - apk --update add g++ make git bash
+    - gem install bundler -v="1.17.3" --no-doc --conservative
+    - bundle install --jobs 4
   script:
-    ./spec.sh jruby 9.0.0.0
-  allow_failure: true
-test_ruby21:
-  stage: test
-  script:
-    ./spec.sh ruby 2.1
-test_ruby22:
-  only:
-    - master
-  stage: test
-  script:
-    ./spec.sh ruby 2.2
-test_ruby23:
-  only:
-    - master
-  stage: test
-  script:
-    ./spec.sh ruby 2.3
-test_ruby24:
-  only:
-    - master
-  stage: test
-  script:
-    ./spec.sh ruby 2.4
-test_ruby25:
-  only:
-    - master
-  stage: test
-  script:
-    ./spec.sh ruby 2.5
-test_ruby26:
-  stage: test
-  script:
-    ./spec.sh ruby 2.6
-  artifacts:
-    paths:
-      - www/coverage/
-      - www/rdoc/
-      - www/public/
+  - bundle exec rake test:ci
 
-pages:
-  stage: deploy 
-  dependencies:
-    - test_ruby26
-  script:
-    - mv www/public .
-    - ls public
-    - echo "#"
-    - ls public/rdoc
-    - echo "#"
-    - ls public/coverage
-      #- ls public
-      #- echo "#"
-      #- ls www/coverage
-      #- mv www/coverage public/
-      #- mv www/rdoc/ public/
-  artifacts:
-    paths:
-      - public
-    expire_in: 30 days
-  only:
-    - master
+# test_jruby:
+#   stage: test
+#   script:
+#     ./spec.sh jruby 9.0.0.0
+#   allow_failure: true
+# test_ruby21:
+#   stage: test
+#   script:
+#     ./spec.sh ruby 2.1
+# test_ruby22:
+#   only:
+#     - master
+#   stage: test
+#   script:
+#     ./spec.sh ruby 2.2
+# test_ruby23:
+#   only:
+#     - master
+#   stage: test
+#   script:
+#     ./spec.sh ruby 2.3
+# test_ruby24:
+#   only:
+#     - master
+#   stage: test
+#   script:
+#     ./spec.sh ruby 2.4
+# test_ruby25:
+#   only:
+#     - master
+#   stage: test
+#   script:
+#     ./spec.sh ruby 2.5
+# test_ruby26:
+#   stage: test
+#   script:
+#     ./spec.sh ruby 2.6
+  # artifacts:
+  #   paths:
+  #     - www/coverage/
+  #     - www/rdoc/
+  #     - www/public/
+
+# pages:
+#   stage: deploy 
+#   dependencies:
+#     - test_ruby26
+#   script:
+#     - mv www/public .
+#     - ls public
+#     - echo "#"
+#     - ls public/rdoc
+#     - echo "#"
+#     - ls public/coverage
+#       #- ls public
+#       #- echo "#"
+#       #- ls www/coverage
+#       #- mv www/coverage public/
+#       #- mv www/rdoc/ public/
+#   artifacts:
+#     paths:
+#       - public
+#     expire_in: 30 days
+#   only:
+#     - master
 
 

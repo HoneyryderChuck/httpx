@@ -31,9 +31,7 @@ services:
       - "nghttp2:another"
 
   sshproxy:
-    build:
-      context: .
-      dockerfile: ./test/support/ssh/Dockerfile
+    image: registry.gitlab.com/honeyryderchuck/httpx/sshproxy:latest
     volumes:
       - ./test/support/ssh:/config
     depends_on:
@@ -41,32 +39,16 @@ services:
 
   socksproxy:
     image: qautomatron/docker-3proxy
-    ports:
-      - "8080:8080"
-      - "3129:3129"
     volumes:
       - ./test/support/ci:/etc/3proxy
 
   httpproxy:
     image: sameersbn/squid:3.3.8-23
-    ports:
-      - "3128:3128"
 
   nghttp2:
     image: registry.gitlab.com/honeyryderchuck/httpx/nghttp2:latest
-    ports:
-      - 80:80
-      - 443:443
     depends_on:
       - httpbin
-    entrypoint:
-      /usr/local/bin/nghttpx
-    volumes:
-      - ./test/support/ci:/home
-    command:
-      --conf /home/nghttp.conf --no-ocsp
           
   httpbin:
     image: citizenstig/httpbin
-    ports:
-      - 8000:8000

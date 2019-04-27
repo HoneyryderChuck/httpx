@@ -13,3 +13,9 @@ RUN \
  && make install \
  && apk del $BUILD_DEPS \
  && rm -rf /tmp/*
+
+COPY test/support/ci /home
+
+ENTRYPOINT ["/usr/local/bin/nghttpx"]
+
+CMD ["--conf", "/home/nghttp.conf", "--no-ocsp"]
