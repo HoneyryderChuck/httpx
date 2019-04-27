@@ -86,8 +86,8 @@ module HTTPX
       end
     end
 
-    def find_connection(_request, **options)
-      pool.find_connection(@uri) || begin
+    def find_connection(_request, options)
+      pool.find_connection(@uri, options) || begin
         @building_connection = true
         connection = pool.build_connection(@uri, **options)
         emit_addresses(connection, @uri_addresses)

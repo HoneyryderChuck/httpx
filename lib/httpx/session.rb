@@ -57,7 +57,7 @@ module HTTPX
 
     def find_connection(request, options)
       uri = URI(request.uri)
-      pool.find_connection(uri) || build_connection(uri, options)
+      pool.find_connection(uri, options) || build_connection(uri, options)
     end
 
     def set_connection_callbacks(connection, options)
@@ -84,7 +84,7 @@ module HTTPX
       # altsvc already exists, somehow it wasn't advertised, probably noop
       return unless altsvc
 
-      connection = pool.find_connection(alt_origin) || build_connection(alt_origin, options)
+      connection = pool.find_connection(alt_origin, options) || build_connection(alt_origin, options)
       # advertised altsvc is the same origin being used, ignore
       return if connection == existing_connection
 

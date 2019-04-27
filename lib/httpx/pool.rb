@@ -68,7 +68,7 @@ module HTTPX
     # Many hostnames are reachable through the same IP, so we try to
     # maximize pipelining by opening as few connections as possible.
     #
-    def find_connection(uri)
+    def find_connection(uri, options)
       @connections.find do |connection|
         connection.match?(uri)
       end
