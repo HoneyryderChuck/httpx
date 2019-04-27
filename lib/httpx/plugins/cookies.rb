@@ -5,6 +5,16 @@ module HTTPX
     module Cookies
       using URIExtensions
 
+      def self.extra_options(options)
+        Class.new(options.class) do
+          def_option(:cookies) do |cookies|
+            return cookies if cookies.is_a?(Store)
+
+            Store.new(cookies)
+          end
+        end.new(options)
+      end
+
       class Store
         def initialize(cookies = nil)
           @store = Hash.new { |hash, origin| hash[origin] = HTTP::CookieJar.new }
@@ -75,7 +85,7 @@ module HTTPX
           super
         end
 
-        def __build_req(*)
+        def __build_req(*, _)
           request = super
           request.headers.cookies(@cookies_store[request.uri], request)
           request
@@ -90,17 +100,6 @@ module HTTPX
           return if cookie_value.empty?
 
           add("cookie", cookie_value)
-        end
-      end
-
-      module OptionsMethods
-        def self.included(klass)
-          super
-          klass.def_option(:cookies) do |cookies|
-            return cookies if cookies.is_a?(Store)
-
-            Store.new(cookies)
-          end
         end
       end
     end

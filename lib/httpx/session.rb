@@ -7,7 +7,7 @@ module HTTPX
 
     def initialize(options = {}, &blk)
       @options = self.class.default_options.merge(options)
-      @pool = Pool.new(@options)
+      @pool = Pool.new
       @responses = {}
       @keep_open = false
       wrap(&blk) if block_given?
@@ -22,22 +22,19 @@ module HTTPX
         yield self
       ensure
         @keep_open = prev_keep_open
-        close
       end
     end
 
-    def close
-      @pool.close
+    def close(*args)
+      @pool.close(*args)
     end
 
-    def request(*args, keep_open: @keep_open, **options)
-      requests = __build_reqs(*args, **options)
-      responses = __send_reqs(*requests, **options)
+    def request(*args, **options)
+      requests = __build_reqs(*args, options)
+      responses = __send_reqs(*requests, options)
       return responses.first if responses.size == 1
 
       responses
-    ensure
-      close unless keep_open
     end
 
     private
@@ -51,11 +48,11 @@ module HTTPX
       stream.refuse
     end
 
-    def fetch_response(request)
+    def fetch_response(request, _, _)
       @responses.delete(request)
     end
 
-    def find_connection(request, **options)
+    def find_connection(request, options)
       uri = URI(request.uri)
       @pool.find_connection(uri) || build_connection(uri, options)
     end
@@ -73,7 +70,7 @@ module HTTPX
     end
 
     def build_connection(uri, options)
-      connection = @pool.build_connection(uri, **options)
+      connection = @pool.build_connection(uri, options)
       set_connection_callbacks(connection, options)
       connection
     end
@@ -107,21 +104,23 @@ module HTTPX
       altsvc["noop"] = true
     end
 
-    def __build_reqs(*args, **options)
+    def __build_reqs(*args, options)
+      request_options = @options.merge(options)
+
       requests = case args.size
                  when 1
                    reqs = args.first
                    reqs.map do |verb, uri|
-                     __build_req(verb, uri, options)
+                     __build_req(verb, uri, request_options)
                    end
                  when 2, 3
                    verb, uris = args
                    if uris.respond_to?(:each)
                      uris.map do |uri, **opts|
-                       __build_req(verb, uri, options.merge(opts))
+                       __build_req(verb, uri, request_options.merge(opts))
                      end
                    else
-                     [__build_req(verb, uris, options)]
+                     [__build_req(verb, uris, request_options)]
                    end
                  else
                    raise ArgumentError, "unsupported number of arguments"
@@ -131,34 +130,45 @@ module HTTPX
       requests
     end
 
-    def __send_reqs(*requests, **options)
+    def __send_reqs(*requests, options)
+      connections = []
+      request_options = @options.merge(options)
+      timeout = request_options.timeout
+
       requests.each do |request|
-        connection = find_connection(request, **options)
+        connection = find_connection(request, request_options)
+        connections << connection unless connections.include?(connection)
         connection.send(request)
       end
+
       responses = []
 
-      # guarantee ordered responses
-      loop do
-        begin
-          request = requests.first
-          @pool.next_tick until (response = fetch_response(request))
+      begin
+        # guarantee ordered responses
+        loop do
+          begin
+            request = requests.first
+            @pool.next_tick(timeout) until (response = fetch_response(request, connections, request_options))
 
-          responses << response
-          requests.shift
+            responses << response
+            requests.shift
 
-          break if requests.empty? || !@pool.running?
+            break if requests.empty? || @pool.empty?
+          end
         end
+        responses
+      ensure
+        close(connections) unless @keep_open
       end
-      responses
     end
 
-    def __build_req(verb, uri, options = {})
+    def __build_req(verb, uri, options)
       rklass = @options.request_class
       rklass.new(verb, uri, @options.merge(options))
     end
 
     @default_options = Options.new
+    @default_options.freeze
     @plugins = []
 
     class << self
@@ -166,7 +176,7 @@ module HTTPX
 
       def inherited(klass)
         super
-        klass.instance_variable_set(:@default_options, @default_options.dup)
+        klass.instance_variable_set(:@default_options, @default_options)
         klass.instance_variable_set(:@plugins, @plugins.dup)
       end
 
@@ -176,15 +186,13 @@ module HTTPX
         unless @plugins.include?(pl)
           @plugins << pl
           pl.load_dependencies(self, *args, &block) if pl.respond_to?(:load_dependencies)
+          @default_options = @default_options.dup
+          @default_options = pl.extra_options(@default_options) if pl.respond_to?(:extra_options)
+
           include(pl::InstanceMethods) if defined?(pl::InstanceMethods)
           extend(pl::ClassMethods) if defined?(pl::ClassMethods)
-          if defined?(pl::OptionsMethods) || defined?(pl::OptionsClassMethods)
-            options_klass = Class.new(@default_options.class)
-            options_klass.extend(pl::OptionsClassMethods) if defined?(pl::OptionsClassMethods)
-            options_klass.__send__(:include, pl::OptionsMethods) if defined?(pl::OptionsMethods)
-            @default_options = options_klass.new
-          end
-          opts = default_options
+
+          opts = @default_options
           opts.request_class.__send__(:include, pl::RequestMethods) if defined?(pl::RequestMethods)
           opts.request_class.extend(pl::RequestClassMethods) if defined?(pl::RequestClassMethods)
           opts.response_class.__send__(:include, pl::ResponseMethods) if defined?(pl::ResponseMethods)
@@ -196,6 +204,8 @@ module HTTPX
           opts.response_body_class.__send__(:include, pl::ResponseBodyMethods) if defined?(pl::ResponseBodyMethods)
           opts.response_body_class.extend(pl::ResponseBodyClassMethods) if defined?(pl::ResponseBodyClassMethods)
           pl.configure(self, *args, &block) if pl.respond_to?(:configure)
+
+          @default_options.freeze
         end
         self
       end

@@ -6,6 +6,17 @@ module HTTPX
       MAX_RETRIES = 3
       IDEMPOTENT_METHODS = %i[get options head put delete].freeze
 
+      def self.extra_options(options)
+        Class.new(options.class) do
+          def_option(:max_retries) do |num|
+            num = Integer(num)
+            raise Error, ":max_retries must be positive" unless num.positive?
+
+            num
+          end
+        end.new(options)
+      end
+
       module InstanceMethods
         def max_retries(n)
           branch(default_options.with_max_retries(n.to_i))
@@ -13,13 +24,14 @@ module HTTPX
 
         private
 
-        def fetch_response(request)
+        def fetch_response(request, connections, options)
           response = super
           if response.is_a?(ErrorResponse) &&
              request.retries.positive? &&
              IDEMPOTENT_METHODS.include?(request.verb)
             request.retries -= 1
-            connection = find_connection(request)
+            connection = find_connection(request, options)
+            connections << connection unless connections.include?(connection)
             connection.send(request)
             return
           end
@@ -33,18 +45,6 @@ module HTTPX
         def initialize(*args)
           super
           @retries = @options.max_retries || MAX_RETRIES
-        end
-      end
-
-      module OptionsMethods
-        def self.included(klass)
-          super
-          klass.def_option(:max_retries) do |num|
-            num = Integer(num)
-            raise Error, ":max_retries must be positive" unless num.positive?
-
-            num
-          end
         end
       end
     end
