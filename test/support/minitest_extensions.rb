@@ -22,12 +22,11 @@ module MinitestExtensions
   end
 
   module FirstFailedTestInThread
-
     def run(*)
       (Thread.current[:passed_tests] ||= []) << "#{self.class.name}##{name}"
       super
     ensure
-      if !Thread.current[:tests_already_failed] && self.failures.size > 0
+      if !Thread.current[:tests_already_failed] && !failures.empty?
         Thread.current[:tests_already_failed] = true
         puts "first test failed: #{Thread.current[:passed_tests].pop}\n"
         puts "this thread also executed: #{Thread.current[:passed_tests].join(", ")}"
@@ -46,5 +45,5 @@ module MinitestExtensions
 end
 
 Minitest::Test.prepend(MinitestExtensions::TimeoutForTest) unless ENV.key?("HTTPX_DEBUG")
-Minitest::Test.prepend(MinitestExtensions::FirstFailedTestInThread)
-Minitest::Test.prepend(MinitestExtensions::TestName)
+# Minitest::Test.prepend(MinitestExtensions::FirstFailedTestInThread)
+# Minitest::Test.prepend(MinitestExtensions::TestName)
