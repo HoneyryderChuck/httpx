@@ -161,7 +161,7 @@ module HTTPX
     end
 
     def inflight?
-      @state == :open && @parser && !@parser.empty?
+      @parser && !@parser.empty?
     end
 
     def interests
