@@ -67,7 +67,7 @@ module HTTPX
 
       module RequestMethods
         def self.included(klass)
-          klass.attr_reader :options
+          klass.__send__(:attr_reader, :options)
           klass.def_delegator :@options, :http2_settings
         end
       end
