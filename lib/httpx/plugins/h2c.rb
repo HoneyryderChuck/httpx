@@ -26,24 +26,18 @@ module HTTPX
             if upgrade_response.status == 101
               # if 101, assume that connection exists and was kept open
               connection = find_connection(upgrade_request, options)
-              parser = connection.upgrade_parser("h2")
-              parser.extend(UpgradeExtensions)
-              parser.upgrade(upgrade_request, upgrade_response, **upgrade_request.options)
-
-              # clean up data left behind in the buffer, if the server started
-              # sending frames
-              data = upgrade_response.to_s
-              parser << data
+              connection.extend(ConnectionMethods)
+              connection.upgrade(upgrade_request, upgrade_response)
 
               response = upgrade_request.response
               if response.status == 200
                 requests.delete(upgrade_request)
                 return response if requests.empty?
               end
-              responses = __send_reqs(*requests, options)
+              responses = __send_reqs(*requests, options.merge(fallback_protocol: "h2"))
             else
               # proceed as usual
-              responses = [upgrade_response] + __send_reqs(*requests[1..-1], options)
+              responses = [upgrade_response] + __send_reqs(*requests[1..-1], options.merge(fallback_protocol: "h2"))
             end
 
             return responses.first if responses.size == 1
@@ -65,6 +59,21 @@ module HTTPX
         end
       end
 
+      module ConnectionMethods
+        def upgrade(upgrade_request, upgrade_response)
+          @parser.reset if @parser
+          @parser = build_parser("h2")
+          @parser.extend(UpgradeMethods)
+          @parser.upgrade(upgrade_request, upgrade_response, **upgrade_request.options)
+
+          @io.instance_variable_set(:@fallback_protocol, "h2")
+          # clean up data left behind in the buffer, if the server started
+          # sending frames
+          data = upgrade_response.to_s
+          @parser << data
+        end
+      end
+
       module RequestMethods
         def self.included(klass)
           klass.attr_reader :options
@@ -72,7 +81,7 @@ module HTTPX
         end
       end
 
-      module UpgradeExtensions
+      module UpgradeMethods
         def upgrade(request, _response, **)
           @connection.send_connection_preface
           # skip checks, it is assumed that this is the first

@@ -141,8 +141,14 @@ module HTTPX
       end
     end
 
-    def match?(uri)
+    def match?(uri, options)
       return false if @state == :closing
+
+      # if this connection is a plaintext HTTP/2,
+      # then one matches only if the request is aware of it.
+      if uri.scheme == "http" && @io.protocol == "h2"
+        return false unless options.fallback_protocol == "h2"
+      end
 
       @origins.include?(uri.origin) || match_altsvcs?(uri)
     end
@@ -219,11 +225,6 @@ module HTTPX
         consume
       end
       nil
-    end
-
-    def upgrade_parser(protocol)
-      @parser.reset if @parser
-      @parser = build_parser(protocol)
     end
 
     def handle_timeout_error(e)

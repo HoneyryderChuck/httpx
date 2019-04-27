@@ -70,7 +70,7 @@ module HTTPX
     #
     def find_connection(uri, options)
       @connections.find do |connection|
-        connection.match?(uri)
+        connection.match?(uri, options)
       end
     end
 
