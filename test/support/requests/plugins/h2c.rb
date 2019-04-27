@@ -11,7 +11,7 @@ module Requests
       end
 
       def test_plugin_h2c
-        session = HTTPX.plugin(:h2c)
+        session = HTTPX.plugin(:h2c).with(debug_level: 2, debug: STDERR)
         uri = build_uri("/get")
         response = session.get(uri)
         verify_status(response, 200)
