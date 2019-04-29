@@ -122,7 +122,7 @@ module HTTPX
       end
     end
 
-    def match?(uri)
+    def match?(uri, _options)
       return false if @state == :closing
 
       @origins.include?(uri.origin) || match_altsvcs?(uri)
@@ -200,11 +200,6 @@ module HTTPX
         consume
       end
       nil
-    end
-
-    def upgrade_parser(protocol)
-      @parser.reset if @parser
-      @parser = build_parser(protocol)
     end
 
     def handle_timeout_error(e)

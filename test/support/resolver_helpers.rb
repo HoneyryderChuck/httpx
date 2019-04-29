@@ -83,7 +83,7 @@ module ResolverHelpers
   end
 
   def build_connection(uri)
-    connection = HTTPX::Connection.by(URI(uri), HTTPX::Options.new)
+    connection = HTTPX::Connection.new("ssl", URI(uri), HTTPX::Options.new)
     connection.extend(ConnectionExtensions)
     connection
   end
