@@ -70,7 +70,8 @@ module HTTPX
     end
 
     def build_connection(uri, options)
-      connection = @pool.build_connection(uri, options)
+      connection = __build_connection(uri, options)
+      connection = @pool.init_connection(connection, options)
       set_connection_callbacks(connection, options)
       connection
     end
@@ -128,6 +129,23 @@ module HTTPX
       raise ArgumentError, "wrong number of URIs (given 0, expect 1..+1)" if requests.empty?
 
       requests
+    end
+
+    def __build_connection(uri, options)
+      type = options.transport || begin
+        case uri.scheme
+        when "http"
+          "tcp"
+        when "https"
+          "ssl"
+        when "h2"
+          options = options.merge(ssl: { alpn_protocols: %w[h2] })
+          "ssl"
+        else
+          raise UnsupportedSchemeError, "#{uri}: #{uri.scheme}: unsupported URI scheme"
+        end
+      end
+      options.connection_class.new(type, uri, options)
     end
 
     def __send_reqs(*requests, options)

@@ -40,25 +40,6 @@ module HTTPX
 
     BUFFER_SIZE = 1 << 14
 
-    class << self
-      def by(uri, options)
-        type = options.transport || begin
-          case uri.scheme
-          when "http"
-            "tcp"
-          when "https"
-            "ssl"
-          when "h2"
-            options = options.merge(ssl: { alpn_protocols: %(h2) })
-            "ssl"
-          else
-            raise UnsupportedSchemeError, "#{uri}: #{uri.scheme}: unsupported URI scheme"
-          end
-        end
-        new(type, uri, options)
-      end
-    end
-
     def_delegator :@io, :closed?
 
     def_delegator :@write_buffer, :empty?

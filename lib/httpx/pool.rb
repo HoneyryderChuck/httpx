@@ -50,8 +50,7 @@ module HTTPX
       end if @connections.empty?
     end
 
-    def build_connection(uri, options)
-      connection = Connection.by(uri, options)
+    def init_connection(connection, options)
       resolve_connection(connection)
       connection.on(:open) do
         @connected_connections += 1

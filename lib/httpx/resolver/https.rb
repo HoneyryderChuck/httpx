@@ -50,8 +50,7 @@ module HTTPX
     end
 
     def timeout
-      timeout = @options.timeout
-      timeout.timeout
+      @connections.map(&:timeout).min
     end
 
     def closed?
@@ -63,7 +62,7 @@ module HTTPX
     private
 
     def resolver_connection
-      @resolver_connection ||= find_connection(@uri, @options)
+      @resolver_connection ||= find_connection(@options)
     end
 
     def resolve(connection = @connections.first, hostname = nil)
@@ -83,10 +82,11 @@ module HTTPX
       end
     end
 
-    def find_connection(_request, **options)
+    def find_connection(options)
       @pool.find_connection(@uri) || begin
         @building_connection = true
-        connection = @pool.build_connection(@uri, **options)
+        connection = options.connection_class.new("ssl", @uri, options.merge(ssl: { alpn_protocols: %w[h2] }))
+        @pool.init_connection(connection, options)
         emit_addresses(connection, @uri_addresses)
         set_connection_callbacks(connection)
         @building_connection = false
