@@ -56,6 +56,7 @@ module HTTPX
         :headers_class => Class.new(Headers),
         :request_body_class => Class.new(Request::Body),
         :response_body_class => Class.new(Response::Body),
+        :connection_class => Class.new(Connection),
         :transport => nil,
         :transport_options => nil,
         :resolver_class => (ENV["HTTPX_RESOLVER"] || :native).to_sym,
@@ -99,7 +100,7 @@ module HTTPX
     %w[
       params form json body
       follow ssl http2_settings
-      request_class response_class headers_class request_body_class response_body_class
+      request_class response_class headers_class request_body_class response_body_class connection_class
       io fallback_protocol debug debug_level transport_options resolver_class resolver_options
     ].each do |method_name|
       def_option(method_name)
@@ -136,6 +137,7 @@ module HTTPX
       self.headers_class       = other.headers_class.dup
       self.request_body_class  = other.request_body_class.dup
       self.response_body_class = other.response_body_class.dup
+      self.connection_class    = other.connection_class.dup
     end
 
     def freeze
@@ -148,6 +150,7 @@ module HTTPX
       headers_class.freeze
       request_body_class.freeze
       response_body_class.freeze
+      connection_class.freeze
     end
 
     protected

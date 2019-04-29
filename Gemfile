@@ -11,6 +11,8 @@ gem "simplecov", require: false
 
 if RUBY_VERSION < "2.2"
   gem "rubocop", "~> 0.57.0", require: false
+  gem "net-ssh", "~> 4.2.0", require: false
+  gem "rb-inotify", "~> 0.9.10", require: false
 else
   gem "rubocop", "~> 0.61.1", require: false
 end

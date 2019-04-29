@@ -9,49 +9,38 @@ module HTTPX
 
       module InstanceMethods
         def request(*args, **options)
-          return super if @_h2c_probed
+          h2c_options = options.merge(fallback_protocol: "h2c")
 
-          begin
-            requests = __build_reqs(*args, options)
+          requests = __build_reqs(*args, h2c_options)
 
-            upgrade_request = requests.first
-            return super unless valid_h2c_upgrade_request?(upgrade_request)
+          upgrade_request = requests.first
+          return super unless valid_h2c_upgrade_request?(upgrade_request)
 
-            upgrade_request.headers["upgrade"] = "h2c"
-            upgrade_request.headers.add("connection", "upgrade")
-            upgrade_request.headers.add("connection", "http2-settings")
-            upgrade_request.headers["http2-settings"] = HTTP2::Client.settings_header(upgrade_request.http2_settings)
-            upgrade_response = wrap { __send_reqs(*upgrade_request, options).first }
+          upgrade_request.headers["upgrade"] = "h2c"
+          upgrade_request.headers.add("connection", "upgrade")
+          upgrade_request.headers.add("connection", "http2-settings")
+          upgrade_request.headers["http2-settings"] = HTTP2::Client.settings_header(upgrade_request.http2_settings)
+          upgrade_response = wrap { __send_reqs(*upgrade_request, h2c_options).first }
 
-            if upgrade_response.status == 101
-              # if 101, assume that connection exists and was kept open
-              connection = find_connection(upgrade_request, options)
-              parser = connection.upgrade_parser("h2")
-              parser.extend(UpgradeExtensions)
-              parser.upgrade(upgrade_request, upgrade_response, **upgrade_request.options)
+          if upgrade_response.status == 101
+            # if 101, assume that connection exists and was kept open
+            connection = find_connection(upgrade_request, upgrade_request.options)
+            connection.upgrade(upgrade_request, upgrade_response)
 
-              # clean up data left behind in the buffer, if the server started
-              # sending frames
-              data = upgrade_response.to_s
-              parser << data
-
-              response = upgrade_request.response
-              if response.status == 200
-                requests.delete(upgrade_request)
-                return response if requests.empty?
-              end
-              responses = __send_reqs(*requests, options)
-            else
-              # proceed as usual
-              responses = [upgrade_response] + __send_reqs(*requests[1..-1], options)
+            response = upgrade_request.response
+            if response.status == 200
+              requests.delete(upgrade_request)
+              return response if requests.empty?
             end
-
-            return responses.first if responses.size == 1
-
-            responses
-          ensure
-            @_h2c_probed = true
+            responses = __send_reqs(*requests, h2c_options)
+          else
+            # proceed as usual
+            responses = [upgrade_response] + __send_reqs(*requests[1..-1], h2c_options)
           end
+
+          return responses.first if responses.size == 1
+
+          responses
         end
 
         private
@@ -72,14 +61,38 @@ module HTTPX
         end
       end
 
-      module UpgradeExtensions
-        def upgrade(request, _response, **)
+      class H2CParser < Connection::HTTP2
+        def upgrade(request, response)
           @connection.send_connection_preface
           # skip checks, it is assumed that this is the first
           # request in the connection
           stream = @connection.upgrade
           handle_stream(stream, request)
           @streams[request] = stream
+
+          # clean up data left behind in the buffer, if the server started
+          # sending frames
+          data = response.to_s
+          @connection << data
+        end
+      end
+
+      module ConnectionMethods
+        def match?(uri, options)
+          super && options.fallback_protocol == "h2c"
+        end
+
+        def upgrade(request, response)
+          @parser.reset if @parser
+          @parser = H2CParser.new(@write_buffer, @options)
+          set_parser_callbacks(@parser)
+          @parser.upgrade(request, response)
+        end
+
+        def build_parser(*)
+          return super unless @uri.scheme == "http"
+
+          super("http/1.1")
         end
       end
 

@@ -51,7 +51,7 @@ class HTTPSResolverTest < Minitest::Test
 
   def build_connection(*)
     connection = super
-    pool.expect(:find_connection, connection, [URI::HTTP])
+    pool.expect(:find_connection, connection, [URI::HTTP, HTTPX::Options])
     connection
   end
 

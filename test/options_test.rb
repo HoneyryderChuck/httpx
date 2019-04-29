@@ -75,6 +75,7 @@ class OptionsTest < Minitest::Test
       :headers_class => bar.headers_class,
       :request_body_class => bar.request_body_class,
       :response_body_class => bar.response_body_class,
+      :connection_class => bar.connection_class,
       :transport => nil,
       :transport_options => nil,
       :resolver_class => bar.resolver_class,

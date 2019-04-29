@@ -16,9 +16,12 @@ module HTTPX
 
         Error = Class.new(Error)
 
-        class Socks5ProxyConnection < ProxyConnection
+        module ConnectionMethods
           def call
             super
+
+            return unless @options.proxy && @options.proxy.uri.scheme == "socks5"
+
             case @state
             when :connecting,
                  :negotiating,
@@ -29,45 +32,9 @@ module HTTPX
 
           private
 
-          def proxy_connect
-            @parser = SocksParser.new(@write_buffer, @options)
-            @parser.on(:packet, &method(:on_packet))
-            transition(:negotiating)
-          end
-
-          def on_packet(packet)
-            case @state
-            when :connecting
-              version, method = packet.unpack("CC")
-              check_version(version)
-              case method
-              when PASSWD
-                transition(:authenticating)
-                return
-              when NONE
-                on_socks_error("no supported authorization methods")
-              else
-                transition(:negotiating)
-              end
-            when :authenticating
-              version, status = packet.unpack("CC")
-              check_version(version)
-              return transition(:negotiating) if status == SUCCESS
-
-              on_socks_error("socks authentication error: #{status}")
-            when :negotiating
-              version, reply, = packet.unpack("CC")
-              check_version(version)
-              on_socks_error("socks5 negotiation error: #{reply}") unless reply == SUCCESS
-              req, _ = @pending.first
-              request_uri = req.uri
-              @io = ProxySSL.new(@io, request_uri, @options) if request_uri.scheme == "https"
-              transition(:connected)
-              throw(:called)
-            end
-          end
-
           def transition(nextstate)
+            return super unless @options.proxy && @options.proxy.uri.scheme == "socks5"
+
             case nextstate
             when :connecting
               return unless @state == :idle
@@ -75,12 +42,12 @@ module HTTPX
               @io.connect
               return unless @io.connected?
 
-              @write_buffer << Packet.negotiate(@parameters)
-              proxy_connect
+              @write_buffer << Packet.negotiate(@options.proxy)
+              __socks5_proxy_connect
             when :authenticating
               return unless @state == :connecting
 
-              @write_buffer << Packet.authenticate(@parameters)
+              @write_buffer << Packet.authenticate(@options.proxy)
             when :negotiating
               return unless @state == :connecting || @state == :authenticating
 
@@ -96,19 +63,55 @@ module HTTPX
             super
           end
 
-          def check_version(version)
-            on_socks_error("invalid SOCKS version (#{version})") if version != 5
+          def __socks5_proxy_connect
+            @parser = SocksParser.new(@write_buffer, @options)
+            @parser.on(:packet, &method(:__socks5_on_packet))
+            transition(:negotiating)
           end
 
-          def on_socks_error(message)
+          def __socks5_on_packet(packet)
+            case @state
+            when :connecting
+              version, method = packet.unpack("CC")
+              __socks5_check_version(version)
+              case method
+              when PASSWD
+                transition(:authenticating)
+                return
+              when NONE
+                on_socks5_error("no supported authorization methods")
+              else
+                transition(:negotiating)
+              end
+            when :authenticating
+              version, status = packet.unpack("CC")
+              __socks5_check_version(version)
+              return transition(:negotiating) if status == SUCCESS
+
+              on_socks5_error("socks authentication error: #{status}")
+            when :negotiating
+              version, reply, = packet.unpack("CC")
+              __socks5_check_version(version)
+              on_socks5_error("socks5 negotiation error: #{reply}") unless reply == SUCCESS
+              req, _ = @pending.first
+              request_uri = req.uri
+              @io = ProxySSL.new(@io, request_uri, @options) if request_uri.scheme == "https"
+              transition(:connected)
+              throw(:called)
+            end
+          end
+
+          def __socks5_check_version(version)
+            on_socks5_error("invalid SOCKS version (#{version})") if version != 5
+          end
+
+          def on_socks5_error(message)
             ex = Error.new(message)
             ex.set_backtrace(caller)
             on_error(ex)
             throw(:called)
           end
         end
-
-        Parameters.register("socks5", Socks5ProxyConnection)
 
         class SocksParser
           include Callbacks
