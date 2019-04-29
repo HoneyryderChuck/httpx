@@ -25,6 +25,16 @@ module HTTPX
         def token_authentication
           Base64.strict_encode64("#{user}:#{password}")
         end
+
+        def ==(other)
+          if other.is_a?(Parameters)
+            @uri == other.uri &&
+              @username == other.username &&
+              @password == other.password
+          else
+            super
+          end
+        end
       end
 
       def self.configure(klass, *)
@@ -69,11 +79,11 @@ module HTTPX
           @pool.find_connection(uri, proxy_options) || build_connection(uri, proxy_options)
         end
 
-        def __build_connection(_uri, options)
+        def __build_connection(uri, options)
           proxy = options.proxy
           return super unless proxy
 
-          options.connection_class.new("tcp", proxy.uri, options)
+          options.connection_class.new(uri, "tcp", proxy.uri, options)
         end
 
         def fetch_response(request, connections, options)
@@ -95,19 +105,35 @@ module HTTPX
       end
 
       module ConnectionMethods
-        def match?(*)
-          true
+        using URIExtensions
+
+        def initialize(request_uri, *args)
+          super(*args)
+          @origins = [request_uri.origin]
+        end
+
+        def match?(uri, options)
+          return super unless @options.proxy
+
+          super && @options.proxy == options.proxy
         end
 
         def send(request, **args)
+          return super unless @options.proxy
+          return super unless connecting?
+
           @pending << [request, args]
         end
 
         def connecting?
+          return super unless @options.proxy
+
           super || @state == :connecting || @state == :connected
         end
 
         def to_io
+          return super unless @options.proxy
+
           case @state
           when :idle
             transition(:connecting)
@@ -119,6 +145,8 @@ module HTTPX
 
         def call
           super
+          return unless @options.proxy
+
           case @state
           when :connecting
             consume
@@ -126,6 +154,8 @@ module HTTPX
         end
 
         def reset
+          return super unless @options.proxy
+
           @state = :open
           transition(:closing)
           transition(:closed)
