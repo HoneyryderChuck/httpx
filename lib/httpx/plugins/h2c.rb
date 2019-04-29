@@ -78,7 +78,6 @@ module HTTPX
       end
 
       module ConnectionMethods
-
         def match?(uri, options)
           super && options.fallback_protocol == "h2c"
         end

@@ -71,7 +71,7 @@ module HTTPX
 
     def build_connection(uri, options)
       connection = __build_connection(uri, options)
-      connection = @pool.init_connection(connection, options)
+      @pool.init_connection(connection, options)
       set_connection_callbacks(connection, options)
       connection
     end

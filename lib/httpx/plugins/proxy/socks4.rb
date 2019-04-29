@@ -13,28 +13,13 @@ module HTTPX
 
         Error = Class.new(Error)
 
-        class Socks4ProxyConnection < ProxyConnection
+        module ConnectionMethods
           private
 
-          def proxy_connect
-            @parser = SocksParser.new(@write_buffer, @options)
-            @parser.once(:packet, &method(:on_packet))
-          end
-
-          def on_packet(packet)
-            _version, status, _port, _ip = packet.unpack("CCnN")
-            if status == GRANTED
-              req, _ = @pending.first
-              request_uri = req.uri
-              @io = ProxySSL.new(@io, request_uri, @options) if request_uri.scheme == "https"
-              transition(:connected)
-              throw(:called)
-            else
-              on_socks_error("socks error: #{status}")
-            end
-          end
-
           def transition(nextstate)
+            return super unless @options.proxy &&
+                                (@options.proxy.uri.scheme == "socks4" || @options.proxy.uri.scheme == "socks4a")
+
             case nextstate
             when :connecting
               return unless @state == :idle
@@ -46,8 +31,8 @@ module HTTPX
               return unless req
 
               request_uri = req.uri
-              @write_buffer << Packet.connect(@parameters, request_uri)
-              proxy_connect
+              @write_buffer << Packet.connect(@options.proxy, request_uri)
+              __socks4_proxy_connect
             when :connected
               return unless @state == :connecting
 
@@ -57,15 +42,31 @@ module HTTPX
             super
           end
 
-          def on_socks_error(message)
+          def __socks4_proxy_connect
+            @parser = SocksParser.new(@write_buffer, @options)
+            @parser.once(:packet, &method(:__socks4_on_packet))
+          end
+
+          def __socks4_on_packet(packet)
+            _version, status, _port, _ip = packet.unpack("CCnN")
+            if status == GRANTED
+              req, _ = @pending.first
+              request_uri = req.uri
+              @io = ProxySSL.new(@io, request_uri, @options) if request_uri.scheme == "https"
+              transition(:connected)
+              throw(:called)
+            else
+              on_socks4_error("socks error: #{status}")
+            end
+          end
+
+          def on_socks4_error(message)
             ex = Error.new(message)
             ex.set_backtrace(caller)
             on_error(ex)
             throw(:called)
           end
         end
-        Parameters.register("socks4", Socks4ProxyConnection)
-        Parameters.register("socks4a", Socks4ProxyConnection)
 
         class SocksParser
           include Callbacks

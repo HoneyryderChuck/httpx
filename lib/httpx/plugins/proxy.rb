@@ -9,23 +9,7 @@ module HTTPX
     module Proxy
       Error = Class.new(Error)
 
-      def self.configure(klass, *)
-        klass.plugin(:"proxy/http")
-        klass.plugin(:"proxy/socks4")
-        klass.plugin(:"proxy/socks5")
-      end
-
-      def self.extra_options(options)
-        Class.new(options.class) do
-          def_option(:proxy) do |pr|
-            Hash[pr]
-          end
-        end.new(options)
-      end
-
       class Parameters
-        extend Registry
-
         attr_reader :uri, :username, :password
 
         def initialize(uri:, username: nil, password: nil)
@@ -43,6 +27,20 @@ module HTTPX
         end
       end
 
+      def self.configure(klass, *)
+        klass.plugin(:"proxy/http")
+        klass.plugin(:"proxy/socks4")
+        klass.plugin(:"proxy/socks5")
+      end
+
+      def self.extra_options(options)
+        Class.new(options.class) do
+          def_option(:proxy) do |pr|
+            Hash[pr]
+          end
+        end.new(options)
+      end
+
       module InstanceMethods
         def with_proxy(*args)
           branch(default_options.with_proxy(*args))
@@ -50,7 +48,7 @@ module HTTPX
 
         private
 
-        def proxy_params(uri, options)
+        def proxy_uris(uri, options)
           @_proxy_uris ||= begin
             uris = options.proxy ? Array(options.proxy[:uri]) : []
             if uris.empty?
@@ -59,33 +57,23 @@ module HTTPX
             end
             uris
           end
-          options.proxy.merge(uri: @_proxy_uris.shift) unless @_proxy_uris.empty?
+          options.proxy.merge(uri: @_proxy_uris.first) unless @_proxy_uris.empty?
         end
 
         def find_connection(request, options)
           uri = URI(request.uri)
-          proxy_params = proxy_params(uri, options)
-          raise Error, "Failed to connect to proxy" unless proxy_params
+          next_proxy = proxy_uris(uri, options)
+          raise Error, "Failed to connect to proxy" unless next_proxy
 
-          @pool.find_connection(URI(proxy_params[:uri]), options) || build_connection(proxy_params, options)
+          proxy_options = options.merge(proxy: Parameters.new(**next_proxy))
+          @pool.find_connection(uri, proxy_options) || build_connection(uri, proxy_options)
         end
 
-        def build_connection(proxy, options)
-          return super if proxy.is_a?(URI::Generic)
+        def __build_connection(_uri, options)
+          proxy = options.proxy
+          return super unless proxy
 
-          connection = build_proxy_connection(proxy, options)
-          set_connection_callbacks(connection, options)
-          connection
-        end
-
-        def build_proxy_connection(params, options)
-          parameters = Parameters.new(**params)
-          uri = parameters.uri
-          log { "proxy: #{uri}" }
-          proxy_type = Parameters.registry(parameters.uri.scheme)
-          connection = proxy_type.new("tcp", uri, parameters, options, &method(:on_response))
-          @pool.__send__(:resolve_connection, connection)
-          connection
+          options.connection_class.new("tcp", proxy.uri, options)
         end
 
         def fetch_response(request, connections, options)
@@ -95,6 +83,7 @@ module HTTPX
              (((response.error.is_a?(TimeoutError) || response.error.is_a?(IOError)) && request.state == :idle) ||
               response.error.is_a?(Error)) &&
              !@_proxy_uris.empty?
+            @_proxy_uris.shift
             log { "failed connecting to proxy, trying next..." }
             connection = find_connection(request, options)
             connections << connection unless connections.include?(connection)
@@ -104,52 +93,47 @@ module HTTPX
           response
         end
       end
+
+      module ConnectionMethods
+        def match?(*)
+          true
+        end
+
+        def send(request, **args)
+          @pending << [request, args]
+        end
+
+        def connecting?
+          super || @state == :connecting || @state == :connected
+        end
+
+        def to_io
+          case @state
+          when :idle
+            transition(:connecting)
+          when :connected
+            transition(:open)
+          end
+          @io.to_io
+        end
+
+        def call
+          super
+          case @state
+          when :connecting
+            consume
+          end
+        end
+
+        def reset
+          @state = :open
+          transition(:closing)
+          transition(:closed)
+          emit(:close)
+        end
+      end
     end
     register_plugin :proxy, Proxy
-  end
-
-  class ProxyConnection < Connection
-    def initialize(type, uri, parameters, options, &blk)
-      super(type, uri, options, &blk)
-      @parameters = parameters
-    end
-
-    def match?(*)
-      true
-    end
-
-    def send(request, **args)
-      @pending << [request, args]
-    end
-
-    def connecting?
-      super || @state == :connecting || @state == :connected
-    end
-
-    def to_io
-      case @state
-      when :idle
-        transition(:connecting)
-      when :connected
-        transition(:open)
-      end
-      @io.to_io
-    end
-
-    def call
-      super
-      case @state
-      when :connecting
-        consume
-      end
-    end
-
-    def reset
-      @state = :open
-      transition(:closing)
-      transition(:closed)
-      emit(:close)
-    end
   end
 
   class ProxySSL < SSL

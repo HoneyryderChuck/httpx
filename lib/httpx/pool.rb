@@ -50,7 +50,7 @@ module HTTPX
       end if @connections.empty?
     end
 
-    def init_connection(connection, options)
+    def init_connection(connection, _options)
       resolve_connection(connection)
       connection.on(:open) do
         @connected_connections += 1
@@ -60,7 +60,6 @@ module HTTPX
         resolver.uncache(connection) if resolver
         resolve_connection(connection)
       end
-      connection
     end
 
     # opens a connection to the IP reachable through +uri+.

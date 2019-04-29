@@ -6,27 +6,12 @@ module HTTPX
   module Plugins
     module Proxy
       module HTTP
-        class HTTPProxyConnection < ProxyConnection
+        module ConnectionMethods
           private
 
-          def proxy_connect
-            req, _ = @pending.first
-            # if the first request after CONNECT is to an https address, it is assumed that
-            # all requests in the queue are not only ALL HTTPS, but they also share the certificate,
-            # and therefore, will share the connection.
-            #
-            if req.uri.scheme == "https"
-              connect_request = ConnectRequest.new(req.uri)
-              if @parameters.authenticated?
-                connect_request.headers["proxy-authentication"] = "Basic #{@parameters.token_authentication}"
-              end
-              parser.send(connect_request)
-            else
-              transition(:connected)
-            end
-          end
-
           def transition(nextstate)
+            return super unless @options.proxy && @options.proxy.uri.scheme == "http"
+
             case nextstate
             when :connecting
               return unless @state == :idle
@@ -35,9 +20,9 @@ module HTTPX
               return unless @io.connected?
 
               @parser = ConnectProxyParser.new(@write_buffer, @options.merge(max_concurrent_requests: 1))
-              @parser.once(:response, &method(:on_connect))
+              @parser.once(:response, &method(:__http_on_connect))
               @parser.on(:close) { transition(:closing) }
-              proxy_connect
+              __http_proxy_connect
               return if @state == :connected
             when :connected
               return unless @state == :idle || @state == :connecting
@@ -55,7 +40,26 @@ module HTTPX
             super
           end
 
-          def on_connect(_request, response)
+          def __http_proxy_connect
+            req, _ = @pending.first
+            # if the first request after CONNECT is to an https address, it is assumed that
+            # all requests in the queue are not only ALL HTTPS, but they also share the certificate,
+            # and therefore, will share the connection.
+            #
+            if req.uri.scheme == "https"
+              connect_request = ConnectRequest.new(req.uri)
+
+              proxy_params = @options.proxy
+              if proxy_params.authenticated?
+                connect_request.headers["proxy-authentication"] = "Basic #{proxy_params.token_authentication}"
+              end
+              parser.send(connect_request)
+            else
+              transition(:connected)
+            end
+          end
+
+          def __http_on_connect(_request, response)
             if response.status == 200
               req, _ = @pending.first
               request_uri = req.uri
@@ -111,8 +115,6 @@ module HTTPX
             "#{@uri.hostname}:#{@uri.port}"
           end
         end
-
-        Parameters.register("http", HTTPProxyConnection)
       end
     end
     register_plugin :"proxy/http", Proxy::HTTP
