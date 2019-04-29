@@ -54,7 +54,7 @@ module HTTPX
 
     def find_connection(request, options)
       uri = URI(request.uri)
-      @pool.find_connection(uri) || build_connection(uri, options)
+      @pool.find_connection(uri, options) || build_connection(uri, options)
     end
 
     def set_connection_callbacks(connection, options)
@@ -70,7 +70,8 @@ module HTTPX
     end
 
     def build_connection(uri, options)
-      connection = @pool.build_connection(uri, options)
+      connection = __build_connection(uri, options)
+      @pool.init_connection(connection, options)
       set_connection_callbacks(connection, options)
       connection
     end
@@ -81,7 +82,7 @@ module HTTPX
       # altsvc already exists, somehow it wasn't advertised, probably noop
       return unless altsvc
 
-      connection = @pool.find_connection(alt_origin) || build_connection(alt_origin, options)
+      connection = @pool.find_connection(alt_origin, options) || build_connection(alt_origin, options)
       # advertised altsvc is the same origin being used, ignore
       return if connection == existing_connection
 
@@ -128,6 +129,23 @@ module HTTPX
       raise ArgumentError, "wrong number of URIs (given 0, expect 1..+1)" if requests.empty?
 
       requests
+    end
+
+    def __build_connection(uri, options)
+      type = options.transport || begin
+        case uri.scheme
+        when "http"
+          "tcp"
+        when "https"
+          "ssl"
+        when "h2"
+          options = options.merge(ssl: { alpn_protocols: %w[h2] })
+          "ssl"
+        else
+          raise UnsupportedSchemeError, "#{uri}: #{uri.scheme}: unsupported URI scheme"
+        end
+      end
+      options.connection_class.new(type, uri, options)
     end
 
     def __send_reqs(*requests, options)
@@ -203,6 +221,7 @@ module HTTPX
           opts.request_body_class.extend(pl::RequestBodyClassMethods) if defined?(pl::RequestBodyClassMethods)
           opts.response_body_class.__send__(:include, pl::ResponseBodyMethods) if defined?(pl::ResponseBodyMethods)
           opts.response_body_class.extend(pl::ResponseBodyClassMethods) if defined?(pl::ResponseBodyClassMethods)
+          opts.connection_class.__send__(:include, pl::ConnectionMethods) if defined?(pl::ConnectionMethods)
           pl.configure(self, *args, &block) if pl.respond_to?(:configure)
 
           @default_options.freeze
