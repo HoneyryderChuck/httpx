@@ -118,6 +118,13 @@ module HTTPX
           super && @options.proxy == options.proxy
         end
 
+        # should not coalesce connections here, as the IP is the IP of the proxy
+        def coalescable?(*)
+          return super unless @options.proxy
+
+          false
+        end
+
         def send(request, **args)
           return super unless @options.proxy
           return super unless connecting?
