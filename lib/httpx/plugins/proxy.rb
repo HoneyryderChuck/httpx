@@ -76,7 +76,7 @@ module HTTPX
           raise Error, "Failed to connect to proxy" unless next_proxy
 
           proxy_options = options.merge(proxy: Parameters.new(**next_proxy))
-          @pool.find_connection(uri, proxy_options) || build_connection(uri, proxy_options)
+          pool.find_connection(uri, proxy_options) || build_connection(uri, proxy_options)
         end
 
         def __build_connection(uri, options)

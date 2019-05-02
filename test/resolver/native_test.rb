@@ -52,14 +52,10 @@ class NativeResolverTest < Minitest::Test
 
   def resolver(options = Options.new)
     @resolver ||= begin
-      resolver = Resolver::Native.new(connection, options)
+      resolver = Resolver::Native.new(options)
       resolver.extend(ResolverHelpers::ResolverExtensions)
       resolver
     end
-  end
-
-  def connection
-    @connection ||= Minitest::Mock.new
   end
 
   def write_buffer

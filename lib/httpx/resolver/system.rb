@@ -12,7 +12,7 @@ module HTTPX
                      Resolv::DNS::EncodeError,
                      Resolv::DNS::DecodeError].freeze
 
-    def initialize(_, options)
+    def initialize(options)
       @options = Options.new(options)
       roptions = @options.resolver_options
       @state = :idle

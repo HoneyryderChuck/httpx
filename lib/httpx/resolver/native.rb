@@ -35,7 +35,7 @@ module HTTPX
 
     def_delegator :@connections, :empty?
 
-    def initialize(_, options)
+    def initialize(options)
       @options = Options.new(options)
       @ns_index = 0
       @resolver_options = Resolver::Options.new(DEFAULTS.merge(@options.resolver_options || {}))
