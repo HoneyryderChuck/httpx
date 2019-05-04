@@ -21,10 +21,10 @@ module HTTPX
 
     def_delegator :@request, :uri
 
-    def initialize(request, status, version, headers, options = {})
-      @options = Options.new(options)
-      @version = version
+    def initialize(request, status, version, headers)
       @request = request
+      @options = request.options
+      @version = version
       @status = Integer(status)
       @headers = @options.headers_class.new(headers)
       @body = @options.response_body_class.new(self, threshold_size: @options.body_threshold_size,
@@ -256,9 +256,7 @@ module HTTPX
 
     # rubocop:disable Style/MissingRespondToMissing
     def method_missing(meth, *, &block)
-      if Response.public_method_defined?(meth)
-        raise NoMethodError, "undefined response method `#{meth}' for error response"
-      end
+      raise NoMethodError, "undefined response method `#{meth}' for error response" if Response.public_method_defined?(meth)
 
       super
     end

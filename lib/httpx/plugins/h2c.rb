@@ -19,7 +19,7 @@ module HTTPX
           upgrade_request.headers["upgrade"] = "h2c"
           upgrade_request.headers.add("connection", "upgrade")
           upgrade_request.headers.add("connection", "http2-settings")
-          upgrade_request.headers["http2-settings"] = HTTP2::Client.settings_header(upgrade_request.http2_settings)
+          upgrade_request.headers["http2-settings"] = HTTP2::Client.settings_header(upgrade_request.options.http2_settings)
           upgrade_response = wrap { __send_reqs(*upgrade_request, h2c_options).first }
 
           if upgrade_response.status == 101
@@ -51,13 +51,6 @@ module HTTPX
         def valid_h2c_upgrade_request?(request)
           VALID_H2C_METHODS.include?(request.verb) &&
             request.scheme == "http"
-        end
-      end
-
-      module RequestMethods
-        def self.included(klass)
-          klass.__send__(:attr_reader, :options)
-          klass.def_delegator :@options, :http2_settings
         end
       end
 

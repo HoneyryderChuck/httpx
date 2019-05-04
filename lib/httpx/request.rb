@@ -34,6 +34,8 @@ module HTTPX
 
     attr_reader :verb, :uri, :headers, :body, :state
 
+    attr_reader :options
+
     attr_accessor :response
 
     def_delegator :@body, :<<
