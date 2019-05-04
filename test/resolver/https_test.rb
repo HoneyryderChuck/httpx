@@ -59,7 +59,7 @@ class HTTPSResolverTest < Minitest::Test
     @resolver ||= begin
       resolver = Resolver::HTTPS.new(options)
       resolver.extend(ResolverHelpers::ResolverExtensions)
-      resolver.singleton_class.attr_accessor :pool
+      resolver.singleton_class.send(:attr_accessor, :pool)
       resolver.pool = @pool
       resolver
     end
