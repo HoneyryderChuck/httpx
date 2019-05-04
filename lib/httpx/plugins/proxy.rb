@@ -73,6 +73,8 @@ module HTTPX
         end
 
         def find_connection(request, options)
+          return super unless options.respond_to?(:proxy)
+
           uri = URI(request.uri)
           next_proxy = proxy_uris(uri, options)
           raise Error, "Failed to connect to proxy" unless next_proxy
@@ -85,7 +87,7 @@ module HTTPX
           proxy = options.proxy
           return super unless proxy
 
-          options.connection_class.new(uri, "tcp", proxy.uri, options)
+          options.connection_class.new("tcp", uri, options)
         end
 
         def fetch_response(request, connections, options)
@@ -109,9 +111,13 @@ module HTTPX
       module ConnectionMethods
         using URIExtensions
 
-        def initialize(request_uri, *args)
-          super(*args)
-          @origins = [request_uri.origin]
+        def initialize(*)
+          super
+          return unless @options.proxy
+
+          # redefining the connection uri as the proxy's URI,
+          # as this will be used as the tcp peer ip.
+          @uri = @options.proxy.uri
         end
 
         def match?(uri, options)
