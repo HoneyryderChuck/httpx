@@ -22,7 +22,7 @@ module Requests
         session_uri = cookies_set_uri(session_cookies)
         session_response = session.get(session_uri)
         verify_status(session_response, 302)
-        verify_cookies(session.cookies_store[URI(session_uri)], session_cookies)
+        verify_cookies(session.cookies[URI(session_uri)], session_cookies)
 
         # first request sets the session
         response = session.get(cookies_uri)
