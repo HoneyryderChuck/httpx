@@ -28,6 +28,9 @@ module HTTPX
       module ResponseBodyMethods
         def initialize(*)
           super
+
+          return unless @headers.key?("content-encoding")
+
           @_decoders = @headers.get("content-encoding").map do |encoding|
             Compression.registry(encoding).decoder
           end
@@ -39,6 +42,8 @@ module HTTPX
         end
 
         def write(chunk)
+          return super unless defined?(@_compressed_length)
+
           @_compressed_length -= chunk.bytesize
           chunk = decompress(chunk)
           super(chunk)
@@ -46,6 +51,9 @@ module HTTPX
 
         def close
           super
+
+          return unless defined?(@_decoders)
+
           @_decoders.each(&:close)
         end
 
