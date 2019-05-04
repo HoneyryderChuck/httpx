@@ -20,7 +20,7 @@ AllCops:
 Metrics/LineLength:
   Exclude:
     - 'test/resolver/native_test.rb'
-  Max: 120
+  Max: 140
 
 Metrics/MethodLength:
   Max: 200
