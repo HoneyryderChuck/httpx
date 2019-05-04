@@ -47,12 +47,8 @@ module HTTPX
             # and therefore, will share the connection.
             #
             if req.uri.scheme == "https"
-              connect_request = ConnectRequest.new(req.uri)
+              connect_request = ConnectRequest.new(req.uri, @options)
 
-              proxy_params = @options.proxy
-              if proxy_params.authenticated?
-                connect_request.headers["proxy-authentication"] = "Basic #{proxy_params.token_authentication}"
-              end
               parser.send(connect_request)
             else
               transition(:connected)
@@ -106,8 +102,10 @@ module HTTPX
         end
 
         class ConnectRequest < Request
-          def initialize(uri, options = {})
-            super(:connect, uri, options)
+          def initialize(uri, options)
+            super(:connect, uri, {})
+            proxy_params = options.proxy
+            @headers["proxy-authentication"] = "Basic #{proxy_params.token_authentication}" if proxy_params.authenticated?
             @headers.delete("accept")
           end
 
