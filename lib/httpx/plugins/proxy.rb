@@ -37,18 +37,20 @@ module HTTPX
         end
       end
 
-      def self.configure(klass, *)
-        klass.plugin(:"proxy/http")
-        klass.plugin(:"proxy/socks4")
-        klass.plugin(:"proxy/socks5")
-      end
+      class << self
+        def configure(klass, *)
+          klass.plugin(:"proxy/http")
+          klass.plugin(:"proxy/socks4")
+          klass.plugin(:"proxy/socks5")
+        end
 
-      def self.extra_options(options)
-        Class.new(options.class) do
-          def_option(:proxy) do |pr|
-            Hash[pr]
-          end
-        end.new(options)
+        def extra_options(options)
+          Class.new(options.class) do
+            def_option(:proxy) do |pr|
+              Hash[pr]
+            end
+          end.new(options)
+        end
       end
 
       module InstanceMethods
