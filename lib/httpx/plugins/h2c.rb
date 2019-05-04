@@ -71,8 +71,18 @@ module HTTPX
       end
 
       module ConnectionMethods
+        using URIExtensions
+
         def match?(uri, options)
+          return super unless uri.scheme == "http" && @options.fallback_protocol == "h2c"
+
           super && options.fallback_protocol == "h2c"
+        end
+
+        def coalescable?(connection)
+          return super unless @options.fallback_protocol == "h2c" && @uri.scheme == "http"
+
+          @uri.origin == connection.uri.origin && connection.options.fallback_protocol == "h2c"
         end
 
         def upgrade(request, response)
