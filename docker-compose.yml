@@ -11,6 +11,7 @@ services:
       - HTTPX_SOCKS5_PROXY=socks5://socksproxy:8080
       - HTTPX_SSH_PROXY=ssh://sshproxy:22
       - PARALLEL=1
+      - N=6 # minitest workers
       - CI=1
       - JEKYLL_ENV=production
       - GEM_HOME=/usr/local/bundle
