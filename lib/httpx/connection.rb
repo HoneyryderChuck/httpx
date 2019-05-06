@@ -57,7 +57,7 @@ module HTTPX
       @read_buffer = Buffer.new(BUFFER_SIZE)
       @write_buffer = Buffer.new(BUFFER_SIZE)
       @pending = []
-      on(:error) { |ex| on_error(ex) }
+      on(:error, &method(:on_error))
       if @options.io
         # if there's an already open IO, get its
         # peer address, and force-initiate the parser
