@@ -19,7 +19,7 @@ module HTTPX
           upgrade_request.headers["upgrade"] = "h2c"
           upgrade_request.headers.add("connection", "upgrade")
           upgrade_request.headers.add("connection", "http2-settings")
-          upgrade_request.headers["http2-settings"] = HTTP2::Client.settings_header(upgrade_request.http2_settings)
+          upgrade_request.headers["http2-settings"] = HTTP2::Client.settings_header(upgrade_request.options.http2_settings)
           upgrade_response = wrap { __send_reqs(*upgrade_request, h2c_options).first }
 
           if upgrade_response.status == 101
@@ -54,13 +54,6 @@ module HTTPX
         end
       end
 
-      module RequestMethods
-        def self.included(klass)
-          klass.__send__(:attr_reader, :options)
-          klass.def_delegator :@options, :http2_settings
-        end
-      end
-
       class H2CParser < Connection::HTTP2
         def upgrade(request, response)
           @connection.send_connection_preface
@@ -78,8 +71,18 @@ module HTTPX
       end
 
       module ConnectionMethods
+        using URIExtensions
+
         def match?(uri, options)
+          return super unless uri.scheme == "http" && @options.fallback_protocol == "h2c"
+
           super && options.fallback_protocol == "h2c"
+        end
+
+        def coalescable?(connection)
+          return super unless @options.fallback_protocol == "h2c" && @uri.scheme == "http"
+
+          @uri.origin == connection.uri.origin && connection.options.fallback_protocol == "h2c"
         end
 
         def upgrade(request, response)

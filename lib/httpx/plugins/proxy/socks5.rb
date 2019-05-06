@@ -79,7 +79,7 @@ module HTTPX
                 transition(:authenticating)
                 return
               when NONE
-                on_socks5_error("no supported authorization methods")
+                __on_socks5_error("no supported authorization methods")
               else
                 transition(:negotiating)
               end
@@ -88,11 +88,11 @@ module HTTPX
               __socks5_check_version(version)
               return transition(:negotiating) if status == SUCCESS
 
-              on_socks5_error("socks authentication error: #{status}")
+              __on_socks5_error("socks authentication error: #{status}")
             when :negotiating
               version, reply, = packet.unpack("CC")
               __socks5_check_version(version)
-              on_socks5_error("socks5 negotiation error: #{reply}") unless reply == SUCCESS
+              __on_socks5_error("socks5 negotiation error: #{reply}") unless reply == SUCCESS
               req, _ = @pending.first
               request_uri = req.uri
               @io = ProxySSL.new(@io, request_uri, @options) if request_uri.scheme == "https"
@@ -102,10 +102,10 @@ module HTTPX
           end
 
           def __socks5_check_version(version)
-            on_socks5_error("invalid SOCKS version (#{version})") if version != 5
+            __on_socks5_error("invalid SOCKS version (#{version})") if version != 5
           end
 
-          def on_socks5_error(message)
+          def __on_socks5_error(message)
             ex = Error.new(message)
             ex.set_backtrace(caller)
             on_error(ex)
