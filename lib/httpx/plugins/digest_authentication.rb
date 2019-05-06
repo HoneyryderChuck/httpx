@@ -5,6 +5,16 @@ module HTTPX
     module DigestAuthentication
       DigestError = Class.new(Error)
 
+      def self.extra_options(options)
+        Class.new(options.class) do
+          def_option(:digest) do |digest|
+            raise Error, ":digest must be a Digest" unless digest.is_a?(Digest)
+
+            digest
+          end
+        end.new(options)
+      end
+
       def self.load_dependencies(*)
         require "securerandom"
         require "digest"
@@ -12,28 +22,28 @@ module HTTPX
 
       module InstanceMethods
         def digest_authentication(user, password)
-          @_digest = Digest.new(user, password)
-          self
+          branch(default_options.with_digest(Digest.new(user, password)))
         end
+
         alias_method :digest_auth, :digest_authentication
 
         def request(*args, **options)
-          return super unless @_digest
-
           requests = __build_reqs(*args, options)
           probe_request = requests.first
+          digest = probe_request.options.digest
+
+          return super unless digest
+
           prev_response = wrap { __send_reqs(*probe_request, options).first }
 
-          unless prev_response.status == 401
-            raise Error, "request doesn't require authentication (status: #{prev_response})"
-          end
+          raise Error, "request doesn't require authentication (status: #{prev_response.status})" unless prev_response.status == 401
 
           probe_request.transition(:idle)
 
           responses = []
 
           while (request = requests.shift)
-            token = @_digest.generate_header(request, prev_response)
+            token = digest.generate_header(request, prev_response)
             request.headers["authorization"] = "Digest #{token}"
             response = if requests.empty?
               __send_reqs(*request, options).first
@@ -58,7 +68,7 @@ module HTTPX
         end
 
         def generate_header(request, response, _iis = false)
-          method = request.verb.to_s.upcase
+          meth = request.verb.to_s.upcase
           www = response.headers["www-authenticate"]
 
           # discard first token, it's Digest
@@ -104,7 +114,7 @@ module HTTPX
           end
 
           ha1 = algorithm.hexdigest(a1)
-          ha2 = algorithm.hexdigest("#{method}:#{uri}")
+          ha2 = algorithm.hexdigest("#{meth}:#{uri}")
           request_digest = [ha1, nonce]
           request_digest.push(nc, cnonce, qop) if qop
           request_digest << ha2
@@ -140,6 +150,7 @@ module HTTPX
         end
       end
     end
+
     register_plugin :digest_authentication, DigestAuthentication
   end
 end

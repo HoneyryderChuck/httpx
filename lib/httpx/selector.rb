@@ -50,49 +50,44 @@ class HTTPX::Selector
   def initialize
     @readers = {}
     @writers = {}
-    @lock = Mutex.new
     @__r__, @__w__ = IO.pipe
     @closed = false
   end
 
   # deregisters +io+ from selectables.
   def deregister(io)
-    @lock.synchronize do
-      rmonitor = @readers.delete(io)
-      wmonitor = @writers.delete(io)
-      monitor = rmonitor || wmonitor
-      monitor.close(false) if monitor
-    end
+    rmonitor = @readers.delete(io)
+    wmonitor = @writers.delete(io)
+    monitor = rmonitor || wmonitor
+    monitor.close(false) if monitor
   end
 
   # register +io+ for +interests+ events.
   def register(io, interests)
     readable = READABLE.include?(interests)
     writable = WRITABLE.include?(interests)
-    @lock.synchronize do
-      if readable
-        monitor = @readers[io]
-        if monitor
-          monitor.interests = interests
-        else
-          monitor = Monitor.new(io, interests, self)
-        end
-        @readers[io] = monitor
-        @writers.delete(io) unless writable
+    if readable
+      monitor = @readers[io]
+      if monitor
+        monitor.interests = interests
+      else
+        monitor = Monitor.new(io, interests, self)
       end
-      if writable
-        monitor = @writers[io]
-        if monitor
-          monitor.interests = interests
-        else
-          # reuse object
-          monitor = readable ? @readers[io] : Monitor.new(io, interests, self)
-        end
-        @writers[io] = monitor
-        @readers.delete(io) unless readable
-      end
-      monitor
+      @readers[io] = monitor
+      @writers.delete(io) unless writable
     end
+    if writable
+      monitor = @writers[io]
+      if monitor
+        monitor.interests = interests
+      else
+        # reuse object
+        monitor = readable ? @readers[io] : Monitor.new(io, interests, self)
+      end
+      @writers[io] = monitor
+      @readers.delete(io) unless readable
+    end
+    monitor
   end
 
   # waits for read/write events for +interval+. Yields for monitors of
@@ -100,22 +95,16 @@ class HTTPX::Selector
   #
   def select(interval)
     begin
-      r = nil
-      w = nil
-      @lock.synchronize do
-        r = @readers.keys
-        w = @writers.keys
-      end
+      r = @readers.keys
+      w = @writers.keys
       r.unshift(@__r__)
 
       readers, writers = IO.select(r, w, nil, interval)
 
       raise HTTPX::TimeoutError.new(interval, "timed out while waiting on select") if readers.nil? && writers.nil?
     rescue IOError, SystemCallError
-      @lock.synchronize do
-        @readers.reject! { |io, _| io.closed? }
-        @writers.reject! { |io, _| io.closed? }
-      end
+      @readers.reject! { |io, _| io.closed? }
+      @writers.reject! { |io, _| io.closed? }
       retry
     end
 

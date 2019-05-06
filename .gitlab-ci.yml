@@ -10,7 +10,8 @@ services:
 cache:
   key: ${CI_COMMIT_REF_SLUG}
   paths:
-    - vendor/ruby
+    - .bundle/ruby
+    - .bundle/jruby
 
 before_script:
   - docker info

@@ -16,9 +16,6 @@ class SystemResolverTest < Minitest::Test
   private
 
   def resolver(options = Options.new)
-    @resolver ||= begin
-      connection = Minitest::Mock.new
-      Resolver::System.new(connection, options)
-    end
+    @resolver ||= Resolver::System.new(options)
   end
 end

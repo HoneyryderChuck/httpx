@@ -37,7 +37,7 @@ class SessionTest < Minitest::Test
     assert req_body.respond_to?(:foo), "request body methods haven't been added"
     assert req_body.foo == "request-body-foo", "request body method is unexpected"
 
-    response = session.response(nil, 200, "2.0", {})
+    response = session.response(request, 200, "2.0", {})
     assert response.respond_to?(:foo), "response methods haven't been added"
     assert response.foo == "response-foo", "response method is unexpected"
     assert request.headers.respond_to?(:foo), "headers methods haven't been added"
@@ -62,7 +62,7 @@ class SessionTest < Minitest::Test
       attr_reader :options
 
       def response(*args)
-        @options.response_class.new(*args, @options)
+        @options.response_class.new(*args)
       end
     end
     self::RequestClassMethods = Module.new do
