@@ -29,10 +29,15 @@ module HTTPX
           def __send_reqs(*requests, options)
             request_options = @options.merge(options)
 
+            return super unless request_options.proxy
+
             ssh_options = request_options.proxy
             ssh_uris = ssh_options.delete(:uri)
-            ssh_username = ssh_options.delete(:username)
             ssh_uri = URI.parse(ssh_uris.shift)
+
+            return super unless ssh_uri.scheme == "ssh"
+
+            ssh_username = ssh_options.delete(:username)
             ssh_options[:port] ||= ssh_uri.port || 22
             if request_options.debug
               ssh_options[:verbose] = request_options.debug_level == 2 ? :debug : :info

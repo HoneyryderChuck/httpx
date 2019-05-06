@@ -51,20 +51,18 @@ class HTTPSResolverTest < Minitest::Test
 
   def build_connection(*)
     connection = super
-    pool.expect(:find_connection, connection, [URI::HTTP, HTTPX::Options])
+    resolver.instance_variable_set(:@resolver_connection, connection)
     connection
   end
 
   def resolver(options = Options.new)
     @resolver ||= begin
-      resolver = Resolver::HTTPS.new(pool, options)
+      resolver = Resolver::HTTPS.new(options)
       resolver.extend(ResolverHelpers::ResolverExtensions)
+      resolver.singleton_class.send(:attr_accessor, :pool)
+      resolver.pool = @pool
       resolver
     end
-  end
-
-  def pool
-    @pool ||= Minitest::Mock.new
   end
 
   def write_buffer

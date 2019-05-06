@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "forwardable"
+
 module HTTPX
   module Plugins
     module Cookies
@@ -53,11 +55,12 @@ module HTTPX
       end
 
       module InstanceMethods
-        attr_reader :cookies_store
+        extend Forwardable
 
-        def initialize(*)
-          super
-          @cookies_store = @options.cookies || Store.new
+        def_delegator :@options, :cookies
+
+        def initialize(options = {}, &blk)
+          super({ cookies: Store.new }.merge(options), &blk)
         end
 
         def with_cookies(cookies)
@@ -65,15 +68,14 @@ module HTTPX
         end
 
         def wrap
-          return unless block_given?
+          return super unless block_given?
 
           super do |session|
-            old_cookies_store = @cookies_store
-            @cookies_store = old_cookies_store.dup
+            old_cookies_store = @options.cookies.dup
             begin
               yield session
             ensure
-              @cookies_store = old_cookies_store
+              @options = @options.with_cookies(old_cookies_store)
             end
           end
         end
@@ -81,22 +83,22 @@ module HTTPX
         private
 
         def on_response(request, response)
-          @cookies_store.set(request.origin, response.headers["set-cookie"])
+          @options.cookies.set(request.origin, response.headers["set-cookie"])
           super
         end
 
         def __build_req(*, _)
           request = super
-          request.headers.cookies(@cookies_store[request.uri], request)
+          request.headers.set_cookie(@options.cookies[request.uri])
           request
         end
       end
 
       module HeadersMethods
-        def cookies(jar, request)
+        def set_cookie(jar)
           return unless jar
 
-          cookie_value = HTTP::Cookie.cookie_value(jar.cookies(request.uri))
+          cookie_value = HTTP::Cookie.cookie_value(jar.cookies)
           return if cookie_value.empty?
 
           add("cookie", cookie_value)

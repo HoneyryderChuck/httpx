@@ -142,7 +142,7 @@ module HTTPX
     end
 
     def inflight?
-      @parser && !@parser.empty?
+      @parser && !@parser.empty? && !@write_buffer.empty?
     end
 
     def interests

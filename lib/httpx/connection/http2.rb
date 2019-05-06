@@ -183,8 +183,8 @@ module HTTPX
         h.map { |k, v| "<- HEADER: #{k}: #{v}" }.join("\n")
       end
       _, status = h.shift
-      headers = @options.headers_class.new(h)
-      response = @options.response_class.new(request, status, "2.0", headers, @options)
+      headers = request.options.headers_class.new(h)
+      response = request.options.response_class.new(request, status, "2.0", headers)
       request.response = response
       @streams[request] = stream
     end

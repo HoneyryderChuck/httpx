@@ -10,6 +10,7 @@ module HTTPX
         VERSION = 4
         CONNECT = 1
         GRANTED = 90
+        PROTOCOLS = %w[socks4 socks4a].freeze
 
         Error = Class.new(Error)
 
@@ -17,8 +18,7 @@ module HTTPX
           private
 
           def transition(nextstate)
-            return super unless @options.proxy &&
-                                (@options.proxy.uri.scheme == "socks4" || @options.proxy.uri.scheme == "socks4a")
+            return super unless @options.proxy && PROTOCOLS.include?(@options.proxy.uri.scheme)
 
             case nextstate
             when :connecting

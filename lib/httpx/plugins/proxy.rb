@@ -37,18 +37,20 @@ module HTTPX
         end
       end
 
-      def self.configure(klass, *)
-        klass.plugin(:"proxy/http")
-        klass.plugin(:"proxy/socks4")
-        klass.plugin(:"proxy/socks5")
-      end
+      class << self
+        def configure(klass, *)
+          klass.plugin(:"proxy/http")
+          klass.plugin(:"proxy/socks4")
+          klass.plugin(:"proxy/socks5")
+        end
 
-      def self.extra_options(options)
-        Class.new(options.class) do
-          def_option(:proxy) do |pr|
-            Hash[pr]
-          end
-        end.new(options)
+        def extra_options(options)
+          Class.new(options.class) do
+            def_option(:proxy) do |pr|
+              Hash[pr]
+            end
+          end.new(options)
+        end
       end
 
       module InstanceMethods
@@ -71,19 +73,21 @@ module HTTPX
         end
 
         def find_connection(request, options)
+          return super unless options.respond_to?(:proxy)
+
           uri = URI(request.uri)
           next_proxy = proxy_uris(uri, options)
           raise Error, "Failed to connect to proxy" unless next_proxy
 
           proxy_options = options.merge(proxy: Parameters.new(**next_proxy))
-          @pool.find_connection(uri, proxy_options) || build_connection(uri, proxy_options)
+          pool.find_connection(uri, proxy_options) || build_connection(uri, proxy_options)
         end
 
         def __build_connection(uri, options)
           proxy = options.proxy
           return super unless proxy
 
-          options.connection_class.new(uri, "tcp", proxy.uri, options)
+          options.connection_class.new("tcp", uri, options)
         end
 
         def fetch_response(request, connections, options)
@@ -107,15 +111,26 @@ module HTTPX
       module ConnectionMethods
         using URIExtensions
 
-        def initialize(request_uri, *args)
-          super(*args)
-          @origins = [request_uri.origin]
+        def initialize(*)
+          super
+          return unless @options.proxy
+
+          # redefining the connection uri as the proxy's URI,
+          # as this will be used as the tcp peer ip.
+          @uri = @options.proxy.uri
         end
 
         def match?(uri, options)
           return super unless @options.proxy
 
           super && @options.proxy == options.proxy
+        end
+
+        # should not coalesce connections here, as the IP is the IP of the proxy
+        def coalescable?(*)
+          return super unless @options.proxy
+
+          false
         end
 
         def send(request, **args)

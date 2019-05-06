@@ -79,11 +79,11 @@ module HTTPX
       return if @request.response
 
       log(level: 2) { "headers received" }
-      headers = @options.headers_class.new(h)
-      response = @options.response_class.new(@request,
-                                             @parser.status_code,
-                                             @parser.http_version.join("."),
-                                             headers, @options)
+      headers = @request.options.headers_class.new(h)
+      response = @request.options.response_class.new(@request,
+                                                     @parser.status_code,
+                                                     @parser.http_version.join("."),
+                                                     headers)
       log(color: :yellow) { "-> HEADLINE: #{response.status} HTTP/#{@parser.http_version.join(".")}" }
       log(color: :yellow) { response.headers.each.map { |f, v| "-> HEADER: #{f}: #{v}" }.join("\n") }
 
