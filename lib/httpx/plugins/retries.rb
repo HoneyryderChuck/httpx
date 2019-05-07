@@ -30,6 +30,7 @@ module HTTPX
              request.retries.positive? &&
              IDEMPOTENT_METHODS.include?(request.verb)
             request.retries -= 1
+            request.transition(:idle)
             connection = find_connection(request, options)
             connections << connection unless connections.include?(connection)
             connection.send(request)
