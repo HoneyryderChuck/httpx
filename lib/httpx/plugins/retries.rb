@@ -40,8 +40,8 @@ module HTTPX
           response = super
           if response.is_a?(ErrorResponse) &&
              request.retries.positive? &&
-             __repeatable_request?(request.verb) &&
-             __retryable_error?(response.error)
+             __repeatable_request?(request, options)  &&
+            __retryable_error?(response.error)
             request.retries -= 1
             request.transition(:idle)
             connection = find_connection(request, options)
@@ -57,7 +57,7 @@ module HTTPX
         end
 
         def __retryable_error?(ex)
-          RETRYABLE_ERRORS.any? { |klass| ex.is_a?(klass) }
+          RETRYABLE_ERRORS.any? { |klass| klass === ex }
         end
       end
 
