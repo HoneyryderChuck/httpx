@@ -123,7 +123,7 @@ module HTTPX
     end
 
     def match?(uri, _options)
-      return false if @state == :closing
+      return false if @state == :closing || @state == :closed
 
       @origins.include?(uri.origin) || match_altsvcs?(uri)
     end
