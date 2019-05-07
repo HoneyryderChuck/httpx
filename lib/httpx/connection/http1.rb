@@ -174,6 +174,7 @@ module HTTPX
       when nil
         # In HTTP/1.1, it's keep alive by default
         return if response.version == "1.1"
+
         @max_requests = Float::INFINITY
         disable
       end
@@ -182,7 +183,7 @@ module HTTPX
     def disable
       disable_pipelining
       emit(:reset)
-        throw(:called)
+      throw(:called)
     end
 
     def disable_pipelining
