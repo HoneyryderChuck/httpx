@@ -83,7 +83,8 @@ module HTTPX
         private
 
         def on_response(request, response)
-          @options.cookies.set(request.origin, response.headers["set-cookie"])
+          @options.cookies.set(request.origin, response.headers["set-cookie"]) if response.respond_to?(:headers)
+
           super
         end
 
