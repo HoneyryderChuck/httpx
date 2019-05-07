@@ -202,26 +202,6 @@ module HTTPX
       nil
     end
 
-    def handle_timeout_error(e)
-      case e
-      when TotalTimeoutError
-        # return unless @options.timeout.no_time_left?
-
-        emit(:error, e)
-      when TimeoutError
-        return emit(:error, e) unless @timeout
-
-        @timeout -= e.timeout
-        return unless @timeout <= 0
-
-        if connecting?
-          emit(:error, e.to_connection_error)
-        else
-          emit(:error, e)
-        end
-      end
-    end
-
     private
 
     def consume
@@ -375,6 +355,13 @@ module HTTPX
     end
 
     def handle_error(e)
+      if e.instance_of?(TimeoutError) && @timeout
+        @timeout -= e.timeout
+        return unless @timeout <= 0
+
+        e = e.to_connection_error if connecting?
+      end
+
       parser.handle_error(e) if @parser && parser.respond_to?(:handle_error)
       @error_response = ErrorResponse.new(e, @options)
       @pending.each do |request, _|
