@@ -24,6 +24,7 @@ module Faraday
 
       class Session < ::HTTPX::Session
         plugin(:compression)
+        plugin(:persistent)
 
         module ReasonPlugin
           if RUBY_VERSION < "2.5"
