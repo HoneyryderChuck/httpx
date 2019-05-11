@@ -8,6 +8,7 @@ module HTTPX
   module Plugins
     module Proxy
       Error = Class.new(Error)
+      PROXY_ERRORS = [TimeoutError, IOError, SystemCallError, Error]
 
       class Parameters
         attr_reader :uri, :username, :password
@@ -94,12 +95,11 @@ module HTTPX
           response = super
           if response.is_a?(ErrorResponse) &&
              # either it was a timeout error connecting, or it was a proxy error
-             (((response.error.is_a?(TimeoutError) || response.error.is_a?(IOError)) && request.state == :idle) ||
-              response.error.is_a?(Error)) &&
-             !@_proxy_uris.empty?
+             PROXY_ERRORS.any? {|ex| response.error.is_a?(ex) } && !@_proxy_uris.empty?
             @_proxy_uris.shift
             log { "failed connecting to proxy, trying next..." }
             connection = find_connection(request, options)
+            request.transition(:idle)
             connections << connection unless connections.include?(connection)
             connection.send(request)
             return
