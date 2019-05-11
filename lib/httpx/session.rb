@@ -8,7 +8,7 @@ module HTTPX
     def initialize(options = {}, &blk)
       @options = self.class.default_options.merge(options)
       @responses = {}
-      @keep_open = false
+      @persistent = @options.persistent
       wrap(&blk) if block_given?
     end
 
@@ -16,11 +16,11 @@ module HTTPX
       return unless block_given?
 
       begin
-        prev_keep_open = @keep_open
-        @keep_open = true
+        prev_persistent = @persistent
+        @persistent = true
         yield self
       ensure
-        @keep_open = prev_keep_open
+        @persistent = prev_persistent
       end
     end
 
@@ -179,7 +179,7 @@ module HTTPX
         end
         responses
       ensure
-        close(connections) unless @keep_open
+        close(connections) unless @persistent
       end
     end
 
