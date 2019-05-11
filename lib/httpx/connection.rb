@@ -79,10 +79,16 @@ module HTTPX
       @io && @io.addresses
     end
 
-    def mergeable?(addresses)
-      return false if @state == :closing || !@io
+    def match?(uri, options)
+      return false if @state == :closing || @state == :closed
 
-      !(@io.addresses & addresses).empty?
+      (@origins.include?(uri.origin) || match_altsvcs?(uri)) && connection_options_match?(options)
+    end
+
+    def mergeable?(connection)
+      return false if @state == :closing || @state == :closed || !@io
+
+      !(@io.addresses & connection.addresses).empty? && connection_options_match?(connection.options)
     end
 
     # coalescable connections need to be mergeable!
@@ -120,12 +126,6 @@ module HTTPX
           yield(request, args)
         end
       end
-    end
-
-    def match?(uri, _options)
-      return false if @state == :closing || @state == :closed
-
-      @origins.include?(uri.origin) || match_altsvcs?(uri)
     end
 
     # checks if this is connection is an alternative service of
@@ -367,6 +367,12 @@ module HTTPX
       @pending.each do |request, _|
         emit(:response, request, @error_response)
       end
+    end
+
+    def connection_options_match?(options)
+      options.transport == @options.transport &&
+       options.transport_options == @options.transport_options &&
+       options.ssl == @options.ssl
     end
   end
 end
