@@ -5,7 +5,7 @@ module HTTPX
     #
     # This plugin adds support for upgrading a plaintext HTTP/1.1 connection to HTTP/2.
     #
-    #
+    # https://tools.ietf.org/html/rfc7540#section-3.2
     #
     module H2C
       def self.load_dependencies(*)
@@ -21,34 +21,30 @@ module HTTPX
           upgrade_request = requests.first
           return super unless valid_h2c_upgrade_request?(upgrade_request)
 
-          upgrade_request.headers["upgrade"] = "h2c"
           upgrade_request.headers.add("connection", "upgrade")
           upgrade_request.headers.add("connection", "http2-settings")
+          upgrade_request.headers["upgrade"] = "h2c"
           upgrade_request.headers["http2-settings"] = HTTP2::Client.settings_header(upgrade_request.options.http2_settings)
           upgrade_response = wrap { __send_reqs(*upgrade_request, h2c_options).first }
 
-          if upgrade_response.status == 101
-            # if 101, assume that connection exists and was kept open
-            connection = find_connection(upgrade_request, nil, upgrade_request.options)
-            connection.upgrade(upgrade_request, upgrade_response)
-
-            response = upgrade_request.response
-            if response.status == 200
-              requests.delete(upgrade_request)
-              return response if requests.empty?
-            end
-            responses = __send_reqs(*requests, h2c_options)
-          else
-            # proceed as usual
-            responses = [upgrade_response] + __send_reqs(*requests[1..-1], h2c_options)
-          end
+          responses = __send_reqs(*requests, h2c_options)
 
           return responses.first if responses.size == 1
-
           responses
         end
 
         private
+
+        def fetch_response(request, connections, options)
+          response = super
+          if response && valid_h2c_upgrade?(request, response, options)
+            log { "upgrading to h2c..." }
+            connection = find_connection(request, connections, options)
+            connections << connection unless connections.include?(connection)
+            connection.upgrade(request, response)
+          end
+          response
+        end
 
         VALID_H2C_METHODS = %i[get options head].freeze
         private_constant :VALID_H2C_METHODS
@@ -56,6 +52,13 @@ module HTTPX
         def valid_h2c_upgrade_request?(request)
           VALID_H2C_METHODS.include?(request.verb) &&
             request.scheme == "http"
+        end
+
+        def valid_h2c_upgrade?(request, response, options)
+          options.fallback_protocol == "h2c" &&
+          request.headers.get("connection").include?("upgrade") &&
+            request.headers.get("upgrade").include?("h2c") &&
+            response.status == 101
         end
       end
 
