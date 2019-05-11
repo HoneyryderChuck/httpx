@@ -81,7 +81,7 @@ module HTTPX
           options.proxy.merge(uri: @_proxy_uris.first) unless @_proxy_uris.empty?
         end
 
-        def find_connection(request, options)
+        def find_connection(request, connections, options)
           return super unless options.respond_to?(:proxy)
 
           uri = URI(request.uri)
@@ -89,14 +89,21 @@ module HTTPX
           raise Error, "Failed to connect to proxy" unless next_proxy
 
           proxy_options = options.merge(proxy: Parameters.new(**next_proxy))
-          pool.find_connection(uri, proxy_options) || build_connection(uri, proxy_options)
+          connection = pool.find_connection(uri, proxy_options) || build_connection(uri, proxy_options)
+          unless connections.nil? || connections.include?(connection)
+            connections << connection
+            set_connection_callbacks(connection, options)
+          end
+          connection
         end
 
-        def __build_connection(uri, options)
+        def build_connection(uri, options)
           proxy = options.proxy
           return super unless proxy
 
-          options.connection_class.new("tcp", uri, options)
+          connection = options.connection_class.new("tcp", uri, options)
+          pool.init_connection(connection, options)
+          connection
         end
 
         def fetch_response(request, connections, options)
@@ -106,8 +113,8 @@ module HTTPX
              PROXY_ERRORS.any? {|ex| response.error.is_a?(ex) } && !@_proxy_uris.empty?
             @_proxy_uris.shift
             log { "failed connecting to proxy, trying next..." }
-            connection = find_connection(request, options)
             request.transition(:idle)
+            connection = find_connection(request, connections, options)
             connections << connection unless connections.include?(connection)
             connection.send(request)
             return

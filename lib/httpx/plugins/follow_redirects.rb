@@ -57,8 +57,7 @@ module HTTPX
             return ErrorResponse.new(error, options)
           end
 
-          connection = find_connection(retry_request, options)
-          connections << connection unless connections.include?(connection)
+          connection = find_connection(retry_request, connections, options)
           connection.send(retry_request)
           nil
         end

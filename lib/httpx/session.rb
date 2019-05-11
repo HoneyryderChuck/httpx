@@ -55,9 +55,14 @@ module HTTPX
       @responses.delete(request)
     end
 
-    def find_connection(request, options)
+    def find_connection(request, connections, options)
       uri = URI(request.uri)
-      pool.find_connection(uri, options) || build_connection(uri, options)
+      connection = pool.find_connection(uri, options) || build_connection(uri, options)
+      unless connections.nil? || connections.include?(connection)
+        connections << connection
+        set_connection_callbacks(connection, options)
+      end
+      connection
     end
 
     def set_connection_callbacks(connection, options)
@@ -72,13 +77,6 @@ module HTTPX
       end
     end
 
-    def build_connection(uri, options)
-      connection = __build_connection(uri, options)
-      pool.init_connection(connection, options)
-      set_connection_callbacks(connection, options)
-      connection
-    end
-
     def build_altsvc_connection(existing_connection, alt_origin, origin, alt_params, options)
       altsvc = AltSvc.cached_altsvc_set(origin, alt_params.merge("origin" => alt_origin))
 
@@ -88,6 +86,7 @@ module HTTPX
       connection = pool.find_connection(alt_origin, options) || build_connection(alt_origin, options)
       # advertised altsvc is the same origin being used, ignore
       return if connection == existing_connection
+      set_connection_callbacks(connection, options)
 
       log(level: 1) { "#{origin} alt-svc: #{alt_origin}" }
 
@@ -134,7 +133,7 @@ module HTTPX
       requests
     end
 
-    def __build_connection(uri, options)
+    def build_connection(uri, options)
       type = options.transport || begin
         case uri.scheme
         when "http"
@@ -148,7 +147,9 @@ module HTTPX
           raise UnsupportedSchemeError, "#{uri}: #{uri.scheme}: unsupported URI scheme"
         end
       end
-      options.connection_class.new(type, uri, options)
+      connection = options.connection_class.new(type, uri, options)
+      pool.init_connection(connection, options)
+      connection
     end
 
     def __send_reqs(*requests, options)
@@ -157,8 +158,7 @@ module HTTPX
       timeout = request_options.timeout
 
       requests.each do |request|
-        connection = find_connection(request, request_options)
-        connections << connection unless connections.include?(connection)
+        connection = find_connection(request, connections, request_options)
         connection.send(request)
       end
 

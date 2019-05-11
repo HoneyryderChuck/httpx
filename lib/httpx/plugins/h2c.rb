@@ -29,7 +29,7 @@ module HTTPX
 
           if upgrade_response.status == 101
             # if 101, assume that connection exists and was kept open
-            connection = find_connection(upgrade_request, upgrade_request.options)
+            connection = find_connection(upgrade_request, nil, upgrade_request.options)
             connection.upgrade(upgrade_request, upgrade_response)
 
             response = upgrade_request.response
