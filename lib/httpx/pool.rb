@@ -89,7 +89,7 @@ module HTTPX
 
     def on_resolver_connection(connection, addresses)
       found_connection = @connections.find do |ch|
-        ch != connection && ch.mergeable?(addresses)
+        ch != connection && ch.mergeable?(connection)
       end
       return register_connection(connection) unless found_connection
 
