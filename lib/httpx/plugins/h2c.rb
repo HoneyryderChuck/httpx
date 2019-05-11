@@ -2,6 +2,11 @@
 
 module HTTPX
   module Plugins
+    #
+    # This plugin adds support for upgrading a plaintext HTTP/1.1 connection to HTTP/2.
+    #
+    #
+    #
     module H2C
       def self.load_dependencies(*)
         require "base64"

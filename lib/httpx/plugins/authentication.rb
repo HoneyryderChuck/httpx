@@ -2,6 +2,10 @@
 
 module HTTPX
   module Plugins
+    #
+    # This plugin adds a shim #authentication method to the session, which will fill
+    # the HTTP Authorization header.
+    #
     module Authentication
       module InstanceMethods
         def authentication(token)

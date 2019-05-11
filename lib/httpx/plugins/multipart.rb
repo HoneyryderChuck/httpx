@@ -2,6 +2,11 @@
 
 module HTTPX
   module Plugins
+    #
+    # This plugin adds support for passing `http-form_data` objects (like file objects) as "multipart/form-data";
+    #
+    #   HTTPX.post(URL, form: form: { image: HTTP::FormData::File.new("path/to/file")})
+    #
     module Multipart
       module FormTranscoder
         module_function

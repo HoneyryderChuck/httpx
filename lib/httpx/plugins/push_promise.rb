@@ -2,6 +2,12 @@
 
 module HTTPX
   module Plugins
+    #
+    # This plugin adds support for HTTP/2 Push responses.
+    #
+    # In order to benefit from this, requests are sent one at a time, so that
+    # no push responses are received after corresponding request has been sent.
+    #
     module PushPromise
       PUSH_OPTIONS = { http2_settings: { settings_enable_push: 1 },
                        max_concurrent_requests: 1 }.freeze

@@ -3,6 +3,14 @@
 module HTTPX
   InsecureRedirectError = Class.new(Error)
   module Plugins
+    #
+    # This plugin adds support for following redirect (status 30X) responses.
+    #
+    # It has an upper bound of followed redirects (see *MAX_REDIRECTS*), after which it
+    # will return the last redirect response. It will **not** raise an exception.
+    #
+    # It also doesn't follow insecure redirects (https -> http) by default (see *follow_insecure_redirects*).
+    #
     module FollowRedirects
       MAX_REDIRECTS = 3
       REDIRECT_STATUS = (300..399).freeze

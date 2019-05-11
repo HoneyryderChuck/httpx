@@ -6,6 +6,14 @@ require "forwardable"
 
 module HTTPX
   module Plugins
+    #
+    # This plugin adds support for proxies. It ships with support for:
+    #
+    # * HTTP proxies
+    # * HTTPS proxies
+    # * Socks4/4a proxies
+    # * Socks5 proxies
+    #
     module Proxy
       Error = Class.new(Error)
       PROXY_ERRORS = [TimeoutError, IOError, SystemCallError, Error]

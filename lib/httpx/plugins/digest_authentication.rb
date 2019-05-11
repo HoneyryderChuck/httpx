@@ -2,6 +2,10 @@
 
 module HTTPX
   module Plugins
+    #
+    # This plugin adds helper methods to implement HTTP Digest Auth
+    # https://tools.ietf.org/html/rfc7616
+    #
     module DigestAuthentication
       DigestError = Class.new(Error)
 

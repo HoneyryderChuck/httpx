@@ -2,8 +2,13 @@
 
 module HTTPX
   module Plugins
+    #
+    # This plugin adds support for retrying requests when certain errors happen.
+    #
     module Retries
       MAX_RETRIES = 3
+      # TODO: pass max_retries in a configure/load block
+
       IDEMPOTENT_METHODS = %i[get options head put delete].freeze
       RETRYABLE_ERRORS = [IOError,
                           EOFError,
