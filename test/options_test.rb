@@ -78,6 +78,7 @@ class OptionsTest < Minitest::Test
       :connection_class => bar.connection_class,
       :transport => nil,
       :transport_options => nil,
+      :persistent => false,
       :resolver_class => bar.resolver_class,
       :resolver_options => bar.resolver_options,
     }, "options haven't merged correctly"
