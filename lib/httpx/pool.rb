@@ -29,13 +29,7 @@ module HTTPX
           monitor.interests = connection.interests
         end
       end
-    rescue TimeoutError => timeout_error
-      @connections.each do |connection|
-        connection.handle_timeout_error(timeout_error)
-      end
-    rescue Errno::ECONNRESET,
-           Errno::ECONNABORTED,
-           Errno::EPIPE => ex
+    rescue StandardError => ex
       @connections.each do |connection|
         connection.emit(:error, ex)
       end
