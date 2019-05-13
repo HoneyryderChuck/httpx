@@ -29,8 +29,8 @@ module HTTPX
     end
 
     def request(*args, **options)
-      requests = __build_reqs(*args, options)
-      responses = __send_reqs(*requests, options)
+      requests = build_requests(*args, options)
+      responses = send_requests(*requests, options)
       return responses.first if responses.size == 1
 
       responses
@@ -107,23 +107,23 @@ module HTTPX
       altsvc["noop"] = true
     end
 
-    def __build_reqs(*args, options)
+    def build_requests(*args, options)
       request_options = @options.merge(options)
 
       requests = case args.size
                  when 1
                    reqs = args.first
                    reqs.map do |verb, uri|
-                     __build_req(verb, uri, request_options)
+                     build_request(verb, uri, request_options)
                    end
                  when 2, 3
                    verb, uris = args
                    if uris.respond_to?(:each)
                      uris.map do |uri, **opts|
-                       __build_req(verb, uri, request_options.merge(opts))
+                       build_request(verb, uri, request_options.merge(opts))
                      end
                    else
-                     [__build_req(verb, uris, request_options)]
+                     [build_request(verb, uris, request_options)]
                    end
                  else
                    raise ArgumentError, "unsupported number of arguments"
@@ -152,7 +152,7 @@ module HTTPX
       connection
     end
 
-    def __send_reqs(*requests, options)
+    def send_requests(*requests, options)
       connections = []
       request_options = @options.merge(options)
       timeout = request_options.timeout
@@ -183,7 +183,7 @@ module HTTPX
       end
     end
 
-    def __build_req(verb, uri, options)
+    def build_request(verb, uri, options)
       rklass = @options.request_class
       rklass.new(verb, uri, @options.merge(options))
     end

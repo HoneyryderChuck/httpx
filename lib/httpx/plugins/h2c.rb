@@ -16,7 +16,7 @@ module HTTPX
         def request(*args, **options)
           h2c_options = options.merge(fallback_protocol: "h2c")
 
-          requests = __build_reqs(*args, h2c_options)
+          requests = build_requests(*args, h2c_options)
 
           upgrade_request = requests.first
           return super unless valid_h2c_upgrade_request?(upgrade_request)
@@ -25,9 +25,9 @@ module HTTPX
           upgrade_request.headers.add("connection", "http2-settings")
           upgrade_request.headers["upgrade"] = "h2c"
           upgrade_request.headers["http2-settings"] = HTTP2::Client.settings_header(upgrade_request.options.http2_settings)
-          upgrade_response = wrap { __send_reqs(*upgrade_request, h2c_options).first }
+          upgrade_response = wrap { send_requests(*upgrade_request, h2c_options).first }
 
-          responses = __send_reqs(*requests, h2c_options)
+          responses = send_requests(*requests, h2c_options)
 
           return responses.first if responses.size == 1
           responses

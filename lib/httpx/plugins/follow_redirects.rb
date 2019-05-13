@@ -45,7 +45,7 @@ module HTTPX
           return response unless REDIRECT_STATUS.include?(response.status)
           return response unless max_redirects.positive?
 
-          retry_request = __build_redirect_req(redirect_request, response, options)
+          retry_request = build_redirect_request(redirect_request, response, options)
 
           request.redirect_request = retry_request
 
@@ -62,7 +62,7 @@ module HTTPX
           nil
         end
 
-        def __build_redirect_req(request, response, options)
+        def build_redirect_request(request, response, options)
           redirect_uri = __get_location_from_response(response)
           max_redirects = request.max_redirects
 
@@ -70,7 +70,7 @@ module HTTPX
           retry_options = options.merge(headers: request.headers,
                                         body: request.body,
                                         max_redirects: max_redirects - 1)
-          __build_req(:get, redirect_uri, retry_options)
+          build_request(:get, redirect_uri, retry_options)
         end
 
         def __get_location_from_response(response)
