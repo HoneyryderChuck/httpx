@@ -101,7 +101,7 @@ module HTTPX
       return if early_resolve(connection)
 
       if @nameserver.nil?
-        ex = ResolveError.new("Can't resolve #{connection.uri.host}: no nameserver")
+        ex = ResolveError.new("Can't resolve #{connection.origin.host}: no nameserver")
         ex.set_backtrace(caller)
         emit(:error, connection, ex)
       else
@@ -132,7 +132,7 @@ module HTTPX
       queries = {}
       while (query = @queries.shift)
         h, connection = query
-        host = connection.uri.host
+        host = connection.origin.host
         timeout = (@timeouts[host][0] -= loop_time)
         unless timeout.negative?
           queries[h] = connection
@@ -216,7 +216,7 @@ module HTTPX
           end
         else
           @connections.delete(connection)
-          Resolver.cached_lookup_set(connection.uri.host, addresses)
+          Resolver.cached_lookup_set(connection.origin.host, addresses)
           emit_addresses(connection, addresses.map { |addr| addr["data"] })
         end
       end
@@ -229,7 +229,7 @@ module HTTPX
       raise Error, "no URI to resolve" unless connection
       return unless @write_buffer.empty?
 
-      hostname = hostname || @queries.key(connection) || connection.uri.host
+      hostname = hostname || @queries.key(connection) || connection.origin.host
       @queries[hostname] = connection
       type = @_record_types[hostname].first
       log(label: "resolver: ") { "query #{type} for #{hostname}" }

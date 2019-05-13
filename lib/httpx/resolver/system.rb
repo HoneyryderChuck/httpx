@@ -29,7 +29,7 @@ module HTTPX
     end
 
     def <<(connection)
-      hostname = connection.uri.host
+      hostname = connection.origin.host
       addresses = connection.addresses ||
                   ip_resolve(hostname) ||
                   system_resolve(hostname) ||

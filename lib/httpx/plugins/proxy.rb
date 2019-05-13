@@ -130,9 +130,9 @@ module HTTPX
           super
           return unless @options.proxy
 
-          # redefining the connection uri as the proxy's URI,
+          # redefining the connection origin as the proxy's URI,
           # as this will be used as the tcp peer ip.
-          @uri = @options.proxy.uri
+          @origin = URI(@options.proxy.uri.origin)
         end
 
         def match?(uri, options)
@@ -148,11 +148,11 @@ module HTTPX
           false
         end
 
-        def send(request, **args)
+        def send(request)
           return super unless @options.proxy
           return super unless connecting?
 
-          @pending << [request, args]
+          @pending << request
         end
 
         def connecting?

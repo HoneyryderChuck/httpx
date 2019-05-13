@@ -39,7 +39,7 @@ module HTTPX
       @parser << data
     end
 
-    def send(request, **)
+    def send(request)
       if @max_requests.positive? &&
          @requests.size >= @max_concurrent_requests
         @pending << request

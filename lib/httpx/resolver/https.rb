@@ -40,7 +40,7 @@ module HTTPX
     def <<(connection)
       @uri_addresses ||= Resolv.getaddresses(@uri.host)
       if @uri_addresses.empty?
-        ex = ResolveError.new("Can't resolve #{connection.uri.host}")
+        ex = ResolveError.new("Can't resolve #{connection.origin.host}")
         ex.set_backtrace(caller)
         emit(:error, connection, ex)
       else
@@ -79,7 +79,7 @@ module HTTPX
     def resolve(connection = @connections.first, hostname = nil)
       return if @building_connection
 
-      hostname = hostname || @queries.key(connection) || connection.uri.host
+      hostname = hostname || @queries.key(connection) || connection.origin.host
       type = @_record_types[hostname].first
       log(label: "resolver: ") { "query #{type} for #{hostname}" }
       begin

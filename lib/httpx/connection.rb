@@ -44,14 +44,14 @@ module HTTPX
 
     def_delegator :@write_buffer, :empty?
 
-    attr_reader :uri, :state, :pending, :options
+    attr_reader :origin, :state, :pending, :options
 
     attr_reader :timeout
 
     def initialize(type, uri, options)
       @type = type
-      @uri = uri
-      @origins = [@uri.origin]
+      @origins = [uri.origin]
+      @origin = URI(uri.origin)
       @options = Options.new(options)
       @window_size = @options.window_size
       @read_buffer = Buffer.new(BUFFER_SIZE)
@@ -62,7 +62,7 @@ module HTTPX
         # if there's an already open IO, get its
         # peer address, and force-initiate the parser
         transition(:already_open)
-        @io = IO.registry(@type).new(@uri, nil, @options)
+        @io = IO.registry(@type).new(@origin, nil, @options)
         parser
       else
         transition(:idle)
@@ -72,7 +72,7 @@ module HTTPX
     # this is a semi-private method, to be used by the resolver
     # to initiate the io object.
     def addresses=(addrs)
-      @io ||= IO.registry(@type).new(@uri, addrs, @options) # rubocop:disable Naming/MemoizedInstanceVariableName
+      @io ||= IO.registry(@type).new(@origin, addrs, @options) # rubocop:disable Naming/MemoizedInstanceVariableName
     end
 
     def addresses
@@ -94,10 +94,10 @@ module HTTPX
     # coalescable connections need to be mergeable!
     # but internally, #mergeable? is called before #coalescable?
     def coalescable?(connection)
-      if @io.protocol == "h2" && @uri.scheme == "https"
-        @io.verify_hostname(connection.uri.host)
+      if @io.protocol == "h2" && @origin.scheme == "https"
+        @io.verify_hostname(connection.origin.host)
       else
-        @uri.origin == connection.uri.origin
+        @origin == connection.origin
       end
     end
 
@@ -111,10 +111,10 @@ module HTTPX
 
     def unmerge(connection)
       @origins -= connection.instance_variable_get(:@origins)
-      purge_pending do |request, args|
-        request.uri == connection.uri && begin
+      purge_pending do |request|
+        request.uri.origin == connection.origin && begin
           request.transition(:idle)
-          connection.send(request, *args)
+          connection.send(request)
           true
         end
       end
@@ -131,7 +131,7 @@ module HTTPX
     # checks if this is connection is an alternative service of
     # +uri+
     def match_altsvcs?(uri)
-      AltSvc.cached_altsvc(@uri.origin).any? do |altsvc|
+      AltSvc.cached_altsvc(@origin).any? do |altsvc|
         origin = altsvc["origin"]
         origin.altsvc_match?(uri.origin)
       end
@@ -176,14 +176,14 @@ module HTTPX
       emit(:close)
     end
 
-    def send(request, **args)
+    def send(request)
       if @error_response
         emit(:response, request, @error_response)
       elsif @parser && !@write_buffer.full?
-        request.headers["alt-used"] = @uri.authority if match_altsvcs?(request.uri)
-        parser.send(request, **args)
+        request.headers["alt-used"] = @origin.authority if match_altsvcs?(request.uri)
+        parser.send(request)
       else
-        @pending << [request, args]
+        @pending << request
       end
     end
 
@@ -249,7 +249,7 @@ module HTTPX
     def send_pending
       while !@write_buffer.full? && (req_args = @pending.shift)
         request, args = req_args
-        parser.send(request, **args)
+        parser.send(request)
       end
     end
 

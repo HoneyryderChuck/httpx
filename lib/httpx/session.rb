@@ -93,13 +93,13 @@ module HTTPX
       # get uninitialized requests
       # incidentally, all requests will be re-routed to the first
       # advertised alt-svc, which incidentally follows the spec.
-      existing_connection.purge_pending do |request, args|
+      existing_connection.purge_pending do |request|
         is_idle = request.origin == origin &&
                   request.state == :idle &&
                   !request.headers.key?("alt-used")
         if is_idle
           log(level: 1) { "#{origin} alt-svc: sending #{request.uri} to #{alt_origin}" }
-          connection.send(request, args)
+          connection.send(request)
         end
         is_idle
       end

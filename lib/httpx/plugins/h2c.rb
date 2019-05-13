@@ -88,9 +88,9 @@ module HTTPX
         end
 
         def coalescable?(connection)
-          return super unless @options.fallback_protocol == "h2c" && @uri.scheme == "http"
+          return super unless @options.fallback_protocol == "h2c" && @origin.scheme == "http"
 
-          @uri.origin == connection.uri.origin && connection.options.fallback_protocol == "h2c"
+          @origin == connection.origin && connection.options.fallback_protocol == "h2c"
         end
 
         def upgrade(request, response)
@@ -101,7 +101,7 @@ module HTTPX
         end
 
         def build_parser(*)
-          return super unless @uri.scheme == "http"
+          return super unless @origin.scheme == "http"
 
           super("http/1.1")
         end
