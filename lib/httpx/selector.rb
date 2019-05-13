@@ -11,7 +11,7 @@ class HTTPX::Selector
   # I/O monitor
   #
   class Monitor
-    attr_accessor :value, :interests, :readiness
+    attr_accessor :io, :interests, :readiness
 
     def initialize(io, interests, reactor)
       @io = io

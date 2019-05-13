@@ -23,10 +23,8 @@ module HTTPX
         tout = timeout.total_timeout if timeout
 
         @selector.select(next_timeout || tout) do |monitor|
-          if (connection = monitor.value)
-            connection.call
-          end
-          monitor.interests = connection.interests
+          monitor.io.call
+          monitor.interests = monitor.io.interests
         end
       end
     rescue StandardError => ex
@@ -74,11 +72,7 @@ module HTTPX
       resolver << connection
       return if resolver.empty?
 
-      @_resolver_monitors[resolver] ||= begin
-        monitor = @selector.register(resolver, :w)
-        monitor.value = resolver
-        monitor
-      end
+      @_resolver_monitors[resolver] ||= @selector.register(resolver, :w)
     end
 
     def on_resolver_connection(connection, addresses)
@@ -123,7 +117,7 @@ module HTTPX
       else
         @selector.register(connection, :w)
       end
-      monitor.value = connection
+      monitor
       connection.on(:close) do
         unregister_connection(connection)
       end
