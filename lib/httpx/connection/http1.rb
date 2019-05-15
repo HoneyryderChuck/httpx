@@ -39,7 +39,7 @@ module HTTPX
       @parser << data
     end
 
-    def send(request, **)
+    def send(request)
       if @max_requests.positive? &&
          @requests.size >= @max_concurrent_requests
         @pending << request
@@ -143,9 +143,7 @@ module HTTPX
 
     def handle_error(ex)
       if @pipelining
-        disable_pipelining
-        emit(:reset)
-        throw(:called)
+        disable
       else
         @requests.each do |request|
           emit(:error, request, ex)
@@ -170,12 +168,22 @@ module HTTPX
           keep_alive_timeout = parameters["timeout"].to_i
           emit(:timeout, keep_alive_timeout)
         end
-      when /close/i, nil
-        disable_pipelining
+      when /close/i
         @max_requests = Float::INFINITY
-        emit(:reset)
-        throw(:called)
+        disable
+      when nil
+        # In HTTP/1.1, it's keep alive by default
+        return if response.version == "1.1"
+
+        @max_requests = Float::INFINITY
+        disable
       end
+    end
+
+    def disable
+      disable_pipelining
+      emit(:reset)
+      throw(:called)
     end
 
     def disable_pipelining

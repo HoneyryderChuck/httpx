@@ -2,6 +2,10 @@
 
 module HTTPX
   module Plugins
+    #
+    # This plugin adds helper methods to implement HTTP Basic Auth
+    # https://tools.ietf.org/html/rfc7617
+    #
     module BasicAuthentication
       def self.load_dependencies(klass, *)
         require "base64"

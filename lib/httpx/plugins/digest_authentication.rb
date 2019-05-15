@@ -2,6 +2,10 @@
 
 module HTTPX
   module Plugins
+    #
+    # This plugin adds helper methods to implement HTTP Digest Auth
+    # https://tools.ietf.org/html/rfc7616
+    #
     module DigestAuthentication
       DigestError = Class.new(Error)
 
@@ -28,13 +32,13 @@ module HTTPX
         alias_method :digest_auth, :digest_authentication
 
         def request(*args, **options)
-          requests = __build_reqs(*args, options)
+          requests = build_requests(*args, options)
           probe_request = requests.first
           digest = probe_request.options.digest
 
           return super unless digest
 
-          prev_response = wrap { __send_reqs(*probe_request, options).first }
+          prev_response = wrap { send_requests(*probe_request, options).first }
 
           raise Error, "request doesn't require authentication (status: #{prev_response.status})" unless prev_response.status == 401
 
@@ -46,9 +50,9 @@ module HTTPX
             token = digest.generate_header(request, prev_response)
             request.headers["authorization"] = "Digest #{token}"
             response = if requests.empty?
-              __send_reqs(*request, options).first
+              send_requests(*request, options).first
             else
-              wrap { __send_reqs(*request, options).first }
+              wrap { send_requests(*request, options).first }
             end
             responses << response
             prev_response = response

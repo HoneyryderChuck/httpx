@@ -2,12 +2,16 @@
 
 module HTTPX
   module Plugins
+    #
+    # This plugin adds support for HTTP/2 Push responses.
+    #
+    # In order to benefit from this, requests are sent one at a time, so that
+    # no push responses are received after corresponding request has been sent.
+    #
     module PushPromise
-      PUSH_OPTIONS = { http2_settings: { settings_enable_push: 1 },
-                       max_concurrent_requests: 1 }.freeze
-
       def self.extra_options(options)
-        options.merge(PUSH_OPTIONS)
+        options.merge(http2_settings: { settings_enable_push: 1 },
+                      max_concurrent_requests: 1)
       end
 
       module ResponseMethods
@@ -43,6 +47,7 @@ module HTTPX
           headers = @options.headers_class.new(h)
           path = headers[":path"]
           authority = headers[":authority"]
+
           request = parser.pending.find { |r| r.authority == authority && r.path == path }
           if request
             request.merge_headers(headers)

@@ -26,7 +26,7 @@ module HTTPX
 
           private
 
-          def __send_reqs(*requests, options)
+          def send_requests(*requests, options)
             request_options = @options.merge(options)
 
             return super unless request_options.proxy

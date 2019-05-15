@@ -59,6 +59,7 @@ module HTTPX
         :connection_class => Class.new(Connection),
         :transport => nil,
         :transport_options => nil,
+        :persistent => false,
         :resolver_class => (ENV["HTTPX_RESOLVER"] || :native).to_sym,
       }
 
@@ -102,6 +103,7 @@ module HTTPX
       follow ssl http2_settings
       request_class response_class headers_class request_body_class response_body_class connection_class
       io fallback_protocol debug debug_level transport_options resolver_class resolver_options
+      persistent
     ].each do |method_name|
       def_option(method_name)
     end

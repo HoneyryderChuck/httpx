@@ -14,7 +14,7 @@ class HTTPSTest < Minitest::Test
   include Timeouts
   include Errors
 
-  include Plugins::Proxy
+  include Plugins::Proxy unless ENV.key?("HTTPX_NO_PROXY")
   include Plugins::Authentication
   include Plugins::FollowRedirects
   include Plugins::Cookies
