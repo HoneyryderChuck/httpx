@@ -248,7 +248,7 @@ module HTTPX
 
     def send_pending
       while !@write_buffer.full? && (req_args = @pending.shift)
-        request, args = req_args
+        request = req_args
         parser.send(request)
       end
     end
@@ -268,14 +268,14 @@ module HTTPX
         AltSvc.emit(request, response) do |alt_origin, origin, alt_params|
           emit(:altsvc, alt_origin, origin, alt_params)
         end
-        emit(:response, request, response)
+        request.emit(:response, response)
       end
       parser.on(:altsvc) do |alt_origin, origin, alt_params|
         emit(:altsvc, alt_origin, origin, alt_params)
       end
 
-      parser.on(:promise) do |*args|
-        emit(:promise, *args)
+      parser.on(:promise) do |request, stream|
+        request.emit(:promise, parser, stream)
       end
       parser.on(:close) do
         transition(:closing)
@@ -298,7 +298,7 @@ module HTTPX
           emit(:uncoalesce, request.uri)
         else
           response = ErrorResponse.new(ex, @options)
-          emit(:response, request, response)
+          request.emit(:response, response)
         end
       end
     end
@@ -365,14 +365,14 @@ module HTTPX
       parser.handle_error(e) if @parser && parser.respond_to?(:handle_error)
       @error_response = ErrorResponse.new(e, @options)
       @pending.each do |request, _|
-        emit(:response, request, @error_response)
+        request.emit(:response, @error_response)
       end
     end
 
     def connection_options_match?(options)
       options.transport == @options.transport &&
-       options.transport_options == @options.transport_options &&
-       options.ssl == @options.ssl
+        options.transport_options == @options.transport_options &&
+        options.ssl == @options.ssl
     end
   end
 end

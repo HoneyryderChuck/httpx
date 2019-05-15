@@ -66,8 +66,6 @@ module HTTPX
     end
 
     def set_connection_callbacks(connection, options)
-      connection.on(:response, &method(:on_response))
-      connection.on(:promise, &method(:on_promise))
       connection.on(:uncoalesce) do |uncoalesced_uri|
         other_connection = build_connection(uncoalesced_uri, options)
         connection.unmerge(other_connection)
@@ -86,6 +84,7 @@ module HTTPX
       connection = pool.find_connection(alt_origin, options) || build_connection(alt_origin, options)
       # advertised altsvc is the same origin being used, ignore
       return if connection == existing_connection
+
       set_connection_callbacks(connection, options)
 
       log(level: 1) { "#{origin} alt-svc: #{alt_origin}" }
@@ -185,7 +184,10 @@ module HTTPX
 
     def build_request(verb, uri, options)
       rklass = @options.request_class
-      rklass.new(verb, uri, @options.merge(options))
+      request = rklass.new(verb, uri, @options.merge(options))
+      request.on(:response, &method(:on_response).curry[request])
+      request.on(:promise, &method(:on_promise))
+      request
     end
 
     @default_options = Options.new

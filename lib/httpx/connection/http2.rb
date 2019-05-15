@@ -275,7 +275,7 @@ module HTTPX
     end
 
     def on_promise(stream)
-      emit(:promise, self, stream)
+      emit(:promise, @streams.key(stream.parent), stream)
     end
 
     def respond_to_missing?(meth, *args)

@@ -48,7 +48,7 @@ module HTTPX
              __repeatable_request?(request, options) &&
              __retryable_error?(response.error)
             request.retries -= 1
-            log {"failed to get response, #{request.retries} tries to go..." }
+            log { "failed to get response, #{request.retries} tries to go..." }
             request.transition(:idle)
             connection = find_connection(request, connections, options)
             connection.send(request)

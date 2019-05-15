@@ -16,7 +16,7 @@ module HTTPX
     #
     module Proxy
       Error = Class.new(Error)
-      PROXY_ERRORS = [TimeoutError, IOError, SystemCallError, Error]
+      PROXY_ERRORS = [TimeoutError, IOError, SystemCallError, Error].freeze
 
       class Parameters
         attr_reader :uri, :username, :password
@@ -110,7 +110,7 @@ module HTTPX
           response = super
           if response.is_a?(ErrorResponse) &&
              # either it was a timeout error connecting, or it was a proxy error
-             PROXY_ERRORS.any? {|ex| response.error.is_a?(ex) } && !@_proxy_uris.empty?
+             PROXY_ERRORS.any? { |ex| response.error.is_a?(ex) } && !@_proxy_uris.empty?
             @_proxy_uris.shift
             log { "failed connecting to proxy, trying next..." }
             request.transition(:idle)

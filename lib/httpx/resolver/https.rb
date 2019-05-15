@@ -70,7 +70,6 @@ module HTTPX
         connection = @options.connection_class.new("ssl", @uri, @options.merge(ssl: { alpn_protocols: %w[h2] }))
         pool.init_connection(connection, @options)
         emit_addresses(connection, @uri_addresses)
-        set_connection_callbacks(connection)
         @building_connection = false
         connection
       end
@@ -93,11 +92,6 @@ module HTTPX
       end
     end
 
-    def set_connection_callbacks(connection)
-      connection.on(:response, &method(:on_response))
-      connection.on(:promise, &method(:on_response))
-    end
-
     def on_response(request, response)
       response.raise_for_status
     rescue Error => ex
@@ -110,6 +104,11 @@ module HTTPX
       parse(response)
     ensure
       @requests.delete(request)
+    end
+
+    def on_promise(_, stream)
+      log(level: 2, label: "#{stream.id}: ") { "refusing stream!" }
+      stream.refuse
     end
 
     def parse(response)
@@ -179,6 +178,8 @@ module HTTPX
         request.headers["content-type"] = "application/dns-message"
         request.headers["accept"] = "application/dns-message"
       end
+      request.on(:response, &method(:on_response).curry[request])
+      request.on(:promise, &method(:on_promise))
       request
     end
 

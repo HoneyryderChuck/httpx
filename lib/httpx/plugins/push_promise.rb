@@ -10,8 +10,8 @@ module HTTPX
     #
     module PushPromise
       def self.extra_options(options)
-        options.merge({ http2_settings: { settings_enable_push: 1 },
-                        max_concurrent_requests: 1 })
+        options.merge(http2_settings: { settings_enable_push: 1 },
+                      max_concurrent_requests: 1)
       end
 
       module ResponseMethods

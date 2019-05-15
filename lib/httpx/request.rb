@@ -5,6 +5,7 @@ require "forwardable"
 module HTTPX
   class Request
     extend Forwardable
+    include Callbacks
     using URIExtensions
 
     METHODS = [

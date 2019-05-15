@@ -75,7 +75,7 @@ module HTTPX
       @_resolver_monitors[resolver] ||= @selector.register(resolver, :w)
     end
 
-    def on_resolver_connection(connection, addresses)
+    def on_resolver_connection(connection)
       found_connection = @connections.find do |ch|
         ch != connection && ch.mergeable?(connection)
       end
@@ -109,7 +109,7 @@ module HTTPX
     end
 
     def register_connection(connection)
-      monitor = if connection.state == :open
+      if connection.state == :open
         # if open, an IO was passed upstream, therefore
         # consider it connected already.
         @connected_connections += 1
@@ -117,7 +117,6 @@ module HTTPX
       else
         @selector.register(connection, :w)
       end
-      monitor
       connection.on(:close) do
         unregister_connection(connection)
       end
