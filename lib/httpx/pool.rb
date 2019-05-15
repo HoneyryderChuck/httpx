@@ -139,7 +139,7 @@ module HTTPX
     end
 
     def next_timeout
-      @resolvers.values.reject(&:closed?).map(&:timeout).min || @connections.map(&:timeout).min
+      @resolvers.values.reject(&:closed?).map(&:timeout).compact.min || @connections.map(&:timeout).compact.min
     end
 
     def find_resolver_for(connection)
