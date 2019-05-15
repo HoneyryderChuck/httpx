@@ -6,8 +6,17 @@ require "forwardable"
 
 module HTTPX
   module Plugins
+    #
+    # This plugin adds support for proxies. It ships with support for:
+    #
+    # * HTTP proxies
+    # * HTTPS proxies
+    # * Socks4/4a proxies
+    # * Socks5 proxies
+    #
     module Proxy
       Error = Class.new(Error)
+      PROXY_ERRORS = [TimeoutError, IOError, SystemCallError, Error].freeze
 
       class Parameters
         attr_reader :uri, :username, :password
@@ -72,7 +81,7 @@ module HTTPX
           options.proxy.merge(uri: @_proxy_uris.first) unless @_proxy_uris.empty?
         end
 
-        def find_connection(request, options)
+        def find_connection(request, connections, options)
           return super unless options.respond_to?(:proxy)
 
           uri = URI(request.uri)
@@ -80,26 +89,32 @@ module HTTPX
           raise Error, "Failed to connect to proxy" unless next_proxy
 
           proxy_options = options.merge(proxy: Parameters.new(**next_proxy))
-          pool.find_connection(uri, proxy_options) || build_connection(uri, proxy_options)
+          connection = pool.find_connection(uri, proxy_options) || build_connection(uri, proxy_options)
+          unless connections.nil? || connections.include?(connection)
+            connections << connection
+            set_connection_callbacks(connection, options)
+          end
+          connection
         end
 
-        def __build_connection(uri, options)
+        def build_connection(uri, options)
           proxy = options.proxy
           return super unless proxy
 
-          options.connection_class.new("tcp", uri, options)
+          connection = options.connection_class.new("tcp", uri, options)
+          pool.init_connection(connection, options)
+          connection
         end
 
         def fetch_response(request, connections, options)
           response = super
           if response.is_a?(ErrorResponse) &&
              # either it was a timeout error connecting, or it was a proxy error
-             (((response.error.is_a?(TimeoutError) || response.error.is_a?(IOError)) && request.state == :idle) ||
-              response.error.is_a?(Error)) &&
-             !@_proxy_uris.empty?
+             PROXY_ERRORS.any? { |ex| response.error.is_a?(ex) } && !@_proxy_uris.empty?
             @_proxy_uris.shift
             log { "failed connecting to proxy, trying next..." }
-            connection = find_connection(request, options)
+            request.transition(:idle)
+            connection = find_connection(request, connections, options)
             connections << connection unless connections.include?(connection)
             connection.send(request)
             return
@@ -115,9 +130,9 @@ module HTTPX
           super
           return unless @options.proxy
 
-          # redefining the connection uri as the proxy's URI,
+          # redefining the connection origin as the proxy's URI,
           # as this will be used as the tcp peer ip.
-          @uri = @options.proxy.uri
+          @origin = URI(@options.proxy.uri.origin)
         end
 
         def match?(uri, options)
@@ -133,11 +148,11 @@ module HTTPX
           false
         end
 
-        def send(request, **args)
+        def send(request)
           return super unless @options.proxy
           return super unless connecting?
 
-          @pending << [request, args]
+          @pending << request
         end
 
         def connecting?

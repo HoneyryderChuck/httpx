@@ -2,6 +2,14 @@
 
 module HTTPX
   module Plugins
+    #
+    # This plugin adds compression support. Namely it:
+    #
+    # * Compresses the request body when passed a supported "Content-Encoding" mime-type;
+    # * Decompresses the response body from a supported "Content-Encoding" mime-type;
+    #
+    # It supports both *gzip* and *deflate*.
+    #
     module Compression
       extend Registry
       def self.configure(klass, *)

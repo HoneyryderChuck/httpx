@@ -23,19 +23,11 @@ module HTTPX
         tout = timeout.total_timeout if timeout
 
         @selector.select(next_timeout || tout) do |monitor|
-          if (connection = monitor.value)
-            connection.call
-          end
-          monitor.interests = connection.interests
+          monitor.io.call
+          monitor.interests = monitor.io.interests
         end
       end
-    rescue TimeoutError => timeout_error
-      @connections.each do |connection|
-        connection.handle_timeout_error(timeout_error)
-      end
-    rescue Errno::ECONNRESET,
-           Errno::ECONNABORTED,
-           Errno::EPIPE => ex
+    rescue StandardError => ex
       @connections.each do |connection|
         connection.emit(:error, ex)
       end
@@ -80,16 +72,12 @@ module HTTPX
       resolver << connection
       return if resolver.empty?
 
-      @_resolver_monitors[resolver] ||= begin
-        monitor = @selector.register(resolver, :w)
-        monitor.value = resolver
-        monitor
-      end
+      @_resolver_monitors[resolver] ||= @selector.register(resolver, :w)
     end
 
-    def on_resolver_connection(connection, addresses)
+    def on_resolver_connection(connection)
       found_connection = @connections.find do |ch|
-        ch != connection && ch.mergeable?(addresses)
+        ch != connection && ch.mergeable?(connection)
       end
       return register_connection(connection) unless found_connection
 
@@ -121,7 +109,7 @@ module HTTPX
     end
 
     def register_connection(connection)
-      monitor = if connection.state == :open
+      if connection.state == :open
         # if open, an IO was passed upstream, therefore
         # consider it connected already.
         @connected_connections += 1
@@ -129,7 +117,6 @@ module HTTPX
       else
         @selector.register(connection, :w)
       end
-      monitor.value = connection
       connection.on(:close) do
         unregister_connection(connection)
       end
@@ -152,7 +139,7 @@ module HTTPX
     end
 
     def next_timeout
-      @resolvers.values.reject(&:closed?).map(&:timeout).min || @connections.map(&:timeout).min
+      @resolvers.values.reject(&:closed?).map(&:timeout).compact.min || @connections.map(&:timeout).compact.min
     end
 
     def find_resolver_for(connection)

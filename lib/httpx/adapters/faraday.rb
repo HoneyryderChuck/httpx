@@ -24,6 +24,7 @@ module Faraday
 
       class Session < ::HTTPX::Session
         plugin(:compression)
+        plugin(:persistent)
 
         module ReasonPlugin
           if RUBY_VERSION < "2.5"
@@ -38,11 +39,11 @@ module Faraday
           module ResponseMethods
             if RUBY_VERSION < "2.5"
               def reason
-                WEBrick::HTTPStatus::StatusMessage[@status]
+                WEBrick::HTTPStatus::StatusMessage.fetch(@status)
               end
             else
               def reason
-                Net::HTTP::STATUS_CODES[@status]
+                Net::HTTP::STATUS_CODES.fetch(@status)
               end
             end
           end

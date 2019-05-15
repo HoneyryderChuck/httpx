@@ -8,7 +8,7 @@ module HTTPX
     def initialize(options = {}, &blk)
       @options = self.class.default_options.merge(options)
       @responses = {}
-      @keep_open = false
+      @persistent = @options.persistent
       wrap(&blk) if block_given?
     end
 
@@ -16,11 +16,11 @@ module HTTPX
       return unless block_given?
 
       begin
-        prev_keep_open = @keep_open
-        @keep_open = true
+        prev_persistent = @persistent
+        @persistent = true
         yield self
       ensure
-        @keep_open = prev_keep_open
+        @persistent = prev_persistent
       end
     end
 
@@ -29,8 +29,8 @@ module HTTPX
     end
 
     def request(*args, **options)
-      requests = __build_reqs(*args, options)
-      responses = __send_reqs(*requests, options)
+      requests = build_requests(*args, options)
+      responses = send_requests(*requests, options)
       return responses.first if responses.size == 1
 
       responses
@@ -55,14 +55,17 @@ module HTTPX
       @responses.delete(request)
     end
 
-    def find_connection(request, options)
+    def find_connection(request, connections, options)
       uri = URI(request.uri)
-      pool.find_connection(uri, options) || build_connection(uri, options)
+      connection = pool.find_connection(uri, options) || build_connection(uri, options)
+      unless connections.nil? || connections.include?(connection)
+        connections << connection
+        set_connection_callbacks(connection, options)
+      end
+      connection
     end
 
     def set_connection_callbacks(connection, options)
-      connection.on(:response, &method(:on_response))
-      connection.on(:promise, &method(:on_promise))
       connection.on(:uncoalesce) do |uncoalesced_uri|
         other_connection = build_connection(uncoalesced_uri, options)
         connection.unmerge(other_connection)
@@ -70,13 +73,6 @@ module HTTPX
       connection.on(:altsvc) do |alt_origin, origin, alt_params|
         build_altsvc_connection(connection, alt_origin, origin, alt_params, options)
       end
-    end
-
-    def build_connection(uri, options)
-      connection = __build_connection(uri, options)
-      pool.init_connection(connection, options)
-      set_connection_callbacks(connection, options)
-      connection
     end
 
     def build_altsvc_connection(existing_connection, alt_origin, origin, alt_params, options)
@@ -89,18 +85,20 @@ module HTTPX
       # advertised altsvc is the same origin being used, ignore
       return if connection == existing_connection
 
+      set_connection_callbacks(connection, options)
+
       log(level: 1) { "#{origin} alt-svc: #{alt_origin}" }
 
       # get uninitialized requests
       # incidentally, all requests will be re-routed to the first
       # advertised alt-svc, which incidentally follows the spec.
-      existing_connection.purge_pending do |request, args|
+      existing_connection.purge_pending do |request|
         is_idle = request.origin == origin &&
                   request.state == :idle &&
                   !request.headers.key?("alt-used")
         if is_idle
           log(level: 1) { "#{origin} alt-svc: sending #{request.uri} to #{alt_origin}" }
-          connection.send(request, args)
+          connection.send(request)
         end
         is_idle
       end
@@ -108,23 +106,23 @@ module HTTPX
       altsvc["noop"] = true
     end
 
-    def __build_reqs(*args, options)
+    def build_requests(*args, options)
       request_options = @options.merge(options)
 
       requests = case args.size
                  when 1
                    reqs = args.first
                    reqs.map do |verb, uri|
-                     __build_req(verb, uri, request_options)
+                     build_request(verb, uri, request_options)
                    end
                  when 2, 3
                    verb, uris = args
                    if uris.respond_to?(:each)
                      uris.map do |uri, **opts|
-                       __build_req(verb, uri, request_options.merge(opts))
+                       build_request(verb, uri, request_options.merge(opts))
                      end
                    else
-                     [__build_req(verb, uris, request_options)]
+                     [build_request(verb, uris, request_options)]
                    end
                  else
                    raise ArgumentError, "unsupported number of arguments"
@@ -134,7 +132,7 @@ module HTTPX
       requests
     end
 
-    def __build_connection(uri, options)
+    def build_connection(uri, options)
       type = options.transport || begin
         case uri.scheme
         when "http"
@@ -148,17 +146,18 @@ module HTTPX
           raise UnsupportedSchemeError, "#{uri}: #{uri.scheme}: unsupported URI scheme"
         end
       end
-      options.connection_class.new(type, uri, options)
+      connection = options.connection_class.new(type, uri, options)
+      pool.init_connection(connection, options)
+      connection
     end
 
-    def __send_reqs(*requests, options)
+    def send_requests(*requests, options)
       connections = []
       request_options = @options.merge(options)
       timeout = request_options.timeout
 
       requests.each do |request|
-        connection = find_connection(request, request_options)
-        connections << connection unless connections.include?(connection)
+        connection = find_connection(request, connections, request_options)
         connection.send(request)
       end
 
@@ -179,13 +178,16 @@ module HTTPX
         end
         responses
       ensure
-        close(connections) unless @keep_open
+        close(connections) unless @persistent
       end
     end
 
-    def __build_req(verb, uri, options)
+    def build_request(verb, uri, options)
       rklass = @options.request_class
-      rklass.new(verb, uri, @options.merge(options))
+      request = rklass.new(verb, uri, @options.merge(options))
+      request.on(:response, &method(:on_response).curry[request])
+      request.on(:promise, &method(:on_promise))
+      request
     end
 
     @default_options = Options.new

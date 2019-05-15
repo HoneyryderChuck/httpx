@@ -44,25 +44,25 @@ module HTTPX
 
     def_delegator :@write_buffer, :empty?
 
-    attr_reader :uri, :state, :pending, :options
+    attr_reader :origin, :state, :pending, :options
 
     attr_reader :timeout
 
     def initialize(type, uri, options)
       @type = type
-      @uri = uri
-      @origins = [@uri.origin]
+      @origins = [uri.origin]
+      @origin = URI(uri.origin)
       @options = Options.new(options)
       @window_size = @options.window_size
       @read_buffer = Buffer.new(BUFFER_SIZE)
       @write_buffer = Buffer.new(BUFFER_SIZE)
       @pending = []
-      on(:error) { |ex| on_error(ex) }
+      on(:error, &method(:on_error))
       if @options.io
         # if there's an already open IO, get its
         # peer address, and force-initiate the parser
         transition(:already_open)
-        @io = IO.registry(@type).new(@uri, nil, @options)
+        @io = IO.registry(@type).new(@origin, nil, @options)
         parser
       else
         transition(:idle)
@@ -72,26 +72,32 @@ module HTTPX
     # this is a semi-private method, to be used by the resolver
     # to initiate the io object.
     def addresses=(addrs)
-      @io ||= IO.registry(@type).new(@uri, addrs, @options) # rubocop:disable Naming/MemoizedInstanceVariableName
+      @io ||= IO.registry(@type).new(@origin, addrs, @options) # rubocop:disable Naming/MemoizedInstanceVariableName
     end
 
     def addresses
       @io && @io.addresses
     end
 
-    def mergeable?(addresses)
-      return false if @state == :closing || !@io
+    def match?(uri, options)
+      return false if @state == :closing || @state == :closed
 
-      !(@io.addresses & addresses).empty?
+      (@origins.include?(uri.origin) || match_altsvcs?(uri)) && connection_options_match?(options)
+    end
+
+    def mergeable?(connection)
+      return false if @state == :closing || @state == :closed || !@io
+
+      !(@io.addresses & connection.addresses).empty? && connection_options_match?(connection.options)
     end
 
     # coalescable connections need to be mergeable!
     # but internally, #mergeable? is called before #coalescable?
     def coalescable?(connection)
-      if @io.protocol == "h2" && @uri.scheme == "https"
-        @io.verify_hostname(connection.uri.host)
+      if @io.protocol == "h2" && @origin.scheme == "https"
+        @io.verify_hostname(connection.origin.host)
       else
-        @uri.origin == connection.uri.origin
+        @origin == connection.origin
       end
     end
 
@@ -105,10 +111,10 @@ module HTTPX
 
     def unmerge(connection)
       @origins -= connection.instance_variable_get(:@origins)
-      purge_pending do |request, args|
-        request.uri == connection.uri && begin
+      purge_pending do |request|
+        request.uri.origin == connection.origin && begin
           request.transition(:idle)
-          connection.send(request, *args)
+          connection.send(request)
           true
         end
       end
@@ -122,16 +128,10 @@ module HTTPX
       end
     end
 
-    def match?(uri, _options)
-      return false if @state == :closing
-
-      @origins.include?(uri.origin) || match_altsvcs?(uri)
-    end
-
     # checks if this is connection is an alternative service of
     # +uri+
     def match_altsvcs?(uri)
-      AltSvc.cached_altsvc(@uri.origin).any? do |altsvc|
+      AltSvc.cached_altsvc(@origin).any? do |altsvc|
         origin = altsvc["origin"]
         origin.altsvc_match?(uri.origin)
       end
@@ -176,14 +176,14 @@ module HTTPX
       emit(:close)
     end
 
-    def send(request, **args)
+    def send(request)
       if @error_response
         emit(:response, request, @error_response)
       elsif @parser && !@write_buffer.full?
-        request.headers["alt-used"] = @uri.authority if match_altsvcs?(request.uri)
-        parser.send(request, **args)
+        request.headers["alt-used"] = @origin.authority if match_altsvcs?(request.uri)
+        parser.send(request)
       else
-        @pending << [request, args]
+        @pending << request
       end
     end
 
@@ -200,26 +200,6 @@ module HTTPX
         consume
       end
       nil
-    end
-
-    def handle_timeout_error(e)
-      case e
-      when TotalTimeoutError
-        # return unless @options.timeout.no_time_left?
-
-        emit(:error, e)
-      when TimeoutError
-        return emit(:error, e) unless @timeout
-
-        @timeout -= e.timeout
-        return unless @timeout <= 0
-
-        if connecting?
-          emit(:error, e.to_connection_error)
-        else
-          emit(:error, e)
-        end
-      end
     end
 
     private
@@ -268,8 +248,8 @@ module HTTPX
 
     def send_pending
       while !@write_buffer.full? && (req_args = @pending.shift)
-        request, args = req_args
-        parser.send(request, **args)
+        request = req_args
+        parser.send(request)
       end
     end
 
@@ -288,14 +268,14 @@ module HTTPX
         AltSvc.emit(request, response) do |alt_origin, origin, alt_params|
           emit(:altsvc, alt_origin, origin, alt_params)
         end
-        emit(:response, request, response)
+        request.emit(:response, response)
       end
       parser.on(:altsvc) do |alt_origin, origin, alt_params|
         emit(:altsvc, alt_origin, origin, alt_params)
       end
 
-      parser.on(:promise) do |*args|
-        emit(:promise, *args)
+      parser.on(:promise) do |request, stream|
+        request.emit(:promise, parser, stream)
       end
       parser.on(:close) do
         transition(:closing)
@@ -318,7 +298,7 @@ module HTTPX
           emit(:uncoalesce, request.uri)
         else
           response = ErrorResponse.new(ex, @options)
-          emit(:response, request, response)
+          request.emit(:response, response)
         end
       end
     end
@@ -375,11 +355,24 @@ module HTTPX
     end
 
     def handle_error(e)
+      if e.instance_of?(TimeoutError) && @timeout
+        @timeout -= e.timeout
+        return unless @timeout <= 0
+
+        e = e.to_connection_error if connecting?
+      end
+
       parser.handle_error(e) if @parser && parser.respond_to?(:handle_error)
       @error_response = ErrorResponse.new(e, @options)
       @pending.each do |request, _|
-        emit(:response, request, @error_response)
+        request.emit(:response, @error_response)
       end
+    end
+
+    def connection_options_match?(options)
+      options.transport == @options.transport &&
+        options.transport_options == @options.transport_options &&
+        options.ssl == @options.ssl
     end
   end
 end

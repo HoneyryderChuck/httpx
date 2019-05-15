@@ -19,7 +19,7 @@ module HTTPX
       end
 
       def uncache(connection)
-        hostname = hostname || @queries.key(connection) || connection.uri.host
+        hostname = hostname || @queries.key(connection) || connection.origin.host
         Resolver.uncache(hostname)
         @_record_types[hostname].shift
       end
@@ -30,12 +30,12 @@ module HTTPX
         addresses.map! do |address|
           address.is_a?(IPAddr) ? address : IPAddr.new(address.to_s)
         end
-        log(label: "resolver: ") { "answer #{connection.uri.host}: #{addresses.inspect}" }
+        log(label: "resolver: ") { "answer #{connection.origin.host}: #{addresses.inspect}" }
         connection.addresses = addresses
-        emit(:resolve, connection, addresses)
+        emit(:resolve, connection)
       end
 
-      def early_resolve(connection, hostname: connection.uri.host)
+      def early_resolve(connection, hostname: connection.origin.host)
         addresses = connection.addresses ||
                     ip_resolve(hostname) ||
                     Resolver.cached_lookup(hostname) ||

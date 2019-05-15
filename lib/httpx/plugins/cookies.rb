@@ -4,6 +4,11 @@ require "forwardable"
 
 module HTTPX
   module Plugins
+    #
+    # This plugin implements a persistent cookie jar for the duration of a session.
+    #
+    # It also adds a *#cookies* helper, so that you can pre-fill the cookies of a session.
+    #
     module Cookies
       using URIExtensions
 
@@ -83,11 +88,12 @@ module HTTPX
         private
 
         def on_response(request, response)
-          @options.cookies.set(request.origin, response.headers["set-cookie"])
+          @options.cookies.set(request.origin, response.headers["set-cookie"]) if response.respond_to?(:headers)
+
           super
         end
 
-        def __build_req(*, _)
+        def build_request(*, _)
           request = super
           request.headers.set_cookie(@options.cookies[request.uri])
           request

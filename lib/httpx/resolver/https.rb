@@ -40,7 +40,7 @@ module HTTPX
     def <<(connection)
       @uri_addresses ||= Resolv.getaddresses(@uri.host)
       if @uri_addresses.empty?
-        ex = ResolveError.new("Can't resolve #{connection.uri.host}")
+        ex = ResolveError.new("Can't resolve #{connection.origin.host}")
         ex.set_backtrace(caller)
         emit(:error, connection, ex)
       else
@@ -70,7 +70,6 @@ module HTTPX
         connection = @options.connection_class.new("ssl", @uri, @options.merge(ssl: { alpn_protocols: %w[h2] }))
         pool.init_connection(connection, @options)
         emit_addresses(connection, @uri_addresses)
-        set_connection_callbacks(connection)
         @building_connection = false
         connection
       end
@@ -79,7 +78,7 @@ module HTTPX
     def resolve(connection = @connections.first, hostname = nil)
       return if @building_connection
 
-      hostname = hostname || @queries.key(connection) || connection.uri.host
+      hostname = hostname || @queries.key(connection) || connection.origin.host
       type = @_record_types[hostname].first
       log(label: "resolver: ") { "query #{type} for #{hostname}" }
       begin
@@ -91,11 +90,6 @@ module HTTPX
       rescue Resolv::DNS::EncodeError, JSON::JSONError => e
         emit_resolve_error(connection, hostname, e)
       end
-    end
-
-    def set_connection_callbacks(connection)
-      connection.on(:response, &method(:on_response))
-      connection.on(:promise, &method(:on_response))
     end
 
     def on_response(request, response)
@@ -110,6 +104,11 @@ module HTTPX
       parse(response)
     ensure
       @requests.delete(request)
+    end
+
+    def on_promise(_, stream)
+      log(level: 2, label: "#{stream.id}: ") { "refusing stream!" }
+      stream.refuse
     end
 
     def parse(response)
@@ -179,6 +178,8 @@ module HTTPX
         request.headers["content-type"] = "application/dns-message"
         request.headers["accept"] = "application/dns-message"
       end
+      request.on(:response, &method(:on_response).curry[request])
+      request.on(:promise, &method(:on_promise))
       request
     end
 

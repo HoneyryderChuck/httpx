@@ -13,17 +13,17 @@ module HTTPX
 
     alias_method :host, :ip
 
-    def initialize(uri, addresses, options)
+    def initialize(origin, addresses, options)
       @state = :idle
-      @hostname = uri.host
+      @hostname = origin.host
       @addresses = addresses
       @options = Options.new(options)
       @fallback_protocol = @options.fallback_protocol
-      @port = uri.port
+      @port = origin.port
       if @options.io
         @io = case @options.io
               when Hash
-                @options.io[uri.authority]
+                @options.io[origin.authority]
               else
                 @options.io
         end
