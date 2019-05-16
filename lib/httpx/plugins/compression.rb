@@ -12,7 +12,7 @@ module HTTPX
     #
     module Compression
       extend Registry
-      def self.configure(klass, *)
+      def self.load_dependencies(klass, *)
         klass.plugin(:"compression/gzip")
         klass.plugin(:"compression/deflate")
       end
