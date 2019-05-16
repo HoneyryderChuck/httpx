@@ -45,5 +45,5 @@ module MinitestExtensions
 end
 
 Minitest::Test.prepend(MinitestExtensions::TimeoutForTest) unless ENV.key?("HTTPX_DEBUG")
-# Minitest::Test.prepend(MinitestExtensions::FirstFailedTestInThread)
+Minitest::Test.prepend(MinitestExtensions::FirstFailedTestInThread)
 # Minitest::Test.prepend(MinitestExtensions::TestName)
