@@ -370,7 +370,8 @@ module HTTPX
     end
 
     def connection_options_match?(options)
-      options.transport == @options.transport &&
+      options.headers == @options.headers &&
+        options.transport == @options.transport &&
         options.transport_options == @options.transport_options &&
         options.ssl == @options.ssl
     end
