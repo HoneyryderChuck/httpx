@@ -82,13 +82,13 @@ module HTTPX
     def match?(uri, options)
       return false if @state == :closing || @state == :closed
 
-      (@origins.include?(uri.origin) || match_altsvcs?(uri)) && connection_options_match?(options)
+      (@origins.include?(uri.origin) || match_altsvcs?(uri)) && @options == options
     end
 
     def mergeable?(connection)
       return false if @state == :closing || @state == :closed || !@io
 
-      !(@io.addresses & connection.addresses).empty? && connection_options_match?(connection.options)
+      !(@io.addresses & connection.addresses).empty? && @options == connection.options
     end
 
     # coalescable connections need to be mergeable!
@@ -367,13 +367,6 @@ module HTTPX
       @pending.each do |request, _|
         request.emit(:response, @error_response)
       end
-    end
-
-    def connection_options_match?(options)
-      options.headers == @options.headers &&
-        options.transport == @options.transport &&
-        options.transport_options == @options.transport_options &&
-        options.ssl == @options.ssl
     end
   end
 end

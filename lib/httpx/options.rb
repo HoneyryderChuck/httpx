@@ -108,6 +108,13 @@ module HTTPX
       def_option(method_name)
     end
 
+    def ==(other)
+      ivars = instance_variables | other.instance_variables
+      ivars.all? do |ivar|
+        instance_variable_get(ivar) == other.instance_variable_get(ivar)
+      end
+    end
+
     def merge(other)
       h1 = to_hash
       h2 = other.to_hash
