@@ -238,9 +238,10 @@ module HTTPX
   class ErrorResponse
     include Loggable
 
-    attr_reader :error
+    attr_reader :request, :error
 
-    def initialize(error, options)
+    def initialize(request, error, options)
+      @request = request
       @error = error
       @options = Options.new(options)
       log_exception(@error)

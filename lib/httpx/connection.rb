@@ -177,8 +177,8 @@ module HTTPX
     end
 
     def send(request)
-      if @error_response
-        emit(:response, request, @error_response)
+      if @error
+        emit(:response, request, ErrorResponse.new(request, @error, @options))
       elsif @parser && !@write_buffer.full?
         request.headers["alt-used"] = @origin.authority if match_altsvcs?(request.uri)
         parser.send(request)
@@ -297,7 +297,7 @@ module HTTPX
         when MisdirectedRequestError
           emit(:uncoalesce, request.uri)
         else
-          response = ErrorResponse.new(ex, @options)
+          response = ErrorResponse.new(request, ex, @options)
           request.emit(:response, response)
         end
       end
@@ -306,7 +306,7 @@ module HTTPX
     def transition(nextstate)
       case nextstate
       when :idle
-        @error_response = nil
+        @error = nil
         @timeout_threshold = @options.timeout.connect_timeout
         @timeout = @timeout_threshold
       when :open
@@ -363,9 +363,9 @@ module HTTPX
       end
 
       parser.handle_error(e) if @parser && parser.respond_to?(:handle_error)
-      @error_response = ErrorResponse.new(e, @options)
+      @error = e
       @pending.each do |request, _|
-        request.emit(:response, @error_response)
+        request.emit(:response, ErrorResponse.new(request, @error, @options))
       end
     end
   end

@@ -56,7 +56,7 @@ module HTTPX
              retry_request.uri.scheme == "http"
             error = InsecureRedirectError.new(retry_request.uri.to_s)
             error.set_backtrace(caller)
-            return ErrorResponse.new(error, options)
+            return ErrorResponse.new(request, error, options)
           end
 
           connection = find_connection(retry_request, connections, options)
