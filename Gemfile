@@ -5,7 +5,6 @@ ruby RUBY_VERSION
 source "https://rubygems.org"
 gemspec
 
-gem "hanna-nouveau", require: false
 gem "rake", "~> 12.3"
 gem "simplecov", require: false
 
@@ -32,9 +31,9 @@ end
 
 platform :mri_21 do
   gem "rbnacl", require: false
-  gem "rbnacl-libsodium", require: false
 end
 
+gem "hanna-nouveau", require: false
 gem "faraday", :require => false
 gem "pry", :require => false
 

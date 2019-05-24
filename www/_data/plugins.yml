@@ -1,10 +1,10 @@
 -
   name: BasicAuthentication
-  path: BasicAuthentication.html
+  path: Authentication.html#basic-authentication
   description: API and support for Basic Authentication. 
 -
   name: DigestAuthentication
-  path: DigestAuthentication.html
+  path: Authentication.html#digest-authentication
   description: API and support for Digest Authentication. 
 -
   name: Compression
@@ -16,11 +16,15 @@
   description: Additional API for setting and interpreting cookies (using `http-cookie`).
 -
   name: FollowRedirects
-  path: FollowRedirects.html
+  path: Follow-Redirects.html
   description: Ability to follow redirects.
 -
+  name: Retries
+  path: Retries.html
+  description: Ability to retry requests.
+-
   name: H2C
-  path: H2C.html
+  path: H2C-Upgrade.html
   description: Upgrade HTTP/1.1 clear-text connections to HTTP/2.
 -
   name: Proxy
@@ -28,7 +32,7 @@
   description: Proxy Support (HTTP, HTTPS, Socks 4/4a/5).
 -
   name: PushPromise
-  path: PushPromise.html
+  path: Server-Push.html
   description: Support for HTTP/2 Server Push.
 -
   name: Stream
@@ -36,5 +40,9 @@
   description: "API and support for Stream (mime-type: `text/event-stream`) responses."
 -
   name: Multipart Uploads
-  path: Multipart.html
+  path: Multipart-Uploads.html
   description: "API and support for multipart uploads (using `http-form_data`)."
+-
+  name: Persistent
+  path: Persistent.html
+  description: "Persist connections over the lifetime of a process."

@@ -7,6 +7,7 @@ class UnixTest < Minitest::Test
   include HTTPX
 
   def test_unix_session
+    skip if RUBY_ENGINE == "jruby"
     on_unix_server do |path|
       session = Session.new(transport: "unix", transport_options: { path: path })
       response = session.get("http://unix.com/ping")

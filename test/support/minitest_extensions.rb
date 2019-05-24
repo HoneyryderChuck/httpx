@@ -22,14 +22,43 @@ module MinitestExtensions
   end
 
   module FirstFailedTestInThread
+    def self.prepended(*)
+      super
+      HTTPX::Session.__send__(:include, SessionExtensions)
+    end
+
+    def setup
+      super
+      extend(OnTheFly)
+    end
+
+    module SessionExtensions
+      def find_connection(request, connections, _)
+        connection = super
+        request.instance_variable_set(:@connection, connection)
+        connection
+      end
+    end
+
     def run(*)
       (Thread.current[:passed_tests] ||= []) << "#{self.class.name}##{name}"
       super
     ensure
-      if !Thread.current[:tests_already_failed] && !failures.empty?
+      if !skipped? && !Thread.current[:tests_already_failed] && !failures.empty?
         Thread.current[:tests_already_failed] = true
         puts "first test failed: #{Thread.current[:passed_tests].pop}\n"
-        puts "this thread also executed: #{Thread.current[:passed_tests].join(", ")}"
+        puts "this thread also executed: #{Thread.current[:passed_tests].join(", ")}" unless Thread.current[:passed_tests].empty?
+      end
+    end
+
+    module OnTheFly
+      def verify_status(response, expect)
+        if response.is_a?(HTTPX::ErrorResponse) && response.error.message.include?("execution expired")
+          connection = response.request.instance_variable_get(:@connection)
+          puts connection.inspect
+        end
+
+        super
       end
     end
   end

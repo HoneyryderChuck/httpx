@@ -4,6 +4,8 @@ RUBY_PLATFORM=`ruby -e 'puts RUBY_PLATFORM'`
 
 if [[ "$RUBY_PLATFORM" = "java" ]]; then
   apk --update add git bash
+elif [[ ${RUBY_VERSION:0:3} = "2.1" ]]; then
+  apk --update add g++ make git bash libsodium
 else
   apk --update add g++ make git bash
 fi
@@ -11,7 +13,7 @@ fi
 export PATH=$GEM_HOME/bin:$BUNDLE_PATH/gems/bin:$PATH
 mkdir -p "$GEM_HOME" && chmod 777 "$GEM_HOME"
 gem install bundler -v="1.17.3" --no-doc --conservative
-cd /home && bundle install --jobs 4 --path .bundle && \
+cd /home && bundle install --jobs 4 --path vendor && \
   bundle exec rake test:ci
 
 RET=$?
@@ -23,8 +25,8 @@ if [[ $RET = 0 ]] && [[ ${RUBY_VERSION:0:3} = "2.6" ]]; then
 fi
 
 if [[ $RET = 0 ]] && [[ ${RUBY_VERSION:0:3} = "2.6" ]]; then
-  bundle exec rake website_rdoc && \
-  cd www && bundle install --jobs 4 --path ../vendor && \
+  bundle exec rake prepare_website &&
+  cd www && bundle install --jobs 4 --path ../vendor &&
   bundle exec jekyll build -d public
 fi
 

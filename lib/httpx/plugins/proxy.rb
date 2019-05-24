@@ -14,6 +14,8 @@ module HTTPX
     # * Socks4/4a proxies
     # * Socks5 proxies
     #
+    # https://gitlab.com/honeyryderchuck/httpx/wikis/Proxy
+    #
     module Proxy
       Error = Class.new(Error)
       PROXY_ERRORS = [TimeoutError, IOError, SystemCallError, Error].freeze
@@ -47,7 +49,7 @@ module HTTPX
       end
 
       class << self
-        def configure(klass, *)
+        def configure(klass)
           klass.plugin(:"proxy/http")
           klass.plugin(:"proxy/socks4")
           klass.plugin(:"proxy/socks5")

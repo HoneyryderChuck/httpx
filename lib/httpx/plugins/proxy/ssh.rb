@@ -6,8 +6,7 @@ module HTTPX
   module Plugins
     module Proxy
       module SSH
-        def self.load_dependencies(_klass, *)
-          # klass.plugin(:proxy)
+        def self.load_dependencies(*)
           require "net/ssh/gateway"
         end
 
@@ -72,6 +71,21 @@ module HTTPX
             else
               raise Error, "unexpected scheme: #{request_uri.scheme}"
             end
+          end
+        end
+
+        module ConnectionMethods
+          def match?(uri, options)
+            return super unless @options.proxy
+
+            super && @options.proxy == options.proxy
+          end
+
+          # should not coalesce connections here, as the IP is the IP of the proxy
+          def coalescable?(*)
+            return super unless @options.proxy
+
+            false
           end
         end
       end

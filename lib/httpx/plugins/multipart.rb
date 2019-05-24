@@ -7,6 +7,8 @@ module HTTPX
     #
     #   HTTPX.post(URL, form: form: { image: HTTP::FormData::File.new("path/to/file")})
     #
+    # https://gitlab.com/honeyryderchuck/httpx/wikis/Multipart-Uploads
+    #
     module Multipart
       module FormTranscoder
         module_function

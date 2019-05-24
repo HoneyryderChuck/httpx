@@ -4,7 +4,7 @@ module HTTPX
   module Plugins
     module Compression
       module Brotli
-        def self.load_dependencies(klass, *)
+        def self.load_dependencies(klass)
           klass.plugin(:compression)
           require "brotli"
         end

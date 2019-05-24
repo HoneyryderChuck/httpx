@@ -5,6 +5,8 @@ module HTTPX
     #
     # This plugin adds support for retrying requests when certain errors happen.
     #
+    # https://gitlab.com/honeyryderchuck/httpx/wikis/Retries
+    #
     module Retries
       MAX_RETRIES = 3
       # TODO: pass max_retries in a configure/load block
@@ -31,7 +33,7 @@ module HTTPX
           end
 
           def_option(:retry_change_requests)
-        end.new(options)
+        end.new(options).merge(max_retries: MAX_RETRIES)
       end
 
       module InstanceMethods
@@ -71,7 +73,7 @@ module HTTPX
 
         def initialize(*args)
           super
-          @retries = @options.max_retries || MAX_RETRIES
+          @retries = @options.max_retries
         end
       end
     end

@@ -9,6 +9,8 @@ module HTTPX
     #
     # It also adds a *#cookies* helper, so that you can pre-fill the cookies of a session.
     #
+    # https://gitlab.com/honeyryderchuck/httpx/wikis/Cookies
+    #
     module Cookies
       using URIExtensions
 
