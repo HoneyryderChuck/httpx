@@ -10,9 +10,11 @@ module HTTPX
     #
     # It supports both *gzip* and *deflate*.
     #
+    # https://gitlab.com/honeyryderchuck/httpx/wikis/Compression
+    #
     module Compression
       extend Registry
-      def self.load_dependencies(klass, *)
+      def self.load_dependencies(klass)
         klass.plugin(:"compression/gzip")
         klass.plugin(:"compression/deflate")
       end

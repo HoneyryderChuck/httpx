@@ -15,9 +15,11 @@ module HTTPX
     # This plugin is also not recommendable when connecting to >9000 (like, a lot) different origins.
     # So when you use this, make sure that you don't fall into this trap.
     #
+    # https://gitlab.com/honeyryderchuck/httpx/wikis/Persistent
+    #
     module Persistent
-      def self.load_dependencies(klass, *)
-        klass.plugin(:retries) # TODO: pass default max_retries -> 1 as soon as this is a parameter
+      def self.load_dependencies(klass)
+        klass.plugin(:retries, max_retries: 1, retry_change_requests: true)
       end
 
       def self.extra_options(options)

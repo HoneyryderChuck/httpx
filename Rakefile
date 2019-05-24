@@ -45,3 +45,24 @@ RDoc::Task.new(:website_rdoc) do |rdoc|
   rdoc.options += rdoc_opts
   rdoc.rdoc_files.add RDOC_FILES
 end
+
+desc "Builds Homepage"
+task :prepare_website => ["website_rdoc"] do
+  require "fileutils"
+  Dir.chdir "www"
+  system("bundle install")
+  FileUtils.rm_rf("wiki")
+  system("git clone https://gitlab.com/honeyryderchuck/httpx.wiki.git wiki")
+  Dir.glob("wiki/*.md") do |path|
+    data = File.read(path)
+    name = File.basename(path, ".md")
+    title = name == "home" ? "Wiki" : name.split("-").map(&:capitalize).join(" ")
+    layout = name == "home" ? "page" : "wiki"
+
+    header = "---\n" \
+             "layout: #{layout}\n" \
+             "title: #{title}\n" \
+             "---\n\n"
+    File.write(path, header + data)
+  end
+end

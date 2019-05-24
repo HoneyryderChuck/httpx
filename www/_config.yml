@@ -6,15 +6,21 @@ baseurl: /httpx
 url: honeyryderchuck.gitlab.io
 markdown: kramdown
 destination: build
+github:
+  repo: https://gitlab.com/honeyryderchuck/httpx
+
+pagination:
+  enabled: true
+  debug: true
+  per_page: 5
+  sort_reverse: true
+
+include:
+  - wiki
 exclude:
   - Gemfile
   - Gemfile.lock
 plugins:
   - jekyll-gzip
   - jekyll-brotli
-defaults:
-  -
-    scope:
-      type: pages
-    values:
-      layout: default
+  - jekyll-paginate-v2
