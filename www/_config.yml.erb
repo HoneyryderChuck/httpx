@@ -8,6 +8,7 @@ markdown: kramdown
 destination: build
 github:
   repo: https://gitlab.com/honeyryderchuck/httpx
+version: <%= File.read("../lib/httpx/version.rb").match(/VERSION *= *"([\d\.]+)"/)[1] %>
 
 pagination:
   enabled: true
