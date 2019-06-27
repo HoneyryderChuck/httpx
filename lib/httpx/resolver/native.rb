@@ -80,6 +80,9 @@ module HTTPX
            NativeResolveError => e
       @ns_index += 1
       if @ns_index < @nameserver.size
+        log(label: "resolver: ") do
+          "failed resolving on nameserver #{@nameserver[@ns_index - 1]} (#{e.message})"
+        end
         transition(:idle)
       else
         if e.respond_to?(:connection) &&

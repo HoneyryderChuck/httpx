@@ -38,7 +38,11 @@ class NativeResolverTest < Minitest::Test
     assert !@has_error, "resolver should still be able to resolve A"
     # A type
     write_buffer.clear
-    resolver.parse(no_record)
+    begin
+      resolver.parse(no_record)
+    rescue
+      @has_error = true
+    end
     assert connection.addresses.nil?
     assert resolver.queries.key?("idontthinkthisexists.org")
     assert @has_error, "resolver should have failed"
