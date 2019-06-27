@@ -40,7 +40,7 @@ class NativeResolverTest < Minitest::Test
     write_buffer.clear
     begin
       resolver.parse(no_record)
-    rescue
+    rescue StandardError
       @has_error = true
     end
     assert connection.addresses.nil?
