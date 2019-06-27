@@ -18,6 +18,31 @@ module Faraday
           }
           [meth, env.url, request_options]
         end
+
+        def options_from_env(env)
+          timeout_options = {
+            connect_timeout: env.request.open_timeout,
+            operation_timeout: env.request.timeout,
+          }.reject { |_, v| v.nil? }
+
+          options = {
+            ssl: {},
+            timeout: timeout_options,
+          }
+
+          options[:ssl][:verify_mode] = OpenSSL::SSL::VERIFY_PEER if env.ssl.verify
+          options[:ssl][:ca_file] = env.ssl.ca_file if env.ssl.ca_file
+          options[:ssl][:ca_path] = env.ssl.ca_path if env.ssl.ca_path
+          options[:ssl][:cert_store] = env.ssl.cert_store if env.ssl.cert_store
+          options[:ssl][:cert] = env.ssl.client_cert if env.ssl.client_cert
+          options[:ssl][:key] = env.ssl.client_key if env.ssl.client_key
+          options[:ssl][:ssl_version] = env.ssl.version if env.ssl.version
+          options[:ssl][:verify_depth] = env.ssl.verify_depth if env.ssl.verify_depth
+          options[:ssl][:min_version] = env.ssl.min_version if env.ssl.min_version
+          options[:ssl][:max_version] = env.ssl.max_version if env.ssl.max_version
+
+          options
+        end
       end
 
       include RequestMixin
@@ -109,30 +134,9 @@ module Faraday
           requests = @handlers.map { |handler| build_request(handler.env) }
           env = @handlers.last.env
 
-          timeout_options = {
-            connect_timeout: env.request.open_timeout,
-            operation_timeout: env.request.timeout,
-          }.reject { |_, v| v.nil? }
-
-          options = {
-            ssl: {},
-            timeout: timeout_options,
-          }
-
-          options[:ssl][:verify_mode] = OpenSSL::SSL::VERIFY_PEER if env.ssl.verify
-          options[:ssl][:ca_file] = env.ssl.ca_file if env.ssl.ca_file
-          options[:ssl][:ca_path] = env.ssl.ca_path if env.ssl.ca_path
-          options[:ssl][:cert_store] = env.ssl.cert_store if env.ssl.cert_store
-          options[:ssl][:cert] = env.ssl.client_cert if env.ssl.client_cert
-          options[:ssl][:key] = env.ssl.client_key if env.ssl.client_key
-          options[:ssl][:ssl_version] = env.ssl.version if env.ssl.version
-          options[:ssl][:verify_depth] = env.ssl.verify_depth if env.ssl.verify_depth
-          options[:ssl][:min_version] = env.ssl.min_version if env.ssl.min_version
-          options[:ssl][:max_version] = env.ssl.max_version if env.ssl.max_version
-
           proxy_options = { uri: env.request.proxy }
 
-          session = @session.with(options)
+          session = @session.with(options_from_env(env))
           session = session.plugin(:proxy).with_proxy(proxy_options) if env.request.proxy
 
           responses = session.request(requests)
@@ -170,30 +174,7 @@ module Faraday
 
         request_options = build_request(env)
 
-        timeout_options = {
-          connect_timeout: env.request.open_timeout,
-          operation_timeout: env.request.timeout,
-        }.reject { |_, v| v.nil? }
-
-        options = {
-          ssl: {},
-          timeout: timeout_options,
-        }
-
-        options[:ssl][:verify_mode] = OpenSSL::SSL::VERIFY_PEER if env.ssl.verify
-        options[:ssl][:ca_file] = env.ssl.ca_file if env.ssl.ca_file
-        options[:ssl][:ca_path] = env.ssl.ca_path if env.ssl.ca_path
-        options[:ssl][:cert_store] = env.ssl.cert_store if env.ssl.cert_store
-        options[:ssl][:cert] = env.ssl.client_cert if env.ssl.client_cert
-        options[:ssl][:key] = env.ssl.client_key if env.ssl.client_key
-        options[:ssl][:ssl_version] = env.ssl.version if env.ssl.version
-        options[:ssl][:verify_depth] = env.ssl.verify_depth if env.ssl.verify_depth
-        options[:ssl][:min_version] = env.ssl.min_version if env.ssl.min_version
-        options[:ssl][:max_version] = env.ssl.max_version if env.ssl.max_version
-
-        proxy_options = { uri: env.request.proxy }
-
-        session = @session.with(options)
+        session = @session.with(options_from_env(env))
         session = session.plugin(:proxy).with_proxy(proxy_options) if env.request.proxy
         response = session.__send__(*request_options)
         response.raise_for_status unless response.is_a?(::HTTPX::Response)
