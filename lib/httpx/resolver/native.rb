@@ -76,13 +76,19 @@ module HTTPX
         consume
       end
       nil
-    rescue Errno::EHOSTUNREACH => e
+    rescue Errno::EHOSTUNREACH,
+           NativeResolveError => e
       @ns_index += 1
       if @ns_index < @nameserver.size
         transition(:idle)
       else
-        @queries.each do |host, connection|
+        if e.respond_to?(:connection) &&
+           e.respond_to?(:host)
           emit_resolve_error(connection, host, e)
+        else
+          @queries.each do |host, connection|
+            emit_resolve_error(connection, host, e)
+          end
         end
       end
     end
@@ -141,8 +147,7 @@ module HTTPX
         @timeouts[host].shift
         if @timeouts[host].empty?
           @timeouts.delete(host)
-          emit_resolve_error(connection, host)
-          return
+          raise NativeResolveError.new(connection, host)
         else
           connections << connection
           log(label: "resolver: ") do
@@ -188,8 +193,9 @@ module HTTPX
       rescue Resolv::DNS::DecodeError => e
         hostname, connection = @queries.first
         if @_record_types[hostname].empty?
-          emit_resolve_error(connection, hostname, e)
-          return
+          ex = NativeResolveError.new(connection, hostname, e.message)
+          ex.set_backtrace(e.backtrace)
+          raise ex
         end
       end
 
@@ -198,8 +204,7 @@ module HTTPX
         @_record_types[hostname].shift
         if @_record_types[hostname].empty?
           @_record_types.delete(hostname)
-          emit_resolve_error(connection, hostname)
-          return
+          raise NativeResolveError.new(connection, hostname)
         end
       else
         address = addresses.first

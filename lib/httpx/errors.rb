@@ -26,6 +26,15 @@ module HTTPX
 
   ResolveError = Class.new(Error)
 
+  NativeResolveError = Class.new(ResolveError) do
+    attr_reader :connection, :host
+    def initialize(connection, host, message = "Can't resolve #{host}")
+      @connection = connection
+      @host = host
+      super(message)
+    end
+  end
+
   HTTPError = Class.new(Error) do
     attr_reader :response
 
