@@ -31,6 +31,18 @@ module HTTPX
       }.freeze
     end
 
+    # nameservers for ipv6 are misconfigured in certain systems;
+    # this can use an unexpected endless loop
+    # https://gitlab.com/honeyryderchuck/httpx/issues/56
+    DEFAULTS[:nameserver].select! do |nameserver|
+      begin
+        IPAddr.new(nameserver)
+        true
+      rescue IPAddr::InvalidAddressError
+        false
+      end
+    end if DEFAULTS[:nameserver]
+
     DNS_PORT = 53
 
     def_delegator :@connections, :empty?
