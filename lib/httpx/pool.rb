@@ -1,14 +1,21 @@
 # frozen_string_literal: true
 
+require "forwardable"
+require "timers"
 require "httpx/selector"
 require "httpx/connection"
 require "httpx/resolver"
 
 module HTTPX
   class Pool
+    extend Forwardable
+
+    def_delegator :@timers, :after
+
     def initialize
       @resolvers = {}
       @_resolver_monitors = {}
+      @timers = Timers::Group.new
       @selector = Selector.new
       @connections = []
       @connected_connections = 0
