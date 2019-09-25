@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "strscan"
+
 module HTTPX
   module AltSvc
     @altsvc_mutex = Mutex.new
@@ -49,9 +51,18 @@ module HTTPX
     def parse(altsvc)
       return enum_for(__method__, altsvc) unless block_given?
 
-      alt_origins, *alt_params = altsvc.split(/ *; */)
-      alt_params = Hash[alt_params.map { |field| field.split("=") }]
-      alt_origins.split(/ *, */).each do |alt_origin|
+      scanner = StringScanner.new(altsvc)
+      until scanner.eos?
+        alt_origin = scanner.scan(/[^=]+=("[^"]+"|[^;,]+)/)
+
+        alt_params = []
+        loop do
+          alt_param = scanner.scan(/[^=]+=("[^"]+"|[^;,]+)/)
+          alt_params << alt_param.strip if alt_param
+          scanner.skip(/;/)
+          break if scanner.eos? || scanner.scan(/ *, */)
+        end
+        alt_params = Hash[alt_params.map { |field| field.split("=") }]
         yield(parse_altsvc_origin(alt_origin), alt_params)
       end
     end
