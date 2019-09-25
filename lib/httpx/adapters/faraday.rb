@@ -165,7 +165,7 @@ module Faraday
         if parallel?(env)
           handler = env[:parallel_manager].enqueue(env)
           handler.on_response do |response|
-            save_response(env, response.status, response.body, response.headers, response.reason) do |response_headers|
+            save_response(env, response.status, response.body.to_s, response.headers, response.reason) do |response_headers|
               response_headers.merge!(response.headers)
             end
           end
@@ -178,7 +178,7 @@ module Faraday
         session = session.plugin(:proxy).with_proxy(proxy_options) if env.request.proxy
         response = session.__send__(*request_options)
         response.raise_for_status unless response.is_a?(::HTTPX::Response)
-        save_response(env, response.status, response.body, response.headers, response.reason) do |response_headers|
+        save_response(env, response.status, response.body.to_s, response.headers, response.reason) do |response_headers|
           response_headers.merge!(response.headers)
         end
         @app.call(env)
