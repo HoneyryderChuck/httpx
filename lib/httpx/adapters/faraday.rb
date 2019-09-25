@@ -140,7 +140,7 @@ module Faraday
           session = session.plugin(:proxy).with_proxy(proxy_options) if env.request.proxy
 
           responses = session.request(requests)
-          responses.each_with_index do |response, index|
+          Array(responses).each_with_index do |response, index|
             handler = @handlers[index]
             handler.on_response.call(response)
             handler.on_complete.call(handler.env)

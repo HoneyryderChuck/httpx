@@ -194,7 +194,7 @@ module HTTPX
       total = options.timeout.total_timeout
       return unless total
 
-      pool.after(total) do
+      timer = pool.after(total) do
         unless @responses[request]
           error = TotalTimeoutError.new(total, "Timed out after #{total} seconds")
           response = ErrorResponse.new(request, error, options)
@@ -202,6 +202,7 @@ module HTTPX
           connection.reset
         end
       end
+      request.timer = timer
     end
 
     @default_options = Options.new
