@@ -13,7 +13,7 @@ module HTTPX
       super
     end
 
-    attr_reader :connect_timeout, :operation_timeout
+    attr_reader :connect_timeout, :operation_timeout, :total_timeout
 
     def initialize(connect_timeout: CONNECT_TIMEOUT,
                    operation_timeout: OPERATION_TIMEOUT,
@@ -22,17 +22,11 @@ module HTTPX
       @connect_timeout = connect_timeout
       @operation_timeout = operation_timeout
       @total_timeout = total_timeout
-      if loop_timeout
-        warn ":loop_timeout is deprecated, use :operation_timeout instead"
-        @operation_timeout = loop_timeout
-      end
-      reset_counter
-    end
 
-    def total_timeout
-      @total_timeout
-    ensure
-      log_time
+      return unless loop_timeout
+
+      warn ":loop_timeout is deprecated, use :operation_timeout instead"
+      @operation_timeout = loop_timeout
     end
 
     def ==(other)
@@ -60,33 +54,6 @@ module HTTPX
       else
         raise ArgumentError, "can't merge with #{other.class}"
       end
-    end
-
-    def no_time_left?
-      @time_left <= 0
-    end
-
-    private
-
-    def reset_counter
-      @time_left = @total_timeout
-    end
-
-    def reset_timer
-      @started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-    end
-
-    def log_time
-      return unless @time_left
-      return reset_timer unless @started
-
-      @time_left -= (Process.clock_gettime(Process::CLOCK_MONOTONIC) - @started)
-      if no_time_left?
-        reset_counter
-        raise TotalTimeoutError.new(@total_timeout, "Timed out after #{@total_timeout} seconds")
-      end
-    ensure
-      reset_timer
     end
   end
 end

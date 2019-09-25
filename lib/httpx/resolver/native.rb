@@ -99,7 +99,7 @@ module HTTPX
       else
         if e.respond_to?(:connection) &&
            e.respond_to?(:host)
-          emit_resolve_error(connection, host, e)
+          emit_resolve_error(e.connection, e.host, e)
         else
           @queries.each do |host, connection|
             emit_resolve_error(connection, host, e)
