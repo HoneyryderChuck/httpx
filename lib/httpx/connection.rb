@@ -46,8 +46,6 @@ module HTTPX
 
     attr_reader :origin, :state, :pending, :options
 
-    attr_reader :timeout
-
     def initialize(type, uri, options)
       @type = type
       @origins = [uri.origin]
@@ -188,7 +186,6 @@ module HTTPX
     end
 
     def call
-      @timeout = @timeout_threshold
       case @state
       when :closed
         return
@@ -200,6 +197,14 @@ module HTTPX
         consume
       end
       nil
+    end
+
+    def timeout
+      return @timeout if defined?(@timeout)
+
+      return @options.timeout.connect_timeout if @state == :idle
+
+      @options.timeout.operation_timeout
     end
 
     private
@@ -289,8 +294,8 @@ module HTTPX
           transition(:open)
         end
       end
-      parser.on(:timeout) do |timeout|
-        @timeout = timeout
+      parser.on(:timeout) do |tout|
+        @timeout = tout
       end
       parser.on(:error) do |request, ex|
         case ex
@@ -307,8 +312,6 @@ module HTTPX
       case nextstate
       when :idle
         @error = nil
-        @timeout_threshold = @options.timeout.connect_timeout
-        @timeout = @timeout_threshold
       when :open
         return if @state == :closed
 
@@ -316,8 +319,6 @@ module HTTPX
         return unless @io.connected?
 
         send_pending
-        @timeout_threshold = @options.timeout.operation_timeout
-        @timeout = @timeout_threshold
         emit(:open)
       when :closing
         return unless @state == :open
@@ -327,11 +328,10 @@ module HTTPX
 
         @io.close
         @read_buffer.clear
+        remove_instance_variable(:@timeout) if defined?(@timeout)
       when :already_open
         nextstate = :open
         send_pending
-        @timeout_threshold = @options.timeout.operation_timeout
-        @timeout = @timeout_threshold
       end
       @state = nextstate
     rescue Errno::EHOSTUNREACH
