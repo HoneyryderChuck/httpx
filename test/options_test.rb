@@ -82,7 +82,7 @@ class OptionsTest < Minitest::Test
       :resolver_class => bar.resolver_class,
       :resolver_options => bar.resolver_options,
     }, "options haven't merged correctly"
-  end
+  end unless ENV.key?("HTTPX_DEBUG")
 
   def test_options_new
     opts = Options.new
