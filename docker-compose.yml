@@ -68,6 +68,8 @@ services:
       --conf /home/nghttp.conf --no-ocsp
           
   httpbin:
+    environment:
+      - DEBUG=True
     image: citizenstig/httpbin
     ports:
       - 8000:8000
