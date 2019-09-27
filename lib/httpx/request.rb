@@ -70,6 +70,7 @@ module HTTPX
 
     def response=(response)
       return unless response
+
       @timer.cancel if @timer
       @response = response
     end

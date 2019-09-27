@@ -146,13 +146,7 @@ module HTTPX
     def interests
       return :w if @state == :idle
 
-      readable = !@read_buffer.full?
-      writable = !@write_buffer.empty?
-      if readable
-        writable ? :rw : :r
-      else
-        writable ? :w : :r
-      end
+      :rw
     end
 
     def to_io

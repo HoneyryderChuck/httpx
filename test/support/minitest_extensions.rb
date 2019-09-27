@@ -17,7 +17,7 @@ module MinitestExtensions
     TestTimeout = Class.new(Timeout::Error)
 
     def run(*)
-      ::Timeout.timeout(RUBY_ENGINE == "jruby" ? 60 : 30, TestTimeout) { super }
+      ::Timeout.timeout(60, TestTimeout) { super }
     end
   end
 
