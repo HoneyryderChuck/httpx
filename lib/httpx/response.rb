@@ -129,7 +129,7 @@ module HTTPX
             return content
           end
         end
-        ""
+        "".b
       ensure
         close
       end
