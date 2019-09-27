@@ -41,6 +41,15 @@ module HTTPX
       super
     end
 
+    def same_headers?(headers)
+      @headers.empty? || begin
+        headers.each do |k, v|
+          return false unless v == self[k]
+        end
+        true
+      end
+    end
+
     # merges headers with another header-quack.
     # the merge rule is, if the header already exists,
     # ignore what the +other+ headers has. Otherwise, set

@@ -55,6 +55,10 @@ module HTTPX
           end if @default_cookies
           store
         end
+
+        def ==(other)
+          @store == other.instance_variable_get(:@store)
+        end
       end
 
       def self.load_dependencies(*)
