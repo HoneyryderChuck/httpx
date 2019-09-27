@@ -6,6 +6,18 @@ require "faraday"
 module Faraday
   class Adapter
     class HTTPX < Faraday::Adapter
+      SSL_ERROR = if defined?(Faraday::SSLError)
+        Faraday::SSLError
+      else
+        Faraday::Error::SSLError
+      end
+
+      CONNECTION_FAILED_ERROR = if defined?(Faraday::ConnectionFailed)
+        Faraday::ConnectionFailed
+      else
+        Faraday::Error::ConnectionFailed
+      end
+
       module RequestMixin
         private
 
@@ -162,6 +174,7 @@ module Faraday
       end
 
       def call(env)
+        super
         if parallel?(env)
           handler = env[:parallel_manager].enqueue(env)
           handler.on_response do |response|
@@ -183,7 +196,7 @@ module Faraday
         end
         @app.call(env)
       rescue OpenSSL::SSL::SSLError => err
-        raise Error::SSLError, err
+        raise SSL_ERROR, err
       rescue Errno::ECONNABORTED,
              Errno::ECONNREFUSED,
              Errno::ECONNRESET,
@@ -191,7 +204,7 @@ module Faraday
              Errno::EINVAL,
              Errno::ENETUNREACH,
              Errno::EPIPE => err
-        raise Error::ConnectionFailed, err
+        raise CONNECTION_FAILED_ERROR, err
       end
 
       private
