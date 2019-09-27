@@ -111,7 +111,7 @@ module HTTPX
           unless @state == :idle
             rewind
             while (chunk = @buffer.read(@window_size))
-              yield(chunk)
+              yield(chunk.force_encoding(@encoding))
             end
           end
         ensure
