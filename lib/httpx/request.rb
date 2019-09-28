@@ -35,9 +35,9 @@ module HTTPX
 
     attr_reader :verb, :uri, :headers, :body, :state
 
-    attr_reader :options
+    attr_reader :options, :response
 
-    attr_accessor :response
+    attr_accessor :timer
 
     def_delegator :@body, :<<
 
@@ -66,6 +66,13 @@ module HTTPX
 
     def scheme
       @uri.scheme
+    end
+
+    def response=(response)
+      return unless response
+
+      @timer.cancel if @timer
+      @response = response
     end
 
     def path

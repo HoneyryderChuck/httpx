@@ -111,7 +111,7 @@ module HTTPX
           unless @state == :idle
             rewind
             while (chunk = @buffer.read(@window_size))
-              yield(chunk)
+              yield(chunk.force_encoding(@encoding))
             end
           end
         ensure
@@ -178,7 +178,7 @@ module HTTPX
         when :idle
           if @length > @threshold_size
             @state = :buffer
-            @buffer = Tempfile.new("httpx", encoding: @encoding, mode: File::RDWR)
+            @buffer = Tempfile.new("httpx", encoding: Encoding::BINARY, mode: File::RDWR)
           else
             @state = :memory
             @buffer = StringIO.new("".b, File::RDWR)
@@ -186,7 +186,7 @@ module HTTPX
         when :memory
           if @length > @threshold_size
             aux = @buffer
-            @buffer = Tempfile.new("httpx", encoding: @encoding, mode: File::RDWR)
+            @buffer = Tempfile.new("httpx", encoding: Encoding::BINARY, mode: File::RDWR)
             aux.rewind
             ::IO.copy_stream(aux, @buffer)
             # (this looks like a bug from Ruby < 2.3

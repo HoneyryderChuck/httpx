@@ -61,6 +61,7 @@ module HTTPX
 
           connection = find_connection(retry_request, connections, options)
           connection.send(retry_request)
+          set_request_timeout(connection, retry_request, options)
           nil
         end
 

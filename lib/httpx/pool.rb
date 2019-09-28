@@ -1,14 +1,21 @@
 # frozen_string_literal: true
 
+require "forwardable"
+require "timers"
 require "httpx/selector"
 require "httpx/connection"
 require "httpx/resolver"
 
 module HTTPX
   class Pool
+    extend Forwardable
+
+    def_delegator :@timers, :after
+
     def initialize
       @resolvers = {}
       @_resolver_monitors = {}
+      @timers = Timers::Group.new
       @selector = Selector.new
       @connections = []
       @connected_connections = 0
@@ -18,14 +25,13 @@ module HTTPX
       @connections.empty?
     end
 
-    def next_tick(timeout = nil)
+    def next_tick
       catch(:jump_tick) do
-        tout = timeout.total_timeout if timeout
-
-        @selector.select(next_timeout || tout) do |monitor|
+        @selector.select(next_timeout || @timers.wait_interval) do |monitor|
           monitor.io.call
           monitor.interests = monitor.io.interests
         end
+        @timers.fire
       end
     rescue StandardError => ex
       @connections.each do |connection|
@@ -34,6 +40,7 @@ module HTTPX
     end
 
     def close(connections = @connections)
+      @timers.cancel
       connections = connections.reject(&:inflight?)
       connections.each(&:close)
       next_tick until connections.none? { |c| @connections.include?(c) }

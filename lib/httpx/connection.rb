@@ -146,13 +146,7 @@ module HTTPX
     def interests
       return :w if @state == :idle
 
-      readable = !@read_buffer.full?
-      writable = !@write_buffer.empty?
-      if readable
-        writable ? :rw : :r
-      else
-        writable ? :w : :r
-      end
+      :rw
     end
 
     def to_io
@@ -175,9 +169,7 @@ module HTTPX
     end
 
     def send(request)
-      if @error
-        emit(:response, request, ErrorResponse.new(request, @error, @options))
-      elsif @parser && !@write_buffer.full?
+      if @parser && !@write_buffer.full?
         request.headers["alt-used"] = @origin.authority if match_altsvcs?(request.uri)
         parser.send(request)
       else
@@ -310,8 +302,6 @@ module HTTPX
 
     def transition(nextstate)
       case nextstate
-      when :idle
-        @error = nil
       when :open
         return if @state == :closed
 
@@ -354,18 +344,17 @@ module HTTPX
       reset
     end
 
-    def handle_error(e)
-      if e.instance_of?(TimeoutError) && @timeout
-        @timeout -= e.timeout
+    def handle_error(error)
+      if error.instance_of?(TimeoutError) && @timeout
+        @timeout -= error.timeout
         return unless @timeout <= 0
 
-        e = e.to_connection_error if connecting?
+        error = error.to_connection_error if connecting?
       end
 
-      parser.handle_error(e) if @parser && parser.respond_to?(:handle_error)
-      @error = e
+      parser.handle_error(error) if @parser && parser.respond_to?(:handle_error)
       @pending.each do |request, _|
-        request.emit(:response, ErrorResponse.new(request, @error, @options))
+        request.emit(:response, ErrorResponse.new(request, error, @options))
       end
     end
   end

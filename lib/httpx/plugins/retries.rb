@@ -54,6 +54,7 @@ module HTTPX
             request.transition(:idle)
             connection = find_connection(request, connections, options)
             connection.send(request)
+            set_request_timeout(connection, request, options)
             return
           end
           response

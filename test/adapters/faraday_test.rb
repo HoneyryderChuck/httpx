@@ -37,7 +37,7 @@ class FaradayTest < Minitest::Test
   def test_adapter_get_ssl_fails_with_bad_cert
     fake_store = OpenSSL::X509::Store.new
     conn = create_connection(ssl: { cert_store: fake_store, verify: OpenSSL::SSL::VERIFY_PEER })
-    err = assert_raises Faraday::SSLError do
+    err = assert_raises Faraday::Adapter::HTTPX::SSL_ERROR do
       conn.get(build_path("/get"))
     end
     assert_includes err.message, "certificate"
@@ -128,7 +128,7 @@ class FaradayTest < Minitest::Test
   # end
 
   def test_adapter_connection_error
-    assert_raises Faraday::Error::ConnectionFailed do
+    assert_raises Faraday::Adapter::HTTPX::CONNECTION_FAILED_ERROR do
       get "http://localhost:4"
     end
   end
