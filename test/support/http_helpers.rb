@@ -13,7 +13,7 @@ module HTTPHelpers
   end
 
   def json_body(response)
-    raise response.status if response.is_a?(HTTPX::ErrorResponse)
+    raise response.error if response.is_a?(HTTPX::ErrorResponse)
 
     JSON.parse(response.body.to_s)
   end
