@@ -22,7 +22,7 @@ task :"test:ci" => %i[test rubocop]
 
 # Doc
 
-rdoc_opts = ["--line-numbers", "--inline-source", "--title", "HTTPX: An HTTP client library for ruby"]
+rdoc_opts = ["--line-numbers", "--title", "HTTPX: An HTTP client library for ruby"]
 
 begin
   gem "hanna-nouveau"
