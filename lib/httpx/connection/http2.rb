@@ -198,7 +198,7 @@ module HTTPX
     def on_stream_close(stream, request, error)
       return handle(request, stream) if request.expects?
 
-      if error
+      if error && error != :no_error
         ex = Error.new(stream.id, error)
         ex.set_backtrace(caller)
         emit(:error, request, ex)
@@ -230,7 +230,7 @@ module HTTPX
     end
 
     def on_close(_last_frame, error, _payload)
-      if error
+      if error && error != :no_error
         ex = Error.new(0, error)
         ex.set_backtrace(caller)
         @streams.each_key do |request|
