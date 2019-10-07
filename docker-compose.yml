@@ -55,7 +55,7 @@ services:
       - "3128:3128"
 
   nghttp2:
-    image: registry.gitlab.com/honeyryderchuck/httpx/nghttp2:latest
+    image: registry.gitlab.com/honeyryderchuck/httpx/nghttp2:2
     ports:
       - 80:80
       - 443:443
@@ -72,5 +72,5 @@ services:
     environment:
       - DEBUG=True
     image: citizenstig/httpbin
-    ports:
-      - 8000:8000
+    command:
+      gunicorn --bind=0.0.0.0:8000 --workers=6 --access-logfile - --error-logfile - --log-level debug --capture-output httpbin:app
