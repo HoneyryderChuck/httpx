@@ -108,10 +108,20 @@ module HTTPX
       def_option(method_name)
     end
 
+    REQUEST_IVARS = %i[@params @form @json @body].freeze
+
     def ==(other)
       ivars = instance_variables | other.instance_variables
       ivars.all? do |ivar|
-        instance_variable_get(ivar) == other.instance_variable_get(ivar)
+        case ivar
+        when :@headers
+          headers = instance_variable_get(ivar)
+          headers.same_headers?(other.instance_variable_get(ivar))
+        when *REQUEST_IVARS
+          true
+        else
+          instance_variable_get(ivar) == other.instance_variable_get(ivar)
+        end
       end
     end
 
