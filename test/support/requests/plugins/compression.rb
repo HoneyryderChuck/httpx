@@ -14,7 +14,7 @@ module Requests
         response = session.get(url)
         skip if response == 429
         verify_status(response, 200)
-        verify_header(response.headers, "content-encoding", "gzip")
+        assert response.body.encodings == %w[gzip], "response should be sent with gzip encoding"
       end
 
       def test_plugin_compression_gzip

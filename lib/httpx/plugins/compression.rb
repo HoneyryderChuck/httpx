@@ -23,6 +23,14 @@ module HTTPX
         options.merge(headers: { "accept-encoding" => Compression.registry.keys })
       end
 
+      module RequestMethods
+        def initialize(*)
+          super
+          # forego compression in the Range cases
+          @headers.delete("accept-encoding") if @headers.key?("range")
+        end
+      end
+
       module RequestBodyMethods
         def initialize(*)
           super
@@ -36,14 +44,28 @@ module HTTPX
       end
 
       module ResponseBodyMethods
+        attr_reader :encodings
+
         def initialize(*)
+          @encodings = []
+
           super
 
           return unless @headers.key?("content-encoding")
 
           @_decoders = @headers.get("content-encoding").map do |encoding|
-            Compression.registry(encoding).decoder
+            decoder = Compression.registry(encoding).decoder
+            # do not uncompress if there is no decoder available. In fact, we can't reliably
+            # continue decompressing beyond that, so ignore.
+            break unless decoder
+
+            @encodings << encoding
+            decoder
           end
+
+          # remove encodings that we are able to decode
+          @headers["content-encoding"] = @headers.get("content-encoding") - @encodings
+
           @_compressed_length = if @headers.key?("content-length")
             @headers["content-length"].to_i
           else
