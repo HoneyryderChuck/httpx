@@ -30,7 +30,7 @@ module HTTPX
 
     def write(buffer)
       siz = @io.send(buffer, 0, @host, @port)
-      buffer.slice!(0, siz)
+      buffer.shift!(siz)
       siz
     end
 

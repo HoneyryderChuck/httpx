@@ -87,7 +87,7 @@ module HTTPX
 
       def write(buffer)
         siz = @io.write_nonblock(buffer)
-        buffer.slice!(0, siz)
+        buffer.shift!(siz)
         siz
       rescue ::IO::WaitWritable
         0
@@ -108,7 +108,7 @@ module HTTPX
         return 0 if siz == :wait_writable
         return if siz.nil?
 
-        buffer.slice!(0, siz)
+        buffer.shift!(siz)
         siz
       end
     end

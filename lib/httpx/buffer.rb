@@ -16,8 +16,6 @@ module HTTPX
 
     def_delegator :@buffer, :bytesize
 
-    def_delegator :@buffer, :slice!
-
     def_delegator :@buffer, :clear
 
     def_delegator :@buffer, :replace
@@ -31,6 +29,10 @@ module HTTPX
 
     def full?
       @buffer.bytesize >= @limit
+    end
+
+    def shift!(fin)
+      @buffer = @buffer.byteslice(fin..-1)
     end
   end
 end

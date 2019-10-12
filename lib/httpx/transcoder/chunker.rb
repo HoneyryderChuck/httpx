@@ -60,7 +60,8 @@ module HTTPX::Transcoder
             return unless index && index.positive?
 
             # Read hex-length
-            hexlen = @buffer.slice!(0, index)
+            hexlen = @buffer.byteslice(0, index)
+            @buffer = @buffer.byteslice(index..-1) || "".b
             hexlen[/\h/] || raise(Error, "wrong chunk size line: #{hexlen}")
             @chunk_length = hexlen.hex
             # check if is last chunk
@@ -72,7 +73,7 @@ module HTTPX::Transcoder
             return if @buffer.bytesize < crlf_size
             raise Error, "wrong chunked encoding format" unless @buffer.start_with?(CRLF * (crlf_size / 2))
 
-            @buffer.slice!(0, crlf_size)
+            @buffer = @buffer.byteslice(crlf_size..-1)
             if @chunk_length.nil?
               nextstate(:length)
             else
@@ -81,8 +82,10 @@ module HTTPX::Transcoder
               nextstate(:data)
             end
           when :data
-            @chunk_buffer << (slice = @buffer.slice!(0, @chunk_length))
-            @chunk_length -= slice.bytesize
+            chunk = @buffer.byteslice(0, @chunk_length)
+            @buffer = @buffer.byteslice(@chunk_length..-1) || "".b
+            @chunk_buffer << chunk
+            @chunk_length -= chunk.bytesize
             if @chunk_length.zero?
               yield @chunk_buffer unless @chunk_buffer.empty?
               @chunk_buffer.clear

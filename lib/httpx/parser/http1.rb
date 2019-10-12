@@ -67,7 +67,8 @@ module HTTPX
         @status_code = code.to_i
         raise(Error, "wrong status code (#{@status_code})") unless (100..599).cover?(@status_code)
 
-        @buffer.slice!(0, idx + 1)
+        # @buffer.slice!(0, idx + 1)
+        @buffer = @buffer.byteslice((idx + 1)..-1)
         nextstate(:headers)
       end
 
@@ -116,7 +117,8 @@ module HTTPX
             @observer.on_data(chunk)
           end
         elsif @content_length
-          data = @buffer.slice!(0, @content_length)
+          data = @buffer.byteslice(0, @content_length)
+          @buffer = @buffer.byteslice(@content_length..-1) || "".b
           @content_length -= data.bytesize
           @observer.on_data(data)
           data.clear
