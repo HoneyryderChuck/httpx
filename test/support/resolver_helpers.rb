@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "ipaddr"
+
 module ResolverHelpers
   include HTTPX
 
