@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 module ResolverHelpers
+  include HTTPX
+
   def test_resolver_api
     assert resolver.respond_to?(:<<)
     assert resolver.respond_to?(:closed?)
@@ -36,33 +38,31 @@ module ResolverHelpers
     assert resolver.respond_to?(:close)
   end
 
-  def test_parse_a_record
+  def test_parse_dns_record
     return unless resolver.respond_to?(:parse)
 
-    connection = build_connection("http://ipv4.tlund.se/")
-    resolver.queries["ipv4.tlund.se"] = connection
+    connection_a = build_connection("http://ipv4.tlund.se/")
+    resolver.queries["ipv4.tlund.se"] = connection_a
     resolver.parse(a_record)
-    assert connection.addresses.include?("193.15.228.195")
-  end
+    assert connection_a.addresses.include?("193.15.228.195")
 
-  def test_parse_aaaa_record
-    return unless resolver.respond_to?(:parse)
+    Resolver.lookups.delete("ipv4.tlund.se")
 
-    connection = build_connection("http://ipv6.tlund.se/")
-    resolver.queries["ipv6.tlund.se"] = connection
+    connection_aaaa = build_connection("http://ipv6.tlund.se/")
+    resolver.queries["ipv6.tlund.se"] = connection_aaaa
     resolver.parse(aaaa_record)
-    assert connection.addresses.include?("2a00:801:f::195")
-  end
+    assert connection_aaaa.addresses.include?("2a00:801:f::195")
 
-  def test_parse_cname_record
-    return unless resolver.respond_to?(:parse)
+    Resolver.lookups.delete("ipv6.tlund.se")
 
-    connection = build_connection("http://ipv4c.tlund.se/")
-    resolver.queries["ipv4c.tlund.se"] = connection
+    connection_cname = build_connection("http://ipv4c.tlund.se/")
+    resolver.queries["ipv4c.tlund.se"] = connection_cname
     resolver.parse(cname_record)
-    assert connection.addresses.nil?
+    assert connection_cname.addresses.nil?
     assert !resolver.queries.key?("ipv4c.tlund.se")
     assert resolver.queries.key?("ipv4.tlund.se")
+
+    Resolver.lookups.delete("ipv4.tlund.se")
   end
 
   def test_append_hostname
@@ -79,11 +79,11 @@ module ResolverHelpers
 
   def setup
     super
-    HTTPX::Resolver.purge_lookup_cache
+    Resolver.purge_lookup_cache
   end
 
   def build_connection(uri)
-    connection = HTTPX::Connection.new("ssl", URI(uri), HTTPX::Options.new)
+    connection = Connection.new("ssl", URI(uri), Options.new)
     connection.extend(ConnectionExtensions)
     connection
   end
@@ -137,6 +137,10 @@ module ResolverHelpers
         public :resolve # rubocop:disable Style/AccessModifierDeclarations
       end
     end
+  end
+
+  Resolver.singleton_class.class_eval do
+    attr_reader :lookups
   end
 
   module ConnectionExtensions
