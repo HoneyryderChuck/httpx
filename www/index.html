@@ -37,7 +37,9 @@ layout: default
   <div class="container">
     <section class="core-guides">
       <div class="col">
-        <h2>Core (RDoc)</h2>
+        <a id="core" href="#core">
+          <h2>Core (RDoc)</h2>
+        </a>
         <ul>
           {% for item in site.data.core %}
           <li>
@@ -51,7 +53,9 @@ layout: default
     </section>
 
     <section class="plugins">
-      <h2 id="plugins">Plugins</h2>
+      <a id="plugins" href="#plugins">
+        <h2 id="plugins">Plugins</h2>
+      </a>
       <dl>
         {% for plugin in site.data.plugins %}
           <dt>
@@ -65,7 +69,9 @@ layout: default
     </section>
 
     <section>
-      <h2>Release notes</h2>
+      <a id="release-notes" href="#release-notes">
+        <h2>Release notes</h2>
+      </a>
       <ul>
         {% for major in site.data.versions %}
         <li>
