@@ -1,28 +1,12 @@
 # frozen_string_literal: true
 
 require "io/wait"
-require "http/2"
+require "http/2/next"
 
 module HTTPX
   class Connection::HTTP2
     include Callbacks
     include Loggable
-
-    if HTTP2::VERSION < "0.10.1"
-      module HTTP2Extensions
-        refine ::HTTP2::Client do
-          def receive(*)
-            send_connection_preface
-            super
-          end
-
-          def <<(*args)
-            receive(*args)
-          end
-        end
-      end
-      using HTTP2Extensions
-    end
 
     Error = Class.new(Error) do
       def initialize(id, code)
@@ -116,7 +100,7 @@ module HTTPX
     end
 
     def init_connection
-      @connection = HTTP2::Client.new(@options.http2_settings)
+      @connection = HTTP2Next::Client.new(@options.http2_settings)
       @connection.on(:frame, &method(:on_frame))
       @connection.on(:frame_sent, &method(:on_frame_sent))
       @connection.on(:frame_received, &method(:on_frame_received))
