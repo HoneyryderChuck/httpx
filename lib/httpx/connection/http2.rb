@@ -73,6 +73,9 @@ module HTTPX
       @streams.each_key do |request|
         emit(:error, request, ex)
       end
+      @pending.each do |request|
+        emit(:error, request, ex)
+      end
     end
 
     private
