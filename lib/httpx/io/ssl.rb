@@ -116,14 +116,16 @@ module HTTPX
       return super unless nextstate == :negotiated
 
       server_cert = @io.peer_cert
+
       "#{super}\n\n" \
       "SSL connection using #{@io.ssl_version} / #{Array(@io.cipher).first}\n" \
         "ALPN, server accepted to use #{protocol}\n" \
         "Server certificate:\n" \
         " subject: #{server_cert.subject}\n" \
         " start date: #{server_cert.not_before}\n" \
-        " start date: #{server_cert.not_after}\n" \
-        " issuer: #{server_cert.issuer}"
+        " expire date: #{server_cert.not_after}\n" \
+        " issuer: #{server_cert.issuer}\n" \
+        " SSL certificate verify ok."
     end
   end
 end
