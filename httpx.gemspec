@@ -28,7 +28,7 @@ Gem::Specification.new do |gem|
   gem.files = Dir["LICENSE.txt", "README.md", "lib/**/*.rb", "doc/*.md"]
   gem.require_paths = ["lib"]
 
-  gem.add_runtime_dependency "http-2-next",              ">= 0.1.1"
+  gem.add_runtime_dependency "http-2-next",              ">= 0.1.2"
   gem.add_runtime_dependency "timers"
   gem.add_development_dependency "http-form_data",  ">= 2.0.0", "< 3"
   gem.add_development_dependency "http-cookie",     "~> 1.0"
