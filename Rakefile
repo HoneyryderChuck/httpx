@@ -32,7 +32,7 @@ rescue Gem::LoadError
 end
 
 rdoc_opts.concat(["--main", "README.md"])
-RDOC_FILES = %w[README.md CHANGELOG.md lib/**/*.rb] + Dir["doc/*.rdoc"] + Dir["doc/release_notes/*.md"]
+RDOC_FILES = %w[README.md lib/**/*.rb] + Dir["doc/*.rdoc"] + Dir["doc/release_notes/*.md"]
 
 RDoc::Task.new do |rdoc|
   rdoc.rdoc_dir = "rdoc"
