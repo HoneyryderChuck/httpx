@@ -151,9 +151,9 @@ module HTTPX
     def array_value(value)
       case value
       when Array
-        value.map { |val| String(val) }
+        value.map { |val| String(val).strip }
       else
-        [String(value)]
+        [String(value).strip]
       end
     end
 
