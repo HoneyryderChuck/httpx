@@ -42,6 +42,3 @@ Naming/AccessorMethodName:
 
 Naming/UncommunicativeMethodParamName:
   Enabled: false
-
-Lint/UriEscapeUnescape:
-  Enabled: false
