@@ -47,7 +47,7 @@ module HTTPX
 
     def initialize(verb, uri, options = {})
       @verb    = verb.to_s.downcase.to_sym
-      @uri     = URI(URI.escape(uri.to_s))
+      @uri     = URI(uri.to_s)
       @options = Options.new(options)
 
       raise(Error, "unknown method: #{verb}") unless METHODS.include?(@verb)
@@ -58,6 +58,16 @@ module HTTPX
 
       @body = @options.request_body_class.new(@headers, @options)
       @state = :idle
+    end
+
+    if RUBY_VERSION < "2.2"
+      # rubocop: disable Lint/UriEscapeUnescape:
+      def initialize_with_escape(verb, uri, options = {})
+        initialize_without_escape(verb, URI.escape(uri.to_s), options)
+      end
+      alias_method :initialize_without_escape, :initialize
+      alias_method :initialize, :initialize_with_escape
+      # rubocop: enable Lint/UriEscapeUnescape:
     end
 
     def merge_headers(h)
