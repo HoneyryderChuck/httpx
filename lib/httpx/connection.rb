@@ -129,10 +129,11 @@ module HTTPX
     # checks if this is connection is an alternative service of
     # +uri+
     def match_altsvcs?(uri)
-      AltSvc.cached_altsvc(@origin).any? do |altsvc|
-        origin = altsvc["origin"]
-        origin.altsvc_match?(uri.origin)
-      end
+      @origins.any? { |origin| uri.altsvc_match?(origin) } ||
+        AltSvc.cached_altsvc(@origin).any? do |altsvc|
+          origin = altsvc["origin"]
+          origin.altsvc_match?(uri.origin)
+        end
     end
 
     def connecting?
