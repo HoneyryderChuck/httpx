@@ -41,7 +41,7 @@ module HTTPX
 
     def send(request, **)
       if !@handshake_completed ||
-         @connection.active_stream_count >= @max_concurrent_requests
+         @streams.size >= @max_concurrent_requests
         @pending << request
         return
       end
@@ -224,7 +224,7 @@ module HTTPX
           emit(:error, request, ex)
         end
       end
-      return unless @connection.state == :closed && @connection.active_stream_count.zero?
+      return unless @connection.state == :closed && @streams.size.zero?
 
       emit(:close)
     end
