@@ -274,6 +274,9 @@ module HTTPX
       parser.on(:promise) do |request, stream|
         request.emit(:promise, parser, stream)
       end
+      parser.on(:origin) do |origin|
+        @origins << origin
+      end
       parser.on(:close) do
         transition(:closing)
       end

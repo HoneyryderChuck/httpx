@@ -107,6 +107,7 @@ module HTTPX
       @connection.on(:frame, &method(:on_frame))
       @connection.on(:frame_sent, &method(:on_frame_sent))
       @connection.on(:frame_received, &method(:on_frame_received))
+      @connection.on(:origin, &method(:on_origin))
       @connection.on(:promise, &method(:on_promise))
       @connection.on(:altsvc) { |frame| on_altsvc(frame[:origin], frame) }
       @connection.on(:settings_ack, &method(:on_settings))
@@ -263,6 +264,10 @@ module HTTPX
 
     def on_promise(stream)
       emit(:promise, @streams.key(stream.parent), stream)
+    end
+
+    def on_origin(origin)
+      emit(:origin, origin)
     end
 
     def respond_to_missing?(meth, *args)
