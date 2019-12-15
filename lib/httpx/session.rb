@@ -147,8 +147,10 @@ module HTTPX
         end
       end
       connection = options.connection_class.new(type, uri, options)
-      pool.init_connection(connection, options)
-      connection
+      catch(:coalesced) do
+        pool.init_connection(connection, options)
+        connection
+      end
     end
 
     def send_requests(*requests, options)

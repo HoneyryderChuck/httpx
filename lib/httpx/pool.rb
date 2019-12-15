@@ -90,6 +90,7 @@ module HTTPX
 
       if found_connection.state == :open
         coalesce_connections(found_connection, connection)
+        throw(:coalesced, found_connection)
       else
         found_connection.once(:open) do
           coalesce_connections(found_connection, connection)
