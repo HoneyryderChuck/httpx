@@ -111,8 +111,8 @@ module HTTPX
     def merge(connection)
       @origins += connection.instance_variable_get(:@origins)
       pending = connection.instance_variable_get(:@pending)
-      pending.each do |req, args|
-        send(req, args)
+      pending.each do |req|
+        send(req)
       end
     end
 
