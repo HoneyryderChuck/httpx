@@ -23,6 +23,22 @@ class HTTPSTest < Minitest::Test
   include Plugins::Retries
   include Plugins::Multipart
 
+  def test_connection_coalescing
+    coalesced_origin = "https://#{ENV["HTTPBIN_COALESCING_HOST"]}"
+    HTTPX.wrap do |http|
+      response1 = http.get(origin)
+      verify_status(response1, 200)
+      response2 = http.get(coalesced_origin)
+      verify_status(response2, 200)
+      # introspection time
+      pool = http.__send__(:pool)
+      connections = pool.instance_variable_get(:@connections)
+      assert connections.any? { |conn|
+        conn.instance_variable_get(:@origins) == [origin, coalesced_origin]
+      }, "connections didn't coalesce (expected connection with both origins)"
+    end
+  end if ENV.key?("HTTPBIN_COALESCING_HOST")
+
   private
 
   def origin(orig = httpbin)
