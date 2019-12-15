@@ -29,8 +29,6 @@ services:
       - ./:/home
     entrypoint:
       /home/test/support/ci/build.sh
-    links:
-      - "nghttp2:another"
 
   sshproxy:
     build:
