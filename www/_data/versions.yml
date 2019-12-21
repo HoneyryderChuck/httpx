@@ -1,7 +1,10 @@
 -
   -
+    name: "0.6.3"
+    path: "0_6_3_md.html"
+  -
     name: "0.6.2"
-    path: "0_6_1_md.html"
+    path: "0_6_2_md.html"
   -
     name: "0.6.1"
     path: "0_6_1_md.html"
