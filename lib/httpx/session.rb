@@ -140,7 +140,7 @@ module HTTPX
         when "https"
           "ssl"
         when "h2"
-          options = options.merge(ssl: { alpn_protocols: %w[h2] })
+          options = options.merge(ssl: SSL::TLS_OPTIONS)
           "ssl"
         else
           raise UnsupportedSchemeError, "#{uri}: #{uri.scheme}: unsupported URI scheme"
