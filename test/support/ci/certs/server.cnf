@@ -1,0 +1,27 @@
+[req]
+distinguished_name = req_distinguished_name
+req_extensions = v3_req
+
+[req_distinguished_name]
+countryName = Country Name (2 letter code)
+countryName_default = PT
+stateOrProvinceName = State or Province Name (full name)
+stateOrProvinceName_default = LX
+localityName = Locality Name (eg, city)
+localityName_default = Lisbon
+0.organizationName = Organizational Unit Name (eg, section)
+organizationalUnitName	= Organizational Unit Name (eg, section)
+organizationalUnitName_default	= Domain Control Validated
+commonName = Internet Widgits Ltd
+commonName_max	= 64
+
+[ v3_req ]
+# Extensions to add to a certificate request
+basicConstraints = CA:FALSE
+keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = nghttp2
+DNS.2 = another
+DNS.3 = another2

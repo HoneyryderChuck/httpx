@@ -14,9 +14,5 @@ end
 
 require "httpx"
 
-# TODO: remove this once ruby 2.5 bug is fixed:
-# https://github.com/ruby/openssl/issues/187
-ENV["CI"] && OpenSSL::SSL::SSLContext::DEFAULT_PARAMS[:verify_mode] = 0
-
 Dir[File.join(".", "test", "support", "*.rb")].each { |f| require f }
 Dir[File.join(".", "test", "support", "**", "*.rb")].each { |f| require f }

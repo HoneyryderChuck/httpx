@@ -140,15 +140,17 @@ module HTTPX
         when "https"
           "ssl"
         when "h2"
-          options = options.merge(ssl: { alpn_protocols: %w[h2] })
+          options = options.merge(ssl: SSL::TLS_OPTIONS)
           "ssl"
         else
           raise UnsupportedSchemeError, "#{uri}: #{uri.scheme}: unsupported URI scheme"
         end
       end
       connection = options.connection_class.new(type, uri, options)
-      pool.init_connection(connection, options)
-      connection
+      catch(:coalesced) do
+        pool.init_connection(connection, options)
+        connection
+      end
     end
 
     def send_requests(*requests, options)

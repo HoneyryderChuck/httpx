@@ -8,8 +8,8 @@ module HTTPHelpers
 
   private
 
-  def build_uri(suffix = "/")
-    "#{origin}#{suffix || "/"}"
+  def build_uri(suffix = "/", uri_origin = origin)
+    "#{uri_origin}#{suffix || "/"}"
   end
 
   def json_body(response)

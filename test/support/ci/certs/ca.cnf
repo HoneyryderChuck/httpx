@@ -1,0 +1,85 @@
+# we use 'ca' as the default section because we're usign the ca command
+# we use 'ca' as the default section because we're usign the ca command
+[ ca ]
+default_ca = my_ca
+
+[ my_ca ]
+#  a text file containing the next serial number to use in hex. Mandatory.
+#  This file must be present and contain a valid serial number.
+serial = ./serial
+
+# the text database file to use. Mandatory. This file must be present though
+# initially it will be empty.
+database = ./index.txt
+
+# specifies the directory where new certificates will be placed. Mandatory.
+new_certs_dir = ./newcerts
+
+# the file containing the CA certificate. Mandatory
+certificate = ./ca.crt
+
+# the file contaning the CA private key. Mandatory
+private_key = ./ca.key
+
+# the message digest algorithm. Remember to not use MD5
+default_md = sha1
+
+# for how many days will the signed certificate be valid
+default_days = 365
+
+# a section with a set of variables corresponding to DN fields
+policy = my_policy
+
+[ my_policy ]
+# if the value is "match" then the field value must match the same field in the
+# CA certificate. If the value is "supplied" then it must be present.
+# Optional means it may be present. Any fields not mentioned are silently
+# deleted.
+countryName = match
+stateOrProvinceName = supplied
+organizationName = supplied
+commonName = supplied
+organizationalUnitName = optional
+commonName = supplied
+
+[ ca ]
+default_ca = my_ca
+
+[ my_ca ]
+#  a text file containing the next serial number to use in hex. Mandatory.
+#  This file must be present and contain a valid serial number.
+serial = ./serial
+
+# the text database file to use. Mandatory. This file must be present though
+# initially it will be empty.
+database = ./index.txt
+
+# specifies the directory where new certificates will be placed. Mandatory.
+new_certs_dir = ./newcerts
+
+# the file containing the CA certificate. Mandatory
+certificate = ./ca.crt
+
+# the file contaning the CA private key. Mandatory
+private_key = ./ca.key
+
+# the message digest algorithm. Remember to not use MD5
+default_md = sha1
+
+# for how many days will the signed certificate be valid
+default_days = 365
+
+# a section with a set of variables corresponding to DN fields
+policy = my_policy
+
+[ my_policy ]
+# if the value is "match" then the field value must match the same field in the
+# CA certificate. If the value is "supplied" then it must be present.
+# Optional means it may be present. Any fields not mentioned are silently
+# deleted.
+countryName = match
+stateOrProvinceName = supplied
+organizationName = supplied
+commonName = supplied
+organizationalUnitName = optional
+commonName = supplied

@@ -80,7 +80,16 @@ module HTTPX
     def match?(uri, options)
       return false if @state == :closing || @state == :closed
 
-      (@origins.include?(uri.origin) || match_altsvcs?(uri)) && @options == options
+      (
+        (
+          @origins.include?(uri.origin) &&
+          # if there is more than one origin to match, it means that this connection
+          # was the result of coalescing. To prevent blind trust in the case where the
+          # origin came from an ORIGIN frame, we're going to verify the hostname with the
+          # SSL certificate
+          (@origins.size == 1 || @origin == uri.origin || @io.verify_hostname(uri.host))
+        ) || match_altsvcs?(uri)
+      ) && @options == options
     end
 
     def mergeable?(connection)
@@ -102,8 +111,8 @@ module HTTPX
     def merge(connection)
       @origins += connection.instance_variable_get(:@origins)
       pending = connection.instance_variable_get(:@pending)
-      pending.each do |req, args|
-        send(req, args)
+      pending.each do |req|
+        send(req)
       end
     end
 
@@ -274,6 +283,9 @@ module HTTPX
 
       parser.on(:promise) do |request, stream|
         request.emit(:promise, parser, stream)
+      end
+      parser.on(:origin) do |origin|
+        @origins << origin
       end
       parser.on(:close) do
         transition(:closing)

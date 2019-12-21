@@ -19,6 +19,7 @@ services:
       - BUNDLE_PATH=/usr/local/bundle
       - BUNDLE_SILENCE_ROOT_WARNING=1
       - BUNDLE_APP_CONFIG=/usr/local/bundle
+      - HTTPBIN_ALTSVC_HOST=another2
     image: ruby:alpine
     depends_on:
       - httpproxy 
@@ -27,10 +28,10 @@ services:
       - nghttp2
     volumes:
       - ./:/home
+    links:
+      - "altsvc-nghttp2:another2"
     entrypoint:
       /home/test/support/ci/build.sh
-    links:
-      - "nghttp2:another"
 
   sshproxy:
     build:
@@ -66,8 +67,22 @@ services:
     volumes:
       - ./test/support/ci:/home
     command:
-      --conf /home/nghttp.conf --no-ocsp
-          
+      --conf /home/nghttp.conf --no-ocsp --frontend 0.0.0.0,80;no-tls --frontend 0.0.0.0,443
+
+  altsvc-nghttp2:
+    image: registry.gitlab.com/honeyryderchuck/httpx/nghttp2:2
+    ports:
+      - 81:80
+      - 444:443
+    depends_on:
+      - httpbin
+    entrypoint:
+      /usr/local/bin/nghttpx
+    volumes:
+      - ./test/support/ci:/home
+    command:
+      --conf /home/nghttp.conf --no-ocsp --frontend 0.0.0.0,80;no-tls --frontend 0.0.0.0,443 --altsvc "h2,443,nghttp2"
+
   httpbin:
     environment:
       - DEBUG=True
