@@ -9,6 +9,8 @@ module HTTPX
 
     CRLF = "\r\n"
 
+    attr_reader :pending
+
     def initialize(buffer, options)
       @options = Options.new(options)
       @max_concurrent_requests = @options.max_concurrent_requests
