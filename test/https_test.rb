@@ -13,6 +13,8 @@ class HTTPSTest < Minitest::Test
   include IO
   include Timeouts
   include Errors
+  # TODO: uncomment as soon as nghttpx supports altsvc for HTTP/2
+  # include AltSvc if ENV.key?("HTTPBIN_ALTSVC_HOST")
 
   include Plugins::Proxy unless ENV.key?("HTTPX_NO_PROXY")
   include Plugins::Authentication

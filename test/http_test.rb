@@ -15,6 +15,7 @@ class HTTPTest < Minitest::Test
   include IO
   include Timeouts
   include Errors
+  include AltSvc if ENV.key?("HTTPBIN_ALTSVC_HOST")
 
   include Plugins::Proxy unless ENV.key?("HTTPX_NO_PROXY")
   include Plugins::Authentication
