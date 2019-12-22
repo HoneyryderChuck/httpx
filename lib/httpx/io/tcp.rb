@@ -158,12 +158,11 @@ module HTTPX
     end
 
     def do_transition(nextstate)
-      log(level: 1) do
-        log_transition_state(nextstate)
-      end
+      log(level: 1) { log_transition_state(nextstate) }
       @state = nextstate
     end
 
+    # :nocov:
     def log_transition_state(nextstate)
       case nextstate
       when :connected
@@ -172,5 +171,6 @@ module HTTPX
         "#{@ip}:#{@port} #{@state} -> #{nextstate}"
       end
     end
+    # :nocov:
   end
 end

@@ -95,7 +95,9 @@ module HTTPX
       @ns_index += 1
       if @ns_index < @nameserver.size
         log(label: "resolver: ") do
+          # :nocov:
           "failed resolving on nameserver #{@nameserver[@ns_index - 1]} (#{e.message})"
+          # :nocov:
         end
         transition(:idle)
       else
@@ -168,7 +170,9 @@ module HTTPX
         else
           connections << connection
           log(label: "resolver: ") do
+            # :nocov:
             "timeout after #{prev_timeout}s, retry(#{timeouts.first}) #{host}..."
+            # :nocov:
           end
         end
       end
