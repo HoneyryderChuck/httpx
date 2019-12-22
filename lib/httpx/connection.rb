@@ -87,7 +87,7 @@ module HTTPX
           # was the result of coalescing. To prevent blind trust in the case where the
           # origin came from an ORIGIN frame, we're going to verify the hostname with the
           # SSL certificate
-          (@origins.size == 1 || @origin == uri.origin || @io.verify_hostname(uri.host))
+          (@origins.size == 1 || @origin == uri.origin || (@io && @io.verify_hostname(uri.host)))
         ) || match_altsvcs?(uri)
       ) && @options == options
     end
@@ -130,7 +130,7 @@ module HTTPX
     def purge_pending
       [@parser.pending, @pending].each do |pending|
         pending.reject! do |request, *args|
-          yield(request, args)
+          yield(request, args) if block_given?
         end
       end
     end
