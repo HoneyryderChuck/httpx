@@ -125,9 +125,15 @@ module HTTPX
       nil
     end
 
+    # :nocov:
     def inspect
-      "#<Request #{@verb.to_s.upcase} #{path} @headers=#{@headers.to_hash} @body=#{@body}>"
+      "#<HTTPX::Request:#{object_id} " \
+      "#{@verb.to_s.upcase} " \
+      "#{uri} " \
+      "@headers=#{@headers} " \
+      "@body=#{@body}>"
     end
+    # :nocov:
 
     class Body
       class << self
@@ -203,6 +209,14 @@ module HTTPX
       def chunk!
         @headers.add("transfer-encoding", "chunked")
       end
+
+      # :nocov:
+      def inspect
+        "#<HTTPX::Request::Body:#{object_id} " \
+        "@state=#{@state} " \
+        "#{unbounded_body? ? "@stream" : "@bytesize=#{bytesize}"}>"
+      end
+      # :nocov:
     end
 
     def transition(nextstate)

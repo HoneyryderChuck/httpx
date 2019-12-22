@@ -96,10 +96,12 @@ module HTTPX
     end
     # :nocov:
 
+    # :nocov:
     def inspect
       id = @io.closed? ? "closed" : @io.to_io.fileno
       "#<SSL(fd: #{id}): #{@ip}:#{@port} state: #{@state}>"
     end
+    # :nocov:
 
     private
 

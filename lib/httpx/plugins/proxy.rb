@@ -38,10 +38,17 @@ module HTTPX
         end
 
         def ==(other)
-          if other.is_a?(Parameters)
+          case other
+          when Parameters
             @uri == other.uri &&
               @username == other.username &&
               @password == other.password
+          when URI::Generic, String
+            proxy_uri = @uri.dup
+            proxy_uri.user = @username
+            proxy_uri.password = @password
+            other_uri = other.is_a?(URI::Generic) ? other : URI.parse(other)
+            proxy_uri == other_uri
           else
             super
           end

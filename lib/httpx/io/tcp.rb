@@ -133,10 +133,12 @@ module HTTPX
       @state == :idle || @state == :closed
     end
 
+    # :nocov:
     def inspect
       id = @io.closed? ? "closed" : @io.fileno
       "#<TCP(fd: #{id}): #{@ip}:#{@port} (state: #{@state})>"
     end
+    # :nocov:
 
     private
 
