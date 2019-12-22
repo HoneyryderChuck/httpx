@@ -3,20 +3,18 @@
 module Requests
   module AltSvc
     def test_altsvc_get
-      altsvc_origin = origin(ENV["HTTPBIN_ALTSVC_HOST"])
+      altsvc_host = ENV["HTTPBIN_ALTSVC_HOST"]
+      altsvc_origin = origin(altsvc_host)
 
       HTTPX.wrap do |http|
         altsvc_uri = build_uri("/get", altsvc_origin)
         response = http.get(altsvc_uri)
         verify_status(response, 200)
-        # this is only needed for http/1.1
+        verify_header(response.headers, "alt-svc", "h2=\"nghttp2:443\"")
         response2 = http.get(altsvc_uri)
         verify_status(response2, 200)
+        verify_no_header(response2.headers, "alt-svc")
         # introspection time
-        pool = http.__send__(:pool)
-        connections = pool.instance_variable_get(:@connections)
-        origins = connections.map { |conn| conn.instance_variable_get(:@origin) }.uniq
-        assert origins.size == 2, "connection didn't follow altsvc (expected a connection for both origins)"
       end
     end
   end

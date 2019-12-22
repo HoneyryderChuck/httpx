@@ -22,7 +22,7 @@ module ResponseHelpers
       end
 
       def verify_no_#{meth}(#{meth}s, key)
-        assert !#{meth}s.key?(key), "#{meth}s contains the given key (" + key + "=\#{#{meth}s[key]})"
+        assert !#{meth}s.key?(key), "#{meth}s contains the given key (" + key + ": \#{#{meth}s[key]})"
       end
     DEFINE
   end
