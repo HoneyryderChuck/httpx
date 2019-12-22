@@ -60,6 +60,7 @@ module HTTPX
       @state = :idle
     end
 
+    # :nocov:
     if RUBY_VERSION < "2.2"
       # rubocop: disable Lint/UriEscapeUnescape:
       def initialize_with_escape(verb, uri, options = {})
@@ -69,6 +70,7 @@ module HTTPX
       alias_method :initialize, :initialize_with_escape
       # rubocop: enable Lint/UriEscapeUnescape:
     end
+    # :nocov:
 
     def merge_headers(h)
       @headers = @headers.merge(h)

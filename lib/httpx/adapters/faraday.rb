@@ -63,6 +63,7 @@ module Faraday
         plugin(:compression)
         plugin(:persistent)
 
+        # :nocov:
         module ReasonPlugin
           if RUBY_VERSION < "2.5"
             def self.load_dependencies(*)
@@ -85,6 +86,7 @@ module Faraday
             end
           end
         end
+        # :nocov:
         plugin(ReasonPlugin)
       end
 

@@ -14,6 +14,7 @@ module HTTPX
       "AAAA" => Resolv::DNS::Resource::IN::AAAA,
     }.freeze
 
+    # :nocov:
     DEFAULTS = if RUBY_VERSION < "2.2"
       {
         **Resolv::DNS::Config.default_config_hash,
@@ -30,6 +31,7 @@ module HTTPX
         record_types: RECORD_TYPES.keys,
       }.freeze
     end
+    # :nocov:
 
     # nameservers for ipv6 are misconfigured in certain systems;
     # this can use an unexpected endless loop

@@ -68,6 +68,7 @@ module HTTPX
            ::IO::WaitWritable
     end
 
+    # :nocov:
     if RUBY_VERSION < "2.3"
       def read(*)
         super
@@ -93,6 +94,7 @@ module HTTPX
         end
       end
     end
+    # :nocov:
 
     def inspect
       id = @io.closed? ? "closed" : @io.to_io.fileno

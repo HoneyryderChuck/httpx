@@ -34,6 +34,7 @@ module HTTPX
       siz
     end
 
+    # :nocov:
     if RUBY_VERSION < "2.3"
       def read(size, buffer)
         data, _ = @io.recvfrom_nonblock(size)
@@ -53,5 +54,6 @@ module HTTPX
       rescue IOError
       end
     end
+    # :nocov:
   end
 end
