@@ -34,7 +34,9 @@ module HTTPX
         end
 
         def token_authentication
-          Base64.strict_encode64("#{user}:#{password}")
+          return unless authenticated?
+
+          Base64.strict_encode64("#{@username}:#{@password}")
         end
 
         def ==(other)

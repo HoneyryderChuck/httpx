@@ -140,7 +140,9 @@ module HTTPX
       headers[":authority"] = request.authority
       headers = headers.merge(request.headers)
       log(level: 1, label: "#{stream.id}: ", color: :yellow) do
+        # :nocov:
         headers.map { |k, v| "-> HEADER: #{k}: #{v}" }.join("\n")
+        # :nocov:
       end
       stream.headers(headers, end_stream: request.empty?)
     end
@@ -168,7 +170,9 @@ module HTTPX
 
     def on_stream_headers(stream, request, h)
       log(label: "#{stream.id}:", color: :yellow) do
+        # :nocov:
         h.map { |k, v| "<- HEADER: #{k}: #{v}" }.join("\n")
+        # :nocov:
       end
       _, status = h.shift
       headers = request.options.headers_class.new(h)
@@ -233,24 +237,28 @@ module HTTPX
     def on_frame_sent(frame)
       log(level: 2, label: "#{frame[:stream]}: ") { "frame was sent!" }
       log(level: 2, label: "#{frame[:stream]}: ", color: :blue) do
+        # :nocov:
         case frame[:type]
         when :data
           frame.merge(payload: frame[:payload].bytesize).inspect
         else
           frame.inspect
         end
+        # :nocov
       end
     end
 
     def on_frame_received(frame)
       log(level: 2, label: "#{frame[:stream]}: ") { "frame was received!" }
       log(level: 2, label: "#{frame[:stream]}: ", color: :magenta) do
+        # :nocov:
         case frame[:type]
         when :data
           frame.merge(payload: frame[:payload].bytesize).inspect
         else
           frame.inspect
         end
+        # :nocov:
       end
     end
 
