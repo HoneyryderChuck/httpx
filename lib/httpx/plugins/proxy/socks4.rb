@@ -4,6 +4,7 @@ require "resolv"
 require "ipaddr"
 
 module HTTPX
+  Socks4Error = Class.new(Error)
   module Plugins
     module Proxy
       module Socks4
@@ -12,7 +13,7 @@ module HTTPX
         GRANTED = 90
         PROTOCOLS = %w[socks4 socks4a].freeze
 
-        Error = Class.new(Error)
+        Error = Socks4Error
 
         module ConnectionMethods
           private

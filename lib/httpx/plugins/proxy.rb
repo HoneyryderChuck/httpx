@@ -5,6 +5,7 @@ require "ipaddr"
 require "forwardable"
 
 module HTTPX
+  HTTPProxyError = Class.new(Error)
   module Plugins
     #
     # This plugin adds support for proxies. It ships with support for:
@@ -17,7 +18,7 @@ module HTTPX
     # https://gitlab.com/honeyryderchuck/httpx/wikis/Proxy
     #
     module Proxy
-      Error = Class.new(Error)
+      Error = HTTPProxyError
       PROXY_ERRORS = [TimeoutError, IOError, SystemCallError, Error].freeze
 
       class Parameters

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module HTTPX
+  Socks5Error = Class.new(Error)
   module Plugins
     module Proxy
       module Socks5
@@ -14,7 +15,7 @@ module HTTPX
         IPV6 = 4
         SUCCESS = 0
 
-        Error = Class.new(Error)
+        Error = Socks5Error
 
         module ConnectionMethods
           def call
