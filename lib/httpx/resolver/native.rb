@@ -31,7 +31,6 @@ module HTTPX
         record_types: RECORD_TYPES.keys,
       }.freeze
     end
-    # :nocov:
 
     # nameservers for ipv6 are misconfigured in certain systems;
     # this can use an unexpected endless loop
@@ -44,6 +43,7 @@ module HTTPX
         false
       end
     end if DEFAULTS[:nameserver]
+    # :nocov:
 
     DNS_PORT = 53
 
