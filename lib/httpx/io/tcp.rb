@@ -41,10 +41,6 @@ module HTTPX
       @io ||= build_socket
     end
 
-    def scheme
-      "http"
-    end
-
     def to_io
       @io.to_io
     end

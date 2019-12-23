@@ -4,11 +4,13 @@ require "openssl"
 
 module HTTPX
   class SSL < TCP
+    # :nocov:
     TLS_OPTIONS = if OpenSSL::SSL::SSLContext.instance_methods.include?(:alpn_protocols)
       { alpn_protocols: %w[h2 http/1.1] }
     else
       {}
     end
+    # :nocov:
 
     def initialize(_, _, options)
       @ctx = OpenSSL::SSL::SSLContext.new
@@ -16,10 +18,6 @@ module HTTPX
       @ctx.set_params(ctx_options) unless ctx_options.empty?
       super
       @state = :negotiated if @keep_open
-    end
-
-    def scheme
-      "https"
     end
 
     def protocol
@@ -116,6 +114,7 @@ module HTTPX
       do_transition(nextstate)
     end
 
+    # :nocov:
     def log_transition_state(nextstate)
       return super unless nextstate == :negotiated
 
@@ -131,5 +130,6 @@ module HTTPX
         " issuer: #{server_cert.issuer}\n" \
         " SSL certificate verify ok."
     end
+    # :nocov:
   end
 end
