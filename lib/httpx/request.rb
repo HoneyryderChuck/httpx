@@ -213,8 +213,7 @@ module HTTPX
       # :nocov:
       def inspect
         "#<HTTPX::Request::Body:#{object_id} " \
-        "@state=#{@state} " \
-        "#{unbounded_body? ? "@stream" : "@bytesize=#{bytesize}"}>"
+        "#{unbounded_body? ? "stream" : "@bytesize=#{bytesize}"}>"
       end
       # :nocov:
     end
