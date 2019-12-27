@@ -67,7 +67,7 @@ services:
     volumes:
       - ./test/support/ci:/home
     command:
-      --conf /home/nghttp.conf --no-ocsp --frontend 0.0.0.0,80;no-tls --frontend 0.0.0.0,443
+      --conf /home/nghttp.conf --no-ocsp --frontend-frame-debug --frontend 0.0.0.0,80;no-tls --frontend 0.0.0.0,443
 
   altsvc-nghttp2:
     image: registry.gitlab.com/honeyryderchuck/httpx/nghttp2:2
