@@ -358,9 +358,11 @@ module HTTPX
     end
 
     def handle_error(error)
-      if error.instance_of?(TimeoutError) && @timeout
-        @timeout -= error.timeout
-        return unless @timeout <= 0
+      if error.instance_of?(TimeoutError)
+        if @timeout
+          @timeout -= error.timeout
+          return unless @timeout <= 0
+        end
 
         error = error.to_connection_error if connecting?
       end

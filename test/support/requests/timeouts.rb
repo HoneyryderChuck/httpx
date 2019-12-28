@@ -18,12 +18,13 @@ module Requests
       assert response.status =~ /timed out after \d+ seconds/i, "response should have timed out"
     end
 
-    # def test_http_timeout_connect_timeout
-    #   uri = build_uri("/delay/3")
-    #   session = HTTPX.timeout(connect_timeout: 0.5, operation_timeout: 30, total_timeout: 2)
-    #   response = session.get(uri)
-    #   assert response.is_a?(HTTPX::ErrorResponse), "response should have failed"
-    #   assert response.error.is_a?(HTTPX::ConnectTimeoutError), "response should have failed on connection"
-    # end
+    def test_http_timeout_connect_timeout
+      uri = "#{origin("nghttp2.org")}:81"
+      session = HTTPX.timeout(connect_timeout: 0.5, operation_timeout: 30, total_timeout: 10)
+      response = session.get(uri)
+      assert response.is_a?(HTTPX::ErrorResponse), "response should have failed (#{response.class})"
+      assert response.error.is_a?(HTTPX::ConnectTimeoutError),
+             "response should have failed on connection (#{response.error.class}: #{response.error})"
+    end
   end
 end
