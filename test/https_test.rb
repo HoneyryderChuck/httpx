@@ -13,6 +13,7 @@ class HTTPSTest < Minitest::Test
   include IO
   include Timeouts
   include Errors
+  include Resolvers if ENV.key?("HTTPX_RESOLVER_URI")
   # TODO: uncomment as soon as nghttpx supports altsvc for HTTP/2
   # include AltSvc if ENV.key?("HTTPBIN_ALTSVC_HOST")
 
