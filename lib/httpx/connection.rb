@@ -128,9 +128,9 @@ module HTTPX
     end
 
     def purge_pending
-      [@parser.pending, @pending].each do |pending|
-        pending.reject! do |request, *args|
-          yield(request, args) if block_given?
+      [*@parser.pending, *@pending].each do |pending|
+        pending.reject! do |request|
+          yield request
         end
       end
     end
