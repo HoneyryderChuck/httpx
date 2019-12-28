@@ -28,9 +28,11 @@ class ResponseTest < Minitest::Test
     r2 = Response.new(request, 302, "2.0", {})
     r2.raise_for_status
     r3 = Response.new(request, 404, "2.0", {})
-    assert_raises(HTTPX::HTTPError) { r3.raise_for_status }
+    error = assert_raises(HTTPX::HTTPError) { r3.raise_for_status }
+    assert error.status == 404
     r4 = Response.new(request, 500, "2.0", {})
-    assert_raises(HTTPX::HTTPError) { r4.raise_for_status }
+    error = assert_raises(HTTPX::HTTPError) { r4.raise_for_status }
+    assert error.status == 500
   end
 
   def test_response_body_to_s
