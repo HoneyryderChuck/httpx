@@ -23,5 +23,11 @@ module Requests
         assert resolver.is_a?(HTTPX::Resolver::HTTPS)
       end
     end
+
+    def test_resolvers_doh_error
+      response = HTTPX.head("https://unexistent", resolver_class: :https, resolver_options: DOH_OPTIONS)
+      assert response.is_a?(HTTPX::ErrorResponse), "should be a response error"
+      assert response.error.is_a?(HTTPX::ResolveError), "should be a resolving error"
+    end
   end
 end
