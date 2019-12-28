@@ -2,7 +2,7 @@
 
 module Requests
   module Resolvers
-    DOH_OPTIONS = { uri: ENV.fetch("HTTPX_RESOLVER_URI") }.freeze
+    DOH_OPTIONS = { uri: ENV["HTTPX_RESOLVER_URI"] }.freeze
 
     SessionWithPool = Class.new(HTTPX::Session) do
       def pool
