@@ -10,16 +10,18 @@ module Requests
       end
     end
 
-    def test_resolvers_doh
-      session = SessionWithPool.new
-      uri = build_uri("/get")
-      response = session.head(uri, resolver_class: :https, resolver_options: DOH_OPTIONS)
-      verify_status(response, 200)
+    def test_resolvers_doh_post
+      HTTPX::Resolver.stub(:cached_lookup, nil) do
+        session = SessionWithPool.new
+        uri = build_uri("/get")
+        response = session.head(uri, resolver_class: :https, resolver_options: DOH_OPTIONS)
+        verify_status(response, 200)
 
-      resolvers = session.pool.instance_variable_get(:@resolvers)
-      assert resolvers.size == 1, "there should be one resolver"
-      resolver = resolvers.values.first
-      assert resolver.is_a?(HTTPX::Resolver::HTTPS)
+        resolvers = session.pool.instance_variable_get(:@resolvers)
+        assert resolvers.size == 1, "there should be one resolver"
+        resolver = resolvers.values.first
+        assert resolver.is_a?(HTTPX::Resolver::HTTPS)
+      end
     end
   end
 end
