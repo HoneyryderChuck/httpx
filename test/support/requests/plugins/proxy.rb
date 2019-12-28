@@ -5,6 +5,12 @@ module Requests
     module Proxy
       include ProxyHelper
 
+      def test_plugin_no_proxy
+        uri = build_uri("/get")
+        session = HTTPX.plugin(:proxy).with_proxy(uri: [])
+        assert_raises(HTTPX::HTTPProxyError) { session.get(uri) }
+      end
+
       def test_plugin_http_proxy
         session = HTTPX.plugin(:proxy).with_proxy(uri: http_proxy)
         uri = build_uri("/get")
