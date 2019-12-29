@@ -13,7 +13,6 @@ class HTTPTest < Minitest::Test
   include Headers
   include ResponseBody
   include IO
-  include Timeouts
   include Errors
   include AltSvc if ENV.key?("HTTPBIN_ALTSVC_HOST")
 
