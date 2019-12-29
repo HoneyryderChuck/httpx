@@ -136,6 +136,7 @@ module HTTPX
     end
 
     def timeout
+      return if @connections.empty?
       @start_timeout = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       hosts = @queries.keys
       @timeouts.values_at(*hosts).reject(&:empty?).map(&:first).min
