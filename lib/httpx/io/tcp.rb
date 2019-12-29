@@ -66,6 +66,11 @@ module HTTPX
 
       @ip_index -= 1
       retry
+    rescue Errno::ETIMEDOUT => e
+      raise ConnectTimeout, e.message if @ip_index <= 0
+
+      @ip_index -= 1
+      retry
     rescue Errno::EINPROGRESS,
            Errno::EALREADY,
            ::IO::WaitReadable

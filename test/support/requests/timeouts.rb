@@ -19,7 +19,7 @@ module Requests
     end
 
     def test_http_timeout_connect_timeout
-      uri = "#{origin("nghttp2.org")}:81"
+      uri = build_uri("/", origin("127.0.0.1:9090"))
       session = HTTPX.timeout(connect_timeout: 0.5, operation_timeout: 30, total_timeout: 2)
       response = session.get(uri)
       assert response.is_a?(HTTPX::ErrorResponse), "response should have failed (#{response.class})"
