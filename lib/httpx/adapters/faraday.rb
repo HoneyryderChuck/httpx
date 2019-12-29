@@ -6,6 +6,7 @@ require "faraday"
 module Faraday
   class Adapter
     class HTTPX < Faraday::Adapter
+      # :nocov:
       SSL_ERROR = if defined?(Faraday::SSLError)
         Faraday::SSLError
       else
@@ -17,6 +18,7 @@ module Faraday
       else
         Faraday::Error::ConnectionFailed
       end
+      # :nocov:
 
       module RequestMixin
         private
