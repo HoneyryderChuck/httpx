@@ -20,11 +20,11 @@ RET=$?
 
 RUBY_VERSION=`ruby -e 'puts RUBY_VERSION'`
 
-if [[ $RET = 0 ]] && [[ ${RUBY_VERSION:0:3} = "2.6" ]]; then
+if [[ $RET = 0 ]] && [[ ${RUBY_VERSION:0:3} = "2.7" ]]; then
 	RUBYOPT="--jit" bundle exec rake test:ci
 fi
 
-if [[ $RET = 0 ]] && [[ ${RUBY_VERSION:0:3} = "2.6" ]]; then
+if [[ $RET = 0 ]] && [[ ${RUBY_VERSION:0:3} = "2.7" ]]; then
   bundle exec rake prepare_website &&
   cd www && bundle install --jobs 4 --path ../vendor &&
   bundle exec jekyll build -d public
