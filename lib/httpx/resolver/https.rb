@@ -94,11 +94,11 @@ module HTTPX
 
     def on_response(request, response)
       response.raise_for_status
-    rescue Error => ex
+    rescue Error => e
       connection = @requests[request]
       hostname = @queries.key(connection)
-      error = ResolveError.new("Can't resolve #{hostname}: #{ex.message}")
-      error.set_backtrace(ex.backtrace)
+      error = ResolveError.new("Can't resolve #{hostname}: #{e.message}")
+      error.set_backtrace(e.backtrace)
       emit(:error, connection, error)
     else
       parse(response)

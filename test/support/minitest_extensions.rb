@@ -24,7 +24,7 @@ module MinitestExtensions
   module FirstFailedTestInThread
     def self.prepended(*)
       super
-      HTTPX::Session.__send__(:include, SessionExtensions)
+      HTTPX::Session.include SessionExtensions
     end
 
     def setup

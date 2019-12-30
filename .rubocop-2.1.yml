@@ -12,3 +12,14 @@ Layout/IndentHeredoc:
 
 Style/HashSyntax:
   Enabled: false
+
+Naming/UncommunicativeMethodParamName:
+  Enabled: false
+
+Lint/HandleExceptions:
+  Enabled: false
+
+Metrics/LineLength:
+  Exclude:
+    - 'test/resolver/native_test.rb'
+  Max: 140

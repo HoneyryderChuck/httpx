@@ -195,16 +195,16 @@ module Faraday
           response_headers.merge!(response.headers)
         end
         @app.call(env)
-      rescue OpenSSL::SSL::SSLError => err
-        raise SSL_ERROR, err
+      rescue OpenSSL::SSL::SSLError => e
+        raise SSL_ERROR, e
       rescue Errno::ECONNABORTED,
              Errno::ECONNREFUSED,
              Errno::ECONNRESET,
              Errno::EHOSTUNREACH,
              Errno::EINVAL,
              Errno::ENETUNREACH,
-             Errno::EPIPE => err
-        raise CONNECTION_FAILED_ERROR, err
+             Errno::EPIPE => e
+        raise CONNECTION_FAILED_ERROR, e
       end
 
       private

@@ -1,7 +1,18 @@
 inherit_from: .rubocop.yml
 
+require: rubocop-performance
+
 # TODO: remove this if min supported version of ruby is 2.3
 Style/HashSyntax:
   Enabled: false
 
+Naming/MethodParameterName:
+  Enabled: false
 
+Lint/SuppressedException:
+  Enabled: false
+
+Layout/LineLength:
+  Exclude:
+    - 'test/resolver/native_test.rb'
+  Max: 140

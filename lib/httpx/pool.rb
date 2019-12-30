@@ -33,9 +33,9 @@ module HTTPX
         end
         @timers.fire
       end
-    rescue StandardError => ex
+    rescue StandardError => e
       @connections.each do |connection|
-        connection.emit(:error, ex)
+        connection.emit(:error, e)
       end
     end
 
