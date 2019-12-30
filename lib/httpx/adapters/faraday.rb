@@ -185,11 +185,11 @@ module Faraday
           return handler
         end
 
-        request_options = build_request(env)
+        meth, uri, request_options = build_request(env)
 
         session = @session.with(options_from_env(env))
         session = session.plugin(:proxy).with_proxy(proxy_options) if env.request.proxy
-        response = session.__send__(*request_options)
+        response = session.__send__(meth, uri, **request_options)
         response.raise_for_status unless response.is_a?(::HTTPX::Response)
         save_response(env, response.status, response.body.to_s, response.headers, response.reason) do |response_headers|
           response_headers.merge!(response.headers)

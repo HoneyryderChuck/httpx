@@ -46,7 +46,7 @@ module HTTPX
       module ResponseBodyMethods
         attr_reader :encodings
 
-        def initialize(*)
+        def initialize(*, **)
           @encodings = []
 
           super

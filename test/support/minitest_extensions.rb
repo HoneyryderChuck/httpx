@@ -2,7 +2,7 @@
 
 # testing proxies is a drag...
 module TestTimeoutDefaults
-  def new(*)
+  def new(**)
     timeout = super
     timeout.instance_variable_set(:@connect_timeout, 5)
     timeout
