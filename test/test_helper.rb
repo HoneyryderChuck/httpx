@@ -14,8 +14,8 @@ end
 
 require "httpx"
 
-Dir[File.join(".", "test", "support", "*.rb")].each { |f| require f }
-Dir[File.join(".", "test", "support", "**", "*.rb")].each { |f| require f }
+Dir[File.join(".", "test", "support", "*.rb")].sort.each { |f| require f }
+Dir[File.join(".", "test", "support", "**", "*.rb")].sort.each { |f| require f }
 
 # Ruby 2.3 openssl configuration somehow ignores SSL_CERT_FILE env var.
 # This adds it manually.

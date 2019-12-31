@@ -13,7 +13,8 @@ if RUBY_VERSION < "2.2"
   gem "net-ssh", "~> 4.2.0", require: false
   gem "rb-inotify", "~> 0.9.10", require: false
 else
-  gem "rubocop", "~> 0.61.1", require: false
+  gem "rubocop", "~> 0.78.0", require: false
+  gem "rubocop-performance", "~> 1.5.2", require: false
 end
 
 platform :mri do

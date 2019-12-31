@@ -2,7 +2,7 @@
 
 # testing proxies is a drag...
 module TestTimeoutDefaults
-  def new(*)
+  def new(**)
     timeout = super
     timeout.instance_variable_set(:@connect_timeout, 5)
     timeout
@@ -24,7 +24,7 @@ module MinitestExtensions
   module FirstFailedTestInThread
     def self.prepended(*)
       super
-      HTTPX::Session.__send__(:include, SessionExtensions)
+      HTTPX::Session.include SessionExtensions
     end
 
     def setup

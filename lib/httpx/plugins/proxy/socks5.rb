@@ -77,7 +77,7 @@ module HTTPX
               case method
               when PASSWD
                 transition(:authenticating)
-                return
+                nil
               when NONE
                 __on_socks5_error("no supported authorization methods")
               else

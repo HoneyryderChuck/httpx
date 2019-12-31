@@ -10,7 +10,7 @@ module HTTPX
     def self.new(opts = {})
       return opts if opts.is_a?(Timeout)
 
-      super
+      super(**opts)
     end
 
     attr_reader :connect_timeout, :operation_timeout, :total_timeout

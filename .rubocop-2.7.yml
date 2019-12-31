@@ -1,0 +1,1 @@
+inherit_from: .rubocop-2.3.yml

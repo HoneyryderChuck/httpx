@@ -13,18 +13,20 @@ fi
 export PATH=$GEM_HOME/bin:$BUNDLE_PATH/gems/bin:$PATH
 mkdir -p "$GEM_HOME" && chmod 777 "$GEM_HOME"
 gem install bundler -v="1.17.3" --no-doc --conservative
-cd /home && bundle install --jobs 4 --path vendor && \
+cd /home && \
+bundle config set path 'vendor' && \
+bundle install --jobs 4 && \
   bundle exec rake test:ci
 
 RET=$?
 
 RUBY_VERSION=`ruby -e 'puts RUBY_VERSION'`
 
-if [[ $RET = 0 ]] && [[ ${RUBY_VERSION:0:3} = "2.6" ]]; then
+if [[ $RET = 0 ]] && [[ ${RUBY_VERSION:0:3} = "2.7" ]]; then
 	RUBYOPT="--jit" bundle exec rake test:ci
 fi
 
-if [[ $RET = 0 ]] && [[ ${RUBY_VERSION:0:3} = "2.6" ]]; then
+if [[ $RET = 0 ]] && [[ ${RUBY_VERSION:0:3} = "2.7" ]]; then
   bundle exec rake prepare_website &&
   cd www && bundle install --jobs 4 --path ../vendor &&
   bundle exec jekyll build -d public

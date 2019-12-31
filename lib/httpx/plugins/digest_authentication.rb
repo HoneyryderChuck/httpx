@@ -107,7 +107,7 @@ module HTTPX
 
           if qop || sess
             cnonce = make_cnonce
-            nc = format("%08x", nc)
+            nc = format("%<nonce>08x", nonce: nc)
           end
 
           a1 = if sess

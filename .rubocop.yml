@@ -17,11 +17,6 @@ AllCops:
     - 'www/**/*'
     - 'lib/httpx/extensions.rb'
 
-Metrics/LineLength:
-  Exclude:
-    - 'test/resolver/native_test.rb'
-  Max: 140
-
 Metrics/MethodLength:
   Max: 200
 
@@ -35,9 +30,6 @@ Naming/FileName:
 
 Layout/EndAlignment:
   EnforcedStyleAlignWith: variable
-
-Lint/HandleExceptions:
-  Enabled: false
 
 Lint/RescueException:
   Exclude:
