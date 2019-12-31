@@ -161,7 +161,13 @@ module HTTPX
         resolver.on(:error, &method(:on_resolver_error))
         resolver.on(:close) { on_resolver_close(resolver) }
         resolver
+      # rubocop: disable Layout/RescueEnsureAlignment
+      rescue ArgumentError
+        # this block is here because of an error which happens on CI from time to time
+        warn "tried resolver: #{resolver_type}"
+        raise
       end
+      # rubocop: enable Layout/RescueEnsureAlignment
     end
   end
 end

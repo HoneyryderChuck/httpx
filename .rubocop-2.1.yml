@@ -23,3 +23,6 @@ Metrics/LineLength:
   Exclude:
     - 'test/resolver/native_test.rb'
   Max: 140
+
+Lint/UnneededCopDisableDirective:
+  Enabled: false
