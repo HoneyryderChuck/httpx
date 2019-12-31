@@ -12,6 +12,8 @@ if RUBY_VERSION < "2.2"
   gem "rubocop", "~> 0.57.0", require: false
   gem "net-ssh", "~> 4.2.0", require: false
   gem "rb-inotify", "~> 0.9.10", require: false
+elsif RUBY_VERSION < "2.3"
+  gem "rubocop", "~> 0.68.1", require: false
 else
   gem "rubocop", "~> 0.78.0", require: false
   gem "rubocop-performance", "~> 1.5.2", require: false
