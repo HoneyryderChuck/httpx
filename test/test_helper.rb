@@ -22,7 +22,9 @@ Dir[File.join(".", "test", "support", "**", "*.rb")].sort.each { |f| require f }
 OpenSSL::SSL::SSLContext::DEFAULT_CERT_STORE.add_file(ENV["SSL_CERT_FILE"]) if RUBY_VERSION.start_with?("2.3") && ENV.key?("SSL_CERT_FILE")
 
 # 9090 drops SYN packets for connect timeout tests, make sure there's a server binding there.
-server = TCPServer.new("127.0.0.1", 9090)
+CONNECT_TIMEOUT_PORT = ENV.fetch("CONNECT_TIMEOUT_PORT", 9090).to_i
+
+server = TCPServer.new("127.0.0.1", CONNECT_TIMEOUT_PORT)
 
 Thread.start do
   begin

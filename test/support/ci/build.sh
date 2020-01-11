@@ -11,8 +11,10 @@ else
 fi
 
 # use port 9090 to test connection timeouts
-iptables -A OUTPUT -p tcp -m tcp --tcp-flags SYN SYN --sport 9090 -j DROP
+CONNECT_TIMEOUT_PORT=9090
+iptables -A OUTPUT -p tcp -m tcp --tcp-flags SYN SYN --sport $CONNECT_TIMEOUT_PORT -j DROP
 
+export CONNECT_TIMEOUT_PORT=$CONNECT_TIMEOUT_PORT
 export PATH=$GEM_HOME/bin:$BUNDLE_PATH/gems/bin:$PATH
 mkdir -p "$GEM_HOME" && chmod 777 "$GEM_HOME"
 gem install bundler -v="1.17.3" --no-doc --conservative
