@@ -76,8 +76,8 @@ module HTTPX
            ::IO::WaitReadable
     end
 
-    # :nocov:
     if RUBY_VERSION < "2.3"
+      # :nocov:
       def read(size, buffer)
         @io.read_nonblock(size, buffer)
         buffer.bytesize
@@ -96,6 +96,7 @@ module HTTPX
       rescue EOFError
         nil
       end
+      # :nocov:
     else
       def read(size, buffer)
         ret = @io.read_nonblock(size, buffer, exception: false)
@@ -114,7 +115,6 @@ module HTTPX
         siz
       end
     end
-    # :nocov:
 
     def close
       return if @keep_open || closed?
