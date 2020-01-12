@@ -57,7 +57,7 @@ class HTTPSTest < Minitest::Test
     assert log_output.match(/ issuer: .+/)
     assert log_output.match(/ SSL certificate verify ok./)
 
-    return if RUBY_ENGINE == "jruby" || RUBY_VERSION < "2.2"
+    return if RUBY_ENGINE == "jruby" || RUBY_VERSION < "2.3"
 
     # assert request headers
     assert log_output.match(/HEADER: :scheme: https/)

@@ -57,14 +57,16 @@ class SessionTest < Minitest::Test
     assert response.status =~ /timed out after \d+ seconds/i, "response should have timed out"
   end
 
-  def test_session_timeout_connect_timeout
-    sleep 2
-    uri = build_uri("/", origin("127.0.0.1:#{CONNECT_TIMEOUT_PORT}"))
-    session = HTTPX.timeout(connect_timeout: 0.5, operation_timeout: 30, total_timeout: 2)
-    response = session.get(uri)
-    assert response.is_a?(HTTPX::ErrorResponse), "response should have failed (#{response.class})"
-    assert response.error.is_a?(HTTPX::ConnectTimeoutError),
-           "response should have failed on connection (#{response.error.class}: #{response.error})"
+  if ENV.key?("HTTPX_DEBUG")
+    def test_session_timeout_connect_timeout
+      sleep 2
+      uri = build_uri("/", origin("127.0.0.1:#{CONNECT_TIMEOUT_PORT}"))
+      session = HTTPX.timeout(connect_timeout: 0.5, operation_timeout: 30, total_timeout: 2)
+      response = session.get(uri)
+      assert response.is_a?(HTTPX::ErrorResponse), "response should have failed (#{response.class})"
+      assert response.error.is_a?(HTTPX::ConnectTimeoutError),
+             "response should have failed on connection (#{response.error.class}: #{response.error})"
+    end
   end
 
   # def test_http_timeouts_operation_timeout
