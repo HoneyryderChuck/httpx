@@ -4,13 +4,13 @@ require "openssl"
 
 module HTTPX
   class SSL < TCP
-    # :nocov:
     TLS_OPTIONS = if OpenSSL::SSL::SSLContext.instance_methods.include?(:alpn_protocols)
       { alpn_protocols: %w[h2 http/1.1] }
     else
+      # :nocov:
       {}
+      # :nocov:
     end
-    # :nocov:
 
     def initialize(_, _, options)
       @ctx = OpenSSL::SSL::SSLContext.new
@@ -66,8 +66,8 @@ module HTTPX
            ::IO::WaitWritable
     end
 
-    # :nocov:
     if RUBY_VERSION < "2.3"
+      # :nocov:
       def read(*)
         super
       rescue ::IO::WaitWritable
@@ -79,6 +79,7 @@ module HTTPX
       rescue ::IO::WaitReadable
         0
       end
+      # :nocov:
     else
       if OpenSSL::VERSION < "2.0.6"
         def read(size, buffer)
@@ -92,7 +93,6 @@ module HTTPX
         end
       end
     end
-    # :nocov:
 
     # :nocov:
     def inspect
@@ -114,7 +114,6 @@ module HTTPX
       do_transition(nextstate)
     end
 
-    # :nocov:
     def log_transition_state(nextstate)
       return super unless nextstate == :negotiated
 
@@ -130,6 +129,5 @@ module HTTPX
         " issuer: #{server_cert.issuer}\n" \
         " SSL certificate verify ok."
     end
-    # :nocov:
   end
 end
