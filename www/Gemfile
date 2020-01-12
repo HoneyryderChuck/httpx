@@ -1,8 +1,8 @@
 source "https://rubygems.org"
 
-gem "jekyll", "~> 3.6.2"
-gem "jekyll-gzip", "~> 1.1.0"
-gem "jekyll-paginate-v2", "~> 2.0.0"
+gem "jekyll", "~> 4.0.0"
+gem "jekyll-gzip", "~> 2.4.1"
+gem "jekyll-paginate-v2", "~> 1.5.2"
 platform :mri do
-  gem "jekyll-brotli", "~> 1.0.0"
+  gem "jekyll-brotli", "~> 2.2.0"
 end

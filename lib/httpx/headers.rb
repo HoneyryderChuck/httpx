@@ -130,6 +130,12 @@ module HTTPX
       @headers.to_s
     end
 
+    # :nocov:
+    def inspect
+      to_hash.inspect
+    end
+    # :nocov:
+
     # this is internal API and doesn't abide to other public API
     # guarantees, like downcasing strings.
     # Please do not use this outside of core!

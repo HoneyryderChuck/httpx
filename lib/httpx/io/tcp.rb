@@ -41,10 +41,6 @@ module HTTPX
       @io ||= build_socket
     end
 
-    def scheme
-      "http"
-    end
-
     def to_io
       @io.to_io
     end
@@ -70,12 +66,18 @@ module HTTPX
 
       @ip_index -= 1
       retry
+    rescue Errno::ETIMEDOUT => e
+      raise ConnectTimeout, e.message if @ip_index <= 0
+
+      @ip_index -= 1
+      retry
     rescue Errno::EINPROGRESS,
            Errno::EALREADY,
            ::IO::WaitReadable
     end
 
     if RUBY_VERSION < "2.3"
+      # :nocov:
       def read(size, buffer)
         @io.read_nonblock(size, buffer)
         buffer.bytesize
@@ -94,6 +96,7 @@ module HTTPX
       rescue EOFError
         nil
       end
+      # :nocov:
     else
       def read(size, buffer)
         ret = @io.read_nonblock(size, buffer, exception: false)
@@ -131,10 +134,12 @@ module HTTPX
       @state == :idle || @state == :closed
     end
 
+    # :nocov:
     def inspect
       id = @io.closed? ? "closed" : @io.fileno
       "#<TCP(fd: #{id}): #{@ip}:#{@port} (state: #{@state})>"
     end
+    # :nocov:
 
     private
 
@@ -154,9 +159,7 @@ module HTTPX
     end
 
     def do_transition(nextstate)
-      log(level: 1) do
-        log_transition_state(nextstate)
-      end
+      log(level: 1) { log_transition_state(nextstate) }
       @state = nextstate
     end
 

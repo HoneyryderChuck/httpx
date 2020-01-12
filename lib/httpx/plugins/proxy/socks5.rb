@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module HTTPX
+  Socks5Error = Class.new(Error)
   module Plugins
     module Proxy
       module Socks5
@@ -14,7 +15,7 @@ module HTTPX
         IPV6 = 4
         SUCCESS = 0
 
-        Error = Class.new(Error)
+        Error = Socks5Error
 
         module ConnectionMethods
           def call
@@ -84,8 +85,7 @@ module HTTPX
                 transition(:negotiating)
               end
             when :authenticating
-              version, status = packet.unpack("CC")
-              __socks5_check_version(version)
+              _, status = packet.unpack("CC")
               return transition(:negotiating) if status == SUCCESS
 
               __on_socks5_error("socks authentication error: #{status}")
@@ -147,8 +147,8 @@ module HTTPX
 
           def authenticate(parameters)
             user = parameters.username
-            pass = parameters.password
-            [0x01, user.bytesize, user, pass.bytesize, password].pack("CCA*CA*")
+            password = parameters.password
+            [0x01, user.bytesize, user, password.bytesize, password].pack("CCA*CA*")
           end
 
           def connect(uri)

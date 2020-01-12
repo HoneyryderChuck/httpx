@@ -11,8 +11,8 @@ class HTTPSTest < Minitest::Test
   include Headers
   include ResponseBody
   include IO
-  include Timeouts
   include Errors
+  include Resolvers if ENV.key?("HTTPX_RESOLVER_URI")
   # TODO: uncomment as soon as nghttpx supports altsvc for HTTP/2
   # include AltSvc if ENV.key?("HTTPBIN_ALTSVC_HOST")
 
@@ -40,6 +40,36 @@ class HTTPSTest < Minitest::Test
       }, "connections didn't coalesce (expected connection with both origins)"
     end
   end if ENV.key?("HTTPBIN_COALESCING_HOST")
+
+  def test_verbose_log
+    log = StringIO.new
+    uri = build_uri("/get")
+    response = HTTPX.get(uri, debug: log, debug_level: 2)
+    verify_status(response, 200)
+    log_output = log.string
+    # assert tls output
+    assert log_output.match(%r{SSL connection using TLSv\d+\.\d+ / \w+})
+    assert log_output.match(/ALPN, server accepted to use h2/) if RUBY_VERSION > "2.2"
+    assert log_output.match(/Server certificate:/)
+    assert log_output.match(/ subject: .+/)
+    assert log_output.match(/ start date: .+ UTC/)
+    assert log_output.match(/ expire date: .+ UTC/)
+    assert log_output.match(/ issuer: .+/)
+    assert log_output.match(/ SSL certificate verify ok./)
+
+    return unless RUBY_VERSION > "2.2"
+
+    # assert request headers
+    assert log_output.match(/HEADER: :scheme: https/)
+    assert log_output.match(/HEADER: :method: GET/)
+    assert log_output.match(/HEADER: :path: .+/)
+    assert log_output.match(/HEADER: :authority: .+/)
+    assert log_output.match(%r{HEADER: accept: */*})
+    # assert response headers
+    assert log_output.match(/HEADER: :status: 200/)
+    assert log_output.match(/HEADER: content\-type: \w+/)
+    assert log_output.match(/HEADER: content\-length: \d+/)
+  end
 
   private
 

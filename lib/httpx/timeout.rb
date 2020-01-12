@@ -25,8 +25,10 @@ module HTTPX
 
       return unless loop_timeout
 
+      # :nocov:
       warn ":loop_timeout is deprecated, use :operation_timeout instead"
       @operation_timeout = loop_timeout
+      # :nocov:
     end
 
     def ==(other)

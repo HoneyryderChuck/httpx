@@ -52,6 +52,16 @@ class NativeResolverTest < Minitest::Test
     __test_io_api
   end
 
+  def test_no_nameserver
+    resolv = resolver(resolver_options: { nameserver: nil })
+    @resolv_error = nil
+    resolv.on(:error) { |_, error| @resolv_error = error }
+    connection = build_connection("https://idontthinkthisexists.org/")
+    resolv << connection
+    assert @resolv_error, "resolver should have failed"
+    assert @resolv_error.message.include?(": no nameserver")
+  end
+
   private
 
   def resolver(options = Options.new)

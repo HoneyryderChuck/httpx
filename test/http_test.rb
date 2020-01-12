@@ -13,7 +13,6 @@ class HTTPTest < Minitest::Test
   include Headers
   include ResponseBody
   include IO
-  include Timeouts
   include Errors
   include AltSvc if ENV.key?("HTTPBIN_ALTSVC_HOST")
 
@@ -25,6 +24,23 @@ class HTTPTest < Minitest::Test
   include Plugins::H2C
   include Plugins::Retries
   include Plugins::Multipart
+
+  def test_verbose_log
+    log = StringIO.new
+    uri = build_uri("/get")
+    response = HTTPX.get(uri, debug: log, debug_level: 2)
+    verify_status(response, 200)
+    log_output = log.string
+    # assert request headers
+    assert log_output.match(%r{HEADLINE: "GET .+ HTTP/1\.1"})
+    assert log_output.match(%r{HEADER: Accept: */*})
+    assert log_output.match(/HEADER: Host: \w+/)
+    assert log_output.match(/HEADER: Connection: keep\-alive/)
+    # assert response headers
+    assert log_output.match(%r{HEADLINE: 200 HTTP/1\.1})
+    assert log_output.match(/HEADER: content\-type: \w+/)
+    assert log_output.match(/HEADER: content\-length: \d+/)
+  end
 
   private
 

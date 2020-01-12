@@ -9,6 +9,7 @@ module HTTPX
   class Resolver::HTTPS
     extend Forwardable
     include Resolver::ResolverMixin
+    using URIExtensions
 
     NAMESERVER = "https://1.1.1.1/dns-query"
 
@@ -38,7 +39,10 @@ module HTTPX
     end
 
     def <<(connection)
+      return if @uri.origin == connection.origin.to_s
+
       @uri_addresses ||= Resolv.getaddresses(@uri.host)
+
       if @uri_addresses.empty?
         ex = ResolveError.new("Can't resolve #{connection.origin.host}")
         ex.set_backtrace(caller)
@@ -94,7 +98,7 @@ module HTTPX
 
     def on_response(request, response)
       response.raise_for_status
-    rescue Error => e
+    rescue StandardError => e
       connection = @requests[request]
       hostname = @queries.key(connection)
       error = ResolveError.new("Can't resolve #{hostname}: #{e.message}")
@@ -176,8 +180,8 @@ module HTTPX
         payload = Resolver.encode_dns_query(hostname, type: RECORD_TYPES[type])
         request = rklass.new("POST", uri, @options.merge(body: [payload]))
         request.headers["content-type"] = "application/dns-message"
-        request.headers["accept"] = "application/dns-message"
       end
+      request.headers["accept"] = "application/dns-message"
       request.on(:response, &method(:on_response).curry[request])
       request.on(:promise, &method(:on_promise))
       request

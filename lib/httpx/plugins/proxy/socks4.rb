@@ -4,6 +4,7 @@ require "resolv"
 require "ipaddr"
 
 module HTTPX
+  Socks4Error = Class.new(Error)
   module Plugins
     module Proxy
       module Socks4
@@ -12,7 +13,7 @@ module HTTPX
         GRANTED = 90
         PROTOCOLS = %w[socks4 socks4a].freeze
 
-        Error = Class.new(Error)
+        Error = Socks4Error
 
         module ConnectionMethods
           private
@@ -100,7 +101,7 @@ module HTTPX
 
               packet << [ip.to_i].pack("N")
             rescue IPAddr::InvalidAddressError
-              if parameters.uri.scheme == "socks4"
+              if parameters.uri.scheme =~ /^socks4a?$/
                 # resolv defaults to IPv4, and socks4 doesn't support IPv6 otherwise
                 ip = IPAddr.new(Resolv.getaddress(uri.host))
                 packet << [ip.to_i].pack("N")

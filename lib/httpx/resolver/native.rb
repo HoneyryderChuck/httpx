@@ -14,6 +14,7 @@ module HTTPX
       "AAAA" => Resolv::DNS::Resource::IN::AAAA,
     }.freeze
 
+    # :nocov:
     DEFAULTS = if RUBY_VERSION < "2.2"
       {
         **Resolv::DNS::Config.default_config_hash,
@@ -42,6 +43,7 @@ module HTTPX
         false
       end
     end if DEFAULTS[:nameserver]
+    # :nocov:
 
     DNS_PORT = 53
 
@@ -93,7 +95,9 @@ module HTTPX
       @ns_index += 1
       if @ns_index < @nameserver.size
         log(label: "resolver: ") do
+          # :nocov:
           "failed resolving on nameserver #{@nameserver[@ns_index - 1]} (#{e.message})"
+          # :nocov:
         end
         transition(:idle)
       else
@@ -132,6 +136,8 @@ module HTTPX
     end
 
     def timeout
+      return if @connections.empty?
+
       @start_timeout = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       hosts = @queries.keys
       @timeouts.values_at(*hosts).reject(&:empty?).map(&:first).min
@@ -166,7 +172,9 @@ module HTTPX
         else
           connections << connection
           log(label: "resolver: ") do
+            # :nocov:
             "timeout after #{prev_timeout}s, retry(#{timeouts.first}) #{host}..."
+            # :nocov:
           end
         end
       end

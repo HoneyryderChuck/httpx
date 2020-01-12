@@ -7,7 +7,9 @@ module HTTPX
     TLS_OPTIONS = if OpenSSL::SSL::SSLContext.instance_methods.include?(:alpn_protocols)
       { alpn_protocols: %w[h2 http/1.1] }
     else
+      # :nocov:
       {}
+      # :nocov:
     end
 
     def initialize(_, _, options)
@@ -16,10 +18,6 @@ module HTTPX
       @ctx.set_params(ctx_options) unless ctx_options.empty?
       super
       @state = :negotiated if @keep_open
-    end
-
-    def scheme
-      "https"
     end
 
     def protocol
@@ -68,6 +66,7 @@ module HTTPX
            ::IO::WaitWritable
     end
 
+    # :nocov:
     if RUBY_VERSION < "2.3"
       def read(*)
         super
@@ -93,11 +92,14 @@ module HTTPX
         end
       end
     end
+    # :nocov:
 
+    # :nocov:
     def inspect
       id = @io.closed? ? "closed" : @io.to_io.fileno
       "#<SSL(fd: #{id}): #{@ip}:#{@port} state: #{@state}>"
     end
+    # :nocov:
 
     private
 

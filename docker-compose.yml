@@ -6,9 +6,9 @@ services:
       - HTTPBIN_HOST=nghttp2
       - HTTPX_HTTP_PROXY=http://httpproxy:3128
       - HTTPX_HTTPS_PROXY=http://httpproxy:3128
-      - HTTPX_SOCKS4_PROXY=socks4://socksproxy:8080
-      - HTTPX_SOCKS4A_PROXY=socks4a://socksproxy:8080
-      - HTTPX_SOCKS5_PROXY=socks5://socksproxy:8080
+      - HTTPX_SOCKS4_PROXY=socks4://user4:@socksproxy:8080
+      - HTTPX_SOCKS4A_PROXY=socks4a://user4:@socksproxy:8080
+      - HTTPX_SOCKS5_PROXY=socks5://user5:password@socksproxy:8080
       - HTTPX_SSH_PROXY=ssh://sshproxy:22
       - PARALLEL=1
       - N=6 # minitest workers
@@ -21,6 +21,7 @@ services:
       - BUNDLE_APP_CONFIG=/usr/local/bundle
       - HTTPBIN_ALTSVC_HOST=another2
     image: ruby:alpine
+    privileged: true
     depends_on:
       - httpproxy 
       - socksproxy 

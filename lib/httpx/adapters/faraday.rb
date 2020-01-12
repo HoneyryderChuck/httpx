@@ -6,6 +6,7 @@ require "faraday"
 module Faraday
   class Adapter
     class HTTPX < Faraday::Adapter
+      # :nocov:
       SSL_ERROR = if defined?(Faraday::SSLError)
         Faraday::SSLError
       else
@@ -17,6 +18,7 @@ module Faraday
       else
         Faraday::Error::ConnectionFailed
       end
+      # :nocov:
 
       module RequestMixin
         private
@@ -63,6 +65,7 @@ module Faraday
         plugin(:compression)
         plugin(:persistent)
 
+        # :nocov:
         module ReasonPlugin
           if RUBY_VERSION < "2.5"
             def self.load_dependencies(*)
@@ -85,6 +88,7 @@ module Faraday
             end
           end
         end
+        # :nocov:
         plugin(ReasonPlugin)
       end
 

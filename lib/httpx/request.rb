@@ -60,6 +60,7 @@ module HTTPX
       @state = :idle
     end
 
+    # :nocov:
     if RUBY_VERSION < "2.2"
       # rubocop: disable Lint/UriEscapeUnescape:
       def initialize_with_escape(verb, uri, options = {})
@@ -69,6 +70,7 @@ module HTTPX
       alias_method :initialize, :initialize_with_escape
       # rubocop: enable Lint/UriEscapeUnescape:
     end
+    # :nocov:
 
     def merge_headers(h)
       @headers = @headers.merge(h)
@@ -123,9 +125,15 @@ module HTTPX
       nil
     end
 
+    # :nocov:
     def inspect
-      "#<Request #{@verb.to_s.upcase} #{path} @headers=#{@headers.to_hash} @body=#{@body}>"
+      "#<HTTPX::Request:#{object_id} " \
+      "#{@verb.to_s.upcase} " \
+      "#{uri} " \
+      "@headers=#{@headers} " \
+      "@body=#{@body}>"
     end
+    # :nocov:
 
     class Body
       class << self
@@ -201,6 +209,13 @@ module HTTPX
       def chunk!
         @headers.add("transfer-encoding", "chunked")
       end
+
+      # :nocov:
+      def inspect
+        "#<HTTPX::Request::Body:#{object_id} " \
+        "#{unbounded_body? ? "stream" : "@bytesize=#{bytesize}"}>"
+      end
+      # :nocov:
     end
 
     def transition(nextstate)

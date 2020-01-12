@@ -128,9 +128,9 @@ module HTTPX
     end
 
     def purge_pending
-      [@parser.pending, @pending].each do |pending|
-        pending.reject! do |request, *args|
-          yield(request, args) if block_given?
+      [*@parser.pending, *@pending].each do |pending|
+        pending.reject! do |request|
+          yield request
         end
       end
     end
@@ -358,15 +358,17 @@ module HTTPX
     end
 
     def handle_error(error)
-      if error.instance_of?(TimeoutError) && @timeout
-        @timeout -= error.timeout
-        return unless @timeout <= 0
+      if error.instance_of?(TimeoutError)
+        if @timeout
+          @timeout -= error.timeout
+          return unless @timeout <= 0
+        end
 
         error = error.to_connection_error if connecting?
       end
 
       parser.handle_error(error) if @parser && parser.respond_to?(:handle_error)
-      @pending.each do |request, _|
+      @pending.each do |request|
         request.emit(:response, ErrorResponse.new(request, error, @options))
       end
     end

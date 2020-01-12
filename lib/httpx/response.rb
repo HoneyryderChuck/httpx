@@ -52,9 +52,15 @@ module HTTPX
       bodyless? || (@request.verb == :connect && @status == 200)
     end
 
+    # :nocov:
     def inspect
-      "#<Response:#{object_id} @status=#{@status} @headers=#{@headers}>"
+      "#<Response:#{object_id} "\
+      "HTTP/#{version} " \
+      "@status=#{@status} " \
+      "@headers=#{@headers} " \
+      "@body=#{@body}>"
     end
+    # :nocov:
 
     def raise_for_status
       return if @status < 400
@@ -164,6 +170,14 @@ module HTTPX
       def ==(other)
         to_s == other.to_s
       end
+
+      # :nocov:
+      def inspect
+        "#<HTTPX::Response::Body:#{object_id} " \
+        "@state=#{@state} " \
+        "@length=#{@length}>"
+      end
+      # :nocov:
 
       private
 

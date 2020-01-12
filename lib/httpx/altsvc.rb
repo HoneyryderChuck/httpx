@@ -67,6 +67,7 @@ module HTTPX
       end
     end
 
+    # :nocov:
     if RUBY_VERSION < "2.2"
       def parse_altsvc_origin(alt_origin)
         alt_proto, alt_origin = alt_origin.split("=")
@@ -87,5 +88,6 @@ module HTTPX
         URI.parse("#{alt_proto}://#{alt_origin}")
       end
     end
+    # :nocov:
   end
 end
