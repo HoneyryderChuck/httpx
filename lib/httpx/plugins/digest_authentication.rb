@@ -59,9 +59,7 @@ module HTTPX
             prev_response = response
           end
 
-          return responses.first if responses.size == 1
-
-          responses
+          responses.size == 1 ? responses.first : responses
         end
       end
 
@@ -81,8 +79,9 @@ module HTTPX
 
           uri = request.path
 
-          params = Hash[auth_info.scan(/(\w+)="(.*?)"/)]
-
+          params = Hash[auth_info.split(/ *, */)
+                                 .map { |val| val.split("=") }
+                                 .map { |k, v| [k, v.delete("\"")] }]
           nonce = params["nonce"]
           nc = next_nonce
 
@@ -90,17 +89,12 @@ module HTTPX
           qop = params["qop"]
 
           if params["algorithm"] =~ /(.*?)(-sess)?$/
-            algorithm = case Regexp.last_match(1)
-                        when "MD5"    then ::Digest::MD5
-                        when "SHA1"   then ::Digest::SHA1
-                        when "SHA2"   then ::Digest::SHA2
-                        when "SHA256" then ::Digest::SHA256
-                        when "SHA384" then ::Digest::SHA384
-                        when "SHA512" then ::Digest::SHA512
-                        when "RMD160" then ::Digest::RMD160
-                        else raise DigestError, "unknown algorithm \"#{Regexp.last_match(1)}\""
-            end
+            alg = Regexp.last_match(1)
+            algorithm = ::Digest.const_get(alg)
+            raise DigestError, "unknown algorithm \"#{alg}\"" unless algorithm
+
             sess = Regexp.last_match(2)
+            params.delete("algorithm")
           else
             algorithm = ::Digest::MD5
           end
