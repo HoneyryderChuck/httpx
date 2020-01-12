@@ -49,7 +49,7 @@ class HTTPSTest < Minitest::Test
     log_output = log.string
     # assert tls output
     assert log_output.match(%r{SSL connection using TLSv\d+\.\d+ / \w+})
-    assert log_output.match(/ALPN, server accepted to use h2/) if RUBY_VERSION > "2.2"
+    assert log_output.match(/ALPN, server accepted to use h2/) unless RUBY_ENGINE == "jruby" || RUBY_VERSION < "2.3"
     assert log_output.match(/Server certificate:/)
     assert log_output.match(/ subject: .+/)
     assert log_output.match(/ start date: .+ UTC/)
@@ -57,7 +57,7 @@ class HTTPSTest < Minitest::Test
     assert log_output.match(/ issuer: .+/)
     assert log_output.match(/ SSL certificate verify ok./)
 
-    return unless RUBY_VERSION > "2.2"
+    return if RUBY_ENGINE == "jruby" || RUBY_VERSION < "2.2"
 
     # assert request headers
     assert log_output.match(/HEADER: :scheme: https/)
