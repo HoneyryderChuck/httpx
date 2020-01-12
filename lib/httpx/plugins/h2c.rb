@@ -30,9 +30,7 @@ module HTTPX
 
           responses = send_requests(*requests, h2c_options)
 
-          return responses.first if responses.size == 1
-
-          responses
+          responses.size == 1 ? responses.first : responses
         end
 
         private
@@ -107,17 +105,6 @@ module HTTPX
           return super unless @origin.scheme == "http"
 
           super("http/1.1")
-        end
-      end
-
-      module FrameBuilder
-        include HTTP2Next
-
-        module_function
-
-        def settings_value(settings)
-          frame = Framer.new.generate(type: :settings, stream: 0, payload: settings)
-          Base64.urlsafe_encode64(frame[9..-1])
         end
       end
     end

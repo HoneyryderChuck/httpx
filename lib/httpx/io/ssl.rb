@@ -66,8 +66,8 @@ module HTTPX
            ::IO::WaitWritable
     end
 
+    # :nocov:
     if RUBY_VERSION < "2.3"
-      # :nocov:
       def read(*)
         super
       rescue ::IO::WaitWritable
@@ -79,7 +79,6 @@ module HTTPX
       rescue ::IO::WaitReadable
         0
       end
-      # :nocov:
     else
       if OpenSSL::VERSION < "2.0.6"
         def read(size, buffer)
@@ -93,6 +92,7 @@ module HTTPX
         end
       end
     end
+    # :nocov:
 
     # :nocov:
     def inspect
