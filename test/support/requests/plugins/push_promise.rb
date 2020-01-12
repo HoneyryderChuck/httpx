@@ -3,6 +3,13 @@
 module Requests
   module Plugins
     module PushPromise
+      def test_plugin_no_push_promise
+        html, css = HTTPX.get(push_html_uri, push_css_uri)
+        verify_status(html, 200)
+        verify_status(css, 200)
+        verify_no_header(css.headers, "x-http2-push")
+      end
+
       def test_plugin_push_promise_get
         session = HTTPX.plugin(:push_promise)
         html, css = session.get(push_html_uri, push_css_uri)
