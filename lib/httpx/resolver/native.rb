@@ -156,6 +156,7 @@ module HTTPX
         @timeouts[host].shift
         if @timeouts[host].empty?
           @timeouts.delete(host)
+          @connections.delete(connection)
           raise NativeResolveError.new(connection, host)
         else
           connections << connection
@@ -205,6 +206,7 @@ module HTTPX
         hostname, connection = @queries.first
         if @_record_types[hostname].empty?
           @queries.delete(hostname)
+          @connections.delete(connection)
           ex = NativeResolveError.new(connection, hostname, e.message)
           ex.set_backtrace(e.backtrace)
           raise ex
@@ -217,6 +219,7 @@ module HTTPX
         if @_record_types[hostname].empty?
           @queries.delete(hostname)
           @_record_types.delete(hostname)
+          @connections.delete(connection)
           raise NativeResolveError.new(connection, hostname)
         end
       else
