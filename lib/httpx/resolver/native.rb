@@ -90,8 +90,7 @@ module HTTPX
         consume
       end
       nil
-    rescue Errno::EHOSTUNREACH,
-           NativeResolveError => e
+    rescue Errno::EHOSTUNREACH => e
       @ns_index += 1
       if @ns_index < @nameserver.size
         log(label: "resolver: ") do
@@ -101,15 +100,10 @@ module HTTPX
         end
         transition(:idle)
       else
-        if e.respond_to?(:connection) &&
-           e.respond_to?(:host)
-          emit_resolve_error(e.connection, e.host, e)
-        else
-          @queries.each do |host, connection|
-            emit_resolve_error(connection, host, e)
-          end
-        end
+        handle_error(e)
       end
+    rescue NativeResolveError => e
+      handle_error(e)
     end
 
     def interests
@@ -300,6 +294,17 @@ module HTTPX
         @io.close if @io
       end
       @state = nextstate
+    end
+
+    def handle_error(error)
+      if error.respond_to?(:connection) &&
+         error.respond_to?(:host)
+        emit_resolve_error(error.connection, error.host, error)
+      else
+        @queries.each do |host, connection|
+          emit_resolve_error(connection, host, error)
+        end
+      end
     end
   end
 end
