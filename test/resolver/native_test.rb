@@ -44,7 +44,7 @@ class NativeResolverTest < Minitest::Test
       @has_error = true
     end
     assert connection.addresses.nil?
-    assert resolver.queries.key?("idontthinkthisexists.org")
+    assert !resolver.queries.key?("idontthinkthisexists.org")
     assert @has_error, "resolver should have failed"
   end
 
