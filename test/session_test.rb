@@ -69,6 +69,15 @@ class SessionTest < Minitest::Test
     end
   end
 
+  # regression test
+  def test_multiple_resolver_errors
+    2.times do
+      response = HTTPX.get("http://www.sfjewjfwigiewpgwwg.com")
+      assert response.is_a?(HTTPX::ErrorResponse)
+      assert response.error.is_a?(HTTPX::ResolveError)
+    end
+  end
+
   # def test_http_timeouts_operation_timeout
   #   uri = build_uri("/delay/2")
   #   session = HTTPX.timeout(operation_timeout: 1)
