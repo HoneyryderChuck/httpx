@@ -1,3 +1,69 @@
+#!/bin/sh
+
+set -euo pipefail
+
+mkdir -p newcerts
+touch index.txt
+echo '01' > serial
+
+#build CA certificate
+echo "building CA certs..."
+openssl genrsa -out ca.key 4096
+openssl req -x509 -new -nodes \
+  -key ca.key \
+  -subj "/C=PT/ST=LX/O=Bumbaklat/CN=httpx-ca" \
+  -sha256 -days 358000 \
+  -out ca.crt
+echo "CA certs built!!!"
+
+# build server certificate
+echo "building server certs..."
+# setup config with alternative names
+cat << EOF > server.cnf
+[req]
+distinguished_name = req_distinguished_name
+req_extensions = v3_req
+
+[req_distinguished_name]
+countryName = Country Name (2 letter code)
+countryName_default = PT
+stateOrProvinceName = State or Province Name (full name)
+stateOrProvinceName_default = LX
+localityName = Locality Name (eg, city)
+localityName_default = Lisbon
+0.organizationName = Organizational Unit Name (eg, section)
+organizationalUnitName  = Organizational Unit Name (eg, section)
+organizationalUnitName_default  = Domain Control Validated
+commonName = Internet Widgits Ltd
+commonName_max  = 64
+
+[ v3_req ]
+# Extensions to add to a certificate request
+basicConstraints = CA:FALSE
+keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = nghttp2
+DNS.2 = another
+DNS.3 = another2
+EOF
+
+openssl genrsa -out server.key 2048
+
+openssl req -new -sha256 \
+  -key server.key \
+  -subj "/C=PT/ST=LX/O=Bumbaklat/OU=nghttp2/CN=nghttp2" \
+  -config server.cnf \
+  -out server.csr
+
+openssl x509 -req -in server.csr \
+  -CA ca.crt \
+  -CAkey ca.key \
+  -CAcreateserial -out server.crt \
+  -days 358000
+
+cat << EOF > ca.cnf
 # we use 'ca' as the default section because we're usign the ca command
 # we use 'ca' as the default section because we're usign the ca command
 [ ca ]
@@ -83,3 +149,45 @@ organizationName = supplied
 commonName = supplied
 organizationalUnitName = optional
 commonName = supplied
+EOF
+
+cat << EOF > server.extensions.cnf
+basicConstraints=CA:FALSE
+subjectAltName=@my_subject_alt_names
+subjectKeyIdentifier = hash
+
+[ my_subject_alt_names ]
+DNS.1 = nghttp2
+DNS.2 = another
+DNS.3 = another2
+EOF
+
+openssl ca -config ca.cnf -out server.crt -extfile server.extensions.cnf -in server.csr -batch
+echo "server certs built!!!"
+
+# build DOH certificate
+echo "building DOH certs..."
+openssl genrsa -out doh.key 2048
+openssl req -new -sha256 \
+  -key doh.key \
+  -subj "/C=PT/ST=LX/O=Bumbaklat/CN=doh" \
+  -out doh.csr
+
+# doh certificate
+openssl x509 -req -in doh.csr \
+  -CA ca.crt \
+  -CAkey ca.key \
+  -CAcreateserial -out doh.crt \
+  -days 358000 -sha256
+echo "DOH certs built!!!"
+
+# ca-bundle.crt
+echo "building ca-bundle..."
+cat doh.crt server.crt ca.crt > ca-bundle.crt
+echo "ca-bundle built!!!"
+
+# verification steps
+openssl verify -CAfile ca.crt server.crt
+echo "server verified!"
+openssl verify -CAfile ca.crt doh.crt
+echo "doh verified!"
