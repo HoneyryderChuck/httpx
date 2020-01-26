@@ -1,8 +1,0 @@
-basicConstraints=CA:FALSE
-subjectAltName=@my_subject_alt_names
-subjectKeyIdentifier = hash
-
-[ my_subject_alt_names ]
-DNS.1 = nghttp2
-DNS.2 = another
-DNS.3 = another2
