@@ -121,6 +121,7 @@ module HTTPX
       rescue Resolv::DNS::DecodeError, JSON::JSONError => e
         host, connection = @queries.first
         if @_record_types[host].empty?
+          @queries.delete(host)
           emit_resolve_error(connection, host, e)
           return
         end
@@ -129,6 +130,7 @@ module HTTPX
         host, connection = @queries.first
         @_record_types[host].shift
         if @_record_types[host].empty?
+          @queries.delete(host)
           @_record_types.delete(host)
           emit_resolve_error(connection, host)
           return

@@ -27,7 +27,9 @@ module HTTPX
     if RUBY_VERSION < "2.2"
       # :nocov:
       def close
-        @io.close rescue nil
+        @io.close
+      rescue StandardError
+        nil
       end
       # :nocov:
     else
