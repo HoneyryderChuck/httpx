@@ -34,7 +34,7 @@ module HTTPX
                   ip_resolve(hostname) ||
                   system_resolve(hostname) ||
                   @resolver.getaddresses(hostname)
-      return emit_resolve_error(connection, hostname) if addresses.empty?
+      throw(:resolve_error, resolve_error(hostname)) if addresses.empty?
 
       emit_addresses(connection, addresses)
     rescue Errno::EHOSTUNREACH, *RESOLV_ERRORS => e

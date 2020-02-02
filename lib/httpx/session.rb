@@ -152,9 +152,14 @@ module HTTPX
       request_options = @options.merge(options)
 
       requests.each do |request|
-        connection = find_connection(request, connections, request_options)
-        connection.send(request)
-        set_request_timeout(connection, request, request_options)
+        error = catch(:resolve_error) do
+          connection = find_connection(request, connections, request_options)
+          connection.send(request)
+          set_request_timeout(connection, request, request_options)
+        end
+        next unless error.is_a?(ResolveError)
+
+        request.emit(:response, ErrorResponse.new(request, error, options))
       end
 
       responses = []
