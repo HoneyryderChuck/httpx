@@ -368,7 +368,7 @@ module HTTPX
       end
 
       parser.handle_error(error) if @parser && parser.respond_to?(:handle_error)
-      @pending.each do |request|
+      while (request = @pending.shift)
         request.emit(:response, ErrorResponse.new(request, error, @options))
       end
     end
