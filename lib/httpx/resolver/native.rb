@@ -237,7 +237,7 @@ module HTTPX
           end
         else
           @connections.delete(connection)
-          Resolver.cached_lookup_set(connection.origin.host, addresses)
+          Resolver.cached_lookup_set(connection.origin.host, addresses) if @resolver_options.cache
           emit_addresses(connection, addresses.map { |addr| addr["data"] })
         end
       end

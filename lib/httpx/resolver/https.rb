@@ -158,7 +158,7 @@ module HTTPX
           next unless connection # probably a retried query for which there's an answer
 
           @connections.delete(connection)
-          Resolver.cached_lookup_set(hostname, addresses)
+          Resolver.cached_lookup_set(hostname, addresses) if @resolver_options.cache
           emit_addresses(connection, addresses.map { |addr| addr["data"] })
         end
       end

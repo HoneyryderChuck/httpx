@@ -61,6 +61,7 @@ module HTTPX
         :transport_options => nil,
         :persistent => false,
         :resolver_class => (ENV["HTTPX_RESOLVER"] || :native).to_sym,
+        :resolver_options => { cache: true },
       }
 
       defaults.merge!(options)
