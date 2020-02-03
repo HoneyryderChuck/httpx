@@ -121,6 +121,7 @@ module HTTPX
       rescue Resolv::DNS::DecodeError, JSON::JSONError => e
         host, connection = @queries.first
         if @_record_types[host].empty?
+          @queries.delete(host)
           emit_resolve_error(connection, host, e)
           return
         end
@@ -129,6 +130,7 @@ module HTTPX
         host, connection = @queries.first
         @_record_types[host].shift
         if @_record_types[host].empty?
+          @queries.delete(host)
           @_record_types.delete(host)
           emit_resolve_error(connection, host)
           return
@@ -158,7 +160,7 @@ module HTTPX
           next unless connection # probably a retried query for which there's an answer
 
           @connections.delete(connection)
-          Resolver.cached_lookup_set(hostname, addresses)
+          Resolver.cached_lookup_set(hostname, addresses) if @resolver_options.cache
           emit_addresses(connection, addresses.map { |addr| addr["data"] })
         end
       end

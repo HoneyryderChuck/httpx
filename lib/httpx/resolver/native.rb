@@ -59,7 +59,7 @@ module HTTPX
       @_record_types = Hash.new { |types, host| types[host] = @resolver_options.record_types.dup }
       @connections = []
       @queries = {}
-      @read_buffer = Buffer.new(@resolver_options.packet_size)
+      @read_buffer = "".b
       @write_buffer = Buffer.new(@resolver_options.packet_size)
       @state = :idle
     end
@@ -90,8 +90,7 @@ module HTTPX
         consume
       end
       nil
-    rescue Errno::EHOSTUNREACH,
-           NativeResolveError => e
+    rescue Errno::EHOSTUNREACH => e
       @ns_index += 1
       if @ns_index < @nameserver.size
         log(label: "resolver: ") do
@@ -101,25 +100,14 @@ module HTTPX
         end
         transition(:idle)
       else
-        if e.respond_to?(:connection) &&
-           e.respond_to?(:host)
-          emit_resolve_error(e.connection, e.host, e)
-        else
-          @queries.each do |host, connection|
-            emit_resolve_error(connection, host, e)
-          end
-        end
+        handle_error(e)
       end
+    rescue NativeResolveError => e
+      handle_error(e)
     end
 
     def interests
-      readable = !@read_buffer.full?
-      writable = !@write_buffer.empty?
-      if readable
-        writable ? :rw : :r
-      else
-        writable ? :w : :r
-      end
+      !@write_buffer.empty? || @queries.empty? ? :w : :r
     end
 
     def <<(connection)
@@ -168,6 +156,7 @@ module HTTPX
         @timeouts[host].shift
         if @timeouts[host].empty?
           @timeouts.delete(host)
+          @connections.delete(connection)
           raise NativeResolveError.new(connection, host)
         else
           connections << connection
@@ -182,7 +171,7 @@ module HTTPX
       connections.each { |ch| resolve(ch) }
     end
 
-    def dread(wsize = @read_buffer.limit)
+    def dread(wsize = @resolver_options.packet_size)
       loop do
         siz = @io.read(wsize, @read_buffer)
         unless siz
@@ -192,7 +181,7 @@ module HTTPX
         return if siz.zero?
 
         log(label: "resolver: ") { "READ: #{siz} bytes..." }
-        parse(@read_buffer.to_s)
+        parse(@read_buffer)
       end
     end
 
@@ -216,6 +205,8 @@ module HTTPX
       rescue Resolv::DNS::DecodeError => e
         hostname, connection = @queries.first
         if @_record_types[hostname].empty?
+          @queries.delete(hostname)
+          @connections.delete(connection)
           ex = NativeResolveError.new(connection, hostname, e.message)
           ex.set_backtrace(e.backtrace)
           raise ex
@@ -226,7 +217,9 @@ module HTTPX
         hostname, connection = @queries.first
         @_record_types[hostname].shift
         if @_record_types[hostname].empty?
+          @queries.delete(hostname)
           @_record_types.delete(hostname)
+          @connections.delete(connection)
           raise NativeResolveError.new(connection, hostname)
         end
       else
@@ -244,7 +237,7 @@ module HTTPX
           end
         else
           @connections.delete(connection)
-          Resolver.cached_lookup_set(connection.origin.host, addresses)
+          Resolver.cached_lookup_set(connection.origin.host, addresses) if @resolver_options.cache
           emit_addresses(connection, addresses.map { |addr| addr["data"] })
         end
       end
@@ -300,6 +293,17 @@ module HTTPX
         @io.close if @io
       end
       @state = nextstate
+    end
+
+    def handle_error(error)
+      if error.respond_to?(:connection) &&
+         error.respond_to?(:host)
+        emit_resolve_error(error.connection, error.host, error)
+      else
+        @queries.each do |host, connection|
+          emit_resolve_error(connection, host, error)
+        end
+      end
     end
   end
 end

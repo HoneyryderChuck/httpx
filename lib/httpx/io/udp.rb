@@ -24,8 +24,18 @@ module HTTPX
       true
     end
 
-    def close
-      @io.close
+    if RUBY_VERSION < "2.2"
+      # :nocov:
+      def close
+        @io.close
+      rescue StandardError
+        nil
+      end
+      # :nocov:
+    else
+      def close
+        @io.close
+      end
     end
 
     def write(buffer)

@@ -14,10 +14,13 @@ module HTTPX
 
     def initialize(options)
       @options = Options.new(options)
-      roptions = @options.resolver_options
+      @resolver_options = Resolver::Options.new(@options.resolver_options)
       @state = :idle
-      @resolver = Resolv::DNS.new(roptions.nil? ? nil : roptions)
-      @resolver.timeouts = roptions[:timeouts] if roptions
+      resolv_options = @resolver_options.to_h
+      timeouts = resolv_options.delete(:timeouts)
+      resolv_options.delete(:cache)
+      @resolver = Resolv::DNS.new(resolv_options.empty? ? nil : resolv_options)
+      @resolver.timeouts = timeouts if timeouts
     end
 
     def closed?
@@ -34,7 +37,7 @@ module HTTPX
                   ip_resolve(hostname) ||
                   system_resolve(hostname) ||
                   @resolver.getaddresses(hostname)
-      return emit_resolve_error(connection, hostname) if addresses.empty?
+      throw(:resolve_error, resolve_error(hostname)) if addresses.empty?
 
       emit_addresses(connection, addresses)
     rescue Errno::EHOSTUNREACH, *RESOLV_ERRORS => e
