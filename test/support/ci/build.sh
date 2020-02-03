@@ -3,7 +3,7 @@
 RUBY_PLATFORM=`ruby -e 'puts RUBY_PLATFORM'`
 
 if [[ "$RUBY_PLATFORM" = "java" ]]; then
-  apk --update add git bash iptables
+  apk --update add make git bash iptables
 elif [[ ${RUBY_VERSION:0:3} = "2.1" ]]; then
   apk --update add g++ make git bash libsodium iptables
 else
