@@ -4,8 +4,8 @@ services:
     environment:
       - SSL_CERT_FILE=/home/test/support/ci/certs/ca-bundle.crt
       - HTTPBIN_HOST=nghttp2
-      - HTTPX_HTTP_PROXY=http://httpproxy:3128
-      - HTTPX_HTTPS_PROXY=http://httpproxy:3128
+      - HTTPX_HTTP_PROXY=http://proxyuser:password@httpproxy:3128
+      - HTTPX_HTTPS_PROXY=http://proxyuser:password@httpproxy:3128
       - HTTPX_SOCKS4_PROXY=socks4://user4:@socksproxy:8080
       - HTTPX_SOCKS4A_PROXY=socks4a://user4:@socksproxy:8080
       - HTTPX_SOCKS5_PROXY=socks5://user5:password@socksproxy:8080
