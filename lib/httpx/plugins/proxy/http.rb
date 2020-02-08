@@ -78,6 +78,8 @@ module HTTPX
 
           def set_request_headers(request)
             super
+            proxy_params = @options.proxy
+            request.headers["proxy-authorization"] = "Basic #{proxy_params.token_authentication}" if proxy_params.authenticated?
             request.headers["proxy-connection"] = request.headers["connection"]
             request.headers.delete("connection")
           end
@@ -104,8 +106,6 @@ module HTTPX
         class ConnectRequest < Request
           def initialize(uri, options)
             super(:connect, uri, {})
-            proxy_params = options.proxy
-            @headers["proxy-authentication"] = "Basic #{proxy_params.token_authentication}" if proxy_params.authenticated?
             @headers.delete("accept")
           end
 
