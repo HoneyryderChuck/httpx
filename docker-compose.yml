@@ -52,9 +52,14 @@ services:
       - ./test/support/ci:/etc/3proxy
 
   httpproxy:
-    image: sameersbn/squid:3.3.8-23
+    image: sameersbn/squid:3.5.27-2
     ports:
       - "3128:3128"
+    volumes:
+      - ./test/support/ci/squid.conf:/etc/squid/squid.conf
+      - ./test/support/ci/proxy-users:/etc/squid/proxy-users
+    command:
+      -d 3
 
   nghttp2:
     image: registry.gitlab.com/honeyryderchuck/httpx/nghttp2:2
