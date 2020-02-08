@@ -254,8 +254,7 @@ module HTTPX
     end
 
     def send_pending
-      while !@write_buffer.full? && (req_args = @pending.shift)
-        request = req_args
+      while !@write_buffer.full? && (request = @pending.shift)
         parser.send(request)
       end
     end

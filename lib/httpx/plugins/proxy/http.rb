@@ -41,7 +41,7 @@ module HTTPX
           end
 
           def __http_proxy_connect
-            req, _ = @pending.first
+            req = @pending.first
             # if the first request after CONNECT is to an https address, it is assumed that
             # all requests in the queue are not only ALL HTTPS, but they also share the certificate,
             # and therefore, will share the connection.
@@ -55,15 +55,15 @@ module HTTPX
             end
           end
 
-          def __http_on_connect(_request, response)
+          def __http_on_connect(_, response)
             if response.status == 200
-              req, _ = @pending.first
+              req = @pending.first
               request_uri = req.uri
               @io = ProxySSL.new(@io, request_uri, @options)
               transition(:connected)
               throw(:called)
             else
-              pending = @pending.map(&:first) + @parser.pending
+              pending = @pending + @parser.pending
               while (req = pending.shift)
                 emit(:response, req, response)
               end
@@ -104,7 +104,7 @@ module HTTPX
         end
 
         class ConnectRequest < Request
-          def initialize(uri, options)
+          def initialize(uri, _options)
             super(:connect, uri, {})
             @headers.delete("accept")
           end
