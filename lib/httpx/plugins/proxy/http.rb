@@ -65,7 +65,7 @@ module HTTPX
             else
               pending = @pending + @parser.pending
               while (req = pending.shift)
-                emit(:response, req, response)
+                req.emit(:response, response)
               end
             end
           end
