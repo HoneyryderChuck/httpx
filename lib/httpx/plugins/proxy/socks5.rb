@@ -52,7 +52,7 @@ module HTTPX
             when :negotiating
               return unless @state == :connecting || @state == :authenticating
 
-              req, _ = @pending.first
+              req = @pending.first
               request_uri = req.uri
               @write_buffer << Packet.connect(request_uri)
             when :connected
@@ -93,7 +93,7 @@ module HTTPX
               version, reply, = packet.unpack("CC")
               __socks5_check_version(version)
               __on_socks5_error("socks5 negotiation error: #{reply}") unless reply == SUCCESS
-              req, _ = @pending.first
+              req = @pending.first
               request_uri = req.uri
               @io = ProxySSL.new(@io, request_uri, @options) if request_uri.scheme == "https"
               transition(:connected)

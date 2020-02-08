@@ -28,7 +28,7 @@ module HTTPX
               @io.connect
               return unless @io.connected?
 
-              req, _ = @pending.first
+              req = @pending.first
               return unless req
 
               request_uri = req.uri
@@ -51,7 +51,7 @@ module HTTPX
           def __socks4_on_packet(packet)
             _version, status, _port, _ip = packet.unpack("CCnN")
             if status == GRANTED
-              req, _ = @pending.first
+              req = @pending.first
               request_uri = req.uri
               @io = ProxySSL.new(@io, request_uri, @options) if request_uri.scheme == "https"
               transition(:connected)

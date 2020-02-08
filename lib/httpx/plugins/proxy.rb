@@ -204,6 +204,16 @@ module HTTPX
           transition(:closed)
           emit(:close)
         end
+
+        def transition(nextstate)
+          return super unless @options.proxy
+
+          case nextstate
+          when :closing
+            @state = :open if @state == :connecting
+          end
+          super
+        end
       end
     end
     register_plugin :proxy, Proxy

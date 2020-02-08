@@ -33,7 +33,8 @@ fi
 
 if [[ $RET = 0 ]] && [[ ${RUBY_VERSION:0:3} = "2.7" ]]; then
   bundle exec rake prepare_website &&
-  cd www && bundle install --jobs 4 --path ../vendor &&
+  cd www && bundle config set path '../vendor' && \
+  bundle install --jobs 4 && \
   bundle exec jekyll build -d public
 fi
 

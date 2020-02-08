@@ -19,6 +19,19 @@ module Requests
         verify_body_length(response)
       end
 
+      def test_plugin_http_proxy_auth_error
+        no_auth_proxy = URI.parse(http_proxy.first)
+        return unless no_auth_proxy.user
+
+        no_auth_proxy.user = nil
+        no_auth_proxy.password = nil
+
+        session = HTTPX.plugin(:proxy).with_proxy(uri: no_auth_proxy.to_s)
+        uri = build_uri("/get")
+        response = session.get(uri)
+        verify_status(response, 407)
+      end
+
       def test_plugin_socks4_proxy
         session = HTTPX.plugin(:proxy).with_proxy(uri: socks4_proxy)
         uri = build_uri("/get")

@@ -4,8 +4,8 @@ services:
     environment:
       - SSL_CERT_FILE=/home/test/support/ci/certs/ca-bundle.crt
       - HTTPBIN_HOST=nghttp2
-      - HTTPX_HTTP_PROXY=http://httpproxy:3128
-      - HTTPX_HTTPS_PROXY=http://httpproxy:3128
+      - HTTPX_HTTP_PROXY=http://proxyuser:password@httpproxy:3128
+      - HTTPX_HTTPS_PROXY=http://proxyuser:password@httpproxy:3128
       - HTTPX_SOCKS4_PROXY=socks4://user4:@socksproxy:8080
       - HTTPX_SOCKS4A_PROXY=socks4a://user4:@socksproxy:8080
       - HTTPX_SOCKS5_PROXY=socks5://user5:password@socksproxy:8080
@@ -52,9 +52,14 @@ services:
       - ./test/support/ci:/etc/3proxy
 
   httpproxy:
-    image: sameersbn/squid:3.3.8-23
+    image: sameersbn/squid:3.5.27-2
     ports:
       - "3128:3128"
+    volumes:
+      - ./test/support/ci/squid.conf:/etc/squid/squid.conf
+      - ./test/support/ci/proxy-users:/etc/squid/proxy-users
+    command:
+      -d 3
 
   nghttp2:
     image: registry.gitlab.com/honeyryderchuck/httpx/nghttp2:2
