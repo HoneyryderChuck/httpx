@@ -28,13 +28,20 @@ module HTTPX
       branch(default_options).wrap(&blk)
     end
 
-    def plugin(*plugins)
+    def plugin(*args, **opts)
       klass = is_a?(Session) ? self.class : Session
       klass = Class.new(klass)
       klass.instance_variable_set(:@default_options, klass.default_options.merge(default_options))
-      klass.plugins(plugins).new
+      klass.plugin(*args, **opts).new
     end
-    alias_method :plugins, :plugin
+
+    # deprecated
+    def plugins(*args, **opts)
+      klass = is_a?(Session) ? self.class : Session
+      klass = Class.new(klass)
+      klass.instance_variable_set(:@default_options, klass.default_options.merge(default_options))
+      klass.plugins(*args, **opts).new
+    end
 
     def with(options, &blk)
       branch(default_options.merge(options), &blk)

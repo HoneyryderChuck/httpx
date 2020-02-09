@@ -251,12 +251,15 @@ module HTTPX
         self
       end
 
+      # :nocov:
       def plugins(pls)
+        warn ":#{__method__} is deprecated, use :plugin instead"
         pls.each do |pl, *args|
           plugin(pl, *args)
         end
         self
       end
+      # :nocov:
     end
 
     plugin(:proxy) unless ENV.grep(/https?_proxy$/i).empty?
