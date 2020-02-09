@@ -4,7 +4,57 @@ variables:
   JEKYLL_ENV: production
 
 services:
-  - docker:dind
+  sshproxy:
+    build:
+      context: .
+      dockerfile: ./test/support/ssh/Dockerfile
+    volumes:
+      - ./test/support/ssh:/config
+    depends_on:
+      - nghttp2
+
+  socksproxy:
+    image: qautomatron/docker-3proxy
+    volumes:
+      - ./test/support/ci:/etc/3proxy
+
+  httpproxy:
+    image: sameersbn/squid:3.5.27-2
+    volumes:
+      - ./test/support/ci/squid.conf:/etc/squid/squid.conf
+      - ./test/support/ci/proxy-users:/etc/squid/proxy-users
+
+  nghttp2:
+    image: registry.gitlab.com/honeyryderchuck/httpx/nghttp2:2
+    depends_on:
+      - httpbin
+    entrypoint:
+      /usr/local/bin/nghttpx
+    volumes:
+      - ./test/support/ci:/home
+    command:
+      --conf /home/nghttp.conf --no-ocsp --frontend 0.0.0.0,80;no-tls --frontend 0.0.0.0,443
+
+  altsvc-nghttp2:
+    image: registry.gitlab.com/honeyryderchuck/httpx/nghttp2:2
+    ports:
+      - 81:80
+      - 444:443
+    depends_on:
+      - httpbin
+    entrypoint:
+      /usr/local/bin/nghttpx
+    volumes:
+      - ./test/support/ci:/home
+    command:
+      --conf /home/nghttp.conf --no-ocsp --frontend 0.0.0.0,80;no-tls --frontend 0.0.0.0,443 --altsvc "h2,443,nghttp2"
+
+  httpbin:
+    environment:
+      - DEBUG=True
+    image: citizenstig/httpbin
+    command:
+      gunicorn --bind=0.0.0.0:8000 --workers=6 --access-logfile - --error-logfile - --log-level debug --capture-output httpbin:app
 
 # Cache gems in between builds
 cache:
@@ -13,75 +63,98 @@ cache:
     - vendor/ruby
     - vendor/jruby
 
-before_script:
-  - docker info
-  - docker-compose --version
+variables:
+  - CONNECT_TIMEOUT_PORT=9090
+  - SSL_CERT_FILE=/home/test/support/ci/certs/ca-bundle.crt
+  - HTTPBIN_HOST=nghttp2
+  - HTTPX_HTTP_PROXY=http://proxyuser:password@httpproxy:3128
+  - HTTPX_HTTPS_PROXY=http://proxyuser:password@httpproxy:3128
+  - HTTPX_SOCKS4_PROXY=socks4://user4:@socksproxy:8080
+  - HTTPX_SOCKS4A_PROXY=socks4a://user4:@socksproxy:8080
+  - HTTPX_SOCKS5_PROXY=socks5://user5:password@socksproxy:8080
+  - HTTPX_SSH_PROXY=ssh://sshproxy:22
+  - PARALLEL=1
+  - N=6 # minitest workers
+  - MT_CPU=6 # minitest workers
+  - CI=1
+  - JEKYLL_ENV=production
+  - GEM_HOME=/usr/local/bundle
+  - BUNDLE_PATH=/usr/local/bundle
+  - BUNDLE_SILENCE_ROOT_WARNING=1
+  - BUNDLE_APP_CONFIG=/usr/local/bundle
+  - HTTPBIN_ALTSVC_HOST=another2
 
-test_jruby:
-  stage: test
-  script:
-    ./spec.sh jruby 9.0.0.0
-  allow_failure: true
-test_ruby21:
-  stage: test
-  script:
-    ./spec.sh ruby 2.1
-test_ruby22:
-  only:
-    - master
-  stage: test
-  script:
-    ./spec.sh ruby 2.2
-test_ruby23:
-  only:
-    - master
-  stage: test
-  script:
-    ./spec.sh ruby 2.3
-test_ruby24:
-  only:
-    - master
-  stage: test
-  script:
-    ./spec.sh ruby 2.4
-test_ruby25:
-  only:
-    - master
-  stage: test
-  script:
-    ./spec.sh ruby 2.5
-test_ruby26:
-  only:
-    - master
-  stage: test
-  script:
-    ./spec.sh ruby 2.6
+before_script:
+  - iptables -A OUTPUT -p tcp -m tcp --tcp-flags SYN SYN --sport $CONNECT_TIMEOUT_PORT -j DROP
+  - bundle install --jobs 4
+
+# test_jruby:
+#   stage: test
+#   script:
+#     ./spec.sh jruby 9.0.0.0
+#   allow_failure: true
+# test_ruby21:
+#   stage: test
+#   script:
+#     ./spec.sh ruby 2.1
+# test_ruby22:
+#   only:
+#     - master
+#   stage: test
+#   script:
+#     ./spec.sh ruby 2.2
+# test_ruby23:
+#   only:
+#     - master
+#   stage: test
+#   script:
+#     ./spec.sh ruby 2.3
+# test_ruby24:
+#   only:
+#     - master
+#   stage: test
+#   script:
+#     ./spec.sh ruby 2.4
+# test_ruby25:
+#   only:
+#     - master
+#   stage: test
+#   script:
+#     ./spec.sh ruby 2.5
+# test_ruby26:
+#   only:
+#     - master
+#   stage: test
+#   script:
+#     ./spec.sh ruby 2.6
 test_ruby27:
   stage: test
+  image: ruby-2.7
+  privileged: true
   script:
-    ./spec.sh ruby 2.7
+    bundle exec rake test:ci
   artifacts:
     paths:
       - www/coverage/
       - www/rdoc/
       - www/public/
 
-pages:
-  stage: deploy 
-  dependencies:
-    - test_ruby27
-  script:
-    - mv www/public .
-    - ls public
-    - echo "#"
-    - ls public/rdoc
-    - echo "#"
-    - ls public/coverage
-  artifacts:
-    paths:
-      - public
-    expire_in: 30 days
-  only:
-    - master
+# pages:
+#   stage: deploy
+#   dependencies:
+#     - test_ruby27
+#   script:
+#     - mv www/public .
+#     - ls public
+#     - echo "#"
+#     - ls public/rdoc
+#     - echo "#"
+#     - ls public/coverage
+#   artifacts:
+#     paths:
+#       - public
+#     expire_in: 30 days
+#   only:
+#     - master
 
 
