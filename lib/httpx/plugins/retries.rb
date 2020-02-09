@@ -33,6 +33,12 @@ module HTTPX
           end
 
           def_option(:retry_change_requests)
+
+          def_option(:retry_on) do |callback|
+            raise ":retry_on must be called with the response" unless callback.respond_to?(:call) && callback.method(:call).arity == 1
+
+            callback
+          end
         end.new(options).merge(max_retries: MAX_RETRIES)
       end
 
@@ -45,10 +51,14 @@ module HTTPX
 
         def fetch_response(request, connections, options)
           response = super
+
+          retry_on = options.retry_on
+
           if response.is_a?(ErrorResponse) &&
              request.retries.positive? &&
              __repeatable_request?(request, options) &&
-             __retryable_error?(response.error)
+             __retryable_error?(response.error) &&
+             (!retry_on || retry_on.call(response))
             request.retries -= 1
             log { "failed to get response, #{request.retries} tries to go..." }
             request.transition(:idle)

@@ -43,7 +43,7 @@ module Requests
       end
 
       def test_plugin_cookies_follow
-        session = HTTPX.plugins(:follow_redirects, :cookies)
+        session = HTTPX.plugin(:follow_redirects).plugin(:cookies)
         session_cookies = { "a" => "b", "c" => "d" }
         session_uri = cookies_set_uri(session_cookies)
 
