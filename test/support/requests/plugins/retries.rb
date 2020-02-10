@@ -46,6 +46,38 @@ module Requests
         assert retries_session.calls.zero?, "expect request not to be retried (it was, #{retries_session.calls} times)"
       end
 
+      def test_plugin_retries_retry_after
+        before_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)
+        retries_session = HTTPX
+                          .plugin(RequestInspector)
+                          .plugin(:retries, retry_after: 2)
+                          .timeout(total_timeout: 3)
+                          .max_retries(1)
+        retries_response = retries_session.get(build_uri("/delay/10"))
+        after_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)
+        total_time = after_time - before_time
+
+        assert retries_response.is_a?(HTTPX::ErrorResponse)
+        assert_in_delta 3 + 2 + 3, total_time, 1, "request didn't take as expected to retry (#{total_time} secs)"
+      end
+
+      def test_plugin_retries_retry_after_callable
+        retries = 0
+        exponential = ->(_) { (retries += 1) * 2 }
+        before_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)
+        retries_session = HTTPX
+                          .plugin(RequestInspector)
+                          .plugin(:retries, retry_after: exponential)
+                          .timeout(total_timeout: 3)
+                          .max_retries(2)
+        retries_response = retries_session.get(build_uri("/delay/10"))
+        after_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)
+        total_time = after_time - before_time
+
+        assert retries_response.is_a?(HTTPX::ErrorResponse)
+        assert_in_delta 3 + 2 + 3 + 4 + 3, total_time, 1, "request didn't take as expected to retry (#{total_time} secs)"
+      end
+
       module RequestInspector
         module InstanceMethods
           attr_reader :calls
