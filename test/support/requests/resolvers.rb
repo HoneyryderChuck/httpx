@@ -29,6 +29,15 @@ module Requests
         response = session.head(uri, resolver_class: resolver, resolver_options: options)
         verify_status(response, 200)
       end
+
+      next unless resolver == :https
+
+      define_method :"test_#{resolver}_resolver_get_request" do
+        session = SessionWithPool.new
+        uri = build_uri("/get")
+        response = session.head(uri, resolver_class: resolver, resolver_options: options.merge(use_get: true))
+        verify_status(response, 200)
+      end
     end
   end
 end
