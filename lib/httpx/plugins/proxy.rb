@@ -134,6 +134,12 @@ module HTTPX
           end
           response
         end
+
+        def build_altsvc_connection(_, _, _, _, options)
+          return if options.proxy
+
+          super
+        end
       end
 
       module ConnectionMethods
