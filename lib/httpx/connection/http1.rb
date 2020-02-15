@@ -54,14 +54,6 @@ module HTTPX
       handle(request)
     end
 
-    def reenqueue!
-      requests = @requests.dup
-      @requests.clear
-      requests.each do |request|
-        send(request)
-      end
-    end
-
     def consume
       @requests.each do |request|
         handle(request)

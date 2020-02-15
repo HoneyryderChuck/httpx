@@ -54,15 +54,6 @@ module HTTPX
       true
     end
 
-    def reenqueue!
-      requests = @streams.keys
-      @streams.clear
-      init_connection
-      requests.each do |request|
-        send(request)
-      end
-    end
-
     def consume
       @streams.each do |request, stream|
         handle(request, stream)
