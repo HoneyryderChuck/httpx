@@ -172,14 +172,15 @@ module HTTPX
     def build_request(hostname, type)
       uri = @uri.dup
       rklass = @options.request_class
+      payload = Resolver.encode_dns_query(hostname, type: RECORD_TYPES[type])
+
       if @resolver_options.use_get
         params = URI.decode_www_form(uri.query.to_s)
         params << ["type", type]
-        params << ["name", CGI.escape(hostname)]
+        params << ["dns", Base64.urlsafe_encode64(payload, padding: false)]
         uri.query = URI.encode_www_form(params)
         request = rklass.new("GET", uri, @options)
       else
-        payload = Resolver.encode_dns_query(hostname, type: RECORD_TYPES[type])
         request = rklass.new("POST", uri, @options.merge(body: [payload]))
         request.headers["content-type"] = "application/dns-message"
       end
