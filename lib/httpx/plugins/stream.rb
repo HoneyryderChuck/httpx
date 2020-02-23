@@ -2,6 +2,9 @@
 
 module HTTPX
   module Plugins
+    #
+    # This plugin adds support for stream response (text/event-stream).
+    #
     module Stream
       module InstanceMethods
         def stream
