@@ -101,7 +101,9 @@ module HTTPX
     # coalescable connections need to be mergeable!
     # but internally, #mergeable? is called before #coalescable?
     def coalescable?(connection)
-      if @io.protocol == "h2" && @origin.scheme == "https"
+      if @io.protocol == "h2" &&
+         @origin.scheme == "https" &&
+         connection.origin.scheme == "https"
         @io.verify_hostname(connection.origin.host)
       else
         @origin == connection.origin
