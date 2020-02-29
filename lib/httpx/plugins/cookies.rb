@@ -17,14 +17,18 @@ module HTTPX
       def self.extra_options(options)
         Class.new(options.class) do
           def_option(:cookies) do |cookies|
-            return cookies if cookies.is_a?(Store)
-
             Store.new(cookies)
           end
         end.new(options)
       end
 
       class Store
+        def self.new(cookies = nil)
+          return cookies if cookies.is_a?(self)
+
+          super
+        end
+
         def initialize(cookies = nil)
           @store = Hash.new { |hash, origin| hash[origin] = HTTP::CookieJar.new }
           return unless cookies
