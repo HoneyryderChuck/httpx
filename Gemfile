@@ -16,7 +16,7 @@ elsif RUBY_VERSION < "2.3"
   gem "rubocop", "~> 0.68.1", require: false
   gem "simplecov", "< 0.11.0", require: false
 else
-  gem "rubocop", "~> 0.78.0", require: false
+  gem "rubocop", "~> 0.80.0", require: false
   gem "rubocop-performance", "~> 1.5.2", require: false
   gem "simplecov", require: false
 end
