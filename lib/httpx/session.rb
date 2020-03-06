@@ -51,8 +51,18 @@ module HTTPX
       stream.refuse
     end
 
-    def fetch_response(request, _, _)
-      @responses.delete(request)
+    def fetch_response(request, connections, options)
+      response = @responses.delete(request)
+      return unless response
+      if response.status == 417 && request.headers.key?("expect")
+        request.headers.delete("expect")
+        request.transition(:idle)
+        connection = find_connection(request, connections, options)
+        connection.send(request)
+        return
+      end
+
+      response
     end
 
     def find_connection(request, connections, options)
