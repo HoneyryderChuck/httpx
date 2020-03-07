@@ -202,6 +202,10 @@ module HTTPX
 
       @streams.delete(request)
       send(@pending.shift) unless @pending.empty?
+      return unless @streams.empty? && exhausted?
+
+      close
+      emit(:close)
     end
 
     def on_frame(bytes)

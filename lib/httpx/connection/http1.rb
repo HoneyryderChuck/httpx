@@ -47,7 +47,7 @@ module HTTPX
     end
 
     def send(request)
-      if !@max_requests.positive?
+      unless @max_requests.positive?
         @pending << request
         return
       end
