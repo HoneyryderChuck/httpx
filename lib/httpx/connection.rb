@@ -80,6 +80,7 @@ module HTTPX
     def match?(uri, options)
       return false if @state == :closing || @state == :closed
 
+      return false if exhausted?
       (
         (
           @origins.include?(uri.origin) &&
@@ -94,6 +95,8 @@ module HTTPX
 
     def mergeable?(connection)
       return false if @state == :closing || @state == :closed || !@io
+
+      return false if exhausted?
 
       !(@io.addresses & connection.addresses).empty? && @options == connection.options
     end
@@ -212,6 +215,10 @@ module HTTPX
     end
 
     private
+
+    def exhausted?
+      @parser && parser.exhausted?
+    end
 
     def consume
       catch(:called) do

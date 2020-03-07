@@ -35,11 +35,15 @@ module HTTPX
       @connection.state == :closed || @streams.empty?
     end
 
+    def exhausted?
+      @connection.active_stream_count >= @max_concurrent_requests
+    end
+
     def <<(data)
       @connection << data
     end
 
-    def send(request, **)
+    def send(request)
       if !@handshake_completed ||
          @streams.size >= @max_concurrent_requests
         @pending << request
