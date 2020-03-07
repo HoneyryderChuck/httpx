@@ -60,22 +60,30 @@ module HTTPX
       connection = pool.find_connection(uri, options) || build_connection(uri, options)
       unless connections.nil? || connections.include?(connection)
         connections << connection
-        set_connection_callbacks(connection, options)
+        set_connection_callbacks(connection, connections, options)
       end
       connection
     end
 
-    def set_connection_callbacks(connection, options)
+    def set_connection_callbacks(connection, connections, options)
       connection.on(:uncoalesce) do |uncoalesced_uri|
         other_connection = build_connection(uncoalesced_uri, options)
+        connections << other_connection
         connection.unmerge(other_connection)
       end
       connection.on(:altsvc) do |alt_origin, origin, alt_params|
-        build_altsvc_connection(connection, alt_origin, origin, alt_params, options)
+        other_connection = build_altsvc_connection(connection, connections, alt_origin, origin, alt_params, options)
+        connections << other_connection if other_connection
+      end
+      connection.on(:exhausted) do
+        other_connection = connection.create_idle
+        other_connection.merge(connection)
+        pool.init_connection(other_connection, options)
+        connections << other_connection
       end
     end
 
-    def build_altsvc_connection(existing_connection, alt_origin, origin, alt_params, options)
+    def build_altsvc_connection(existing_connection, connections, alt_origin, origin, alt_params, options)
       altsvc = AltSvc.cached_altsvc_set(origin, alt_params.merge("origin" => alt_origin))
 
       # altsvc already exists, somehow it wasn't advertised, probably noop
@@ -85,7 +93,7 @@ module HTTPX
       # advertised altsvc is the same origin being used, ignore
       return if connection == existing_connection
 
-      set_connection_callbacks(connection, options)
+      set_connection_callbacks(connection, connections, options)
 
       log(level: 1) { "#{origin} alt-svc: #{alt_origin}" }
 
@@ -99,8 +107,10 @@ module HTTPX
       end
 
       connection.merge(existing_connection)
+      connection
     rescue UnsupportedSchemeError
       altsvc["noop"] = true
+      nil
     end
 
     def build_requests(*args, options)

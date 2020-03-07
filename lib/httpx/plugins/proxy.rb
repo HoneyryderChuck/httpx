@@ -104,7 +104,7 @@ module HTTPX
           connection = pool.find_connection(uri, proxy_options) || build_connection(uri, proxy_options)
           unless connections.nil? || connections.include?(connection)
             connections << connection
-            set_connection_callbacks(connection, options)
+            set_connection_callbacks(connection, connections, options)
           end
           connection
         end
