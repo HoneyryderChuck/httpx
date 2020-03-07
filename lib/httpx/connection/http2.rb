@@ -28,7 +28,7 @@ module HTTPX
     end
 
     def close
-      @connection.goaway
+      @connection.goaway unless @connection.state == :closed
     end
 
     def empty?
