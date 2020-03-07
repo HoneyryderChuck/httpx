@@ -54,6 +54,7 @@ module HTTPX
     def fetch_response(request, connections, options)
       response = @responses.delete(request)
       return unless response
+
       if response.status == 417 && request.headers.key?("expect")
         request.headers.delete("expect")
         request.transition(:idle)

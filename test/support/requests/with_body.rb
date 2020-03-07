@@ -32,17 +32,6 @@ module Requests
         verify_uploaded(body, "form", "foo" => "bar")
       end
 
-       define_method :"test_#{meth}_expect_100_form_params_417" do
-        uri = build_uri("/status/417")
-        response = HTTPX.headers("expect" => "100-continue")
-                        .send(meth, uri, form: { "foo" => "bar" })
-
-        # we can't really test that the request would be successful without it, however we can
-        # test whether the header has been removed from the request.
-        verify_status(response, 417)
-        verify_no_header(response.instance_variable_get(:@request).headers, "expect")
-      end
-
       define_method :"test_#{meth}_json_params" do
         uri = build_uri("/#{meth}")
         response = HTTPX.send(meth, uri, json: { "foo" => "bar" })
