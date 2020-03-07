@@ -81,6 +81,7 @@ module HTTPX
       return false if @state == :closing || @state == :closed
 
       return false if exhausted?
+
       (
         (
           @origins.include?(uri.origin) &&
