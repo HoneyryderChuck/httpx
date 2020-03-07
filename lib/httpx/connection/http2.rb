@@ -56,6 +56,9 @@ module HTTPX
       end
       handle(request, stream)
       true
+    rescue HTTP2Next::Error::StreamLimitExceeded
+      @pending.unshift(request)
+      emit(:exhausted)
     end
 
     def consume
