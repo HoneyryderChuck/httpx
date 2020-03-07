@@ -113,10 +113,13 @@ module HTTPX
       end
     end
 
+    def create_idle
+      self.class.new(@type, @origin, @options)
+    end
+
     def merge(connection)
       @origins += connection.instance_variable_get(:@origins)
-      pending = connection.instance_variable_get(:@pending)
-      pending.each do |req|
+      connection.purge_pending do |req|
         send(req)
       end
     end
@@ -133,7 +136,10 @@ module HTTPX
     end
 
     def purge_pending
-      [*@parser.pending, *@pending].each do |pending|
+      pendings = []
+      pendings << @parser.pending if @parser
+      pendings << @pending
+      pendings.each do |pending|
         pending.reject! do |request|
           yield request
         end
