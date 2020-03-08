@@ -247,6 +247,7 @@ module HTTPX
         return if @state == :expect
       end
       @state = nextstate
+      emit(@state)
       nil
     end
 

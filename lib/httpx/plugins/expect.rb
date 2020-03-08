@@ -8,12 +8,39 @@ module HTTPX
     # https://gitlab.com/honeyryderchuck/httpx/wikis/Expect#expect
     #
     module Expect
+      EXPECT_TIMEOUT = 2
+
+      def self.extra_options(options)
+        Class.new(options.class) do
+          def_option(:expect_timeout) do |seconds|
+            seconds = Integer(seconds)
+            raise Error, ":expect_timeout must be positive" unless seconds.positive?
+
+            seconds
+          end
+        end.new(options).merge(expect_timeout: EXPECT_TIMEOUT)
+      end
+
       module RequestBodyMethods
         def initialize(*)
           super
           return if @body.nil?
 
           @headers["expect"] = "100-continue"
+        end
+      end
+
+      module ConnectionMethods
+        def send(request)
+          request.once(:expects) do
+            @timers.after(@options.expect_timeout) do
+              if request.state == :expects && !request.expects?
+                request.headers.delete("expect")
+                handle(request)
+              end
+            end
+          end
+          super
         end
       end
 
