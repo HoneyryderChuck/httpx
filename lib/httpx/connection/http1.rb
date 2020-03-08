@@ -51,10 +51,12 @@ module HTTPX
         @pending << request
         return
       end
+
       unless @requests.include?(request)
         @requests << request
         @pipelining = true if @requests.size > 1
       end
+
       handle(request)
     end
 
@@ -167,13 +169,11 @@ module HTTPX
           emit(:timeout, keep_alive_timeout)
         end
       when /close/i
-        @max_requests = Float::INFINITY
         disable
       when nil
         # In HTTP/1.1, it's keep alive by default
         return if response.version == "1.1"
 
-        @max_requests = Float::INFINITY
         disable
       end
     end

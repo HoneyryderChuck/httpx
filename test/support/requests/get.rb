@@ -20,11 +20,6 @@ module Requests
       verify_body_length(response2)
 
       assert response1.to_s == response2.to_s, "request should have been the same"
-
-      date1 = Time.parse(response1.headers["date"])
-      date2 = Time.parse(response2.headers["date"])
-
-      assert_in_delta 0, date2 - date1, 0.5
     end
 
     def test_multiple_get_no_concurrency
