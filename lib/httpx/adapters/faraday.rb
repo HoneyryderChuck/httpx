@@ -153,7 +153,7 @@ module Faraday
           proxy_options = { uri: env.request.proxy }
 
           session = @session.with(options_from_env(env))
-          session = session.plugin(:proxy).with_proxy(proxy_options) if env.request.proxy
+          session = session.plugin(:proxy).with(proxy: proxy_options) if env.request.proxy
 
           responses = session.request(requests)
           Array(responses).each_with_index do |response, index|
@@ -192,7 +192,7 @@ module Faraday
         meth, uri, request_options = build_request(env)
 
         session = @session.with(options_from_env(env))
-        session = session.plugin(:proxy).with_proxy(proxy_options) if env.request.proxy
+        session = session.plugin(:proxy).with(proxy: proxy_options) if env.request.proxy
         response = session.__send__(meth, uri, **request_options)
         response.raise_for_status unless response.is_a?(::HTTPX::Response)
         save_response(env, response.status, response.body.to_s, response.headers, response.reason) do |response_headers|

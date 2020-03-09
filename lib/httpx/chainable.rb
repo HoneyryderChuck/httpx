@@ -12,16 +12,20 @@ module HTTPX
       branch(default_options).request(verb, uri, **options)
     end
 
+    # :nocov:
     def timeout(**args)
-      branch(default_options.with_timeout(args))
+      warn ":#{__method__} is deprecated, use :with_timeout instead"
+      branch(default_options.with(timeout: args))
     end
 
     def headers(headers)
-      branch(default_options.with_headers(headers))
+      warn ":#{__method__} is deprecated, use :with_headers instead"
+      branch(default_options.with(headers: headers))
     end
+    # :nocov:
 
     def accept(type)
-      headers("accept" => String(type))
+      with(headers: { "accept" => String(type) })
     end
 
     def wrap(&blk)
@@ -58,6 +62,19 @@ module HTTPX
       return self.class.new(options, &blk) if is_a?(Session)
 
       Session.new(options, &blk)
+    end
+
+    def method_missing(meth, *args, **options)
+      if meth =~ /\Awith_(.+)/
+        option = Regexp.last_match(1).to_sym
+        with(option => (args.first || options))
+      else
+        super
+      end
+    end
+
+    def respond_to_missing?(meth, *args)
+      default_options.respond_to?(meth, *args) || super
     end
   end
 end

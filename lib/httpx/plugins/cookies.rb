@@ -82,10 +82,6 @@ module HTTPX
           super({ cookies: Store.new }.merge(options), &blk)
         end
 
-        def with_cookies(cookies)
-          branch(default_options.with_cookies(cookies))
-        end
-
         def wrap
           return super unless block_given?
 
@@ -94,7 +90,7 @@ module HTTPX
             begin
               yield session
             ensure
-              @options = @options.with_cookies(old_cookies_store)
+              @options = @options.with(cookies: old_cookies_store)
             end
           end
         end

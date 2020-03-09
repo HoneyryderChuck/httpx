@@ -5,7 +5,7 @@ module Requests
     %w[post put patch delete].each do |meth|
       define_method :"test_#{meth}_chunked_body_params" do
         uri = build_uri("/#{meth}")
-        response = HTTPX.headers("transfer-encoding" => "chunked")
+        response = HTTPX.with_headers("transfer-encoding" => "chunked")
                         .send(meth, uri, body: %w[this is a chunked response])
         verify_status(response, 200)
         body = json_body(response)

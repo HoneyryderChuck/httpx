@@ -11,7 +11,7 @@ module HTTPX
     module Authentication
       module InstanceMethods
         def authentication(token)
-          headers("authorization" => token)
+          with(headers: { "authorization" => token })
         end
       end
     end

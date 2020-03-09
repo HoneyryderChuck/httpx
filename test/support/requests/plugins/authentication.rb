@@ -20,7 +20,7 @@ module Requests
       end
 
       def test_plugin_digest_authentication
-        session = HTTPX.plugin(:digest_authentication).headers("cookie" => "fake=fake_value")
+        session = HTTPX.plugin(:digest_authentication).with_headers("cookie" => "fake=fake_value")
         response = session.digest_authentication(user, pass).get(digest_auth_uri)
         verify_status(response, 200)
         body = json_body(response)
@@ -30,7 +30,7 @@ module Requests
 
       %w[SHA1 SHA2 SHA256 SHA384 SHA512 RMD160].each do |alg|
         define_method "test_plugin_digest_authentication_#{alg}" do
-          session = HTTPX.plugin(:digest_authentication).headers("cookie" => "fake=fake_value")
+          session = HTTPX.plugin(:digest_authentication).with_headers("cookie" => "fake=fake_value")
           response = session.digest_authentication(user, pass).get("#{digest_auth_uri}/#{alg}")
           verify_status(response, 200)
           body = json_body(response)

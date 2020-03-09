@@ -79,10 +79,6 @@ module HTTPX
       end
 
       module InstanceMethods
-        def with_proxy(*args)
-          branch(default_options.with_proxy(*args))
-        end
-
         private
 
         def proxy_uris(uri, options)
