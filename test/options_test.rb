@@ -53,7 +53,7 @@ class OptionsTest < Minitest::Test
       :ssl => { :foo => "bar" },
     )
 
-    assert foo.merge(bar).to_hash == {
+    expected = {
       :io => ENV.key?("HTTPX_DEBUG") ? $stderr : nil,
       :debug => nil,
       :debug_level => 1,
@@ -68,7 +68,7 @@ class OptionsTest < Minitest::Test
       :ssl => { :foo => "bar" },
       :http2_settings => { :settings_enable_push => 0 },
       :fallback_protocol => "http/1.1",
-      :headers => { "Foo" => "foo", "Accept" => "xml", "Bar" => "bar" },
+      :headers => { "accept" => "xml", "foo" => "foo", "bar" => "bar" },
       :max_concurrent_requests => 100,
       :request_class => bar.request_class,
       :response_class => bar.response_class,
@@ -81,7 +81,9 @@ class OptionsTest < Minitest::Test
       :persistent => false,
       :resolver_class => bar.resolver_class,
       :resolver_options => bar.resolver_options,
-    }, "options haven't merged correctly"
+    }
+
+    assert foo.merge(bar).to_hash == expected, "options haven't merged correctly"
   end unless ENV.key?("HTTPX_DEBUG")
 
   def test_options_new

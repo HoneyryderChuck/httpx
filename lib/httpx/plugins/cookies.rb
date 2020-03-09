@@ -17,7 +17,11 @@ module HTTPX
       def self.extra_options(options)
         Class.new(options.class) do
           def_option(:cookies) do |cookies|
-            Store.new(cookies)
+            if cookies.is_a?(Store)
+              cookies
+            else
+              Store.new(cookies)
+            end
           end
         end.new(options)
       end

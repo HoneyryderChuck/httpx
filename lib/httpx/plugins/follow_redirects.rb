@@ -21,7 +21,7 @@ module HTTPX
         Class.new(options.class) do
           def_option(:max_redirects) do |num|
             num = Integer(num)
-            raise Error, ":max_redirects must be positive" unless num.positive?
+            raise Error, ":max_redirects must be positive" if num.negative?
 
             num
           end

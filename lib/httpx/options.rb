@@ -28,7 +28,14 @@ module HTTPX
         defined_options << name.to_sym
         interpreter ||= ->(v) { v }
 
-        attr_accessor name
+        attr_reader name
+
+        define_method(:"#{name}=") do |value|
+          return if value.nil?
+
+          instance_variable_set(:"@#{name}", instance_exec(value, &interpreter))
+        end
+
         protected :"#{name}="
 
         define_method(:"with_#{name}") do |value|
@@ -66,37 +73,43 @@ module HTTPX
 
       defaults.merge!(options)
       defaults[:headers] = Headers.new(defaults[:headers])
-      defaults.each { |(k, v)| self[k] = v }
+      defaults.each do |(k, v)|
+        __send__(:"#{k}=", v)
+      end
     end
 
     def_option(:headers) do |headers|
-      self.headers.merge(headers)
+      if self.headers
+        self.headers.merge(headers)
+      else
+        headers
+      end
     end
 
     def_option(:timeout) do |opts|
-      self.timeout = Timeout.new(opts)
+      Timeout.new(opts)
     end
 
     def_option(:max_concurrent_requests) do |num|
       max = Integer(num)
       raise Error, ":max_concurrent_requests must be positive" unless max.positive?
 
-      self.max_concurrent_requests = max
+      max
     end
 
     def_option(:window_size) do |num|
-      self.window_size = Integer(num)
+      Integer(num)
     end
 
     def_option(:body_threshold_size) do |num|
-      self.body_threshold_size = Integer(num)
+      Integer(num)
     end
 
     def_option(:transport) do |tr|
       transport = tr.to_s
       raise Error, "#{transport} is an unsupported transport type" unless IO.registry.key?(transport)
 
-      self.transport = transport
+      transport
     end
 
     %w[
@@ -171,12 +184,6 @@ module HTTPX
       request_body_class.freeze
       response_body_class.freeze
       connection_class.freeze
-    end
-
-    protected
-
-    def []=(option, val)
-      send(:"#{option}=", val)
     end
   end
 end

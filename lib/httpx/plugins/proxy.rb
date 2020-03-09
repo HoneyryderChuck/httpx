@@ -68,7 +68,11 @@ module HTTPX
         def extra_options(options)
           Class.new(options.class) do
             def_option(:proxy) do |pr|
-              Hash[pr]
+              if pr.is_a?(Parameters)
+                pr
+              else
+                Hash[pr]
+              end
             end
           end.new(options)
         end
