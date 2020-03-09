@@ -238,9 +238,6 @@ module HTTPX
           when 100
             # deallocate
             @response = nil
-          when 417
-            @response = @response
-            return
           end
         end
       when :done
