@@ -51,7 +51,7 @@ module HTTPX
       stream.refuse
     end
 
-    def fetch_response(request, connections, options)
+    def fetch_response(request, _, _)
       @responses.delete(request)
     end
 

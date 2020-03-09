@@ -28,14 +28,12 @@ module HTTPX
           # number of seconds after which one can retry the request
           def_option(:retry_after) do |num|
             # return early if callable
-            if num.respond_to?(:call)
-              num
-            else
+            unless num.respond_to?(:call)
               num = Integer(num)
               raise Error, ":retry_after must be positive" unless num.positive?
-
-              num
             end
+
+            num
           end
 
           def_option(:max_retries) do |num|
