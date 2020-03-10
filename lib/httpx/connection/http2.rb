@@ -28,18 +28,22 @@ module HTTPX
     end
 
     def close
-      @connection.goaway
+      @connection.goaway unless @connection.state == :closed
     end
 
     def empty?
       @connection.state == :closed || @streams.empty?
     end
 
+    def exhausted?
+      @connection.active_stream_count >= @max_concurrent_requests
+    end
+
     def <<(data)
       @connection << data
     end
 
-    def send(request, **)
+    def send(request)
       if !@handshake_completed ||
          @streams.size >= @max_concurrent_requests
         @pending << request
@@ -52,6 +56,9 @@ module HTTPX
       end
       handle(request, stream)
       true
+    rescue HTTP2Next::Error::StreamLimitExceeded
+      @pending.unshift(request)
+      emit(:exhausted)
     end
 
     def consume
@@ -195,6 +202,10 @@ module HTTPX
 
       @streams.delete(request)
       send(@pending.shift) unless @pending.empty?
+      return unless @streams.empty? && exhausted?
+
+      close
+      emit(:close)
     end
 
     def on_frame(bytes)

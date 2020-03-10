@@ -14,7 +14,7 @@ module HTTPX
     def initialize(buffer, options)
       @options = Options.new(options)
       @max_concurrent_requests = @options.max_concurrent_requests
-      @max_requests = Float::INFINITY
+      @max_requests = @max_concurrent_requests
       @parser = Parser::HTTP1.new(self)
       @buffer = buffer
       @version = [1, 1]
@@ -23,12 +23,17 @@ module HTTPX
     end
 
     def reset
+      @max_requests = @max_concurrent_requests
       @parser.reset!
     end
 
     def close
       reset
       emit(:close)
+    end
+
+    def exhausted?
+      !@max_requests.positive?
     end
 
     def empty?
@@ -42,8 +47,7 @@ module HTTPX
     end
 
     def send(request)
-      if @max_requests.positive? &&
-         @requests.size >= @max_concurrent_requests
+      unless @max_requests.positive?
         @pending << request
         return
       end

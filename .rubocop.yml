@@ -21,6 +21,7 @@ Metrics/MethodLength:
   Max: 200
 
 Metrics/ParameterLists:
+  Max: 6
   CountKeywordArgs: false
 
 Naming/FileName:

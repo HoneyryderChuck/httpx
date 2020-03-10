@@ -80,6 +80,8 @@ module HTTPX
     def match?(uri, options)
       return false if @state == :closing || @state == :closed
 
+      return false if exhausted?
+
       (
         (
           @origins.include?(uri.origin) &&
@@ -94,6 +96,8 @@ module HTTPX
 
     def mergeable?(connection)
       return false if @state == :closing || @state == :closed || !@io
+
+      return false if exhausted?
 
       !(@io.addresses & connection.addresses).empty? && @options == connection.options
     end
@@ -110,10 +114,13 @@ module HTTPX
       end
     end
 
+    def create_idle
+      self.class.new(@type, @origin, @options)
+    end
+
     def merge(connection)
       @origins += connection.instance_variable_get(:@origins)
-      pending = connection.instance_variable_get(:@pending)
-      pending.each do |req|
+      connection.purge_pending do |req|
         send(req)
       end
     end
@@ -130,7 +137,10 @@ module HTTPX
     end
 
     def purge_pending
-      [*@parser.pending, *@pending].each do |pending|
+      pendings = []
+      pendings << @parser.pending if @parser
+      pendings << @pending
+      pendings.each do |pending|
         pending.reject! do |request|
           yield request
         end
@@ -213,6 +223,10 @@ module HTTPX
 
     private
 
+    def exhausted?
+      @parser && parser.exhausted?
+    end
+
     def consume
       catch(:called) do
         dread
@@ -284,6 +298,9 @@ module HTTPX
 
       parser.on(:promise) do |request, stream|
         request.emit(:promise, parser, stream)
+      end
+      parser.on(:exhausted) do
+        emit(:exhausted)
       end
       parser.on(:origin) do |origin|
         @origins << origin
