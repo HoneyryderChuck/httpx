@@ -51,6 +51,7 @@ module HTTPX
 
     def init_connection(connection, _options)
       resolve_connection(connection)
+      connection.timers = @timers
       connection.on(:open) do
         @connected_connections += 1
       end

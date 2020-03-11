@@ -28,10 +28,10 @@ module HTTPX
           # number of seconds after which one can retry the request
           def_option(:retry_after) do |num|
             # return early if callable
-            return num if num.respond_to?(:call)
-
-            num = Integer(num)
-            raise Error, ":retry_after must be positive" unless num.positive?
+            unless num.respond_to?(:call)
+              num = Integer(num)
+              raise Error, ":retry_after must be positive" unless num.positive?
+            end
 
             num
           end
@@ -46,7 +46,7 @@ module HTTPX
           def_option(:retry_change_requests)
 
           def_option(:retry_on) do |callback|
-            raise ":retry_on must be called with the response" unless callback.respond_to?(:call) && callback.method(:call).arity == 1
+            raise ":retry_on must be called with the response" unless callback.respond_to?(:call)
 
             callback
           end

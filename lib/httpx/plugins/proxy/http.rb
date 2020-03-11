@@ -91,15 +91,13 @@ module HTTPX
           def headline_uri(request)
             return super unless request.verb == :connect
 
-            uri = request.uri
-            tunnel = "#{uri.hostname}:#{uri.port}"
+            tunnel = request.path
             log { "establishing HTTP proxy tunnel to #{tunnel}" }
             tunnel
           end
 
           def empty?
-            @requests.reject { |r| r.verb == :connect }.empty? ||
-              @requests.all? { |request| !request.response.nil? }
+            @requests.reject { |r| r.verb == :connect }.empty? || @requests.all? { |request| !request.response.nil? }
           end
         end
 

@@ -9,7 +9,7 @@ module Requests
       assert body.key?("headers"), "no headers"
       assert body["headers"]["Accept"] == "*/*", "unexpected accept"
 
-      response = HTTPX.headers("accept" => "text/css").get(uri)
+      response = HTTPX.with_headers("accept" => "text/css").get(uri)
       body = json_body(response)
       verify_header(body["headers"], "Accept", "text/css")
     end

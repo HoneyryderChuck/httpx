@@ -29,7 +29,7 @@ module Requests
       def test_plugin_compression_gzip_post
         session = HTTPX.plugin(:compression)
         uri = build_uri("/post")
-        response = session.headers("content-encoding" => "gzip")
+        response = session.with_headers("content-encoding" => "gzip")
                           .post(uri, body: "a" * 8012)
         verify_status(response, 200)
         body = json_body(response)
@@ -50,7 +50,7 @@ module Requests
       def test_plugin_compression_deflate_post
         session = HTTPX.plugin(:compression)
         uri = build_uri("/post")
-        response = session.headers("content-encoding" => "deflate")
+        response = session.with_headers("content-encoding" => "deflate")
                           .post(uri, body: "a" * 8012)
         verify_status(response, 200)
         body = json_body(response)
@@ -71,7 +71,7 @@ module Requests
         def test_plugin_compression_brotli_post
           session = HTTPX.plugin(:"compression/brotli")
           uri = build_uri("/post")
-          response = session.headers("content-encoding" => "br")
+          response = session.with_headers("content-encoding" => "br")
                             .post(uri, body: "a" * 8012)
           verify_status(response, 200)
           body = json_body(response)

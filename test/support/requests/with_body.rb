@@ -23,7 +23,7 @@ module Requests
 
       define_method :"test_#{meth}_expect_100_form_params" do
         uri = build_uri("/#{meth}")
-        response = HTTPX.headers("expect" => "100-continue")
+        response = HTTPX.with_headers("expect" => "100-continue")
                         .send(meth, uri, form: { "foo" => "bar" })
         verify_status(response, 200)
         body = json_body(response)

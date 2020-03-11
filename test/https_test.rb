@@ -24,6 +24,7 @@ class HTTPSTest < Minitest::Test
   include Plugins::PushPromise if OpenSSL::SSL::SSLContext.instance_methods.include?(:alpn_protocols)
   include Plugins::Retries
   include Plugins::Multipart
+  include Plugins::Expect
 
   def test_connection_coalescing
     coalesced_origin = "https://#{ENV["HTTPBIN_COALESCING_HOST"]}"

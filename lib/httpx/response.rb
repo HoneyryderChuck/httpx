@@ -103,6 +103,8 @@ module HTTPX
       def read(*args)
         return unless @buffer
 
+        rewind
+
         @buffer.read(*args)
       end
 

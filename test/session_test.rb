@@ -61,7 +61,7 @@ class SessionTest < Minitest::Test
   #   def test_session_timeout_connect_timeout
   #     sleep 2
   #     uri = build_uri("/", origin("127.0.0.1:#{CONNECT_TIMEOUT_PORT}"))
-  #     session = HTTPX.timeout(connect_timeout: 0.5, operation_timeout: 30, total_timeout: 2)
+  #     session = HTTPX.with_timeout(connect_timeout: 0.5, operation_timeout: 30, total_timeout: 2)
   #     response = session.get(uri)
   #     assert response.is_a?(HTTPX::ErrorResponse), "response should have failed (#{response.class})"
   #     assert response.error.is_a?(HTTPX::ConnectTimeoutError),
@@ -71,7 +71,7 @@ class SessionTest < Minitest::Test
 
   # def test_http_timeouts_operation_timeout
   #   uri = build_uri("/delay/2")
-  #   session = HTTPX.timeout(operation_timeout: 1)
+  #   session = HTTPX.with_timeout(operation_timeout: 1)
   #   response = session.get(uri)
   #   assert response.is_a?(HTTPX::ErrorResponse), "response should have failed"
   #   assert response.error =~ /timed out while waiting/, "response should have timed out"

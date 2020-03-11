@@ -68,17 +68,17 @@ module HTTPX
         def extra_options(options)
           Class.new(options.class) do
             def_option(:proxy) do |pr|
-              Hash[pr]
+              if pr.is_a?(Parameters)
+                pr
+              else
+                Hash[pr]
+              end
             end
           end.new(options)
         end
       end
 
       module InstanceMethods
-        def with_proxy(*args)
-          branch(default_options.with_proxy(*args))
-        end
-
         private
 
         def proxy_uris(uri, options)

@@ -17,7 +17,11 @@ module HTTPX
       def self.extra_options(options)
         Class.new(options.class) do
           def_option(:cookies) do |cookies|
-            Store.new(cookies)
+            if cookies.is_a?(Store)
+              cookies
+            else
+              Store.new(cookies)
+            end
           end
         end.new(options)
       end
@@ -78,10 +82,6 @@ module HTTPX
           super({ cookies: Store.new }.merge(options), &blk)
         end
 
-        def with_cookies(cookies)
-          branch(default_options.with_cookies(cookies))
-        end
-
         def wrap
           return super unless block_given?
 
@@ -90,7 +90,7 @@ module HTTPX
             begin
               yield session
             ensure
-              @options = @options.with_cookies(old_cookies_store)
+              @options = @options.with(cookies: old_cookies_store)
             end
           end
         end
