@@ -1,14 +1,14 @@
 #!/bin/sh
 
-RUBY_PLATFORM=`ruby -e 'puts RUBY_PLATFORM'`
+# RUBY_PLATFORM=`ruby -e 'puts RUBY_PLATFORM'`
 
-if [[ "$RUBY_PLATFORM" = "java" ]]; then
-  apk --update add make git bash iptables
-elif [[ ${RUBY_VERSION:0:3} = "2.1" ]]; then
-  apk --update add g++ make git bash libsodium iptables
-else
-  apk --update add g++ make git bash iptables
-fi
+# if [[ "$RUBY_PLATFORM" = "java" ]]; then
+#   apk --update add make git bash iptables
+# elif [[ ${RUBY_VERSION:0:3} = "2.1" ]]; then
+#   apk --update add g++ make git bash libsodium iptables
+# else
+#   apk --update add g++ make git bash iptables
+# fi
 
 # use port 9090 to test connection timeouts
 CONNECT_TIMEOUT_PORT=9090
