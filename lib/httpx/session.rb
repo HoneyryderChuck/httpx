@@ -78,7 +78,10 @@ module HTTPX
       connection.on(:exhausted) do
         other_connection = connection.create_idle
         other_connection.merge(connection)
-        pool.init_connection(other_connection, options)
+        catch(:coalesced) do
+          pool.init_connection(other_connection, options)
+        end
+        set_connection_callbacks(other_connection, connections, options)
         connections << other_connection
       end
     end

@@ -211,6 +211,7 @@ module HTTPX
 
       close
       emit(:close)
+      emit(:exhausted) unless @pending.empty?
     end
 
     def on_frame(bytes)
