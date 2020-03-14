@@ -8,6 +8,8 @@ module HTTPX
     include Callbacks
     include Loggable
 
+    MAX_CONCURRENT_REQUESTS = 200
+
     Error = Class.new(Error) do
       def initialize(id, code)
         super("stream #{id} closed with error: #{code}")

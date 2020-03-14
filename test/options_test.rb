@@ -69,7 +69,7 @@ class OptionsTest < Minitest::Test
       :http2_settings => { :settings_enable_push => 0 },
       :fallback_protocol => "http/1.1",
       :headers => { "accept" => "xml", "foo" => "foo", "bar" => "bar" },
-      :max_concurrent_requests => 100,
+      :max_concurrent_requests => nil,
       :request_class => bar.request_class,
       :response_class => bar.response_class,
       :headers_class => bar.headers_class,

@@ -2,7 +2,6 @@
 
 module HTTPX
   class Options
-    MAX_CONCURRENT_REQUESTS = 100
     WINDOW_SIZE = 1 << 14 # 16K
     MAX_BODY_THRESHOLD_SIZE = (1 << 10) * 112 # 112K
 
@@ -55,7 +54,6 @@ module HTTPX
         :fallback_protocol => "http/1.1",
         :timeout => Timeout.new,
         :headers => {},
-        :max_concurrent_requests => MAX_CONCURRENT_REQUESTS,
         :window_size => WINDOW_SIZE,
         :body_threshold_size => MAX_BODY_THRESHOLD_SIZE,
         :request_class => Class.new(Request),
