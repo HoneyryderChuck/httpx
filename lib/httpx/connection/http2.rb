@@ -20,7 +20,8 @@ module HTTPX
 
     def initialize(buffer, options)
       @options = Options.new(options)
-      @max_concurrent_requests = @options.max_concurrent_requests
+      @max_concurrent_requests = @options.max_concurrent_requests || MAX_CONCURRENT_REQUESTS
+      @max_requests = 0
       @pending = []
       @streams = {}
       @drains  = {}
@@ -38,7 +39,7 @@ module HTTPX
     end
 
     def exhausted?
-      @connection.active_stream_count >= @max_concurrent_requests
+      @connection.active_stream_count >= @max_requests
     end
 
     def <<(data)
@@ -47,7 +48,8 @@ module HTTPX
 
     def send(request)
       if !@handshake_completed ||
-         @streams.size >= @max_concurrent_requests
+         @streams.size >= @max_concurrent_requests ||
+         @streams.size >= @max_requests
         @pending << request
         return
       end
@@ -55,6 +57,7 @@ module HTTPX
         stream = @connection.new_stream
         handle_stream(stream, request)
         @streams[request] = stream
+        @max_requests -= 1
       end
       handle(request, stream)
       true
@@ -216,8 +219,10 @@ module HTTPX
 
     def on_settings(*)
       @handshake_completed = true
-      @max_concurrent_requests = [@max_concurrent_requests,
-                                  @connection.remote_settings[:settings_max_concurrent_streams]].min
+
+      @max_requests = @connection.remote_settings[:settings_max_concurrent_streams]
+
+      @max_concurrent_requests = [@max_concurrent_requests, @max_requests].min
       send_pending
     end
 
