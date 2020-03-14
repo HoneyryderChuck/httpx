@@ -4,17 +4,14 @@ require "tempfile"
 require_relative "../test_helper"
 
 class UnixTest < Minitest::Test
-  include HTTPX
+  include HTTPHelpers
 
   def test_unix_session
     skip if RUBY_ENGINE == "jruby"
     on_unix_server do |path|
-      session = Session.new(transport: "unix", transport_options: { path: path })
-      response = session.get("http://unix.com/ping")
-      assert response.status == 200, "unexpected code (#{response.status})"
+      response = HTTPX.with(transport: "unix", transport_options: { path: path }).get("http://unix.com/ping")
+      verify_status(response, 200)
       assert response.to_s == "pong", "unexpected body (#{response})"
-      response.close
-      session.close
     end
   end
 
