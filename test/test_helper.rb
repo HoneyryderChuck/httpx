@@ -5,6 +5,8 @@ require "simplecov" if ENV.key?("CI")
 gem "minitest"
 require "minitest/autorun"
 
+Minitest.info_signal = "USR2" if RUBY_PLATFORM == "x86_64-linux-musl"
+
 if ENV.key?("PARALLEL")
   require "minitest/hell"
   class Minitest::Test
