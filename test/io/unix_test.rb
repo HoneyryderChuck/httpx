@@ -29,17 +29,24 @@ class UnixTest < Minitest::Test
   HTTP
 
   def on_unix_server
+    mutex = Mutex.new
+    resource = ConditionVariable.new
     path = File.join(Dir.tmpdir, "httpx-unix.sock")
     server = UNIXServer.new(path)
     begin
       th = Thread.start do
+        mutex.synchronize do
+          resource.signal
+        end
         socket = server.accept
         socket.readpartial(4096) # drain the socket for the request
         socket.write(RESPONSE_HEADER)
         socket.write("pong")
         socket.close
       end
-      sleep 0.5
+      mutex.synchronize do
+        resource.wait(mutex)
+      end
       yield server.path
     ensure
       server.close

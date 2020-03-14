@@ -26,9 +26,6 @@ CONNECT_TIMEOUT_PORT = ENV.fetch("CONNECT_TIMEOUT_PORT", 9090).to_i
 
 server = TCPServer.new("127.0.0.1", CONNECT_TIMEOUT_PORT)
 
-Thread.abort_on_exception = true if Thread.respond_to?(:abort_on_exception)
-Thread.report_on_exception = true if Thread.respond_to?(:report_on_exception)
-
 Thread.start do
   begin
     sock = server.accept
