@@ -8,7 +8,7 @@ module HTTPX
     include Callbacks
     include Loggable
 
-    MAX_CONCURRENT_REQUESTS = 200
+    MAX_CONCURRENT_REQUESTS = HTTP2Next::DEFAULT_MAX_CONCURRENT_STREAMS
 
     Error = Class.new(Error) do
       def initialize(id, code)
@@ -21,7 +21,7 @@ module HTTPX
     def initialize(buffer, options)
       @options = Options.new(options)
       @max_concurrent_requests = @options.max_concurrent_requests || MAX_CONCURRENT_REQUESTS
-      @max_requests = 0
+      @max_requests = @options.max_requests || 0
       @pending = []
       @streams = {}
       @drains  = {}
@@ -107,6 +107,7 @@ module HTTPX
 
     def init_connection
       @connection = HTTP2Next::Client.new(@options.http2_settings)
+      @connection.max_streams = @max_requests if @connection.respond_to?(:max_streams=) && @max_requests.positive?
       @connection.on(:frame, &method(:on_frame))
       @connection.on(:frame_sent, &method(:on_frame_sent))
       @connection.on(:frame_received, &method(:on_frame_received))
@@ -221,7 +222,7 @@ module HTTPX
     def on_settings(*)
       @handshake_completed = true
 
-      @max_requests = @connection.remote_settings[:settings_max_concurrent_streams]
+      @max_requests = [@max_requests, @connection.remote_settings[:settings_max_concurrent_streams]].max
 
       @max_concurrent_requests = [@max_concurrent_requests, @max_requests].min
       send_pending

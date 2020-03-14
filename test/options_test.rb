@@ -70,6 +70,7 @@ class OptionsTest < Minitest::Test
       :fallback_protocol => "http/1.1",
       :headers => { "accept" => "xml", "foo" => "foo", "bar" => "bar" },
       :max_concurrent_requests => nil,
+      :max_requests => nil,
       :request_class => bar.request_class,
       :response_class => bar.response_class,
       :headers_class => bar.headers_class,

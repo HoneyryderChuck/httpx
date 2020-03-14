@@ -89,10 +89,15 @@ module HTTPX
     end
 
     def_option(:max_concurrent_requests) do |num|
-      max = Integer(num)
-      raise Error, ":max_concurrent_requests must be positive" unless max.positive?
+      raise Error, ":max_concurrent_requests must be positive" unless num.positive?
 
-      max
+      num
+    end
+
+    def_option(:max_requests) do |num|
+      raise Error, ":max_requests must be positive" unless num.positive?
+
+      num
     end
 
     def_option(:window_size) do |num|
