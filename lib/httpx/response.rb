@@ -150,6 +150,8 @@ module HTTPX
       def copy_to(dest)
         return unless @buffer
 
+        rewind
+
         if dest.respond_to?(:path) && @buffer.respond_to?(:path)
           FileUtils.mv(@buffer.path, dest.path)
         else
