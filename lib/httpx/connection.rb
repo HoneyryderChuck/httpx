@@ -338,6 +338,8 @@ module HTTPX
       when :open
         return if @state == :closed
 
+        total_timeout
+
         @io.connect
         return unless @io.connected?
 
@@ -348,6 +350,11 @@ module HTTPX
       when :closed
         return unless @state == :closing
         return unless @write_buffer.empty?
+
+        if @total_timeout
+          @total_timeout.cancel
+          remove_instance_variable(:@total_timeout)
+        end
 
         @io.close
         @read_buffer.clear
@@ -390,6 +397,19 @@ module HTTPX
       parser.handle_error(error) if @parser && parser.respond_to?(:handle_error)
       while (request = @pending.shift)
         request.emit(:response, ErrorResponse.new(request, error, @options))
+      end
+    end
+
+    def total_timeout
+      total = @options.timeout.total_timeout
+
+      return unless total
+
+      @total_timeout ||= @timers.after(total) do
+        ex = TotalTimeoutError.new(total, "Timed out after #{total} seconds")
+        ex.set_backtrace(caller)
+        @parser.close if @parser
+        on_error(ex)
       end
     end
   end

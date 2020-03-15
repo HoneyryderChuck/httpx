@@ -37,8 +37,6 @@ module HTTPX
 
     attr_reader :options, :response
 
-    attr_accessor :timer
-
     def_delegator :@body, :<<
 
     def_delegator :@body, :empty?
@@ -83,7 +81,6 @@ module HTTPX
     def response=(response)
       return unless response
 
-      @timer.cancel if @timer
       @response = response
     end
 

@@ -168,7 +168,6 @@ module HTTPX
         error = catch(:resolve_error) do
           connection = find_connection(request, connections, request_options)
           connection.send(request)
-          set_request_timeout(connection, request, request_options)
         end
         next unless error.is_a?(ResolveError)
 
@@ -202,21 +201,6 @@ module HTTPX
       request.on(:response, &method(:on_response).curry[request])
       request.on(:promise, &method(:on_promise))
       request
-    end
-
-    def set_request_timeout(connection, request, options)
-      total = options.timeout.total_timeout
-      return unless total
-
-      timer = pool.after(total) do
-        unless @responses[request]
-          error = TotalTimeoutError.new(total, "Timed out after #{total} seconds")
-          response = ErrorResponse.new(request, error, options)
-          request.emit(:response, response)
-          connection.reset
-        end
-      end
-      request.timer = timer
     end
 
     @default_options = Options.new
