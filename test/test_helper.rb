@@ -31,10 +31,9 @@ server = TCPServer.new("127.0.0.1", CONNECT_TIMEOUT_PORT)
 Thread.start do
   begin
     sock = server.accept
-    warn "received: #{sock}"
     sock.close
   rescue StandardError => e
-    puts "smth weird happened: #{e.class} -> #{e.message}"
-    puts e.backtrace
+    warn e.message
+    warn e.backtrace
   end
 end
