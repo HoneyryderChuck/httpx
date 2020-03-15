@@ -73,8 +73,22 @@ module HTTPX
             request.retries -= 1
             log { "failed to get response, #{request.retries} tries to go..." }
             request.transition(:idle)
-            connection = find_connection(request, connections, options)
-            __retry_request(connection, request, options)
+
+            retry_after = options.retry_after
+            if retry_after
+              retry_after = retry_after.call(request) if retry_after.respond_to?(:call)
+
+              log { "retrying after #{retry_after} secs..." }
+              pool.after(retry_after) do
+                log { "retrying!!" }
+                connection = find_connection(request, connections, options)
+                connection.send(request)
+              end
+            else
+              connection = find_connection(request, connections, options)
+              connection.send(request)
+            end
+
             return
           end
           response
@@ -86,23 +100,6 @@ module HTTPX
 
         def __retryable_error?(ex)
           RETRYABLE_ERRORS.any? { |klass| ex.is_a?(klass) }
-        end
-
-        def __retry_request(connection, request, options)
-          retry_after = options.retry_after
-          unless retry_after
-            connection.send(request)
-            set_request_timeout(connection, request, options)
-            return
-          end
-
-          retry_after = retry_after.call(request) if retry_after.respond_to?(:call)
-          log { "retrying after #{retry_after} secs..." }
-          pool.after(retry_after) do
-            log { "retrying!!" }
-            connection.send(request)
-            set_request_timeout(connection, request, options)
-          end
         end
       end
 

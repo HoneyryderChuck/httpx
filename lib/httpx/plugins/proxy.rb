@@ -129,13 +129,12 @@ module HTTPX
             connection = find_connection(request, connections, options)
             connections << connection unless connections.include?(connection)
             connection.send(request)
-            set_request_timeout(connection, request, options)
             return
           end
           response
         end
 
-        def build_altsvc_connection(_, _, _, _, options)
+        def build_altsvc_connection(_, _, _, _, _, options)
           return if options.proxy
 
           super

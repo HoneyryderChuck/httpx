@@ -5,6 +5,8 @@ require "simplecov" if ENV.key?("CI")
 gem "minitest"
 require "minitest/autorun"
 
+Minitest.info_signal = "USR2" if RUBY_PLATFORM == "x86_64-linux-musl"
+
 if ENV.key?("PARALLEL")
   require "minitest/hell"
   class Minitest::Test
@@ -29,10 +31,9 @@ server = TCPServer.new("127.0.0.1", CONNECT_TIMEOUT_PORT)
 Thread.start do
   begin
     sock = server.accept
-    warn "received: #{sock}"
     sock.close
   rescue StandardError => e
-    puts "smth weird happened: #{e.class} -> #{e.message}"
-    puts e.backtrace
+    warn e.message
+    warn e.backtrace
   end
 end
