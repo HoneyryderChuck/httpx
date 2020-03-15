@@ -27,20 +27,22 @@ module HTTPX
 
     def next_tick
       catch(:jump_tick) do
-        timeout = next_timeout || @timers.wait_interval
-        timeout = 0 if timeout.negative?
+        timeout = [next_timeout, @timers.wait_interval].compact.min
+        if timeout.negative?
+          @timers.fire
+          throw(:jump_tick)
+        end
 
         @selector.select(timeout) do |monitor|
           monitor.io.call
           monitor.interests = monitor.io.interests
         end
+        @timers.fire
       end
     rescue StandardError => e
       @connections.each do |connection|
         connection.emit(:error, e)
       end
-    ensure
-      @timers.fire
     end
 
     def close(connections = @connections)
