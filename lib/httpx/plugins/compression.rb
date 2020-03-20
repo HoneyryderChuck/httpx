@@ -37,6 +37,8 @@ module HTTPX
           return if @body.nil?
 
           @headers.get("content-encoding").each do |encoding|
+            next if encoding == "identity"
+
             @body = Encoder.new(@body, Compression.registry(encoding).encoder)
           end
           @headers["content-length"] = @body.bytesize unless chunked?
@@ -54,6 +56,8 @@ module HTTPX
           return unless @headers.key?("content-encoding")
 
           @_decoders = @headers.get("content-encoding").map do |encoding|
+            next if encoding == "identity"
+
             decoder = Compression.registry(encoding).decoder
             # do not uncompress if there is no decoder available. In fact, we can't reliably
             # continue decompressing beyond that, so ignore.
@@ -61,7 +65,7 @@ module HTTPX
 
             @encodings << encoding
             decoder
-          end
+          end.compact
 
           # remove encodings that we are able to decode
           @headers["content-encoding"] = @headers.get("content-encoding") - @encodings
