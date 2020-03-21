@@ -21,6 +21,18 @@ Dir[File.join(".", "test", "support", "**", "*.rb")].sort.each { |f| require f }
 # This adds it manually.
 OpenSSL::SSL::SSLContext::DEFAULT_CERT_STORE.add_file(ENV["SSL_CERT_FILE"]) if RUBY_VERSION.start_with?("2.3") && ENV.key?("SSL_CERT_FILE")
 
+module SessionWithPool
+  ConnectionPool = Class.new(HTTPX::Pool) do
+    attr_reader :connections
+  end
+
+  module InstanceMethods
+    def pool
+      @pool ||= ConnectionPool.new
+    end
+  end
+end
+
 # 9090 drops SYN packets for connect timeout tests, make sure there's a server binding there.
 CONNECT_TIMEOUT_PORT = ENV.fetch("CONNECT_TIMEOUT_PORT", 9090).to_i
 

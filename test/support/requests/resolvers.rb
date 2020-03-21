@@ -2,12 +2,6 @@
 
 module Requests
   module Resolvers
-    SessionWithPool = Class.new(HTTPX::Session) do
-      def pool
-        @pool ||= HTTPX::Pool.new
-      end
-    end
-
     {
       native: { cache: false },
       system: { cache: false },
@@ -15,7 +9,7 @@ module Requests
     }.each do |resolver, options|
       define_method :"test_multiple_#{resolver}_resolver_errors" do
         2.times do |i|
-          session = SessionWithPool.new
+          session = HTTPX.plugin(SessionWithPool)
           unknown_uri = "http://www.sfjewjfwigiewpgwwg-native-#{i}.com"
           response = session.get(unknown_uri, resolver_class: resolver, resolver_options: options)
           assert response.is_a?(HTTPX::ErrorResponse), "should be a response error"
@@ -24,7 +18,7 @@ module Requests
       end
 
       define_method :"test_#{resolver}_resolver_request" do
-        session = SessionWithPool.new
+        session = HTTPX.plugin(SessionWithPool)
         uri = build_uri("/get")
         response = session.head(uri, resolver_class: resolver, resolver_options: options)
         verify_status(response, 200)
@@ -33,7 +27,7 @@ module Requests
       next unless resolver == :https
 
       define_method :"test_#{resolver}_resolver_get_request" do
-        session = SessionWithPool.new
+        session = HTTPX.plugin(SessionWithPool)
         uri = build_uri("/get")
         response = session.head(uri, resolver_class: resolver, resolver_options: options.merge(use_get: true))
         verify_status(response, 200)
