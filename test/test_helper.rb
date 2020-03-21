@@ -24,6 +24,17 @@ OpenSSL::SSL::SSLContext::DEFAULT_CERT_STORE.add_file(ENV["SSL_CERT_FILE"]) if R
 module SessionWithPool
   ConnectionPool = Class.new(HTTPX::Pool) do
     attr_reader :connections
+    attr_reader :connection_count
+
+    def initialize(*)
+      super
+      @connection_count = 0
+    end
+
+    def init_connection(connection, _)
+      super
+      connection.on(:open) { @connection_count += 1 }
+    end
   end
 
   module InstanceMethods
