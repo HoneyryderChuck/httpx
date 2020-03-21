@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
-BACKTRACE_HANDLER = lambda do
+Signal.trap("USR2") do
+  warn "starting..."
   Thread.list.each do |thread|
     warn "Thread TID-#{(thread.object_id ^ ::Process.pid).to_s(36)} #{thread.name}"
     if thread.backtrace
@@ -10,5 +11,3 @@ BACKTRACE_HANDLER = lambda do
     end
   end
 end
-
-Signal.trap("USR2", BACKTRACE_HANDLER)
