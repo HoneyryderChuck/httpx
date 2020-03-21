@@ -358,6 +358,8 @@ module HTTPX
 
         @io.close
         @read_buffer.clear
+        @parser.reset if @parser
+
         remove_instance_variable(:@timeout) if defined?(@timeout)
       when :already_open
         nextstate = :open

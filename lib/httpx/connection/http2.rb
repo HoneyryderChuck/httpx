@@ -30,6 +30,10 @@ module HTTPX
       init_connection
     end
 
+    def reset
+      init_connection
+    end
+
     def close
       @connection.goaway unless @connection.state == :closed
     end
