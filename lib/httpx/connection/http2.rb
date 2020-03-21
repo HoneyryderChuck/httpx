@@ -226,7 +226,7 @@ module HTTPX
     def on_settings(*)
       @handshake_completed = true
 
-      @max_requests = [@max_requests, @connection.remote_settings[:settings_max_concurrent_streams]].max
+      @max_requests = @connection.remote_settings[:settings_max_concurrent_streams] if @max_requests.zero?
 
       @max_concurrent_requests = [@max_concurrent_requests, @max_requests].min
       send_pending
