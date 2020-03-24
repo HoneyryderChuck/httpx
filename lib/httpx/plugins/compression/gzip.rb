@@ -15,31 +15,41 @@ module HTTPX
         end
 
         class Encoder
+          def initialize
+            @compressed_chunk = "".b
+          end
+
           def deflate(raw, buffer, chunk_size:)
             gzip = Zlib::GzipWriter.new(self)
 
-            while (chunk = raw.read(chunk_size))
-              gzip.write(chunk)
-              gzip.flush
-              compressed = compressed_chunk
-              buffer << compressed
-              yield compressed if block_given?
+            begin
+              while (chunk = raw.read(chunk_size))
+                gzip.write(chunk)
+                gzip.flush
+                compressed = compressed_chunk
+                buffer << compressed
+                yield compressed if block_given?
+              end
+            ensure
+              gzip.close
             end
-          ensure
-            gzip.close
+
+            return unless (compressed = compressed_chunk)
+
+            buffer << compressed
+            yield compressed if block_given?
           end
 
           private
 
           def write(chunk)
-            @compressed_chunk = chunk
+            @compressed_chunk << chunk
           end
 
           def compressed_chunk
-            compressed = @compressed_chunk
-            compressed
+            @compressed_chunk.dup
           ensure
-            @compressed_chunk = nil
+            @compressed_chunk.clear
           end
         end
 
