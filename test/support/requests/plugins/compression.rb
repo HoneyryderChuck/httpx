@@ -17,6 +17,18 @@ module Requests
         assert response.body.encodings == %w[gzip], "response should be sent with gzip encoding"
       end
 
+      def test_plugin_compression_identity_post
+        session = HTTPX.plugin(:compression)
+        uri = build_uri("/post")
+        response = session.with_headers("content-encoding" => "identity")
+                          .post(uri, body: "a" * 8012)
+        verify_status(response, 200)
+        body = json_body(response)
+        verify_header(body["headers"], "Content-Type", "application/octet-stream")
+        compressed_data = body["data"]
+        assert compressed_data.bytesize == 8012, "body shouldn't have been compressed"
+      end
+
       def test_plugin_compression_gzip
         session = HTTPX.plugin(:compression)
         uri = build_uri("/gzip")
