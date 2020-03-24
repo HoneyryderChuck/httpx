@@ -49,6 +49,29 @@ class ResponseTest < Minitest::Test
     assert body3 == "", "HEAD requets body must be empty"
   end
 
+  def test_response_body_copy_to_memory
+    payload = "a" * 512
+    body = Response::Body.new(Response.new(request, 200, "2.0", {}), threshold_size: 1024)
+    body.write(payload)
+
+    memory = StringIO.new
+    body.copy_to(memory)
+    assert memory.string == payload, "didn't copy all bytes (expected #{payload.bytesize}, was #{memory.size})"
+    body.close
+  end
+
+  def test_response_body_copy_to_file
+    payload = "a" * 2048
+    body = Response::Body.new(Response.new(request, 200, "2.0", {}), threshold_size: 1024)
+    body.write(payload)
+
+    file = Tempfile.new("httpx-file-buffer")
+    body.copy_to(file)
+    assert File.read(file.path) == payload, "didn't copy all bytes (expected #{payload.bytesize}, was #{File.size(file.path)})"
+    body.close
+    file.unlink
+  end
+
   def test_response_body_read
     body1 = Response::Body.new(Response.new(request, 200, "2.0", {}), threshold_size: 1024)
     body1.write("foo")

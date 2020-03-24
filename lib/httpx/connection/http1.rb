@@ -53,16 +53,17 @@ module HTTPX
         return
       end
 
-      unless @requests.include?(request)
-        @requests << request
-        @pipelining = true if @requests.size > 1
-      end
+      return if @requests.include?(request)
 
-      handle(request)
+      @requests << request
+      @pipelining = true if @requests.size > 1
     end
 
     def consume
-      @requests.each do |request|
+      requests_limit = [@max_concurrent_requests, @max_requests, @requests.size].min
+      @requests.each_with_index do |request, idx|
+        break if idx >= requests_limit
+
         handle(request)
       end
     end
@@ -121,7 +122,7 @@ module HTTPX
 
     def dispatch
       if @request.expects?
-        reset
+        @parser.reset!
         return handle(@request)
       end
 
@@ -136,10 +137,10 @@ module HTTPX
         throw(:called)
       end
 
-      reset
+      @parser.reset!
       @max_requests -= 1
-      send(@pending.shift) unless @pending.empty?
       manage_connection(response)
+      send(@pending.shift) unless empty?
     end
 
     def handle_error(ex)
