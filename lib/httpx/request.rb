@@ -219,6 +219,7 @@ module HTTPX
       case nextstate
       when :idle
         @response = nil
+        @drainer = nil
       when :headers
         return unless @state == :idle
       when :body
