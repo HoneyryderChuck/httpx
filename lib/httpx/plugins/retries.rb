@@ -65,11 +65,19 @@ module HTTPX
 
           retry_on = options.retry_on
 
-          if response.is_a?(ErrorResponse) &&
+          if response &&
              request.retries.positive? &&
              __repeatable_request?(request, options) &&
-             __retryable_error?(response.error) &&
-             (!retry_on || retry_on.call(response))
+             (
+               # rubocop:disable Style/MultilineTernaryOperator
+               retry_on ?
+               retry_on.call(response) :
+               (
+                 response.is_a?(ErrorResponse) && __retryable_error?(response.error)
+               )
+               # rubocop:enable Style/MultilineTernaryOperator
+             )
+
             request.retries -= 1
             log { "failed to get response, #{request.retries} tries to go..." }
             request.transition(:idle)
