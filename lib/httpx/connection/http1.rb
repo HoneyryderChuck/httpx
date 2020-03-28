@@ -140,7 +140,7 @@ module HTTPX
       @parser.reset!
       @max_requests -= 1
       manage_connection(response)
-      send(@pending.shift) unless empty?
+      send(@pending.shift) unless @pending.empty?
     end
 
     def handle_error(ex)
