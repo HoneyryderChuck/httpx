@@ -75,6 +75,32 @@ class SessionTest < Minitest::Test
   #   assert response.error =~ /timed out while waiting/, "response should have timed out"
   # end
 
+  def test_session_timeout_keep_alive_timeout
+    uri = build_uri("/get")
+
+    HTTPX.plugin(SessionWithPool).wrap do |http|
+      response1 = http.get(uri)
+      sleep(3)
+      response2 = http.get(uri)
+
+      verify_status(response1, 200)
+      verify_status(response2, 200)
+      connection_count = http.pool.connection_count
+      assert connection_count == 1, "session opened more connections than expected (#{connection_count})"
+    end
+
+    HTTPX.plugin(SessionWithPool).with(timeout: { keep_alive_timeout: 2 }).wrap do |http|
+      response1 = http.get(uri)
+      sleep(3)
+      response2 = http.get(uri)
+
+      verify_status(response1, 200)
+      verify_status(response2, 200)
+      connection_count = http.pool.connection_count
+      assert connection_count == 2, "session should have closed the first connection (#{connection_count})"
+    end
+  end
+
   TestPlugin = Module.new do
     self::ClassMethods = Module.new do
       def foo
