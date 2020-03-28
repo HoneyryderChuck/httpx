@@ -67,6 +67,10 @@ module HTTPX
       else
         transition(:idle)
       end
+
+      @inflight = 0
+      @keep_alive_timeout = options.timeout.keep_alive_timeout
+      @keep_alive_timer = nil
     end
 
     # this is a semi-private method, to be used by the resolver
@@ -84,6 +88,8 @@ module HTTPX
 
       return false if exhausted?
 
+      return false if @keep_alive_timer && @keep_alive_timer.fires_in.negative?
+
       (
         (
           @origins.include?(uri.origin) &&
@@ -100,6 +106,8 @@ module HTTPX
       return false if @state == :closing || @state == :closed || !@io
 
       return false if exhausted?
+
+      return false if @keep_alive_timer && @keep_alive_timer.fires_in.negative?
 
       !(@io.addresses & connection.addresses).empty? && @options == connection.options
     end
@@ -183,6 +191,7 @@ module HTTPX
 
     def close
       @parser.close if @parser
+      @keep_alive_timer.cancel if @keep_alive_timer
       transition(:closing)
     end
 
@@ -195,6 +204,8 @@ module HTTPX
     def send(request)
       if @parser && !@write_buffer.full?
         request.headers["alt-used"] = @origin.authority if match_altsvcs?(request.uri)
+        @keep_alive_timer.pause if @keep_alive_timer
+        @inflight += 1
         parser.send(request)
       else
         @pending << request
@@ -273,6 +284,8 @@ module HTTPX
 
     def send_pending
       while !@write_buffer.full? && (request = @pending.shift)
+        @keep_alive_timer.pause if @keep_alive_timer
+        @inflight += 1
         parser.send(request)
       end
     end
@@ -292,6 +305,7 @@ module HTTPX
         AltSvc.emit(request, response) do |alt_origin, origin, alt_params|
           emit(:altsvc, alt_origin, origin, alt_params)
         end
+        handle_response
         request.emit(:response, response)
       end
       parser.on(:altsvc) do |alt_origin, origin, alt_params|
@@ -359,6 +373,7 @@ module HTTPX
         @io.close
         @read_buffer.clear
         @parser.reset if @parser
+        @keep_alive_timer.cancel if @keep_alive_timer
 
         remove_instance_variable(:@timeout) if defined?(@timeout)
       when :already_open
@@ -379,6 +394,18 @@ module HTTPX
       handle_error(e)
       @state = :closed
       emit(:close)
+    end
+
+    def handle_response
+      @inflight -= 1
+      return unless @inflight.zero?
+
+      @keep_alive_timer ||= @timers.after(@keep_alive_timeout) do
+        log { "keep alive timeout expired, closing..." }
+        reset
+      end
+      @keep_alive_timer.reset
+      @keep_alive_timer.resume
     end
 
     def on_error(ex)
