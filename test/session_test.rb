@@ -99,7 +99,7 @@ class SessionTest < Minitest::Test
       connection_count = http.pool.connection_count
       assert connection_count == 2, "session should have closed the first connection (#{connection_count})"
     end
-  end
+  end unless RUBY_VERSION < "2.3" || RUBY_ENGINE == "jruby"
 
   TestPlugin = Module.new do
     self::ClassMethods = Module.new do
