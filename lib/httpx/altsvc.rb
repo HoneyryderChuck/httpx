@@ -73,7 +73,7 @@ module HTTPX
         alt_proto, alt_origin = alt_origin.split("=")
         alt_origin = alt_origin[1..-2] if alt_origin.start_with?("\"") && alt_origin.end_with?("\"")
         if alt_origin.start_with?(":")
-          alt_origin = "dummy#{alt_origin}"
+          alt_origin = "#{alt_proto}://dummy#{alt_origin}"
           uri = URI.parse(alt_origin)
           uri.host = nil
           uri
