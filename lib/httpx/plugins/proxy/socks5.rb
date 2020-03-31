@@ -60,7 +60,7 @@ module HTTPX
 
               @parser = nil
             end
-            log(level: 1, label: "SOCKS5: ") { "#{nextstate}: #{@write_buffer.to_s.inspect}" } unless nextstate == :open
+            log(level: 1) { "SOCKS5: #{nextstate}: #{@write_buffer.to_s.inspect}" } unless nextstate == :open
             super
           end
 

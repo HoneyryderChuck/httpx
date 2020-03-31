@@ -30,7 +30,7 @@ module HTTPX
         addresses.map! do |address|
           address.is_a?(IPAddr) ? address : IPAddr.new(address.to_s)
         end
-        log(label: "resolver: ") { "answer #{connection.origin.host}: #{addresses.inspect}" }
+        log { "resolver: answer #{connection.origin.host}: #{addresses.inspect}" }
         connection.addresses = addresses
         catch(:coalesced) { emit(:resolve, connection) }
       end

@@ -84,7 +84,7 @@ module HTTPX
 
       hostname = hostname || @queries.key(connection) || connection.origin.host
       type = @_record_types[hostname].first
-      log(label: "resolver: ") { "query #{type} for #{hostname}" }
+      log { "resolver: query #{type} for #{hostname}" }
       begin
         request = build_request(hostname, type)
         @requests[request] = connection
@@ -111,7 +111,7 @@ module HTTPX
     end
 
     def on_promise(_, stream)
-      log(level: 2, label: "#{stream.id}: ") { "refusing stream!" }
+      log(level: 2) { "#{stream.id}: refusing stream!" }
       stream.refuse
     end
 
