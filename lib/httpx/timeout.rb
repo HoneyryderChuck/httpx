@@ -6,6 +6,7 @@ module HTTPX
   class Timeout
     CONNECT_TIMEOUT = 60
     OPERATION_TIMEOUT = 60
+    KEEP_ALIVE_TIMEOUT = 20
 
     def self.new(opts = {})
       return opts if opts.is_a?(Timeout)
@@ -13,14 +14,16 @@ module HTTPX
       super(**opts)
     end
 
-    attr_reader :connect_timeout, :operation_timeout, :total_timeout
+    attr_reader :connect_timeout, :operation_timeout, :keep_alive_timeout, :total_timeout
 
     def initialize(connect_timeout: CONNECT_TIMEOUT,
                    operation_timeout: OPERATION_TIMEOUT,
+                   keep_alive_timeout: KEEP_ALIVE_TIMEOUT,
                    total_timeout: nil,
                    loop_timeout: nil)
       @connect_timeout = connect_timeout
       @operation_timeout = operation_timeout
+      @keep_alive_timeout = keep_alive_timeout
       @total_timeout = total_timeout
 
       return unless loop_timeout
@@ -35,6 +38,7 @@ module HTTPX
       if other.is_a?(Timeout)
         @connect_timeout == other.instance_variable_get(:@connect_timeout) &&
           @operation_timeout == other.instance_variable_get(:@operation_timeout) &&
+          @keep_alive_timeout == other.instance_variable_get(:@keep_alive_timeout) &&
           @total_timeout == other.instance_variable_get(:@total_timeout)
       else
         super
@@ -49,9 +53,11 @@ module HTTPX
       when Timeout
         connect_timeout = other.instance_variable_get(:@connect_timeout) || @connect_timeout
         operation_timeout = other.instance_variable_get(:@operation_timeout) || @operation_timeout
+        keep_alive_timeout = other.instance_variable_get(:@keep_alive_timeout) || @keep_alive_timeout
         total_timeout = other.instance_variable_get(:@total_timeout) || @total_timeout
         Timeout.new(connect_timeout: connect_timeout,
                     operation_timeout: operation_timeout,
+                    keep_alive_timeout: keep_alive_timeout,
                     total_timeout: total_timeout)
       else
         raise ArgumentError, "can't merge with #{other.class}"
