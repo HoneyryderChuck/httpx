@@ -63,6 +63,7 @@ module HTTPX
       requests_limit = [@max_concurrent_requests, @max_requests, @requests.size].min
       @requests.each_with_index do |request, idx|
         break if idx >= requests_limit
+        next if request.state == :done
 
         handle(request)
       end
