@@ -3,9 +3,11 @@
 module HTTPX
   module Chainable
     %i[head get post put delete trace options connect patch].each do |meth|
-      define_method meth do |*uri, **options|
-        request(meth, uri, **options)
-      end
+      class_eval(<<-MOD, __FILE__, __LINE__ + 1)
+        def #{meth}(*uri, **options)
+          request(:#{meth}, uri, **options)
+        end
+      MOD
     end
 
     def request(verb, uri, **options)
