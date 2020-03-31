@@ -14,7 +14,25 @@ module Requests
                           .with_timeout(total_timeout: 3)
         retries_response = retries_session.get(build_uri("/delay/10"))
         assert retries_response.is_a?(HTTPX::ErrorResponse)
-        assert retries_session.calls == 3, "expect request to be built 4 times (was #{retries_session.calls})"
+        assert retries_session.calls == 3, "expect request to be built 3 times (was #{retries_session.calls})"
+      end
+
+      def test_plugin_retries_change_requests
+        check_error = ->(response) { response.is_a?(HTTPX::ErrorResponse) || response.status == 405 }
+        retries_session = HTTPX
+                          .plugin(RequestInspector)
+                          .plugin(:retries, retry_on: check_error) # because CI
+                          .with_timeout(total_timeout: 3)
+
+        retries_response = retries_session.post(build_uri("/delay/10"), body: ["a" * 1024])
+        assert check_error[retries_response]
+        assert retries_session.calls.zero?, "expect request to be built 0 times (was #{retries_session.calls})"
+
+        retries_session.reset
+
+        retries_response = retries_session.post(build_uri("/delay/10"), body: ["a" * 1024], retry_change_requests: true)
+        assert check_error[retries_response]
+        assert retries_session.calls == 3, "expect request to be built 3 times (was #{retries_session.calls})"
       end
 
       def test_plugin_retries_max_retries
@@ -27,7 +45,7 @@ module Requests
         assert retries_response.is_a?(HTTPX::ErrorResponse)
         # we're comparing against max-retries + 1, because the calls increment will happen
         # also in the last call, where the request is not going to be retried.
-        assert retries_session.calls == 2, "expect request to be built 3 times (was #{retries_session.calls})"
+        assert retries_session.calls == 2, "expect request to be built 2 times (was #{retries_session.calls})"
       end
 
       def test_plugin_retries_retry_on
@@ -85,6 +103,10 @@ module Requests
             super
             # we're comparing against max-retries + 1, because the calls increment will happen
             # also in the last call, where the request is not going to be retried.
+            @calls = -1
+          end
+
+          def reset
             @calls = -1
           end
 
