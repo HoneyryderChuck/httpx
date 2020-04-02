@@ -166,14 +166,11 @@ module HTTPX
     def dread(wsize = @resolver_options.packet_size)
       loop do
         siz = @io.read(wsize, @read_buffer)
-        unless siz
-          emit(:close)
-          return
-        end
-        return if siz.zero?
+        return unless siz && siz.positive?
 
         log { "resolver: READ: #{siz} bytes..." }
         parse(@read_buffer)
+        return if @state == :closed
       end
     end
 
@@ -182,12 +179,10 @@ module HTTPX
         return if @write_buffer.empty?
 
         siz = @io.write(@write_buffer)
-        unless siz
-          emit(:close)
-          return
-        end
+        return unless siz && siz.positive?
+
         log { "resolver: WRITE: #{siz} bytes..." }
-        return if siz.zero?
+        return if @state == :closed
       end
     end
 
