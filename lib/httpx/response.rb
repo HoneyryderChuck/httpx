@@ -58,7 +58,7 @@ module HTTPX
       "HTTP/#{version} " \
       "@status=#{@status} " \
       "@headers=#{@headers} " \
-      "@body=#{@body}>"
+      "@body=#{@body.size}>"
     end
     # :nocov:
 
