@@ -7,7 +7,8 @@ AllCops:
     - lib/**/*.rb
     - test/**/*.rb
     - Rakefile
-    - palanca.gemspec
+    - httpx.gemspec
+    - profiler/**/*
   Exclude:
     - '*.rb'
     - 'bugreports/*'
@@ -32,20 +33,6 @@ Naming/FileName:
 Layout/EndAlignment:
   EnforcedStyleAlignWith: variable
 
-Lint/RescueException:
-  Exclude:
-    # starts the server in a new thread
-    - lib/palanca/server.rb 
-    # safely close the ssl socket, copied from ruby-openssl
-    - lib/palanca/server/ssl.rb 
-    # guards against Exceptions in a thread loop
-    - lib/palanca/executor/threaded.rb 
-#Style/CaseIndentation:
-#  EnforcedStyle: end
-
-  #Style/IndentHash:
-  #  EnforcedStyle: consistent
-
 Style/Alias:
   EnforcedStyle: prefer_alias_method
 
@@ -60,15 +47,6 @@ Style/StringLiterals:
 
 Style/StringLiteralsInInterpolation:
   EnforcedStyle: double_quotes 
-
-Style/GlobalVars:
-  AllowedVariables: [$PALANCA_DEBUG]
-
-Style/ClassVars:
-  Exclude:
-    # header field transformation caches
-    - lib/palanca/http/headers.rb
-    - lib/palanca/http1/headers.rb
 
 Style/SignalException:
   Enabled: false
