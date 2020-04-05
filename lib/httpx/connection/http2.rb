@@ -43,6 +43,8 @@ module HTTPX
     end
 
     def exhausted?
+      return false if @max_requests.zero? && @connection.active_stream_count.zero?
+
       @connection.active_stream_count >= @max_requests
     end
 
@@ -228,7 +230,11 @@ module HTTPX
     def on_settings(*)
       @handshake_completed = true
 
-      @max_requests = @connection.remote_settings[:settings_max_concurrent_streams] if @max_requests.zero?
+      if @max_requests.zero?
+        @max_requests = @connection.remote_settings[:settings_max_concurrent_streams]
+
+        @connection.max_streams = @max_requests if @connection.respond_to?(:max_streams=) && @max_requests.positive?
+      end
 
       @max_concurrent_requests = [@max_concurrent_requests, @max_requests].min
       send_pending
