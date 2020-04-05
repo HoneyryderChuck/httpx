@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "time"
+
 module Requests
   module Get
     def test_http_get

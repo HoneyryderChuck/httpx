@@ -192,7 +192,6 @@ module HTTPX
     def close
       @parser.close if @parser
       @keep_alive_timer.cancel if @keep_alive_timer
-      transition(:closing)
     end
 
     def reset
@@ -321,8 +320,12 @@ module HTTPX
       parser.on(:origin) do |origin|
         @origins << origin
       end
-      parser.on(:close) do
+      parser.on(:close) do |force|
         transition(:closing)
+        if force
+          transition(:closed)
+          emit(:close)
+        end
       end
       parser.on(:reset) do
         if parser.empty?

@@ -36,6 +36,7 @@ module HTTPX
 
     def close
       @connection.goaway unless @connection.state == :closed
+      emit(:close)
     end
 
     def empty?
@@ -219,7 +220,6 @@ module HTTPX
       return unless @streams.empty? && exhausted?
 
       close
-      emit(:close)
       emit(:exhausted) unless @pending.empty?
     end
 
