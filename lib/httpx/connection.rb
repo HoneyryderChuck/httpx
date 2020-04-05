@@ -432,12 +432,19 @@ module HTTPX
 
     def handle_error(error)
       if error.instance_of?(TimeoutError)
+
         if @timeout
           @timeout -= error.timeout
           return unless @timeout <= 0
         end
 
-        error = error.to_connection_error if connecting?
+        error = if @total_timeout && @total_timeout.fires_in.negative?
+          ex = TotalTimeoutError.new(@total_timeout.interval, "Timed out after #{@total_timeout.interval} seconds")
+          ex.set_backtrace(error.backtrace)
+          ex
+        elsif connecting?
+          error.to_connection_error
+        end
       end
 
       parser.handle_error(error) if @parser && parser.respond_to?(:handle_error)
@@ -454,8 +461,8 @@ module HTTPX
       @total_timeout ||= @timers.after(total) do
         ex = TotalTimeoutError.new(total, "Timed out after #{total} seconds")
         ex.set_backtrace(caller)
-        @parser.close if @parser
         on_error(ex)
+        @parser.close if @parser
       end
     end
   end

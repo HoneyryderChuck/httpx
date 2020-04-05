@@ -51,10 +51,10 @@ class SessionTest < Minitest::Test
 
   def test_session_timeouts_total_timeout
     uri = build_uri("/delay/3")
-    session = HTTPX.with_timeout(operation_timeout: 1, total_timeout: 2)
+    session = HTTPX.with_timeout(total_timeout: 2)
     response = session.get(uri)
     assert response.is_a?(HTTPX::ErrorResponse), "response should have failed"
-    assert response.status =~ /timed out after \d+ seconds/i, "response should have timed out (instead, we got \"#{response.status}\")"
+    assert response.error.is_a?(HTTPX::TotalTimeoutError), "response should have timed out (instead, we got \"#{response.status}\")"
   end
 
   def test_session_timeout_connect_timeout
