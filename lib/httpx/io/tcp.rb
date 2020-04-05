@@ -11,6 +11,8 @@ module HTTPX
 
     attr_reader :addresses
 
+    attr_reader :state
+
     alias_method :host, :ip
 
     def initialize(origin, addresses, options)

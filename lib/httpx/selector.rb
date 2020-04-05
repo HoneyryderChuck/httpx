@@ -11,21 +11,24 @@ class HTTPX::Selector
   # I/O monitor
   #
   class Monitor
-    attr_accessor :io, :interests, :readiness
+    attr_accessor :io, :readiness
 
-    def initialize(io, interests, reactor)
+    def initialize(io, reactor)
       @io = io
-      @interests = interests
       @reactor = reactor
       @closed = false
     end
 
+    def interests
+      @io.interests
+    end
+
     def readable?
-      READABLE.include?(@interests)
+      READABLE.include?(@io.interests)
     end
 
     def writable?
-      WRITABLE.include?(@interests)
+      WRITABLE.include?(@io.interests)
     end
 
     # closes +@io+, deregisters from reactor (unless +deregister+ is false)
@@ -42,7 +45,7 @@ class HTTPX::Selector
 
     # :nocov:
     def to_s
-      "#<#{self.class}: #{@io}(closed:#{@closed}) #{@interests} #{object_id.to_s(16)}>"
+      "#<#{self.class}: #{@io}(closed:#{@closed}) #{@io.interests} #{object_id.to_s(16)}>"
     end
     # :nocov:
   end
@@ -59,15 +62,14 @@ class HTTPX::Selector
     monitor.close(false) if monitor
   end
 
-  # register +io+ for +interests+ events.
-  def register(io, interests)
+  # register +io+.
+  def register(io)
     monitor = @selectables[io]
-    if monitor
-      monitor.interests = interests
-    else
-      monitor = Monitor.new(io, interests, self)
-      @selectables[io] = monitor
-    end
+    return if monitor
+
+    monitor = Monitor.new(io, self)
+    @selectables[io] = monitor
+
     monitor
   end
 

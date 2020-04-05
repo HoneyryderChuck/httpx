@@ -31,6 +31,10 @@ module HTTPX
             end
           end
 
+          def connecting?
+            super || @state == :authenticating || @state == :negotiating
+          end
+
           private
 
           def transition(nextstate)

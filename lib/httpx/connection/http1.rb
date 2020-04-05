@@ -23,6 +23,19 @@ module HTTPX
       @requests = []
     end
 
+    def interests
+      # this means we're processing incoming response already
+      return :r if @request
+
+      return if @requests.empty?
+
+      request = @requests.first
+
+      return :w if request.interests == :w || !@buffer.empty?
+
+      :r
+    end
+
     def reset
       @max_requests = @options.max_requests || MAX_REQUESTS
       @parser.reset!

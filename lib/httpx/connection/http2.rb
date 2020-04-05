@@ -30,6 +30,22 @@ module HTTPX
       init_connection
     end
 
+    def interests
+      return :r if @buffer.full?
+
+      return :w if @connection.state == :closed
+
+      return :r unless (@connection.state == :connected && @handshake_completed)
+
+      return :w unless @pending.empty?
+
+      return :w if @streams.each_key.any? { |r| r.interests == :w }
+
+      return :r if @buffer.empty?
+
+      :rw
+    end
+
     def reset
       init_connection
     end

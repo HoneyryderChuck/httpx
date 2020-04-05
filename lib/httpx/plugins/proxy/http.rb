@@ -7,6 +7,10 @@ module HTTPX
     module Proxy
       module HTTP
         module ConnectionMethods
+          def connecting?
+            super || @state == :connecting || @state == :connected
+          end
+
           private
 
           def transition(nextstate)
@@ -34,7 +38,6 @@ module HTTPX
               when :idle
                 @parser = ProxyParser.new(@write_buffer, @options)
                 set_parser_callbacks(@parser)
-                @parser.on(:close) { transition(:closing) }
               end
             end
             super

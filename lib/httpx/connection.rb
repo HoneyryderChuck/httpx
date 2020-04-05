@@ -176,9 +176,21 @@ module HTTPX
     end
 
     def interests
-      return :w if @state == :idle
+      # connecting
+      if connecting?
+        return :w unless @io
 
-      :rw
+        return :rw if @io.state == :connected
+
+        return :w
+      end
+
+      # if the write buffer is full, we drain it
+      return :w if @write_buffer.full?
+
+      return @parser.interests if @parser
+
+      nil
     end
 
     def to_io
