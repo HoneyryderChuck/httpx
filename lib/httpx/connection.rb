@@ -203,7 +203,10 @@ module HTTPX
 
     def close
       @parser.close if @parser
-      @keep_alive_timer.cancel if @keep_alive_timer
+      return unless @keep_alive_timer
+
+      @keep_alive_timer.cancel
+      remove_instance_variable(:@keep_alive_timer)
     end
 
     def reset
@@ -215,8 +218,8 @@ module HTTPX
     def send(request)
       if @parser && !@write_buffer.full?
         request.headers["alt-used"] = @origin.authority if match_altsvcs?(request.uri)
-        @keep_alive_timer.pause if @keep_alive_timer
         @inflight += 1
+        @keep_alive_timer.pause if @keep_alive_timer
         parser.send(request)
       else
         @pending << request
@@ -295,8 +298,8 @@ module HTTPX
 
     def send_pending
       while !@write_buffer.full? && (request = @pending.shift)
-        @keep_alive_timer.pause if @keep_alive_timer
         @inflight += 1
+        @keep_alive_timer.pause if @keep_alive_timer
         parser.send(request)
       end
     end
@@ -390,7 +393,10 @@ module HTTPX
         @io.close
         @read_buffer.clear
         @parser.reset if @parser
-        @keep_alive_timer.cancel if @keep_alive_timer
+        if @keep_alive_timer
+          @keep_alive_timer.cancel
+          remove_instance_variable(:@keep_alive_timer)
+        end
 
         remove_instance_variable(:@timeout) if defined?(@timeout)
       when :already_open
@@ -417,12 +423,17 @@ module HTTPX
       @inflight -= 1
       return unless @inflight.zero?
 
-      @keep_alive_timer ||= @timers.after(@keep_alive_timeout) do
-        log { "keep alive timeout expired, closing..." }
-        reset
+      if @keep_alive_timer
+        @keep_alive_timer.resume
+        @keep_alive_timer.reset
+      else
+        @keep_alive_timer = @timers.after(@keep_alive_timeout) do
+          unless @inflight.zero?
+            log { "keep alive timeout expired, closing..." }
+            reset
+          end
+        end
       end
-      @keep_alive_timer.reset
-      @keep_alive_timer.resume
     end
 
     def on_error(ex)
