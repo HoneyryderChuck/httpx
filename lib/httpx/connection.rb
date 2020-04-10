@@ -259,6 +259,7 @@ module HTTPX
         dread
         dwrite
         parser.consume
+        @timeout = @current_timeout
       end
     end
 
@@ -369,6 +370,9 @@ module HTTPX
 
     def transition(nextstate)
       case nextstate
+      when :idle
+        @timeout = @current_timeout = @options.timeout.connect_timeout
+
       when :open
         return if @state == :closed
 
@@ -378,6 +382,8 @@ module HTTPX
         return unless @io.connected?
 
         send_pending
+
+        @timeout = @current_timeout = @options.timeout.operation_timeout
         emit(:open)
       when :closing
         return unless @state == :open
@@ -429,21 +435,15 @@ module HTTPX
       else
         @keep_alive_timer = @timers.after(@keep_alive_timeout) do
           unless @inflight.zero?
-            log { "keep alive timeout expired, closing..." }
+            log { "(#{object_id})) keep alive timeout expired, closing..." }
             reset
           end
         end
       end
     end
 
-    def on_error(ex)
-      handle_error(ex)
-      reset
-    end
-
-    def handle_error(error)
+    def on_error(error)
       if error.instance_of?(TimeoutError)
-
         if @timeout
           @timeout -= error.timeout
           return unless @timeout <= 0
@@ -457,7 +457,11 @@ module HTTPX
           error = error.to_connection_error
         end
       end
+      handle_error(error)
+      reset
+    end
 
+    def handle_error(error)
       parser.handle_error(error) if @parser && parser.respond_to?(:handle_error)
       while (request = @pending.shift)
         request.emit(:response, ErrorResponse.new(request, error, @options))

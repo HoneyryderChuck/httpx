@@ -28,7 +28,7 @@ module HTTPX
     def next_tick
       catch(:jump_tick) do
         timeout = [next_timeout, @timers.wait_interval].compact.min
-        if timeout.negative?
+        if timeout && timeout.negative?
           @timers.fire
           throw(:jump_tick)
         end
