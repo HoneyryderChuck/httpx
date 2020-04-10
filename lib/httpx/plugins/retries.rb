@@ -63,15 +63,13 @@ module HTTPX
         def fetch_response(request, connections, options)
           response = super
 
-          retry_on = options.retry_on
-
           if response &&
              request.retries.positive? &&
              __repeatable_request?(request, options) &&
              (
                # rubocop:disable Style/MultilineTernaryOperator
-               retry_on ?
-               retry_on.call(response) :
+               options.retry_on ?
+               options.retry_on.call(response) :
                (
                  response.is_a?(ErrorResponse) && __retryable_error?(response.error)
                )
