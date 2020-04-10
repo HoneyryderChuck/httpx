@@ -31,6 +31,7 @@ module HTTPX
     end
 
     def interests
+      # waiting for WINDOW_UPDATE frames
       return :r if @buffer.full?
 
       return :w if @connection.state == :closed
