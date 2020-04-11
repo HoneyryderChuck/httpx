@@ -15,6 +15,7 @@ module HTTPX
       @options = Options.new(options)
       @path = @options.transport_options[:path]
       @fallback_protocol = @options.fallback_protocol
+      @interests = :w
       if @options.io
         @io = case @options.io
               when Hash

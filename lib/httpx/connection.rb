@@ -180,9 +180,7 @@ module HTTPX
       if connecting?
         return :w unless @io
 
-        return :rw if @io.state == :connected
-
-        return :w
+        return @io.interests
       end
 
       # if the write buffer is full, we drain it

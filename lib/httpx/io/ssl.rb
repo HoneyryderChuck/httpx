@@ -62,8 +62,10 @@ module HTTPX
       @io.connect_nonblock
       @io.post_connection_check(@hostname) if @ctx.verify_mode != OpenSSL::SSL::VERIFY_NONE
       transition(:negotiated)
-    rescue ::IO::WaitReadable,
-           ::IO::WaitWritable
+    rescue ::IO::WaitReadable
+      @interests = :r
+    rescue ::IO::WaitWritable
+      @interests = :w
     end
 
     # :nocov:
