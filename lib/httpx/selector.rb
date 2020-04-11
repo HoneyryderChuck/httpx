@@ -52,8 +52,6 @@ class HTTPX::Selector
 
   def initialize
     @selectables = {}
-    @__r__, @__w__ = IO.pipe
-    @closed = false
   end
 
   # deregisters +io+ from selectables.
@@ -78,34 +76,31 @@ class HTTPX::Selector
   #
   def select(interval)
     begin
-      r = [@__r__]
-      w = []
+      r = nil
+      w = nil
 
       @selectables.each do |io, monitor|
-        r << io if monitor.interests == :r || monitor.interests == :rw
-        w << io if monitor.interests == :w || monitor.interests == :rw
+        (r ||= []) << io if monitor.interests == :r || monitor.interests == :rw
+        (w ||= []) << io if monitor.interests == :w || monitor.interests == :rw
         monitor.readiness = nil
       end
 
       readers, writers = IO.select(r, w, nil, interval)
 
-      raise HTTPX::TimeoutError.new(interval, "timed out while waiting on select") if readers.nil? && writers.nil?
+      if readers.nil? && writers.nil?
+        raise HTTPX::TimeoutError.new(interval, "timed out while waiting on select")
+      end
     rescue IOError, SystemCallError
       @selectables.reject! { |io, _| io.closed? }
       retry
     end
 
     readers.each do |io|
-      if io == @__r__
-        # clean up wakeups
-        @__r__.read(@__r__.stat.size)
-      else
-        monitor = io.closed? ? @selectables.delete(io) : @selectables[io]
-        next unless monitor
+      monitor = io.closed? ? @selectables.delete(io) : @selectables[io]
+      next unless monitor
 
-        monitor.readiness = writers.delete(io) ? :rw : :r
-        yield monitor
-      end
+      monitor.readiness = writers.delete(io) ? :rw : :r
+      yield monitor
     end if readers
 
     writers.each do |io|
@@ -120,18 +115,5 @@ class HTTPX::Selector
 
   # Closes the selector.
   #
-  def close
-    return if @closed
-
-    @__r__.close
-    @__w__.close
-  rescue IOError
-  ensure
-    @closed = true
-  end
-
-  # interrupts the select call.
-  def wakeup
-    @__w__.write_nonblock("\0", exception: false)
-  end
+  def close ; end
 end
