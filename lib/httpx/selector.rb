@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "io/wait"
+
 class HTTPX::Selector
   READABLE = %i[rw r].freeze
   WRITABLE = %i[rw w].freeze
@@ -11,24 +13,12 @@ class HTTPX::Selector
   # I/O monitor
   #
   class Monitor
-    attr_accessor :io, :readiness
+    attr_accessor :io
 
     def initialize(io, reactor)
       @io = io
       @reactor = reactor
       @closed = false
-    end
-
-    def interests
-      @io.interests
-    end
-
-    def readable?
-      READABLE.include?(@io.interests)
-    end
-
-    def writable?
-      WRITABLE.include?(@io.interests)
     end
 
     # closes +@io+, deregisters from reactor (unless +deregister+ is false)
@@ -74,46 +64,68 @@ class HTTPX::Selector
   # waits for read/write events for +interval+. Yields for monitors of
   # selected IO objects.
   #
-  def select(interval)
+  def select(interval, &block)
+    return select_one(interval, &block) if @selectables.size == 1
+
     begin
       r = nil
       w = nil
 
-      @selectables.each do |io, monitor|
-        (r ||= []) << io if monitor.interests == :r || monitor.interests == :rw
-        (w ||= []) << io if monitor.interests == :w || monitor.interests == :rw
-        monitor.readiness = nil
+      @selectables.each_key do |io|
+        (r ||= []) << io if io.interests == :r || io.interests == :rw
+        (w ||= []) << io if io.interests == :w || io.interests == :rw
       end
 
       readers, writers = IO.select(r, w, nil, interval)
 
-      if readers.nil? && writers.nil?
-        raise HTTPX::TimeoutError.new(interval, "timed out while waiting on select")
-      end
+      raise HTTPX::TimeoutError.new(interval, "timed out while waiting on select") if readers.nil? && writers.nil?
     rescue IOError, SystemCallError
       @selectables.reject! { |io, _| io.closed? }
       retry
     end
 
     readers.each do |io|
-      monitor = io.closed? ? @selectables.delete(io) : @selectables[io]
+      monitor = @selectables[io]
       next unless monitor
 
-      monitor.readiness = writers.delete(io) ? :rw : :r
+      # so that we don't yield 2 times
+      writers.delete(io)
+
       yield monitor
     end if readers
 
     writers.each do |io|
-      monitor = io.closed? ? @selectables.delete(io) : @selectables[io]
+      monitor = @selectables[io]
       next unless monitor
 
-      # don't double run this, the last iteration might have run this task already
-      monitor.readiness = :w
       yield monitor
     end if writers
   end
 
   # Closes the selector.
   #
-  def close ; end
+  def close; end
+
+  private
+
+  def select_one(interval)
+    io, monitor = @selectables.first
+
+    case io.interests
+    when :r
+      result = io.to_io.wait_readable(interval)
+      raise HTTPX::TimeoutError.new(interval, "timed out while waiting on select") unless result
+    when :w
+      result = io.to_io.wait_writable(interval)
+      raise HTTPX::TimeoutError.new(interval, "timed out while waiting on select") unless result
+    when :rw
+      readers, writers = IO.select([io], [io], nil, interval)
+
+      raise HTTPX::TimeoutError.new(interval, "timed out while waiting on select") if readers.nil? && writers.nil?
+    end
+
+    yield monitor
+  rescue IOError, SystemCallError
+    @selectables.reject! { |ios, _| ios.closed? }
+  end
 end
