@@ -61,10 +61,6 @@ class HTTPX::Selector
     monitor
   end
 
-  # Closes the selector.
-  #
-  def close; end
-
   private
 
   def select_many(interval)
