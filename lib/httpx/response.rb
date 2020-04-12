@@ -269,6 +269,10 @@ module HTTPX
       @error.message
     end
 
+    def body
+      @error.backtrace.join("\n")
+    end
+
     def raise_for_status
       raise @error
     end
