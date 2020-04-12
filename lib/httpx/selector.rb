@@ -61,12 +61,13 @@ class HTTPX::Selector
     monitor
   end
 
-  # waits for read/write events for +interval+. Yields for monitors of
-  # selected IO objects.
+  # Closes the selector.
   #
-  def select(interval, &block)
-    return select_one(interval, &block) if @selectables.size == 1
+  def close; end
 
+  private
+
+  def select_many(interval)
     begin
       r = nil
       w = nil
@@ -102,12 +103,6 @@ class HTTPX::Selector
     end if writers
   end
 
-  # Closes the selector.
-  #
-  def close; end
-
-  private
-
   def select_one(interval)
     io, monitor = @selectables.first
 
@@ -128,4 +123,23 @@ class HTTPX::Selector
   rescue IOError, SystemCallError
     @selectables.reject! { |ios, _| ios.closed? }
   end
+
+  # waits for read/write events for +interval+. Yields for monitors of
+  # selected IO objects.
+  #
+  if RUBY_VERSION < "2.2" || RUBY_ENGINE == "jruby"
+
+    alias_method :select, :select_many
+
+  else
+
+    def select(interval, &block)
+      return select_one(interval, &block) if @selectables.size == 1
+
+      select_many(interval, &block)
+    end
+
+  end
+
+  public :select
 end

@@ -135,8 +135,8 @@ module ResolverHelpers
     def self.extended(obj)
       obj.singleton_class.class_eval do
         attr_reader :queries
-        public :parse # rubocop:disable Style/AccessModifierDeclarations
-        public :resolve # rubocop:disable Style/AccessModifierDeclarations
+        public :parse
+        public :resolve
       end
     end
   end
