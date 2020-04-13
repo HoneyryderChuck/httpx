@@ -2,12 +2,33 @@
 
 require "io/wait"
 
+module IOExtensions # :nodoc:
+  refine IO do
+    def wait(timeout = nil, mode = :read)
+      case mode
+      when :read
+        wait_readable(timeout)
+      when :write
+        wait_writable(timeout)
+      when :read_write
+        r, w = IO.select([self], [self], nil, timeout)
+
+        return unless r || w
+
+        self
+      end
+    end
+  end
+end
+
 class HTTPX::Selector
   READABLE = %i[rw r].freeze
   WRITABLE = %i[rw w].freeze
 
   private_constant :READABLE
   private_constant :WRITABLE
+
+  using IOExtensions unless IO.method_defined?(:wait) && IO.instance_method(:wait).arity == 2
 
   #
   # I/O monitor
@@ -102,40 +123,24 @@ class HTTPX::Selector
   def select_one(interval)
     io, monitor = @selectables.first
 
-    case io.interests
-    when :r
-      result = io.to_io.wait_readable(interval)
-      raise HTTPX::TimeoutError.new(interval, "timed out while waiting on select") unless result
-    when :w
-      result = io.to_io.wait_writable(interval)
-      raise HTTPX::TimeoutError.new(interval, "timed out while waiting on select") unless result
-    when :rw
-      readers, writers = IO.select([io], [io], nil, interval)
-
-      raise HTTPX::TimeoutError.new(interval, "timed out while waiting on select") if readers.nil? && writers.nil?
+    result = case io.interests
+             when :r then io.to_io.wait_readable(interval)
+             when :w then io.to_io.wait_writable(interval)
+             when :rw then io.to_io.wait(interval, :read_write)
     end
+
+    raise HTTPX::TimeoutError.new(interval, "timed out while waiting on select") unless result
 
     yield monitor
   rescue IOError, SystemCallError
     @selectables.reject! { |ios, _| ios.closed? }
   end
 
-  # waits for read/write events for +interval+. Yields for monitors of
-  # selected IO objects.
-  #
-  # if RUBY_VERSION < "2.2" || RUBY_ENGINE == "jruby"
-
-  #   alias_method :select, :select_many
-
-  # else
-
   def select(interval, &block)
     return select_one(interval, &block) if @selectables.size == 1
 
     select_many(interval, &block)
   end
-
-  # end
 
   public :select
 end
