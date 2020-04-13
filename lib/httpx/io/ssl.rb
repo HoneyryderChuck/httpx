@@ -20,6 +20,14 @@ module HTTPX
       @state = :negotiated if @keep_open
     end
 
+    def interests
+      @interests || super
+    end
+
+    def interests
+      :rw
+    end if RUBY_ENGINE == "jruby"
+
     def protocol
       @io.alpn_protocol || super
     rescue StandardError

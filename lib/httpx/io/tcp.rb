@@ -13,8 +13,6 @@ module HTTPX
 
     attr_reader :state
 
-    attr_reader :interests
-
     alias_method :host, :ip
 
     def initialize(origin, addresses, options)
@@ -24,7 +22,6 @@ module HTTPX
       @options = Options.new(options)
       @fallback_protocol = @options.fallback_protocol
       @port = origin.port
-      @interests = :w
       if @options.io
         @io = case @options.io
               when Hash
@@ -44,6 +41,10 @@ module HTTPX
         @ip = @addresses[@ip_index]
       end
       @io ||= build_socket
+    end
+
+    def interests
+      :w
     end
 
     def to_io
