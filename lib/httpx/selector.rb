@@ -123,19 +123,19 @@ class HTTPX::Selector
   # waits for read/write events for +interval+. Yields for monitors of
   # selected IO objects.
   #
-  if RUBY_VERSION < "2.2" || RUBY_ENGINE == "jruby"
+  # if RUBY_VERSION < "2.2" || RUBY_ENGINE == "jruby"
 
-    alias_method :select, :select_many
+  #   alias_method :select, :select_many
 
-  else
+  # else
 
-    def select(interval, &block)
-      return select_one(interval, &block) if @selectables.size == 1
+  def select(interval, &block)
+    return select_one(interval, &block) if @selectables.size == 1
 
-      select_many(interval, &block)
-    end
-
+    select_many(interval, &block)
   end
+
+  # end
 
   public :select
 end

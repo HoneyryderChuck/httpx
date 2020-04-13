@@ -20,13 +20,14 @@ module HTTPX
       @state = :negotiated if @keep_open
     end
 
-    def interests
-      @interests || super
-    end
+    # TODO: come back to this once we have the loops figured out
+    # def interests
+    #   @interests || super
+    # end
 
     def interests
       :rw
-    end if RUBY_ENGINE == "jruby"
+    end
 
     def protocol
       @io.alpn_protocol || super
