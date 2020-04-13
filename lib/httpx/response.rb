@@ -269,6 +269,14 @@ module HTTPX
       @error.message
     end
 
+    def reason
+      @error.class.name
+    end
+
+    def headers
+      {}
+    end
+
     def body
       @error.backtrace.join("\n")
     end

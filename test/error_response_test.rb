@@ -18,7 +18,7 @@ class ErrorResponseTest < Minitest::Test
 
   def test_respond_method_missing_errors
     r1 = ErrorResponse.new(Minitest::Mock.new, RuntimeError.new("wow"), {})
-    ex1 = assert_raises(NoMethodError) { r1.headers }
+    ex1 = assert_raises(NoMethodError) { r1.read }
     assert ex1.message =~ /undefined response method/
     ex2 = assert_raises(NoMethodError) { r1.bang }
     assert ex2.message =~ /undefined method/
