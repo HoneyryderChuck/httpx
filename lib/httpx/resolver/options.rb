@@ -6,7 +6,7 @@ module HTTPX
       @options = options
     end
 
-    def method_missing(m, *args, &block)
+    def method_missing(m, *, &block)
       if @options.key?(m)
         @options[m]
       else
@@ -14,7 +14,7 @@ module HTTPX
       end
     end
 
-    def respond_to_missing?(m)
+    def respond_to_missing?(m, *)
       @options.key?(m) || super
     end
 

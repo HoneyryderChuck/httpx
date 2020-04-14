@@ -64,7 +64,8 @@ module HTTPX
 
         case handler
         when Symbol, String
-          const_get(handler)
+          obj = const_get(handler)
+          @registry[tag] = obj
         else
           handler
         end

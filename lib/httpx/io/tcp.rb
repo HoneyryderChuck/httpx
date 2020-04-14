@@ -11,6 +11,8 @@ module HTTPX
 
     attr_reader :addresses
 
+    attr_reader :state
+
     alias_method :host, :ip
 
     def initialize(origin, addresses, options)
@@ -39,6 +41,10 @@ module HTTPX
         @ip = @addresses[@ip_index]
       end
       @io ||= build_socket
+    end
+
+    def interests
+      :w
     end
 
     def to_io

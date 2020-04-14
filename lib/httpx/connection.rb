@@ -176,9 +176,19 @@ module HTTPX
     end
 
     def interests
-      return :w if @state == :idle
+      # connecting
+      if connecting?
+        return :w unless @io
 
-      :rw
+        return @io.interests
+      end
+
+      # if the write buffer is full, we drain it
+      return :w if @write_buffer.full?
+
+      return @parser.interests if @parser
+
+      nil
     end
 
     def to_io
@@ -191,8 +201,10 @@ module HTTPX
 
     def close
       @parser.close if @parser
-      @keep_alive_timer.cancel if @keep_alive_timer
-      transition(:closing)
+      return unless @keep_alive_timer
+
+      @keep_alive_timer.cancel
+      remove_instance_variable(:@keep_alive_timer)
     end
 
     def reset
@@ -204,8 +216,8 @@ module HTTPX
     def send(request)
       if @parser && !@write_buffer.full?
         request.headers["alt-used"] = @origin.authority if match_altsvcs?(request.uri)
-        @keep_alive_timer.pause if @keep_alive_timer
         @inflight += 1
+        @keep_alive_timer.pause if @keep_alive_timer
         parser.send(request)
       else
         @pending << request
@@ -245,6 +257,7 @@ module HTTPX
         dread
         dwrite
         parser.consume
+        @timeout = @current_timeout
       end
     end
 
@@ -284,8 +297,8 @@ module HTTPX
 
     def send_pending
       while !@write_buffer.full? && (request = @pending.shift)
-        @keep_alive_timer.pause if @keep_alive_timer
         @inflight += 1
+        @keep_alive_timer.pause if @keep_alive_timer
         parser.send(request)
       end
     end
@@ -321,8 +334,12 @@ module HTTPX
       parser.on(:origin) do |origin|
         @origins << origin
       end
-      parser.on(:close) do
+      parser.on(:close) do |force|
         transition(:closing)
+        if force
+          transition(:closed)
+          emit(:close)
+        end
       end
       parser.on(:reset) do
         if parser.empty?
@@ -351,6 +368,9 @@ module HTTPX
 
     def transition(nextstate)
       case nextstate
+      when :idle
+        @timeout = @current_timeout = @options.timeout.connect_timeout
+
       when :open
         return if @state == :closed
 
@@ -360,6 +380,8 @@ module HTTPX
         return unless @io.connected?
 
         send_pending
+
+        @timeout = @current_timeout = @options.timeout.operation_timeout
         emit(:open)
       when :closing
         return unless @state == :open
@@ -375,7 +397,10 @@ module HTTPX
         @io.close
         @read_buffer.clear
         @parser.reset if @parser
-        @keep_alive_timer.cancel if @keep_alive_timer
+        if @keep_alive_timer
+          @keep_alive_timer.cancel
+          remove_instance_variable(:@keep_alive_timer)
+        end
 
         remove_instance_variable(:@timeout) if defined?(@timeout)
       when :already_open
@@ -402,29 +427,39 @@ module HTTPX
       @inflight -= 1
       return unless @inflight.zero?
 
-      @keep_alive_timer ||= @timers.after(@keep_alive_timeout) do
-        log { "keep alive timeout expired, closing..." }
-        reset
+      if @keep_alive_timer
+        @keep_alive_timer.resume
+        @keep_alive_timer.reset
+      else
+        @keep_alive_timer = @timers.after(@keep_alive_timeout) do
+          unless @inflight.zero?
+            log { "(#{object_id})) keep alive timeout expired, closing..." }
+            reset
+          end
+        end
       end
-      @keep_alive_timer.reset
-      @keep_alive_timer.resume
     end
 
-    def on_error(ex)
-      handle_error(ex)
-      reset
-    end
-
-    def handle_error(error)
+    def on_error(error)
       if error.instance_of?(TimeoutError)
         if @timeout
           @timeout -= error.timeout
           return unless @timeout <= 0
         end
 
-        error = error.to_connection_error if connecting?
+        if @total_timeout && @total_timeout.fires_in.negative?
+          ex = TotalTimeoutError.new(@total_timeout.interval, "Timed out after #{@total_timeout.interval} seconds")
+          ex.set_backtrace(error.backtrace)
+          error = ex
+        elsif connecting?
+          error = error.to_connection_error
+        end
       end
+      handle_error(error)
+      reset
+    end
 
+    def handle_error(error)
       parser.handle_error(error) if @parser && parser.respond_to?(:handle_error)
       while (request = @pending.shift)
         request.emit(:response, ErrorResponse.new(request, error, @options))
@@ -439,8 +474,8 @@ module HTTPX
       @total_timeout ||= @timers.after(total) do
         ex = TotalTimeoutError.new(total, "Timed out after #{total} seconds")
         ex.set_backtrace(caller)
-        @parser.close if @parser
         on_error(ex)
+        @parser.close if @parser
       end
     end
   end

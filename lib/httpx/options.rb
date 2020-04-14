@@ -25,23 +25,28 @@ module HTTPX
 
       def def_option(name, &interpreter)
         defined_options << name.to_sym
-        interpreter ||= ->(v) { v }
 
         attr_reader name
 
-        define_method(:"#{name}=") do |value|
-          return if value.nil?
+        if interpreter
+          define_method(:"#{name}=") do |value|
+            return if value.nil?
 
-          instance_variable_set(:"@#{name}", instance_exec(value, &interpreter))
+            instance_variable_set(:"@#{name}", instance_exec(value, &interpreter))
+          end
+
+          define_method(:"with_#{name}") do |value|
+            merge(name => instance_exec(value, &interpreter))
+          end
+        else
+          attr_writer name
+
+          define_method(:"with_#{name}") do |value|
+            merge(name => value)
+          end
         end
 
         protected :"#{name}="
-
-        define_method(:"with_#{name}") do |value|
-          other = dup
-          other.send(:"#{name}=", other.instance_exec(value, &interpreter))
-          other
-        end
       end
     end
 
@@ -70,7 +75,6 @@ module HTTPX
       }
 
       defaults.merge!(options)
-      defaults[:headers] = Headers.new(defaults[:headers])
       defaults.each do |(k, v)|
         __send__(:"#{k}=", v)
       end
@@ -80,7 +84,7 @@ module HTTPX
       if self.headers
         self.headers.merge(headers)
       else
-        headers
+        Headers.new(headers)
       end
     end
 
@@ -116,8 +120,7 @@ module HTTPX
     end
 
     %w[
-      params form json body
-      follow ssl http2_settings
+      params form json body ssl http2_settings
       request_class response_class headers_class request_body_class response_body_class connection_class
       io fallback_protocol debug debug_level transport_options resolver_class resolver_options
       persistent

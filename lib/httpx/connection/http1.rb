@@ -23,6 +23,19 @@ module HTTPX
       @requests = []
     end
 
+    def interests
+      # this means we're processing incoming response already
+      return :r if @request
+
+      return if @requests.empty?
+
+      request = @requests.first
+
+      return :w if request.interests == :w || !@buffer.empty?
+
+      :r
+    end
+
     def reset
       @max_requests = @options.max_requests || MAX_REQUESTS
       @parser.reset!
@@ -30,7 +43,7 @@ module HTTPX
 
     def close
       reset
-      emit(:close)
+      emit(:close, true)
     end
 
     def exhausted?
@@ -63,6 +76,7 @@ module HTTPX
       requests_limit = [@max_concurrent_requests, @max_requests, @requests.size].min
       @requests.each_with_index do |request, idx|
         break if idx >= requests_limit
+        next if request.state == :done
 
         handle(request)
       end
@@ -148,6 +162,9 @@ module HTTPX
         disable
       else
         @requests.each do |request|
+          emit(:error, request, ex)
+        end
+        @pending.each do |request|
           emit(:error, request, ex)
         end
       end

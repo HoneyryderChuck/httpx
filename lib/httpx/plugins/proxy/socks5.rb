@@ -31,6 +31,10 @@ module HTTPX
             end
           end
 
+          def connecting?
+            super || @state == :authenticating || @state == :negotiating
+          end
+
           private
 
           def transition(nextstate)
@@ -60,7 +64,7 @@ module HTTPX
 
               @parser = nil
             end
-            log(level: 1, label: "SOCKS5: ") { "#{nextstate}: #{@write_buffer.to_s.inspect}" } unless nextstate == :open
+            log(level: 1) { "SOCKS5: #{nextstate}: #{@write_buffer.to_s.inspect}" } unless nextstate == :open
             super
           end
 

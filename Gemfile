@@ -40,7 +40,11 @@ end
 
 gem "hanna-nouveau", require: false
 gem "faraday", :require => false
-gem "pry", :require => false
+if RUBY_VERSION < "2.2"
+  gem "pry", "~> 0.12.2", :require => false
+else
+  gem "pry", :require => false
+end
 
 gem "minitest", require: false
 gem "minitest-proveit", require: false

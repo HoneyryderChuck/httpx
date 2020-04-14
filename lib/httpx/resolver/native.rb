@@ -93,11 +93,7 @@ module HTTPX
     rescue Errno::EHOSTUNREACH => e
       @ns_index += 1
       if @ns_index < @nameserver.size
-        log(label: "resolver: ") do
-          # :nocov:
-          "failed resolving on nameserver #{@nameserver[@ns_index - 1]} (#{e.message})"
-          # :nocov:
-        end
+        log { "resolver: failed resolving on nameserver #{@nameserver[@ns_index - 1]} (#{e.message})" }
         transition(:idle)
       else
         handle_error(e)
@@ -160,11 +156,7 @@ module HTTPX
           raise NativeResolveError.new(connection, host)
         else
           connections << connection
-          log(label: "resolver: ") do
-            # :nocov:
-            "timeout after #{prev_timeout}s, retry(#{timeouts.first}) #{host}..."
-            # :nocov:
-          end
+          log { "resolver: timeout after #{prev_timeout}s, retry(#{timeouts.first}) #{host}..." }
         end
       end
       @queries = queries
@@ -174,14 +166,11 @@ module HTTPX
     def dread(wsize = @resolver_options.packet_size)
       loop do
         siz = @io.read(wsize, @read_buffer)
-        unless siz
-          emit(:close)
-          return
-        end
-        return if siz.zero?
+        return unless siz && siz.positive?
 
-        log(label: "resolver: ") { "READ: #{siz} bytes..." }
+        log { "resolver: READ: #{siz} bytes..." }
         parse(@read_buffer)
+        return if @state == :closed
       end
     end
 
@@ -190,12 +179,10 @@ module HTTPX
         return if @write_buffer.empty?
 
         siz = @io.write(@write_buffer)
-        unless siz
-          emit(:close)
-          return
-        end
-        log(label: "resolver: ") { "WRITE: #{siz} bytes..." }
-        return if siz.zero?
+        return unless siz && siz.positive?
+
+        log { "resolver: WRITE: #{siz} bytes..." }
+        return if @state == :closed
       end
     end
 
@@ -253,7 +240,7 @@ module HTTPX
       hostname = hostname || @queries.key(connection) || connection.origin.host
       @queries[hostname] = connection
       type = @_record_types[hostname].first
-      log(label: "resolver: ") { "query #{type} for #{hostname}" }
+      log { "resolver: query #{type} for #{hostname}" }
       begin
         @write_buffer << Resolver.encode_dns_query(hostname, type: RECORD_TYPES[type])
       rescue Resolv::DNS::EncodeError => e
@@ -269,7 +256,7 @@ module HTTPX
       uri = URI::Generic.build(scheme: "udp", port: port)
       uri.hostname = ip
       type = IO.registry(uri.scheme)
-      log(label: "resolver: ") { "server: #{uri}..." }
+      log { "resolver: server: #{uri}..." }
       @io = type.new(uri, [IPAddr.new(ip)], @options)
     end
 

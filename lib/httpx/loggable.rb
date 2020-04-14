@@ -13,35 +13,35 @@ module HTTPX
       white: 37,
     }.freeze
 
-    def log(level: @options.debug_level, label: "", color: nil, &msg)
+    def log(level: @options.debug_level, color: nil, &msg)
       return unless @options.debug
       return unless @options.debug_level >= level
 
       debug_stream = @options.debug
 
-      message = (+label << msg.call << "\n")
+      message = (+"" << msg.call << "\n")
       message = "\e[#{COLORS[color]}m#{message}\e[0m" if debug_stream.respond_to?(:isatty) && debug_stream.isatty
       debug_stream << message
     end
 
     if !Exception.instance_methods.include?(:full_message)
 
-      def log_exception(ex, level: @options.debug_level, label: "", color: nil)
+      def log_exception(ex, level: @options.debug_level, color: nil)
         return unless @options.debug
         return unless @options.debug_level >= level
 
         message = +"#{ex.message} (#{ex.class})"
         message << "\n" << ex.backtrace.join("\n") unless ex.backtrace.nil?
-        log(level: level, label: label, color: color) { message }
+        log(level: level, color: color) { message }
       end
 
     else
 
-      def log_exception(ex, level: @options.debug_level, label: "", color: nil)
+      def log_exception(ex, level: @options.debug_level, color: nil)
         return unless @options.debug
         return unless @options.debug_level >= level
 
-        log(level: level, label: label, color: color) { ex.full_message }
+        log(level: level, color: color) { ex.full_message }
       end
 
     end

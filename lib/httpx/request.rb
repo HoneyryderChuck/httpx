@@ -58,6 +58,12 @@ module HTTPX
       @state = :idle
     end
 
+    def interests
+      return :r if @state == :done || @state == :expect
+
+      :w
+    end
+
     # :nocov:
     if RUBY_VERSION < "2.2"
       # rubocop: disable Lint/UriEscapeUnescape:

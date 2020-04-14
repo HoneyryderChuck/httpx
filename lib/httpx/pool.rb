@@ -28,14 +28,13 @@ module HTTPX
     def next_tick
       catch(:jump_tick) do
         timeout = [next_timeout, @timers.wait_interval].compact.min
-        if timeout.negative?
+        if timeout && timeout.negative?
           @timers.fire
           throw(:jump_tick)
         end
 
         @selector.select(timeout) do |monitor|
           monitor.io.call
-          monitor.interests = monitor.io.interests
         end
         @timers.fire
       end
@@ -86,7 +85,7 @@ module HTTPX
       resolver << connection
       return if resolver.empty?
 
-      @_resolver_monitors[resolver] ||= @selector.register(resolver, :w)
+      @_resolver_monitors[resolver] ||= @selector.register(resolver)
     end
 
     def on_resolver_connection(connection)
@@ -128,10 +127,8 @@ module HTTPX
         # if open, an IO was passed upstream, therefore
         # consider it connected already.
         @connected_connections += 1
-        @selector.register(connection, :rw)
-      else
-        @selector.register(connection, :w)
       end
+      @selector.register(connection)
       connection.on(:close) do
         unregister_connection(connection)
       end

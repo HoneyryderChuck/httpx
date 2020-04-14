@@ -58,7 +58,7 @@ module HTTPX
       "HTTP/#{version} " \
       "@status=#{@status} " \
       "@headers=#{@headers} " \
-      "@body=#{@body}>"
+      "@body=#{@body.size}>"
     end
     # :nocov:
 
@@ -267,6 +267,18 @@ module HTTPX
 
     def status
       @error.message
+    end
+
+    def reason
+      @error.class.name
+    end
+
+    def headers
+      {}
+    end
+
+    def body
+      @error.backtrace.join("\n")
     end
 
     def raise_for_status

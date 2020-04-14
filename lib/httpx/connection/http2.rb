@@ -30,12 +30,30 @@ module HTTPX
       init_connection
     end
 
+    def interests
+      # waiting for WINDOW_UPDATE frames
+      return :r if @buffer.full?
+
+      return :w if @connection.state == :closed
+
+      return :r unless (@connection.state == :connected && @handshake_completed)
+
+      return :w unless @pending.empty?
+
+      return :w if @streams.each_key.any? { |r| r.interests == :w }
+
+      return :r if @buffer.empty?
+
+      :rw
+    end
+
     def reset
       init_connection
     end
 
     def close
       @connection.goaway unless @connection.state == :closed
+      emit(:close)
     end
 
     def empty?
@@ -43,6 +61,8 @@ module HTTPX
     end
 
     def exhausted?
+      return false if @max_requests.zero? && @connection.active_stream_count.zero?
+
       @connection.active_stream_count >= @max_requests
     end
 
@@ -72,6 +92,8 @@ module HTTPX
 
     def consume
       @streams.each do |request, stream|
+        next if request.state == :done
+
         handle(request, stream)
       end
     end
@@ -132,7 +154,7 @@ module HTTPX
     def handle_stream(stream, request)
       stream.on(:close, &method(:on_stream_close).curry[stream, request])
       stream.on(:half_close) do
-        log(level: 2, label: "#{stream.id}: ") { "waiting for response..." }
+        log(level: 2) { "#{stream.id}: waiting for response..." }
       end
       stream.on(:altsvc, &method(:on_altsvc).curry[request.origin])
       stream.on(:headers, &method(:on_stream_headers).curry[stream, request])
@@ -147,8 +169,8 @@ module HTTPX
       headers[":path"]      = headline_uri(request)
       headers[":authority"] = request.authority
       headers = headers.merge(request.headers)
-      log(level: 1, label: "#{stream.id}: ", color: :yellow) do
-        headers.map { |k, v| "-> HEADER: #{k}: #{v}" }.join("\n")
+      log(level: 1, color: :yellow) do
+        headers.map { |k, v| "#{stream.id}: -> HEADER: #{k}: #{v}" }.join("\n")
       end
       stream.headers(headers, end_stream: request.empty?)
     end
@@ -159,8 +181,8 @@ module HTTPX
       chunk = @drains.delete(request) || request.drain_body
       while chunk
         next_chunk = request.drain_body
-        log(level: 1, label: "#{stream.id}: ", color: :green) { "-> DATA: #{chunk.bytesize} bytes..." }
-        log(level: 2, label: "#{stream.id}: ", color: :green) { "-> #{chunk.inspect}" }
+        log(level: 1, color: :green) { "#{stream.id}: -> DATA: #{chunk.bytesize} bytes..." }
+        log(level: 2, color: :green) { "#{stream.id}: -> #{chunk.inspect}" }
         stream.data(chunk, end_stream: !next_chunk)
         if next_chunk && @buffer.full?
           @drains[request] = next_chunk
@@ -175,8 +197,8 @@ module HTTPX
     ######
 
     def on_stream_headers(stream, request, h)
-      log(label: "#{stream.id}:", color: :yellow) do
-        h.map { |k, v| "<- HEADER: #{k}: #{v}" }.join("\n")
+      log(color: :yellow) do
+        h.map { |k, v| "#{stream.id}: <- HEADER: #{k}: #{v}" }.join("\n")
       end
       _, status = h.shift
       headers = request.options.headers_class.new(h)
@@ -186,8 +208,8 @@ module HTTPX
     end
 
     def on_stream_data(stream, request, data)
-      log(level: 1, label: "#{stream.id}: ", color: :green) { "<- DATA: #{data.bytesize} bytes..." }
-      log(level: 2, label: "#{stream.id}: ", color: :green) { "<- #{data.inspect}" }
+      log(level: 1, color: :green) { "#{stream.id}: <- DATA: #{data.bytesize} bytes..." }
+      log(level: 2, color: :green) { "#{stream.id}: <- #{data.inspect}" }
       request.response << data
     end
 
@@ -208,14 +230,13 @@ module HTTPX
           emit(:response, request, response)
         end
       end
-      log(level: 2, label: "#{stream.id}: ") { "closing stream" }
+      log(level: 2) { "#{stream.id}: closing stream" }
 
       @streams.delete(request)
       send(@pending.shift) unless @pending.empty?
       return unless @streams.empty? && exhausted?
 
       close
-      emit(:close)
       emit(:exhausted) unless @pending.empty?
     end
 
@@ -226,7 +247,11 @@ module HTTPX
     def on_settings(*)
       @handshake_completed = true
 
-      @max_requests = @connection.remote_settings[:settings_max_concurrent_streams] if @max_requests.zero?
+      if @max_requests.zero?
+        @max_requests = @connection.remote_settings[:settings_max_concurrent_streams]
+
+        @connection.max_streams = @max_requests if @connection.respond_to?(:max_streams=) && @max_requests.positive?
+      end
 
       @max_concurrent_requests = [@max_concurrent_requests, @max_requests].min
       send_pending
@@ -246,32 +271,26 @@ module HTTPX
     end
 
     def on_frame_sent(frame)
-      log(level: 2, label: "#{frame[:stream]}: ") { "frame was sent!" }
-      log(level: 2, label: "#{frame[:stream]}: ", color: :blue) do
-        case frame[:type]
-        when :data
-          frame.merge(payload: frame[:payload].bytesize).inspect
-        else
-          frame.inspect
-        end
+      log(level: 2) { "#{frame[:stream]}: frame was sent!" }
+      log(level: 2, color: :blue) do
+        payload = frame
+        payload = payload.merge(payload: frame[:payload].bytesize) if frame[:type] == :data
+        "#{frame[:stream]}: #{payload}"
       end
     end
 
     def on_frame_received(frame)
-      log(level: 2, label: "#{frame[:stream]}: ") { "frame was received!" }
-      log(level: 2, label: "#{frame[:stream]}: ", color: :magenta) do
-        case frame[:type]
-        when :data
-          frame.merge(payload: frame[:payload].bytesize).inspect
-        else
-          frame.inspect
-        end
+      log(level: 2) { "#{frame[:stream]}: frame was received!" }
+      log(level: 2, color: :magenta) do
+        payload = frame
+        payload = payload.merge(payload: frame[:payload].bytesize) if frame[:type] == :data
+        "#{frame[:stream]}: #{payload}"
       end
     end
 
     def on_altsvc(origin, frame)
-      log(level: 2, label: "#{frame[:stream]}: ") { "altsvc frame was received" }
-      log(level: 2, label: "#{frame[:stream]}: ") { frame.inspect }
+      log(level: 2) { "#{frame[:stream]}: altsvc frame was received" }
+      log(level: 2) { "#{frame[:stream]}: #{frame.inspect}" }
       alt_origin = URI.parse("#{frame[:proto]}://#{frame[:host]}:#{frame[:port]}")
       params = { "ma" => frame[:max_age] }
       emit(:altsvc, origin, alt_origin, origin, params)

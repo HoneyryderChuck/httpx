@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "time"
+
 module Requests
   module Get
     def test_http_get
@@ -52,7 +54,7 @@ module Requests
         verify_status(response1, 200)
         verify_status(response2, 200)
         connection_count = http.pool.connection_count
-        assert connection_count == 2, "expected to have 2 connection, instead have #{connection_count}"
+        assert connection_count == 2, "expected to have 2 connections, instead have #{connection_count}"
       end
     end
 

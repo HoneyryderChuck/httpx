@@ -20,6 +20,15 @@ module HTTPX
       @state = :negotiated if @keep_open
     end
 
+    # TODO: come back to this once we have the loops figured out
+    # def interests
+    #   @interests || super
+    # end
+
+    def interests
+      :rw
+    end
+
     def protocol
       @io.alpn_protocol || super
     rescue StandardError
@@ -62,8 +71,10 @@ module HTTPX
       @io.connect_nonblock
       @io.post_connection_check(@hostname) if @ctx.verify_mode != OpenSSL::SSL::VERIFY_NONE
       transition(:negotiated)
-    rescue ::IO::WaitReadable,
-           ::IO::WaitWritable
+    rescue ::IO::WaitReadable
+      @interests = :r
+    rescue ::IO::WaitWritable
+      @interests = :w
     end
 
     # :nocov:
