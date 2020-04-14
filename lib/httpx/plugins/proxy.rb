@@ -179,7 +179,7 @@ module HTTPX
           super || @state == :connecting || @state == :connected
         end
 
-        def to_io
+        def connect
           return super unless @options.proxy
 
           case @state
@@ -188,11 +188,11 @@ module HTTPX
           when :connected
             transition(:open)
           end
-          @io.to_io
         end
 
         def call
           super
+
           return unless @options.proxy
 
           case @state

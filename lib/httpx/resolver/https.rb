@@ -25,7 +25,7 @@ module HTTPX
 
     def_delegator :@connections, :empty?
 
-    def_delegators :@resolver_connection, :to_io, :call, :interests, :close
+    def_delegators :@resolver_connection, :connect, :connecting?, :to_io, :call, :interests, :close
 
     def initialize(options)
       @options = Options.new(options)

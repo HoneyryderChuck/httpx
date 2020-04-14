@@ -20,13 +20,8 @@ module HTTPX
       @state = :negotiated if @keep_open
     end
 
-    # TODO: come back to this once we have the loops figured out
-    # def interests
-    #   @interests || super
-    # end
-
     def interests
-      :rw
+      @interests || super
     end
 
     def protocol

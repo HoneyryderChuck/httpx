@@ -90,6 +90,8 @@ class HTTPX::Selector
       w = nil
 
       @selectables.each_key do |io|
+        io.connect if io.connecting?
+
         (r ||= []) << io if io.interests == :r || io.interests == :rw
         (w ||= []) << io if io.interests == :w || io.interests == :rw
       end
@@ -122,6 +124,8 @@ class HTTPX::Selector
 
   def select_one(interval)
     io, monitor = @selectables.first
+
+    io.connect if io.connecting?
 
     result = case io.interests
              when :r then io.to_io.wait_readable(interval)

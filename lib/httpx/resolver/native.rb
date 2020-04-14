@@ -72,7 +72,11 @@ module HTTPX
       @state == :closed
     end
 
-    def to_io
+    def connecting?
+      @state == :idle
+    end
+
+    def connect
       case @state
       when :idle
         transition(:open)
@@ -81,6 +85,9 @@ module HTTPX
         transition(:open)
       end
       resolve if @queries.empty?
+    end
+
+    def to_io
       @io.to_io
     end
 

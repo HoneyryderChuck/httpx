@@ -191,12 +191,26 @@ module HTTPX
       nil
     end
 
+    def connect
+      transition(:open)
+    end
+
     def to_io
-      case @state
-      when :idle
-        transition(:open)
-      end
       @io.to_io
+    end
+
+    def call
+      case @state
+      when :closed
+        return
+      when :closing
+        dwrite
+        transition(:closed)
+        emit(:close)
+      when :open
+        consume
+      end
+      nil
     end
 
     def close
@@ -222,20 +236,6 @@ module HTTPX
       else
         @pending << request
       end
-    end
-
-    def call
-      case @state
-      when :closed
-        return
-      when :closing
-        dwrite
-        transition(:closed)
-        emit(:close)
-      when :open
-        consume
-      end
-      nil
     end
 
     def timeout
