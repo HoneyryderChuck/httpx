@@ -42,7 +42,23 @@ module HTTPX
 
       origin = request.origin
       host = request.uri.host
-      parse(response.headers["alt-svc"]) do |alt_origin, alt_params|
+
+      altsvc = response.headers["alt-svc"]
+
+      # https://tools.ietf.org/html/rfc7838#section-3
+      # A field value containing the special value "clear" indicates that the
+      # origin requests all alternatives for that origin to be invalidated
+      # (including those specified in the same response, in case of an
+      # invalid reply containing both "clear" and alternative services).
+      if altsvc == "clear"
+        @altsvc_mutex.synchronize do
+          @altsvcs[origin].clear
+        end
+
+        return
+      end
+
+      parse(altsvc) do |alt_origin, alt_params|
         alt_origin.host ||= host
         yield(alt_origin, origin, alt_params)
       end
