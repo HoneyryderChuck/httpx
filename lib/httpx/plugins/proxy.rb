@@ -215,6 +215,8 @@ module HTTPX
 
           case nextstate
           when :closing
+            # this is a hack so that we can use the super method
+            # and it'll thing that the current state is open
             @state = :open if @state == :connecting
           end
           super
