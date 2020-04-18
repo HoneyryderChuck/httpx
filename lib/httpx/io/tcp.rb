@@ -88,6 +88,7 @@ module HTTPX
         @io.read_nonblock(size, buffer)
         buffer.bytesize
       rescue ::IO::WaitReadable
+        buffer.clear
         0
       rescue EOFError
         nil
@@ -106,7 +107,10 @@ module HTTPX
     else
       def read(size, buffer)
         ret = @io.read_nonblock(size, buffer, exception: false)
-        return 0 if ret == :wait_readable
+        if ret == :wait_readable
+          buffer.clear
+          return 0
+        end
         return if ret.nil?
 
         buffer.bytesize

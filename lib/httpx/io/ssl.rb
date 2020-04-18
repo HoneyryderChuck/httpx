@@ -74,9 +74,10 @@ module HTTPX
 
     # :nocov:
     if RUBY_VERSION < "2.3"
-      def read(*)
+      def read(_, buffer)
         super
       rescue ::IO::WaitWritable
+        buffer.clear
         0
       end
 
