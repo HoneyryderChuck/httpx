@@ -348,6 +348,7 @@ module HTTPX
           transition(:closing)
           transition(:closed)
           emit(:reset)
+          @parser.reset if @parser
           transition(:idle)
           transition(:open)
         end
@@ -396,7 +397,6 @@ module HTTPX
 
         @io.close
         @read_buffer.clear
-        @parser.reset if @parser
         if @keep_alive_timer
           @keep_alive_timer.cancel
           remove_instance_variable(:@keep_alive_timer)
