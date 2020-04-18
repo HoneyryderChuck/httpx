@@ -205,6 +205,8 @@ module HTTPX
       response = request.options.response_class.new(request, status, "2.0", headers)
       request.response = response
       @streams[request] = stream
+
+      handle(request, stream) if request.expects?
     end
 
     def on_stream_data(stream, request, data)
@@ -214,8 +216,6 @@ module HTTPX
     end
 
     def on_stream_close(stream, request, error)
-      return handle(request, stream) if request.expects?
-
       if error && error != :no_error
         ex = Error.new(stream.id, error)
         ex.set_backtrace(caller)
