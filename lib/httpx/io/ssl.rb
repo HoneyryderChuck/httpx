@@ -93,6 +93,7 @@ module HTTPX
           buffer.bytesize
         rescue ::IO::WaitReadable,
                ::IO::WaitWritable
+          buffer.clear
           0
         rescue EOFError
           nil

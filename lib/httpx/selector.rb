@@ -84,16 +84,19 @@ class HTTPX::Selector
 
   private
 
+  READ_INTERESTS = %i[r rw].freeze
+  WRITE_INTERESTS = %i[w rw].freeze
+
   def select_many(interval)
     begin
       r = nil
       w = nil
 
       @selectables.each_key do |io|
-        io.connect if io.connecting?
+        interests = io.interests
 
-        (r ||= []) << io if io.interests == :r || io.interests == :rw
-        (w ||= []) << io if io.interests == :w || io.interests == :rw
+        (r ||= []) << io if READ_INTERESTS.include?(interests)
+        (w ||= []) << io if WRITE_INTERESTS.include?(interests)
       end
 
       readers, writers = IO.select(r, w, nil, interval)
@@ -124,8 +127,6 @@ class HTTPX::Selector
 
   def select_one(interval)
     io, monitor = @selectables.first
-
-    io.connect if io.connecting?
 
     result = case io.interests
              when :r then io.to_io.wait_readable(interval)

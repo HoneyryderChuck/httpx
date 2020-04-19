@@ -181,9 +181,9 @@ module HTTPX
     def interests
       # connecting
       if connecting?
-        return :w unless @io
+        connect
 
-        return @io.interests
+        return @io.interests if connecting?
       end
 
       # if the write buffer is full, we drain it
@@ -192,10 +192,6 @@ module HTTPX
       return @parser.interests if @parser
 
       nil
-    end
-
-    def connect
-      transition(:open)
     end
 
     def to_io
@@ -250,6 +246,10 @@ module HTTPX
     end
 
     private
+
+    def connect
+      transition(:open)
+    end
 
     def exhausted?
       @parser && parser.exhausted?

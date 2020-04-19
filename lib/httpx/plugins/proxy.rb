@@ -179,17 +179,6 @@ module HTTPX
           super || @state == :connecting || @state == :connected
         end
 
-        def connect
-          return super unless @options.proxy
-
-          case @state
-          when :idle
-            transition(:connecting)
-          when :connected
-            transition(:open)
-          end
-        end
-
         def call
           super
 
@@ -208,6 +197,19 @@ module HTTPX
           transition(:closing)
           transition(:closed)
           emit(:close)
+        end
+
+        private
+
+        def connect
+          return super unless @options.proxy
+
+          case @state
+          when :idle
+            transition(:connecting)
+          when :connected
+            transition(:open)
+          end
         end
 
         def transition(nextstate)

@@ -25,7 +25,7 @@ module HTTPX
 
     def_delegator :@connections, :empty?
 
-    def_delegators :@resolver_connection, :connect, :connecting?, :to_io, :call, :interests, :close
+    def_delegators :@resolver_connection, :connecting?, :to_io, :call, :close
 
     def initialize(options)
       @options = Options.new(options)
@@ -62,7 +62,19 @@ module HTTPX
       resolver_connection.closed?
     end
 
+    def interests
+      return if @queries.empty?
+
+      resolver_connection.__send__(__method__)
+    end
+
     private
+
+    def connect
+      return if @queries.empty?
+
+      resolver_connection.__send__(__method__)
+    end
 
     def pool
       Thread.current[:httpx_connection_pool] ||= Pool.new
