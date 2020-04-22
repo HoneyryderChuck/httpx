@@ -14,7 +14,7 @@ module HTTPX
 
     def initialize
       @resolvers = {}
-      @_resolver_monitors = {}
+      @_resolver_ios = {}
       @timers = Timers::Group.new
       @selector = Selector.new
       @connections = []
@@ -33,9 +33,8 @@ module HTTPX
           throw(:jump_tick)
         end
 
-        @selector.select(timeout) do |monitor|
-          monitor.io.call
-        end
+        @selector.select(timeout, &:call)
+
         @timers.fire
       end
     rescue StandardError => e
@@ -85,7 +84,7 @@ module HTTPX
       resolver << connection
       return if resolver.empty?
 
-      @_resolver_monitors[resolver] ||= @selector.register(resolver)
+      @_resolver_ios[resolver] ||= @selector.register(resolver)
     end
 
     def on_resolver_connection(connection)
@@ -117,8 +116,7 @@ module HTTPX
       @resolvers.delete(resolver_type)
 
       @selector.deregister(resolver)
-      monitor = @_resolver_monitors.delete(resolver)
-      monitor.close if monitor
+      @_resolver_ios.delete(resolver)
       resolver.close unless resolver.closed?
     end
 
