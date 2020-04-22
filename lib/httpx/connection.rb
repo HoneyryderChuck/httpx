@@ -148,7 +148,10 @@ module HTTPX
 
     def purge_pending
       pendings = []
-      pendings << @parser.pending if @parser
+      if @parser
+        @inflight -= @parser.pending.size
+        pendings << @parser.pending
+      end
       pendings << @pending
       pendings.each do |pending|
         pending.reject! do |request|
@@ -178,9 +181,9 @@ module HTTPX
     def interests
       # connecting
       if connecting?
-        return :w unless @io
+        connect
 
-        return @io.interests
+        return @io.interests if connecting?
       end
 
       # if the write buffer is full, we drain it
@@ -192,11 +195,21 @@ module HTTPX
     end
 
     def to_io
-      case @state
-      when :idle
-        transition(:open)
-      end
       @io.to_io
+    end
+
+    def call
+      case @state
+      when :closed
+        return
+      when :closing
+        consume
+        transition(:closed)
+        emit(:close)
+      when :open
+        consume
+      end
+      nil
     end
 
     def close
@@ -224,20 +237,6 @@ module HTTPX
       end
     end
 
-    def call
-      case @state
-      when :closed
-        return
-      when :closing
-        dwrite
-        transition(:closed)
-        emit(:close)
-      when :open
-        consume
-      end
-      nil
-    end
-
     def timeout
       return @timeout if defined?(@timeout)
 
@@ -248,50 +247,87 @@ module HTTPX
 
     private
 
+    def connect
+      transition(:open)
+    end
+
     def exhausted?
       @parser && parser.exhausted?
     end
 
     def consume
       catch(:called) do
-        dread
-        dwrite
-        parser.consume
-        @timeout = @current_timeout
-      end
-    end
+        loop do
+          parser.consume
 
-    def dread(wsize = @window_size)
-      loop do
-        siz = @io.read(wsize, @read_buffer)
-        unless siz
-          ex = EOFError.new("descriptor closed")
-          ex.set_backtrace(caller)
-          on_error(ex)
-          return
+          # we exit if there's no more data to process
+          if @pending.size.zero? && @inflight.zero?
+            log(level: 3) { "NO MORE REQUESTS..." }
+            return
+          end
+
+          @timeout = @current_timeout
+
+          read_drained = false
+          write_drained = nil
+
+          # dread
+          loop do
+            siz = @io.read(@window_size, @read_buffer)
+            unless siz
+              ex = EOFError.new("descriptor closed")
+              ex.set_backtrace(caller)
+              on_error(ex)
+              return
+            end
+
+            log { "READ: #{siz} bytes..." }
+
+            if siz.zero?
+              read_drained = @read_buffer.empty?
+              break
+            end
+
+            parser << @read_buffer.to_s
+
+            break if @state == :closing || @state == :closed
+
+            # for HTTP/2, we just want to write goaway frame
+          end unless @state == :closing
+
+          # dwrite
+          loop do
+            if @write_buffer.empty?
+              # we only mark as drained on the first loop
+              write_drained = write_drained.nil? && @inflight.positive?
+              break
+            end
+
+            siz = @io.write(@write_buffer)
+            unless siz
+              ex = EOFError.new("descriptor closed")
+              ex.set_backtrace(caller)
+              on_error(ex)
+              return
+            end
+            log { "WRITE: #{siz} bytes..." }
+
+            if siz.zero?
+              write_drained = !@write_buffer.empty?
+              break
+            end
+
+            break if @state == :closing || @state == :closed
+
+            write_drained = false
+          end
+
+          # return if socket is drained
+          if read_drained && write_drained
+            log(level: 3) { "WAITING FOR EVENTS..." }
+            return
+          end
         end
-        return if siz.zero?
-
-        log { "READ: #{siz} bytes..." }
-        parser << @read_buffer.to_s
-        return if @state == :closing || @state == :closed
-      end
-    end
-
-    def dwrite
-      loop do
-        return if @write_buffer.empty?
-
-        siz = @io.write(@write_buffer)
-        unless siz
-          ex = EOFError.new("descriptor closed")
-          ex.set_backtrace(caller)
-          on_error(ex)
-          return
-        end
-        log { "WRITE: #{siz} bytes..." }
-        return if siz.zero?
-        return if @state == :closing || @state == :closed
       end
     end
 

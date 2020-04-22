@@ -18,6 +18,9 @@ AllCops:
     - 'www/**/*'
     - 'lib/httpx/extensions.rb'
 
+Metrics/ClassLength:
+  Max: 400
+
 Metrics/MethodLength:
   Max: 200
 

@@ -179,20 +179,9 @@ module HTTPX
           super || @state == :connecting || @state == :connected
         end
 
-        def to_io
-          return super unless @options.proxy
-
-          case @state
-          when :idle
-            transition(:connecting)
-          when :connected
-            transition(:open)
-          end
-          @io.to_io
-        end
-
         def call
           super
+
           return unless @options.proxy
 
           case @state
@@ -210,11 +199,26 @@ module HTTPX
           emit(:close)
         end
 
+        private
+
+        def connect
+          return super unless @options.proxy
+
+          case @state
+          when :idle
+            transition(:connecting)
+          when :connected
+            transition(:open)
+          end
+        end
+
         def transition(nextstate)
           return super unless @options.proxy
 
           case nextstate
           when :closing
+            # this is a hack so that we can use the super method
+            # and it'll thing that the current state is open
             @state = :open if @state == :connecting
           end
           super

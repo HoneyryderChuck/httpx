@@ -51,7 +51,7 @@ module HTTPX
             #
             if req.uri.scheme == "https"
               connect_request = ConnectRequest.new(req.uri, @options)
-
+              @inflight += 1
               parser.send(connect_request)
             else
               transition(:connected)
@@ -59,6 +59,7 @@ module HTTPX
           end
 
           def __http_on_connect(_, response)
+            @inflight -= 1
             if response.status == 200
               req = @pending.first
               request_uri = req.uri
@@ -70,6 +71,7 @@ module HTTPX
               while (req = pending.shift)
                 req.emit(:response, response)
               end
+              reset
             end
           end
         end

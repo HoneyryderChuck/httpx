@@ -20,13 +20,8 @@ module HTTPX
       @state = :negotiated if @keep_open
     end
 
-    # TODO: come back to this once we have the loops figured out
-    # def interests
-    #   @interests || super
-    # end
-
     def interests
-      :rw
+      @interests || super
     end
 
     def protocol
@@ -79,9 +74,10 @@ module HTTPX
 
     # :nocov:
     if RUBY_VERSION < "2.3"
-      def read(*)
+      def read(_, buffer)
         super
       rescue ::IO::WaitWritable
+        buffer.clear
         0
       end
 
@@ -97,6 +93,7 @@ module HTTPX
           buffer.bytesize
         rescue ::IO::WaitReadable,
                ::IO::WaitWritable
+          buffer.clear
           0
         rescue EOFError
           nil

@@ -73,14 +73,6 @@ module HTTPX
     end
 
     def to_io
-      case @state
-      when :idle
-        transition(:open)
-      when :closed
-        transition(:idle)
-        transition(:open)
-      end
-      resolve if @queries.empty?
       @io.to_io
     end
 
@@ -103,6 +95,14 @@ module HTTPX
     end
 
     def interests
+      case @state
+      when :idle
+        transition(:open)
+      when :closed
+        transition(:idle)
+        transition(:open)
+      end
+
       !@write_buffer.empty? || @queries.empty? ? :w : :r
     end
 
@@ -272,8 +272,11 @@ module HTTPX
         return unless @state == :idle
 
         build_socket
+
         @io.connect
         return unless @io.connected?
+
+        resolve if @queries.empty?
       when :closed
         return unless @state == :open
 
