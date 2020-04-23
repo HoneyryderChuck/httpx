@@ -36,7 +36,9 @@ module HTTPX
 
       return :w if @connection.state == :closed
 
-      return :r unless (@connection.state == :connected && @handshake_completed)
+      unless (@connection.state == :connected && @handshake_completed)
+        return @buffer.empty? ? :r : :rw
+      end
 
       return :w unless @pending.empty?
 
