@@ -67,7 +67,7 @@ module HTTPX
     #
     def [](field)
       a = @headers[downcased(field)] || return
-      a.join(",")
+      a.join(", ")
     end
 
     # sets +value+ (if not nil) as single value for the +field+ header.

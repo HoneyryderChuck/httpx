@@ -25,7 +25,7 @@ class HeadersTest < Minitest::Test
   def test_headers_add
     h1 = Headers.new("accept" => "text/html")
     h1.add("accept", "application/xhtml+xml")
-    assert h1["accept"] == "text/html,application/xhtml+xml", "unexpected header value"
+    assert h1["accept"] == "text/html, application/xhtml+xml", "unexpected header value"
     assert h1.get("accept") == %w[text/html application/xhtml+xml], "unexpected header value"
   end
 
