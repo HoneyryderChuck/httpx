@@ -281,12 +281,12 @@ module HTTPX
               return
             end
 
-            log { "READ: #{siz} bytes..." }
-
             if siz.zero?
               read_drained = @read_buffer.empty?
               break
             end
+
+            log { "READ: #{siz} bytes..." }
 
             parser << @read_buffer.to_s
 
