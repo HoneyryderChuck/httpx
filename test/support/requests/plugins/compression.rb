@@ -50,6 +50,18 @@ module Requests
         assert compressed_data.bytesize < 8012, "body hasn't been compressed"
       end
 
+      def test_plugin_compression_gzip_post_threshold_size
+        session = HTTPX.plugin(:compression, compression_threshold_size: 8015)
+        uri = build_uri("/post")
+        response = session.with_headers("content-encoding" => "gzip")
+                          .post(uri, body: "a" * 8012)
+        verify_status(response, 200)
+        body = json_body(response)
+        verify_header(body["headers"], "Content-Type", "application/octet-stream")
+        compressed_data = body["data"]
+        assert compressed_data.bytesize == 8012, "body has been compressed when it shouldn't"
+      end
+
       def test_plugin_compression_deflate
         session = HTTPX.plugin(:compression)
         uri = build_uri("/deflate")
