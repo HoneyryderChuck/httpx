@@ -78,6 +78,7 @@ module HTTPX
         break if idx >= requests_limit
         next if request.state == :done
 
+        request.headers["connection"] ||= request.options.persistent || idx < requests_limit - 1 ? "keep-alive" : "close"
         handle(request)
       end
     end
@@ -206,7 +207,14 @@ module HTTPX
     def disable_pipelining
       return if @requests.empty?
 
-      @requests.each { |r| r.transition(:idle) }
+      @requests.each do |r|
+        r.transition(:idle)
+
+        # when we disable pipelining, we still want to try keep-alive.
+        # only when keep-alive with one request fails, do we fallback to
+        # connection: close.
+        r.headers["connection"] = "close" if @max_concurrent_requests == 1
+      end
       # server doesn't handle pipelining, and probably
       # doesn't support keep-alive. Fallback to send only
       # 1 keep alive request.
@@ -216,7 +224,7 @@ module HTTPX
 
     def set_request_headers(request)
       request.headers["host"] ||= request.authority
-      request.headers["connection"] ||= "keep-alive"
+      request.headers["connection"] ||= request.options.persistent ? "keep-alive" : "close"
       if !request.headers.key?("content-length") &&
          request.body.bytesize == Float::INFINITY
         request.chunk!
