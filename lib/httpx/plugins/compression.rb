@@ -14,13 +14,23 @@ module HTTPX
     #
     module Compression
       extend Registry
-      def self.load_dependencies(klass)
-        klass.plugin(:"compression/gzip")
-        klass.plugin(:"compression/deflate")
-      end
 
-      def self.extra_options(options)
-        options.merge(headers: { "accept-encoding" => Compression.registry.keys })
+      class << self
+        def load_dependencies(klass)
+          klass.plugin(:"compression/gzip")
+          klass.plugin(:"compression/deflate")
+        end
+
+        def extra_options(options)
+          Class.new(options.class) do
+            def_option(:compression_threshold_size) do |bytes|
+              bytes = Integer(bytes)
+              raise Error, ":expect_threshold_size must be positive" unless bytes.positive?
+
+              bytes
+            end
+          end.new(options).merge(headers: { "accept-encoding" => Compression.registry.keys })
+        end
       end
 
       module RequestMethods
@@ -32,9 +42,15 @@ module HTTPX
       end
 
       module RequestBodyMethods
-        def initialize(*)
+        def initialize(*, options)
           super
           return if @body.nil?
+
+          if (threshold = options.compression_threshold_size)
+            unless unbounded_body?
+              return if @body.bytesize < threshold
+            end
+          end
 
           @headers.get("content-encoding").each do |encoding|
             next if encoding == "identity"
