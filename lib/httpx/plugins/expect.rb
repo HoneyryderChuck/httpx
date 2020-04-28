@@ -18,13 +18,26 @@ module HTTPX
 
             seconds
           end
+
+          def_option(:expect_threshold_size) do |bytes|
+            bytes = Integer(bytes)
+            raise Error, ":expect_threshold_size must be positive" unless bytes.positive?
+
+            bytes
+          end
         end.new(options).merge(expect_timeout: EXPECT_TIMEOUT)
       end
 
       module RequestBodyMethods
-        def initialize(*)
+        def initialize(*, options)
           super
           return if @body.nil?
+
+          if (threshold = options.expect_threshold_size)
+            unless unbounded_body?
+              return if @body.bytesize < threshold
+            end
+          end
 
           @headers["expect"] = "100-continue"
         end

@@ -13,6 +13,20 @@ module Requests
         verify_uploaded(body, "form", "foo" => "bar")
       end
 
+      def test_plugin_expect_100_form_params_under_threshold
+        uri = build_uri("/post")
+        session = HTTPX.plugin(:expect, expect_threshold_size: 4)
+        response = session.post(uri, body: "a" * 3)
+        verify_status(response, 200)
+        body = json_body(response)
+        verify_no_header(body["headers"], "Expect")
+
+        response = session.post(uri, body: "a" * 5)
+        verify_status(response, 200)
+        body = json_body(response)
+        verify_header(body["headers"], "Expect", "100-continue")
+      end
+
       # def test_plugin_expect_100_send_body_after_delay
       #   uri = build_uri("/delay/3")
       #   response = HTTPX.plugin(:expect).post(uri, form: { "foo" => "bar" })
