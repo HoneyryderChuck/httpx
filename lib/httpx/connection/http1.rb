@@ -170,6 +170,11 @@ module HTTPX
       end
     end
 
+    def ping
+      emit(:reset)
+      emit(:exhausted)
+    end
+
     private
 
     def manage_connection(response)

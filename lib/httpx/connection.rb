@@ -230,6 +230,7 @@ module HTTPX
           # is the possibility that the connection might have extended the keep alive timeout.
           # for such cases, we want to ping for availability before deciding to shovel requests.
           if @keep_alive_timer.fires_in.negative?
+            @pending << request
             parser.ping
             return
           end
