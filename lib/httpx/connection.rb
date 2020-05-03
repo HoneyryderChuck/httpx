@@ -88,8 +88,6 @@ module HTTPX
 
       return false if exhausted?
 
-      return false if @keep_alive_timer && @keep_alive_timer.fires_in.negative?
-
       (
         (
           @origins.include?(uri.origin) &&
@@ -106,8 +104,6 @@ module HTTPX
       return false if @state == :closing || @state == :closed || !@io
 
       return false if exhausted?
-
-      return false if @keep_alive_timer && @keep_alive_timer.fires_in.negative?
 
       !(@io.addresses & connection.addresses).empty? && @options == connection.options
     end
@@ -229,8 +225,18 @@ module HTTPX
     def send(request)
       if @parser && !@write_buffer.full?
         request.headers["alt-used"] = @origin.authority if match_altsvcs?(request.uri)
+        if @keep_alive_timer
+          # when pushing a request into an existing connection, we have to check whether there
+          # is the possibility that the connection might have extended the keep alive timeout.
+          # for such cases, we want to ping for availability before deciding to shovel requests.
+          if @keep_alive_timer.fires_in.negative?
+            parser.ping
+            return
+          end
+
+          @keep_alive_timer.pause
+        end
         @inflight += 1
-        @keep_alive_timer.pause if @keep_alive_timer
         parser.send(request)
       else
         @pending << request
@@ -361,6 +367,8 @@ module HTTPX
         emit(:altsvc, alt_origin, origin, alt_params)
       end
 
+      parser.on(:pong, &method(:send_pending))
+
       parser.on(:promise) do |request, stream|
         request.emit(:promise, parser, stream)
       end
@@ -469,8 +477,8 @@ module HTTPX
       else
         @keep_alive_timer = @timers.after(@keep_alive_timeout) do
           unless @inflight.zero?
-            log { "(#{object_id})) keep alive timeout expired, closing..." }
-            reset
+            log { "(#{@origin}): keep alive timeout expired" }
+            parser.ping
           end
         end
       end

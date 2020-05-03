@@ -96,8 +96,8 @@ class SessionTest < Minitest::Test
 
       verify_status(response1, 200)
       verify_status(response2, 200)
-      connection_count = http.pool.connection_count
-      assert connection_count == 2, "session should have closed the first connection (#{connection_count})"
+      ping_count = http.pool.ping_count
+      assert ping_count == 1, "session should have pinged after timeout (#{ping_count})"
     end
   end unless RUBY_VERSION < "2.3" || RUBY_ENGINE == "jruby"
 
