@@ -1,19 +1,18 @@
 # frozen_string_literal: true
 
 require "resolv"
+require "httpx/resolver/resolver_mixin"
+require "httpx/resolver/system"
+require "httpx/resolver/native"
+require "httpx/resolver/https"
 
 module HTTPX
   module Resolver
-    autoload :ResolverMixin, "httpx/resolver/resolver_mixin"
-    autoload :System, "httpx/resolver/system"
-    autoload :Native, "httpx/resolver/native"
-    autoload :HTTPS, "httpx/resolver/https"
-
     extend Registry
 
-    register :system, :System
-    register :native, :Native
-    register :https,  :HTTPS
+    register :system, System
+    register :native, Native
+    register :https,  HTTPS
 
     @lookup_mutex = Mutex.new
     @lookups = Hash.new { |h, k| h[k] = [] }
