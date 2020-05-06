@@ -26,6 +26,7 @@ module HTTPX
       @pending = []
       @streams = {}
       @drains  = {}
+      @pings = []
       @buffer = buffer
       @handshake_completed = false
       init_connection
@@ -54,8 +55,8 @@ module HTTPX
       init_connection
     end
 
-    def close
-      @connection.goaway unless @connection.state == :closed
+    def close(*args)
+      @connection.goaway(*args) unless @connection.state == :closed
       emit(:close)
     end
 
@@ -111,8 +112,10 @@ module HTTPX
     end
 
     def ping
-      @ping_payload = SecureRandom.bytes(8)
-      @connection.ping(@ping_payload)
+      ping = SecureRandom.bytes(8)
+      @connection.ping(ping)
+    ensure
+      @pings << ping
     end
 
     private
@@ -313,11 +316,12 @@ module HTTPX
       emit(:origin, origin)
     end
 
-    def on_pong(_payload)
-      # TODO: what to do when ping doesn't match
-      emit(:pong)
-    ensure
-      @ping_payload = nil
+    def on_pong(ping)
+      if !@pings.delete(ping)
+        close(:protocol_error, "ping payload did not match")
+      else
+        emit(:pong)
+      end
     end
 
     def respond_to_missing?(meth, *args)
