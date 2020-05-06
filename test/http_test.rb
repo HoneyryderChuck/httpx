@@ -36,7 +36,7 @@ class HTTPTest < Minitest::Test
     assert log_output.match(%r{HEADLINE: "GET .+ HTTP/1\.1"})
     assert log_output.match(%r{HEADER: Accept: */*})
     assert log_output.match(/HEADER: Host: \w+/)
-    assert log_output.match(/HEADER: Connection: keep\-alive/)
+    assert log_output.match(/HEADER: Connection: close/)
     # assert response headers
     assert log_output.match(%r{HEADLINE: 200 HTTP/1\.1})
     assert log_output.match(/HEADER: content\-type: \w+/)
