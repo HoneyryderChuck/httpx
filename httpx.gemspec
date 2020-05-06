@@ -25,7 +25,9 @@ Gem::Specification.new do |gem|
     "source_code_uri" => "https://gitlab.com/honeyryderchuck/httpx",
   }
 
-  gem.files = Dir["LICENSE.txt", "README.md", "lib/**/*.rb", "doc/*.md"]
+  gem.files = Dir["LICENSE.txt", "README.md", "lib/**/*.rb", "doc/release_notes/*.md"]
+  gem.extra_rdoc_files = Dir["LICENSE.txt", "README.md", "doc/release_notes/*.md"]
+
   gem.require_paths = ["lib"]
 
   gem.add_runtime_dependency "http-2-next", ">= 0.1.2"
