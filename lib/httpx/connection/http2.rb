@@ -112,7 +112,7 @@ module HTTPX
     end
 
     def ping
-      ping = SecureRandom.bytes(8)
+      ping = SecureRandom.gen_random(8)
       @connection.ping(ping)
     ensure
       @pings << ping
