@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "securerandom"
 require "io/wait"
 require "http/2/next"
 
@@ -109,6 +110,11 @@ module HTTPX
       end
     end
 
+    def ping
+      @ping_payload = SecureRandom.bytes(8)
+      @connection.ping(@ping_payload)
+    end
+
     private
 
     def send_pending
@@ -143,6 +149,7 @@ module HTTPX
       @connection.on(:promise, &method(:on_promise))
       @connection.on(:altsvc) { |frame| on_altsvc(frame[:origin], frame) }
       @connection.on(:settings_ack, &method(:on_settings))
+      @connection.on(:ack, &method(:on_pong))
       @connection.on(:goaway, &method(:on_close))
       #
       # Some servers initiate HTTP/2 negotiation right away, some don't.
@@ -304,6 +311,13 @@ module HTTPX
 
     def on_origin(origin)
       emit(:origin, origin)
+    end
+
+    def on_pong(_payload)
+      # TODO: what to do when ping doesn't match
+      emit(:pong)
+    ensure
+      @ping_payload = nil
     end
 
     def respond_to_missing?(meth, *args)
