@@ -10,19 +10,21 @@ Among its features, it supports:
 
 * HTTP/2 and HTTP/1.x protocol versions
 * Concurrent requests by default
-* Simple and chainable API (based on HTTP.rb, itself based on Python Requests)
+* Simple and chainable API
 * Proxy Support (HTTP(S), Socks4/4a/5)
 * Simple Timeout System
-* Lightweight (explicit feature loading)
+* Lightweight by default (require what you need)
 
-And among others
+And also:
 
 * Compression (gzip, deflate, brotli)
 * Authentication (Basic Auth, Digest Auth)
+* Expect 100-continue
+* Multipart Requests
 * Cookies
 * HTTP/2 Server Push
 * H2C Upgrade
-* Redirect following
+* Automatic follow redirects
 
 ## How
 
