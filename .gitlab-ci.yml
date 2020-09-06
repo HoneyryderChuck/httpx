@@ -1,87 +1,162 @@
-image: tmaier/docker-compose
-
-variables:
-  JEKYLL_ENV: production
-
-services:
-  - docker:dind
-
 # Cache gems in between builds
+stages:
+  - build
+  - test
+  - prepare
+  - deploy
+
 cache:
-  key: ${CI_COMMIT_REF_SLUG}
+  key: "$CI_JOB_NAME-$CI_COMMIT_REF_SLUG"
   paths:
     - vendor/ruby
-    - vendor/jruby
 
-before_script:
-  - docker info
-  - docker-compose --version
+services:
+  -
+    image: citizenstig/httpbin
+    command:
+      gunicorn --bind=0.0.0.0:8000 --workers=6 --access-logfile - --error-logfile - --log-level debug --capture-output httpbin:app
 
-test_jruby:
-  stage: test
+    name: citizenstig/httpbin
+    alias: httpbin
+    command:
+      gunicorn --bind=0.0.0.0:8000 --workers=6 --access-logfile - --error-logfile - --log-level debug --capture-output httpbin:app
+  -
+    name: registry.gitlab.com/honeyryderchuck/httpx/nghttp2:2
+    alias: nghttp2
+    depends_on:
+      - httpbin
+    entrypoint: ["/usr/local/bin/nghttpx"]
+    volumes:
+      - ./test/support/ci:/home
+    command:
+      --conf /home/nghttp.conf --no-ocsp --frontend 0.0.0.0,80;no-tls --frontend 0.0.0.0,443 
+
+variables:
+  BUNDLE_JOBS: 4
+  BUNDLE_PATH: vendor
+  CI: 1
+  PARALLEL: 1
+  CONNECT_TIMEOUT_PORT: 9090
+  SSL_CERT_FILE: /home/test/support/ci/certs/ca-bundle.crt
+  HTTPBIN_HOST: nghttp2
+  HTTPX_HTTP_PROXY: http://proxyuser:password@httpproxy:3128
+  HTTPX_HTTPS_PROXY: http://proxyuser:password@httpproxy:3128
+  HTTPX_SOCKS4_PROXY: socks4://user4:@socksproxy:8080
+  HTTPX_SOCKS4A_PROXY: socks4a://user4:@socksproxy:8080
+  HTTPX_SOCKS5_PROXY: socks5://user5:password@socksproxy:8080
+  HTTPX_SSH_PROXY: ssh://sshproxy:22
+  HTTPBIN_ALTSVC_HOST: another2
+  N: 6 # minitest workers
+  MT_CPU: 6 # minitest workers
+
+
+.before_script: &before_script
+  - bundle install --path vendor
+
+.deps_alpine: &deps_alpine  
+  - apk --update add g++ make git bash iptables
+
+.prepare: &prepare
+  - iptables -A OUTPUT -p tcp -m tcp --tcp-flags SYN SYN --sport $CONNECT_TIMEOUT_PORT -j DROP
+
+.test: &test
+  - bundle exec rake test:ci 
+
+ruby27:
+  before_script:
+    - *deps_alpine
+    - *before_script
+  image: "ruby:2.7-alpine"
   script:
-    ./spec.sh jruby 9.0.0.0
-  allow_failure: true
-test_ruby21:
-  stage: test
-  script:
-    ./spec.sh ruby 2.1
-test_ruby22:
-  only:
-    - master
-  stage: test
-  script:
-    ./spec.sh ruby 2.2
-test_ruby23:
-  only:
-    - master
-  stage: test
-  script:
-    ./spec.sh ruby 2.3
-test_ruby24:
-  only:
-    - master
-  stage: test
-  script:
-    ./spec.sh ruby 2.4
-test_ruby25:
-  only:
-    - master
-  stage: test
-  script:
-    ./spec.sh ruby 2.5
-test_ruby26:
-  only:
-    - master
-  stage: test
-  script:
-    ./spec.sh ruby 2.6
-test_ruby27:
-  stage: test
-  script:
-    ./spec.sh ruby 2.7
+    - *test
   artifacts:
     paths:
-      - www/coverage/
-      - www/rdoc/
-      - www/public/
+      - "coverage/"
 
-pages:
-  stage: deploy 
-  dependencies:
-    - test_ruby27
-  script:
-    - mv www/public .
-    - ls public
-    - echo "#"
-    - ls public/rdoc
-    - echo "#"
-    - ls public/coverage
-  artifacts:
-    paths:
-      - public
-    expire_in: 30 days
-  only:
-    - master
+# image: tmaier/docker-compose
+
+# variables:
+#   JEKYLL_ENV: production
+
+# services:
+#   - docker:dind
+
+# # Cache gems in between builds
+# cache:
+#   key: ${CI_COMMIT_REF_SLUG}
+#   paths:
+#     - vendor/ruby
+#     - vendor/jruby
+
+# before_script:
+#   - docker info
+#   - docker-compose --version
+
+# test_jruby:
+#   stage: test
+#   script:
+#     ./spec.sh jruby 9.0.0.0
+#   allow_failure: true
+# test_ruby21:
+#   stage: test
+#   script:
+#     ./spec.sh ruby 2.1
+# test_ruby22:
+#   only:
+#     - master
+#   stage: test
+#   script:
+#     ./spec.sh ruby 2.2
+# test_ruby23:
+#   only:
+#     - master
+#   stage: test
+#   script:
+#     ./spec.sh ruby 2.3
+# test_ruby24:
+#   only:
+#     - master
+#   stage: test
+#   script:
+#     ./spec.sh ruby 2.4
+# test_ruby25:
+#   only:
+#     - master
+#   stage: test
+#   script:
+#     ./spec.sh ruby 2.5
+# test_ruby26:
+#   only:
+#     - master
+#   stage: test
+#   script:
+#     ./spec.sh ruby 2.6
+# test_ruby27:
+#   stage: test
+#   script:
+#     ./spec.sh ruby 2.7
+#   artifacts:
+#     paths:
+#       - www/coverage/
+#       - www/rdoc/
+#       - www/public/
+
+# pages:
+#   stage: deploy 
+#   dependencies:
+#     - test_ruby27
+#   script:
+#     - mv www/public .
+#     - ls public
+#     - echo "#"
+#     - ls public/rdoc
+#     - echo "#"
+#     - ls public/coverage
+#   artifacts:
+#     paths:
+#       - public
+#     expire_in: 30 days
+#   only:
+#     - master
 
 
