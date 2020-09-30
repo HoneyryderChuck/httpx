@@ -1,0 +1,9 @@
+version: '3'
+services:
+  httpx:
+    environment:
+      - "BUNDLE_PATH=${BUNDLE_PATH}"
+      - "BUNDLE_JOBS=${BUNDLE_JOBS}"
+      - HTTPBIN_HOST=nghttp2
+    volumes:
+      - "${MOUNT_POINT}:/home/vendor"
