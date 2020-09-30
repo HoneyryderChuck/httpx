@@ -5,6 +5,5 @@ SimpleCov.start do
   add_filter "/test/"
   add_filter "/lib/httpx/extensions.rb"
   add_filter "/lib/httpx/loggable.rb"
-  coverage_dir "www/coverage"
   minimum_coverage 80
 end
