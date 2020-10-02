@@ -239,13 +239,11 @@ module HTTPX
 
       private
 
-      # :nodoc:
       def mime_type(str)
         m = str.to_s[MIME_TYPE_RE, 1]
         m && m.strip.downcase
       end
 
-      # :nodoc:
       def charset(str)
         m = str.to_s[CHARSET_RE, 1]
         m && m.strip.delete('"')

@@ -2,7 +2,7 @@
 
 module HTTPX
   class Headers
-    EMPTY = [].freeze # :nodoc:
+    EMPTY = [].freeze
 
     class << self
       def new(headers = nil)

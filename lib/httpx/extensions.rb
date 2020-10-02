@@ -11,7 +11,7 @@ module HTTPX
     #
     # Why not using Refinements? Because they don't work for Method (tested with ruby 2.1.9).
     #
-    module CurryMethods # :nodoc:
+    module CurryMethods
       # Backport for the Method#curry method, which is part of ruby core since 2.2 .
       #
       def curry(*args)
