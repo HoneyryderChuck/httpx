@@ -32,7 +32,7 @@ namespace :coverage do
   end
 end
 
-task :"test:ci" => (RUBY_ENGINE == "jruby" ? %i[test] : %i[test rubocop])
+task :"test:ci" => (RUBY_ENGINE == "ruby" ? %i[test rubocop] : %i[test])
 
 # Doc
 

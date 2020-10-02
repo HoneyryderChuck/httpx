@@ -84,6 +84,11 @@ test_ruby30:
   script:
     ./spec.sh ruby 3.0
   allow_failure: true
+test_truffleruby:
+  stage: test
+  script:
+    ./spec.sh truffleruby latest
+  allow_failure: true
 
 jekyll:
   stage: test

@@ -1,8 +1,12 @@
 #!/bin/sh
 
 RUBY_PLATFORM=`ruby -e 'puts RUBY_PLATFORM'`
+RUBY_ENGINE=`ruby -e 'puts RUBY_ENGINE'`
 
-if [[ "$RUBY_PLATFORM" = "java" ]]; then
+if [[ "$RUBY_ENGINE" = "truffleruby" ]]; then
+  apt-get update && apt-get install -y \
+    iptables
+elif [[ "$RUBY_PLATFORM" = "java" ]]; then
   apk --update add make git bash iptables
 elif [[ ${RUBY_VERSION:0:3} = "2.1" ]]; then
   apk --update add g++ make git bash libsodium iptables
@@ -19,6 +23,10 @@ export PATH=$GEM_HOME/bin:$BUNDLE_PATH/gems/bin:$PATH
 mkdir -p "$GEM_HOME" && chmod 777 "$GEM_HOME"
 gem install bundler -v="1.17.3" --no-doc --conservative
 cd /home
+
+if [[ "$RUBY_ENGINE" = "truffleruby" ]]; then
+  gem install bundler -v="2.1.4" --no-doc --conservative
+fi
 
 bundle install --quiet
 bundle exec rake test:ci

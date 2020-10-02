@@ -35,6 +35,7 @@ group :test do
 
   gem "oga"
   gem "faraday"
+  gem "unf", git: "https://github.com/knu/ruby-unf.git", branch: "master"
 end
 
 group :coverage do
