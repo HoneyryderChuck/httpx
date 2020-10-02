@@ -92,6 +92,7 @@ jekyll:
     paths:
       - www/public/
       - www/rdoc/
+      - www/wiki/
 
 coverage:
   stage: prepare
