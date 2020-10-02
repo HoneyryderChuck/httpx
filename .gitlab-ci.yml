@@ -79,6 +79,11 @@ test_ruby27:
   artifacts:
     paths:
       - coverage/
+test_ruby30:
+  stage: test
+  script:
+    ./spec.sh ruby 3.0
+  allow_failure: true
 
 jekyll:
   stage: test
