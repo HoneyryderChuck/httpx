@@ -11,8 +11,8 @@
   name: HTTPX::Headers
   path: HTTPX/Headers.html
 -
-  name: HTTPX::Client
-  path: HTTPX/Client.html
+  name: HTTPX::Session
+  path: HTTPX/Session.html
 -
   name: HTTPX::Options
   path: HTTPX/Options.html

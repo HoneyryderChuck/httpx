@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
-require "simplecov" if ENV.key?("CI")
+if ENV.key?("CI")
+  require "simplecov"
+  SimpleCov.command_name "#{RUBY_ENGINE}-#{RUBY_VERSION}"
+  SimpleCov.coverage_dir "coverage/#{RUBY_ENGINE}-#{RUBY_VERSION}"
+end
 
 gem "minitest"
 require "minitest/autorun"

@@ -3,7 +3,6 @@
 require "bundler/gem_tasks"
 require "rdoc/task"
 require "rake/testtask"
-require "rubocop/rake_task"
 
 Rake::TestTask.new do |t|
   t.libs = %w[lib test]
@@ -13,12 +12,27 @@ end
 
 RUBY_MAJOR_MINOR = RUBY_VERSION.split(/\./).first(2).join(".")
 
-desc "Run rubocop"
-RuboCop::RakeTask.new(:rubocop) do |task|
-  task.options += %W[-c.rubocop-#{RUBY_MAJOR_MINOR}.yml]
+begin
+  require "rubocop/rake_task"
+  desc "Run rubocop"
+  RuboCop::RakeTask.new(:rubocop) do |task|
+    task.options += %W[-c.rubocop-#{RUBY_MAJOR_MINOR}.yml]
+  end
+rescue LoadError
 end
 
-task :"test:ci" => %i[test rubocop]
+namespace :coverage do
+  desc "Aggregates coverage reports"
+  task :report do
+    return unless ENV.key?("CI")
+
+    require "simplecov"
+
+    SimpleCov.collate Dir["coverage/**/.resultset.json"]
+  end
+end
+
+task :"test:ci" => (RUBY_ENGINE == "jruby" ? %i[test] : %i[test rubocop])
 
 # Doc
 
@@ -50,7 +64,6 @@ desc "Builds Homepage"
 task :prepare_website => ["website_rdoc"] do
   require "fileutils"
   Dir.chdir "www"
-  system("bundle install")
   FileUtils.rm_rf("wiki")
   system("git clone https://gitlab.com/honeyryderchuck/httpx.wiki.git wiki")
   Dir.glob("wiki/*.md") do |path|

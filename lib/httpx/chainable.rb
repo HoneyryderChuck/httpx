@@ -59,7 +59,6 @@ module HTTPX
       @options || Options.new
     end
 
-    # :nodoc:
     def branch(options, &blk)
       return self.class.new(options, &blk) if is_a?(Session)
 

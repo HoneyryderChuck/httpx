@@ -2,7 +2,7 @@
 
 require "io/wait"
 
-module IOExtensions # :nodoc:
+module IOExtensions
   refine IO do
     def wait(timeout = nil, mode = :read)
       case mode
