@@ -54,7 +54,7 @@ So why are people making a case against it? Why go with `rodauth` instead?
 
 ## Welcome to the desert of the real
 
-![Desert of the real]({{ '/assets/desert-real.gif' | prepend: site.baseurl }})
+![Desert of the real]({{ '/images/desert-real.gif' | prepend: site.baseurl }})
 
 
 The vision for `devise` was fully accomplished by 2010: a no-friction email/password authentication add-on for Ruby on Rails. 
@@ -96,7 +96,7 @@ But it does feel that `devise` is legacy software.
 
 
 
-![Buzz Lightyear]({{ '/assets/to-infinity-and-beyond.jpg' | prepend: site.baseurl }})
+![Buzz Lightyear]({{ '/images/to-infinity-and-beyond.jpg' | prepend: site.baseurl }})
 
 
 
