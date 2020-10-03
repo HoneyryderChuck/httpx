@@ -26,7 +26,7 @@ cache:
     - vendor
 
 test_jruby:
-  stage: test
+  <<: *test_settings
   script:
     ./spec.sh jruby 9.0.0.0
   allow_failure: true
@@ -34,44 +34,44 @@ test_jruby:
     paths:
       - coverage/
 test_ruby21:
-  stage: test
+  <<: *test_settings
   script:
     ./spec.sh ruby 2.1
   artifacts:
     paths:
       - coverage/
 test_ruby22:
+  <<: *test_settings
   only:
     - master
-  stage: test
   script:
     ./spec.sh ruby 2.2
 test_ruby23:
+  <<: *test_settings
   only:
     - master
-  stage: test
   script:
     ./spec.sh ruby 2.3
 test_ruby24:
+  <<: *test_settings
   only:
     - master
-  stage: test
   script:
     ./spec.sh ruby 2.4
 test_ruby25:
+  <<: *test_settings
   only:
     - master
-  stage: test
   script:
     ./spec.sh ruby 2.5
 test_ruby26:
+  <<: *test_settings
   only:
     - master
-  stage: test
   script:
     ./spec.sh ruby 2.6
 test_ruby27:
-  stage: test
+  <<: *test_settings
   script:
     ./spec.sh ruby 2.7
   artifacts:
