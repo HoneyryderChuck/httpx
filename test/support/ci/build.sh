@@ -4,10 +4,9 @@ RUBY_PLATFORM=`ruby -e 'puts RUBY_PLATFORM'`
 RUBY_ENGINE=`ruby -e 'puts RUBY_ENGINE'`
 
 if [[ "$RUBY_ENGINE" = "truffleruby" ]]; then
-  apt-get update && apt-get install -y \
-    iptables
+  apt-get update && apt-get install -y git iptables
 elif [[ "$RUBY_PLATFORM" = "java" ]]; then
-  apk --update add make git bash iptables
+  apt-get update && apt-get install -y git iptables
 elif [[ ${RUBY_VERSION:0:3} = "2.1" ]]; then
   apk --update add g++ make git bash libsodium iptables
 else

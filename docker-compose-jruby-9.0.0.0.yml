@@ -1,6 +1,9 @@
 version: '3'
 services:
   httpx:
-    image: jruby:9.2.7-alpine
+    image: jruby:9.2.13
     environment:
       - JRUBY_OPTS=--debug
+    entrypoint:
+      - bash
+      - /home/test/support/ci/build.sh
