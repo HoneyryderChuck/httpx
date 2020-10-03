@@ -80,12 +80,12 @@ test_ruby27:
     paths:
       - coverage/
 test_ruby30:
-  stage: test
+  <<: *test_settings
   script:
     ./spec.sh ruby 3.0
   allow_failure: true
 test_truffleruby:
-  stage: test
+  <<: *test_settings
   script:
     ./spec.sh truffleruby latest
   allow_failure: true
@@ -117,7 +117,7 @@ coverage:
     - test_ruby27
   image: "ruby:2.7-alpine"
   script:
-    - apk --update add g++ make
+    - apk --update add g++ make git
     - bundle install --quiet
     # this is a workaround, because simplecov doesn't support relative paths.
     #
