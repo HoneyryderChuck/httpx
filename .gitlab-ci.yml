@@ -14,8 +14,10 @@ variables:
   BUNDLE_JOBS: 4
   BUNDLE_PATH: vendor
 
-services:
-  - docker:dind
+.test_settings: &test_settings
+  stage: test
+  services:
+    - docker:dind
 
 # Cache gems in between builds
 cache:
@@ -24,7 +26,7 @@ cache:
     - vendor
 
 test_jruby:
-  stage: test
+  <<: *test_settings
   script:
     ./spec.sh jruby 9.0.0.0
   allow_failure: true
@@ -32,44 +34,44 @@ test_jruby:
     paths:
       - coverage/
 test_ruby21:
-  stage: test
+  <<: *test_settings
   script:
     ./spec.sh ruby 2.1
   artifacts:
     paths:
       - coverage/
 test_ruby22:
+  <<: *test_settings
   only:
     - master
-  stage: test
   script:
     ./spec.sh ruby 2.2
 test_ruby23:
+  <<: *test_settings
   only:
     - master
-  stage: test
   script:
     ./spec.sh ruby 2.3
 test_ruby24:
+  <<: *test_settings
   only:
     - master
-  stage: test
   script:
     ./spec.sh ruby 2.4
 test_ruby25:
+  <<: *test_settings
   only:
     - master
-  stage: test
   script:
     ./spec.sh ruby 2.5
 test_ruby26:
+  <<: *test_settings
   only:
     - master
-  stage: test
   script:
     ./spec.sh ruby 2.6
 test_ruby27:
-  stage: test
+  <<: *test_settings
   script:
     ./spec.sh ruby 2.7
   artifacts:
@@ -81,13 +83,12 @@ jekyll:
   image: "ruby:2.7-alpine"
   variables:
     JEKYLL_ENV: production
+    BUNDLE_GEMFILE: www/Gemfile
   script:
-    - apk --update add g++ make
-    - gem install hanna-nouveau
-    - rake prepare_website
-    - cd www
+    - apk --update add g++ make git
     - bundle install
-    - bundle exec jekyll build -d public
+    - bundle exec rake prepare_website
+    - bundle exec jekyll build -s www -d www/public
   artifacts:
     paths:
       - www/public/

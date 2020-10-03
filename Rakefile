@@ -42,7 +42,6 @@ begin
   gem "hanna-nouveau"
   rdoc_opts.concat(["-f", "hanna"])
 rescue Gem::LoadError
-  puts "fodeu"
 end
 
 rdoc_opts.concat(["--main", "README.md"])
