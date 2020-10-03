@@ -82,11 +82,11 @@ jekyll:
   variables:
     JEKYLL_ENV: production
   script:
-    - apk --update add g++ make
+    - apk --update add g++ make git
     - gem install hanna-nouveau
     - rake prepare_website
     - cd www
-    - bundle install
+    - bundle install --path ../vendor
     - bundle exec jekyll build -d public
   artifacts:
     paths:
