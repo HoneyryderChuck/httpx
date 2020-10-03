@@ -14,8 +14,10 @@ variables:
   BUNDLE_JOBS: 4
   BUNDLE_PATH: vendor
 
-services:
-  - docker:dind
+.test_settings: &test_settings
+  stage: test
+  services:
+    - docker:dind
 
 # Cache gems in between builds
 cache:
@@ -81,13 +83,12 @@ jekyll:
   image: "ruby:2.7-alpine"
   variables:
     JEKYLL_ENV: production
+    BUNDLE_GEMFILE: www/Gemfile
   script:
     - apk --update add g++ make git
-    - gem install hanna-nouveau
-    - rake prepare_website
-    - cd www
-    - bundle install --path ../vendor
-    - bundle exec jekyll build -d public
+    - bundle install
+    - bundle exec rake prepare_website
+    - bundle exec jekyll build -s www -d www/public
   artifacts:
     paths:
       - www/public/

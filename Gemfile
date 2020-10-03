@@ -38,7 +38,6 @@ platform :mri_21 do
   gem "rbnacl", require: false
 end
 
-gem "hanna-nouveau", require: false
 gem "faraday", :require => false
 if RUBY_VERSION < "2.2"
   gem "pry", "~> 0.12.2", :require => false
