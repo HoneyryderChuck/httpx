@@ -11,6 +11,16 @@ module Requests
       verify_body_length(response)
     end
 
+    def test_http_get_build_request
+      uri = build_uri("/get")
+      HTTPX.wrap do |http|
+        request = http.build_request(:get, uri)
+        response = http.request(request)
+        verify_status(response, 200)
+        verify_body_length(response)
+      end
+    end
+
     def test_multiple_get
       uri = build_uri("/delay/2")
       response1, response2 = HTTPX.get(uri, uri)

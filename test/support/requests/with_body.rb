@@ -84,6 +84,36 @@ module Requests
         verify_header(body["headers"], "Content-Type", "application/octet-stream")
         verify_uploaded(body, "data", "data")
       end
+
+      define_method :"test_#{meth}_multiple_params" do
+        uri = build_uri("/#{meth}")
+        response1, response2 = HTTPX.request([
+                                               [meth, uri, body: "data"],
+                                               [meth, uri, form: { "foo" => "bar" }],
+                                             ], max_concurrent_requests: 1) # because httpbin sucks and can't handle pipeline requests
+
+        verify_status(response1, 200)
+        body1 = json_body(response1)
+        verify_header(body1["headers"], "Content-Type", "application/octet-stream")
+        verify_uploaded(body1, "data", "data")
+
+        verify_status(response2, 200)
+        body2 = json_body(response2)
+        verify_header(body2["headers"], "Content-Type", "application/x-www-form-urlencoded")
+        verify_uploaded(body2, "form", "foo" => "bar")
+      end
+
+      define_method :"test_#{meth}_build_request_body_params" do
+        uri = build_uri("/#{meth}")
+        HTTPX.wrap do |http|
+          request = http.build_request(meth, uri, body: "data")
+          response = http.request(request)
+          verify_status(response, 200)
+          body = json_body(response)
+          verify_header(body["headers"], "Content-Type", "application/octet-stream")
+          verify_uploaded(body, "data", "data")
+        end
+      end
     end
 
     private
