@@ -10,8 +10,8 @@ module HTTPX
       MOD
     end
 
-    def request(verb, uri, **options)
-      branch(default_options).request(verb, uri, **options)
+    def request(*args, **options)
+      branch(default_options).request(*args, **options)
     end
 
     # :nocov:

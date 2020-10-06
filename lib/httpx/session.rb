@@ -31,7 +31,7 @@ module HTTPX
     end
 
     def request(*args, **options)
-      requests = build_requests(*args, options)
+      requests = args.first.is_a?(Request) ? args : build_requests(*args, options)
       responses = send_requests(*requests, options)
       return responses.first if responses.size == 1
 
@@ -203,14 +203,6 @@ module HTTPX
       ensure
         close(connections) unless @persistent
       end
-    end
-
-    def build_request(verb, uri, options)
-      rklass = @options.request_class
-      request = rklass.new(verb, uri, @options.merge(options).merge(persistent: @persistent))
-      request.on(:response, &method(:on_response).curry[request])
-      request.on(:promise, &method(:on_promise))
-      request
     end
 
     @default_options = Options.new
