@@ -12,7 +12,7 @@ pkg
 rdoc
 spec/reports
 tmp
-www/public
-www/build
-www/.sass-cache
-www/wiki
+public
+build
+.sass-cache
+wiki
