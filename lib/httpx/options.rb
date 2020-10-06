@@ -146,8 +146,10 @@ module HTTPX
     end
 
     def merge(other)
-      h1 = to_hash
       h2 = other.to_hash
+      return self if h2.empty?
+
+      h1 = to_hash
 
       merged = h1.merge(h2) do |k, v1, v2|
         case k

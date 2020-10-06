@@ -6,9 +6,9 @@ include HTTPX
 URLS = %w[http://nghttp2.org/httpbin/post] * 102 
 
 $HTTPX_DEBUG = true
-client = Client.new
-requests = URLS.map { |url| client.request(:post, url, json: {"bang" => "bang"}) }
-responses = client.send(*requests)
+client = Session.new
+requests = URLS.map { |url| client.build_request(:post, url, json: {"bang" => "bang"}) }
+responses = client.request(*requests)
 
 responses.each do |res| 
   puts "status: #{res.status}"
