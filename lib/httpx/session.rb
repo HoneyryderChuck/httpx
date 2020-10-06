@@ -5,7 +5,9 @@ module HTTPX
     include Loggable
     include Chainable
 
-    def initialize(options = {}, &blk)
+    EMPTY_HASH = {}.freeze
+
+    def initialize(options = EMPTY_HASH, &blk)
       @options = self.class.default_options.merge(options)
       @responses = {}
       @persistent = @options.persistent
@@ -34,6 +36,14 @@ module HTTPX
       return responses.first if responses.size == 1
 
       responses
+    end
+
+    def build_request(verb, uri, options = EMPTY_HASH)
+      rklass = @options.request_class
+      request = rklass.new(verb, uri, @options.merge(options).merge(persistent: @persistent))
+      request.on(:response, &method(:on_response).curry[request])
+      request.on(:promise, &method(:on_promise))
+      request
     end
 
     private
@@ -122,8 +132,8 @@ module HTTPX
       requests = case args.size
                  when 1
                    reqs = args.first
-                   reqs.map do |verb, uri|
-                     build_request(verb, uri, request_options)
+                   reqs.map do |verb, uri, opts = EMPTY_HASH|
+                     build_request(verb, uri, request_options.merge(opts))
                    end
                  when 2, 3
                    verb, uris = args
