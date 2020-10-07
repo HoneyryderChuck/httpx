@@ -90,12 +90,12 @@ jekyll:
     - apk --update add g++ make git
     - bundle install --quiet
     - bundle exec rake prepare_website
-    - bundle exec jekyll build -s www -d www/public
+    - mv rdoc/ www
+    - mv wiki/ www
+    - bundle exec jekyll build -s www -d public
   artifacts:
     paths:
-      - www/public/
-      - www/rdoc/
-      - www/wiki/
+      - public/
 
 coverage:
   stage: prepare
@@ -130,7 +130,6 @@ pages:
     - coverage
     - jekyll
   script:
-    - mv www/public .
     - mv coverage public
   artifacts:
     paths:

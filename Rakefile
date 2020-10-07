@@ -53,16 +53,9 @@ RDoc::Task.new do |rdoc|
   rdoc.rdoc_files.add RDOC_FILES
 end
 
-RDoc::Task.new(:website_rdoc) do |rdoc|
-  rdoc.rdoc_dir = "www/rdoc"
-  rdoc.options += rdoc_opts
-  rdoc.rdoc_files.add RDOC_FILES
-end
-
 desc "Builds Homepage"
-task :prepare_website => ["website_rdoc"] do
+task :prepare_website => ["rdoc"] do
   require "fileutils"
-  Dir.chdir "www"
   FileUtils.rm_rf("wiki")
   system("git clone https://gitlab.com/honeyryderchuck/httpx.wiki.git wiki")
   Dir.glob("wiki/*.md") do |path|
