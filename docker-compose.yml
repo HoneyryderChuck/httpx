@@ -14,7 +14,6 @@ services:
       - N=6 # minitest workers
       - MT_CPU=6 # minitest workers
       - CI=1
-      - JEKYLL_ENV=production
       - GEM_HOME=/usr/local/bundle
       - BUNDLE_PATH=/usr/local/bundle
       - BUNDLE_SILENCE_ROOT_WARNING=1

@@ -20,7 +20,7 @@ mkdir -p "$GEM_HOME" && chmod 777 "$GEM_HOME"
 gem install bundler -v="1.17.3" --no-doc --conservative
 cd /home
 
-bundle install
+bundle install --quiet
 bundle exec rake test:ci
 
 RET=$?

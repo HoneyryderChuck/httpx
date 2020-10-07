@@ -16,10 +16,7 @@ else
   extra="-f docker-compose-gitlab.yml -f docker-compose-${RUBY}-${VERSION}.yml"
 fi
 
-docker-compose -f docker-compose.yml ${extra} -p ci build
-docker-compose -f docker-compose.yml ${extra} -p ci up \
-  --exit-code-from httpx \
-  --abort-on-container-exit
+docker-compose -f docker-compose.yml ${extra} -p ci run httpx
 
 #
 #

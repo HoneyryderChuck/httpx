@@ -4,6 +4,7 @@ services:
     environment:
       - "BUNDLE_PATH=${BUNDLE_PATH}"
       - "BUNDLE_JOBS=${BUNDLE_JOBS}"
+      - "BUNDLE_WITHOUT=${BUNDLE_WITHOUT}"
       - HTTPBIN_HOST=nghttp2
     volumes:
       - "${MOUNT_POINT}:/home/vendor"

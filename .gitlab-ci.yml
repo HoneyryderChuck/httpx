@@ -15,6 +15,8 @@ variables:
   BUNDLE_PATH: vendor
 
 .test_settings: &test_settings
+  variables:
+    BUNDLE_WITHOUT: website:assorted
   stage: test
   services:
     - docker:dind
@@ -83,26 +85,30 @@ jekyll:
   image: "ruby:2.7-alpine"
   variables:
     JEKYLL_ENV: production
-    BUNDLE_GEMFILE: www/Gemfile
+    BUNDLE_WITHOUT: test:coverage:assorted
   script:
     - apk --update add g++ make git
-    - bundle install
+    - bundle install --quiet
     - bundle exec rake prepare_website
-    - bundle exec jekyll build -s www -d www/public
+    - mv rdoc/ www
+    - mv wiki/ www
+    - bundle exec jekyll build -s www -d public
   artifacts:
     paths:
-      - www/public/
-      - www/rdoc/
-      - www/wiki/
+      - public/
 
 coverage:
   stage: prepare
+  variables:
+    BUNDLE_WITHOUT: test:website:assorted
   dependencies:
     - test_jruby
     - test_ruby21
     - test_ruby27
   image: "ruby:2.7-alpine"
   script:
+    - apk --update add g++ make
+    - bundle install --quiet
     # this is a workaround, because simplecov doesn't support relative paths.
     #
     # https://github.com/simplecov-ruby/simplecov/issues/887
@@ -113,8 +119,7 @@ coverage:
     # all of those have to be rewritten before the merge happens.
     #
     - find coverage -name "*resultset.json" -exec sed -i 's?/home?'`pwd`'?' {} \;
-    - gem install --no-doc simplecov
-    - rake coverage:report
+    - bundle exec rake coverage:report
   artifacts:
     paths:
       - "coverage/"
@@ -125,7 +130,6 @@ pages:
     - coverage
     - jekyll
   script:
-    - mv www/public .
     - mv coverage public
   artifacts:
     paths:
