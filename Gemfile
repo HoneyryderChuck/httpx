@@ -54,7 +54,7 @@ group :website do
   gem "jekyll-gzip", "~> 2.4.1"
   gem "jekyll-paginate-v2", "~> 1.5.2"
   gem "jekyll-brotli", "~> 2.2.0"
-end if RUBY_VERSION > "2.2"
+end if RUBY_VERSION > "2.4"
 
 group :assorted do
   if RUBY_VERSION < "2.2"
