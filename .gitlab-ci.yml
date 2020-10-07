@@ -88,7 +88,7 @@ jekyll:
     BUNDLE_WITHOUT: test:coverage:assorted
   script:
     - apk --update add g++ make git
-    - bundle install
+    - bundle install --quiet
     - bundle exec rake prepare_website
     - bundle exec jekyll build -s www -d www/public
   artifacts:
@@ -108,7 +108,7 @@ coverage:
   image: "ruby:2.7-alpine"
   script:
     - apk --update add g++ make
-    - bundle install
+    - bundle install --quiet
     # this is a workaround, because simplecov doesn't support relative paths.
     #
     # https://github.com/simplecov-ruby/simplecov/issues/887
