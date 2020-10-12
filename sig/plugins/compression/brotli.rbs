@@ -1,0 +1,21 @@
+module HTTPX
+  module Plugins
+    module Compression
+      module Brotli
+        # def self.load_dependencies: (singleton(Session)) -> void
+        def self.configure: (*untyped) -> void
+
+        def self?.encoder: () -> singleton(Encoder)
+        def self?.decoder: () -> Decoder
+
+        module Encoder
+          extend _Deflater
+        end
+
+        module BrotliWrapper
+          extend _Inflater
+        end
+      end
+    end
+  end
+end

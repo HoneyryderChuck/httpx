@@ -25,7 +25,7 @@ Gem::Specification.new do |gem|
     "source_code_uri" => "https://gitlab.com/honeyryderchuck/httpx",
   }
 
-  gem.files = Dir["LICENSE.txt", "README.md", "lib/**/*.rb", "doc/release_notes/*.md"]
+  gem.files = Dir["LICENSE.txt", "README.md", "lib/**/*.rb", "sig/**/*.rbs", "doc/release_notes/*.md"]
   gem.extra_rdoc_files = Dir["LICENSE.txt", "README.md", "doc/release_notes/*.md"]
 
   gem.require_paths = ["lib"]

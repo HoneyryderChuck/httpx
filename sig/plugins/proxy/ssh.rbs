@@ -1,0 +1,18 @@
+module HTTPX
+  module Plugins
+    module Proxy
+      module SSH
+        # def self.load_dependencies: (singleton(Session)) -> void
+      
+        module InstancenMethods
+          private
+
+          def build_gateway_socket: (int, URI::HTTPS | URI::HTTPS, Options) ->  IO
+        end
+      end
+    end
+
+
+    type sessionSSHProxy = Plugins::Proxy::InstanceMethods & Plugins::Proxy::SSH::InstanceMethods
+  end
+end

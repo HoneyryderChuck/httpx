@@ -1,0 +1,63 @@
+module HTTPX
+  module Plugins
+    module Compression
+      extend Registry[Symbol, Class]
+
+      type deflatable = _ReadableStream | _ToS
+
+      interface _Deflater
+        def deflate: (deflatable, _WritableStream, chunk_size: Integer) -> void
+                   | (deflatable, _WritableStream, chunk_size: Integer) { (String) -> void } -> void
+      end
+
+      interface _Inflater
+        def inflate: (string) -> String
+      end
+       
+      # def self.load_dependencies: (singleton(Session)) -> void
+
+      interface _CompressionOptions
+        def compression_threshold_size: () -> _Integer?
+        def compression_threshold_size=: (int) -> int
+        def with_compression_threshold_size: (int) -> instance
+      end
+ 
+      def self.extra_options: (Options) -> (Options & _CompressionOptions)
+
+
+      module ResponseBodyMethods
+        @encodings: Array[String]
+        @_decoders: Array[_Decoder]
+
+        private
+
+        def decompress: (String) -> String
+      end
+
+      class Encoder
+        include Transcoder::_Encoder
+        include _ToS
+        include _Each[String, untyped]
+
+        def close: () -> void
+
+      	private
+
+        def initialize: (deflatable body, _Deflater deflater) -> untyped
+        def deflate: () -> void
+                   | () { (String) -> void } -> void
+      end
+
+      class Decoder
+        include Transcoder::_Decoder
+
+        def finish: () -> String
+        def close: () -> void
+
+        private
+
+        def initialize: (_Inflater inflater) -> untyped
+      end
+    end
+  end
+end

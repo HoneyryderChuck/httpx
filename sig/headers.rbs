@@ -1,0 +1,42 @@
+module HTTPX
+  class Headers
+    include _ToS
+
+    @headers: headers_hash
+
+    def self.new: (?untyped headers) -> Headers
+
+    def ==: (untyped other) -> bool
+
+    def []: (headers_key field) -> _ToS?
+    def []=: (headers_key field, headers_value value) -> void
+
+    def add: (headers_key field, string value) -> void
+    def delete: (headers_key field) -> void
+
+    def each: () { (headers_key, String) -> void } -> void
+            | () -> Enumerable[[headers_key, String], void]
+
+    def get: (headers_key field) -> Array[String]
+    def key?: (headers_key downcased_key) -> bool
+
+    def merge: (_Each[headers_key, headers_value] other) -> Headers
+
+    def same_headers?: (untyped headers) -> bool
+
+    def to_a: () -> Array[[headers_key, String]]
+    def inspect: () -> String 
+
+    private
+
+    def initialize: (headers?) -> untyped
+    def array_value: (headers_value) -> Array[String]
+    def downcased: (headers_key) -> String
+  end
+
+  type headers_key = String | Symbol
+  type headers_value = _ToS | Array[_ToS]
+  type headers_hash = Hash[headers_key, headers_value]
+  type headers_input = headers_hash | Array[[headers_key, string]]
+  type headers = Headers | headers_input
+end

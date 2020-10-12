@@ -1,0 +1,25 @@
+module HTTPX
+  module Plugins
+    module Compression
+      module GZIP
+        # def self.load_dependencies: (singleton(Session)) -> void
+        def self.configure: (*untyped) -> void
+
+        def self?.encoder: () -> Encoder
+        def self?.decoder: () -> Decoder
+
+        class Encoder
+          include _Deflater
+
+          @compressed_chunk: String
+          
+          private
+          
+          def initialize: () -> untyped
+          def write: (string) -> void
+          def compressed_chunk: () -> String
+        end
+      end
+    end
+  end
+end

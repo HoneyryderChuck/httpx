@@ -1,0 +1,32 @@
+module HTTPX::Transcoder
+  module Chunker
+    def self?.encode: (_Encoder chunks) -> Encoder
+
+    class Encoder
+      @raw: _Each[String, untyped]
+
+      include _Each[String, untyped]
+
+      private
+
+      def initalize: (_Encoder chunks) -> untyped
+    end
+
+    class Decoder
+      include _ToS
+      include _Each[String, untyped]
+
+      def finished?: () -> bool
+      def empty?: () -> bool
+      def <<: (string) -> void
+      def clear: () -> void
+
+      private
+
+      def initialize: (String, bool) -> untyped
+                    | (String) -> untyped
+
+      def nextstate: (Symbol) -> void
+    end
+  end
+end

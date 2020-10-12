@@ -1,0 +1,24 @@
+module HTTPX
+  class Buffer
+    include _ToS
+    include _ToStr
+
+    @buffer: String
+
+    attr_reader limit: Integer
+
+    def full?: () -> bool
+    def shift!: (Integer) -> void
+
+    # delegated
+    def <<: (string data) -> void
+    def empty?: () -> bool
+    def bytesize: () -> Integer
+    def clear: () -> void
+    def replace: (string) -> void
+
+    private
+
+    def initialize: (Integer limit) -> untyped
+  end
+end

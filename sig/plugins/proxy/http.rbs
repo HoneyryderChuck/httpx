@@ -1,0 +1,14 @@
+module HTTPX
+  module Plugins
+    module Proxy
+      module HTTP
+      
+        module ConnectionMethods
+          def __http_proxy_connect: () ->  void
+          def __http_on_connect: (top, Response) ->  void
+        end
+        
+      end
+    end
+  end
+end

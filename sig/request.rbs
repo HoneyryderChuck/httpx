@@ -1,0 +1,61 @@
+module HTTPX
+  class Request
+    include Callbacks
+
+    METHODS: Array[verb]
+    USER_AGENT: String
+
+    attr_reader verb: verb
+    attr_reader uri: URI::HTTP | URI::HTTPS
+    attr_reader headers: Headers
+    attr_reader body: Body
+    attr_reader state: Symbol
+    attr_reader options: Options
+    attr_reader response: Response?
+
+    def initialize: (verb | String, uri, ?options?) -> untyped
+
+    def interests: () -> (:r | :w)
+
+    def merge_headers: (Headers | Hash) -> void
+
+    def scheme: () -> ("http" | "https")
+
+    def response=: (Response response) -> void
+
+    def path: () -> String
+
+    def authority: () -> String
+
+    def origin: () -> String
+
+    def query: () -> String
+
+    def drain_body: () -> String?
+
+    def inspect: () -> String
+
+    def transition: (Symbol) -> void
+
+    def expects?: () -> bool
+
+    class Body
+      def initialize: (Headers, Options) -> untyped
+      def each: () { (String) -> void } -> void
+              | () -> Enumerable[String, void]
+
+      def empty?: () -> bool
+      def bytesize: () -> Integer
+      def stream: (Transcoder::_Encoder) -> bodyIO
+      def unbounded_body?: () -> bool
+      def chunked?: () -> bool
+      def chunk!: () -> void
+      def inspect: () -> String
+    end
+
+    class ProcIO
+      include _WritableStream
+      def initialize: (^(_ToS) -> void) -> untyped
+    end
+  end
+end

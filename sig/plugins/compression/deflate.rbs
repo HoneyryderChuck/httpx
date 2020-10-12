@@ -1,0 +1,17 @@
+module HTTPX
+  module Plugins
+    module Compression
+      module Deflate
+        # def self.load_dependencies: (singleton(Session)) -> void
+        def self.configure: (*untyped) -> void
+
+        def self?.encoder: () -> singleton(Encoder)
+        def self?.decoder: () -> Decoder
+
+        module Encoder
+          extend _Deflater
+        end
+      end
+    end
+  end
+end
