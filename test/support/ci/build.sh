@@ -28,6 +28,15 @@ if [[ "$RUBY_ENGINE" = "truffleruby" ]]; then
 fi
 
 bundle install --quiet
+
+if [[ ${RUBY_VERSION:0:1} = "3" ]]; then
+  export RUBYOPT='-rbundler/setup -rrbs/test/setup'
+  export RBS_TEST_RAISE=true
+  export RBS_TEST_LOGLEVEL=error
+  export RBS_TEST_OPT='-Isig -ruri -rjson'
+  export RBS_TEST_TARGET='HTTPX*'
+fi
+
 bundle exec rake test:ci
 
 RET=$?
