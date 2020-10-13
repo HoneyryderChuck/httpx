@@ -34,11 +34,11 @@ module HTTPX
       branch(default_options).wrap(&blk)
     end
 
-    def plugin(*args, **opts)
+    def plugin(*args, **opts, &blk)
       klass = is_a?(Session) ? self.class : Session
       klass = Class.new(klass)
       klass.instance_variable_set(:@default_options, klass.default_options.merge(default_options))
-      klass.plugin(*args, **opts).new
+      klass.plugin(*args, **opts, &blk).new
     end
 
     # deprecated
