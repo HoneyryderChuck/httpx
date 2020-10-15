@@ -76,6 +76,8 @@ module HTTPX
 
       defaults.merge!(options)
       defaults.each do |(k, v)|
+        next if v.nil?
+
         __send__(:"#{k}=", v)
       end
     end
