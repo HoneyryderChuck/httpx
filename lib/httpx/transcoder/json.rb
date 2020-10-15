@@ -16,8 +16,6 @@ module HTTPX::Transcoder
 
       def_delegator :@raw, :bytesize
 
-      def_delegator :@raw, :force_encoding
-
       def initialize(json)
         @raw = ::JSON.dump(json)
         @charset = @raw.encoding.name.downcase

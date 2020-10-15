@@ -14,8 +14,6 @@ module HTTPX::Transcoder
 
       def_delegator :@raw, :bytesize
 
-      def_delegator :@raw, :force_encoding
-
       def initialize(form)
         @raw = URI.encode_www_form(form)
       end

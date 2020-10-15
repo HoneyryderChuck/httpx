@@ -37,8 +37,6 @@ module HTTPX
 
     attr_reader :options, :response
 
-    def_delegator :@body, :<<
-
     def_delegator :@body, :empty?
 
     def_delegator :@body, :chunk!
