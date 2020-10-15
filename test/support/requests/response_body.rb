@@ -34,7 +34,7 @@ module Requests
 
     def test_http_response_buffer_to_custom
       uri = build_uri("/")
-      custom_body = Class.new do
+      custom_body = Class.new(HTTPX::Response::Body) do
         attr_reader :file
 
         def initialize(_response, **)
