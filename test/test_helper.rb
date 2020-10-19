@@ -18,6 +18,8 @@ end
 
 require "httpx"
 
+Dir[File.join(".", "lib", "httpx", "plugins", "**", "*.rb")].sort.each { |f| require f } if defined?(RBS)
+
 Dir[File.join(".", "test", "support", "*.rb")].sort.each { |f| require f }
 Dir[File.join(".", "test", "support", "**", "*.rb")].sort.each { |f| require f }
 
