@@ -71,6 +71,15 @@ module HTTPX
 
           return unless @headers.key?("content-encoding")
 
+          # remove encodings that we are able to decode
+          @headers["content-encoding"] = @headers.get("content-encoding") - @encodings
+
+          @_compressed_length = if @headers.key?("content-length")
+            @headers["content-length"].to_i
+          else
+            Float::INFINITY
+          end
+
           @_decoders = @headers.get("content-encoding").map do |encoding|
             next if encoding == "identity"
 
@@ -82,15 +91,6 @@ module HTTPX
             @encodings << encoding
             decoder
           end.compact
-
-          # remove encodings that we are able to decode
-          @headers["content-encoding"] = @headers.get("content-encoding") - @encodings
-
-          @_compressed_length = if @headers.key?("content-length")
-            @headers["content-length"].to_i
-          else
-            Float::INFINITY
-          end
         end
 
         def write(chunk)

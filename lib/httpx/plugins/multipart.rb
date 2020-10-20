@@ -30,10 +30,6 @@ module HTTPX
             @raw.content_length
           end
 
-          def force_encoding(*args)
-            @raw.to_s.force_encoding(*args)
-          end
-
           def to_str
             @raw.to_s
           end
