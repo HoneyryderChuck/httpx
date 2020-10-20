@@ -14,7 +14,7 @@ module HTTPX
           Compression.register "gzip", self
         end
 
-        class Encoder
+        class Deflater
           def initialize
             @compressed_chunk = "".b
           end
@@ -53,14 +53,32 @@ module HTTPX
           end
         end
 
-        module_function
+        class Inflater
+          def initialize(bytesize)
+            @inflater = Zlib::Inflate.new(32 + Zlib::MAX_WBITS)
+            @bytesize = bytesize
+            @buffer = nil
+          end
 
-        def encoder
-          Encoder.new
+          def inflate(chunk)
+            buffer = @inflater.inflate(chunk)
+            @bytesize -= chunk.bytesize
+            if @bytesize <= 0
+              buffer << @inflater.finish
+              @inflater.close
+            end
+            buffer
+          end
         end
 
-        def decoder
-          Decoder.new(Zlib::Inflate.new(32 + Zlib::MAX_WBITS))
+        module_function
+
+        def deflater
+          Deflater.new
+        end
+
+        def inflater(bytesize)
+          Inflater.new(bytesize)
         end
       end
     end

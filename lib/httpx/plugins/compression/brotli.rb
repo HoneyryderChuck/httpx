@@ -13,7 +13,7 @@ module HTTPX
           Compression.register "br", self
         end
 
-        module Encoder
+        module Deflater
           module_function
 
           def deflate(raw, buffer, chunk_size:)
@@ -25,28 +25,24 @@ module HTTPX
           end
         end
 
-        module BrotliWrapper
-          module_function
-
-          def inflate(text)
-            ::Brotli.inflate(text)
+        class Inflater
+          def initialize(bytesize)
+            @bytesize = bytesize
           end
 
-          def close; end
-
-          def finish
-            ""
+          def inflate(chunk)
+            ::Brotli.inflate(chunk)
           end
         end
 
         module_function
 
-        def encoder
-          Encoder
+        def deflater
+          Deflater
         end
 
-        def decoder
-          Decoder.new(BrotliWrapper)
+        def inflater(bytesize)
+          Inflater.new(bytesize)
         end
       end
     end

@@ -55,7 +55,7 @@ module HTTPX
           @headers.get("content-encoding").each do |encoding|
             next if encoding == "identity"
 
-            @body = Encoder.new(@body, Compression.registry(encoding).encoder)
+            @body = Encoder.new(@body, Compression.registry(encoding).deflater)
           end
           @headers["content-length"] = @body.bytesize unless chunked?
         end
@@ -74,47 +74,40 @@ module HTTPX
           # remove encodings that we are able to decode
           @headers["content-encoding"] = @headers.get("content-encoding") - @encodings
 
-          @_compressed_length = if @headers.key?("content-length")
+          compressed_length = if @headers.key?("content-length")
             @headers["content-length"].to_i
           else
             Float::INFINITY
           end
 
-          @_decoders = @headers.get("content-encoding").map do |encoding|
+          @_inflaters = @headers.get("content-encoding").map do |encoding|
             next if encoding == "identity"
 
-            decoder = Compression.registry(encoding).decoder
+            inflater = Compression.registry(encoding).inflater(compressed_length)
             # do not uncompress if there is no decoder available. In fact, we can't reliably
             # continue decompressing beyond that, so ignore.
-            break unless decoder
+            break unless inflater
 
             @encodings << encoding
-            decoder
+            inflater
           end.compact
+
+          # this can happen if the only declared encoding is "identity"
+          remove_instance_variable(:@_inflaters) if @_inflaters.empty?
         end
 
         def write(chunk)
-          return super unless defined?(@_compressed_length)
+          return super unless defined?(@_inflaters)
 
-          @_compressed_length -= chunk.bytesize
           chunk = decompress(chunk)
           super(chunk)
-        end
-
-        def close
-          super
-
-          return unless defined?(@_decoders)
-
-          @_decoders.each(&:close)
         end
 
         private
 
         def decompress(buffer)
-          @_decoders.reverse_each do |decoder|
-            buffer = decoder.decode(buffer)
-            buffer << decoder.finish if @_compressed_length <= 0
+          @_inflaters.reverse_each do |inflater|
+            buffer = inflater.inflate(buffer)
           end
           buffer
         end
@@ -148,11 +141,6 @@ module HTTPX
           @buffer.read
         end
 
-        def close
-          @buffer.close
-          @body.close
-        end
-
         private
 
         def deflate(&blk)
@@ -160,22 +148,6 @@ module HTTPX
 
           @body.rewind
           @deflater.deflate(@body, @buffer, chunk_size: 16_384, &blk)
-        end
-      end
-
-      class Decoder
-        extend Forwardable
-
-        def_delegator :@inflater, :finish
-
-        def_delegator :@inflater, :close
-
-        def initialize(inflater)
-          @inflater = inflater
-        end
-
-        def decode(chunk)
-          @inflater.inflate(chunk)
         end
       end
     end

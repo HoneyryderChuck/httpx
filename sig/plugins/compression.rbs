@@ -12,6 +12,8 @@ module HTTPX
 
       interface _Inflater
         def inflate: (string) -> String
+
+        def initialize: (Numeric bytesize) -> untyped
       end
        
       # def self.load_dependencies: (singleton(Session)) -> void
@@ -27,11 +29,11 @@ module HTTPX
 
       module ResponseBodyMethods
         @encodings: Array[String]
-        @_decoders: Array[_Decoder]
+        @_deflaters: Array[_Decoder]
 
         private
 
-        def decompress: (String) -> String
+        def decompress: (string) -> String
       end
 
       class Encoder
@@ -48,16 +50,6 @@ module HTTPX
                    | () { (String) -> void } -> void
       end
 
-      class Decoder
-        include Transcoder::_Decoder
-
-        def finish: () -> String
-        def close: () -> void
-
-        private
-
-        def initialize: (_Inflater inflater) -> untyped
-      end
     end
   end
 end

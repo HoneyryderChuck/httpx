@@ -5,10 +5,10 @@ module HTTPX
         # def self.load_dependencies: (singleton(Session)) -> void
         def self.configure: (*untyped) -> void
 
-        def self?.encoder: () -> singleton(Encoder)
-        def self?.decoder: () -> Decoder
+        def self?.deflater: () -> _Deflater
+        def self?.inflater: (Numeric bytesize) -> GZIP::Inflater
 
-        module Encoder
+        module Deflater
           extend _Deflater
         end
       end

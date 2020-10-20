@@ -5,15 +5,15 @@ module HTTPX
         # def self.load_dependencies: (singleton(Session)) -> void
         def self.configure: (*untyped) -> void
 
-        def self?.encoder: () -> singleton(Encoder)
-        def self?.decoder: () -> Decoder
+        def self?.deflater: () -> _Deflater
+        def self?.decoder: (Numeric bytesize) -> Inflater
 
-        module Encoder
+        module Deflater
           extend _Deflater
         end
 
-        module BrotliWrapper
-          extend _Inflater
+        class Inflater
+          include _Inflater
         end
       end
     end
