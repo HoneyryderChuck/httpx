@@ -9,10 +9,9 @@ module HTTPX
 
       attr_reader :status_code, :http_version, :headers
 
-      def initialize(observer, header_separator: ":")
+      def initialize(observer)
         @observer = observer
         @state = :idle
-        @header_separator = header_separator
         @buffer = "".b
         @headers = {}
       end
@@ -94,7 +93,7 @@ module HTTPX
             end
             return
           end
-          separator_index = line.index(@header_separator)
+          separator_index = line.index(":")
           raise Error, "wrong header format" unless separator_index
 
           key = line[0..separator_index - 1]
