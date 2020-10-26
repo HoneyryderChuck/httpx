@@ -7,8 +7,6 @@ module HTTPX
 
         @raw: bodyIO
 
-        def content_type: () -> String
-
         private
 
         def initialize: (untyped body ) -> untyped

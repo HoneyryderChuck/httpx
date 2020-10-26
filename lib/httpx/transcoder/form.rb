@@ -21,10 +21,6 @@ module HTTPX::Transcoder
       def content_type
         "application/x-www-form-urlencoded"
       end
-
-      def to_str
-        @raw.to_s
-      end
     end
 
     def encode(form)

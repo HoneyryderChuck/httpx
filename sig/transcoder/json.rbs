@@ -5,9 +5,6 @@ module HTTPX::Transcoder
     class Encoder
       include _Encoder
       include _ToS
-      include _ToStr
-
-      def content_type: () -> String
 
       private
 

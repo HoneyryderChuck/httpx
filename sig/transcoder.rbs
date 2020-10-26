@@ -6,6 +6,7 @@ module HTTPX
 
     interface _Encoder
       def bytesize: () -> Integer
+      def content_type: () -> String
     end
 
     interface _Decoder

@@ -29,10 +29,6 @@ module HTTPX
           def bytesize
             @raw.content_length
           end
-
-          def to_str
-            @raw.to_s
-          end
         end
 
         def encode(form)

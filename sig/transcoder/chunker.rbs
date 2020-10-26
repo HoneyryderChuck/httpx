@@ -9,7 +9,7 @@ module HTTPX::Transcoder
 
       private
 
-      def initalize: (_Encoder chunks) -> untyped
+      def initialize: (_Encoder chunks) -> untyped
     end
 
     class Decoder

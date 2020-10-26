@@ -10,8 +10,6 @@ module HTTPX::Transcoder
     class Encoder
       extend Forwardable
 
-      def_delegator :@raw, :to_str
-
       def_delegator :@raw, :to_s
 
       def_delegator :@raw, :bytesize

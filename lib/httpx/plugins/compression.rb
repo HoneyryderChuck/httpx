@@ -114,7 +114,10 @@ module HTTPX
       end
 
       class Encoder
+        attr_reader :content_type
+
         def initialize(body, deflater)
+          @content_type = body.content_type
           @body = body.respond_to?(:read) ? body : StringIO.new(body.to_s)
           @buffer = StringIO.new("".b, File::RDWR)
           @deflater = deflater
@@ -123,22 +126,15 @@ module HTTPX
         def each(&blk)
           return enum_for(__method__) unless block_given?
 
-          unless @buffer.size.zero?
-            @buffer.rewind
-            return @buffer.each(&blk)
-          end
-          deflate(&blk)
+          return deflate(&blk) if @buffer.size.zero?
+
+          @buffer.rewind
+          @buffer.each(&blk)
         end
 
         def bytesize
           deflate
           @buffer.size
-        end
-
-        def to_s
-          deflate
-          @buffer.rewind
-          @buffer.read
         end
 
         private

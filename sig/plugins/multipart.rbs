@@ -8,10 +8,7 @@ module HTTPX
       class Encoder
         include Transcoder::_Encoder
         include _ToS
-        include _ToStr
         include _ReadableStream
-
-        def content_type: () -> String
 
         private
 
