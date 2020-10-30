@@ -12,9 +12,8 @@ github:
 pagination:
   enabled: true
   debug: true
-  per_page: 0
+  per_page: 5
   sort_reverse: true
-  limit: 0
 
 include:
   - wiki
