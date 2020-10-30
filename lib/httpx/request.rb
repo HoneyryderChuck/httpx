@@ -37,15 +37,13 @@ module HTTPX
 
     attr_reader :options, :response
 
-    def_delegator :@body, :<<
-
     def_delegator :@body, :empty?
 
     def_delegator :@body, :chunk!
 
     def initialize(verb, uri, options = {})
       @verb    = verb.to_s.downcase.to_sym
-      @uri     = URI(uri.to_s)
+      @uri     = URI(uri)
       @options = Options.new(options)
 
       raise(Error, "unknown method: #{verb}") unless METHODS.include?(@verb)
@@ -64,7 +62,6 @@ module HTTPX
       :w
     end
 
-    # :nocov:
     if RUBY_VERSION < "2.2"
       # rubocop: disable Lint/UriEscapeUnescape:
       def initialize_with_escape(verb, uri, options = {})
@@ -74,7 +71,6 @@ module HTTPX
       alias_method :initialize, :initialize_with_escape
       # rubocop: enable Lint/UriEscapeUnescape:
     end
-    # :nocov:
 
     def merge_headers(h)
       @headers = @headers.merge(h)
@@ -180,19 +176,13 @@ module HTTPX
         return true if @body.nil?
         return false if chunked?
 
-        bytesize.zero?
+        @body.bytesize.zero?
       end
 
       def bytesize
         return 0 if @body.nil?
 
-        if @body.respond_to?(:bytesize)
-          @body.bytesize
-        elsif @body.respond_to?(:size)
-          @body.size
-        else
-          raise Error, "cannot determine size of body: #{@body.inspect}"
-        end
+        @body.bytesize
       end
 
       def stream(body)

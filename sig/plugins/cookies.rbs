@@ -1,0 +1,40 @@
+module HTTPX
+  module Plugins
+    module Cookies
+      type store_value = String | Array[HTTP::Cookie] | Hash[_ToS, _ToS]
+      type cookies_value = Store | store_value
+
+      interface _CookieOptions
+        def cookies: () -> Store?
+        def cookies=: (cookies_value) -> Store
+        def with_cookies: (cookies_value) -> instance
+      end
+ 
+      def self.extra_options: (Options) -> (Options & _CookieOptions)
+
+      module InstanceMethods
+        def cookies: () -> Store
+      end
+
+      module HeadersMethods
+        def set_cookie: (HTTP::CookieJar?) -> void
+      end
+
+      class Store
+      	@store: Hash[string, HTTP::CookieJar]
+      	@default_cookies: Array[HTTP::Cookie]?
+
+        def set: (string origin, string? cookies) -> void
+        # def []: (URI::HTTP | URI::HTTPS) -> HTTP::CookieJar
+        def ==: (untyped other) -> bool
+
+        private
+
+        def initialize: (store_value?) -> untyped
+      end
+    end
+
+    type sessionCookies = Session & Plugins::Cookies::InstanceMethods
+    type headersCookies = Headers & Plugins::Cookies::HeadersMethods
+  end
+end

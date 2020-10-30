@@ -1,0 +1,47 @@
+module HTTPX
+  HTTPProxyError: singleton(Error)
+
+  module Plugins
+    module Proxy
+      Error: singleton(HTTPProxyError)
+      PROXY_ERRORS: Array[singleton(StandardError)]
+
+      class Parameters
+        attr_reader uri: URI::Generic
+        attr_reader username: string?
+        attr_reader password: string?
+
+        def authenticated?: () -> bool
+        def token_authentication: () -> String?
+
+        def ==: (untyped) -> bool
+
+        private
+
+        def initialize: (uri: uri, ?username: string, ?password: string) -> untyped
+      end
+
+      # def self.configure: (singleton(Session)) -> void
+      
+      type proxyParam = Parameters | Hash
+      
+      interface _ProxyOptions
+        def proxy: () -> proxyParam?
+        def proxy=: (Parameters | _ToHash) -> proxyParam
+        def with_proxy: (Parameters | _ToHash) -> instance
+      end
+ 
+      def self.extra_options: (Options) -> (Options & _ProxyOptions)
+
+      module InstanceMethods
+        private
+
+        def proxy_uris: (uri, Options & _ProxyOptions) -> { uri: (URI | string), username: string, password: string }
+                      | (uri, Options & _ProxyOptions) -> { uri: (URI | string) }
+                      | (uri, Options & _ProxyOptions) -> nil
+      end
+    end
+
+    type sessionProxy = Session & Plugins::Proxy::InstanceMethods
+  end
+end

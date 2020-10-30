@@ -1,0 +1,14 @@
+module HTTPX
+  interface _Callable
+    def call: (*untyped) -> void
+  end
+
+  module Callbacks
+    def on: (Symbol) { (*untyped) -> void } -> void
+    def once: (Symbol) { (*untyped) -> void } -> void
+    def emit: (Symbol, *untyped) -> void
+
+    def callbacks: () -> Hash[Symbol, Array[_Callable]]
+                  | (Symbol) -> Array[_Callable]
+  end
+end

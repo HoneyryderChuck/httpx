@@ -1,0 +1,4 @@
+module HTTPX
+  class Connection::HTTP2
+  end
+end

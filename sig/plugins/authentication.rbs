@@ -1,0 +1,11 @@
+module HTTPX
+  module Plugins
+    module Authentication
+      module InstanceMethods
+        def authentication: (string token) -> instance
+      end
+    end
+
+    type sessionAuthentication = Session & Plugins::Authentication::InstanceMethods
+  end
+end

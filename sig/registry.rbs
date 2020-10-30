@@ -1,0 +1,9 @@
+module HTTPX::Registry[T, V]
+  # type registrable = Symbol | String | Class
+
+  def self.registry: (T tag) -> Class
+                   | () -> Hash[K, V]
+  def self.register: (T tag,  V handler) -> void
+
+  def registry: (?T tag) -> V
+end

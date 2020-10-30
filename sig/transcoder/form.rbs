@@ -1,0 +1,16 @@
+module HTTPX::Transcoder
+  type urlencoded_input = Enumerable[[string, string], untyped]
+
+  module Form
+    def self?.encode: (urlencoded_input form) -> Encoder
+
+    class Encoder
+      include _Encoder
+      include _ToS
+
+      private
+
+      def initalize: (urlencoded_input form) -> untyped
+    end
+  end
+end

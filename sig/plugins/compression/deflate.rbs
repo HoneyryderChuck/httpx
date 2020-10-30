@@ -1,0 +1,17 @@
+module HTTPX
+  module Plugins
+    module Compression
+      module Deflate
+        # def self.load_dependencies: (singleton(Session)) -> void
+        def self.configure: (*untyped) -> void
+
+        def self?.deflater: () -> _Deflater
+        def self?.inflater: (Numeric bytesize) -> GZIP::Inflater
+
+        module Deflater
+          extend _Deflater
+        end
+      end
+    end
+  end
+end

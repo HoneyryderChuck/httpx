@@ -1,0 +1,19 @@
+module HTTPX
+  module Plugins
+    module Multipart
+      # def self.load_dependencies: (singleton(Session)) -> void
+      def self.configure: (*untyped) -> void
+      def self?.encode: (untyped) -> Encoder
+
+      class Encoder
+        include Transcoder::_Encoder
+        include _ToS
+        include _ReadableStream
+
+        private
+
+        def initalize: (Hash[Symbol | string, HTTP::FormData::Part | string] multipart_data) -> untyped
+      end
+    end
+  end
+end

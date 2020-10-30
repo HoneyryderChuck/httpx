@@ -5,6 +5,24 @@ require_relative "test_helper"
 class HeadersTest < Minitest::Test
   include HTTPX
 
+  def test_headers_clone
+    h1 = Headers.new
+    h2 = h1.clone
+    h2.instance_variables.each do |ivar|
+      assert !h1.instance_variable_get(ivar).nil?
+      assert !h1.instance_variable_get(ivar).equal?(h2.instance_variable_get(ivar))
+    end
+  end
+
+  def test_headers_dup
+    h1 = Headers.new
+    h2 = h1.dup
+    h2.instance_variables.each do |ivar|
+      assert !h1.instance_variable_get(ivar).nil?
+      assert !h1.instance_variable_get(ivar).equal?(h2.instance_variable_get(ivar))
+    end
+  end
+
   def test_headers_set
     h1 = Headers.new
     assert h1["accept"].nil?, "unexpected header value"

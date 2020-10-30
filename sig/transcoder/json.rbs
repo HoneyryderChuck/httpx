@@ -1,0 +1,14 @@
+module HTTPX::Transcoder
+  module JSON
+    def self?.encode: (_ToJson json) -> Encoder
+
+    class Encoder
+      include _Encoder
+      include _ToS
+
+      private
+
+      def initalize: (_ToJson json) -> untyped
+    end
+  end
+end

@@ -1,0 +1,87 @@
+module HTTPX
+  interface _Response
+    def raise_for_status: () -> void 
+  end
+
+  class Response
+    include _Response
+    include _ToS
+    include _ReadableStream
+
+    attr_reader status: int
+    attr_reader headers: headers
+    attr_reader body: Body
+    attr_reader version: String
+
+    @options: Options
+    @request: Request
+
+    def copy_to: (_ToPath | _WritableStream destination) -> void
+    def close: () -> void
+    def uri: () -> uri
+
+    def merge_headers: (headers) -> void
+    def bodyless?: () -> bool
+    def content_type: () -> ContentType
+    def complete?: () -> bool
+
+    private
+
+    def initialize: (Request, _ToS, String, headers) -> untyped
+    def no_data?: () -> bool
+
+    class Body
+      include _WritableStream
+      include _ReadableStream
+      include _ToS
+      include _ToStr
+
+      @state: :idle | :memory | :buffer
+
+      def each: () { (String) -> void } -> void
+              | () -> Enumerable[String, void]
+
+      def bytesize: () -> Integer
+      def empty?: () -> bool
+      def copy_to: (_ToPath | _WritableStream destination) -> void
+      def close: () -> void
+
+      private
+
+      def initialize: (Response, ?threshold_size: Integer, ?window_size: Integer) -> untyped
+      def rewind: () -> void
+      def transition: () -> void
+    end
+  end
+
+  class ContentType
+    attr_reader mime_type: String?
+    attr_reader charset: String?
+
+    def self.parse: (_ToS) -> instance
+    def self.mime_type: (_ToS) -> String?
+    def self.charset: (_ToS) -> String?
+
+    private
+
+    def initialize: (String?, String?) -> untyped
+  end
+
+  class ErrorResponse
+    include _Response
+    include Loggable
+
+    @options: Options
+
+    attr_reader request: Request
+    attr_reader error: Exception
+
+    def status: () -> (Integer | _ToS)
+
+    private
+
+    def initialize: (Request, Exception, options) -> untyped
+  end
+
+  type response = Response | ErrorResponse
+end

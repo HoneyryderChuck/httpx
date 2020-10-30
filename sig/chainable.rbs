@@ -1,0 +1,37 @@
+module HTTPX
+  module Chainable
+    def request: (*untyped, **untyped) -> (response | Array[response])
+    def accept: (String) -> Session
+    def wrap: () { (Session) -> void } -> void
+            | () -> void
+
+    def with: (options) -> Session
+            | (options) { (Session) -> Session} -> Session
+
+
+
+
+    def plugin: (:authentication) -> Plugins::sessionAuthentication
+              | (:basic_authentication) -> Plugins::sessionBasicAuthentication
+              | (:digest_authentication) -> Plugins::sessionDigestAuthentication
+              | (:compression) -> Session
+              | (:cookies) -> Plugins::sessionCookies
+              | (:expect) -> Session
+              | (:follow_redirects) -> Plugins::sessionFollowRedirects
+              | (:h2c) -> Plugins::sessionH2C
+              | (:multipart) -> Session
+              | (:persistent) -> Plugins::sessionPersistent
+              | (:proxy) -> Plugins::sessionProxy
+              | (:push_promise) -> Plugins::sessionPushPromise
+              | (:retries) -> Plugins::sessionRetries
+              | (:stream) -> Plugins::sessionStream
+              | (Symbol | Module, ?options?) { (Class) -> void } -> Session
+              | (Symbol | Module, ?options?) -> Session
+
+    private
+
+    def default_options: () -> Options
+    def branch: (options) -> Session
+              | (options) { (Session) -> Session } -> Session
+  end
+end

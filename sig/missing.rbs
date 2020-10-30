@@ -1,0 +1,12 @@
+# defining these here, as I don't think there's hope of http-cookie to ever become type-friendly
+module HTTP
+  class Cookie
+  end
+  class CookieJar
+  end
+end
+
+module HTTP2Next
+  class Stream
+  end
+end

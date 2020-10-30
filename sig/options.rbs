@@ -1,0 +1,118 @@
+module HTTPX
+  class Options
+    # include _ToHash
+
+    WINDOW_SIZE: Integer
+    MAX_BODY_THRESHOLD_SIZE: Integer
+
+    def self.new: (options) -> instance
+                | () -> instance
+
+    # headers
+    attr_reader headers: Headers?
+    def headers=: (headers) -> void
+    def with_headers: (headers) -> instance 
+
+    # timeout
+    attr_reader timeout: Timeout?
+    def timeout=: (Hash[Symbol, untyped] | Timeout) -> void
+    def with_timeout: (Hash[Symbol, untyped] | Timeout) -> instance
+
+    # max_concurrent_requests
+    attr_reader max_concurrent_requests: Integer?
+    def max_concurrent_requests=: (Integer) -> void
+    def with_max_concurrent_requests: (Integer) -> instance
+
+    # max_requests
+    attr_reader max_requests: Integer?
+    def max_requests=: (Integer) -> void
+    def with_max_requests: (Integer) -> instance
+
+    # window_size
+    attr_reader window_size: int?
+    def window_size=: (int) -> void
+    def with_window_size: (int) -> instance
+
+    # body_threshold_size
+    attr_reader body_threshold_size: int?
+    def body_threshold_size=: (int) -> void
+    def with_body_threshold_size: (int) -> instance
+
+    # transport
+    attr_reader transport: _ToS?
+    def transport=: (_ToS) -> void
+    def with_transport: (_ToS) -> instance
+
+    # transport_options
+    attr_reader transport_options: Hash[untyped, untyped]?
+    def transport_options=: (Hash[untyped, untyped]) -> void
+    def with_transport_options: (Hash[untyped, untyped]) -> instance
+
+    # params
+    attr_reader params: Transcoder::urlencoded_input?
+    def params=: (Transcoder::urlencoded_input) -> void
+    def with_params: (Transcoder::urlencoded_input) -> instance
+
+    # form
+    attr_reader form: Transcoder::urlencoded_input?
+    def form=: (Transcoder::urlencoded_input) -> void
+    def with_form: (Transcoder::urlencoded_input) -> instance
+
+    # json
+    attr_reader json: _ToJson?
+    def json=: (_ToJson) -> void
+    def with_json: (_ToJson) -> instance
+
+    # body
+    attr_reader body: bodyIO?
+    def body=: (bodyIO) -> void
+    def with_body: (bodyIO) -> instance
+
+    # ssl
+
+    # http2_settings
+
+    # request_class response_class headers_class request_body_class
+    # response_body_class connection_class
+    # resolver_class resolver_options
+
+    # request_class
+    # attr_reader request_class: singleton(Request)
+    # def request_class=: (singleton(Request)) -> void
+    # def with_request_class: (singleton(Request)) -> instance
+
+    # io
+    attr_reader io: _ToIO?
+    def io=: (_ToIO) -> void
+    def with_io: (_ToIO) -> instance
+
+    # fallback_protocol
+    attr_reader fallback_protocol: String?
+    def fallback_protocol=: (String) -> void
+    def with_fallback_protocol: (String) -> instance
+
+    # debug
+    attr_reader debug: _IOLogger?
+    def debug=: (_IOLogger) -> void
+    def with_debug: (_IOLogger) -> instance
+
+    # debug_level
+    attr_reader debug_level: Integer?
+    def debug_level=: (Integer) -> void
+    def with_debug_level: (Integer) -> instance
+
+    # persistent
+    attr_reader persistent: bool?
+    def persistent=: (bool) -> void
+    def with_persistent: (bool) -> instance
+
+    def ==: (untyped other) -> bool
+    def merge: (_ToHash other) -> instance
+
+    private
+
+    def initialize: (options) -> untyped
+  end
+
+  type options = Options | Hash[Symbol | String, untyped]
+end

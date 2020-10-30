@@ -1,0 +1,18 @@
+module HTTPX
+  module Transcoder
+    module Body
+      class Encoder
+        include _Encoder
+        include _ToS
+
+        @raw: bodyIO
+
+        private
+
+        def initialize: (untyped body ) -> untyped
+      end
+
+      def self?.encode: (bodyIO body) -> Encoder
+    end
+  end
+end

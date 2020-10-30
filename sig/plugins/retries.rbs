@@ -1,0 +1,48 @@
+module HTTPX
+  module Plugins
+    module Retries
+      MAX_RETRIES: Integer
+      IDEMPOTENT_METHODS: Array[verb]
+      RETRYABLE_ERRORS: Array[singleton(StandardError)]
+      
+      interface _RetryCallback
+        def call: (response) -> bool?
+      end
+
+      interface _RetriesOptions
+        def retry_after: () -> Integer?
+        def retry_after=: (int) -> Integer
+        def with_retry_after: (int) -> instance
+
+        def max_retries: () -> Integer?
+        def max_retries=: (int) -> Integer
+        def with_max_retries: (int) -> instance
+
+        def retry_change_requests: () -> bool?
+        def retry_change_requests=: (bool) -> bool
+        def with_retry_change_requests: (bool) -> instance
+
+        def retry_on: () -> _RetryCallback?
+        def retry_on=: (_RetryCallback) -> _RetryCallback
+        def with_retry_on: (_RetryCallback) -> instance
+      end
+ 
+      def self.extra_options: (Options) -> (Options & _RetriesOptions)
+
+      module InstanceMethods
+        def max_retries: (int) -> instance
+
+        private
+
+        def __repeatable_request?: (Request, Options) -> bool
+        def __retryable_error?: (_Exception) -> bool
+      end
+
+      module RequestMethods
+      	def retries: () -> Integer
+      end
+    end
+
+    type sessionRetries = Session & Plugins::Retries::InstanceMethods
+  end
+end

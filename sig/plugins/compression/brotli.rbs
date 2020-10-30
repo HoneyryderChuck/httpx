@@ -1,0 +1,21 @@
+module HTTPX
+  module Plugins
+    module Compression
+      module Brotli
+        # def self.load_dependencies: (singleton(Session)) -> void
+        def self.configure: (*untyped) -> void
+
+        def self?.deflater: () -> _Deflater
+        def self?.decoder: (Numeric bytesize) -> Inflater
+
+        module Deflater
+          extend _Deflater
+        end
+
+        class Inflater
+          include _Inflater
+        end
+      end
+    end
+  end
+end

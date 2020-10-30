@@ -1,0 +1,50 @@
+module HTTPX
+  module Parser
+    type parsed_headers = Hash[String, Array[String]]
+
+    interface _HTTP1Events
+
+      def on_start: () -> void
+      def on_headers: (parsed_headers) -> void
+      def on_trailers: (parsed_headers) -> void
+      def on_data: (String) -> void
+      def on_complete: () -> void
+    end
+
+    class HTTP1
+      VERSIONS: Array[String]
+
+      def <<: (String chunk) -> void
+
+      def headers: () -> parsed_headers
+
+      def http_version: () -> Array[1 | 0]
+
+      def reset!: () -> void
+
+      def status_code: () -> Integer
+
+      def upgrade?: () -> bool
+
+      def upgrade_data: () -> String
+
+      private
+
+      def initialize: (_HTTP1Events observer) -> untyped
+
+      def nextstate: (Symbol state) -> void
+
+      def no_more_data?: () -> bool
+
+      def parse: () -> void
+
+      def parse_data: () -> void
+
+      def parse_headers: () -> void
+
+      def parse_headline: () -> void
+
+      def prepare_data: (parsed_headers headers) -> void
+    end
+  end
+end

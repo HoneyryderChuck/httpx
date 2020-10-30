@@ -1,0 +1,16 @@
+module HTTPX
+  type bodyIO = _ReadableStream | _Each[String, untyped] | _ToS
+
+  module Transcoder
+    extend HTTPX::Registry[String, Class]
+
+    interface _Encoder
+      def bytesize: () -> Integer
+      def content_type: () -> String
+    end
+
+    interface _Decoder
+      def decode: (string) -> String
+    end
+  end
+end

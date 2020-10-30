@@ -1,0 +1,33 @@
+module HTTPX
+  Socks4Error: singleton(Error)
+
+  module Plugins
+    module Proxy
+      module Socks4
+      
+        module ConnectionMethods
+          def __socks4_proxy_connect: () ->  void
+          def __socks4_on_packet: (String packet) ->  void
+          def on_socks4_error: (string) -> void
+        end
+        
+        class SocksParser
+          include Callbacks
+
+          def close: () -> void
+          def consume: (*untyped) -> void
+          def empty: () -> bool
+          def <<: (string) -> void
+
+          private
+
+          def initialize: (Buffer buffer, Options) -> untyped
+        end
+
+        module Packet
+          def self?.connect: (Parameters, uri) -> String
+        end
+      end
+    end
+  end
+end

@@ -35,6 +35,11 @@ group :test do
 
   gem "oga"
   gem "faraday"
+  gem "unf", git: "https://github.com/knu/ruby-unf.git", branch: "master"
+
+  if RUBY_VERSION >= "3.0"
+    gem "rbs", git: "https://github.com/ruby/rbs.git", branch: "master"
+  end
 end
 
 group :coverage do

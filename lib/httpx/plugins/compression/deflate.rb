@@ -4,16 +4,17 @@ module HTTPX
   module Plugins
     module Compression
       module Deflate
-        def self.load_dependencies(*)
+        def self.load_dependencies(klass)
           require "stringio"
           require "zlib"
+          klass.plugin(:"compression/gzip")
         end
 
         def self.configure(*)
           Compression.register "deflate", self
         end
 
-        module Encoder
+        module Deflater
           module_function
 
           def deflate(raw, buffer, chunk_size:)
@@ -36,12 +37,12 @@ module HTTPX
 
         module_function
 
-        def encoder
-          Encoder
+        def deflater
+          Deflater
         end
 
-        def decoder
-          Decoder.new(Zlib::Inflate.new(32 + Zlib::MAX_WBITS))
+        def inflater(bytesize)
+          GZIP::Inflater.new(bytesize)
         end
       end
     end

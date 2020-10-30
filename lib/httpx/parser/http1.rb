@@ -9,10 +9,9 @@ module HTTPX
 
       attr_reader :status_code, :http_version, :headers
 
-      def initialize(observer, header_separator: ":")
+      def initialize(observer)
         @observer = observer
         @state = :idle
-        @header_separator = header_separator
         @buffer = "".b
         @headers = {}
       end
@@ -40,18 +39,18 @@ module HTTPX
       private
 
       def parse
-        state = @state
-        case @state
-        when :idle
-          parse_headline
-        when :headers
-          parse_headers
-        when :trailers
-          parse_headers
-        when :data
-          parse_data
+        loop do
+          state = @state
+          case @state
+          when :idle
+            parse_headline
+          when :headers, :trailers
+            parse_headers
+          when :data
+            parse_data
+          end
+          return if @buffer.empty? || state == @state
         end
-        parse if !@buffer.empty? && state != @state
       end
 
       def parse_headline
@@ -91,12 +90,10 @@ module HTTPX
               @observer.on_trailers(headers)
               headers.clear
               nextstate(:complete)
-            else
-              raise Error, "wrong header format"
             end
             return
           end
-          separator_index = line.index(@header_separator)
+          separator_index = line.index(":")
           raise Error, "wrong header format" unless separator_index
 
           key = line[0..separator_index - 1]

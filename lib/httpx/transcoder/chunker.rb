@@ -10,8 +10,6 @@ module HTTPX::Transcoder
     class Encoder
       extend Forwardable
 
-      def_delegator :@raw, :readpartial
-
       def initialize(body)
         @raw = body
       end

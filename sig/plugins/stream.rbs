@@ -1,0 +1,18 @@
+module HTTPX
+  module Plugins
+    module Stream
+      # def self.load_dependencies: (singleton(Session)) -> void
+      
+      module InstanceMethods
+        def stream: () -> instance
+      end
+
+      module ResponseMethods
+        def complete?: () -> bool
+        def stream?: () -> bool
+      end
+    end
+
+    type sessionStream = Session & Plugins::H2C::InstanceMethods
+  end
+end

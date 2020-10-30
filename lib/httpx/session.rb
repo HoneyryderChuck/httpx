@@ -135,10 +135,10 @@ module HTTPX
                    reqs.map do |verb, uri, opts = EMPTY_HASH|
                      build_request(verb, uri, request_options.merge(opts))
                    end
-                 when 2, 3
+                 when 2
                    verb, uris = args
                    if uris.respond_to?(:each)
-                     uris.map do |uri, **opts|
+                     uris.enum_for(:each).map do |uri, opts = EMPTY_HASH|
                        build_request(verb, uri, request_options.merge(opts))
                      end
                    else
