@@ -50,7 +50,7 @@ module HTTPX
       @timers.cancel
       connections = connections.reject(&:inflight?)
       connections.each(&:close)
-      next_tick until connections.none? { |c| @connections.include?(c) }
+      next_tick until connections.none? { |c| c.state != :idle && @connections.include?(c) }
       @resolvers.each_value do |resolver|
         resolver.close unless resolver.closed?
       end if @connections.empty?
