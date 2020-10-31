@@ -25,6 +25,7 @@ class HTTPSTest < Minitest::Test
   include Plugins::Retries
   include Plugins::Multipart
   include Plugins::Expect
+  include Plugins::RateLimiter
 
   def test_connection_coalescing
     coalesced_origin = "https://#{ENV["HTTPBIN_COALESCING_HOST"]}"
