@@ -102,28 +102,6 @@ module Requests
       def verify_error_response(response)
         assert response.is_a?(HTTPX::ErrorResponse), "expected an error response, instead got #{response.inspect}"
       end
-
-      module RequestInspector
-        module InstanceMethods
-          attr_reader :calls
-          def initialize(*args)
-            super
-            # we're comparing against max-retries + 1, because the calls increment will happen
-            # also in the last call, where the request is not going to be retried.
-            @calls = -1
-          end
-
-          def reset
-            @calls = -1
-          end
-
-          def fetch_response(*)
-            response = super
-            @calls += 1 if response
-            response
-          end
-        end
-      end
     end
   end
 end
