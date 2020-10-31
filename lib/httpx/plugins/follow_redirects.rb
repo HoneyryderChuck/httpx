@@ -59,8 +59,26 @@ module HTTPX
             return ErrorResponse.new(request, error, options)
           end
 
-          connection = find_connection(retry_request, connections, options)
-          connection.send(retry_request)
+          retry_after = response.headers["retry-after"]
+
+          if retry_after
+            # Servers send the "Retry-After" header field to indicate how long the
+            # user agent ought to wait before making a follow-up request.
+            # When sent with any 3xx (Redirection) response, Retry-After indicates
+            # the minimum time that the user agent is asked to wait before issuing
+            # the redirected request.
+            #
+            retry_after = Utils.parse_retry_after(retry_after)
+
+            log { "redirecting after #{retry_after} secs..." }
+            pool.after(retry_after) do
+              connection = find_connection(retry_request, connections, options)
+              connection.send(retry_request)
+            end
+          else
+            connection = find_connection(retry_request, connections, options)
+            connection.send(retry_request)
+          end
           nil
         end
 

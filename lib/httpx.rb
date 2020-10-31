@@ -5,6 +5,7 @@ require "httpx/version"
 require "httpx/extensions"
 
 require "httpx/errors"
+require "httpx/utils"
 require "httpx/altsvc"
 require "httpx/callbacks"
 require "httpx/loggable"

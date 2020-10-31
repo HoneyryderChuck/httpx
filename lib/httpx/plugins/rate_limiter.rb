@@ -35,21 +35,12 @@ module HTTPX
         # the minimum time that the user agent is asked to wait before issuing
         # the redirected request.
         #
-        # The value of this field can be either an HTTP-date or a number of
-        # seconds to delay after the response is received.
-        def retry_after_rate_limit(_request, response)
+        def retry_after_rate_limit(_, response)
           retry_after = response.headers["retry-after"]
 
           return unless retry_after
 
-          begin
-            # first: bet on it being an integer
-            Integer(retry_after)
-          rescue ArgumentError
-            # Then it's a datetime
-            time = Time.httpdate(retry_after)
-            time - Time.now
-          end
+          Utils.parse_retry_after(retry_after)
         end
       end
     end

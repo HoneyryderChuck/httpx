@@ -7,6 +7,10 @@ module SessionWithMockResponse
     self
   end
 
+  module ResponseMethods
+    attr_writer :status
+  end
+
   module InstanceMethods
     def initialize(*)
       super
@@ -19,11 +23,9 @@ module SessionWithMockResponse
       response.close
       @mock_responses_counter -= 1
 
-      mock_response = @options.response_class.new(request,
-                                                  Thread.current[:httpx_mock_response_status],
-                                                  "2.0",
-                                                  Thread.current[:httpx_mock_response_headers])
-      super(request, mock_response)
+      response.status = Thread.current[:httpx_mock_response_status]
+      response.merge_headers(Thread.current[:httpx_mock_response_headers])
+      super(request, response)
     end
   end
 end
