@@ -1,7 +1,7 @@
 module HTTPX
   module Plugins
     module Cookies
-      type store_value = String | Array[HTTP::Cookie] | Hash[_ToS, _ToS]
+      type store_value = Array[HTTP::Cookie] | _Each[_ToS, _ToS] | _Each[Hash[_ToS, _ToS]]
       type cookies_value = Store | store_value
 
       interface _CookieOptions

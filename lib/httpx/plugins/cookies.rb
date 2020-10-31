@@ -20,18 +20,6 @@ module HTTPX
         require "httpx/plugins/cookies/set_cookie_parser"
       end
 
-      def self.extra_options(options)
-        Class.new(options.class) do
-          def_option(:cookies) do |cookies|
-            if cookies.is_a?(Store)
-              cookies
-            else
-              Store.new(cookies)
-            end
-          end
-        end.new(options)
-      end
-
       class Store
         def self.new(cookies = nil)
           return cookies if cookies.is_a?(self)
@@ -41,14 +29,14 @@ module HTTPX
 
         def initialize(cookies = nil)
           @store = Hash.new { |hash, origin| hash[origin] = HTTP::CookieJar.new }
+
           return unless cookies
 
-          cookies = cookies.split(/ *; */) if cookies.is_a?(String)
-          @default_cookies = cookies.map do |cookie, v|
-            if cookie.is_a?(HTTP::Cookie)
-              cookie
+          @default_cookies = cookies.enum_for(:each).map do |*args|
+            if args.size == 1 && args.first.is_a?(HTTP::Cookie)
+              args.first
             else
-              HTTP::Cookie.new(cookie.to_s, v.to_s)
+              HTTP::Cookie.new(*args)
             end
           end
         end
@@ -77,6 +65,18 @@ module HTTPX
 
       def self.load_dependencies(*)
         require "http/cookie"
+      end
+
+      def self.extra_options(options)
+        Class.new(options.class) do
+          def_option(:cookies) do |cookies|
+            if cookies.is_a?(Store)
+              cookies
+            else
+              Store.new(cookies)
+            end
+          end
+        end.new(options)
       end
 
       module InstanceMethods

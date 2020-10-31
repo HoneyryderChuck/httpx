@@ -16,6 +16,14 @@ module Requests
         assert body["cookies"]["abc"] == "def", "abc wasn't properly set"
       end
 
+      def test_plugin_cookies_get_with_hash
+        session = HTTPX.plugin(:cookies)
+        session_response = session.with_cookies([{ "name" => "abc", "value" => "def" }]).get(cookies_uri)
+        body = json_body(session_response)
+        assert body.key?("cookies")
+        assert body["cookies"]["abc"] == "def", "abc wasn't properly set"
+      end
+
       def test_plugin_cookies_set
         session = HTTPX.plugin(:cookies)
         session_cookies = { "a" => "b", "c" => "d" }
