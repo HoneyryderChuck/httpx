@@ -7,22 +7,23 @@ module SessionWithMockResponse
     self
   end
 
-  module ConnectionMethods
+  module InstanceMethods
     def initialize(*)
       super
       @mock_responses_counter = 1
     end
 
-    def send(request)
-      return super if @mock_responses_counter.zero?
+    def on_response(request, response)
+      return super unless response && @mock_responses_counter.positive?
 
+      response.close
       @mock_responses_counter -= 1
 
       mock_response = @options.response_class.new(request,
                                                   Thread.current[:httpx_mock_response_status],
                                                   "2.0",
                                                   Thread.current[:httpx_mock_response_headers])
-      request.emit(:response, mock_response)
+      super(request, mock_response)
     end
   end
 end
