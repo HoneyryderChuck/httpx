@@ -82,7 +82,7 @@ module Requests
 
       def test_plugin_retries_retry_after_callable
         retries = 0
-        exponential = ->(_) { (retries += 1) * 2 }
+        exponential = ->(*) { (retries += 1) * 2 }
         before_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)
         retries_session = HTTPX
                           .plugin(RequestInspector)
