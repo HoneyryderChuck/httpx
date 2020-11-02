@@ -12,7 +12,13 @@ module HTTPX
     # https://gitlab.com/honeyryderchuck/httpx/wikis/Cookies
     #
     module Cookies
-      using URIExtensions
+      def self.load_dependencies(*)
+        require "httpx/plugins/cookies/store"
+        require "httpx/plugins/cookies/jar"
+        require "httpx/plugins/cookies/cookie"
+        require "httpx/plugins/cookies/domain_name"
+        require "httpx/plugins/cookies/set_cookie_parser"
+      end
 
       def self.extra_options(options)
         Class.new(options.class) do
