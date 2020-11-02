@@ -1,0 +1,27 @@
+module HTTPX
+  module Plugins::Cookies
+    class Jar
+      type cookie = Cookie | Array[String, String, cookie_attributes] | Array[String, String] | cookie_attributes
+
+      include Enumerable[Cookie, void]
+
+      @cookies: Array[Cookie]
+
+      def parse: (String) -> void
+
+      def add: (Cookie) -> void
+             | (Cookie, String) -> void
+
+      def []: (uri) -> Array[Cookie]
+
+      def each: (uri) { (Cookie) -> void } -> void
+              | (uri) -> Enumerable[Cookie, void]
+              | () { (Cookie) -> void } -> void
+              | () -> Enumerable[Cookie, void]
+      private
+
+      def initialize: () -> void
+                    | (_Each[cookie]) -> untyped
+    end
+  end
+end

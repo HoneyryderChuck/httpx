@@ -1,0 +1,19 @@
+module HTTPX
+  module Plugins::Cookies
+    class DomainName
+      type domain = string | DomainName
+
+      include Comparable
+
+      def normalize: (String) -> String
+
+      def cookie_domain?: (domain, ?bool?) -> bool
+
+      def self.new: (domain) -> untyped
+
+      private
+
+      def initialize: (string) -> untyped
+    end
+  end
+end

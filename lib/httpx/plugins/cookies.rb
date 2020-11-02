@@ -13,67 +13,19 @@ module HTTPX
     #
     module Cookies
       def self.load_dependencies(*)
-        require "httpx/plugins/cookies/store"
         require "httpx/plugins/cookies/jar"
         require "httpx/plugins/cookies/cookie"
         require "httpx/plugins/cookies/domain_name"
         require "httpx/plugins/cookies/set_cookie_parser"
       end
 
-      class Store
-        def self.new(cookies = nil)
-          return cookies if cookies.is_a?(self)
-
-          super
-        end
-
-        def initialize(cookies = nil)
-          @store = Hash.new { |hash, origin| hash[origin] = HTTP::CookieJar.new }
-
-          return unless cookies
-
-          @default_cookies = cookies.enum_for(:each).map do |*args|
-            if args.size == 1 && args.first.is_a?(HTTP::Cookie)
-              args.first
-            else
-              HTTP::Cookie.new(*args)
-            end
-          end
-        end
-
-        def set(origin, cookies)
-          return unless cookies
-
-          @store[origin].parse(cookies, origin)
-        end
-
-        def [](uri)
-          store = @store[uri.origin]
-          @default_cookies.each do |cookie|
-            c = cookie.dup
-            c.domain ||= uri.authority
-            c.path ||= uri.path
-            store.add(c)
-          end if @default_cookies
-          store
-        end
-
-        def ==(other)
-          @store == other.instance_variable_get(:@store)
-        end
-      end
-
-      def self.load_dependencies(*)
-        require "http/cookie"
-      end
-
       def self.extra_options(options)
         Class.new(options.class) do
           def_option(:cookies) do |cookies|
-            if cookies.is_a?(Store)
+            if cookies.is_a?(Jar)
               cookies
             else
-              Store.new(cookies)
+              Jar.new(cookies)
             end
           end
         end.new(options)
@@ -85,26 +37,31 @@ module HTTPX
         def_delegator :@options, :cookies
 
         def initialize(options = {}, &blk)
-          super({ cookies: Store.new }.merge(options), &blk)
+          super({ cookies: Jar.new }.merge(options), &blk)
         end
 
         def wrap
           return super unless block_given?
 
           super do |session|
-            old_cookies_store = @options.cookies.dup
+            old_cookies_jar = @options.cookies.dup
             begin
               yield session
             ensure
-              @options = @options.with(cookies: old_cookies_store)
+              @options = @options.merge(cookies: old_cookies_jar)
             end
           end
         end
 
         private
 
-        def on_response(request, response)
-          @options.cookies.set(request.origin, response.headers["set-cookie"]) if response.respond_to?(:headers)
+        def on_response(reuest, response)
+          if response && response.respond_to?(:headers) && (set_cookie = response.headers["set-cookie"])
+
+            log { "cookies: set-cookie is over #{Cookie::MAX_LENGTH}" } if set_cookie.bytesize > Cookie::MAX_LENGTH
+
+            @options.cookies.parse(set_cookie)
+          end
 
           super
         end
@@ -117,13 +74,12 @@ module HTTPX
       end
 
       module HeadersMethods
-        def set_cookie(jar)
-          return unless jar
+        def set_cookie(cookies)
+          return if cookies.empty?
 
-          cookie_value = HTTP::Cookie.cookie_value(jar.cookies)
-          return if cookie_value.empty?
+          header_value = cookies.sort.join("; ")
 
-          add("cookie", cookie_value)
+          add("cookie", header_value)
         end
       end
     end
