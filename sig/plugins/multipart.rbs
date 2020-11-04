@@ -8,7 +8,7 @@ module HTTPX
       class Encoder
         include Transcoder::_Encoder
         include _ToS
-        include _ReadableStream
+        include _Reader
 
         private
 

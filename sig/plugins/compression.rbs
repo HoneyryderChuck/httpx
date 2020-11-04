@@ -3,11 +3,11 @@ module HTTPX
     module Compression
       extend Registry[Symbol, Class]
 
-      type deflatable = _ReadableStream | _ToS
+      type deflatable = _Reader | _ToS
 
       interface _Deflater
-        def deflate: (deflatable, _WritableStream, chunk_size: Integer) -> void
-                   | (deflatable, _WritableStream, chunk_size: Integer) { (String) -> void } -> void
+        def deflate: (deflatable, _Writer, chunk_size: Integer) -> void
+                   | (deflatable, _Writer, chunk_size: Integer) { (String) -> void } -> void
       end
 
       interface _Inflater
