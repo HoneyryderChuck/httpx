@@ -21,6 +21,10 @@ variables:
   services:
     - docker:dind
 
+.jit_matrix: &jit_matrix
+  parallel:
+    matrix:
+      - RUBYOPT: ["", "--jit --jit-warnings --jit-wait"]
 # Cache gems in between builds
 cache:
   key: "$CI_JOB_NAME-$CI_COMMIT_REF_SLUG"
@@ -68,12 +72,14 @@ test_ruby25:
     ./spec.sh ruby 2.5
 test_ruby26:
   <<: *test_settings
+  <<: *jit_matrix
   only:
     - master
   script:
     ./spec.sh ruby 2.6
 test_ruby27:
   <<: *test_settings
+  <<: *jit_matrix
   script:
     ./spec.sh ruby 2.7
   artifacts:
@@ -81,6 +87,7 @@ test_ruby27:
       - coverage/
 test_ruby30:
   <<: *test_settings
+  <<: *jit_matrix
   script:
     ./spec.sh ruby 3.0
   allow_failure: true

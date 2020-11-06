@@ -38,14 +38,3 @@ if [[ ${RUBY_VERSION:0:1} = "3" ]]; then
 fi
 
 bundle exec rake test:ci
-
-RET=$?
-
-RUBY_VERSION=`ruby -e 'puts RUBY_VERSION'`
-
-if [[ $RET = 0 ]] && [[ ${RUBY_VERSION:0:3} = "2.7" ]]; then
-  RUBYOPT="--jit" bundle exec rake test:ci
-fi
-
-exit $RET
-
