@@ -221,7 +221,7 @@ module HTTPX
       def plugin(pl, options = nil, &block)
         # raise Error, "Cannot add a plugin to a frozen config" if frozen?
         pl = Plugins.load_plugin(pl) if pl.is_a?(Symbol)
-        unless @plugins.include?(pl)
+        if !@plugins.include?(pl)
           @plugins << pl
           pl.load_dependencies(self, &block) if pl.respond_to?(:load_dependencies)
           @default_options = @default_options.dup
@@ -244,6 +244,13 @@ module HTTPX
           opts.response_body_class.extend(pl::ResponseBodyClassMethods) if defined?(pl::ResponseBodyClassMethods)
           opts.connection_class.__send__(:include, pl::ConnectionMethods) if defined?(pl::ConnectionMethods)
           pl.configure(self, &block) if pl.respond_to?(:configure)
+
+          @default_options.freeze
+        elsif options
+          # this can happen when two plugins are loaded, an one of them calls the other under the hood,
+          # albeit changing some default.
+          @default_options = @default_options.dup
+          @default_options = @default_options.merge(options)
 
           @default_options.freeze
         end

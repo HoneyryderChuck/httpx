@@ -19,7 +19,12 @@ module HTTPX
     #
     module Persistent
       def self.load_dependencies(klass)
-        klass.plugin(:retries, max_retries: 1, retry_change_requests: true)
+        max_retries = if klass.default_options.respond_to?(:max_retries)
+          [klass.default_options.max_retries, 1].max
+        else
+          1
+        end
+        klass.plugin(:retries, max_retries: max_retries, retry_change_requests: true)
       end
 
       def self.extra_options(options)

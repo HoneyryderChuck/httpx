@@ -25,6 +25,8 @@ class HTTPSTest < Minitest::Test
   include Plugins::Retries
   include Plugins::Multipart
   include Plugins::Expect
+  include Plugins::RateLimiter
+  include Plugins::Persistent unless RUBY_ENGINE == "jruby" || RUBY_VERSION < "2.3"
 
   def test_connection_coalescing
     coalesced_origin = "https://#{ENV["HTTPBIN_COALESCING_HOST"]}"

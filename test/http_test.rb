@@ -25,6 +25,7 @@ class HTTPTest < Minitest::Test
   include Plugins::Retries
   include Plugins::Multipart
   include Plugins::Expect
+  include Plugins::RateLimiter
 
   def test_verbose_log
     log = StringIO.new

@@ -1,0 +1,11 @@
+module HTTPX
+  module Plugins
+    module RateLimiter
+      # def self.load_dependencies: (singleton(Session)) -> void
+
+      def self.retry_on_rate_limited_response: (_Response) -> bool
+
+      def self.retry_after_rate_limit: (untyped, _Response) -> Numeric?
+    end
+  end
+end

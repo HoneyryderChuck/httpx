@@ -36,6 +36,19 @@ module Requests
         verify_status(response, 302)
       end
 
+      def test_plugin_follow_redirects_retry_after
+        session = HTTPX.plugin(SessionWithMockResponse[302, "retry-after" => "2"]).plugin(:follow_redirects)
+
+        before_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)
+        response = session.get(max_redirect_uri(1))
+        after_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)
+
+        verify_status(response, 200)
+
+        total_time = after_time - before_time
+        assert total_time >= 2, "request didn't take as expected to redirect (#{total_time} secs)"
+      end
+
       def test_plugin_follow_insecure_no_insecure_downgrade
         return unless origin.start_with?("https")
 
