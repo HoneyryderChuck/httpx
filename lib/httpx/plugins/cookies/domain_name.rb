@@ -63,7 +63,7 @@ module HTTPX::Plugins::Cookies
       # Normalizes a _domain_ using the Punycode algorithm as necessary.
       # The result will be a downcased, ASCII-only string.
       def normalize(domain)
-        domain = domain.ascii_only? ? domain : domain.chomp(DOT).unicode_normaliza(:nfc)
+        domain = domain.ascii_only? ? domain : domain.chomp(DOT).unicode_normalize(:nfc)
         Punycode.encode_hostname(domain).downcase
       end
     end
@@ -249,7 +249,7 @@ module HTTPX::Plugins::Cookies
         # Encode a +string+ in Punycode
         def encode(string)
           input = string.unpack("U*")
-          output = ""
+          output = +""
 
           # Initialize the state
           n = INITIAL_N
