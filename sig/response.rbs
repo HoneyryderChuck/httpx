@@ -6,7 +6,7 @@ module HTTPX
   class Response
     include _Response
     include _ToS
-    include _ReadableStream
+    include _Reader
 
     attr_reader status: int
     attr_reader headers: headers
@@ -16,7 +16,7 @@ module HTTPX
     @options: Options
     @request: Request
 
-    def copy_to: (_ToPath | _WritableStream destination) -> void
+    def copy_to: (_ToPath | _Writer destination) -> void
     def close: () -> void
     def uri: () -> uri
 
@@ -31,8 +31,8 @@ module HTTPX
     def no_data?: () -> bool
 
     class Body
-      include _WritableStream
-      include _ReadableStream
+      include _Writer
+      include _Reader
       include _ToS
       include _ToStr
 
@@ -43,7 +43,7 @@ module HTTPX
 
       def bytesize: () -> Integer
       def empty?: () -> bool
-      def copy_to: (_ToPath | _WritableStream destination) -> void
+      def copy_to: (_ToPath | _Writer destination) -> void
       def close: () -> void
 
       private

@@ -1,5 +1,5 @@
 module HTTPX
-  type bodyIO = _ReadableStream | _Each[String, untyped] | _ToS
+  type bodyIO = _Reader | _Each[String, untyped] | _ToS
 
   module Transcoder
     extend HTTPX::Registry[String, Class]

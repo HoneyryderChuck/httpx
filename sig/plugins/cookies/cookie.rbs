@@ -1,0 +1,50 @@
+module HTTPX
+  module Plugins::Cookies
+    type cookie_attributes = Hash[Symbol | String, top]
+
+    class Cookie
+      include Comparable
+
+      MAX_LENGTH: Integer
+
+      attr_reader domain: DomainName?
+
+      attr_reader path: String
+
+      attr_reader name: String
+
+      attr_reader value: String?
+
+      attr_reader created_at: Time
+
+      def path=: (string) -> void
+
+      def domain=: (string) -> void
+
+      def expires: () -> Time?
+
+      def expired?: () -> bool
+                  | (Time) -> bool
+
+      def cookie_value: () -> String
+      alias to_s cookie_value
+
+      def valid_for_uri?: (uri) -> bool
+
+      def self.new: (Cookie) -> untyped
+                    | (cookie_attributes) -> untyped
+                    | (String, String) -> untyped
+                    | (String, String, cookie_attributes) -> untyped
+
+      def self.path_match?: (String, String) -> bool
+
+      private
+
+      def initialize: (cookie_attributes) -> untyped
+                    | (String, String) -> untyped
+                    | (String, String, cookie_attributes?) -> untyped
+      
+      def acceptable_from_uri?: (uri) -> bool
+    end
+  end
+end

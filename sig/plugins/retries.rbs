@@ -34,7 +34,7 @@ module HTTPX
 
         private
 
-        def __repeatable_request?: (Request, Options) -> bool
+        def __repeatable_request?: (Request, Options) -> boolish
         def __retryable_error?: (_Exception) -> bool
       end
 

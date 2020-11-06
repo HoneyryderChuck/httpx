@@ -11,7 +11,7 @@ module HTTPX
         attr_reader username: string?
         attr_reader password: string?
 
-        def authenticated?: () -> bool
+        def authenticated?: () -> boolish
         def token_authentication: () -> String?
 
         def ==: (untyped) -> bool

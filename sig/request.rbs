@@ -54,7 +54,7 @@ module HTTPX
     end
 
     class ProcIO
-      include _WritableStream
+      include _Writer
       def initialize: (^(_ToS) -> void) -> untyped
     end
   end
