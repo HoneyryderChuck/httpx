@@ -1,3 +1,17 @@
+#breadcrumbs {
+  margin-bottom: 1.8em;
+
+  a {
+    padding-right: 10px;
+  }
+
+  a+a:before {
+    padding-right: 10px;
+    color: $color-body-text;
+    content: "/\00a0";
+  }
+}
+
 .header {
   padding: 3em 0 2em;
   text-align: center;
