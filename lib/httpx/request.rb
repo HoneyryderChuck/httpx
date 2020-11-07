@@ -43,7 +43,7 @@ module HTTPX
 
     def initialize(verb, uri, options = {})
       @verb    = verb.to_s.downcase.to_sym
-      @uri     = URI(uri)
+      @uri     = Utils.uri(uri)
       @options = Options.new(options)
 
       raise(Error, "unknown method: #{verb}") unless METHODS.include?(@verb)

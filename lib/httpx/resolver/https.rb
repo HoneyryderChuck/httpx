@@ -94,7 +94,14 @@ module HTTPX
     def resolve(connection = @connections.first, hostname = nil)
       return if @building_connection
 
-      hostname = hostname || @queries.key(connection) || connection.origin.host
+      hostname ||= @queries.key(connection)
+
+      if hostname.nil?
+        hostname = connection.origin.host
+        if hostname != connection.origin.non_ascii_hostname
+          log { "resolver: resolve IDN #{connection.origin.non_ascii_hostname} as #{hostname}" }
+        end
+      end
       type = @_record_types[hostname].first
       log { "resolver: query #{type} for #{hostname}" }
       begin

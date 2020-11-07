@@ -66,7 +66,8 @@ module HTTPX
     end
 
     def find_connection(request, connections, options)
-      uri = URI(request.uri)
+      uri = request.uri
+
       connection = pool.find_connection(uri, options) || build_connection(uri, options)
       unless connections.nil? || connections.include?(connection)
         connections << connection
