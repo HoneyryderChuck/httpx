@@ -33,9 +33,7 @@ module HTTPX
 
     USER_AGENT = "httpx.rb/#{VERSION}"
 
-    attr_reader :verb, :uri, :headers, :body, :state
-
-    attr_reader :options, :response
+    attr_reader :verb, :uri, :headers, :body, :state, :options, :response
 
     def_delegator :@body, :empty?
 

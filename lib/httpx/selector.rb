@@ -51,7 +51,7 @@ class HTTPX::Selector
   READ_INTERESTS = %i[r rw].freeze
   WRITE_INTERESTS = %i[w rw].freeze
 
-  def select_many(interval)
+  def select_many(interval, &block)
     selectables, r, w = nil
 
     # first, we group IOs based on interest type. On call to #interests however,
@@ -102,9 +102,7 @@ class HTTPX::Selector
       writers.delete(io)
     end if readers
 
-    writers.each do |io|
-      yield io
-    end if writers
+    writers.each(&block) if writers
   end
 
   def select_one(interval)

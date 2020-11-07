@@ -181,7 +181,7 @@ module HTTPX
     def manage_connection(response)
       connection = response.headers["connection"]
       case connection
-      when /keep\-alive/i
+      when /keep-alive/i
         keep_alive = response.headers["keep-alive"]
         return unless keep_alive
 

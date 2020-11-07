@@ -37,3 +37,8 @@ Style/Documentation:
 Naming/AccessorMethodName:
   Enabled: false
 
+Lint/UriEscapeUnescape:
+  Enabled: false
+
+Gemspec/RequiredRubyVersion:
+  Enabled: false

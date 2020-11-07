@@ -7,11 +7,7 @@ module HTTPX
   class TCP
     include Loggable
 
-    attr_reader :ip, :port
-
-    attr_reader :addresses
-
-    attr_reader :state
+    attr_reader :ip, :port, :addresses, :state
 
     alias_method :host, :ip
 

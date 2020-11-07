@@ -46,11 +46,8 @@ module HTTPX
           super
           return if @body.nil?
 
-          if (threshold = options.compression_threshold_size)
-            unless unbounded_body?
-              return if @body.bytesize < threshold
-            end
-          end
+          threshold = options.compression_threshold_size
+          return if threshold && !unbounded_body? && @body.bytesize < threshold
 
           @headers.get("content-encoding").each do |encoding|
             next if encoding == "identity"

@@ -213,7 +213,7 @@ module HTTPX
       case response.headers["content-type"]
       when "application/dns-json",
            "application/json",
-           %r{^application\/x\-javascript} # because google...
+           %r{^application/x-javascript} # because google...
         payload = JSON.parse(response.to_s)
         payload["Answer"]
       when "application/dns-udpwireformat",

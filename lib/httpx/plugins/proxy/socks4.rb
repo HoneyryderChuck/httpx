@@ -91,6 +91,8 @@ module HTTPX
         end
 
         module Packet
+          using(RegexpExtensions) unless Regexp.method_defined?(:match?)
+
           module_function
 
           def connect(parameters, uri)
@@ -101,7 +103,7 @@ module HTTPX
 
               packet << [ip.to_i].pack("N")
             rescue IPAddr::InvalidAddressError
-              if parameters.uri.scheme =~ /^socks4a?$/
+              if /^socks4a?$/.match?(parameters.uri.scheme)
                 # resolv defaults to IPv4, and socks4 doesn't support IPv6 otherwise
                 ip = IPAddr.new(Resolv.getaddress(uri.host))
                 packet << [ip.to_i].pack("N")

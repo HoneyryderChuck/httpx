@@ -40,8 +40,8 @@ class HTTPTest < Minitest::Test
     assert log_output.match(/HEADER: Connection: close/)
     # assert response headers
     assert log_output.match(%r{HEADLINE: 200 HTTP/1\.1})
-    assert log_output.match(/HEADER: content\-type: \w+/)
-    assert log_output.match(/HEADER: content\-length: \d+/)
+    assert log_output.match(/HEADER: content-type: \w+/)
+    assert log_output.match(/HEADER: content-length: \d+/)
   end
 
   private

@@ -67,7 +67,7 @@ module Requests
       private
 
       def redirect_uri(redirect_uri = redirect_location)
-        build_uri("/redirect-to?url=" + redirect_uri)
+        build_uri("/redirect-to?url=#{redirect_uri}")
       end
 
       def max_redirect_uri(n)

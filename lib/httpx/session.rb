@@ -190,15 +190,13 @@ module HTTPX
       begin
         # guarantee ordered responses
         loop do
-          begin
-            request = requests.first
-            pool.next_tick until (response = fetch_response(request, connections, request_options))
+          request = requests.first
+          pool.next_tick until (response = fetch_response(request, connections, request_options))
 
-            responses << response
-            requests.shift
+          responses << response
+          requests.shift
 
-            break if requests.empty? || pool.empty?
-          end
+          break if requests.empty? || pool.empty?
         end
         responses
       ensure

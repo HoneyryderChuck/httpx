@@ -11,13 +11,7 @@ module HTTPX
       # least)
       MAX_LENGTH = 4096
 
-      attr_reader :domain
-
-      attr_reader :path
-
-      attr_reader :name, :value
-
-      attr_reader :created_at
+      attr_reader :domain, :path, :name, :value, :created_at
 
       def path=(path)
         path = String(path)
