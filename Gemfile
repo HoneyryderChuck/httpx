@@ -16,7 +16,7 @@ group :test do
     gem "net-ssh", "~> 4.2.0"
   elsif RUBY_VERSION < "2.3"
     gem "rubocop", "~> 0.68.1"
-  elsif RUBY_VERSION < "2.3"
+  elsif RUBY_VERSION < "2.4"
     gem "rubocop", "~> 0.81.1"
   else
     gem "rubocop", "~> 1.0.0"
