@@ -23,12 +23,14 @@ module HTTPX
       end
     else
 
+      URIParser = URI::RFC2396_Parser.new
+
       def uri(uri)
         return Kernel.URI(uri) unless uri.is_a?(String) && !uri.ascii_only?
 
-        uri = Kernel.URI(URI.escape(uri))
+        uri = Kernel.URI(URIParser.escape(uri))
 
-        non_ascii_hostname = URI.unescape(uri.host)
+        non_ascii_hostname = URIParser.unescape(uri.host)
 
         idna_hostname = DomainName.new(non_ascii_hostname).hostname
 
