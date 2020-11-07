@@ -5,3 +5,11 @@ Style/OptionalBooleanParameter:
 
 Gemspec/RequiredRubyVersion:
   Enabled: false
+
+Lint/MissingSuper:
+  Exclude:
+    - 'lib/httpx/io/unix.rb'
+
+Style/HashTransformValues:
+  Exclude:
+    - 'lib/httpx/plugins/digest_authentication.rb'

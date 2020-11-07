@@ -16,3 +16,6 @@ Layout/LineLength:
   Exclude:
     - 'test/resolver/native_test.rb'
   Max: 140
+
+Layout/RescueEnsureAlignment:
+  Enabled: false

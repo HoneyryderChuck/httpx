@@ -81,7 +81,7 @@ module HTTPX
 
           uri = request.path
 
-          params = Hash[auth_info.split(/ *, */) # rubocop:disable Style/HashTransformValues
+          params = Hash[auth_info.split(/ *, */)
                                  .map { |val| val.split("=") }
                                  .map { |k, v| [k, v.delete("\"")] }]
           nonce = params["nonce"]

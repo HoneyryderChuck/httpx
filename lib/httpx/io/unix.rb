@@ -8,7 +8,6 @@ module HTTPX
 
     def_delegator :@uri, :port, :scheme
 
-    # rubocop:disable Lint/MissingSuper
     def initialize(uri, addresses, options)
       @uri = uri
       @addresses = addresses
@@ -30,7 +29,6 @@ module HTTPX
       end
       @io ||= build_socket
     end
-    # rubocop:enable Lint/MissingSuper
 
     def hostname
       @uri.host
