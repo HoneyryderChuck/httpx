@@ -3,3 +3,6 @@ inherit_from: .rubocop-2.1.yml
 # Because this cop doesn't work well with frozen regexes
 Style/RedundantFreeze:
   Enabled: false
+
+Layout/RescueEnsureAlignment:
+  Enabled: false
