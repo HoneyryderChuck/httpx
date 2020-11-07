@@ -59,7 +59,7 @@ group :website do
   gem "jekyll", "~> 4.0.0"
   gem "jekyll-gzip", "~> 2.4.1"
   gem "jekyll-paginate-v2", "~> 1.5.2"
-  gem "jekyll-brotli", "~> 2.2.0"
+  gem "jekyll-brotli", "~> 2.2.0", platform: :mri
 end if RUBY_VERSION > "2.4"
 
 group :assorted do
