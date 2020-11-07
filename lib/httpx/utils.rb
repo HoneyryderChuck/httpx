@@ -32,7 +32,7 @@ module HTTPX
 
         non_ascii_hostname = URIParser.unescape(uri.host)
 
-        non_ascii_hostname.force_encoding(Encoding::UTF8) if RUBY_ENGINE == "jruby"
+        non_ascii_hostname.force_encoding(Encoding::UTF8)
 
         idna_hostname = DomainName.new(non_ascii_hostname).hostname
 
