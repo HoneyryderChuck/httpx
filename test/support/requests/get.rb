@@ -75,5 +75,13 @@ module Requests
       request = response.instance_variable_get(:@request)
       verify_header(request.headers, "accept", "text/html")
     end
+
+    def test_get_non_ascii
+      response = HTTPX.get("http://bücher.ch")
+      verify_status(response, 200)
+
+      response = HTTPX.get(build_uri("/get?q=ã"))
+      verify_status(response, 200)
+    end
   end
 end
