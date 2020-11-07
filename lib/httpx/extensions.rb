@@ -56,9 +56,17 @@ module HTTPX
 
   module URIExtensions
     refine URI::Generic do
+      def non_ascii_hostname
+        @non_ascii_hostname
+      end
+
+      def non_ascii_hostname=(hostname)
+        @non_ascii_hostname = hostname
+      end
+
       def authority
         port_string = port == default_port ? nil : ":#{port}"
-        "#{host}#{port_string}"
+        "#{@non_ascii_hostname || host}#{port_string}"
       end
 
       def origin

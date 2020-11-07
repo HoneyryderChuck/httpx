@@ -2,6 +2,8 @@
 
 module HTTPX
   module Utils
+    using URIExtensions
+
     module_function
 
     # The value of this field can be either an HTTP-date or a number of
@@ -13,6 +15,20 @@ module HTTPX
       # Then it's a datetime
       time = Time.httpdate(retry_after)
       time - Time.now
+    end
+
+    def uri(uri)
+      return Kernel.URI(uri) unless uri.is_a?(String) && !uri.ascii_only?
+
+      uri = Kernel.URI(URI.escape(uri))
+
+      non_ascii_hostname = URI.unescape(uri.host)
+
+      idna_hostname = DomainName.new(non_ascii_hostname).hostname
+
+      uri.host = idna_hostname
+      uri.non_ascii_hostname = non_ascii_hostname
+      uri
     end
   end
 end
