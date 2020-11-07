@@ -17,7 +17,7 @@ group :test do
   elsif RUBY_VERSION < "2.3"
     gem "rubocop", "~> 0.68.1"
   elsif RUBY_VERSION < "2.4"
-    gem "rubocop", "~> 0.81.1"
+    gem "rubocop", "~> 0.81.0"
   else
     gem "rubocop", "~> 1.0.0"
     gem "rubocop-performance", "~> 1.5.2"
