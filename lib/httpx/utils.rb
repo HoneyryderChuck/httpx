@@ -32,7 +32,7 @@ module HTTPX
 
         non_ascii_hostname = URIParser.unescape(uri.host)
 
-        non_ascii_hostname.force_encoding(Encoding::UTF8)
+        non_ascii_hostname.force_encoding(Encoding::UTF_8)
 
         idna_hostname = DomainName.new(non_ascii_hostname).hostname
 
