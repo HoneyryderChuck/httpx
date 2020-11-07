@@ -28,7 +28,7 @@
 
 require "ipaddr"
 
-module HTTPX::Plugins::Cookies
+module HTTPX
   # Represents a domain name ready for extracting its registered domain
   # and TLD.
   class DomainName

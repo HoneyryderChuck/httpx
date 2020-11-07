@@ -15,7 +15,6 @@ module HTTPX
       def self.load_dependencies(*)
         require "httpx/plugins/cookies/jar"
         require "httpx/plugins/cookies/cookie"
-        require "httpx/plugins/cookies/domain_name"
         require "httpx/plugins/cookies/set_cookie_parser"
       end
 
