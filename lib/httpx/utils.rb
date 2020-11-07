@@ -17,18 +17,25 @@ module HTTPX
       time - Time.now
     end
 
-    def uri(uri)
-      return Kernel.URI(uri) unless uri.is_a?(String) && !uri.ascii_only?
+    if RUBY_VERSION < "2.3"
+      def uri(*args)
+        URI(*args)
+      end
+    else
 
-      uri = Kernel.URI(URI.escape(uri))
+      def uri(uri)
+        return Kernel.URI(uri) unless uri.is_a?(String) && !uri.ascii_only?
 
-      non_ascii_hostname = URI.unescape(uri.host)
+        uri = Kernel.URI(URI.escape(uri))
 
-      idna_hostname = DomainName.new(non_ascii_hostname).hostname
+        non_ascii_hostname = URI.unescape(uri.host)
 
-      uri.host = idna_hostname
-      uri.non_ascii_hostname = non_ascii_hostname
-      uri
+        idna_hostname = DomainName.new(non_ascii_hostname).hostname
+
+        uri.host = idna_hostname
+        uri.non_ascii_hostname = non_ascii_hostname
+        uri
+      end
     end
   end
 end

@@ -82,6 +82,6 @@ module Requests
 
       response = HTTPX.get(build_uri("/get?q=ã"))
       verify_status(response, 200)
-    end
+    end unless RUBY_VERSION < "2.3"
   end
 end
