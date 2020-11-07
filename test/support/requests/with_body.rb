@@ -88,8 +88,8 @@ module Requests
       define_method :"test_#{meth}_multiple_params" do
         uri = build_uri("/#{meth}")
         response1, response2 = HTTPX.request([
-                                               [meth, uri, body: "data"],
-                                               [meth, uri, form: { "foo" => "bar" }],
+                                               [meth, uri, { body: "data" }],
+                                               [meth, uri, { form: { "foo" => "bar" } }],
                                              ], max_concurrent_requests: 1) # because httpbin sucks and can't handle pipeline requests
 
         verify_status(response1, 200)

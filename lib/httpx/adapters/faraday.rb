@@ -121,7 +121,7 @@ module Faraday
           end
 
           def respond_to_missing?(meth)
-            @env.respond_to?(meth)
+            @env.respond_to?(meth) || super
           end
 
           def method_missing(meth, *args, &blk)

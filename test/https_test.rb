@@ -70,8 +70,8 @@ class HTTPSTest < Minitest::Test
     assert log_output.match(%r{HEADER: accept: */*})
     # assert response headers
     assert log_output.match(/HEADER: :status: 200/)
-    assert log_output.match(/HEADER: content\-type: \w+/)
-    assert log_output.match(/HEADER: content\-length: \d+/)
+    assert log_output.match(/HEADER: content-type: \w+/)
+    assert log_output.match(/HEADER: content-length: \d+/)
   end
 
   private

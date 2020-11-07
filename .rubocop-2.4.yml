@@ -1,1 +1,7 @@
 inherit_from: .rubocop-2.3.yml
+
+Style/OptionalBooleanParameter:
+  Enabled: false
+
+Gemspec/RequiredRubyVersion:
+  Enabled: false

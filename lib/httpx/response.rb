@@ -75,11 +75,11 @@ module HTTPX
         @status == 204 ||
         @status == 205 ||
         @status == 304 || begin
-        content_length = @headers["content-length"]
-        return false if content_length.nil?
+          content_length = @headers["content-length"]
+          return false if content_length.nil?
 
-        content_length == "0"
-      end
+          content_length == "0"
+        end
     end
 
     class Body

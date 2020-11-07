@@ -91,10 +91,8 @@ module ProfilerHelpers
     end
   end
 
-  def memory_profile
+  def memory_profile(&block)
     require "memory_profiler"
-    MemoryProfiler.report(allow_files: ["lib/httpx"]) do
-      yield
-    end.pretty_print
+    MemoryProfiler.report(allow_files: ["lib/httpx"], &block).pretty_print
   end
 end

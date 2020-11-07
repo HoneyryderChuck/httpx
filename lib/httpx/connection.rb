@@ -51,7 +51,7 @@ module HTTPX
     def initialize(type, uri, options)
       @type = type
       @origins = [uri.origin]
-      @origin = URI(uri.origin)
+      @origin = Utils.uri(uri.origin)
       @options = Options.new(options)
       @window_size = @options.window_size
       @read_buffer = Buffer.new(BUFFER_SIZE)
@@ -142,7 +142,7 @@ module HTTPX
       end
     end
 
-    def purge_pending
+    def purge_pending(&block)
       pendings = []
       if @parser
         @inflight -= @parser.pending.size
@@ -150,9 +150,7 @@ module HTTPX
       end
       pendings << @pending
       pendings.each do |pending|
-        pending.reject! do |request|
-          yield request
-        end
+        pending.reject!(&block)
       end
     end
 
@@ -460,7 +458,6 @@ module HTTPX
       throw(:jump_tick)
     rescue Errno::ECONNREFUSED,
            Errno::EADDRNOTAVAIL,
-           Errno::EHOSTUNREACH,
            OpenSSL::SSL::SSLError => e
       # connect errors, exit gracefully
       handle_error(e)

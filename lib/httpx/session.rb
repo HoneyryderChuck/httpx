@@ -66,7 +66,8 @@ module HTTPX
     end
 
     def find_connection(request, connections, options)
-      uri = URI(request.uri)
+      uri = request.uri
+
       connection = pool.find_connection(uri, options) || build_connection(uri, options)
       unless connections.nil? || connections.include?(connection)
         connections << connection
@@ -189,15 +190,13 @@ module HTTPX
       begin
         # guarantee ordered responses
         loop do
-          begin
-            request = requests.first
-            pool.next_tick until (response = fetch_response(request, connections, request_options))
+          request = requests.first
+          pool.next_tick until (response = fetch_response(request, connections, request_options))
 
-            responses << response
-            requests.shift
+          responses << response
+          requests.shift
 
-            break if requests.empty? || pool.empty?
-          end
+          break if requests.empty? || pool.empty?
         end
         responses
       ensure

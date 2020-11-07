@@ -54,11 +54,31 @@ module HTTPX
     Numeric.__send__(:include, NegMethods)
   end
 
+  module RegexpExtensions
+    # If you wonder why this is there: the oauth feature uses a refinement to enhance the
+    # Regexp class locally with #match? , but this is never tested, because ActiveSupport
+    # monkey-patches the same method... Please ActiveSupport, stop being so intrusive!
+    # :nocov:
+    refine(Regexp) do
+      def match?(*args)
+        !match(*args).nil?
+      end
+    end
+  end
+
   module URIExtensions
     refine URI::Generic do
+      def non_ascii_hostname
+        @non_ascii_hostname
+      end
+
+      def non_ascii_hostname=(hostname)
+        @non_ascii_hostname = hostname
+      end
+
       def authority
         port_string = port == default_port ? nil : ":#{port}"
-        "#{host}#{port_string}"
+        "#{@non_ascii_hostname || host}#{port_string}"
       end
 
       def origin

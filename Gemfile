@@ -16,8 +16,10 @@ group :test do
     gem "net-ssh", "~> 4.2.0"
   elsif RUBY_VERSION < "2.3"
     gem "rubocop", "~> 0.68.1"
+  elsif RUBY_VERSION < "2.3"
+    gem "rubocop", "~> 0.81.1"
   else
-    gem "rubocop", "~> 0.80.0"
+    gem "rubocop", "~> 1.0.0"
     gem "rubocop-performance", "~> 1.5.2"
   end
 
@@ -57,7 +59,7 @@ group :website do
   gem "jekyll", "~> 4.0.0"
   gem "jekyll-gzip", "~> 2.4.1"
   gem "jekyll-paginate-v2", "~> 1.5.2"
-  gem "jekyll-brotli", "~> 2.2.0"
+  gem "jekyll-brotli", "~> 2.2.0", platform: :mri
 end if RUBY_VERSION > "2.4"
 
 group :assorted do
