@@ -291,8 +291,6 @@ module HTTPX
               break
             end
 
-            log { "READ: #{siz} bytes..." }
-
             parser << @read_buffer.to_s
 
             break if @state == :closing || @state == :closed
@@ -315,7 +313,6 @@ module HTTPX
               on_error(ex)
               return
             end
-            log { "WRITE: #{siz} bytes..." }
 
             if siz.zero?
               write_drained = !@write_buffer.empty?

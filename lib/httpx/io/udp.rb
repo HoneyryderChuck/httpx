@@ -7,11 +7,12 @@ module HTTPX
   class UDP
     include Loggable
 
-    def initialize(uri, _, _)
+    def initialize(uri, _, options)
       ip = IPAddr.new(uri.host)
       @host = ip.to_s
       @port = uri.port
       @io = UDPSocket.new(ip.family)
+      @options = options
     end
 
     def to_io
@@ -40,6 +41,7 @@ module HTTPX
 
     def write(buffer)
       siz = @io.send(buffer, 0, @host, @port)
+      log { "WRITE: #{siz} bytes..." }
       buffer.shift!(siz)
       siz
     end
@@ -49,6 +51,7 @@ module HTTPX
       def read(size, buffer)
         data, _ = @io.recvfrom_nonblock(size)
         buffer.replace(data)
+        log { "READ: #{buffer.bytesize} bytes..." }
         buffer.bytesize
       rescue ::IO::WaitReadable
         0

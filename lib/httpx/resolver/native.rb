@@ -169,7 +169,6 @@ module HTTPX
         siz = @io.read(wsize, @read_buffer)
         return unless siz && siz.positive?
 
-        log { "resolver: READ: #{siz} bytes..." }
         parse(@read_buffer)
         return if @state == :closed
       end
@@ -182,7 +181,6 @@ module HTTPX
         siz = @io.write(@write_buffer)
         return unless siz && siz.positive?
 
-        log { "resolver: WRITE: #{siz} bytes..." }
         return if @state == :closed
       end
     end

@@ -82,6 +82,7 @@ module HTTPX
       # :nocov:
       def read(size, buffer)
         @io.read_nonblock(size, buffer)
+        log { "READ: #{buffer.bytesize} bytes..." }
         buffer.bytesize
       rescue ::IO::WaitReadable
         buffer.clear
@@ -92,6 +93,7 @@ module HTTPX
 
       def write(buffer)
         siz = @io.write_nonblock(buffer)
+        log { "WRITE: #{siz} bytes..." }
         buffer.shift!(siz)
         siz
       rescue ::IO::WaitWritable
@@ -109,6 +111,7 @@ module HTTPX
         end
         return if ret.nil?
 
+        log { "READ: #{buffer.bytesize} bytes..." }
         buffer.bytesize
       end
 
@@ -116,6 +119,8 @@ module HTTPX
         siz = @io.write_nonblock(buffer, exception: false)
         return 0 if siz == :wait_writable
         return if siz.nil?
+
+        log { "WRITE: #{siz} bytes..." }
 
         buffer.shift!(siz)
         siz
