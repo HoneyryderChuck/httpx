@@ -2,9 +2,18 @@
 
 require "socket"
 require "httpx/io/tcp"
-require "httpx/io/ssl"
 require "httpx/io/unix"
 require "httpx/io/udp"
+
+if RUBY_ENGINE == "jruby"
+  begin
+    require "httpx/io/tls"
+  rescue LoadError
+    require "httpx/io/ssl"
+  end
+else
+  require "httpx/io/ssl"
+end
 
 module HTTPX
   module IO
