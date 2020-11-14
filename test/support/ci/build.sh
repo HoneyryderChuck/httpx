@@ -8,7 +8,7 @@ RUBY_ENGINE=`ruby -e 'puts RUBY_ENGINE'`
 if [[ "$RUBY_ENGINE" = "truffleruby" ]]; then
   apt-get update && apt-get install -y git iptables file
 elif [[ "$RUBY_PLATFORM" = "java" ]]; then
-  apt-get update && apt-get install -y git iptables file
+  apt-get update && apt-get install -y git iptables file libssl-dev
 elif [[ ${RUBY_VERSION:0:3} = "2.1" ]]; then
   apk --update add g++ make git bash libsodium iptables file
 else
@@ -29,7 +29,7 @@ if [[ "$RUBY_ENGINE" = "truffleruby" ]]; then
   gem install bundler -v="2.1.4" --no-doc --conservative
 fi
 
-bundle install --quiet
+bundle install
 
 if [[ ${RUBY_VERSION:0:1} = "3" ]]; then
   export RUBYOPT="$RUBYOPT -rbundler/setup -rrbs/test/setup"
