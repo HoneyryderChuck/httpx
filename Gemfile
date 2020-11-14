@@ -40,6 +40,10 @@ group :test do
     gem "rbnacl"
   end
 
+  platform :jruby do
+    gem "ruby-tls"
+  end
+
   gem "faraday"
   gem "oga"
 
