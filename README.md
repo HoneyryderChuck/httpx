@@ -25,6 +25,7 @@ And also:
 * HTTP/2 Server Push
 * H2C Upgrade
 * Automatic follow redirects
+* International Domain Names
 
 ## How
 

@@ -98,9 +98,7 @@ module HTTPX
 
       if hostname.nil?
         hostname = connection.origin.host
-        if hostname != connection.origin.non_ascii_hostname
-          log { "resolver: resolve IDN #{connection.origin.non_ascii_hostname} as #{hostname}" }
-        end
+        log { "resolver: resolve IDN #{connection.origin.non_ascii_hostname} as #{hostname}" } if connection.origin.non_ascii_hostname
       end
       type = @_record_types[hostname].first
       log { "resolver: query #{type} for #{hostname}" }
