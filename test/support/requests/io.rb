@@ -11,7 +11,7 @@ module Requests
       assert !io.closed?, "io should have been left open"
     ensure
       io.close if io
-    end
+    end unless defined?(RubyTls)
   end
 
   private
