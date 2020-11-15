@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
+require "httpx/io/ruby-tls"
 require "openssl"
-require "ruby-tls"
 
 module HTTPX
   class SSL < TCP
@@ -47,10 +47,10 @@ module HTTPX
     end
     # :nocov:
 
+    alias_method :transport_close, :close
     def close
-      super
+      transport_close
       @ctx.cleanup
-      @negotiated = false
     end
 
     def read(*, buffer)
@@ -65,11 +65,9 @@ module HTTPX
 
     alias_method :unencrypted_write, :write
     def write(buffer)
-      do_write
-      siz = buffer.bytesize
       @ctx.encrypt(buffer.to_s.dup)
       buffer.clear
-      siz
+      do_write
     end
 
     # TLS callback.
@@ -97,6 +95,7 @@ module HTTPX
     # signals TLS invalid status / shutdown.
     def close_cb
       log { "TLS closing" }
+      transport_close
     end
 
     # TLS callback.
@@ -114,28 +113,31 @@ module HTTPX
     # passed the peer +cert+ to be verified.
     #
     def verify_cb(cert)
+      raise "Peer verification enabled, but no certificate received." if cert.nil?
       log { "TLS verifying #{cert}" }
+      @peer_cert = OpenSSL::X509::Certificate.new(cert)
       # by default one doesn't verify client certificates in the server
-      verify_hostname(cert)
-    end
-
-    private
-
-    def do_write
-      until @encrypted.empty?
-        nwritten = unencrypted_write(@encrypted)
-        return nwritten unless nwritten.is_a?(Integer)
-      end
+      verify_hostname(@peer_cert)
     end
 
     # copied from:
     # https://github.com/ruby/ruby/blob/8cbf2dae5aadfa5d6241b0df2bf44d55db46704f/ext/openssl/lib/openssl/ssl.rb#L395-L409
     #
     def verify_hostname(peer_cert)
-      raise "Peer verification enabled, but no certificate received." if peer_cert.nil?
+      OpenSSL::SSL.verify_certificate_identity(peer_cert, @hostname)
+    end
 
-      @peer_cert = OpenSSL::X509::Certificate.new(peer_cert)
-      OpenSSL::SSL.verify_certificate_identity(@peer_cert, @hostname)
+    private
+
+    def do_write
+      nwritten = 0
+      until @encrypted.empty?
+        siz = unencrypted_write(@encrypted)
+        break unless !siz || siz.zero?
+
+        nwritten += siz
+      end
+      nwritten
     end
 
     def convert_tls_options(ssl_options)
@@ -168,6 +170,7 @@ module HTTPX
       server_cert = @peer_cert
 
       "#{super}\n\n" \
+        "SSL connection using #{@ctx.ssl_version} / #{Array(@ctx.cipher).first}\n" \
         "ALPN, server accepted to use #{protocol}\n" \
         "Server certificate:\n" \
         " subject: #{server_cert.subject}\n" \

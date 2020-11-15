@@ -41,7 +41,9 @@ group :test do
   end
 
   platform :jruby do
-    gem "ruby-tls"
+    gem "concurrent-ruby"
+    gem "ffi-compiler"
+    gem "ruby-debug"
   end
 
   gem "faraday"
