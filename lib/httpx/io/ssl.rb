@@ -42,7 +42,6 @@ module HTTPX
       # allow reconnections
       # connect only works if initial @io is a socket
       @io = @io.io if @io.respond_to?(:io)
-      @negotiated = false
     end
 
     def connected?
