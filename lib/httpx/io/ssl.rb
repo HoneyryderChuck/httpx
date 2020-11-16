@@ -11,12 +11,11 @@ module HTTPX
     end
 
     def initialize(_, _, options)
+      super
       @ctx = OpenSSL::SSL::SSLContext.new
       ctx_options = TLS_OPTIONS.merge(options.ssl)
-      @tls_hostname = ctx_options.delete(:hostname)
+      @sni_hostname = ctx_options.delete(:hostname) || @hostname
       @ctx.set_params(ctx_options) unless ctx_options.empty?
-      super
-      @tls_hostname ||= @hostname
       @state = :negotiated if @keep_open
     end
 
@@ -59,11 +58,11 @@ module HTTPX
 
       unless @io.is_a?(OpenSSL::SSL::SSLSocket)
         @io = OpenSSL::SSL::SSLSocket.new(@io, @ctx)
-        @io.hostname = @tls_hostname
+        @io.hostname = @sni_hostname
         @io.sync_close = true
       end
       @io.connect_nonblock
-      @io.post_connection_check(@tls_hostname) if @ctx.verify_mode != OpenSSL::SSL::VERIFY_NONE
+      @io.post_connection_check(@sni_hostname) if @ctx.verify_mode != OpenSSL::SSL::VERIFY_NONE
       transition(:negotiated)
     rescue ::IO::WaitReadable
       @interests = :r

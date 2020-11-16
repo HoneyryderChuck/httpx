@@ -6,10 +6,12 @@ require "openssl"
 module HTTPX
   class SSL < TCP
     def initialize(_, _, options)
+      super
       @encrypted = Buffer.new(Connection::BUFFER_SIZE)
       @decrypted = "".b
-      super
-      @ctx = RubyTls::SSL::Box.new(false, self, convert_tls_options(options.ssl))
+      tls_options = convert_tls_options(options.ssl)
+      @sni_hostname = tls_options[:host_name]
+      @ctx = RubyTls::SSL::Box.new(false, self, tls_options)
       @state = :negotiated if @keep_open
     end
 
@@ -114,10 +116,11 @@ module HTTPX
     #
     def verify_cb(cert)
       raise "Peer verification enabled, but no certificate received." if cert.nil?
+
       log { "TLS verifying #{cert}" }
       @peer_cert = OpenSSL::X509::Certificate.new(cert)
       # by default one doesn't verify client certificates in the server
-      verify_hostname(@peer_cert)
+      verify_hostname(@sni_hostname)
     end
 
     # copied from:
@@ -149,7 +152,7 @@ module HTTPX
       options[:ciphers] = ssl_options[:ciphers] if ssl_options.key?(:ciphers)
       options[:protocols] = ssl_options.fetch(:alpn_protocols, %w[h2 http/1.1])
       options[:fallback] = "http/1.1"
-      options[:host_name] = @hostname
+      options[:host_name] = ssl_options.fetch(:hostname, @hostname)
       options
     end
 
