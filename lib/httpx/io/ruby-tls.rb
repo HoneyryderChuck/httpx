@@ -143,13 +143,16 @@ module RubyTls
     attach_function :SSL_set_ex_data, %i[ssl int string], :int
     callback :verify_callback, %i[int x509], :int
     attach_function :SSL_set_verify, %i[ssl int verify_callback], :void
+    attach_function :SSL_get_verify_result, %i[ssl], :long
     attach_function :SSL_connect, [:ssl], :int
 
     # Verify callback
     attach_function :X509_STORE_CTX_get_current_cert, [:pointer], :x509
     attach_function :SSL_get_ex_data_X509_STORE_CTX_idx, [], :int
     attach_function :X509_STORE_CTX_get_ex_data, %i[pointer int], :ssl
+    attach_function :X509_STORE_CTX_get_error_depth, %i[x509], :int
     attach_function :PEM_write_bio_X509, %i[bio x509], :bool
+    attach_function :X509_verify_cert_error_string, %i[long], :string
 
     # SSL Context Class
     # OpenSSL before 1.1.0 do not have these methods
@@ -596,7 +599,8 @@ module RubyTls
         InstanceLookup[@ssl.address] = self
 
         @alpn_fallback = options[:fallback]
-        SSL.SSL_set_verify(@ssl, SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE, VerifyCB) if options[:verify_peer]
+        @verify_peer = options[:verify_peer]
+        SSL.SSL_set_verify(@ssl, SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE, VerifyCB) if @verify_peer
 
         # Add Server Name Indication (SNI) for client connections
         if options[:host_name]
@@ -636,7 +640,7 @@ module RubyTls
         nil
       end
 
-      attr_reader :is_server, :context, :handshake_completed, :hosts, :ssl_version, :cipher
+      attr_reader :is_server, :context, :handshake_completed, :hosts, :ssl_version, :cipher, :verify_peer
 
       def get_peer_cert
         return "" unless @ready
@@ -690,7 +694,10 @@ module RubyTls
           if resp < 0
             err_code = SSL.SSL_get_error(@ssl, resp)
             if err_code != SSL_ERROR_WANT_READ
-              @transport.close_cb if err_code == SSL_ERROR_SSL
+              if err_code == SSL_ERROR_SSL
+                verify_msg = SSL.X509_verify_cert_error_string(SSL.SSL_get_verify_result(@ssl))
+                @transport.close_cb(verify_msg)
+              end
               return
             end
           end
@@ -767,7 +774,11 @@ module RubyTls
 
       # Called from class level callback function
       def verify(cert)
-        @transport.verify_cb(cert) == true ? 1 : 0
+        @transport.verify_cb(cert)
+      end
+
+      def close(msg)
+        @transport.close_cb(msg)
       end
 
       private
@@ -783,28 +794,24 @@ module RubyTls
       end
 
       VerifyCB = FFI::Function.new(:int, %i[int pointer]) do |preverify_ok, x509_store|
-        if preverify_ok.zero?
-          1
-        else
-          x509 = SSL.X509_STORE_CTX_get_current_cert(x509_store)
-          ssl = SSL.X509_STORE_CTX_get_ex_data(x509_store, SSL.SSL_get_ex_data_X509_STORE_CTX_idx)
+        x509 = SSL.X509_STORE_CTX_get_current_cert(x509_store)
+        ssl = SSL.X509_STORE_CTX_get_ex_data(x509_store, SSL.SSL_get_ex_data_X509_STORE_CTX_idx)
 
-          bio_out = SSL.BIO_new(SSL.BIO_s_mem)
-          ret = SSL.PEM_write_bio_X509(bio_out, x509)
-          unless ret
-            SSL.BIO_free(bio_out)
-            raise "Error reading certificate"
-          end
-
-          len = SSL.BIO_pending(bio_out)
-          buffer = FFI::MemoryPointer.new(:char, len, false)
-          size = SSL.BIO_read(bio_out, buffer, len)
-
-          # THis is the callback into the ruby class
-          cert = buffer.read_string(size)
+        bio_out = SSL.BIO_new(SSL.BIO_s_mem)
+        ret = SSL.PEM_write_bio_X509(bio_out, x509)
+        unless ret
           SSL.BIO_free(bio_out)
-          InstanceLookup[ssl.address].verify(cert)
+          raise "Error reading certificate"
         end
+
+        len = SSL.BIO_pending(bio_out)
+        buffer = FFI::MemoryPointer.new(:char, len, false)
+        size = SSL.BIO_read(bio_out, buffer, len)
+
+        # THis is the callback into the ruby class
+        cert = buffer.read_string(size)
+        SSL.BIO_free(bio_out)
+        InstanceLookup[ssl.address].verify(cert) || preverify_ok.zero? ? 1 : 0
       end
 
       def pending_data(bio)
