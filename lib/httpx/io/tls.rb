@@ -4,6 +4,7 @@ require "httpx/io/ruby-tls"
 require "openssl"
 
 module HTTPX
+  TLSError = Class.new(StandardError)
   class SSL < TCP
     def initialize(_, _, options)
       super
@@ -96,8 +97,8 @@ module HTTPX
     #
     # signals TLS invalid status / shutdown.
     def close_cb
-      log { "TLS closing" }
-      transport_close
+      log { "Error, TLS closing" }
+      raise TLSError, "SSL Error"
     end
 
     # TLS callback.
@@ -115,10 +116,11 @@ module HTTPX
     # passed the peer +cert+ to be verified.
     #
     def verify_cb(cert)
-      raise "Peer verification enabled, but no certificate received." if cert.nil?
+      raise TLSError, "Peer verification enabled, but no certificate received." if cert.nil?
 
       log { "TLS verifying #{cert}" }
       @peer_cert = OpenSSL::X509::Certificate.new(cert)
+
       # by default one doesn't verify client certificates in the server
       verify_hostname(@sni_hostname)
     end
@@ -126,8 +128,10 @@ module HTTPX
     # copied from:
     # https://github.com/ruby/ruby/blob/8cbf2dae5aadfa5d6241b0df2bf44d55db46704f/ext/openssl/lib/openssl/ssl.rb#L395-L409
     #
-    def verify_hostname(peer_cert)
-      OpenSSL::SSL.verify_certificate_identity(peer_cert, @hostname)
+    def verify_hostname(host)
+      return false unless @ctx.verify_peer && @peer_cert
+
+      OpenSSL::SSL.verify_certificate_identity(@peer_cert, host)
     end
 
     private
@@ -147,8 +151,18 @@ module HTTPX
       options = {}
       options[:verify_peer] = !ssl_options.key?(:verify_mode) || ssl_options[:verify_mode] != OpenSSL::SSL::VERIFY_NONE
       options[:version] = ssl_options[:ssl_version] if ssl_options.key?(:ssl_version)
-      # options[:private_key] = tls[:key] if tls.key?(:key)
-      options[:cert_chain] = ssl_options[:cert_store] if ssl_options.key?(:cert_store)
+
+      if ssl_options.key?(:key)
+        private_key = ssl_options[:key]
+        private_key = private_key.to_pem if private_key.respond_to?(:to_pem)
+        options[:private_key] = private_key
+      end
+
+      if ssl_options.key?(:ca_path) || ssl_options.key?(:ca_file)
+        ca_path = ssl_options[:ca_path] || ssl_options[:ca_file].path
+        options[:cert_chain] = ca_path
+      end
+
       options[:ciphers] = ssl_options[:ciphers] if ssl_options.key?(:ciphers)
       options[:protocols] = ssl_options.fetch(:alpn_protocols, %w[h2 http/1.1])
       options[:fallback] = "http/1.1"

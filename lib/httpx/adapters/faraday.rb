@@ -197,7 +197,7 @@ module Faraday
           response_headers.merge!(response.headers)
         end
         @app.call(env)
-      rescue OpenSSL::SSL::SSLError => e
+      rescue ::HTTPX::TLSError => e
         raise SSL_ERROR, e
       rescue Errno::ECONNABORTED,
              Errno::ECONNREFUSED,

@@ -3,6 +3,8 @@
 require "openssl"
 
 module HTTPX
+  TLSError = OpenSSL::SSL::SSLError
+
   class SSL < TCP
     TLS_OPTIONS = if OpenSSL::SSL::SSLContext.instance_methods.include?(:alpn_protocols)
       { alpn_protocols: %w[h2 http/1.1] }

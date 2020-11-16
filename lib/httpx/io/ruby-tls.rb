@@ -149,7 +149,7 @@ module RubyTls
     attach_function :X509_STORE_CTX_get_current_cert, [:pointer], :x509
     attach_function :SSL_get_ex_data_X509_STORE_CTX_idx, [], :int
     attach_function :X509_STORE_CTX_get_ex_data, %i[pointer int], :ssl
-    attach_function :PEM_write_bio_X509, %i[bio x509], :int
+    attach_function :PEM_write_bio_X509, %i[bio x509], :bool
 
     # SSL Context Class
     # OpenSSL before 1.1.0 do not have these methods
@@ -219,9 +219,10 @@ module RubyTls
 
     attach_function :SSL_ctrl, %i[ssl int long pointer], :long
     SSL_CTRL_SET_TLSEXT_HOSTNAME = 55
+
     def self.SSL_set_tlsext_host_name(ssl, host_name)
-      name = FFI::MemoryPointer.from_string(host_name)
-      SSL_ctrl(ssl, SSL_CTRL_SET_TLSEXT_HOSTNAME, TLSEXT_NAMETYPE_host_name, name)
+      name_ptr = FFI::MemoryPointer.from_string(host_name)
+      raise "error setting SNI hostname" if SSL_ctrl(ssl, SSL_CTRL_SET_TLSEXT_HOSTNAME, TLSEXT_NAMETYPE_host_name, name_ptr) == 0
     end
 
     # Server Name Indication (SNI) Support
@@ -781,22 +782,29 @@ module RubyTls
         end
       end
 
-      VerifyCB = FFI::Function.new(:int, %i[int pointer]) do |_preverify_ok, x509_store|
-        x509 = SSL.X509_STORE_CTX_get_current_cert(x509_store)
-        ssl = SSL.X509_STORE_CTX_get_ex_data(x509_store, SSL.SSL_get_ex_data_X509_STORE_CTX_idx)
+      VerifyCB = FFI::Function.new(:int, %i[int pointer]) do |preverify_ok, x509_store|
+        if preverify_ok.zero?
+          1
+        else
+          x509 = SSL.X509_STORE_CTX_get_current_cert(x509_store)
+          ssl = SSL.X509_STORE_CTX_get_ex_data(x509_store, SSL.SSL_get_ex_data_X509_STORE_CTX_idx)
 
-        bio_out = SSL.BIO_new(SSL.BIO_s_mem)
-        SSL.PEM_write_bio_X509(bio_out, x509)
+          bio_out = SSL.BIO_new(SSL.BIO_s_mem)
+          ret = SSL.PEM_write_bio_X509(bio_out, x509)
+          unless ret
+            SSL.BIO_free(bio_out)
+            raise "Error reading certificate"
+          end
 
-        len = SSL.BIO_pending(bio_out)
-        buffer = FFI::MemoryPointer.new(:char, len, false)
-        size = SSL.BIO_read(bio_out, buffer, len)
+          len = SSL.BIO_pending(bio_out)
+          buffer = FFI::MemoryPointer.new(:char, len, false)
+          size = SSL.BIO_read(bio_out, buffer, len)
 
-        # THis is the callback into the ruby class
-        result = InstanceLookup[ssl.address].verify(buffer.read_string(size))
-
-        SSL.BIO_free(bio_out)
-        result
+          # THis is the callback into the ruby class
+          cert = buffer.read_string(size)
+          SSL.BIO_free(bio_out)
+          InstanceLookup[ssl.address].verify(cert)
+        end
       end
 
       def pending_data(bio)

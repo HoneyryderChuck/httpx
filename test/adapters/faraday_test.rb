@@ -34,9 +34,9 @@ class FaradayTest < Minitest::Test
     assert JSON.parse(res.body.to_s)["gzipped"]
   end
 
+  SYSTEM_CERT_STORE_DIR = "/usr/share/ca-certificates/mozilla"
   def test_adapter_get_ssl_fails_with_bad_cert
-    fake_store = OpenSSL::X509::Store.new
-    conn = create_connection(ssl: { cert_store: fake_store, verify: OpenSSL::SSL::VERIFY_PEER })
+    conn = create_connection(ssl: { ca_path: SYSTEM_CERT_STORE_DIR, verify: OpenSSL::SSL::VERIFY_PEER })
     err = assert_raises Faraday::Adapter::HTTPX::SSL_ERROR do
       conn.get(build_path("/get"))
     end
