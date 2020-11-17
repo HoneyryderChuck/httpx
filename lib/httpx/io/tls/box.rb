@@ -37,7 +37,7 @@ module HTTPX
 
         @handshake_completed = false
         @handshake_signaled = false
-        @negotiated = false
+        @alpn_negotiated = false
         @transport = transport
 
         @read_buffer = FFI::MemoryPointer.new(:char, READ_BUFFER, false)
@@ -54,7 +54,6 @@ module HTTPX
 
         InstanceLookup[@ssl.address] = self
 
-        @alpn_fallback = options[:fallback]
         @verify_peer = options[:verify_peer]
         SSL.SSL_set_verify(@ssl, SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE, VerifyCB) if @verify_peer
 
@@ -161,30 +160,26 @@ module HTTPX
       def signal_handshake
         @handshake_signaled = true
 
-        proto = nil
-
         # Check protocol support here
         if @context.alpn_set
-          proto = negotiated_protocol
+          proto = alpn_negotiated_protocol
 
           if proto == :failed
-            if @negotiated
+            if @alpn_negotiated
               # We should shutdown if this is the case
               # TODO: send back proper error message
               @transport.close_cb
               return
-            elsif @alpn_fallback
-              # Client or Server with a client that doesn't support ALPN
-              proto = @alpn_fallback.to_sym
             end
           end
+          @transport.alpn_protocol_cb(proto)
         end
 
-        @transport.handshake_cb(proto)
+        @transport.handshake_cb
       end
 
-      def negotiated
-        @negotiated = true
+      def alpn_negotiated!
+        @alpn_negotiated = true
       end
 
       SSL_RECEIVED_SHUTDOWN = 2
@@ -222,7 +217,7 @@ module HTTPX
 
       private
 
-      def negotiated_protocol
+      def alpn_negotiated_protocol
         return nil unless @context.alpn_set
 
         proto = FFI::MemoryPointer.new(:pointer, 1, true)
@@ -230,12 +225,11 @@ module HTTPX
         SSL.SSL_get0_alpn_selected(@ssl, proto, len)
 
         resp = proto.get_pointer(0)
-        if resp.address == 0
-          :failed
-        else
-          length = len.get_uint(0)
-          resp.read_string(length).to_sym
-        end
+
+        return :failed if resp.address == 0
+
+        length = len.get_uint(0)
+        resp.read_string(length)
       end
 
       def get_plain_text(buffer, ready)

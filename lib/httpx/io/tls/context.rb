@@ -17,7 +17,7 @@ module HTTPX
 
         protos = ssl.context.alpn_str
         status = SSL.SSL_select_next_proto(out, outlen, protos, protos.length, inp, inlen)
-        ssl.negotiated
+        ssl.alpn_negotiated
 
         case status
         when SSL::OPENSSL_NPN_UNSUPPORTED
@@ -47,66 +47,24 @@ module HTTPX
         SSL.SSL_CTX_set_mode(@ssl_ctx, SSL::SSL_MODE_RELEASE_BUFFERS)
 
         SSL.SSL_CTX_set_cipher_list(@ssl_ctx, options[:ciphers] || CIPHERS)
-        @alpn_set = false
 
-        version = options[:version]
-        if version
-          vresult = set_min_proto_version(version)
-          raise Error, "#{version} is unsupported" unless vresult
-        end
+        set_min_version(options[:version])
 
         if @is_server
           SSL.SSL_CTX_sess_set_cache_size(@ssl_ctx, 128)
           SSL.SSL_CTX_set_session_id_context(@ssl_ctx, SESSION, 8)
-
-          if SSL::ALPN_SUPPORTED && options[:protocols]
-            @alpn_str = Context.build_alpn_string(options[:protocols])
-            SSL.SSL_CTX_set_alpn_select_cb(@ssl_ctx, ALPN_Select_CB, nil)
-            @alpn_set = true
-          end
         else
           set_private_key(options[:private_key])
           set_certificate(options[:cert_chain])
-
-          # Check for ALPN support
-          if SSL::ALPN_SUPPORTED && options[:protocols]
-            protocols = Context.build_alpn_string(options[:protocols])
-            @alpn_set = SSL.SSL_CTX_set_alpn_protos(@ssl_ctx, protocols, protocols.length) == 0
-          end
         end
+        set_alpn_negotiation(options[:protocols])
       end
 
-      # Version can be one of:
-      # :SSL3, :TLS1, :TLS1_1, :TLS1_2, :TLS1_3, :TLS_MAX
-      if SSL::VERSION_SUPPORTED
-        def set_min_proto_version(version)
-          num = SSL.const_get("#{version}_VERSION")
-          SSL.SSL_CTX_set_min_proto_version(@ssl_ctx, num) == 1
-        rescue NameError
-          false
-        end
-
-        def set_max_proto_version(version)
-          num = SSL.const_get("#{version}_VERSION")
-          SSL.SSL_CTX_set_max_proto_version(@ssl_ctx, num) == 1
-        rescue NameError
-          false
-        end
-      else
-        def set_min_proto_version(_version)
-          false
-        end
-
-        def set_max_proto_version(_version)
-          false
-        end
-      end
 
       def cleanup
-        if @ssl_ctx
-          SSL.SSL_CTX_free(@ssl_ctx)
-          @ssl_ctx = nil
-        end
+        return unless @ssl_ctx
+        SSL.SSL_CTX_free(@ssl_ctx)
+        @ssl_ctx = nil
       end
 
       def add_server_name_indication
@@ -131,13 +89,46 @@ module HTTPX
       private
 
       def self.build_alpn_string(protos)
-        protocols = "".b
-        protos.each do |prot|
-          protocol = prot.to_s
-          protocols << protocol.length
-          protocols << protocol
+        protos.reduce("".b) do |buffer, proto|
+          buffer << proto.bytesize
+          buffer << proto
         end
-        protocols
+      end
+
+      # Version can be one of:
+      # :SSL3, :TLS1, :TLS1_1, :TLS1_2, :TLS1_3, :TLS_MAX
+      if SSL::VERSION_SUPPORTED
+
+        def set_min_version(version)
+          return unless version
+          num = SSL.const_get("#{version}_VERSION")
+          SSL.SSL_CTX_set_min_proto_version(@ssl_ctx, num) == 1
+          puts "version done"
+        rescue NameError
+          raise Error, "#{version} is unsupported"
+        end
+
+      else
+        def set_min_version(_version); end
+      end
+
+      if SSL::ALPN_SUPPORTED
+        def set_alpn_negotiation(protocols)
+          @alpn_set = false
+          return unless protocols
+
+          if @is_server
+            @alpn_str = Context.build_alpn_string(protocols)
+            SSL.SSL_CTX_set_alpn_select_cb(@ssl_ctx, ALPN_Select_CB, nil)
+            @alpn_set = true
+          else
+            protocols = Context.build_alpn_string(protocols)
+            @alpn_set = SSL.SSL_CTX_set_alpn_protos(@ssl_ctx, protocols, protocols.length) == 0
+            puts "alpn protocols: #{protocols}"
+          end
+        end
+      else
+        def set_alpn_negotiation(_protocols); end
       end
 
       def set_private_key(key)

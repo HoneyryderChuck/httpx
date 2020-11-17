@@ -105,11 +105,19 @@ module HTTPX
 
     # TLS callback.
     #
-    # handshake finished, passed negotiated +protocol+ (or :failed).
+    # alpn protocol negotiation (+protocol+).
     #
-    def handshake_cb(protocol)
-      @protocol = String(protocol) unless protocol == :failed
-      log { "TLS handshake completed: #{@protocol}" }
+    def alpn_protocol_cb(protocol)
+      @protocol = protocol
+      log { "TLS ALPN protocol negotiated: #{@protocol}" }
+    end
+
+    # TLS callback.
+    #
+    # handshake finished.
+    #
+    def handshake_cb
+      log { "TLS handshake completed" }
       transition(:negotiated)
     end
 
@@ -167,7 +175,6 @@ module HTTPX
 
       options[:ciphers] = ssl_options[:ciphers] if ssl_options.key?(:ciphers)
       options[:protocols] = ssl_options.fetch(:alpn_protocols, %w[h2 http/1.1])
-      options[:fallback] = "http/1.1"
       options[:hostname] = ssl_options.fetch(:hostname, @hostname)
       options
     end
