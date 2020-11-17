@@ -1,18 +1,20 @@
 # frozen_string_literal: true
 
-require "httpx/io/ruby-tls"
+require "httpx/io/tls/ffi"
+require "httpx/io/tls/context"
+require "httpx/io/tls/box"
 require "openssl"
 
 module HTTPX
-  TLSError = Class.new(StandardError)
+  TLSError = Class.new(TLS::Error)
   class SSL < TCP
     def initialize(_, _, options)
       super
       @encrypted = Buffer.new(Connection::BUFFER_SIZE)
       @decrypted = "".b
       tls_options = convert_tls_options(options.ssl)
-      @sni_hostname = tls_options[:host_name]
-      @ctx = RubyTls::SSL::Box.new(false, self, tls_options)
+      @sni_hostname = tls_options[:hostname]
+      @ctx = TLS::Box.new(false, self, tls_options)
       @state = :negotiated if @keep_open
     end
 
@@ -166,7 +168,7 @@ module HTTPX
       options[:ciphers] = ssl_options[:ciphers] if ssl_options.key?(:ciphers)
       options[:protocols] = ssl_options.fetch(:alpn_protocols, %w[h2 http/1.1])
       options[:fallback] = "http/1.1"
-      options[:host_name] = ssl_options.fetch(:hostname, @hostname)
+      options[:hostname] = ssl_options.fetch(:hostname, @hostname)
       options
     end
 
