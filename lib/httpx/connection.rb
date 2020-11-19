@@ -352,13 +352,17 @@ module HTTPX
     end
 
     def set_parser_callbacks(parser)
-      parser.on(:response) do |request, response|
+      parser.on(:response_started) do |request, response|
         AltSvc.emit(request, response) do |alt_origin, origin, alt_params|
           emit(:altsvc, alt_origin, origin, alt_params)
         end
         handle_response
         request.emit(:response, response)
       end
+      parser.on(:response_finished) do |request, response|
+        response.finish!
+      end
+
       parser.on(:altsvc) do |alt_origin, origin, alt_params|
         emit(:altsvc, alt_origin, origin, alt_params)
       end

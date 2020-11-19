@@ -68,6 +68,10 @@ module HTTPX
       raise HTTPError, self
     end
 
+    def finish!
+      @body.finish!
+    end
+
     private
 
     def no_data?

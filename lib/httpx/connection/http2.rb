@@ -218,7 +218,15 @@ module HTTPX
       request.response = response
       @streams[request] = stream
 
+      if response.status == 421
+        ex = MisdirectedRequestError.new(response)
+        ex.set_backtrace(caller)
+        emit(:error, request, ex)
+      end
+
       handle(request, stream) if request.expects?
+
+      emit(:response_started, request, response)
     end
 
     def on_stream_data(stream, request, data)
@@ -233,14 +241,7 @@ module HTTPX
         ex.set_backtrace(caller)
         emit(:error, request, ex)
       else
-        response = request.response
-        if response.status == 421
-          ex = MisdirectedRequestError.new(response)
-          ex.set_backtrace(caller)
-          emit(:error, request, ex)
-        else
-          emit(:response, request, response)
-        end
+        emit(:response_finished, request, request.response)
       end
       log(level: 2) { "#{stream.id}: closing stream" }
 
