@@ -46,7 +46,7 @@ module HTTPX
 
     attr_reader :origin, :state, :pending, :options
 
-    attr_writer :timers
+    attr_writer :timers, :pool
 
     def initialize(type, uri, options)
       @type = type

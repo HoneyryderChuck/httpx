@@ -57,6 +57,7 @@ module HTTPX
     end
 
     def init_connection(connection, _options)
+      connection.pool = self
       resolve_connection(connection)
       connection.timers = @timers
       connection.on(:open) do
