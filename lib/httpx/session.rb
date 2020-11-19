@@ -187,21 +187,16 @@ module HTTPX
 
       responses = []
 
-      begin
-        # guarantee ordered responses
-        loop do
-          request = requests.first
-          pool.next_tick until (response = fetch_response(request, connections, request_options))
+      loop do
+        request = requests.first
+        pool.next_tick until (response = fetch_response(request, connections, request_options))
 
-          responses << response
-          requests.shift
+        responses << response
+        requests.shift
 
-          break if requests.empty? || pool.empty?
-        end
-        responses
-      ensure
-        close(connections) unless @persistent
+        break if requests.empty?
       end
+      responses
     end
 
     @default_options = Options.new

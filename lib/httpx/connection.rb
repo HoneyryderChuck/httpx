@@ -356,11 +356,11 @@ module HTTPX
         AltSvc.emit(request, response) do |alt_origin, origin, alt_params|
           emit(:altsvc, alt_origin, origin, alt_params)
         end
-        handle_response
         request.emit(:response, response)
       end
-      parser.on(:response_finished) do |request, response|
+      parser.on(:response_finished) do |_request, response|
         response.finish!
+        handle_finished_response
       end
 
       parser.on(:altsvc) do |alt_origin, origin, alt_params|
@@ -466,7 +466,7 @@ module HTTPX
       emit(:close)
     end
 
-    def handle_response
+    def handle_finished_response
       @inflight -= 1
       return unless @inflight.zero?
 
@@ -481,6 +481,8 @@ module HTTPX
           end
         end
       end
+
+      @pool.close([self]) unless @options.persistent
     end
 
     def on_error(error)
