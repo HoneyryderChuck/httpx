@@ -24,7 +24,7 @@ module HTTPX
               return unless @io.connected?
 
               @parser = ConnectProxyParser.new(@write_buffer, @options.merge(max_concurrent_requests: 1))
-              @parser.once(:response, &method(:__http_on_connect))
+              @parser.once(:response_started, &method(:__http_on_connect))
               @parser.on(:close) { transition(:closing) }
               __http_proxy_connect
               return if @state == :connected
