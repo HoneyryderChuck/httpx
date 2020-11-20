@@ -27,8 +27,16 @@ module HTTPX
       @version = version
       @status = Integer(status)
       @headers = @options.headers_class.new(headers)
-      @body = @options.response_body_class.new(self, threshold_size: @options.body_threshold_size,
-                                                     window_size: @options.window_size)
+
+      content_size = @headers["content-length"]
+      content_size = Integer(content_size) if content_size
+
+      @body = @options.response_body_class.new(
+        self,
+        content_size: content_size,
+        threshold_size: @options.body_threshold_size,
+        window_size: @options.window_size
+      )
     end
 
     def merge_headers(h)
@@ -40,8 +48,7 @@ module HTTPX
     end
 
     def bodyless?
-      @request.verb == :head ||
-        no_data?
+      @request.verb == :head || no_data?
     end
 
     def content_type
@@ -65,6 +72,7 @@ module HTTPX
     def raise_for_status
       return if @status < 400
 
+      close
       raise HTTPError, self
     end
 
@@ -87,92 +95,107 @@ module HTTPX
     end
 
     class Body
-      def initialize(response, threshold_size:, window_size: 1 << 14)
+      def initialize(response, content_size:, threshold_size:, window_size: 1 << 14)
         @response = response
         @headers = response.headers
+        @content_size = content_size
         @threshold_size = threshold_size
         @window_size = window_size
         @encoding = response.content_type.charset || Encoding::BINARY
+        @buffer = Buffer.new(threshold_size)
         @length = 0
-        @buffer = nil
-        @state = :idle
+        @finished = false
+      end
+
+      def finish!
+        @finished = true
       end
 
       def write(chunk)
         @length += chunk.bytesize
-        transition
-        @buffer.write(chunk)
+        @buffer << chunk
       end
 
-      def read(*args)
-        return unless @buffer
-
-        rewind
-
-        @buffer.read(*args)
-      end
-
-      def bytesize
-        @length
-      end
-
+      # This is non-reentrant.
       def each
         return enum_for(__method__) unless block_given?
 
+        enum_buffer = "".b
+
+        buffer = @buffer
+
+        # 1st step - drain the current buffer
+        buffer.rewind
+        enum_buffer << buffer.read
+
+        unless enum_buffer.empty?
+          yield enum_buffer.force_encoding(@encoding)
+          enum_buffer.clear
+        end
+
+        # 2. yield chunks as they come
         begin
-          unless @state == :idle
-            rewind
-            while (chunk = @buffer.read(@window_size))
-              yield(chunk.force_encoding(@encoding))
-            end
+          @buffer = enum_buffer
+          loop do
+            break if finished?
+
+            pool.next_tick
+
+            yield(@buffer.force_encoding(@encoding)) unless @buffer.empty?
+
+            @buffer.clear
           end
         ensure
+          @buffer = buffer
           close
         end
       end
 
       def to_s
-        rewind
-        if @buffer
-          content = @buffer.read
-          begin
-            return content.force_encoding(@encoding)
-          rescue ArgumentError # ex: unknown encoding name - utf
-            return content
-          end
+        # early exit if the operation has been done already
+        return @content if defined?(@content)
+
+        buffer = @buffer
+        begin
+          @buffer.rewind
+          # drain buffer to memory
+          @content = read
+
+          @buffer = @content
+          pool.next_tick until finished?
+
+          @content.force_encoding(@encoding)
+        ensure
+          @buffer = buffer
+          close
         end
-        "".b
-      ensure
-        close
       end
       alias_method :to_str, :to_s
 
-      def empty?
-        @length.zero?
+      # this will read from the buffer directly
+      def read(*args)
+        @buffer.read(*args)
       end
 
       def copy_to(dest)
-        return unless @buffer
-
-        rewind
-
-        if dest.respond_to?(:path) && @buffer.respond_to?(:path)
-          FileUtils.mv(@buffer.path, dest.path)
+        buffer = if @content
+          StringIO.new(@content)
         else
-          @buffer.rewind
-          ::IO.copy_stream(@buffer, dest)
+          pool.next_tick until finished?
+          @buffer
+        end
+
+        if dest.respond_to?(:path) && buffer.respond_to?(:path)
+          FileUtils.mv(buffer.path, dest.path)
+        else
+          buffer.rewind
+          ::IO.copy_stream(buffer, dest)
         end
       end
 
       # closes/cleans the buffer, resets everything
       def close
-        return if @state == :idle
-
         @buffer.close
-        @buffer.unlink if @buffer.respond_to?(:unlink)
-        @buffer = nil
-        @length = 0
-        @state = :idle
       end
 
       def ==(other)
@@ -189,37 +212,56 @@ module HTTPX
 
       private
 
-      def rewind
-        return if @state == :idle
-
-        @buffer.rewind
+      def pool
+        Thread.current[:httpx_connection_pool] ||= Pool.new
       end
 
-      def transition
-        case @state
-        when :idle
-          if @length > @threshold_size
-            @state = :buffer
-            @buffer = Tempfile.new("httpx", encoding: Encoding::BINARY, mode: File::RDWR)
-          else
-            @state = :memory
-            @buffer = StringIO.new("".b, File::RDWR)
-          end
-        when :memory
-          if @length > @threshold_size
-            aux = @buffer
-            @buffer = Tempfile.new("httpx", encoding: Encoding::BINARY, mode: File::RDWR)
-            aux.rewind
-            ::IO.copy_stream(aux, @buffer)
-            # (this looks like a bug from Ruby < 2.3
-            @buffer.pos = aux.pos ##################
-            ########################################
-            aux.close
-            @state = :buffer
-          end
+      def finished?
+        @finished
+      end
+
+      class Buffer
+        def initialize(threshold)
+          @threshold = threshold
+          @buffer = nil
+          @size = 0
         end
 
-        return unless %i[memory buffer].include?(@state)
+        def <<(chunk)
+          @size += chunk.bytesize
+
+          if @size > @threshold
+            buffer = @buffer
+            @buffer = Tempfile.new("httpx", encoding: Encoding::BINARY, mode: File::RDWR)
+            if buffer
+              buffer.rewind
+              ::IO.copy_stream(buffer, @buffer)
+              # (this looks like a bug from Ruby < 2.3
+              @buffer.pos = buffer.pos ###############
+              ########################################
+            end
+          else
+            @buffer ||= StringIO.new("".b, File::RDWR)
+          end
+
+          @buffer << chunk
+        end
+
+        def read(*args)
+          return "".b unless @buffer
+
+          @buffer.read(*args)
+        end
+
+        def rewind
+          @buffer.rewind if @buffer
+        end
+
+        # closes/cleans the buffer, resets everything
+        def close
+          @buffer.close if @buffer.respond_to?(:close)
+          @buffer.unlink if @buffer.respond_to?(:unlink)
+        end
       end
     end
   end
