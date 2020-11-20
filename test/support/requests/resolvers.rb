@@ -22,6 +22,7 @@ module Requests
         uri = build_uri("/get")
         response = session.head(uri, resolver_class: resolver, resolver_options: options)
         verify_status(response, 200)
+        response.close
       end
 
       next unless resolver == :https
@@ -31,6 +32,7 @@ module Requests
         uri = build_uri("/get")
         response = session.head(uri, resolver_class: resolver, resolver_options: options.merge(use_get: true))
         verify_status(response, 200)
+        response.close
       end
     end
   end
