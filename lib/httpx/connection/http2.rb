@@ -226,6 +226,9 @@ module HTTPX
 
       handle(request, stream) if request.expects?
 
+      # do not emit the event if response is 100-continue
+      return if response.status == 100
+
       emit(:response_started, request, response)
     end
 

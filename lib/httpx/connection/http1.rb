@@ -105,7 +105,11 @@ module HTTPX
       log(color: :yellow) { response.headers.each.map { |f, v| "-> HEADER: #{f}: #{v}" }.join("\n") }
 
       @request.response = response
-      emit(:response_started, @request, response)
+
+      unless response.status == 100
+        # do not emit the event if response is 100-continue
+        emit(:response_started, @request, response)
+      end
       on_complete if response.complete?
     end
 
@@ -146,7 +150,6 @@ module HTTPX
       @request = nil
       @requests.shift
       response = request.response
-      emit(:response_finished, request, response)
 
       if @parser.upgrade?
         response << @parser.upgrade_data
@@ -156,6 +159,7 @@ module HTTPX
       emit(:response_finished, request, response)
       @parser.reset!
       @max_requests -= 1
+      emit(:response_finished, request, response)
       manage_connection(response)
       send(@pending.shift) unless @pending.empty?
     end
