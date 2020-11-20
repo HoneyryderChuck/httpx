@@ -13,6 +13,8 @@ module Requests
         rate_limiter_session.get(uri)
 
         verify_rated_responses(rate_limiter_session, 429)
+
+        rate_limiter_session.close
       end
 
       def test_plugin_rate_limiter_503
@@ -25,6 +27,8 @@ module Requests
         rate_limiter_session.get(uri)
 
         verify_rated_responses(rate_limiter_session, 503)
+
+        rate_limiter_session.close
       end
 
       def test_plugin_rate_limiter_retry_after_integer
@@ -42,6 +46,8 @@ module Requests
 
         total_time = after_time - before_time
         assert total_time >= 2, "request didn't take as expected to retry (#{total_time} secs)"
+
+        rate_limiter_session.close
       end
 
       def test_plugin_rate_limiter_retry_after_date
@@ -58,6 +64,8 @@ module Requests
         verify_rated_responses(rate_limiter_session, 429)
         total_time = after_time - before_time
         assert total_time >= 2, "request didn't take as expected to retry (#{total_time} secs)"
+
+        rate_limiter_session.close
       end
 
       private

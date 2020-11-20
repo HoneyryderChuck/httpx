@@ -20,7 +20,6 @@ module SessionWithMockResponse
     def on_response(request, response)
       return super unless response && @mock_responses_counter.positive?
 
-      response.close
       @mock_responses_counter -= 1
 
       response.status = Thread.current[:httpx_mock_response_status]

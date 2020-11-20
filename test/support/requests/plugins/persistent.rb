@@ -9,11 +9,13 @@ module Requests
         non_persistent_session = HTTPX.plugin(SessionWithPool)
         response = non_persistent_session.get(uri)
         verify_status(response, 200)
+        response.close
         assert non_persistent_session.pool.connections.empty?, "unexpected connections ()"
 
         persistent_session = non_persistent_session.plugin(:persistent)
         response = persistent_session.get(uri)
         verify_status(response, 200)
+        response.close
         assert persistent_session.pool.connections.size == 1, "unexpected connections ()"
 
         persistent_session.close

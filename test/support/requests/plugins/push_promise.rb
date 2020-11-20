@@ -8,6 +8,8 @@ module Requests
         verify_status(html, 200)
         verify_status(css, 200)
         verify_no_header(css.headers, "x-http2-push")
+        html.close
+        css.close
       end
 
       def test_plugin_push_promise_get
@@ -17,6 +19,8 @@ module Requests
         verify_status(css, 200)
         verify_header(css.headers, "x-http2-push", "1")
         assert css.pushed?
+        html.close
+        css.close
       end
 
       def test_plugin_push_promise_concurrent
@@ -27,6 +31,8 @@ module Requests
         verify_status(css, 200)
         verify_no_header(css.headers, "x-http2-push")
         assert !css.pushed?
+        html.close
+        css.close
       end
 
       private

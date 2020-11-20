@@ -30,8 +30,6 @@ module Requests
 
       verify_status(response2, 200)
       verify_body_length(response2)
-
-      assert response1.to_s == response2.to_s, "request should have been the same"
     end
 
     def test_multiple_get_no_concurrency
@@ -62,7 +60,9 @@ module Requests
       session.wrap do |http|
         response1, response2 = http.get(uri, uri)
         verify_status(response1, 200)
+        verify_body_length(response1)
         verify_status(response2, 200)
+        verify_body_length(response2)
         connection_count = http.pool.connection_count
         assert connection_count == 2, "expected to have 2 connections, instead have #{connection_count}"
       end
@@ -74,14 +74,17 @@ module Requests
       verify_status(response, 200)
       request = response.instance_variable_get(:@request)
       verify_header(request.headers, "accept", "text/html")
+      response.close
     end
 
     def test_get_non_ascii
       response = HTTPX.get("http://bücher.ch")
       verify_status(response, 200)
+      response.close
 
       response = HTTPX.get(build_uri("/get?q=ã"))
       verify_status(response, 200)
+      response.close
     end unless RUBY_VERSION < "2.3"
   end
 end

@@ -24,6 +24,8 @@ module Requests
 
         response = session.get(max_redirect_uri(4))
         verify_status(response, 302)
+
+        session.close
       end
 
       def test_plugin_follow_redirects_max_redirects
@@ -34,6 +36,8 @@ module Requests
 
         response = session.max_redirects(1).get(max_redirect_uri(2))
         verify_status(response, 302)
+
+        session.close
       end
 
       def test_plugin_follow_redirects_retry_after
@@ -47,6 +51,8 @@ module Requests
 
         total_time = after_time - before_time
         assert total_time >= 2, "request didn't take as expected to redirect (#{total_time} secs)"
+
+        session.close
       end
 
       def test_plugin_follow_insecure_no_insecure_downgrade
@@ -62,6 +68,8 @@ module Requests
         insecure_response = insecure_session.get(insecure_redirect_uri)
         assert insecure_response.is_a?(HTTPX::Response),
                "request should follow insecure URLs (instead: #{insecure_response.status})"
+
+        session.close
       end
 
       private

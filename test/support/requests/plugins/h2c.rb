@@ -8,6 +8,7 @@ module Requests
         response = HTTPX.get(uri)
         verify_status(response, 200)
         assert response.version == "1.1", "http requests should be by default in HTTP/1.1"
+        response.close
       end
 
       def test_plugin_h2c
@@ -16,6 +17,7 @@ module Requests
         response = session.get(uri)
         verify_status(response, 200)
         assert response.version == "2.0", "http h2c requests should be in HTTP/2"
+        response.close
       end
     end
   end

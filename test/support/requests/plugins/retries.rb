@@ -15,6 +15,9 @@ module Requests
         retries_response = retries_session.get(build_uri("/delay/10"))
         assert verify_error_response(retries_response)
         assert retries_session.calls == 3, "expect request to be built 3 times (was #{retries_session.calls})"
+
+        no_retries_session.close
+        retries_session.close
       end
 
       def test_plugin_retries_change_requests
@@ -33,6 +36,8 @@ module Requests
         retries_response = retries_session.post(build_uri("/delay/10"), body: ["a" * 1024], retry_change_requests: true)
         assert check_error[retries_response]
         assert retries_session.calls == 3, "expect request to be built 3 times (was #{retries_session.calls})"
+
+        retries_session.close
       end
 
       def test_plugin_retries_max_retries
@@ -47,6 +52,8 @@ module Requests
         # we're comparing against max-retries + 1, because the calls increment will happen
         # also in the last call, where the request is not going to be retried.
         assert retries_session.calls == 2, "expect request to be built 2 times (was #{retries_session.calls})"
+
+        retries_session.close
       end
 
       def test_plugin_retries_retry_on
@@ -63,6 +70,8 @@ module Requests
         retries_response = retries_session.get(build_uri("/delay/10"))
         assert verify_error_response(retries_response)
         assert retries_session.calls.zero?, "expect request not to be retried (it was, #{retries_session.calls} times)"
+
+        retries_session.close
       end
 
       def test_plugin_retries_retry_after
@@ -78,6 +87,8 @@ module Requests
 
         assert verify_error_response(retries_response)
         assert_in_delta 3 + 2 + 3, total_time, 1, "request didn't take as expected to retry (#{total_time} secs)"
+
+        retries_session.close
       end
 
       def test_plugin_retries_retry_after_callable
@@ -95,6 +106,8 @@ module Requests
 
         assert verify_error_response(retries_response)
         assert_in_delta 3 + 2 + 3 + 4 + 3, total_time, 1, "request didn't take as expected to retry (#{total_time} secs)"
+
+        retries_session.close
       end
 
       private

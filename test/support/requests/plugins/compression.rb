@@ -9,12 +9,14 @@ module Requests
         skip if response1.status == 429
         verify_status(response1, 200)
         assert !response1.headers.key?("content-encoding"), "response should come in plain text"
+        response1.close
 
         session = HTTPX.plugin(:compression)
         response = session.get(url)
         skip if response == 429
         verify_status(response, 200)
         assert response.body.encodings == %w[gzip], "response should be sent with gzip encoding"
+        response.close
       end
 
       def test_plugin_compression_identity_post
