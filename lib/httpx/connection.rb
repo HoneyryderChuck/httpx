@@ -46,7 +46,7 @@ module HTTPX
 
     attr_reader :origin, :state, :pending, :options
 
-    attr_writer :timers, :pool
+    attr_writer :timers, :pool, :persistent
 
     def initialize(type, uri, options)
       @type = type
@@ -482,7 +482,7 @@ module HTTPX
         end
       end
 
-      @pool.close([self]) unless @options.persistent
+      @pool.close([self]) unless @persistent
     end
 
     def on_error(error)

@@ -23,6 +23,7 @@ module HTTPX
         yield self
       ensure
         @persistent = prev_persistent
+        close unless @persistent
       end
     end
 
@@ -165,6 +166,7 @@ module HTTPX
         end
       end
       connection = options.connection_class.new(type, uri, options)
+      connection.persistent = @persistent
       catch(:coalesced) do
         pool.init_connection(connection, options)
         connection
