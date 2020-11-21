@@ -123,30 +123,24 @@ module HTTPX
       def each
         return enum_for(__method__) unless block_given?
 
-        enum_buffer = "".b
-
         buffer = @buffer
 
         # 1st step - drain the current buffer
         buffer.rewind
-        enum_buffer << buffer.read
+        buffered = buffer.read
 
-        unless enum_buffer.empty?
-          yield enum_buffer.force_encoding(@encoding)
-          enum_buffer.clear
-        end
+        yield buffered.force_encoding(@encoding) unless buffered.empty?
 
         # 2. yield chunks as they come
         begin
-          @buffer = enum_buffer
           loop do
             break if finished?
+
+            @buffer = "".b
 
             @pool.next_tick
 
             yield(@buffer.force_encoding(@encoding)) unless @buffer.empty?
-
-            @buffer.clear
           end
         ensure
           @buffer = buffer
