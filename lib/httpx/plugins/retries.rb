@@ -75,7 +75,7 @@ module HTTPX
                )
                # rubocop:enable Style/MultilineTernaryOperator
              )
-            response.close if response.respond_to?(:close)
+            response.finish_and_close if response.respond_to?(:finish_and_close)
             request.retries -= 1
             log { "failed to get response, #{request.retries} tries to go..." }
             request.transition(:idle)

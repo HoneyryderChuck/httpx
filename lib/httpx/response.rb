@@ -22,6 +22,10 @@ module HTTPX
 
     def_delegator :@body, :pool=
 
+    def_delegator :@body, :finish!
+
+    def_delegator :@body, :finish_and_close
+
     def_delegator :@request, :uri
 
     def initialize(request, status, version, headers)
@@ -78,10 +82,6 @@ module HTTPX
 
       close
       raise HTTPError, self
-    end
-
-    def finish!
-      @body.finish!
     end
 
     private
@@ -200,6 +200,11 @@ module HTTPX
           buffer.rewind
           ::IO.copy_stream(buffer, dest)
         end
+      end
+
+      def finish_and_close
+        @pool.next_tick until finished?
+        close
       end
 
       # closes/cleans the buffer, resets everything
