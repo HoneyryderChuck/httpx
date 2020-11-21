@@ -46,7 +46,9 @@ module HTTPX
 
     attr_reader :origin, :state, :pending, :options
 
-    attr_writer :timers, :pool, :persistent
+    attr_writer :timers, :pool
+
+    attr_accessor :persistent
 
     def initialize(type, uri, options)
       @type = type
@@ -353,13 +355,14 @@ module HTTPX
 
     def set_parser_callbacks(parser)
       parser.on(:response_started) do |request, response|
+        response.pool = @pool
         AltSvc.emit(request, response) do |alt_origin, origin, alt_params|
           emit(:altsvc, alt_origin, origin, alt_params)
         end
         request.emit(:response, response)
       end
       parser.on(:response_finished) do |_request, response|
-        response.finish!
+        response.emit(:complete)
         handle_finished_response
       end
 

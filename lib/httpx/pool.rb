@@ -56,8 +56,9 @@ module HTTPX
       end if @connections.empty?
     end
 
-    def init_connection(connection, _options)
+    def init_connection(connection, persistent, _options)
       connection.pool = self
+      connection.persistent = persistent
       resolve_connection(connection)
       connection.timers = @timers
       connection.on(:open) do
@@ -163,6 +164,8 @@ module HTTPX
 
       @resolvers[resolver_type] ||= begin
         resolver = resolver_type.new(connection_options)
+        resolver.persistent = connection.persistent if resolver.respond_to?(:persistent=)
+        resolver.pool = self if resolver.respond_to?(:pool=)
         resolver.on(:resolve, &method(:on_resolver_connection))
         resolver.on(:error, &method(:on_resolver_error))
         resolver.on(:close) { on_resolver_close(resolver) }

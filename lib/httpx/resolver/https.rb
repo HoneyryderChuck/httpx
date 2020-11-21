@@ -27,6 +27,8 @@ module HTTPX
 
     def_delegators :@resolver_connection, :connecting?, :to_io, :call, :close
 
+    attr_writer :persistent, :pool
+
     def initialize(options)
       @options = Options.new(options)
       @resolver_options = Resolver::Options.new(DEFAULTS.merge(@options.resolver_options || {}))
@@ -76,15 +78,11 @@ module HTTPX
       resolver_connection.__send__(__method__)
     end
 
-    def pool
-      Thread.current[:httpx_connection_pool] ||= Pool.new
-    end
-
     def resolver_connection
-      @resolver_connection ||= pool.find_connection(@uri, @options) || begin
+      @resolver_connection ||= @pool.find_connection(@uri, @options) || begin
         @building_connection = true
         connection = @options.connection_class.new("ssl", @uri, @options.merge(ssl: { alpn_protocols: %w[h2] }))
-        pool.init_connection(connection, @options)
+        @pool.init_connection(connection, @persistent, @options)
         emit_addresses(connection, @uri_addresses)
         @building_connection = false
         connection

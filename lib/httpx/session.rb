@@ -91,7 +91,7 @@ module HTTPX
         other_connection = connection.create_idle
         other_connection.merge(connection)
         catch(:coalesced) do
-          pool.init_connection(other_connection, options)
+          pool.init_connection(other_connection, @persistent, options)
         end
         set_connection_callbacks(other_connection, connections, options)
         connections << other_connection
@@ -166,9 +166,8 @@ module HTTPX
         end
       end
       connection = options.connection_class.new(type, uri, options)
-      connection.persistent = @persistent
       catch(:coalesced) do
-        pool.init_connection(connection, options)
+        pool.init_connection(connection, @persistent, options)
         connection
       end
     end

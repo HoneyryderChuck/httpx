@@ -19,6 +19,8 @@ module HTTPX
 
     def_delegator :@body, :close
 
+    def_delegator :@body, :pool=
+
     def_delegator :@request, :uri
 
     def initialize(request, status, version, headers)
@@ -95,6 +97,10 @@ module HTTPX
     end
 
     class Body
+      attr_writer :pool
+
+      attr_reader :bytesize
+
       def initialize(response, content_size:, threshold_size:, window_size: 1 << 14)
         @response = response
         @headers = response.headers
@@ -103,7 +109,7 @@ module HTTPX
         @window_size = window_size
         @encoding = response.content_type.charset || Encoding::BINARY
         @buffer = Buffer.new(threshold_size)
-        @length = 0
+        @bytesize = 0
         @finished = false
       end
 
@@ -112,7 +118,7 @@ module HTTPX
       end
 
       def write(chunk)
-        @length += chunk.bytesize
+        @bytesize += chunk.bytesize
         @buffer << chunk
       end
 
@@ -139,7 +145,7 @@ module HTTPX
           loop do
             break if finished?
 
-            pool.next_tick
+            @pool.next_tick
 
             yield(@buffer.force_encoding(@encoding)) unless @buffer.empty?
 
@@ -162,7 +168,7 @@ module HTTPX
           @content = read
 
           @buffer = @content
-          pool.next_tick until finished?
+          @pool.next_tick until finished?
 
           @content.force_encoding(@encoding)
         ensure
@@ -181,7 +187,7 @@ module HTTPX
         buffer = if @content
           StringIO.new(@content)
         else
-          pool.next_tick until finished?
+          @pool.next_tick until finished?
           @buffer
         end
 
@@ -206,15 +212,11 @@ module HTTPX
       def inspect
         "#<HTTPX::Response::Body:#{object_id} " \
         "@state=#{@state} " \
-        "@length=#{@length}>"
+        "@bytesize=#{@bytesize}>"
       end
       # :nocov:
 
       private
-
-      def pool
-        Thread.current[:httpx_connection_pool] ||= Pool.new
-      end
 
       def finished?
         @finished

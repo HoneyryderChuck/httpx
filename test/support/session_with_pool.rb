@@ -12,7 +12,7 @@ module SessionWithPool
       @ping_count = 0
     end
 
-    def init_connection(connection, _)
+    def init_connection(connection, *)
       super
       connection.on(:open) { @connection_count += 1 }
       connection.on(:pong) { @ping_count += 1 }

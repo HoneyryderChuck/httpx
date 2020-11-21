@@ -114,8 +114,7 @@ module HTTPX
           return super unless proxy
 
           connection = options.connection_class.new("tcp", uri, options)
-          connection.persistent = @persistent
-          pool.init_connection(connection, options)
+          pool.init_connection(connection, @persistent, options)
           connection
         end
 
