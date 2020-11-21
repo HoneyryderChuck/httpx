@@ -182,6 +182,7 @@ module HTTPX
 
       # this will read from the buffer directly
       def read(*args)
+        @buffer.rewind
         @buffer.read(*args)
       end
 
