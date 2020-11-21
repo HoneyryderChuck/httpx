@@ -176,18 +176,12 @@ module HTTPX
       end
 
       def copy_to(dest)
-        buffer = if @content
-          StringIO.new(@content)
+        if @content
+          buffer = StringIO.new(@content)
+          ::IO.copy_stream(buffer, dest)
         else
           @pool.next_tick until finished?
-          @buffer
-        end
-
-        if dest.respond_to?(:path) && buffer.respond_to?(:path)
-          FileUtils.mv(buffer.path, dest.path)
-        else
-          buffer.rewind
-          ::IO.copy_stream(buffer, dest)
+          @buffer.copy_to(dest)
         end
       end
 
@@ -260,6 +254,18 @@ module HTTPX
           raise Error, "response is closed" if @closed
 
           @buffer.rewind if @buffer
+        end
+
+        def copy_to(dest)
+          raise Error, "response is closed" if @closed
+          return unless @buffer
+
+          @buffer.rewind
+          if dest.respond_to?(:path) && @buffer.respond_to?(:path)
+            FileUtils.mv(@buffer.path, dest.path)
+          else
+            ::IO.copy_stream(@buffer, dest)
+          end
         end
 
         # closes/cleans the buffer, resets everything
