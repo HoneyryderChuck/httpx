@@ -62,7 +62,7 @@ class HTTP1ParserTest < Minitest::Test
         end
 
         assert response.body.bytesize == res_json["body_size"] if res_json["body_size"]
-        assert response.body.to_s == res_json["body"]
+        assert response.body.read == res_json["body"]
       rescue HTTPX::Parser::Error => e
         raise e unless res_json["error"]
 

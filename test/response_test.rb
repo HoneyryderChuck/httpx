@@ -16,12 +16,6 @@ class ResponseTest < Minitest::Test
     assert resource.headers.is_a?(Headers), "headers should have been coerced"
   end
 
-  def test_response_body_write
-    assert resource.body.empty?, "body should be empty after init"
-    resource << "data"
-    assert resource.body == "data", "body should have been updated"
-  end
-
   def test_raise_for_status
     r1 = Response.new(request, 200, "2.0", {})
     r1.raise_for_status
@@ -36,22 +30,21 @@ class ResponseTest < Minitest::Test
   end
 
   def test_response_body_to_s
-    body1 = Response::Body.new(Response.new(request, 200, "2.0", {}), threshold_size: 1024)
-    assert body1.empty?, "body must be empty after initialization"
+    body1 = response_body(Response.new(request, 200, "2.0", {}), threshold_size: 1024)
     body1.write("foo")
     assert body1 == "foo", "body must be updated"
-    body1.write("foo")
-    body1.write("bar")
-    assert body1 == "foobar", "body must buffer subsequent chunks"
+    body2 = response_body(Response.new(request, 200, "2.0", {}), threshold_size: 1024)
+    body2.write("foo")
+    body2.write("bar")
+    assert body2 == "foobar", "body must buffer subsequent chunks"
 
-    body3 = Response::Body.new(Response.new(request("head"), 200, "2.0", {}), threshold_size: 1024)
-    assert body3.empty?, "body must be empty after initialization"
+    body3 = response_body(Response.new(request("head"), 200, "2.0", {}), threshold_size: 1024)
     assert body3 == "", "HEAD requets body must be empty"
   end
 
   def test_response_body_copy_to_memory
     payload = "a" * 512
-    body = Response::Body.new(Response.new(request, 200, "2.0", {}), threshold_size: 1024)
+    body = response_body(Response.new(request, 200, "2.0", {}), threshold_size: 1024)
     body.write(payload)
 
     memory = StringIO.new
@@ -62,7 +55,7 @@ class ResponseTest < Minitest::Test
 
   def test_response_body_copy_to_file
     payload = "a" * 2048
-    body = Response::Body.new(Response.new(request, 200, "2.0", {}), threshold_size: 1024)
+    body = response_body(Response.new(request, 200, "2.0", {}), threshold_size: 1024)
     body.write(payload)
 
     file = Tempfile.new("httpx-file-buffer")
@@ -73,7 +66,7 @@ class ResponseTest < Minitest::Test
   end
 
   def test_response_body_read
-    body1 = Response::Body.new(Response.new(request, 200, "2.0", {}), threshold_size: 1024)
+    body1 = response_body(Response.new(request, 200, "2.0", {}), threshold_size: 1024)
     body1.write("foo")
     assert body1.bytesize == 3
     assert body1.read(1), "f"
@@ -82,24 +75,25 @@ class ResponseTest < Minitest::Test
   end
 
   def test_response_body_each
-    body1 = Response::Body.new(Response.new(request, 200, "2.0", {}), threshold_size: 1024)
+    body1 = response_body(Response.new(request, 200, "2.0", {}), threshold_size: 1024)
     body1.write("foo")
     assert body1.each.to_a == %w[foo], "must yield buffer"
-    body1.write("foo")
-    body1.write("bar")
-    assert body1.each.to_a == %w[foobar], "must yield buffers"
+    body2 = response_body(Response.new(request, 200, "2.0", {}), threshold_size: 1024)
+    body2.write("foo")
+    body2.write("bar")
+    assert body2.each.to_a == %w[foobar], "must yield buffers"
   end
 
   def test_response_body_buffer
-    body = Response::Body.new(Response.new(request, 200, "2.0", {}), threshold_size: 10)
-    body.extend(Module.new do
+    buffer = Response::Body::Buffer.new(10)
+    buffer.extend(Module.new do
       attr_reader :buffer
     end)
-    assert body.buffer.nil?, "body should not buffer anything"
-    body.write("hello")
-    assert body.buffer.is_a?(StringIO), "body should buffer to memory"
-    body.write(" world")
-    assert body.buffer.is_a?(Tempfile), "body should buffer to file after going over threshold"
+    assert buffer.buffer.nil?, "body should not buffer anything"
+    buffer << "hello"
+    assert buffer.buffer.is_a?(StringIO), "body should buffer to memory"
+    buffer << " world"
+    assert buffer.buffer.is_a?(Tempfile), "body should buffer to file after going over threshold"
   end
 
   private
@@ -114,5 +108,22 @@ class ResponseTest < Minitest::Test
 
   def resource
     @resource ||= Response.new(request, 200, "2.0", {})
+  end
+
+  def response_body(response, pool: mock_pool, **params)
+    body = Response::Body.new(response, **params)
+    pool.body = body
+    body.pool = pool
+    body
+  end
+
+  def mock_pool
+    Class.new do
+      attr_writer :body
+
+      def next_tick
+        @body.finish!
+      end
+    end.new
   end
 end
