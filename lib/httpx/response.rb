@@ -35,12 +35,8 @@ module HTTPX
       @status = Integer(status)
       @headers = @options.headers_class.new(headers)
 
-      content_size = @headers["content-length"]
-      content_size = Integer(content_size) if content_size
-
       @body = @options.response_body_class.new(
         self,
-        content_size: content_size,
         threshold_size: @options.body_threshold_size,
         window_size: @options.window_size
       )
@@ -103,10 +99,9 @@ module HTTPX
 
       attr_reader :bytesize
 
-      def initialize(response, content_size:, threshold_size:, window_size: 1 << 14)
+      def initialize(response, threshold_size:, window_size: 1 << 14)
         @response = response
         @headers = response.headers
-        @content_size = content_size
         @threshold_size = threshold_size
         @window_size = window_size
         @encoding = response.content_type.charset || Encoding::BINARY
