@@ -235,9 +235,12 @@ module HTTPX
           @threshold = threshold
           @buffer = nil
           @size = 0
+          @closed = false
         end
 
         def <<(chunk)
+          return if @closed
+
           @size += chunk.bytesize
 
           if @size > @threshold
@@ -258,12 +261,15 @@ module HTTPX
         end
 
         def read(*args)
+          raise Error, "response is closed" if @closed
           return "".b unless @buffer
 
           @buffer.read(*args)
         end
 
         def rewind
+          raise Error, "response is closed" if @closed
+
           @buffer.rewind if @buffer
         end
 
@@ -271,6 +277,8 @@ module HTTPX
         def close
           @buffer.close if @buffer.respond_to?(:close)
           @buffer.unlink if @buffer.respond_to?(:unlink)
+          @buffer = nil
+          @closed = true
         end
       end
     end
