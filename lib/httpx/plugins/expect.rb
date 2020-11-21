@@ -60,6 +60,7 @@ module HTTPX
           return unless response
 
           if response.status == 417 && request.headers.key?("expect")
+            response.close
             request.headers.delete("expect")
             request.transition(:idle)
             connection = find_connection(request, connections, options)
