@@ -120,7 +120,7 @@ module HTTPX
       error.set_backtrace(e.backtrace)
       emit(:error, connection, error)
     else
-      parse(response)
+      response.once(:complete) { parse(response) }
     ensure
       @requests.delete(request)
     end

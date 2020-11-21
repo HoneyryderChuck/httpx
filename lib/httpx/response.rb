@@ -8,6 +8,7 @@ require "forwardable"
 module HTTPX
   class Response
     extend Forwardable
+    include Callbacks
 
     attr_reader :status, :headers, :body, :version
 
@@ -39,6 +40,7 @@ module HTTPX
         threshold_size: @options.body_threshold_size,
         window_size: @options.window_size
       )
+      once(:complete, &method(:finish!))
     end
 
     def merge_headers(h)
