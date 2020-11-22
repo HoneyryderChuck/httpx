@@ -95,6 +95,8 @@ module HTTPX
       end
 
       def write(chunk)
+        return if @state == :closed
+
         @length += chunk.bytesize
         transition
         @buffer.write(chunk)
@@ -116,7 +118,7 @@ module HTTPX
         return enum_for(__method__) unless block_given?
 
         begin
-          unless @state == :idle
+          if @buffer
             rewind
             while (chunk = @buffer.read(@window_size))
               yield(chunk.force_encoding(@encoding))
@@ -155,20 +157,19 @@ module HTTPX
         if dest.respond_to?(:path) && @buffer.respond_to?(:path)
           FileUtils.mv(@buffer.path, dest.path)
         else
-          @buffer.rewind
           ::IO.copy_stream(@buffer, dest)
         end
       end
 
       # closes/cleans the buffer, resets everything
       def close
-        return if @state == :idle
-
-        @buffer.close
-        @buffer.unlink if @buffer.respond_to?(:unlink)
-        @buffer = nil
+        if @buffer
+          @buffer.close
+          @buffer.unlink if @buffer.respond_to?(:unlink)
+          @buffer = nil
+        end
         @length = 0
-        @state = :idle
+        @state = :closed
       end
 
       def ==(other)
@@ -186,7 +187,7 @@ module HTTPX
       private
 
       def rewind
-        return if @state == :idle
+        return unless @buffer
 
         @buffer.rewind
       end

@@ -40,9 +40,10 @@ class ResponseTest < Minitest::Test
     assert body1.empty?, "body must be empty after initialization"
     body1.write("foo")
     assert body1 == "foo", "body must be updated"
-    body1.write("foo")
-    body1.write("bar")
-    assert body1 == "foobar", "body must buffer subsequent chunks"
+    body2 = Response::Body.new(Response.new(request, 200, "2.0", {}), threshold_size: 1024)
+    body2.write("foo")
+    body2.write("bar")
+    assert body2 == "foobar", "body buffers chunks"
 
     body3 = Response::Body.new(Response.new(request("head"), 200, "2.0", {}), threshold_size: 1024)
     assert body3.empty?, "body must be empty after initialization"
@@ -85,9 +86,10 @@ class ResponseTest < Minitest::Test
     body1 = Response::Body.new(Response.new(request, 200, "2.0", {}), threshold_size: 1024)
     body1.write("foo")
     assert body1.each.to_a == %w[foo], "must yield buffer"
-    body1.write("foo")
-    body1.write("bar")
-    assert body1.each.to_a == %w[foobar], "must yield buffers"
+    body2 = Response::Body.new(Response.new(request, 200, "2.0", {}), threshold_size: 1024)
+    body2.write("foo")
+    body2.write("bar")
+    assert body2.each.to_a == %w[foobar], "must yield buffers"
   end
 
   def test_response_body_buffer
