@@ -12,7 +12,7 @@ module HTTPX
         def request(*args, stream: false, **options)
           return super(*args, **options) unless stream
 
-          requests = build_requests(*args, options)
+          requests = args.first.is_a?(Request) ? args : build_requests(*args, options)
 
           raise Error, "only 1 response at a time is supported for streaming requests" unless requests.size == 1
 
@@ -31,7 +31,7 @@ module HTTPX
       end
 
       module ResponseBodyMethods
-        def initialize(*)
+        def initialize(*, **)
           super
           @stream = @response.stream
         end
@@ -58,39 +58,55 @@ module HTTPX
           @options = @request.options
         end
 
-        def each_line
+        def each(&block)
+          return enum_for(__method__) unless block_given?
+
           raise Error, "response already streamed" if @response
 
-          Enumerator.new do |yielder|
-            @request.stream = self
+          @request.stream = self
 
-            @chunk_fiber = Fiber.new do
-              response
-              :done
-            end
+          begin
+            @on_chunk = block
 
-            loop do
-              chunk = @chunk_fiber.resume
+            response.raise_for_status
+            response.close
+          ensure
+            @on_chunk = nil
+          end
+        end
 
-              break if chunk == :done
+        def each_line
+          return enum_for(__method__) unless block_given?
 
-              yielder << chunk
+          line = +""
+
+          each do |chunk|
+            line << chunk
+
+            while (idx = line.index("\n"))
+              yield line.byteslice(0..idx - 1)
+
+              line = line.byteslice(idx + 1..-1)
             end
           end
         end
 
         # This is a ghost method. It's to be used ONLY internally, when processing streams
         def on_chunk(chunk)
-          raise NoMethodError unless @chunk_fiber
+          raise NoMethodError unless @on_chunk
 
           @on_chunk.call(chunk.dup)
         end
 
         # :nocov:
         def inspect
-          "#<StreamResponse:#{object_id} >"
+          "#<StreamResponse:#{object_id}>"
         end
         # :nocov:
+
+        def to_s
+          response.to_s
+        end
 
         private
 
