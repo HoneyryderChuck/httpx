@@ -47,6 +47,8 @@ module HTTPX
     end
 
     def close(connections = @connections)
+      return if connections.empty?
+
       @timers.cancel
       connections = connections.reject(&:inflight?)
       connections.each(&:close)
