@@ -1,18 +1,39 @@
 module HTTPX
   module Plugins
     module Stream
-      # def self.load_dependencies: (singleton(Session)) -> void
-      
       module InstanceMethods
-        def stream: () -> instance
+        private
+
+#        def request: (*Request, stream: false, **untyped) -> (response | Array[response])
+#                   | (*untyped, stream: false, **untyped) -> (response | Array[response])
+      end
+
+      module RequestMethods
+        attr_accessor stream: StreamResponse?
       end
 
       module ResponseMethods
-        def complete?: () -> bool
-        def stream?: () -> bool
+        def stream: () -> StreamResponse?
+      end
+
+      class StreamResponse
+        include _ToS
+
+        def each: () { (String) -> void } -> void
+                | () -> Enumerable[String]
+
+        def each_line: () { (String) -> void } -> void
+                     | () -> Enumerable[String]
+
+        def on_chunk: (string) -> void
+
+        private
+
+        def response: () -> response
+        def initialize: (Request, Session) -> untyped
       end
     end
 
-    type sessionStream = Session & Plugins::H2C::InstanceMethods
+    type sessionStream = Session & Plugins::Stream::InstanceMethods
   end
 end

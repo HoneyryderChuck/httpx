@@ -3,9 +3,9 @@ module HTTPX::Transcoder
     def self?.encode: (_Encoder chunks) -> Encoder
 
     class Encoder
-      @raw: _Each[String, untyped]
+      @raw: _Each[String]
 
-      include _Each[String, untyped]
+      include _Each[String]
 
       private
 
@@ -14,7 +14,7 @@ module HTTPX::Transcoder
 
     class Decoder
       include _ToS
-      include _Each[String, untyped]
+      include _Each[String]
 
       def finished?: () -> bool
       def empty?: () -> bool

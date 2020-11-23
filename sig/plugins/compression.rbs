@@ -39,7 +39,7 @@ module HTTPX
       class Encoder
         include Transcoder::_Encoder
         include _ToS
-        include _Each[String, untyped]
+        include _Each[String]
 
         def close: () -> void
 

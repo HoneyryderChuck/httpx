@@ -3,7 +3,7 @@ module HTTPX
     class Jar
       type cookie = Cookie | Array[String, String, cookie_attributes] | Array[String, String] | cookie_attributes
 
-      include Enumerable[Cookie, void]
+      include Enumerable[Cookie]
 
       @cookies: Array[Cookie]
 
@@ -15,9 +15,9 @@ module HTTPX
       def []: (uri) -> Array[Cookie]
 
       def each: (uri) { (Cookie) -> void } -> void
-              | (uri) -> Enumerable[Cookie, void]
+              | (uri) -> Enumerable[Cookie]
               | () { (Cookie) -> void } -> void
-              | () -> Enumerable[Cookie, void]
+              | () -> Enumerable[Cookie]
       private
 
       def initialize: () -> void
