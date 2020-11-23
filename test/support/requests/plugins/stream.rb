@@ -18,24 +18,12 @@ module Requests
         assert session.total_responses.size == 2, "there should be 2 available responses"
       end
 
-      def test_plugin_stream_multiple_responses_error
-        session = HTTPX.plugin(:stream)
-
-        assert_raises(HTTPX::Error, /support only 1 response at a time/) do
-          session.get(build_uri("/stream/2"), build_uri("/stream/3"), stream: true)
-        end
-      end
-
       def test_plugin_stream_each
         session = HTTPX.plugin(:stream)
 
         response = session.get(build_uri("/stream/3"), stream: true)
-        lines = response.each.each_with_index.map do |line, idx|
-          data = JSON.parse(line)
-          assert data["id"] == idx
-        end
-
-        assert lines.size == 3, "all the lines should have been yielded"
+        payload = response.each.to_a.join
+        assert payload.lines.size == 3, "all the lines should have been yielded"
       end
 
       def test_plugin_stream_each_line
@@ -49,6 +37,36 @@ module Requests
         end
 
         assert lines.size == 3, "all the lines should have been yielded"
+      end
+
+      def test_plugin_stream_multiple_responses_error
+        session = HTTPX.plugin(:stream)
+
+        assert_raises(HTTPX::Error, /support only 1 response at a time/) do
+          response = session.get(build_uri("/stream/2"), build_uri("/stream/3"), stream: true)
+          # force request
+          response.each_line.to_a
+        end
+      end
+
+      def test_plugin_stream_response_error
+        session = HTTPX.plugin(:stream)
+
+        assert_raises(HTTPX::HTTPError) do
+          response = session.get(build_uri("/status/404"), stream: true)
+          # force request
+          response.each_line.to_a
+        end
+      end
+
+      def test_plugin_stream_connnectionn_error
+        session = HTTPX.with_timeout(total_timeout: 1).plugin(:stream)
+
+        assert_raises(HTTPX::TimeoutError) do
+          response = session.get(build_uri("/delay/10"), stream: true)
+          # force request
+          response.each_line.to_a
+        end
       end
     end
   end
