@@ -59,7 +59,7 @@ module Requests
         end
       end
 
-      def test_plugin_stream_connnectionn_error
+      def test_plugin_stream_connection_error
         session = HTTPX.with_timeout(total_timeout: 1).plugin(:stream)
 
         assert_raises(HTTPX::TimeoutError) do
