@@ -39,7 +39,7 @@ module HTTPX
         def write(chunk)
           return super unless @stream
 
-          @stream.on_chunk(chunk)
+          @stream.on_chunk(chunk.to_s.dup)
         end
 
         private
@@ -95,7 +95,7 @@ module HTTPX
         def on_chunk(chunk)
           raise NoMethodError unless @on_chunk
 
-          @on_chunk.call(chunk.dup)
+          @on_chunk.call(chunk)
         end
 
         # :nocov:
