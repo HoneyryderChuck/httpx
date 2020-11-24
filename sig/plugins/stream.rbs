@@ -4,8 +4,8 @@ module HTTPX
       module InstanceMethods
         private
 
-#        def request: (*Request, stream: false, **untyped) -> (response | Array[response])
-#                   | (*untyped, stream: false, **untyped) -> (response | Array[response])
+        def request: (*Request, ?stream: bool, **untyped?) -> (response | Array[response] | StreamResponse)
+                   | (*untyped, ?stream: bool, **untyped?) -> (response | Array[response] | StreamResponse)
       end
 
       module RequestMethods
