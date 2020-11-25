@@ -7,6 +7,7 @@ module Requests
         no_auth_response = HTTPX.get(basic_auth_uri)
         verify_status(no_auth_response, 401)
         verify_header(no_auth_response.headers, "www-authenticate", "Basic realm=\"Fake Realm\"")
+        no_auth_response.close
 
         session = HTTPX.plugin(:basic_authentication)
         response = session.basic_authentication(user, pass).get(basic_auth_uri)

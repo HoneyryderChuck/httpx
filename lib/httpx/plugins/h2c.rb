@@ -73,7 +73,7 @@ module HTTPX
 
           # clean up data left behind in the buffer, if the server started
           # sending frames
-          data = response.to_s
+          data = response.read
           @connection << data
         end
       end

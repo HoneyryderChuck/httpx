@@ -18,6 +18,7 @@ Among its features, it supports:
 And also:
 
 * Compression (gzip, deflate, brotli)
+* Streaming Requests
 * Authentication (Basic Auth, Digest Auth)
 * Expect 100-continue
 * Multipart Requests

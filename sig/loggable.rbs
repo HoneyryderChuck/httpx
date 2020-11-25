@@ -4,7 +4,7 @@ module HTTPX
   end
 
   module Loggable
-    def log: (?level: Integer, ?color: Symbol) { () -> String } -> void
+    def log: (?level: Integer?, ?color: Symbol?) { () -> String } -> void
 
     def log_exception: (StandardError, **untyped) -> void
   end

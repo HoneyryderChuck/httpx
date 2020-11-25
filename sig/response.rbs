@@ -39,7 +39,7 @@ module HTTPX
       @state: :idle | :memory | :buffer
 
       def each: () { (String) -> void } -> void
-              | () -> Enumerable[String, void]
+              | () -> Enumerable[String]
 
       def bytesize: () -> Integer
       def empty?: () -> bool

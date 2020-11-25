@@ -42,7 +42,7 @@ module HTTPX
     class Body
       def initialize: (Headers, Options) -> untyped
       def each: () { (String) -> void } -> void
-              | () -> Enumerable[String, void]
+              | () -> Enumerable[String]
 
       def empty?: () -> bool
       def bytesize: () -> Integer

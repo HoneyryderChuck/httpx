@@ -133,7 +133,7 @@ module Requests
         expires_jar = HTTPX::Plugins::Cookies::Jar.new
         expires_jar.parse(%(a=b; Path=/; Max-Age=2))
         assert !expires_jar[cookies_uri].empty?
-        sleep 2
+        sleep 3
         assert expires_jar[cookies_uri].empty?
 
         maxage_jar = HTTPX::Plugins::Cookies::Jar.new
