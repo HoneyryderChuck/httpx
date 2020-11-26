@@ -12,8 +12,8 @@ group :test do
   gem "minitest-proveit"
 
   if RUBY_VERSION < "2.2"
-    gem "rubocop", "~> 0.57.0"
     gem "net-ssh", "~> 4.2.0"
+    gem "rubocop", "~> 0.57.0"
   elsif RUBY_VERSION < "2.3"
     gem "rubocop", "~> 0.68.1"
   elsif RUBY_VERSION < "2.4"
@@ -25,23 +25,21 @@ group :test do
   end
 
   platform :mri do
-    gem "brotli"
-    gem "benchmark-ips"
-    gem "net-ssh-gateway"
-    gem "ed25519"
     gem "bcrypt_pbkdf"
+    gem "benchmark-ips"
+    gem "brotli"
+    gem "ed25519"
+    gem "net-ssh-gateway"
   end
 
   platform :mri_21 do
     gem "rbnacl"
   end
 
-  gem "oga"
   gem "faraday"
+  gem "oga"
 
-  if RUBY_VERSION >= "3.0"
-    gem "rbs", git: "https://github.com/ruby/rbs.git", branch: "master"
-  end
+  gem "rbs", git: "https://github.com/ruby/rbs.git", branch: "master" if RUBY_VERSION >= "3.0"
 end
 
 group :coverage do
@@ -58,9 +56,10 @@ group :website do
   gem "hanna-nouveau"
 
   gem "jekyll", "~> 4.0.0"
+  gem "jekyll-brotli", "~> 2.2.0", platform: :mri
+  gem "jekyll-feed", "~> 0.15.1"
   gem "jekyll-gzip", "~> 2.4.1"
   gem "jekyll-paginate-v2", "~> 1.5.2"
-  gem "jekyll-brotli", "~> 2.2.0", platform: :mri
 end if RUBY_VERSION > "2.4"
 
 group :assorted do

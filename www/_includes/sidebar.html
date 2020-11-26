@@ -25,6 +25,7 @@
       {% endif %}
     {% endfor %}
 
+    <a class="sidebar-nav-item" href="{{ '/feed.xml' | prepend: site.baseurl }}">RSS Feed</a>
     <a class="sidebar-nav-item" href="{{ site.github.repo }}/archive/v{{ site.data.versions[0][0].name }}.zip">Download</a>
     <a class="sidebar-nav-item" href="{{ site.github.repo }}">GitHub project</a>
     <span class="sidebar-nav-item">Currently v{{ site.data.versions[0][0].name }}</span>
