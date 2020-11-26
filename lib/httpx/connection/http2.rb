@@ -51,10 +51,6 @@ module HTTPX
       :rw
     end
 
-    def reset
-      init_connection
-    end
-
     def close(*args)
       @connection.goaway(*args) unless @connection.state == :closed
       emit(:close)
@@ -162,6 +158,9 @@ module HTTPX
       #
       @connection.send_connection_preface
     end
+
+    alias_method :reset, :init_connection
+    public :reset
 
     def handle_stream(stream, request)
       stream.on(:close, &method(:on_stream_close).curry[stream, request])
