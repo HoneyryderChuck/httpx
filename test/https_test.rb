@@ -85,6 +85,17 @@ class HTTPSTest < Minitest::Test
     end
   end
 
+  def test_http2_uncoalesce_on_misdirected
+    uri = build_uri("/status/421")
+    HTTPX.plugin(SessionWithPool).wrap do |http|
+      response = http.get(uri)
+      verify_status(response, 421)
+      connection_count = http.pool.connection_count
+      assert connection_count == 2, "expected to have 2 connections, instead have #{connection_count}"
+      assert response.version == "1.1", "request should have been retried with HTTP/1.1"
+    end
+  end
+
   private
 
   def origin(orig = httpbin)
