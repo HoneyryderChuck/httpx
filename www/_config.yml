@@ -24,3 +24,4 @@ plugins:
   - jekyll-gzip
   - jekyll-brotli
   - jekyll-paginate-v2
+  - jekyll-feed
