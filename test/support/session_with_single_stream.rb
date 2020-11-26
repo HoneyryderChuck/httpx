@@ -17,15 +17,4 @@ module SessionWithSingleStream
       parser
     end
   end
-
-  module InstanceMethods
-    attr_reader :connection_exausted
-
-    def set_connection_callbacks(connection, connections, options)
-      super
-      connection.on(:exhausted) do
-        @connection_exausted = true
-      end
-    end
-  end
 end
