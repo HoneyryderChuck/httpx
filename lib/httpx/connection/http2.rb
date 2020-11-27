@@ -269,16 +269,16 @@ module HTTPX
     end
 
     def on_close(_last_frame, error, _payload)
+      is_connection_closed = @connection.state == :closed
       if error && error != :no_error
+        @buffer.clear if is_connection_closed
         ex = Error.new(0, error)
         ex.set_backtrace(caller)
-        @streams.each_key do |request|
-          emit(:error, request, ex)
-        end
+        handle_error(ex)
       end
-      return unless @connection.state == :closed && @streams.size.zero?
+      return unless is_connection_closed && @streams.size.zero?
 
-      emit(:close)
+      emit(:close, is_connection_closed)
     end
 
     def on_frame_sent(frame)

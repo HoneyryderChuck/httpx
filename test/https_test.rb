@@ -98,6 +98,16 @@ class HTTPSTest < Minitest::Test
         assert response.version == "1.1", "request should have been retried with HTTP/1.1"
       end
     end
+
+    def test_http2_settings_timeout
+      uri = build_uri("/get")
+      HTTPX.plugin(SessionWithPool).plugin(SessionWithFrameDelay).wrap do |http|
+        response = http.get(uri)
+        assert response.is_a?(HTTPX::ErrorResponse), "expected to fail for settings timeout"
+        assert response.status =~ /settings_timeout/,
+               "connection should have terminated due to HTTP/2 settings timeout"
+      end
+    end
   end
 
   private
