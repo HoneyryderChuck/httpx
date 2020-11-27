@@ -424,7 +424,7 @@ module HTTPX
           remove_instance_variable(:@total_timeout)
         end
 
-        @io.close
+        @io.close if @io
         @read_buffer.clear
         if @keep_alive_timer
           @keep_alive_timer.cancel

@@ -19,6 +19,16 @@ module Requests
         verify_body_length(response)
       end
 
+      def test_plugin_http_next_proxy
+        session = HTTPX.plugin(SessionWithPool)
+                       .plugin(:proxy)
+                       .with_proxy(uri: ["http://unavailable-proxy", *http_proxy])
+        uri = build_uri("/get")
+        response = session.get(uri)
+        verify_status(response, 200)
+        verify_body_length(response)
+      end
+
       def test_plugin_http_proxy_auth_error
         no_auth_proxy = URI.parse(http_proxy.first)
         return unless no_auth_proxy.user

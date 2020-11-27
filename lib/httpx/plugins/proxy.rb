@@ -121,8 +121,7 @@ module HTTPX
         def fetch_response(request, connections, options)
           response = super
           if response.is_a?(ErrorResponse) &&
-             # either it was a timeout error connecting, or it was a proxy error
-             PROXY_ERRORS.any? { |ex| response.error.is_a?(ex) } && !@_proxy_uris.empty?
+             __proxy_error?(response) && !@_proxy_uris.empty?
             @_proxy_uris.shift
             log { "failed connecting to proxy, trying next..." }
             request.transition(:idle)
@@ -138,6 +137,21 @@ module HTTPX
           return if options.proxy
 
           super
+        end
+
+        def __proxy_error?(response)
+          error = response.error
+          case error
+          when ResolveError
+            # failed resolving proxy domain
+            proxy_uri = error.connection.options.proxy.uri
+            proxy_uri.to_s == @_proxy_uris.first
+          when *PROXY_ERRORS
+            # timeout errors connecting to proxy
+            true
+          else
+            false
+          end
         end
       end
 

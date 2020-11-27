@@ -206,6 +206,7 @@ module HTTPX
           @queries.delete(hostname)
           @_record_types.delete(hostname)
           @connections.delete(connection)
+
           raise NativeResolveError.new(connection, hostname)
         end
       else

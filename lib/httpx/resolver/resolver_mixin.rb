@@ -62,6 +62,8 @@ module HTTPX
       end
 
       def resolve_error(hostname, ex = nil)
+        return ex if ex.is_a?(ResolveError)
+
         message = ex ? ex.message : "Can't resolve #{hostname}"
         error = ResolveError.new(message)
         error.set_backtrace(ex ? ex.backtrace : caller)
