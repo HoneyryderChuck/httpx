@@ -168,12 +168,6 @@ module HTTPX
         resolver.on(:error, &method(:on_resolver_error))
         resolver.on(:close) { on_resolver_close(resolver) }
         resolver
-      rescue ArgumentError
-        # this block is here because of an error which happens on CI from time to time
-        warn "tried resolver: #{resolver_type}"
-        warn "initialize: #{resolver_type.instance_method(:initialize).source_location}"
-        warn "new: #{resolver_type.method(:new).source_location}"
-        raise
       end
     end
   end
