@@ -59,21 +59,21 @@ module Requests
         verify_uploaded(body, "data", "data")
       end
 
-      # TODO: nghttp not receiving chunked requests, investigate
-      # define_method :"test_#{meth}_body_enum_params" do
-      #   uri = build_uri("/#{meth}")
-      #   body = Enumerator.new do |y|
-      #     y << "d"
-      #     y << "a"
-      #     y << "t"
-      #     y << "a"
-      #   end
-      #   response = HTTPX.send(meth, uri, body: body)
-      #   verify_status(response, 200)
-      #   body = json_body(response)
-      #   verify_header(body["headers"], "Content-Type", "application/octet-stream")
-      #   verify_uploaded(body, "data", "data")
-      # end
+      define_method :"test_#{meth}_body_each_params" do
+        uri = build_uri("/#{meth}")
+        body = Class.new do
+          def each(&blk)
+            %w[d a t a].each(&blk)
+          end
+        end.new
+        response = HTTPX.send(meth, uri, body: body)
+        verify_status(response, 200)
+        body = json_body(response)
+        verify_header(body["headers"], "Content-Type", "application/octet-stream")
+        verify_header(body["headers"], "Transfer-Encoding", "chunked")
+        # TODO: nghttp not receiving chunked requests, investigate
+        # verify_uploaded(body, "data", "data")
+      end
 
       define_method :"test_#{meth}_body_io_params" do
         uri = build_uri("/#{meth}")

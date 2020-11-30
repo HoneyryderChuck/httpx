@@ -5,6 +5,11 @@ require_relative "test_helper"
 class RequestTest < Minitest::Test
   include HTTPX
 
+  def test_request_unsupported_body
+    ex = assert_raises(HTTPX::Error) { Request.new(:post, "/", body: Object.new) }
+    assert ex.message =~ /cannot determine size of body/
+  end
+
   def test_request_verb
     r1 = Request.new(:get, "/")
     assert r1.verb == :get, "unexpected verb (#{r1.verb})"
