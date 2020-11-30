@@ -21,6 +21,7 @@ module HTTPX
     DEFAULTS = {
       uri: NAMESERVER,
       use_get: false,
+      record_types: RECORD_TYPES.keys,
     }.freeze
 
     def_delegator :@connections, :empty?
@@ -30,7 +31,7 @@ module HTTPX
     def initialize(options)
       @options = Options.new(options)
       @resolver_options = Resolver::Options.new(DEFAULTS.merge(@options.resolver_options || {}))
-      @_record_types = Hash.new { |types, host| types[host] = RECORD_TYPES.keys.dup }
+      @_record_types = Hash.new { |types, host| types[host] = @resolver_options.record_types.dup }
       @queries = {}
       @requests = {}
       @connections = []
@@ -43,13 +44,9 @@ module HTTPX
 
       @uri_addresses ||= Resolv.getaddresses(@uri.host)
 
-      if @uri_addresses.empty?
-        ex = ResolveError.new("Can't resolve #{connection.origin.host}")
-        ex.set_backtrace(caller)
-        emit(:error, connection, ex)
-      else
-        early_resolve(connection) || resolve(connection)
-      end
+      raise ResolveError, "Can't resolve DNS server #{@uri.host}" if @uri_addresses.empty?
+
+      early_resolve(connection) || resolve(connection)
     end
 
     def timeout
@@ -69,12 +66,6 @@ module HTTPX
     end
 
     private
-
-    def connect
-      return if @queries.empty?
-
-      resolver_connection.__send__(__method__)
-    end
 
     def pool
       Thread.current[:httpx_connection_pool] ||= Pool.new
@@ -104,6 +95,8 @@ module HTTPX
       log { "resolver: query #{type} for #{hostname}" }
       begin
         request = build_request(hostname, type)
+        request.on(:response, &method(:on_response).curry[request])
+        request.on(:promise, &method(:on_promise))
         @requests[request] = connection
         resolver_connection.send(request)
         @queries[hostname] = connection
@@ -118,9 +111,7 @@ module HTTPX
     rescue StandardError => e
       connection = @requests[request]
       hostname = @queries.key(connection)
-      error = ResolveError.new("Can't resolve #{hostname}: #{e.message}")
-      error.set_backtrace(e.backtrace)
-      emit(:error, connection, error)
+      emit_resolve_error(connection, hostname, e)
     else
       parse(response)
     ensure
@@ -143,7 +134,7 @@ module HTTPX
           return
         end
       end
-      if answers.empty?
+      if answers.nil? || answers.empty?
         host, connection = @queries.first
         @_record_types[host].shift
         if @_record_types[host].empty?
@@ -202,8 +193,6 @@ module HTTPX
         request.headers["content-type"] = "application/dns-message"
       end
       request.headers["accept"] = "application/dns-message"
-      request.on(:response, &method(:on_response).curry[request])
-      request.on(:promise, &method(:on_promise))
       request
     end
 
