@@ -30,7 +30,7 @@ module Requests
       end
 
       def test_plugin_http_proxy_auth_error
-        no_auth_proxy = URI.parse(http_proxy.first)
+        no_auth_proxy = URI(http_proxy.first)
         return unless no_auth_proxy.user
 
         no_auth_proxy.user = nil
@@ -64,6 +64,17 @@ module Requests
         response = session.get(uri)
         verify_status(response, 200)
         verify_body_length(response)
+      end
+
+      def test_plugin_socks5_proxy_error
+        proxy = URI(socks5_proxy.first)
+        proxy.password = nil
+
+        session = HTTPX.plugin(:proxy).with_proxy(uri: [proxy])
+        uri = build_uri("/get")
+        response = session.get(uri)
+        assert response.is_a?(HTTPX::ErrorResponse), "should be a response error"
+        assert response.error.is_a?(HTTPX::Socks5Error), "should be a socks 5 error"
       end
 
       def test_plugin_ssh_proxy
