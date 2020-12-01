@@ -25,49 +25,60 @@ module Requests
         response.close
       end
 
-      next unless resolver == :https
+      case resolver
+      when :https
 
-      define_method :"test_resolver_#{resolver}_get_request" do
-        session = HTTPX.plugin(SessionWithPool)
-        uri = build_uri("/get")
-        response = session.head(uri, resolver_class: resolver, resolver_options: options.merge(use_get: true))
-        verify_status(response, 200)
-        response.close
-      end
-
-      define_method :"test_resolver_#{resolver}_unresolvable_servername" do
-        session = HTTPX.plugin(SessionWithPool)
-        uri = build_uri("/get")
-        ex = assert_raises(HTTPX::ResolveError) do
-          session.head(uri, resolver_class: resolver, resolver_options: options.merge(uri: "https://unexisting-doh/dns-query"))
+        define_method :"test_resolver_#{resolver}_get_request" do
+          session = HTTPX.plugin(SessionWithPool)
+          uri = build_uri("/get")
+          response = session.head(uri, resolver_class: resolver, resolver_options: options.merge(use_get: true))
+          verify_status(response, 200)
+          response.close
         end
-        assert ex.message =~ /Can't resolve DNS server/
-      end
 
-      define_method :"test_resolver_#{resolver}_server_error" do
-        session = HTTPX.plugin(SessionWithPool)
-        uri = URI(build_uri("/get"))
-        resolver_class = Class.new(HTTPX::Resolver::HTTPS) do
-          def build_request(_hostname, _type)
-            @options.request_class.new("POST", @uri)
+        define_method :"test_resolver_#{resolver}_unresolvable_servername" do
+          session = HTTPX.plugin(SessionWithPool)
+          uri = build_uri("/get")
+          response = session.head(uri, resolver_class: resolver, resolver_options: options.merge(uri: "https://unexisting-doh/dns-query"))
+          assert response.is_a?(HTTPX::ErrorResponse), "should be a response error"
+          assert response.error.is_a?(HTTPX::ResolveError), "should be a resolving error"
+        end
+
+        define_method :"test_resolver_#{resolver}_server_error" do
+          session = HTTPX.plugin(SessionWithPool)
+          uri = URI(build_uri("/get"))
+          resolver_class = Class.new(HTTPX::Resolver::HTTPS) do
+            def build_request(_hostname, _type)
+              @options.request_class.new("POST", @uri)
+            end
           end
+          response = session.head(uri, resolver_class: resolver_class, resolver_options: options)
+          assert response.is_a?(HTTPX::ErrorResponse), "should be a response error"
+          assert response.error.is_a?(HTTPX::ResolveError), "should be a resolving error"
         end
-        response = session.head(uri, resolver_class: resolver_class, resolver_options: options)
-        assert response.is_a?(HTTPX::ErrorResponse), "should be a response error"
-        assert response.error.is_a?(HTTPX::ResolveError), "should be a resolving error"
-      end
 
-      define_method :"test_resolver_#{resolver}_decoding_error" do
-        session = HTTPX.plugin(SessionWithPool)
-        uri = URI(build_uri("/get"))
-        resolver_class = Class.new(HTTPX::Resolver::HTTPS) do
-          def decode_response_body(_response)
-            raise Resolv::DNS::DecodeError
+        define_method :"test_resolver_#{resolver}_decoding_error" do
+          session = HTTPX.plugin(SessionWithPool)
+          uri = URI(build_uri("/get"))
+          resolver_class = Class.new(HTTPX::Resolver::HTTPS) do
+            def decode_response_body(_response)
+              raise Resolv::DNS::DecodeError
+            end
           end
+          response = session.head(uri, resolver_class: resolver_class, resolver_options: options.merge(record_types: %w[A]))
+          assert response.is_a?(HTTPX::ErrorResponse), "should be a response error"
+          assert response.error.is_a?(HTTPX::ResolveError), "should be a resolving error"
         end
-        response = session.head(uri, resolver_class: resolver_class, resolver_options: options.merge(record_types: %w[A]))
-        assert response.is_a?(HTTPX::ErrorResponse), "should be a response error"
-        assert response.error.is_a?(HTTPX::ResolveError), "should be a resolving error"
+      when :native
+
+        define_method :"test_resolver_#{resolver}_no_nameserver" do
+          session = HTTPX.plugin(SessionWithPool)
+          uri = build_uri("/get")
+
+          response = session.head(uri, resolver_class: resolver, resolver_options: options.merge(nameserver: nil))
+          assert response.is_a?(HTTPX::ErrorResponse), "should be a response error"
+          assert response.error.is_a?(HTTPX::ResolveError), "should be a resolving error"
+        end
       end
     end
   end

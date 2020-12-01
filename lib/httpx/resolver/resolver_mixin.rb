@@ -57,7 +57,7 @@ module HTTPX
         ips.map { |ip| IPAddr.new(ip) }
       end
 
-      def emit_resolve_error(connection, hostname, ex = nil)
+      def emit_resolve_error(connection, hostname = connection.origin.host, ex = nil)
         emit(:error, connection, resolve_error(hostname, ex))
       end
 

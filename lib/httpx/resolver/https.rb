@@ -44,7 +44,11 @@ module HTTPX
 
       @uri_addresses ||= Resolv.getaddresses(@uri.host)
 
-      raise ResolveError, "Can't resolve DNS server #{@uri.host}" if @uri_addresses.empty?
+      if @uri_addresses.empty?
+        ex = ResolveError.new("Can't resolve DNS server #{@uri.host}")
+        ex.set_backtrace(caller)
+        throw(:resolve_error, ex)
+      end
 
       early_resolve(connection) || resolve(connection)
     end

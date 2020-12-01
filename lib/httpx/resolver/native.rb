@@ -15,7 +15,6 @@ module HTTPX
       "AAAA" => Resolv::DNS::Resource::IN::AAAA,
     }.freeze
 
-    # :nocov:
     DEFAULTS = if RUBY_VERSION < "2.2"
       {
         **Resolv::DNS::Config.default_config_hash,
@@ -44,7 +43,6 @@ module HTTPX
         false
       end
     end if DEFAULTS[:nameserver]
-    # :nocov:
 
     DNS_PORT = 53
 
@@ -111,9 +109,9 @@ module HTTPX
       return if early_resolve(connection)
 
       if @nameserver.nil?
-        ex = ResolveError.new("Can't resolve #{connection.origin.host}: no nameserver")
+        ex = ResolveError.new("No available nameserver")
         ex.set_backtrace(caller)
-        emit(:error, connection, ex)
+        throw(:resolve_error, ex)
       else
         @connections << connection
         resolve
