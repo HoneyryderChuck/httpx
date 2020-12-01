@@ -42,12 +42,15 @@ module HTTPX
     end
 
     # deprecated
+    # :nocov
     def plugins(*args, **opts)
+      warn ":#{__method__} is deprecated, use :plugin instead"
       klass = is_a?(Session) ? self.class : Session
       klass = Class.new(klass)
       klass.instance_variable_set(:@default_options, klass.default_options.merge(default_options))
       klass.plugins(*args, **opts).new
     end
+    # :nocov
 
     def with(options, &blk)
       branch(default_options.merge(options), &blk)
