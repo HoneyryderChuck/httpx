@@ -197,7 +197,7 @@ module HTTPX
         end
       end
 
-      if addresses.empty?
+      if addresses.nil? || addresses.empty?
         hostname, connection = @queries.first
         @_record_types[hostname].shift
         if @_record_types[hostname].empty?
@@ -242,7 +242,7 @@ module HTTPX
         log { "resolver: resolve IDN #{connection.origin.non_ascii_hostname} as #{hostname}" } if connection.origin.non_ascii_hostname
       end
       @queries[hostname] = connection
-      type = @_record_types[hostname].first
+      type = @_record_types[hostname].first || "A"
       log { "resolver: query #{type} for #{hostname}" }
       begin
         @write_buffer << Resolver.encode_dns_query(hostname, type: RECORD_TYPES[type])

@@ -95,7 +95,7 @@ module HTTPX
         hostname = connection.origin.host
         log { "resolver: resolve IDN #{connection.origin.non_ascii_hostname} as #{hostname}" } if connection.origin.non_ascii_hostname
       end
-      type = @_record_types[hostname].first
+      type = @_record_types[hostname].first || "A"
       log { "resolver: query #{type} for #{hostname}" }
       begin
         request = build_request(hostname, type)

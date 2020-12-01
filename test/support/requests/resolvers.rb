@@ -65,7 +65,7 @@ module Requests
               raise Resolv::DNS::DecodeError
             end
           end
-          response = session.head(uri, resolver_class: resolver_class, resolver_options: options.merge(record_types: %w[A]))
+          response = session.head(uri, resolver_class: resolver_class, resolver_options: options.merge(record_types: %w[]))
           assert response.is_a?(HTTPX::ErrorResponse), "should be a response error"
           assert response.error.is_a?(HTTPX::ResolveError), "should be a resolving error"
         end
@@ -78,6 +78,19 @@ module Requests
           response = session.head(uri, resolver_class: resolver, resolver_options: options.merge(nameserver: nil))
           assert response.is_a?(HTTPX::ErrorResponse), "should be a response error"
           assert response.error.is_a?(HTTPX::ResolveError), "should be a resolving error"
+        end
+
+        define_method :"test_resolver_#{resolver}_decoding_error" do
+          session = HTTPX.plugin(SessionWithPool)
+          uri = URI(build_uri("/get"))
+          resolver_class = Class.new(HTTPX::Resolver::Native) do
+            def parse(buffer)
+              super(buffer[0..-2])
+            end
+          end
+          response = session.head(uri, resolver_class: resolver_class, resolver_options: options.merge(record_types: %w[]))
+          assert response.is_a?(HTTPX::ErrorResponse), "should be a response error"
+          assert response.error.is_a?(HTTPX::NativeResolveError), "should be a resolving error"
         end
       end
     end
