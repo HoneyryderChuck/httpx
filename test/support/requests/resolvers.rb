@@ -92,6 +92,26 @@ module Requests
           assert response.is_a?(HTTPX::ErrorResponse), "should be a response error"
           assert response.error.is_a?(HTTPX::NativeResolveError), "should be a resolving error"
         end
+
+        define_method :"test_resolver_#{resolver}_unreachable" do
+          session = HTTPX.plugin(SessionWithPool)
+          uri = URI(build_uri("/get"))
+          resolver_class = Class.new(HTTPX::Resolver::Native) do
+            class << self
+              attr_accessor :attempts
+            end
+            self.attempts = 0
+
+            def consume
+              self.class.attempts += 1
+              raise Errno::EHOSTUNREACH, "host unreachable"
+            end
+          end
+          response = session.head(uri, resolver_class: resolver_class, resolver_options: options.merge(nameserver: %w[127.0.0.1] * 3))
+          assert response.is_a?(HTTPX::ErrorResponse), "should be a response error"
+          assert response.error.is_a?(HTTPX::ResolveError), "should be a resolving error"
+          assert resolver_class.attempts == 3, "should have attempted to use all 3 nameservers"
+        end
       end
     end
   end
