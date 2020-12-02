@@ -4,19 +4,14 @@ require "io/wait"
 
 module IOExtensions
   refine IO do
-    def wait(timeout = nil, mode = :read)
-      case mode
-      when :read
-        wait_readable(timeout)
-      when :write
-        wait_writable(timeout)
-      when :read_write
-        r, w = IO.select([self], [self], nil, timeout)
+    # provides a fallback for rubies where IO#wait isn't implemented,
+    # but IO#wait_readable and IO#wait_writable are.
+    def wait(timeout = nil, _mode = :read_write)
+      r, w = IO.select([self], [self], nil, timeout)
 
-        return unless r || w
+      return unless r || w
 
-        self
-      end
+      self
     end
   end
 end
