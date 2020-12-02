@@ -30,12 +30,12 @@ module HTTPX
 
     def initialize(options)
       @options = Options.new(options)
-      @resolver_options = Resolver::Options.new(DEFAULTS.merge(@options.resolver_options || {}))
-      @_record_types = Hash.new { |types, host| types[host] = @resolver_options.record_types.dup }
+      @resolver_options = DEFAULTS.merge(@options.resolver_options)
+      @_record_types = Hash.new { |types, host| types[host] = @resolver_options[:record_types].dup }
       @queries = {}
       @requests = {}
       @connections = []
-      @uri = URI(@resolver_options.uri)
+      @uri = URI(@resolver_options[:uri])
       @uri_addresses = nil
     end
 
@@ -172,7 +172,7 @@ module HTTPX
           next unless connection # probably a retried query for which there's an answer
 
           @connections.delete(connection)
-          Resolver.cached_lookup_set(hostname, addresses) if @resolver_options.cache
+          Resolver.cached_lookup_set(hostname, addresses) if @resolver_options[:cache]
           emit_addresses(connection, addresses.map { |addr| addr["data"] })
         end
       end
@@ -186,7 +186,7 @@ module HTTPX
       rklass = @options.request_class
       payload = Resolver.encode_dns_query(hostname, type: RECORD_TYPES[type])
 
-      if @resolver_options.use_get
+      if @resolver_options[:use_get]
         params = URI.decode_www_form(uri.query.to_s)
         params << ["type", type]
         params << ["dns", Base64.urlsafe_encode64(payload, padding: false)]

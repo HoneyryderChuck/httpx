@@ -101,5 +101,3 @@ module HTTPX
     end
   end
 end
-
-require "httpx/resolver/options"

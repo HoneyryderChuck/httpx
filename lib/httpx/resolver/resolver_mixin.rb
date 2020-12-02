@@ -38,7 +38,7 @@ module HTTPX
       def early_resolve(connection, hostname: connection.origin.host)
         addresses = connection.addresses ||
                     ip_resolve(hostname) ||
-                    (@resolver_options.cache && Resolver.cached_lookup(hostname)) ||
+                    (@resolver_options[:cache] && Resolver.cached_lookup(hostname)) ||
                     system_resolve(hostname)
         return unless addresses
 

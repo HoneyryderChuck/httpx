@@ -51,15 +51,15 @@ module HTTPX
     def initialize(options)
       @options = Options.new(options)
       @ns_index = 0
-      @resolver_options = Resolver::Options.new(DEFAULTS.merge(@options.resolver_options || {}))
-      @nameserver = @resolver_options.nameserver
-      @_timeouts = Array(@resolver_options.timeouts)
+      @resolver_options = DEFAULTS.merge(@options.resolver_options)
+      @nameserver = @resolver_options[:nameserver]
+      @_timeouts = Array(@resolver_options[:timeouts])
       @timeouts = Hash.new { |timeouts, host| timeouts[host] = @_timeouts.dup }
-      @_record_types = Hash.new { |types, host| types[host] = @resolver_options.record_types.dup }
+      @_record_types = Hash.new { |types, host| types[host] = @resolver_options[:record_types].dup }
       @connections = []
       @queries = {}
       @read_buffer = "".b
-      @write_buffer = Buffer.new(@resolver_options.packet_size)
+      @write_buffer = Buffer.new(@resolver_options[:packet_size])
       @state = :idle
     end
 
@@ -162,7 +162,7 @@ module HTTPX
       connections.each { |ch| resolve(ch) }
     end
 
-    def dread(wsize = @resolver_options.packet_size)
+    def dread(wsize = @resolver_options[:packet_size])
       loop do
         siz = @io.read(wsize, @read_buffer)
         return unless siz && siz.positive?
@@ -222,7 +222,7 @@ module HTTPX
           end
         else
           @connections.delete(connection)
-          Resolver.cached_lookup_set(connection.origin.host, addresses) if @resolver_options.cache
+          Resolver.cached_lookup_set(connection.origin.host, addresses) if @resolver_options[:cache]
           emit_addresses(connection, addresses.map { |addr| addr["data"] })
         end
       end
