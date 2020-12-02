@@ -10,7 +10,7 @@ module HTTPX
       module Socks4
         VERSION = 4
         CONNECT = 1
-        GRANTED = 90
+        GRANTED = 0x5A
         PROTOCOLS = %w[socks4 socks4a].freeze
 
         Error = Socks4Error
@@ -91,27 +91,25 @@ module HTTPX
         end
 
         module Packet
-          using(RegexpExtensions) unless Regexp.method_defined?(:match?)
-
           module_function
 
           def connect(parameters, uri)
             packet = [VERSION, CONNECT, uri.port].pack("CCn")
-            begin
-              ip = IPAddr.new(uri.host)
-              raise Error, "Socks4 connection to #{ip} not supported" unless ip.ipv4?
 
-              packet << [ip.to_i].pack("N")
-            rescue IPAddr::InvalidAddressError
-              if /^socks4a?$/.match?(parameters.uri.scheme)
-                # resolv defaults to IPv4, and socks4 doesn't support IPv6 otherwise
-                ip = IPAddr.new(Resolv.getaddress(uri.host))
-                packet << [ip.to_i].pack("N")
-              else
-                packet << "\x0\x0\x0\x1" << "\x7\x0" << uri.host
+            case parameters.uri.scheme
+            when "socks4"
+              socks_host = uri.host
+              begin
+                ip = IPAddr.new(socks_host)
+                packet << ip.hton
+              rescue IPAddr::InvalidAddressError
+                socks_host = Resolv.getaddress(socks_host)
+                retry
               end
+              packet << [parameters.username].pack("Z*")
+            when "socks4a"
+              packet << "\x0\x0\x0\x1" << [parameters.username].pack("Z*") << uri.host << "\x0"
             end
-            packet << [parameters.username].pack("Z*")
             packet
           end
         end

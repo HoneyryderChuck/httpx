@@ -50,6 +50,28 @@ module Requests
         verify_body_length(response)
       end
 
+      def test_plugin_socks4_proxy_ip
+        proxy = URI(socks4_proxy.first)
+        proxy.host = Resolv.getaddress(proxy.host)
+
+        session = HTTPX.plugin(:proxy).with_proxy(uri: [proxy])
+        uri = build_uri("/get")
+        response = session.get(uri)
+        verify_status(response, 200)
+        verify_body_length(response)
+      end
+
+      def test_plugin_socks4_proxy_error
+        proxy = URI(socks4_proxy.first)
+        proxy.user = nil
+
+        session = HTTPX.plugin(:proxy).with_proxy(uri: [proxy])
+        uri = build_uri("/get")
+        response = session.get(uri)
+        assert response.is_a?(HTTPX::ErrorResponse), "should be a response error"
+        assert response.error.is_a?(HTTPX::Socks4Error), "should be a socks 4 error"
+      end
+
       def test_plugin_socks4a_proxy
         session = HTTPX.plugin(:proxy).with_proxy(uri: socks4a_proxy)
         uri = build_uri("/get")
