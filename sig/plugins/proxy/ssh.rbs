@@ -2,7 +2,7 @@ module HTTPX
   module Plugins
     module Proxy
       module SSH
-        # def self.load_dependencies: (singleton(Session)) -> void
+        def self.load_dependencies: (singleton(Session)) -> void
       
         module InstancenMethods
           private

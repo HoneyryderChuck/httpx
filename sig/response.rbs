@@ -41,7 +41,7 @@ module HTTPX
       def each: () { (String) -> void } -> void
               | () -> Enumerable[String]
 
-      def bytesize: () -> Integer
+      def bytesize: () -> Numeric
       def empty?: () -> bool
       def copy_to: (_ToPath | _Writer destination) -> void
       def close: () -> void

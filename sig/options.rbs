@@ -77,9 +77,9 @@ module HTTPX
     # resolver_class resolver_options
 
     # request_class
-    # attr_reader request_class: singleton(Request)
-    # def request_class=: (singleton(Request)) -> void
-    # def with_request_class: (singleton(Request)) -> instance
+    attr_reader request_class: singleton(Request)
+    def request_class=: (singleton(Request)) -> void
+    def with_request_class: (singleton(Request)) -> instance
 
     # io
     attr_reader io: _ToIO?
