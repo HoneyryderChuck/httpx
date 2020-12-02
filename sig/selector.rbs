@@ -1,0 +1,20 @@
+module HTTPX
+  class Selector
+    READABLE: :r | :rw
+    WRITABLE: :w | :rw
+
+    def register: (_ToIO) -> void
+    def deregister: (_ToIO) -> void
+
+    def select: (Numeric?) { (_ToIO) -> void } -> void
+    
+    private
+
+    def initialize: () -> untyped
+
+    def select_many: (Numeric?) { (_ToIO) -> void } -> void
+    def select_one: (Numeric?) { (_ToIO) -> void } -> void
+  end
+
+  type io_interests = :r | :w | :rw
+end

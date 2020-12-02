@@ -4,6 +4,7 @@ module HTTPX
   VERSION: String
 
   type uri = URI::HTTP | URI::HTTPS | string
+  type generic_uri = uri | URI::Generic
 
   type verb = :options | :get | :head | :post | :put | :delete | :trace | :connect |
               :propfind | :proppatch | :mkcol | :copy | :move | :lock | :unlock | :orderpatch |

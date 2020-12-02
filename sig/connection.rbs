@@ -1,2 +1,87 @@
-class HTTPX::Connection
+module HTTPX
+  class Connection
+    type ipaddr = IPAddr | String
+
+    interface _Parser
+
+      def on: (Symbol) { (*untyped) -> void } -> void
+      def empty?: () -> bool
+      def close: () -> void
+      def consume: () -> void
+      def <<: (string) -> void
+    end
+
+    include Loggable
+    include Callbacks
+    extend HTTPX::Registry[String, Class]
+
+    attr_reader origin: generic_uri 
+    attr_reader state: Symbol
+    attr_reader pending: Array[Request]
+    attr_reader options: options
+
+    def addresses: () -> Array[ipaddr]?
+
+    def addresses=: (Array[ipaddr]) -> void
+
+    def match?: (generic_uri, options) -> bool
+
+    def mergeable?: (Connection) -> bool
+
+    def coalescable?: (Connection) -> bool
+
+    def create_idle: (options) -> Connection
+                   | () -> Connection
+
+    def merge: (Connection) -> void
+
+    def purge_pending: () { (Request) -> void } -> void
+
+    def match_altsvcs?: (generic_uri) -> bool
+
+    def connecting?: () -> bool
+    def inflight?: () -> boolish
+
+    def interests: () -> io_interests?
+
+    def to_io: () -> _ToIO
+
+    def call: () -> void
+
+    def close: () -> void
+    def reset: () -> void
+
+    def send: (Request) -> void
+
+    def timeout: () -> Numeric?
+
+    private
+
+    def initialize: (String, generic_uri, options) -> untyped
+
+    def connect: () -> void
+
+    def exhausted?: () -> boolish
+
+    def consume: () -> void
+
+    def send_pending: () -> void
+
+    def parser: () -> _Parser
+
+    def build_parser: () -> _Parser
+                    | (String) -> _Parser
+
+    def set_parser_callbacks: (_Parser) -> void
+
+    def transition: (Symbol) -> void
+
+    def handle_response: () -> void
+
+    def on_error: (StandardError) -> void
+
+    def handle_error: (StandardError) -> void
+
+    def total_timeout: () -> Timers::Timer?
+  end
 end
