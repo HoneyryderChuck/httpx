@@ -51,8 +51,8 @@ module HTTPX
       :rw
     end
 
-    def close(*args)
-      @connection.goaway(*args) unless @connection.state == :closed
+    def close
+      @connection.goaway unless @connection.state == :closed
       emit(:close)
     end
 
@@ -316,7 +316,7 @@ module HTTPX
     end
 
     def on_pong(ping)
-      if !@pings.delete(ping)
+      if !@pings.delete(ping.to_s)
         close(:protocol_error, "ping payload did not match")
       else
         emit(:pong)

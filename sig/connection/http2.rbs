@@ -1,4 +1,78 @@
 module HTTPX
   class Connection::HTTP2
+    include Callbacks
+    include Loggable
+
+    attr_reader streams: Hash[HTTP2Next::Stream, Response]
+    attr_reader pending: Array[Request]
+
+    @options: Options
+    @max_concurrent_requests: Integer
+    @max_requests: Integer
+    @drains: Hash[Request, String]
+    @pings: Array[String]
+    @buffer: Buffer
+
+    def interests: () -> io_interests
+
+    def close: () -> void
+
+    def empty?: () -> bool
+
+    def exhausted?: () -> bool
+
+    def <<: (String) -> void
+
+    def send: (Request) -> void
+
+    def consume: () -> void
+
+    def handle_error: (StandardError ex) -> void
+
+    def ping: () -> void
+
+    alias reset init_connection
+
+    private
+
+    def initialize: (Buffer, options) -> untyped
+
+    def send_pending: () -> void
+
+    def headline_uri: (Request) -> String
+
+    def set_request_headers: (Request) -> void
+
+    def handle: (Request request, HTTP2Next::Stream stream) -> void
+
+    def init_connection: () -> void
+
+    def handle_stream: (HTTP2Next::Stream stream, Request request) -> void
+
+    def join_headers: (HTTP2Next::Stream stream, Request request) -> void
+
+    def join_body: (HTTP2Next::Stream stream, Request request) -> void
+
+
+    # def on_stream_headers: (HTTP2Next::Stream stream, Request request, Array[String, String] headers) -> void
+
+    # def on_stream_data: (HTTP2Next::Stream stream, Request request, string data) -> void
+
+    # def on_stream_close: (HTTP2Next::Stream stream, Request request, Symbol? error) -> void
+
+    def on_frame: (string bytes) -> void
+
+    def on_settings: (*untyped) -> void
+
+    def on_close: (Integer last_frame, Symbol? error, String? payload) -> void
+
+    def on_frame_sent: (HTTP2Next::frame) -> void
+    def on_frame_received: (HTTP2Next::frame) -> void
+
+    def on_promise: (HTTP2Next::Stream) -> void
+
+    def on_origin: (String) -> void
+
+    def on_pong: (string ping) -> void
   end
 end
