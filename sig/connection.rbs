@@ -1,7 +1,5 @@
 module HTTPX
   class Connection
-    type ipaddr = IPAddr | String
-
     interface _Parser
 
       def on: (Symbol) { (*untyped) -> void } -> void
