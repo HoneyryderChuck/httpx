@@ -1,0 +1,6 @@
+module HTTPX
+  type resolver = Resolver::System | Resolver::Native | Resolver::HTTPS
+  
+  module Resolver
+  end
+end

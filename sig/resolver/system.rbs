@@ -1,0 +1,6 @@
+module HTTPX
+  module Resolver
+    class System
+    end
+  end
+end
