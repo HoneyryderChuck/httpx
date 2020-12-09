@@ -40,7 +40,6 @@ group :test do
   gem "oga"
 
   gem "rbs", git: "https://github.com/ruby/rbs.git", branch: "master" if RUBY_VERSION >= "3.0"
-  gem "http-2-next", git: "https://gitlab.com/honeyryderchuck/http-2-next.git", branch: "master" if RUBY_VERSION >= "3.0"
 end
 
 group :coverage do
