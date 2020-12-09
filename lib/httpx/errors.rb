@@ -41,7 +41,7 @@ module HTTPX
 
     def initialize(response)
       @response = response
-      super("HTTP Error: #{@response.status}")
+      super("HTTP Error: #{@response.status} #{@response.headers}\n#{@response.body}")
     end
 
     def status
