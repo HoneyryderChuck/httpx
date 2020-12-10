@@ -11,7 +11,7 @@ Metrics/ModuleLength:
   Max: 325
 
 Metrics/BlockLength:
-  Max: 100
+  Max: 200
 
 Metrics/BlockNesting:
   Enabled: False

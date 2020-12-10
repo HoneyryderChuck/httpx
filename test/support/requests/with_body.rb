@@ -12,6 +12,15 @@ module Requests
         verify_uploaded(body, "url", build_uri("/#{meth}?q=this+is+a+test"))
       end
 
+      define_method :"test_#{meth}_query_nested_params" do
+        uri = build_uri("/#{meth}")
+        response = HTTPX.send(meth, uri, params: { "q" => { "a" => "z" }, "a" => %w[1 2], "b" => [] })
+        verify_status(response, 200)
+        body = json_body(response)
+        verify_uploaded(body, "args", "q[a]" => "z", "a[]" => %w[1 2], "b[]" => "")
+        verify_uploaded(body, "url", build_uri("/#{meth}?q[a]=z&a[]=1&a[]=2&b[]"))
+      end
+
       define_method :"test_#{meth}_form_params" do
         uri = build_uri("/#{meth}")
         response = HTTPX.send(meth, uri, form: { "foo" => "bar" })
@@ -19,6 +28,15 @@ module Requests
         body = json_body(response)
         verify_header(body["headers"], "Content-Type", "application/x-www-form-urlencoded")
         verify_uploaded(body, "form", "foo" => "bar")
+      end
+
+      define_method :"test_#{meth}_form_nested_params" do
+        uri = build_uri("/#{meth}")
+        response = HTTPX.send(meth, uri, form: { "q" => { "a" => "z" }, "a" => %w[1 2], "b" => [] })
+        verify_status(response, 200)
+        body = json_body(response)
+        verify_header(body["headers"], "Content-Type", "application/x-www-form-urlencoded")
+        verify_uploaded(body, "form", "q[a]" => "z", "a[]" => %w[1 2], "b[]" => "")
       end
 
       define_method :"test_#{meth}_expect_100_form_params" do

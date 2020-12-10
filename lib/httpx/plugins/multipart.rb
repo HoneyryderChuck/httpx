@@ -23,11 +23,25 @@ module HTTPX
           def_delegator :@raw, :read
 
           def initialize(form)
-            @raw = HTTP::FormData.create(form)
+            @raw = if multipart?(form)
+              HTTP::FormData::Multipart.new(Hash[*form.map { |k, v| Transcoder.enum_for(:normalize_keys, k, v).to_a }])
+            else
+              HTTP::FormData::Urlencoded.new(form, :encoder => Transcoder::Form.method(:encode))
+            end
           end
 
           def bytesize
             @raw.content_length
+          end
+
+          private
+
+          def multipart?(data)
+            data.any? do |_, v|
+              v.is_a?(HTTP::FormData::Part) ||
+                (v.respond_to?(:to_ary) && v.to_ary.any? { |e| e.is_a?(HTTP::FormData::Part) }) ||
+                (v.respond_to?(:to_hash) && v.to_hash.any? { |_, e| e.is_a?(HTTP::FormData::Part) })
+            end
           end
         end
 

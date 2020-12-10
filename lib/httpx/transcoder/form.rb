@@ -12,10 +12,18 @@ module HTTPX::Transcoder
 
       def_delegator :@raw, :to_s
 
+      def_delegator :@raw, :to_str
+
       def_delegator :@raw, :bytesize
 
       def initialize(form)
-        @raw = URI.encode_www_form(form)
+        @raw = form.each_with_object("".b) do |(key, val), buf|
+          HTTPX::Transcoder.normalize_keys(key, val) do |k, v|
+            buf << "&" unless buf.empty?
+            buf << URI.encode_www_form_component(k)
+            buf << "=#{URI.encode_www_form_component(v.to_s)}" unless v.nil?
+          end
+        end
       end
 
       def content_type

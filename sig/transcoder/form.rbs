@@ -10,7 +10,7 @@ module HTTPX::Transcoder
 
       private
 
-      def initalize: (urlencoded_input form) -> untyped
+      def initialize: (urlencoded_input form) -> untyped
     end
   end
 end

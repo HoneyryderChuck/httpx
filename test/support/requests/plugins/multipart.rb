@@ -16,6 +16,16 @@ module Requests
           verify_uploaded(body, "form", "foo" => "bar")
         end
 
+        define_method :"test_plugin_multipart_nested_urlencoded_#{meth}" do
+          uri = build_uri("/#{meth}")
+          response = HTTPX.plugin(:multipart)
+                          .send(meth, uri, form: { "q" => { "a" => "z" }, "a" => %w[1 2] })
+          verify_status(response, 200)
+          body = json_body(response)
+          verify_header(body["headers"], "Content-Type", "application/x-www-form-urlencoded")
+          verify_uploaded(body, "form", "q[a]" => "z", "a[]" => %w[1 2])
+        end
+
         define_method :"test_plugin_multipart_formdata_#{meth}" do
           uri = build_uri("/#{meth}")
           response = HTTPX.plugin(:multipart)
@@ -24,6 +34,16 @@ module Requests
           body = json_body(response)
           verify_header(body["headers"], "Content-Type", "multipart/form-data")
           verify_uploaded_image(body)
+        end
+
+        define_method :"test_plugin_multipart_nested_formdata_#{meth}" do
+          uri = build_uri("/#{meth}")
+          response = HTTPX.plugin(:multipart)
+                          .send(meth, uri, form: { q: { image: HTTP::FormData::File.new(fixture_file_path) } })
+          verify_status(response, 200)
+          body = json_body(response)
+          verify_header(body["headers"], "Content-Type", "multipart/form-data")
+          verify_uploaded_image(body, "q[image]")
         end
       end
 
@@ -39,9 +59,9 @@ module Requests
         File.join("test", "support", "fixtures", "image.jpg")
       end
 
-      def verify_uploaded_image(body)
+      def verify_uploaded_image(body, key = "image")
         assert body.key?("files"), "there were no files uploaded"
-        assert body["files"].key?("image"), "there is no image in the file"
+        assert body["files"].key?(key), "there is no image in the file"
       end
     end
   end
