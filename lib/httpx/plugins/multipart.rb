@@ -24,7 +24,7 @@ module HTTPX
 
           def initialize(form)
             @raw = if multipart?(form)
-              HTTP::FormData::Multipart.new(Hash[*form.map { |k, v| Transcoder.enum_for(:normalize_keys, k, v).to_a }])
+              HTTP::FormData::Multipart.new(Hash[form.flat_map { |k, v| Transcoder.enum_for(:normalize_keys, k, v).to_a }])
             else
               HTTP::FormData::Urlencoded.new(form, :encoder => Transcoder::Form.method(:encode))
             end
