@@ -106,7 +106,7 @@ module HTTPX
 
       query = []
       if (q = @options.params)
-        query << URI.encode_www_form(q)
+        query << Transcoder.registry("form").encode(q)
       end
       query << @uri.query if @uri.query
       @query = query.join("&")
