@@ -12,7 +12,9 @@ module HTTPX
 
         private
 
-        def initalize: (Hash[Symbol | string, HTTP::FormData::Part | string] multipart_data) -> untyped
+        def initialize: (Hash[Symbol | string, HTTP::FormData::Part | string] multipart_data) -> untyped
+
+        def multipart?: (top) -> bool
       end
     end
   end

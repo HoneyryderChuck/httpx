@@ -11,8 +11,6 @@ module HTTPX::Transcoder
       private
 
       def initialize: (urlencoded_input form) -> untyped
-
-      def normalize_keys: (string, untyped) { (string, untyped) -> void } -> void
     end
   end
 end
