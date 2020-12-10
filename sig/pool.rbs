@@ -1,2 +1,36 @@
-class HTTPX::Pool
+module HTTPX
+  class Pool
+    def empty?: () -> void
+
+    def next_tick: () -> void
+
+    def close: (Array[Connection]) -> void
+             | () -> void
+
+    def init_connection: (Connection, Options) -> void
+
+    def find_connection: (generic_uri, Options) -> Connection?
+
+    private
+
+    def initialize: () -> untyped
+
+    def resolve_connection: (Connection) -> void
+
+    def on_resolver_connection: (Connection) -> void
+
+    def on_resolver_error: (Connection, StandardError) -> void
+
+    def on_resolver_close: (resolver) -> void
+
+    def register_connection: (Connection) -> void
+
+    def unregister_connection: (Connection) -> void
+
+    def coalesce_connections: (Connection, Connection) -> void
+
+    def next_timeout: () -> Numeric?
+
+    def find_resolver_for: (Connection) -> resolver
+  end
 end

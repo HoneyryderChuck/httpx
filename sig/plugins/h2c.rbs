@@ -1,7 +1,7 @@
 module HTTPX
   module Plugins
     module H2C
-      # def self.load_dependencies: (singleton(Session)) -> void
+      def self.load_dependencies: (singleton(Session)) -> void
       
       module InstanceMethods
         VALID_H2C_METHODS: Array[Symbol]

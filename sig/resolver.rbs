@@ -1,0 +1,26 @@
+module HTTPX
+  type ipaddr = IPAddr | String
+
+  type resolver = Resolver::System | Resolver::Native | Resolver::HTTPS
+
+  module Resolver
+    type dns_resource = singleton(Resolv::DNS::Resource)
+
+    type dns_result = { "name" => String, "TTL" => Numeric, "alias" => String }
+                    | { "name" => String, "TTL" => Numeric, "data" => String }
+
+    def self?.cached_lookup: (String hostname) -> Array[String]?
+
+    def self?.cached_lookup_set: (String hostname, Array[dns_result] addresses) -> void
+
+    def self?.uncache: (String hostname) -> void
+
+    def self?.lookup: (String hostname, Numeric ttl) -> Array[String]?
+
+    def self?.generate_id: () -> Integer
+
+    def self?.encode_dns_query: (String hostname, ?type: dns_resource) -> String
+
+    def self?.decode_dns_answer: (String) -> Array[dns_result]
+  end
+end

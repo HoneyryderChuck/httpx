@@ -51,12 +51,8 @@ module HTTPX
       :rw
     end
 
-    def reset
-      init_connection
-    end
-
-    def close(*args)
-      @connection.goaway(*args) unless @connection.state == :closed
+    def close
+      @connection.goaway unless @connection.state == :closed
       emit(:close)
     end
 
@@ -162,6 +158,9 @@ module HTTPX
       #
       @connection.send_connection_preface
     end
+
+    alias_method :reset, :init_connection
+    public :reset
 
     def handle_stream(stream, request)
       stream.on(:close, &method(:on_stream_close).curry[stream, request])
@@ -270,16 +269,16 @@ module HTTPX
     end
 
     def on_close(_last_frame, error, _payload)
+      is_connection_closed = @connection.state == :closed
       if error && error != :no_error
+        @buffer.clear if is_connection_closed
         ex = Error.new(0, error)
         ex.set_backtrace(caller)
-        @streams.each_key do |request|
-          emit(:error, request, ex)
-        end
+        handle_error(ex)
       end
-      return unless @connection.state == :closed && @streams.size.zero?
+      return unless is_connection_closed && @streams.size.zero?
 
-      emit(:close)
+      emit(:close, is_connection_closed)
     end
 
     def on_frame_sent(frame)
@@ -317,7 +316,7 @@ module HTTPX
     end
 
     def on_pong(ping)
-      if !@pings.delete(ping)
+      if !@pings.delete(ping.to_s)
         close(:protocol_error, "ping payload did not match")
       else
         emit(:pong)

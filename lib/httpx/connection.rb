@@ -120,25 +120,14 @@ module HTTPX
       end
     end
 
-    def create_idle
-      self.class.new(@type, @origin, @options)
+    def create_idle(options = {})
+      self.class.new(@type, @origin, @options.merge(options))
     end
 
     def merge(connection)
       @origins += connection.instance_variable_get(:@origins)
       connection.purge_pending do |req|
         send(req)
-      end
-    end
-
-    def unmerge(connection)
-      @origins -= connection.instance_variable_get(:@origins)
-      purge_pending do |request|
-        request.uri.origin == connection.origin && begin
-          request.transition(:idle)
-          connection.send(request)
-          true
-        end
       end
     end
 
@@ -399,7 +388,7 @@ module HTTPX
       parser.on(:error) do |request, ex|
         case ex
         when MisdirectedRequestError
-          emit(:uncoalesce, request.uri)
+          emit(:misdirected, request)
         else
           response = ErrorResponse.new(request, ex, @options)
           request.emit(:response, response)
@@ -435,7 +424,7 @@ module HTTPX
           remove_instance_variable(:@total_timeout)
         end
 
-        @io.close
+        @io.close if @io
         @read_buffer.clear
         if @keep_alive_timer
           @keep_alive_timer.cancel

@@ -4,7 +4,7 @@ module Requests
   module Plugins
     module PushPromise
       def test_plugin_no_push_promise
-        html, css = HTTPX.get(push_html_uri, push_css_uri)
+        html, css = HTTPX.get(push_html_uri, push_css_uri, max_concurrent_requests: 1)
         verify_status(html, 200)
         verify_status(css, 200)
         verify_no_header(css.headers, "x-http2-push")

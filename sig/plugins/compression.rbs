@@ -16,7 +16,7 @@ module HTTPX
         def initialize: (Numeric bytesize) -> untyped
       end
        
-      # def self.load_dependencies: (singleton(Session)) -> void
+      def self.load_dependencies: (singleton(Session)) -> void
 
       interface _CompressionOptions
         def compression_threshold_size: () -> _Integer?

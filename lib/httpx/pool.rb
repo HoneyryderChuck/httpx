@@ -108,10 +108,10 @@ module HTTPX
       end
     end
 
-    def on_resolver_error(ch, error)
-      ch.emit(:error, error)
+    def on_resolver_error(connection, error)
+      connection.emit(:error, error)
       # must remove connection by hand, hasn't been started yet
-      unregister_connection(ch)
+      unregister_connection(connection)
     end
 
     def on_resolver_close(resolver)
@@ -144,12 +144,12 @@ module HTTPX
       @connected_connections -= 1
     end
 
-    def coalesce_connections(ch1, ch2)
-      if ch1.coalescable?(ch2)
-        ch1.merge(ch2)
-        @connections.delete(ch2)
+    def coalesce_connections(conn1, conn2)
+      if conn1.coalescable?(conn2)
+        conn1.merge(conn2)
+        @connections.delete(conn2)
       else
-        register_connection(ch2)
+        register_connection(conn2)
       end
     end
 
@@ -168,12 +168,6 @@ module HTTPX
         resolver.on(:error, &method(:on_resolver_error))
         resolver.on(:close) { on_resolver_close(resolver) }
         resolver
-      rescue ArgumentError
-        # this block is here because of an error which happens on CI from time to time
-        warn "tried resolver: #{resolver_type}"
-        warn "initialize: #{resolver_type.instance_method(:initialize).source_location}"
-        warn "new: #{resolver_type.method(:new).source_location}"
-        raise
       end
     end
   end

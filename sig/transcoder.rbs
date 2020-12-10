@@ -5,8 +5,7 @@ module HTTPX
     extend HTTPX::Registry[String, Class]
 
     interface _Encoder
-      def bytesize: () -> Integer
-      def content_type: () -> String
+      def bytesize: () -> Numeric
     end
 
     interface _Decoder

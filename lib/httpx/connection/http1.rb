@@ -21,6 +21,7 @@ module HTTPX
       @version = [1, 1]
       @pending = []
       @requests = []
+      @handshake_completed = false
     end
 
     def interests
@@ -155,6 +156,7 @@ module HTTPX
       @parser.reset!
       @max_requests -= 1
       manage_connection(response)
+
       send(@pending.shift) unless @pending.empty?
     end
 
@@ -182,17 +184,28 @@ module HTTPX
       connection = response.headers["connection"]
       case connection
       when /keep-alive/i
+        if @handshake_completed
+          if @max_requests.zero?
+            @pending.concat(@requests)
+            @requests.clear
+            emit(:exhausted)
+          end
+          return
+        end
+
         keep_alive = response.headers["keep-alive"]
         return unless keep_alive
 
         parameters = Hash[keep_alive.split(/ *, */).map do |pair|
           pair.split(/ *= */)
         end]
-        @max_requests = parameters["max"].to_i if parameters.key?("max")
+        @max_requests = parameters["max"].to_i - 1 if parameters.key?("max")
+
         if parameters.key?("timeout")
           keep_alive_timeout = parameters["timeout"].to_i
           emit(:timeout, keep_alive_timeout)
         end
+        @handshake_completed = true
       when /close/i
         disable
       when nil

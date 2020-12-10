@@ -38,7 +38,7 @@ module HTTPX
       def early_resolve(connection, hostname: connection.origin.host)
         addresses = connection.addresses ||
                     ip_resolve(hostname) ||
-                    (@resolver_options.cache && Resolver.cached_lookup(hostname)) ||
+                    (@resolver_options[:cache] && Resolver.cached_lookup(hostname)) ||
                     system_resolve(hostname)
         return unless addresses
 
@@ -57,11 +57,13 @@ module HTTPX
         ips.map { |ip| IPAddr.new(ip) }
       end
 
-      def emit_resolve_error(connection, hostname, ex = nil)
+      def emit_resolve_error(connection, hostname = connection.origin.host, ex = nil)
         emit(:error, connection, resolve_error(hostname, ex))
       end
 
       def resolve_error(hostname, ex = nil)
+        return ex if ex.is_a?(ResolveError)
+
         message = ex ? ex.message : "Can't resolve #{hostname}"
         error = ResolveError.new(message)
         error.set_backtrace(ex ? ex.backtrace : caller)

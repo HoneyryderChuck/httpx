@@ -45,7 +45,7 @@ module HTTPX
               | () -> Enumerable[String]
 
       def empty?: () -> bool
-      def bytesize: () -> Integer
+      def bytesize: () -> Numeric
       def stream: (Transcoder::_Encoder) -> bodyIO
       def unbounded_body?: () -> bool
       def chunked?: () -> bool

@@ -14,9 +14,9 @@ module HTTPX
 
     def initialize(options)
       @options = Options.new(options)
-      @resolver_options = Resolver::Options.new(@options.resolver_options)
+      @resolver_options = @options.resolver_options
       @state = :idle
-      resolv_options = @resolver_options.to_h
+      resolv_options = @resolver_options.dup
       timeouts = resolv_options.delete(:timeouts)
       resolv_options.delete(:cache)
       @resolver = Resolv::DNS.new(resolv_options.empty? ? nil : resolv_options)

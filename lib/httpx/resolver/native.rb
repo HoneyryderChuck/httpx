@@ -15,7 +15,6 @@ module HTTPX
       "AAAA" => Resolv::DNS::Resource::IN::AAAA,
     }.freeze
 
-    # :nocov:
     DEFAULTS = if RUBY_VERSION < "2.2"
       {
         **Resolv::DNS::Config.default_config_hash,
@@ -44,7 +43,6 @@ module HTTPX
         false
       end
     end if DEFAULTS[:nameserver]
-    # :nocov:
 
     DNS_PORT = 53
 
@@ -53,15 +51,15 @@ module HTTPX
     def initialize(options)
       @options = Options.new(options)
       @ns_index = 0
-      @resolver_options = Resolver::Options.new(DEFAULTS.merge(@options.resolver_options || {}))
-      @nameserver = @resolver_options.nameserver
-      @_timeouts = Array(@resolver_options.timeouts)
+      @resolver_options = DEFAULTS.merge(@options.resolver_options)
+      @nameserver = @resolver_options[:nameserver]
+      @_timeouts = Array(@resolver_options[:timeouts])
       @timeouts = Hash.new { |timeouts, host| timeouts[host] = @_timeouts.dup }
-      @_record_types = Hash.new { |types, host| types[host] = @resolver_options.record_types.dup }
+      @_record_types = Hash.new { |types, host| types[host] = @resolver_options[:record_types].dup }
       @connections = []
       @queries = {}
       @read_buffer = "".b
-      @write_buffer = Buffer.new(@resolver_options.packet_size)
+      @write_buffer = Buffer.new(@resolver_options[:packet_size])
       @state = :idle
     end
 
@@ -111,9 +109,9 @@ module HTTPX
       return if early_resolve(connection)
 
       if @nameserver.nil?
-        ex = ResolveError.new("Can't resolve #{connection.origin.host}: no nameserver")
+        ex = ResolveError.new("No available nameserver")
         ex.set_backtrace(caller)
-        emit(:error, connection, ex)
+        throw(:resolve_error, ex)
       else
         @connections << connection
         resolve
@@ -164,7 +162,7 @@ module HTTPX
       connections.each { |ch| resolve(ch) }
     end
 
-    def dread(wsize = @resolver_options.packet_size)
+    def dread(wsize = @resolver_options[:packet_size])
       loop do
         siz = @io.read(wsize, @read_buffer)
         return unless siz && siz.positive?
@@ -199,13 +197,14 @@ module HTTPX
         end
       end
 
-      if addresses.empty?
+      if addresses.nil? || addresses.empty?
         hostname, connection = @queries.first
         @_record_types[hostname].shift
         if @_record_types[hostname].empty?
           @queries.delete(hostname)
           @_record_types.delete(hostname)
           @connections.delete(connection)
+
           raise NativeResolveError.new(connection, hostname)
         end
       else
@@ -223,7 +222,7 @@ module HTTPX
           end
         else
           @connections.delete(connection)
-          Resolver.cached_lookup_set(connection.origin.host, addresses) if @resolver_options.cache
+          Resolver.cached_lookup_set(connection.origin.host, addresses) if @resolver_options[:cache]
           emit_addresses(connection, addresses.map { |addr| addr["data"] })
         end
       end
@@ -243,7 +242,7 @@ module HTTPX
         log { "resolver: resolve IDN #{connection.origin.non_ascii_hostname} as #{hostname}" } if connection.origin.non_ascii_hostname
       end
       @queries[hostname] = connection
-      type = @_record_types[hostname].first
+      type = @_record_types[hostname].first || "A"
       log { "resolver: query #{type} for #{hostname}" }
       begin
         @write_buffer << Resolver.encode_dns_query(hostname, type: RECORD_TYPES[type])

@@ -75,6 +75,41 @@ class HTTPSTest < Minitest::Test
     assert log_output.match(/HEADER: content-length: \d+/)
   end
 
+  unless RUBY_ENGINE == "jruby" || RUBY_VERSION < "2.3"
+    # HTTP/2-specific tests
+
+    def test_http2_max_streams
+      uri = build_uri("/get")
+      HTTPX.plugin(SessionWithSingleStream).plugin(SessionWithPool).wrap do |http|
+        http.get(uri, uri)
+        connection_count = http.pool.connection_count
+        assert connection_count == 2, "expected to have 2 connections, instead have #{connection_count}"
+        assert http.connection_exausted, "expected 1 connnection to have exhausted"
+      end
+    end
+
+    def test_http2_uncoalesce_on_misdirected
+      uri = build_uri("/status/421")
+      HTTPX.plugin(SessionWithPool).wrap do |http|
+        response = http.get(uri)
+        verify_status(response, 421)
+        connection_count = http.pool.connection_count
+        assert connection_count == 2, "expected to have 2 connections, instead have #{connection_count}"
+        assert response.version == "1.1", "request should have been retried with HTTP/1.1"
+      end
+    end
+
+    def test_http2_settings_timeout
+      uri = build_uri("/get")
+      HTTPX.plugin(SessionWithPool).plugin(SessionWithFrameDelay).wrap do |http|
+        response = http.get(uri)
+        assert response.is_a?(HTTPX::ErrorResponse), "expected to fail for settings timeout"
+        assert response.status =~ /settings_timeout/,
+               "connection should have terminated due to HTTP/2 settings timeout"
+      end
+    end
+  end
+
   private
 
   def origin(orig = httpbin)

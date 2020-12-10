@@ -1,0 +1,27 @@
+module HTTPX
+  module Resolver
+    module ResolverMixin
+      include Callbacks
+      include Loggable
+
+      def uncache: (Connection) -> void
+
+      private
+
+      def emit_addresses: (Connection, Array[ipaddr]) -> void
+
+      def early_resolve: (Connection, ?hostname: String) -> void
+
+      def ip_resolve: (String hostname) -> Array[ipaddr]?
+
+      def system_resolve: (String hostname) -> Array[ipaddr]?
+
+      def emit_resolve_error: (Connection, String hostname, StandardError) -> void
+                            | (Connection, String hostname) -> void
+                            | (Connection) -> void
+
+      def resolve_error: (String hostname, StandardError?) -> void
+                       | (String hostname) -> void  
+    end
+  end
+end

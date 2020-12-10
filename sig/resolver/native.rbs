@@ -1,0 +1,60 @@
+module HTTPX
+  module Resolver
+    class Native
+      include ResolverMixin
+      include _ToIO
+
+      @options: Options
+      @ns_index: Integer
+      @resolver_options: Hash[Symbol, untyped]
+      @nameserver: String
+      @_timeouts: Array[Numeric]
+      @timeouts: Hash[String, Array[Numeric]]
+      @_record_types: Hash[String, Hash["A" | "AAAA", dns_resource]]
+      @connections: Array[Connection]
+      @queries: Hash[String, Connection]
+      @read_buffer: String
+      @write_buffer: Buffer
+      @state: :idle | :closed
+
+      def closed?: () -> bool
+
+      def empty?: () -> bool
+
+      def close: () -> void
+
+      def call: () -> void
+
+      def interests: () -> io_interests
+
+      def <<: (Connection) -> void
+
+      def timeout: () -> Numeric?
+
+      private
+
+      def initialize: (options) -> untyped
+
+      def consume: () -> void
+
+      def do_retry: () -> void
+
+      def dread: (Integer) -> void
+               | () -> void
+
+      def dwrite: () -> void
+
+      def parse: (String) -> void
+
+      def resolve: (Connection, String hostname) -> void
+                 | (Connection) -> void
+                 | () -> void
+
+      def build_socket: () -> void
+
+      def transition: (Symbol nextstate) -> void
+
+      def handle_error: (StandardError) -> void
+    end
+  end
+end

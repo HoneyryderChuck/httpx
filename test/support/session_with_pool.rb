@@ -20,8 +20,17 @@ module SessionWithPool
   end
 
   module InstanceMethods
+    attr_reader :connection_exausted
+
     def pool
       @pool ||= ConnectionPool.new
+    end
+
+    def set_connection_callbacks(connection, connections, options)
+      super
+      connection.on(:exhausted) do
+        @connection_exausted = true
+      end
     end
   end
 

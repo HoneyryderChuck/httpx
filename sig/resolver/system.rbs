@@ -1,0 +1,17 @@
+module HTTPX
+  module Resolver
+    class System
+      include ResolverMixin
+
+      def closed?: () -> true
+
+      def empty?: () -> true
+
+      def <<: (Connection) -> void
+
+      private
+
+      def initialize: (options) -> untyped
+    end
+  end
+end

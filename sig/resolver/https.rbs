@@ -1,0 +1,49 @@
+module HTTPX
+  module Resolver
+    class HTTPS
+      include ResolverMixin
+      include _ToIO
+
+      @options: Options
+      @resolver_options: Hash[Symbol, untyped]
+      @_record_types: Hash[String, Hash["A" | "AAAA", dns_resource]]
+      @queries: Hash[String, Connection]
+      @requests: Hash[Request, Connection]
+      @connections: Array[Connection]
+      @uri: URI::HTTPS
+      @uri_addresses: Array[String]?
+
+      def <<: (Connection) -> void
+
+      def timeout: () -> Numeric?
+
+      def closed?: () -> bool
+
+      def empty?: () -> bool
+
+      def close: () -> void
+
+      def call: () -> void
+
+      def interests: () -> io_interests?
+
+      private
+
+      def initialize: (options) -> untyped
+
+      def pool: () -> Pool
+
+      def resolver_connection: () -> Connection
+
+      def resolve: (Connection, String hostname) -> void
+                 | (Connection) -> void
+                 | () -> void
+
+      def response: (Response) -> void
+
+      def build_request: (String hostname, "A" | "AAAA") -> Request
+
+      def decode_response_body: (Response) -> Array[dns_result]
+    end
+  end
+end

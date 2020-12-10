@@ -1,7 +1,7 @@
 module HTTPX
   module Plugins
     module Multipart
-      # def self.load_dependencies: (singleton(Session)) -> void
+      def self.load_dependencies: (singleton(Session)) -> void
       def self.configure: (*untyped) -> void
       def self?.encode: (untyped) -> Encoder
 

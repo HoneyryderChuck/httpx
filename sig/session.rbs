@@ -16,8 +16,8 @@ module HTTPX
 
     def build_request: (String | verb, uri, ?options) -> Request
 
-    # def self.plugin: | (Symbol | Module, ?options) { (Class) -> void } -> singleton(Session)
-    #                  | (Symbol | Module, ?options) -> singleton(Session)
+    def self.plugin: (Symbol | Module, ?options) { (Class) -> void } -> singleton(Session)
+                   | (Symbol | Module, ?options) -> singleton(Session)
 
 
 

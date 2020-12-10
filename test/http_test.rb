@@ -45,6 +45,24 @@ class HTTPTest < Minitest::Test
     assert log_output.match(/HEADER: content-length: \d+/)
   end
 
+  def test_max_streams
+    server = KeepAliveServer.new
+    th = Thread.new { server.start }
+    begin
+      uri = "#{server.origin}/"
+      HTTPX.plugin(SessionWithPool).with(max_concurrent_requests: 1).wrap do |http|
+        responses = http.get(uri, uri, uri)
+        assert responses.size == 3, "expected 3 responses, got #{responses.size}"
+        connection_count = http.pool.connection_count
+        assert connection_count == 2, "expected to have 2 connections, instead have #{connection_count}"
+        assert http.connection_exausted, "expected 1 connnection to have exhausted"
+      end
+    ensure
+      server.shutdown
+      th.join
+    end
+  end
+
   private
 
   def origin(orig = httpbin)

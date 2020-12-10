@@ -18,10 +18,10 @@ module HTTPX
 
         private
 
-        def initialize: (uri: uri, ?username: string, ?password: string) -> untyped
+        def initialize: (uri: generic_uri, ?username: string, ?password: string) -> untyped
       end
 
-      # def self.configure: (singleton(Session)) -> void
+      def self.configure: (singleton(Session)) -> void
       
       type proxyParam = Parameters | Hash
       
