@@ -112,7 +112,8 @@ class HTTPSTest < Minitest::Test
     uri = build_uri("/get")
     response = HTTPX.with(ssl: { hostname: "great-gatsby.com" }).get(uri)
     assert response.is_a?(HTTPX::ErrorResponse), "response should contain errors"
-    assert response.error.message.include?("certificate verify failed")
+    assert response.error.message.include?("certificate verify failed"),
+           "unexpected error: #{response.error.message}"
   end
 
   private

@@ -148,16 +148,21 @@ module HTTPX
       attach_function :SSL_set_ex_data, %i[ssl int string], :int
       callback :verify_callback, %i[int x509], :int
       attach_function :SSL_set_verify, %i[ssl int verify_callback], :void
+      attach_function :SSL_CTX_set_verify, %i[ssl int verify_callback], :void
       attach_function :SSL_get_verify_result, %i[ssl], :long
       attach_function :SSL_connect, [:ssl], :int
 
       # Verify callback
+      X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT = 2
+      X509_V_ERR_HOSTNAME_MISMATCH = 62
+      X509_V_ERR_CERT_REJECTED = 28
       attach_function :X509_STORE_CTX_get_current_cert, [:pointer], :x509
       attach_function :SSL_get_ex_data_X509_STORE_CTX_idx, [], :int
       attach_function :X509_STORE_CTX_get_ex_data, %i[pointer int], :ssl
       attach_function :X509_STORE_CTX_get_error_depth, %i[x509], :int
       attach_function :PEM_write_bio_X509, %i[bio x509], :bool
       attach_function :X509_verify_cert_error_string, %i[long], :string
+      attach_function :X509_STORE_CTX_set_error, %i[ssl_ctx long], :void
 
       # SSL Context Class
       # OpenSSL before 1.1.0 do not have these methods
@@ -230,7 +235,7 @@ module HTTPX
 
       def self.SSL_set_tlsext_host_name(ssl, host_name)
         name_ptr = FFI::MemoryPointer.from_string(host_name)
-        raise Error, "error setting SNI hostname" if SSL_ctrl(ssl, SSL_CTRL_SET_TLSEXT_HOSTNAME, TLSEXT_NAMETYPE_host_name, name_ptr) == 0
+        raise Error, "error setting SNI hostname" if SSL_ctrl(ssl, SSL_CTRL_SET_TLSEXT_HOSTNAME, TLSEXT_NAMETYPE_host_name, name_ptr).zero?
       end
 
       # Server Name Indication (SNI) Support
@@ -286,7 +291,7 @@ module HTTPX
       # Deconstructor
       attach_function :SSL_CTX_free, [:ssl_ctx], :void
 
-      PrivateMaterials = <<~keystr
+      PrivateMaterials = <<~KEYSTR
         -----BEGIN RSA PRIVATE KEY-----
         MIICXAIBAAKBgQDCYYhcw6cGRbhBVShKmbWm7UVsEoBnUf0cCh8AX+MKhMxwVDWV
         Igdskntn3cSJjRtmgVJHIK0lpb/FYHQB93Ohpd9/Z18pDmovfFF9nDbFF0t39hJ/
@@ -325,7 +330,7 @@ module HTTPX
         Df6hTAs7H3MWww62ddvR8l07AWfSzSP5L6mDsbvq7EmQsmPODwb6C+i2aF3EDL8j
         uw73m4YIGI0Zw2XdBpiOGkx2H56Kya6mJJe/5XORZedh1wpI7zki01tHYbcy
         -----END CERTIFICATE-----
-      keystr
+      KEYSTR
 
       BuiltinPasswdCB = FFI::Function.new(:int, %i[pointer int int pointer]) do |buffer, _len, _flag, _data|
         buffer.write_string("kittycat")

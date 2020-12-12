@@ -15,19 +15,28 @@ module HTTPX
 
         bio_out = SSL.BIO_new(SSL.BIO_s_mem)
         ret = SSL.PEM_write_bio_X509(bio_out, x509)
-        unless ret
+        if ret
+          len = SSL.BIO_pending(bio_out)
+          buffer = FFI::MemoryPointer.new(:char, len, false)
+          size = SSL.BIO_read(bio_out, buffer, len)
+
+          # THis is the callback into the ruby class
+          cert = buffer.read_string(size)
           SSL.BIO_free(bio_out)
-          raise "Error reading certificate"
+          # InstanceLookup[ssl.address].verify(cert) || preverify_ok.zero? ? 1 : 0
+          box = InstanceLookup[ssl.address]
+          hostname_verify = box.verify(cert)
+          if hostname_verify
+            1
+          else
+            SSL.X509_STORE_CTX_set_error(x509_store, SSL::X509_V_ERR_HOSTNAME_MISMATCH)
+            0
+          end
+        else
+          SSL.BIO_free(bio_out)
+          SSL.X509_STORE_CTX_set_error(x509_store, SSL::X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT)
+          0
         end
-
-        len = SSL.BIO_pending(bio_out)
-        buffer = FFI::MemoryPointer.new(:char, len, false)
-        size = SSL.BIO_read(bio_out, buffer, len)
-
-        # THis is the callback into the ruby class
-        cert = buffer.read_string(size)
-        SSL.BIO_free(bio_out)
-        InstanceLookup[ssl.address].verify(cert) || preverify_ok.zero? ? 1 : 0
       end
 
       attr_reader :is_server, :context, :handshake_completed, :hosts, :ssl_version, :cipher, :verify_peer

@@ -100,7 +100,7 @@ module HTTPX
     # signals TLS invalid status / shutdown.
     def close_cb(msg = nil)
       log { "TLS Error: #{msg}, closing" }
-      raise TLSError, msg || "TLS Error"
+      raise TLSError, "TLSError: certificate verify failed (#{msg})"
     end
 
     # TLS callback.

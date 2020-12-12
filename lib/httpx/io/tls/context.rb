@@ -60,9 +60,9 @@ module HTTPX
         set_alpn_negotiation(options[:protocols])
       end
 
-
       def cleanup
         return unless @ssl_ctx
+
         SSL.SSL_CTX_free(@ssl_ctx)
         @ssl_ctx = nil
       end
@@ -101,9 +101,9 @@ module HTTPX
 
         def set_min_version(version)
           return unless version
+
           num = SSL.const_get("#{version}_VERSION")
           SSL.SSL_CTX_set_min_proto_version(@ssl_ctx, num) == 1
-          puts "version done"
         rescue NameError
           raise Error, "#{version} is unsupported"
         end
@@ -124,7 +124,6 @@ module HTTPX
           else
             protocols = Context.build_alpn_string(protocols)
             @alpn_set = SSL.SSL_CTX_set_alpn_protos(@ssl_ctx, protocols, protocols.length) == 0
-            puts "alpn protocols: #{protocols}"
           end
         end
       else
