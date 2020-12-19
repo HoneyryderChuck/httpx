@@ -163,13 +163,13 @@ module HTTPX
     public :reset
 
     def handle_stream(stream, request)
-      stream.on(:close, &method(:on_stream_close).curry[stream, request])
+      stream.on(:close, &method(:on_stream_close).curry(3)[stream, request])
       stream.on(:half_close) do
         log(level: 2) { "#{stream.id}: waiting for response..." }
       end
-      stream.on(:altsvc, &method(:on_altsvc).curry[request.origin])
-      stream.on(:headers, &method(:on_stream_headers).curry[stream, request])
-      stream.on(:data, &method(:on_stream_data).curry[stream, request])
+      stream.on(:altsvc, &method(:on_altsvc).curry(2)[request.origin])
+      stream.on(:headers, &method(:on_stream_headers).curry(3)[stream, request])
+      stream.on(:data, &method(:on_stream_data).curry(3)[stream, request])
     end
 
     def join_headers(stream, request)

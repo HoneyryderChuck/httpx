@@ -39,6 +39,8 @@ module HTTPX
                  | (Connection) -> void
                  | () -> void
 
+      def on_response: (Request, response) -> void
+
       def response: (Response) -> void
 
       def build_request: (String hostname, "A" | "AAAA") -> Request

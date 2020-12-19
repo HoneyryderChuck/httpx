@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+GC.auto_compact = true if GC.respond_to?(:auto_compact=)
+
 if ENV.key?("CI")
   require "simplecov"
   SimpleCov.command_name "#{RUBY_ENGINE}-#{RUBY_VERSION}"

@@ -70,8 +70,8 @@ module HTTPX
           request.transition(:done)
           response = request.response
           response.mark_as_pushed!
-          stream.on(:data, &parser.method(:on_stream_data).curry[stream, request])
-          stream.on(:close, &parser.method(:on_stream_close).curry[stream, request])
+          stream.on(:data, &parser.method(:on_stream_data).curry(3)[stream, request])
+          stream.on(:close, &parser.method(:on_stream_close).curry(3)[stream, request])
         end
       end
     end
