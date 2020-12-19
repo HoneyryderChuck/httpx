@@ -29,7 +29,7 @@ module HTTPX
                   | (?options?) -> untyped
 
     def pool: -> Pool
-    # def on_response: (Request, response) -> void
+    def on_response: (Request, response) -> void
     def on_promise: (untyped, untyped) -> void
     def fetch_response: (Request, *untyped) -> response?
     def set_connection_callbacks: (Connection, Array[Connection], Options) -> void

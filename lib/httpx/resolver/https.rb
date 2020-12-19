@@ -99,7 +99,7 @@ module HTTPX
       log { "resolver: query #{type} for #{hostname}" }
       begin
         request = build_request(hostname, type)
-        request.on(:response, &method(:on_response).curry[request])
+        request.on(:response, &method(:on_response).curry(2)[request])
         request.on(:promise, &method(:on_promise))
         @requests[request] = connection
         resolver_connection.send(request)
