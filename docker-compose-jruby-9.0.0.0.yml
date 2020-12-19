@@ -1,7 +1,7 @@
 version: '3'
 services:
   httpx:
-    image: jruby:9.2.13
+    image: jruby:9.2.14
     environment:
       - JRUBY_OPTS=--debug
     entrypoint:
