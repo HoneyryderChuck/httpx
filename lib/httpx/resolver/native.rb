@@ -148,14 +148,19 @@ module HTTPX
           queries[h] = connection
           next
         end
+
         @timeouts[host].shift
         if @timeouts[host].empty?
           @timeouts.delete(host)
           @connections.delete(connection)
-          raise NativeResolveError.new(connection, host)
+          # This loop_time passed to the exception is bogus. Ideally we would pass the total
+          # resolve timeout, including from the previous retries.
+          raise ResolveTimeoutError.new(loop_time, "Timed out")
+          # raise NativeResolveError.new(connection, host)
         else
+          log { "resolver: timeout after #{timeout}s, retry(#{@timeouts[host].first}) #{host}..." }
           connections << connection
-          log { "resolver: timeout after #{prev_timeout}s, retry(#{timeouts.first}) #{host}..." }
+          queries[h] = connection
         end
       end
       @queries = queries

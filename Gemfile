@@ -20,7 +20,7 @@ group :test do
     gem "rubocop", "~> 0.81.0"
     gem "rubocop-performance", "~> 1.5.2"
   else
-    gem "rubocop", "~> 1.0.0"
+    gem "rubocop", "~> 1.0"
     gem "rubocop-performance", "~> 1.5.2"
   end
 
@@ -39,7 +39,10 @@ group :test do
   gem "faraday"
   gem "oga"
 
-  gem "rbs", git: "https://github.com/ruby/rbs.git", branch: "master" if RUBY_VERSION >= "3.0"
+  if RUBY_VERSION >= "3.0"
+    gem "rbs", git: "https://github.com/ruby/rbs.git", branch: "master"
+    gem "webrick"
+  end
 end
 
 group :coverage do

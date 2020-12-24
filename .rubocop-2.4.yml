@@ -13,3 +13,9 @@ Lint/MissingSuper:
 Style/HashTransformValues:
   Exclude:
     - 'lib/httpx/plugins/digest_authentication.rb'
+
+Bundler/DuplicatedGem:
+  Enabled: false
+
+Naming/VariableNumber:
+  Enabled: false
