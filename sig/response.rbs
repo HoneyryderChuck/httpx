@@ -27,7 +27,7 @@ module HTTPX
 
     private
 
-    def initialize: (Request, _ToS, String, headers) -> untyped
+    def initialize: (Request, _ToS, String, headers?) -> untyped
     def no_data?: () -> bool
 
     class Body

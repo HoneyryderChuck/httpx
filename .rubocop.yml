@@ -6,6 +6,7 @@ AllCops:
   Include:
     - lib/**/*.rb
     - test/**/*.rb
+    - integrations/**/*.rb
     - Rakefile
     - httpx.gemspec
     - profiler/**/*

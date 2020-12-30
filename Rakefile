@@ -10,6 +10,13 @@ Rake::TestTask.new do |t|
   t.warning = false
 end
 
+desc "integration tests for third party modules"
+Rake::TestTask.new(:integrations) do |t|
+  t.libs = %w[lib test]
+  t.pattern = "integrations/**/*_test.rb"
+  t.warning = false
+end
+
 RUBY_MAJOR_MINOR = RUBY_VERSION.split(/\./).first(2).join(".")
 
 begin

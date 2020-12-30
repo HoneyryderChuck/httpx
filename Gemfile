@@ -10,6 +10,7 @@ gem "rake", "~> 12.3"
 group :test do
   gem "minitest"
   gem "minitest-proveit"
+  gem "webmock"
 
   if RUBY_VERSION < "2.2"
     gem "net-ssh", "~> 4.2.0"
