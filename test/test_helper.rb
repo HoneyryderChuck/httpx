@@ -5,7 +5,8 @@ GC.auto_compact = true if GC.respond_to?(:auto_compact=)
 if ENV.key?("CI")
   require "simplecov"
   SimpleCov.command_name "#{RUBY_ENGINE}-#{RUBY_VERSION}"
-  SimpleCov.coverage_dir "coverage/#{RUBY_ENGINE}-#{RUBY_VERSION}"
+  coverage_key = ENV.fetch("COVERAGE_KEY", "#{RUBY_ENGINE}-#{RUBY_VERSION}")
+  SimpleCov.coverage_dir "coverage/#{coverage_key}"
 end
 
 gem "minitest"

@@ -37,4 +37,7 @@ if [[ ${RUBY_VERSION:0:1} = "3" ]]; then
   export RBS_TEST_TARGET='HTTP*'
 fi
 
-bundle exec rake test:ci
+
+PARALLEL=1 bundle exec rake test:ci
+# third party modules
+COVERAGE_KEY="#$RUBY_ENGINE-$RUBY_VERSION-integration" bundle exec rake integrations

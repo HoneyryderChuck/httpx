@@ -23,7 +23,7 @@ begin
   require "rubocop/rake_task"
   desc "Run rubocop"
   RuboCop::RakeTask.new(:rubocop) do |task|
-    task.options += %W[-c.rubocop-#{RUBY_MAJOR_MINOR}.yml]
+    task.options += %W[-c.rubocop-#{RUBY_MAJOR_MINOR}.yml --parallel]
   end
 rescue LoadError
 end
