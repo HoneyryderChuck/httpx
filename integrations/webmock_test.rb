@@ -1,16 +1,20 @@
 # frozen_string_literal: true
 
 require "test_helper"
+require "support/http_helpers"
 require "webmock/minitest"
 require "httpx/adapters/webmock"
 
 class WebmockTest < Minitest::Test
+  include HTTPHelpers
+
   MOCK_URL_HTTP = "http://www.example.com"
   MOCK_URL_HTTPS = "https://www.example.com"
 
   def setup
     super
     WebMock.enable!
+    WebMock.disable_net_connect!
     @stub_http = stub_http_request(:any, MOCK_URL_HTTP)
     @stub_https = stub_http_request(:any, MOCK_URL_HTTPS)
   end
@@ -134,6 +138,26 @@ class WebmockTest < Minitest::Test
     end
   end
 
+  def test_webmock_mix_mock_and_real_request
+    WebMock.allow_net_connect!
+
+    @stub_http.to_return(status: 200)
+
+    responses = {}
+    WebMock.after_request do |request_signature, response|
+      responses[request_signature.uri.to_s] = response
+    end
+
+    # this one ain't stubbed
+    real_request_uri = build_uri("/get", "http://#{httpbin}")
+    http_request(:get, "#{MOCK_URL_HTTP}/", real_request_uri)
+
+    assert responses.size == 2
+    assert(responses.values.all? { |r| r.status.first == 200 })
+  ensure
+    WebMock.reset_callbacks
+  end
+
   private
 
   def assert_raise_with_message(e, message, &block)
@@ -145,10 +169,7 @@ class WebmockTest < Minitest::Test
     end
   end
 
-  def http_request(meth, uri, options = {})
-    session = HTTPX
-    uri = URI.parse(uri)
-    session = session.plugin(:basic_authentication, username: uri.user, password: password) if uri.user
-    session.request(meth, uri, **options)
+  def http_request(meth, *uris, **options)
+    HTTPX.__send__(meth, *uris, **options)
   end
 end

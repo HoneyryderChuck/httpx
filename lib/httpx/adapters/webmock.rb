@@ -34,7 +34,7 @@ module WebMock
             WebMock::CallbackRegistry.invoke_callbacks({ lib: :httpx }, sig_reqs[idx], webmock_response)
             log { "mocking #{request.uri} with #{mock_responses[idx].inspect}" }
           elsif WebMock.net_connect_allowed?(sig_reqs[idx].uri)
-            log { "performing #{req.uri}" }
+            log { "performing #{request.uri}" }
             real_requests[request] = idx
           else
             raise WebMock::NetConnectNotAllowedError, sig_reqs[idx]
@@ -43,7 +43,7 @@ module WebMock
 
         unless real_requests.empty?
           reqs = real_requests.keys
-          zip(reqs, super(*reqs, options)).each do |req, res|
+          reqs.zip(super(*reqs, options)).each do |req, res|
             idx = real_requests[req]
 
             if WebMock::CallbackRegistry.any_callbacks?
@@ -76,8 +76,8 @@ module WebMock
       def _build_webmock_response(_request, response)
         webmock_response = WebMock::Response.new
         webmock_response.status = [response.status, HTTP_REASONS[response.status]]
-        webmock_response.body = patron_response.body.to_s
-        webmock_response.headers = patron_response.headers.to_h
+        webmock_response.body = response.body.to_s
+        webmock_response.headers = response.headers.to_h
         webmock_response
       end
 
