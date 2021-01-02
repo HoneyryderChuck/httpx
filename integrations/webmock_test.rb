@@ -9,14 +9,12 @@ class WebmockTest < Minitest::Test
   include HTTPHelpers
 
   MOCK_URL_HTTP = "http://www.example.com"
-  MOCK_URL_HTTPS = "https://www.example.com"
 
   def setup
     super
     WebMock.enable!
     WebMock.disable_net_connect!
     @stub_http = stub_http_request(:any, MOCK_URL_HTTP)
-    @stub_https = stub_http_request(:any, MOCK_URL_HTTPS)
   end
 
   def teardown
@@ -144,6 +142,7 @@ class WebmockTest < Minitest::Test
 
     @stub_http.to_return(status: 200)
 
+    # test webmock callback as well
     responses = {}
     WebMock.after_request do |request_signature, response|
       responses[request_signature.uri.to_s] = response

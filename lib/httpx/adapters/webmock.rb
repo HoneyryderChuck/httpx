@@ -10,6 +10,11 @@ module WebMock
       HTTP_REASONS = Net::HTTP::STATUS_CODES
     end
 
+    #
+    # HTTPX plugin for webmock.
+    #
+    # Requests are "hijacked" at the session, before they're distributed to a connection.
+    #
     module Plugin
       module InstanceMethods
         private
