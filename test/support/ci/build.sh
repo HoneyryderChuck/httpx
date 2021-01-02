@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 RUBY_PLATFORM=`ruby -e 'puts RUBY_PLATFORM'`
 RUBY_ENGINE=`ruby -e 'puts RUBY_ENGINE'`
 

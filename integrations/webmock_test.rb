@@ -84,10 +84,10 @@ class WebmockTest < Minitest::Test
   end
 
   def test_verification_that_expected_request_occured_with_query_params
-    stub_request(:any, MOCK_URL_HTTP).with(query: hash_including({ "a" => %w[b c] }))
+    stub_request(:any, MOCK_URL_HTTP).with(query: hash_including("a" => %w[b c]))
     http_request(:get, "#{MOCK_URL_HTTP}/?a[]=b&a[]=c&x=1")
     assert_requested(:get, MOCK_URL_HTTP,
-                     query: hash_including({ "a" => %w[b c] }))
+                     query: hash_including("a" => %w[b c]))
   end
 
   def test_verification_that_expected_request_not_occured_with_query_params
