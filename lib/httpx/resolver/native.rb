@@ -284,7 +284,7 @@ module HTTPX
         @io.connect
         return unless @io.connected?
 
-        resolve if @queries.empty?
+        resolve if @queries.empty? && !@connections.empty?
       when :closed
         return unless @state == :open
 
