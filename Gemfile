@@ -8,6 +8,7 @@ gemspec
 gem "rake", "~> 12.3"
 
 group :test do
+  gem "ddtrace"
   gem "minitest"
   gem "minitest-proveit"
   gem "webmock"
