@@ -59,7 +59,7 @@ module HTTPX
     private
 
     def default_options
-      @options || Options.new
+      @options || Session.default_options
     end
 
     def branch(options, &blk)
