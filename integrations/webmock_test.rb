@@ -21,6 +21,7 @@ class WebmockTest < Minitest::Test
 
   def teardown
     WebMock.reset!
+    WebMock.allow_net_connect!
     WebMock.disable!
   end
 
