@@ -119,6 +119,7 @@ module HTTPX
     def to_hash
       Hash[to_a]
     end
+    alias_method :to_h, :to_hash
 
     # the headers store in array of pairs format
     def to_a

@@ -25,6 +25,9 @@ module HTTPX
     def same_headers?: (untyped headers) -> bool
 
     def to_a: () -> Array[[headers_key, String]]
+    def to_hash: () -> Hash[headers_key, String]
+    alias to_h to_hash
+
     def inspect: () -> String 
 
     private
