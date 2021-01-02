@@ -8,75 +8,247 @@ require "httpx/adapters/datadog"
 class DatadogTest < Minitest::Test
   include HTTPHelpers
 
-  def setup
-    configuration_options = {}
-    Datadog.configure do |c|
-      c.use :httpx, configuration_options
-    end
-    Datadog.reset!
-    Datadog.registry[:httpx].reset_configuration!
-
-    tracer # initialize tracer patches
-  end
-
-  def test_datadog_successful_request
+  def test_datadog_disabled
+    set_datadog
+    tracer.configure(enabled: false)
     uri = URI(build_uri("/status/200", "http://#{httpbin}"))
 
     response = HTTPX.get(uri)
+    verify_status(response, 200)
+
+    assert fetch_spans.empty?, "expected not to have spans"
+    verify_no_distributed_headers(response)
+  end
+
+  def test_datadog_successful_get_request
+    set_datadog
+    uri = URI(build_uri("/status/200", "http://#{httpbin}"))
+
+    response = HTTPX.get(uri)
+    verify_status(response, 200)
 
     assert !fetch_spans.empty?, "expected to have spans"
-    verify_instrumented_request(response, meth: "GET", uri: uri, status: 200)
+    verify_instrumented_request(response, verb: "GET", uri: uri)
+    verify_distributed_headers(response)
+  end
+
+  def test_datadog_successful_post_request
+    set_datadog
+    uri = URI(build_uri("/status/200", "http://#{httpbin}"))
+
+    response = HTTPX.post(uri, body: "bla")
+    verify_status(response, 200)
+
+    assert !fetch_spans.empty?, "expected to have spans"
+    verify_instrumented_request(response, verb: "POST", uri: uri)
+    verify_distributed_headers(response)
+  end
+
+  def test_datadog_successful_multiple_requests
+    set_datadog
+    uri = URI(build_uri("/status/200", "http://#{httpbin}"))
+
+    get_response, post_response = HTTPX.request([[:get, uri], [:post, uri]])
+    verify_status(get_response, 200)
+    verify_status(post_response, 200)
+
+    assert fetch_spans.size == 2, "expected to have 2 spans"
+    get_span, post_span = fetch_spans
+    verify_instrumented_request(get_response, span: get_span, verb: "GET", uri: uri)
+    verify_instrumented_request(post_response, span: post_span, verb: "POST", uri: uri)
+    verify_distributed_headers(get_response, span: get_span)
+    verify_distributed_headers(post_response, span: post_span)
+    verify_analytics_headers(get_span)
+    verify_analytics_headers(post_span)
   end
 
   def test_datadog_server_error_request
+    set_datadog
     uri = URI(build_uri("/status/500", "http://#{httpbin}"))
 
     response = HTTPX.get(uri)
+    verify_status(response, 500)
 
     assert !fetch_spans.empty?, "expected to have spans"
-    verify_instrumented_request(response, meth: "GET", uri: uri, status: 500)
-    span = fetch_spans.first
-    assert span.get_tag("error.type") == "HTTPX::HTTPError"
+    verify_instrumented_request(response, verb: "GET", uri: uri)
+    verify_distributed_headers(response)
   end
 
   def test_datadog_client_error_request
+    set_datadog
     uri = URI(build_uri("/status/404", "http://#{httpbin}"))
 
     response = HTTPX.get(uri)
+    verify_status(response, 404)
 
     assert !fetch_spans.empty?, "expected to have spans"
-    verify_instrumented_request(response, meth: "GET", uri: uri, status: 404)
-    span = fetch_spans.first
-    assert span.get_tag("error.type") == "HTTPX::HTTPError"
+    verify_instrumented_request(response, verb: "GET", uri: uri)
+    verify_distributed_headers(response)
+  end
+
+  def test_datadog_some_other_error
+    set_datadog
+    uri = URI("http://unexisting/")
+
+    response = HTTPX.get(uri)
+    assert response.is_a?(HTTPX::ErrorResponse), "response should contain errors"
+
+    assert !fetch_spans.empty?, "expected to have spans"
+    verify_instrumented_request(response, verb: "GET", uri: uri, error: "HTTPX::NativeResolveError")
+    verify_distributed_headers(response)
+  end
+
+  def test_datadog_host_config
+    uri = URI(build_uri("/status/200", "http://#{httpbin}"))
+    set_datadog(describe: /#{uri.host}/) do |http|
+      http.service_name = "httpbin"
+      http.split_by_domain = false
+    end
+
+    response = HTTPX.get(uri)
+    verify_status(response, 200)
+
+    assert !fetch_spans.empty?, "expected to have spans"
+    verify_instrumented_request(response, service: "httpbin", verb: "GET", uri: uri)
+    verify_distributed_headers(response)
+  end
+
+  def test_datadog_split_by_domain
+    uri = URI(build_uri("/status/200", "http://#{httpbin}"))
+    set_datadog do |http|
+      http.split_by_domain = true
+    end
+
+    response = HTTPX.get(uri)
+    verify_status(response, 200)
+
+    assert !fetch_spans.empty?, "expected to have spans"
+    verify_instrumented_request(response, service: uri.host, verb: "GET", uri: uri)
+    verify_distributed_headers(response)
+  end
+
+  def test_datadog_distributed_headers_disabled
+    set_datadog(distributed_tracing: false)
+    uri = URI(build_uri("/status/200", "http://#{httpbin}"))
+
+    sampling_priority = 10
+    tracer.configure(enabled: true)
+    response = tracer.trace("foo.bar") do |span|
+      span.context.sampling_priority = sampling_priority
+      HTTPX.get(uri)
+    end
+    verify_status(response, 200)
+
+    assert !fetch_spans.empty?, "expected to have spans"
+    span = fetch_spans.last
+    verify_instrumented_request(response, span: span, verb: "GET", uri: uri)
+    verify_no_distributed_headers(response)
+    verify_analytics_headers(span)
+  end
+
+  def test_datadog_distributed_headers_sampling_priority
+    set_datadog
+    uri = URI(build_uri("/status/200", "http://#{httpbin}"))
+
+    sampling_priority = 10
+    tracer.configure(enabled: true)
+    response = tracer.trace("foo.bar") do |span|
+      span.context.sampling_priority = sampling_priority
+      HTTPX.get(uri)
+    end
+    verify_status(response, 200)
+
+    assert !fetch_spans.empty?, "expected to have spans"
+    span = fetch_spans.last
+    verify_instrumented_request(response, span: span, verb: "GET", uri: uri)
+    verify_distributed_headers(response, span: span, sampling_priority: sampling_priority)
+    verify_analytics_headers(span)
+  end
+
+  def test_datadog_analytics_enabled
+    set_datadog(analytics_enabled: true)
+    uri = URI(build_uri("/status/200", "http://#{httpbin}"))
+
+    response = HTTPX.get(uri)
+    verify_status(response, 200)
+
+    assert !fetch_spans.empty?, "expected to have spans"
+    span = fetch_spans.last
+    verify_instrumented_request(response, span: span, verb: "GET", uri: uri)
+    verify_analytics_headers(span, sample_rate: 1.0)
+  end
+
+  def test_datadog_analytics_sample_rate
+    set_datadog(analytics_enabled: true, analytics_sample_rate: 0.5)
+    uri = URI(build_uri("/status/200", "http://#{httpbin}"))
+
+    response = HTTPX.get(uri)
+    verify_status(response, 200)
+
+    assert !fetch_spans.empty?, "expected to have spans"
+    span = fetch_spans.last
+    verify_instrumented_request(response, span: span, verb: "GET", uri: uri)
+    verify_analytics_headers(span, sample_rate: 0.5)
   end
 
   private
 
-  def verify_instrumented_request(response, meth:, uri:, status:)
-    assert response.status == status
-    assert fetch_spans.first.is_a?(Datadog::Span)
-    span = fetch_spans.first
-    assert span.get_tag(Datadog::Ext::NET::TARGET_HOST) == uri.host
-    assert span.get_tag(Datadog::Ext::NET::TARGET_PORT) == "80"
-    assert span.get_tag(Datadog::Ext::HTTP::METHOD) == meth
-    assert span.get_tag(Datadog::Ext::HTTP::URL) == uri.path
-    assert span.get_tag(Datadog::Ext::HTTP::STATUS_CODE) == status.to_s
-    assert span.span_type == "http"
-    assert span.name == "httpx.request"
-    assert span.service == "httpx"
-    # peer service
-    assert span.get_tag("peer.service") == span.service
-    verify_propagates_headers(span, response)
+  def set_datadog(options = {}, &blk)
+    Datadog.reset!
+    Datadog.registry[:httpx].reset_configuration!
+
+    Datadog.configure do |c|
+      c.use(:httpx, options, &blk)
+    end
+
+    tracer # initialize tracer patches
   end
 
-  def verify_propagates_headers(span, response)
-    distributed_tracing_headers = { "X-Datadog-Parent-Id" => span.span_id.to_s,
-                                    "X-Datadog-Trace-Id" => span.trace_id.to_s }
+  def verify_instrumented_request(response, verb:, uri:, span: fetch_spans.first, service: "httpx", error: nil)
+    assert span.is_a?(Datadog::Span)
+    assert span.span_type == "http"
+    assert span.name == "httpx.request"
+    assert span.service == service
 
-    request = response.instance_variable_get(:@request)
-    distributed_tracing_headers.each do |field, value|
-      assert request.headers[field] == value
+    assert span.get_tag(Datadog::Ext::NET::TARGET_HOST) == uri.host
+    assert span.get_tag(Datadog::Ext::NET::TARGET_PORT) == "80"
+    assert span.get_tag(Datadog::Ext::HTTP::METHOD) == verb
+    assert span.get_tag(Datadog::Ext::HTTP::URL) == uri.path
+    if error
+      assert span.get_tag("error.type") == error
+      assert !span.get_tag("error.msg").nil?
+      assert span.status == 1
+    elsif response.status >= 400
+      assert span.get_tag(Datadog::Ext::HTTP::STATUS_CODE) == response.status.to_s
+      assert span.get_tag("error.type") == "HTTPX::HTTPError"
+      assert !span.get_tag("error.msg").nil?
+      assert span.status == 1
+    else
+      assert span.status.zero?
+      assert span.get_tag(Datadog::Ext::HTTP::STATUS_CODE) == response.status.to_s
+      # peer service
+      assert span.get_tag("peer.service") == span.service
     end
+  end
+
+  def verify_no_distributed_headers(response)
+    request = response.instance_variable_get(:@request)
+
+    assert !request.headers.key?(Datadog::Ext::DistributedTracing::HTTP_HEADER_PARENT_ID)
+    assert !request.headers.key?(Datadog::Ext::DistributedTracing::HTTP_HEADER_TRACE_ID)
+    assert !request.headers.key?(Datadog::Ext::DistributedTracing::HTTP_HEADER_SAMPLING_PRIORITY)
+  end
+
+  def verify_distributed_headers(response, span: fetch_spans.first, sampling_priority: 1)
+    request = response.instance_variable_get(:@request)
+
+    assert request.headers[Datadog::Ext::DistributedTracing::HTTP_HEADER_PARENT_ID] == span.span_id.to_s
+    assert request.headers[Datadog::Ext::DistributedTracing::HTTP_HEADER_TRACE_ID] == span.trace_id.to_s
+    assert request.headers[Datadog::Ext::DistributedTracing::HTTP_HEADER_SAMPLING_PRIORITY] == sampling_priority.to_s
+  end
+
+  def verify_analytics_headers(span, sample_rate: nil)
+    assert span.get_metric(Datadog::Ext::Analytics::TAG_SAMPLE_RATE) == sample_rate
   end
 
   def tracer
@@ -115,41 +287,4 @@ class DatadogTest < Minitest::Test
       end
     end
   end
-
-  #   context 'distributed tracing disabled' do
-  #     let(:configuration_options) { super().merge(distributed_tracing: false) }
-
-  #     it_behaves_like 'instrumented request'
-
-  #     shared_examples_for 'does not propagate distributed headers' do
-  #       it 'does not propagate the headers' do
-  #         request
-
-  #         distributed_tracing_headers = { 'X-Datadog-Parent-Id' => span.span_id.to_s,
-  #                                         'X-Datadog-Trace-Id' => span.trace_id.to_s }
-
-  #         expect(a_request(:get, url).with(headers: distributed_tracing_headers)).to_not have_been_made
-  #       end
-  #     end
-
-  #     it_behaves_like 'does not propagate distributed headers'
-
-  #     context 'with sampling priority' do
-  #       let(:sampling_priority) { 0.2 }
-
-  #       before do
-  #         tracer.provider.context.sampling_priority = sampling_priority
-  #       end
-
-  #       it_behaves_like 'does not propagate distributed headers'
-
-  #       it 'does not propagate sampling priority headers' do
-  #         RestClient.get(url)
-
-  #         expect(a_request(:get, url).with(headers: { 'X-Datadog-Sampling-Priority' => sampling_priority.to_s }))
-  #           .to_not have_been_made
-  #       end
-  #     end
-  #   end
-  # end
 end

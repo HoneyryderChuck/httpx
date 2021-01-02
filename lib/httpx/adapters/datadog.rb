@@ -8,6 +8,11 @@ module Datadog
   module Contrib
     module HTTPX
       # HTTPX Datadog Plugin
+      #
+      # Enables tracing for httpx requests. A span will be created for each individual requests,
+      # and it'll trace since the moment it is fed to the connection, until the moment the response is
+      # fed back to the session.
+      #
       module Plugin
         module ConnectionMethods
           def send(request)
@@ -24,38 +29,36 @@ module Datadog
 
             on(:response, &method(:finish_trace!))
 
+            @span = datadog_pin.tracer.trace(SPAN_REQUEST)
+            service_name = datadog_config[:split_by_domain] ? uri.host : datadog_pin.service_name
+
             begin
-              @span = datadog_pin.tracer.trace(SPAN_REQUEST)
-              service_name = datadog_config[:split_by_domain] ? uri.host : datadog_pin.service_name
+              @span.service = service_name
+              @span.span_type = Datadog::Ext::HTTP::TYPE_OUTBOUND
+              @span.resource = verb.to_s.upcase
 
-              begin
-                @span.service = service_name
-                @span.span_type = Datadog::Ext::HTTP::TYPE_OUTBOUND
-                @span.resource = verb.to_s.upcase
+              Datadog::HTTPPropagator.inject!(@span.context, @headers) if datadog_pin.tracer.enabled && !skip_distributed_tracing?
 
-                Datadog::HTTPPropagator.inject!(@span.context, @headers) if datadog_pin.tracer.enabled && !skip_distributed_tracing?
+              # Add additional request specific tags to the span.
 
-                # Add additional request specific tags to the span.
+              @span.set_tag(Datadog::Ext::HTTP::URL, path)
+              @span.set_tag(Datadog::Ext::HTTP::METHOD, verb.to_s.upcase)
 
-                @span.set_tag(Datadog::Ext::HTTP::URL, path)
-                @span.set_tag(Datadog::Ext::HTTP::METHOD, verb.to_s.upcase)
+              @span.set_tag(Datadog::Ext::NET::TARGET_HOST, uri.host)
+              @span.set_tag(Datadog::Ext::NET::TARGET_PORT, uri.port.to_s)
 
-                @span.set_tag(Datadog::Ext::NET::TARGET_HOST, uri.host)
-                @span.set_tag(Datadog::Ext::NET::TARGET_PORT, uri.port.to_s)
+              # Tag as an external peer service
+              @span.set_tag(Datadog::Ext::Integration::TAG_PEER_SERVICE, @span.service)
 
-                # Tag as an external peer service
-                @span.set_tag(Datadog::Ext::Integration::TAG_PEER_SERVICE, @span.service)
-
-                # Set analytics sample rate
-                if Contrib::Analytics.enabled?(datadog_config[:analytics_enabled])
-                  Contrib::Analytics.set_sample_rate(@span, datadog_config[:analytics_sample_rate])
-                end
-              rescue StandardError => e
-                Datadog.logger.error("error preparing span for http request: #{e}")
+              # Set analytics sample rate
+              if Contrib::Analytics.enabled?(datadog_config[:analytics_enabled])
+                Contrib::Analytics.set_sample_rate(@span, datadog_config[:analytics_sample_rate])
               end
             rescue StandardError => e
-              Datadog.logger.debug("Failed to start span: #{e}")
+              Datadog.logger.error("error preparing span for http request: #{e}")
             end
+          rescue StandardError => e
+            Datadog.logger.debug("Failed to start span: #{e}")
           end
 
           def finish_trace!(response)
@@ -113,7 +116,8 @@ module Datadog
       end
 
       module Configuration
-        # Default settings for the Que integration
+        # Default settings for httpx
+        #
         class Settings < Datadog::Contrib::Configuration::Settings
           option :service_name, default: "httpx"
           option :distributed_tracing, default: true
@@ -138,7 +142,8 @@ module Datadog
         end
       end
 
-      # Patcher enables patching of 'httpx' module.
+      # Patcher enables patching of 'httpx' with datadog components.
+      #
       module Patcher
         include Datadog::Contrib::Patcher
 
@@ -148,6 +153,8 @@ module Datadog
           Integration.version
         end
 
+        # loads a session instannce with the datadog plugin, and replaces the
+        # base HTTPX::Session with the patched session class.
         def patch
           datadog_session = ::HTTPX.plugin(Plugin)
 
@@ -156,6 +163,8 @@ module Datadog
         end
       end
 
+      # Datadog Integration for HTTPX.
+      #
       class Integration
         include Contrib::Integration
 
