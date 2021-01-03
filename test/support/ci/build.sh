@@ -32,7 +32,7 @@ fi
 bundle install --quiet
 
 if [[ ${RUBY_VERSION:0:1} = "3" ]]; then
-  export RUBYOPT='-rbundler/setup -rrbs/test/setup'
+  export RUBYOPT='$RUBYOPT -rbundler/setup -rrbs/test/setup'
   export RBS_TEST_RAISE=true
   export RBS_TEST_LOGLEVEL=error
   export RBS_TEST_OPT='-Isig -ruri -rjson -ripaddr -rhttp-2-next'
