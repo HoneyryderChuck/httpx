@@ -23,7 +23,8 @@ begin
   require "rubocop/rake_task"
   desc "Run rubocop"
   RuboCop::RakeTask.new(:rubocop) do |task|
-    task.options += %W[-c.rubocop-#{RUBY_MAJOR_MINOR}.yml --parallel]
+    # rubocop 0.81 seems to have a race condition somewhere when loading the configs
+    task.options += RUBY_MAJOR_MINOR > "2.3" ? %W[-c.rubocop-#{RUBY_MAJOR_MINOR}.yml --parallel] : %W[-c.rubocop-#{RUBY_MAJOR_MINOR}.yml]
   end
 rescue LoadError
 end
