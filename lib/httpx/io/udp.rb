@@ -25,7 +25,7 @@ module HTTPX
       true
     end
 
-    if RUBY_VERSION < "2.2"
+    if RUBY_VERSION < "2.3"
       # :nocov:
       def close
         @io.close
