@@ -7,7 +7,7 @@ layout: default
     <div>
       <h1>{{ site.title }} (v{{ site.data.versions[0][0].name }})</h1>
       <div>
-        <a class="badge" href="{{ '/pipelines' | prepend: site.repourl }}">
+        <a class="badge" href="{{ '/pipelines?page=1&scope=all&ref=master' | prepend: site.repourl }}">
           <img src="{{ '/badges/master/pipeline.svg' | prepend: site.repourl }}" />
         </a>
         <a class="badge" href="{{ '/coverage/#_AllFiles' | prepend: site.baseurl }}">

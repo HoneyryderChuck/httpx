@@ -1,7 +1,7 @@
 # HTTPX: A Ruby HTTP library for tomorrow... and beyond!
 
 [![Gem Version](https://badge.fury.io/rb/httpx.svg)](http://rubygems.org/gems/httpx)
-[![pipeline status](https://gitlab.com/honeyryderchuck/httpx/badges/master/pipeline.svg)](https://gitlab.com/honeyryderchuck/httpx/commits/master)
+[![pipeline status](https://gitlab.com/honeyryderchuck/httpx/badges/master/pipeline.svg)](https://gitlab.com/honeyryderchuck/httpx/pipelines?page=1&scope=all&ref=master)
 [![coverage report](https://gitlab.com/honeyryderchuck/httpx/badges/master/coverage.svg?job=coverage)](https://honeyryderchuck.gitlab.io/httpx/coverage/#_AllFiles)
 
 HTTPX is an HTTP client library for the Ruby programming language.
