@@ -85,7 +85,15 @@ However if the server supports HTTP/1.1, it will try to use HTTP pipelining, fal
 
 ### Clean API
 
-`HTTPX` acknowledges the ease-of-use of the [http gem](https://github.com/httprb/http) API (itself inspired by python [requests](http://docs.python-requests.org/en/latest/) library). It therefore aims at reusing the same facade, extending it for the use cases which the http gem doesn't support.
+`httpx` builds all functions around the `HTTPX` module, so that all calls can compose of each other. Here are a few examples:
+
+```ruby
+response = HTTPX.get("https://www.google.com")
+response = HTTPX.post("https://www.nghttp2.org/httpbin/post", params: {name: "John", age: "22"})
+response = HTTPX.plugin(:basic_authentication)
+                .basic_authentication("user", "pass")
+                .get("https://www.google.com")
+```
 
 ### Lightweight
 
@@ -135,7 +143,7 @@ Doesn't work with ruby 2.4.0 for Windows (see [#36](https://gitlab.com/honeyryde
 
 * Discuss your contribution in an issue
 * Fork it
-* Make your changes, add some test
+* Make your changes, add some tests
 * Ensure all tests pass (`bundle exec rake test`)
 * Open a Merge Request (that's Pull Request in Github-ish)
 * Wait for feedback

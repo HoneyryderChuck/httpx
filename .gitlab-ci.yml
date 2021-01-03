@@ -90,7 +90,6 @@ test_ruby30:
   <<: *jit_matrix
   script:
     ./spec.sh ruby 3.0
-  allow_failure: true
 test_truffleruby:
   <<: *test_settings
   script:
@@ -122,7 +121,9 @@ coverage:
     - test_jruby
     - test_ruby21
     - test_ruby27
-  image: "ruby:2.7-alpine"
+    - test_ruby30
+
+  image: "ruby:3.0-alpine"
   script:
     - apk --update add g++ make git
     - bundle install --quiet

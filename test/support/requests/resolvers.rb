@@ -92,7 +92,7 @@ module Requests
 
           assert response.is_a?(HTTPX::ErrorResponse), "should be a response error"
           assert response.error.is_a?(HTTPX::ResolveTimeoutError), "should be a resolving timeout error"
-          assert_in_delta 2 + 1, total_time, 3, "request didn't take as expected to retry dns queries (#{total_time} secs)"
+          assert_in_delta 2 + 1, total_time, 6, "request didn't take as expected to retry dns queries (#{total_time} secs)"
         end
 
         # this test mocks the case where there's no nameserver set to send the DNS queries to.
