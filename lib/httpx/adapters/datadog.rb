@@ -14,20 +14,20 @@ module Datadog
       # fed back to the session.
       #
       module Plugin
-        module ConnectionMethods
-          def send(request)
-            request.start_trace!
-            super
-          end
-        end
-
-        module RequestMethods
+        class RequestTracer
           SPAN_REQUEST = "httpx.request"
 
-          def start_trace!
+          def initialize(request)
+            @request = request
+          end
+
+          def call
             return if skip_tracing?
 
-            on(:response, &method(:finish_trace!))
+            @request.on(:response, &method(:finish))
+
+            verb = @request.verb.to_s.upcase
+            uri = @request.uri
 
             @span = datadog_pin.tracer.trace(SPAN_REQUEST)
             service_name = datadog_config[:split_by_domain] ? uri.host : datadog_pin.service_name
@@ -35,14 +35,14 @@ module Datadog
             begin
               @span.service = service_name
               @span.span_type = Datadog::Ext::HTTP::TYPE_OUTBOUND
-              @span.resource = verb.to_s.upcase
+              @span.resource = verb
 
-              Datadog::HTTPPropagator.inject!(@span.context, @headers) if datadog_pin.tracer.enabled && !skip_distributed_tracing?
+              Datadog::HTTPPropagator.inject!(@span.context, @request.headers) if datadog_pin.tracer.enabled && !skip_distributed_tracing?
 
               # Add additional request specific tags to the span.
 
-              @span.set_tag(Datadog::Ext::HTTP::URL, path)
-              @span.set_tag(Datadog::Ext::HTTP::METHOD, verb.to_s.upcase)
+              @span.set_tag(Datadog::Ext::HTTP::URL, @request.path)
+              @span.set_tag(Datadog::Ext::HTTP::METHOD, verb)
 
               @span.set_tag(Datadog::Ext::NET::TARGET_HOST, uri.host)
               @span.set_tag(Datadog::Ext::NET::TARGET_PORT, uri.port.to_s)
@@ -61,7 +61,7 @@ module Datadog
             Datadog.logger.debug("Failed to start span: #{e}")
           end
 
-          def finish_trace!(response)
+          def finish(response)
             return unless @span
 
             if response.respond_to?(:error)
@@ -78,7 +78,7 @@ module Datadog
           private
 
           def skip_tracing?
-            return true if @headers.key?(Datadog::Ext::Transport::HTTP::HEADER_META_TRACER_VERSION)
+            return true if @request.headers.key?(Datadog::Ext::Transport::HTTP::HEADER_META_TRACER_VERSION)
 
             return false unless @datadog_pin
 
@@ -110,7 +110,14 @@ module Datadog
           end
 
           def datadog_config
-            @datadog_config ||= Datadog.configuration[:httpx, @uri.host]
+            @datadog_config ||= Datadog.configuration[:httpx, @request.uri.host]
+          end
+        end
+
+        module ConnectionMethods
+          def send(request)
+            RequestTracer.new(request).call
+            super
           end
         end
       end
