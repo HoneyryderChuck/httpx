@@ -26,24 +26,118 @@ module Requests
           verify_uploaded(body, "form", "q[a]" => "z", "a[]" => %w[1 2])
         end
 
-        define_method :"test_plugin_multipart_formdata_#{meth}" do
+        define_method :"test_plugin_multipart_hash_#{meth}" do
           uri = build_uri("/#{meth}")
           response = HTTPX.plugin(:multipart)
-                          .send(meth, uri, form: { image: HTTP::FormData::File.new(fixture_file_path) })
+                          .send(meth, uri, form: { metadata: { content_type: "application/json", body: JSON.dump({ a: 1 }) } })
           verify_status(response, 200)
           body = json_body(response)
           verify_header(body["headers"], "Content-Type", "multipart/form-data")
-          verify_uploaded_image(body)
+          assert JSON.parse(body["form"]["metadata"], symbolize_names: true) == { a: 1 }
         end
 
-        define_method :"test_plugin_multipart_nested_formdata_#{meth}" do
+        define_method :"test_plugin_multipart_nested_hash_#{meth}" do
           uri = build_uri("/#{meth}")
           response = HTTPX.plugin(:multipart)
-                          .send(meth, uri, form: { q: { image: HTTP::FormData::File.new(fixture_file_path) } })
+                          .send(meth, uri, form: { q: { metadata: { content_type: "application/json", body: JSON.dump({ a: 1 }) } } })
           verify_status(response, 200)
           body = json_body(response)
           verify_header(body["headers"], "Content-Type", "multipart/form-data")
-          verify_uploaded_image(body, "q[image]")
+          assert JSON.parse(body["form"]["q[metadata]"], symbolize_names: true) == { a: 1 }
+        end
+
+        define_method :"test_plugin_multipart_nested_array_#{meth}" do
+          uri = build_uri("/#{meth}")
+          response = HTTPX.plugin(:multipart)
+                          .send(meth, uri, form: { q: [{ content_type: "application/json", body: JSON.dump({ a: 1 }) }] })
+          verify_status(response, 200)
+          body = json_body(response)
+          verify_header(body["headers"], "Content-Type", "multipart/form-data")
+          assert JSON.parse(body["form"]["q[]"], symbolize_names: true) == { a: 1 }
+        end
+
+        define_method :"test_plugin_multipart_file_#{meth}" do
+          uri = build_uri("/#{meth}")
+          response = HTTPX.plugin(:multipart)
+                          .send(meth, uri, form: { image: File.new(fixture_file_path) })
+          verify_status(response, 200)
+          body = json_body(response)
+          verify_header(body["headers"], "Content-Type", "multipart/form-data")
+          verify_uploaded_image(body, "image", "image/jpeg")
+        end
+
+        define_method :"test_plugin_multipart_nested_file_#{meth}" do
+          uri = build_uri("/#{meth}")
+          response = HTTPX.plugin(:multipart)
+                          .send(meth, uri, form: { q: { image: File.new(fixture_file_path) } })
+          verify_status(response, 200)
+          body = json_body(response)
+          verify_header(body["headers"], "Content-Type", "multipart/form-data")
+          verify_uploaded_image(body, "q[image]", "image/jpeg")
+        end
+
+        define_method :"test_plugin_multipart_nested_ary_file_#{meth}" do
+          uri = build_uri("/#{meth}")
+          response = HTTPX.plugin(:multipart)
+                          .send(meth, uri, form: { images: [File.new(fixture_file_path)] })
+          verify_status(response, 200)
+          body = json_body(response)
+          verify_header(body["headers"], "Content-Type", "multipart/form-data")
+          verify_uploaded_image(body, "images[]", "image/jpeg")
+        end
+
+        define_method :"test_plugin_multipart_filename_#{meth}" do
+          uri = build_uri("/#{meth}")
+          response = HTTPX.plugin(:multipart)
+                          .send(meth, uri, form: { image: { filename: "selfie", body: File.new(fixture_file_path) } })
+          verify_status(response, 200)
+          body = json_body(response)
+          verify_header(body["headers"], "Content-Type", "multipart/form-data")
+          verify_uploaded_image(body, "image", "image/jpeg")
+          # TODO: find out how to check the filename given.
+        end
+
+        define_method :"test_plugin_multipart_nested_filename_#{meth}" do
+          uri = build_uri("/#{meth}")
+          response = HTTPX.plugin(:multipart)
+                          .send(meth, uri, form: { q: { image: { filename: "selfie", body: File.new(fixture_file_path) } } })
+          verify_status(response, 200)
+          body = json_body(response)
+          verify_header(body["headers"], "Content-Type", "multipart/form-data")
+          verify_uploaded_image(body, "q[image]", "image/jpeg")
+          # TODO: find out how to check the filename given.
+        end
+
+        define_method :"test_plugin_multipart_nested_filename_#{meth}" do
+          uri = build_uri("/#{meth}")
+          response = HTTPX.plugin(:multipart)
+                          .send(meth, uri, form: { q: { image: File.new(fixture_file_path) } })
+          verify_status(response, 200)
+          body = json_body(response)
+          verify_header(body["headers"], "Content-Type", "multipart/form-data")
+          verify_uploaded_image(body, "q[image]", "image/jpeg")
+        end
+
+        define_method :"test_plugin_multipart_http_formdata_#{meth}" do
+          uri = build_uri("/#{meth}")
+          file = HTTP::FormData::File.new(fixture_file_path, content_type: "image/jpeg")
+          response = HTTPX.plugin(:multipart)
+                          .send(meth, uri, form: { image: file })
+          verify_status(response, 200)
+          body = json_body(response)
+          verify_header(body["headers"], "Content-Type", "multipart/form-data")
+          verify_uploaded_image(body, "image", file.content_type)
+        end
+
+        define_method :"test_plugin_multipart_nested_http_formdata_#{meth}" do
+          uri = build_uri("/#{meth}")
+          file = HTTP::FormData::File.new(fixture_file_path, content_type: "image/jpeg")
+          response = HTTPX.plugin(:multipart)
+                          .send(meth, uri, form: { q: { image: file } })
+          verify_status(response, 200)
+          body = json_body(response)
+          verify_header(body["headers"], "Content-Type", "multipart/form-data")
+          verify_uploaded_image(body, "q[image]", file.content_type)
         end
       end
 
@@ -55,13 +149,19 @@ module Requests
         File.basename(fixture_file_path)
       end
 
-      def fixture_file_path
-        File.join("test", "support", "fixtures", "image.jpg")
+      def fixture_file_name
+        "image.jpg"
       end
 
-      def verify_uploaded_image(body, key = "image")
+      def fixture_file_path
+        File.join("test", "support", "fixtures", fixture_file_name)
+      end
+
+      def verify_uploaded_image(body, key, mime_type)
         assert body.key?("files"), "there were no files uploaded"
         assert body["files"].key?(key), "there is no image in the file"
+        # checking mime-type is a bit leaky, as httpbin displays the base64-encoded data
+        assert body["files"][key].start_with?("data:#{mime_type}"), "data was wrongly encoded (#{body["files"][key][0..64]})"
       end
     end
   end
