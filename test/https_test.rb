@@ -40,8 +40,9 @@ class HTTPSTest < Minitest::Test
       pool = http.__send__(:pool)
       connections = pool.instance_variable_get(:@connections)
       assert connections.any? { |conn|
-        conn.instance_variable_get(:@origins) == [origin, coalesced_origin]
-      }, "connections didn't coalesce (expected connection with both origins)"
+        origins = conn.instance_variable_get(:@origins)
+        origins == [origin, coalesced_origin]
+      }, "connections didn't coalesce (expected connection with both origins (got: #{origins}))"
     end
   end if ENV.key?("HTTPBIN_COALESCING_HOST")
 
