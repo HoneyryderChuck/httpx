@@ -35,6 +35,8 @@ module SessionWithPool
   end
 
   module ConnectionMethods
+    attr_reader :origins
+
     def set_parser_callbacks(parser)
       super
       parser.on(:pong) { emit(:pong) }

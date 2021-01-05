@@ -31,15 +31,15 @@ class HTTPSTest < Minitest::Test
 
   def test_connection_coalescing
     coalesced_origin = "https://#{ENV["HTTPBIN_COALESCING_HOST"]}"
-    HTTPX.wrap do |http|
+    HTTPX.plugin(SessionWithPool).wrap do |http|
       response1 = http.get(origin)
       verify_status(response1, 200)
       response2 = http.get(coalesced_origin)
       verify_status(response2, 200)
       # introspection time
-      pool = http.__send__(:pool)
-      connections = pool.instance_variable_get(:@connections)
-      origins = connections.map { |conn| conn.instance_variable_get(:@origins) }
+      pool = http.pool
+      connections = pool.connections
+      origins = connections.map(&:origins)
       assert origins.any? { |orgs| orgs.sort == [origin, coalesced_origin].sort },
              "connections for #{[origin, coalesced_origin]} didn't coalesce (expected connection with both origins (#{origins}))"
     end
