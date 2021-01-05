@@ -68,8 +68,7 @@ module Requests
         session = HTTPX.plugin(:proxy).with_proxy(uri: [proxy])
         uri = build_uri("/get")
         response = session.get(uri)
-        assert response.is_a?(HTTPX::ErrorResponse), "should be a response error"
-        assert response.error.is_a?(HTTPX::Socks4Error), "should be a socks 4 error"
+        verify_error_response(response, HTTPX::Socks4Error)
       end
 
       def test_plugin_socks4a_proxy
@@ -95,8 +94,7 @@ module Requests
         session = HTTPX.plugin(:proxy).with_proxy(uri: [proxy])
         uri = build_uri("/get")
         response = session.get(uri)
-        assert response.is_a?(HTTPX::ErrorResponse), "should be a response error"
-        assert response.error.is_a?(HTTPX::Socks5Error), "should be a socks 5 error"
+        verify_error_response(response, HTTPX::Socks5Error)
       end
 
       def test_plugin_ssh_proxy

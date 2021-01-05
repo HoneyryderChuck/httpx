@@ -31,4 +31,28 @@ module ResponseHelpers
     len = response.body.to_s.bytesize
     assert len == expect, "length assertion failed: #{len} (expected: #{expect})"
   end
+
+  def verify_execution_delta(expected, actual, delta = 0)
+    assert_in_delta expected, actual, delta, "expected to have executed in #{expected} secs (actual: #{actual} secs)"
+  end
+
+  def verify_error_response(response, expectation = nil)
+    assert response.is_a?(HTTPX::ErrorResponse), "expected an error response (instead got: #{response.inspect})"
+
+    return unless expectation
+
+    case expectation
+    when Regexp
+      assert response.error.message =~ expectation,
+             "expected to match \/#{expectation}\/ in \"#{response.error.message}\""
+    when String
+      assert response.error.message.include?(expectation),
+             "expected \"#{response.error.message}\" to include \"#{expectation}\""
+    when Class
+      assert response.error.is_a?(expectation),
+             "expected #{response.error} to be a #{expectation}"
+    else
+      raise "unexpected expectation (#{expectation})"
+    end
+  end
 end

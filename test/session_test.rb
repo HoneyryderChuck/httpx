@@ -53,26 +53,22 @@ class SessionTest < Minitest::Test
     uri = build_uri("/delay/3")
     session = HTTPX.with_timeout(total_timeout: 2)
     response = session.get(uri)
-    assert response.is_a?(HTTPX::ErrorResponse), "response should have failed"
-    assert response.error.is_a?(HTTPX::TotalTimeoutError), "response should have timed out (instead, we got \"#{response.status}\")"
+    verify_error_response(response, HTTPX::TotalTimeoutError)
   end
 
   def test_session_timeout_connect_timeout
     uri = build_uri("/", origin("127.0.0.1:#{CONNECT_TIMEOUT_PORT}"))
     session = HTTPX.with_timeout(connect_timeout: 0.5, operation_timeout: 30, total_timeout: 2)
     response = session.get(uri)
-    assert response.is_a?(HTTPX::ErrorResponse), "response should have failed (#{response.class})"
-
-    # assert response.error.is_a?(HTTPX::ConnectTimeoutError),
-    #        "response should have failed on connection (#{response.error.class}: #{response.error})"
+    verify_error_response(response)
+    # verify_error_response(response, HTTPX::ConnectTimeoutError)
   end
 
   # def test_http_timeouts_operation_timeout
   #   uri = build_uri("/delay/2")
   #   session = HTTPX.with_timeout(operation_timeout: 1)
   #   response = session.get(uri)
-  #   assert response.is_a?(HTTPX::ErrorResponse), "response should have failed"
-  #   assert response.error =~ /timed out while waiting/, "response should have timed out"
+  #   verify_error_response(response, /timed out while waiting/)
   # end
 
   def test_session_timeout_keep_alive_timeout

@@ -103,9 +103,7 @@ class HTTPSTest < Minitest::Test
       uri = build_uri("/get")
       HTTPX.plugin(SessionWithPool).plugin(SessionWithFrameDelay).wrap do |http|
         response = http.get(uri)
-        assert response.is_a?(HTTPX::ErrorResponse), "expected to fail for settings timeout"
-        assert response.status =~ /settings_timeout/,
-               "connection should have terminated due to HTTP/2 settings timeout"
+        verify_error_response(response, /settings_timeout/)
       end
     end
   end

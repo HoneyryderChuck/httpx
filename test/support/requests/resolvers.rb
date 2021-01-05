@@ -12,8 +12,7 @@ module Requests
           session = HTTPX.plugin(SessionWithPool)
           unknown_uri = "http://www.sfjewjfwigiewpgwwg-native-#{i}.com"
           response = session.get(unknown_uri, resolver_class: resolver, resolver_options: options)
-          assert response.is_a?(HTTPX::ErrorResponse), "should be a response error"
-          assert response.error.is_a?(HTTPX::ResolveError), "should be a resolving error"
+          verify_error_response(response, HTTPX::ResolveError)
         end
       end
 
@@ -40,8 +39,7 @@ module Requests
           session = HTTPX.plugin(SessionWithPool)
           uri = build_uri("/get")
           response = session.head(uri, resolver_class: resolver, resolver_options: options.merge(uri: "https://unexisting-doh/dns-query"))
-          assert response.is_a?(HTTPX::ErrorResponse), "should be a response error"
-          assert response.error.is_a?(HTTPX::ResolveError), "should be a resolving error"
+          verify_error_response(response, HTTPX::ResolveError)
         end
 
         define_method :"test_resolver_#{resolver}_server_error" do
@@ -53,8 +51,7 @@ module Requests
             end
           end
           response = session.head(uri, resolver_class: resolver_class, resolver_options: options)
-          assert response.is_a?(HTTPX::ErrorResponse), "should be a response error"
-          assert response.error.is_a?(HTTPX::ResolveError), "should be a resolving error"
+          verify_error_response(response, HTTPX::ResolveError)
         end
 
         define_method :"test_resolver_#{resolver}_decoding_error" do
@@ -66,8 +63,7 @@ module Requests
             end
           end
           response = session.head(uri, resolver_class: resolver_class, resolver_options: options.merge(record_types: %w[]))
-          assert response.is_a?(HTTPX::ErrorResponse), "should be a response error"
-          assert response.error.is_a?(HTTPX::ResolveError), "should be a resolving error"
+          verify_error_response(response, HTTPX::ResolveError)
         end
       when :native
 
@@ -90,8 +86,7 @@ module Requests
           after_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)
           total_time = after_time - before_time
 
-          assert response.is_a?(HTTPX::ErrorResponse), "should be a response error"
-          assert response.error.is_a?(HTTPX::ResolveTimeoutError), "should be a resolving timeout error"
+          verify_error_response(response, HTTPX::ResolveTimeoutError)
           assert_in_delta 2 + 1, total_time, 6, "request didn't take as expected to retry dns queries (#{total_time} secs)"
         end
 
@@ -101,8 +96,7 @@ module Requests
           uri = build_uri("/get")
 
           response = session.head(uri, resolver_class: resolver, resolver_options: options.merge(nameserver: nil))
-          assert response.is_a?(HTTPX::ErrorResponse), "should be a response error"
-          assert response.error.is_a?(HTTPX::ResolveError), "should be a resolving error"
+          verify_error_response(response, HTTPX::ResolveError)
         end
 
         # this test mocks a DNS server invalid messages back
@@ -115,8 +109,7 @@ module Requests
             end
           end
           response = session.head(uri, resolver_class: resolver_class, resolver_options: options.merge(record_types: %w[]))
-          assert response.is_a?(HTTPX::ErrorResponse), "should be a response error"
-          assert response.error.is_a?(HTTPX::NativeResolveError), "should be a resolving error"
+          verify_error_response(response, HTTPX::NativeResolveError)
         end
 
         # this test mocks a DNS server breaking the socket with Errno::EHOSTUNREACH
@@ -135,8 +128,7 @@ module Requests
             end
           end
           response = session.head(uri, resolver_class: resolver_class, resolver_options: options.merge(nameserver: %w[127.0.0.1] * 3))
-          assert response.is_a?(HTTPX::ErrorResponse), "should be a response error"
-          assert response.error.is_a?(HTTPX::ResolveError), "should be a resolving error"
+          verify_error_response(response, HTTPX::ResolveError)
           assert resolver_class.attempts == 3, "should have attempted to use all 3 nameservers"
         end
       end

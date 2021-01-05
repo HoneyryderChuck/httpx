@@ -49,7 +49,8 @@ module Requests
 
       # I test for greater than 2 due to the concurrent test, which affect the times.
       # However, most important is, it takes certainly more than 2 seconds.
-      assert (date2 - date1).abs >= 2, "time between requests took < 2 seconds"
+      time_it_took = (date2 - date1).abs
+      assert time_it_took >= 2, "time between requests took < 2 secs (actual: #{time_it_took} secs)"
     end
 
     def test_multiple_get_max_requests
