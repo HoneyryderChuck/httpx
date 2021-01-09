@@ -24,6 +24,16 @@ module Requests
         response.close
       end
 
+      define_method :"test_resolver_#{resolver}_alias_request" do
+        session = HTTPX.plugin(SessionWithPool)
+        uri = URI(build_uri("/get"))
+        # this google host will resolve to a CNAME
+        uri.host = "lh3.googleusercontent.com"
+        response = session.head(uri, resolver_class: resolver, resolver_options: options)
+        assert response.status < 500
+        response.close
+      end
+
       case resolver
       when :https
 
