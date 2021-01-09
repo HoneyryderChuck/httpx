@@ -10,43 +10,155 @@ module HTTPX
     # https://gitlab.com/honeyryderchuck/httpx/wikis/Multipart-Uploads
     #
     module Multipart
-      module FormTranscoder
-        module_function
+      MULTIPART_VALUE_COND = lambda do |value|
+        value.respond_to?(:read) ||
+          (value.respond_to?(:to_hash) &&
+            value.key?(:body) &&
+            (value.key?(:filename) || value.key?(:content_type)))
+      end
 
-        class Encoder
-          extend Forwardable
+      def self.normalize_keys(key, value, &block)
+        Transcoder.normalize_keys(key, value, MULTIPART_VALUE_COND, &block)
+      end
 
-          def_delegator :@raw, :content_type
+      class Part
+        attr_reader :value
 
-          def_delegator :@raw, :to_s
+        def initialize(key, value)
+          @key = key
 
-          def_delegator :@raw, :read
-
-          def initialize(form)
-            @raw = if multipart?(form)
-              HTTP::FormData::Multipart.new(Hash[form.flat_map { |k, v| Transcoder.enum_for(:normalize_keys, k, v).to_a }])
-            else
-              HTTP::FormData::Urlencoded.new(form, :encoder => Transcoder::Form.method(:encode))
-            end
+          @value = case value
+                   when Hash
+                     @content_type = value[:content_type]
+                     @filename = value[:filename]
+                     value[:body]
+                   else
+                     value
           end
 
-          def bytesize
-            @raw.content_length
-          end
+          case @value
+          when Pathname
+            @value = @value.open(:binmode => true)
+            extract_from_file(@value)
+          when File
+            extract_from_file(@value)
+          when String
+            @value = StringIO.new(@value)
+          else
+            @filename ||= @value.filename if @value.respond_to?(:filename)
+            @content_type ||= @value.content_type if @value.respond_to?(:content_type)
+            raise Error, "#{@value} does not respond to #read#" unless @value.respond_to?(:read)
 
-          private
-
-          def multipart?(data)
-            data.any? do |_, v|
-              v.is_a?(HTTP::FormData::Part) ||
-                (v.respond_to?(:to_ary) && v.to_ary.any? { |e| e.is_a?(HTTP::FormData::Part) }) ||
-                (v.respond_to?(:to_hash) && v.to_hash.any? { |_, e| e.is_a?(HTTP::FormData::Part) })
-            end
+            value
           end
         end
 
+        def header
+          header = "Content-Disposition: form-data; name=#{@key}".b
+          header << "; filename=#{@filename}" if @filename
+          header << "\r\n"
+          header << "Content-Type: #{@content_type}\r\n" if @content_type
+          header << "\r\n"
+          header
+        end
+
+        private
+
+        def extract_from_file(file)
+          @filename ||= File.basename(file.path)
+          @content_type ||= determine_mime_type(file) # rubocop:disable Naming/MemoizedInstanceVariableName
+        end
+
+        def determine_mime_type(_file)
+          "application/octet-stream"
+        end
+      end
+
+      class MultipartEncoder
+        def initialize(form)
+          @boundary = ("-" * 21) << SecureRandom.hex(21)
+          @part_index = 0
+          @buffer = "".b
+
+          @parts = to_parts(form)
+        end
+
+        def content_type
+          "multipart/form-data; boundary=#{@boundary}"
+        end
+
+        def bytesize
+          @parts.map(&:size).sum
+        end
+
+        def read(length = nil, outbuf = nil)
+          data   = outbuf.clear.force_encoding(Encoding::BINARY) if outbuf
+          data ||= "".b
+
+          read_chunks(data, length)
+
+          data unless length && data.empty?
+        end
+
+        private
+
+        def to_parts(form)
+          params = form.each_with_object([]) do |(key, val), aux|
+            Multipart.normalize_keys(key, val) do |k, v|
+              part = Part.new(k, v)
+              aux << StringIO.new("--#{@boundary}\r\n")
+              aux << StringIO.new(part.header)
+              aux << part.value
+              aux << StringIO.new("\r\n")
+            end
+          end
+          params << StringIO.new("--#{@boundary}--\r\n")
+          params
+        end
+
+        def read_chunks(buffer, length = nil)
+          while (chunk = read_from_part(length))
+            buffer << chunk.force_encoding(Encoding::BINARY)
+
+            next unless length
+
+            length -= chunk.bytesize
+
+            break if length.zero?
+          end
+        end
+
+        # if there's a current part to read from, tries to read a chunk.
+        def read_from_part(max_length = nil)
+          return unless @part_index < @parts.size
+
+          chunk = @parts[@part_index].read(max_length, @buffer)
+
+          return chunk if chunk && !chunk.empty?
+
+          @part_index += 1
+
+          nil
+        end
+      end
+
+      module FormTranscoder
+        module_function
+
         def encode(form)
-          Encoder.new(form)
+          if multipart?(form)
+            MultipartEncoder.new(form)
+          else
+            Transcoder::Form::Encoder.new(form)
+          end
+        end
+
+        def multipart?(data)
+          data.any? do |_, v|
+            MULTIPART_VALUE_COND.call(v) ||
+              (v.respond_to?(:to_ary) && v.to_ary.any?(&MULTIPART_VALUE_COND)) ||
+              (v.respond_to?(:to_hash) && v.to_hash.any? { |_, e| MULTIPART_VALUE_COND.call(e) })
+          end
         end
       end
 
