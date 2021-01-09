@@ -20,6 +20,8 @@ variables:
   stage: test
   services:
     - docker:dind
+  except:
+    - blog
 
 .jit_matrix: &jit_matrix
   parallel:
@@ -112,6 +114,9 @@ jekyll:
   artifacts:
     paths:
       - public/
+  only:
+    - master
+    - blog
 
 coverage:
   stage: prepare
@@ -122,6 +127,8 @@ coverage:
     - test_ruby21
     - test_ruby27
     - test_ruby30
+  except:
+    - blog
 
   image: "ruby:3.0-alpine"
   script:
@@ -148,10 +155,11 @@ pages:
     - coverage
     - jekyll
   script:
-    - mv coverage public
+    - "if [ -d coverage ] ; then mv coverage public ; fi"
   artifacts:
     paths:
       - public
     expire_in: 30 days
   only:
     - master
+    - blog

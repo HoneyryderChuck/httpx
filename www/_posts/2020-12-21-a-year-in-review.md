@@ -73,6 +73,8 @@ Overall, I'd like to achieve two ambitious goals: reduce all dependencies not ma
 
 After a few initial bumps (including an issue that involved a report to the AWS Cloudfront team), H2spec compliance was achieved, so I can actually tell for a fact that `http-2-next` is the only complete implementation of the HTTP/2 protocol. These specs are run as part of the CI, so future changes don't break the status quo.
 
+**EDIT**: It was brought to my attention that [protocol-http2](https://github.com/socketry/protocol-http2) also ships with an h2spec-compliant HTTP/2 parser.
+
 ### Features
 
 Support for the `ORIGIN` frame was added. It was a bittersweet endeavour though, as, such as the `ALTSVC` frame before it, no known public server seems to use it yet, so it can't even be tested. Bummer.
