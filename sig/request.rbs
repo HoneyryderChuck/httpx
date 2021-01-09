@@ -37,7 +37,7 @@ module HTTPX
 
     def transition: (Symbol) -> void
 
-    def expects?: () -> bool
+    def expects?: () -> boolish
 
     class Body
       def initialize: (Headers, Options) -> untyped
