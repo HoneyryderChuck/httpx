@@ -42,11 +42,11 @@ module HTTPX
 
       module ConnectionMethods
         def send(request)
-          request.once(:expects) do
+          request.once(:expect) do
             @timers.after(@options.expect_timeout) do
-              if request.state == :expects && !request.expects?
+              if request.state == :expect && !request.expects?
                 request.headers.delete("expect")
-                handle(request)
+                consume
               end
             end
           end
