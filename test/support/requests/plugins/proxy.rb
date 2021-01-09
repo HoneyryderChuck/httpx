@@ -1,9 +1,14 @@
 # frozen_string_literal: true
 
+require "resolv"
+
 module Requests
   module Plugins
     module Proxy
       include ProxyHelper
+      using HTTPX::URIExtensions
+
+      RESOLVER = Resolv::DNS.new
 
       def test_plugin_no_proxy
         uri = build_uri("/get")
@@ -86,6 +91,33 @@ module Requests
         verify_status(response, 200)
         verify_body_length(response)
       end
+
+      def test_plugin_socks5_ipv4_proxy
+        session = HTTPX.plugin(:proxy).with_proxy(uri: socks5_proxy)
+        uri = URI(build_uri("/get"))
+        hostname = uri.host
+
+        ipv4 = RESOLVER.getresource(hostname, Resolv::DNS::Resource::IN::A).address.to_s
+        uri.hostname = ipv4
+
+        response = session.get(uri, headers: { "host" => uri.authority }, ssl: { hostname: hostname })
+        verify_status(response, 200)
+        verify_body_length(response)
+      end
+
+      # TODO: enable when docker-compose supports ipv6 out of the box
+      # def test_plugin_socks5_ipv6_proxy
+      #   session = HTTPX.plugin(:proxy).with_proxy(uri: socks5_proxy)
+      #   uri = URI(build_uri("/get"))
+      #   hostname = uri.host
+
+      #   ipv6 = RESOLVER.getresource(hostname, Resolv::DNS::Resource::IN::AAAA).address.to_s
+      #   uri.hostname = ipv6
+
+      #   response = session.get(uri, headers: { "host" => uri.authority }, ssl: { hostname: hostname })
+      #   verify_status(response, 200)
+      #   verify_body_length(response)
+      # end
 
       def test_plugin_socks5_proxy_error
         proxy = URI(socks5_proxy.first)
