@@ -69,8 +69,68 @@ module HTTPX
           @content_type ||= determine_mime_type(file) # rubocop:disable Naming/MemoizedInstanceVariableName
         end
 
-        def determine_mime_type(_file)
-          "application/octet-stream"
+        DEFAULT_MIMETYPE = "application/octet-stream"
+
+        # inspired by https://github.com/shrinerb/shrine/blob/master/lib/shrine/plugins/determine_mime_type.rb
+        if defined?(MIME::Types)
+
+          def determine_mime_type(_file)
+            mime = MIME::Types.of(@filename).first
+
+            return DEFAULT_MIMETYPE unless mime
+
+            mime.content_type
+          end
+
+        elsif defined?(MimeMagic)
+
+          def determine_mime_type(file)
+            mime = MimeMagic.by_magic(file)
+
+            return DEFAULT_MIMETYPE unless mime
+
+            return mime.type if mime
+          end
+
+        elsif system("which file", out: File::NULL)
+          require "open3"
+
+          def determine_mime_type(file)
+            return if file.eof? # file command returns "application/x-empty" for empty files
+
+            Open3.popen3(*%w[file --mime-type --brief -]) do |stdin, stdout, stderr, thread|
+              begin
+                ::IO.copy_stream(file, stdin.binmode)
+              rescue Errno::EPIPE
+              end
+              file.rewind
+              stdin.close
+
+              status = thread.value
+
+              # call to file command failed
+              if status.nil? || !status.success?
+                $stderr.print(stderr.read)
+                return DEFAULT_MIMETYPE
+              end
+
+              output = stdout.read.strip
+
+              if output.include?("cannot open")
+                $stderr.print(output)
+                return DEFAULT_MIMETYPE
+              end
+
+              output
+            end
+          end
+
+        else
+
+          def determine_mime_type(_file)
+            DEFAULT_MIMETYPE
+          end
+
         end
       end
 
