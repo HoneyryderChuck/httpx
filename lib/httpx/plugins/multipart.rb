@@ -50,10 +50,6 @@ module HTTPX
         end
       end
 
-      def self.load_dependencies(*)
-        require "http/form_data"
-      end
-
       def self.configure(*)
         Transcoder.register("form", FormTranscoder)
       end
