@@ -34,7 +34,7 @@ module HTTPX
                      value[:body]
                    else
                      value
-          end
+                   end
 
           case @value
           when Pathname
@@ -192,9 +192,13 @@ module HTTPX
         def read_from_part(max_length = nil)
           return unless @part_index < @parts.size
 
-          chunk = @parts[@part_index].read(max_length, @buffer)
+          part = @parts[@part_index]
+
+          chunk = part.read(max_length, @buffer)
 
           return chunk if chunk && !chunk.empty?
+
+          part.close
 
           @part_index += 1
 
