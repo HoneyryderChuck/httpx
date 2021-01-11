@@ -73,8 +73,6 @@ module HTTPX::Plugins
 
         return chunk if chunk && !chunk.empty?
 
-        part.close if part.respond_to?(:close)
-
         @part_index += 1
 
         nil
