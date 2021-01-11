@@ -159,9 +159,10 @@ module HTTPX
             packet = [VERSION, CONNECT, 0].pack("C*")
             begin
               ip = IPAddr.new(uri.host)
-              raise Error, "Socks4 connection to #{ip} not supported" unless ip.ipv4?
 
-              packet << [IPV4, ip.to_i].pack("CN")
+              ipcode = ip.ipv6? ? IPV6 : IPV4
+
+              packet << [ipcode].pack("C") << ip.hton
             rescue IPAddr::InvalidAddressError
               packet << [DOMAIN, uri.host.bytesize, uri.host].pack("CCA*")
             end

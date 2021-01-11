@@ -221,15 +221,13 @@ module HTTPX
                       @state == :expect
 
         if @headers.key?("expect")
-          unless @response
-            @state = :expect
-            return
-          end
+          if @response
+            # check for 100 Continue response, and deallocate the var
+            @response = nil if @response.status == 100
+          else
+            return if @state == :expect # do not re-set it
 
-          case @response.status
-          when 100
-            # deallocate
-            @response = nil
+            nextstate = :expect
           end
         end
       when :done

@@ -54,7 +54,7 @@ module Requests
 
         session = HTTPX.plugin(:follow_redirects).max_redirects(1)
         response = session.get(insecure_redirect_uri)
-        assert response.is_a?(HTTPX::ErrorResponse), "request should not follow insecure URLs"
+        verify_error_response(response)
 
         insecure_session = HTTPX.plugin(:follow_redirects)
                                 .max_redirects(1)

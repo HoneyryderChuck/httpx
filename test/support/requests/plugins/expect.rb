@@ -27,17 +27,26 @@ module Requests
         verify_header(body["headers"], "Expect", "100-continue")
       end
 
-      # def test_plugin_expect_100_send_body_after_delay
-      #   uri = build_uri("/delay/3")
-      #   response = HTTPX.plugin(:expect).post(uri, form: { "foo" => "bar" })
-      #   verify_status(response, 200)
-      #   body = json_body(response)
-      #   verify_header(body["headers"], "Content-Type", "application/x-www-form-urlencoded")
-      #   verify_header(body["headers"], "Expect", "100-continue")
-      #   verify_uploaded(body, "form", "foo" => "bar")
+      def test_plugin_expect_100_send_body_after_delay
+        # run this only for http/1.1 mode, as this is a local test server
+        return unless origin.start_with?("http://")
 
-      #   verify_no_header(response.instance_variable_get(:@request).headers, "expect")
-      # end
+        server = NoExpect100Server.new
+        th = Thread.new { server.start }
+        begin
+          uri = "#{server.origin}/"
+          HTTPX.plugin(:expect).wrap do |http|
+            response = http.post(uri, body: "helloworld")
+            verify_status(response, 200)
+            body = response.body.to_s
+            assert body == "echo: helloworld"
+            verify_no_header(response.instance_variable_get(:@request).headers, "expect")
+          end
+        ensure
+          server.shutdown
+          th.join
+        end
+      end
 
       def test_plugin_expect_100_form_params_417
         uri = build_uri("/status/417")

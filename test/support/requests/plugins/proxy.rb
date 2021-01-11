@@ -1,9 +1,14 @@
 # frozen_string_literal: true
 
+require "resolv"
+
 module Requests
   module Plugins
     module Proxy
       include ProxyHelper
+      using HTTPX::URIExtensions
+
+      RESOLVER = Resolv::DNS.new
 
       def test_plugin_no_proxy
         uri = build_uri("/get")
@@ -68,8 +73,7 @@ module Requests
         session = HTTPX.plugin(:proxy).with_proxy(uri: [proxy])
         uri = build_uri("/get")
         response = session.get(uri)
-        assert response.is_a?(HTTPX::ErrorResponse), "should be a response error"
-        assert response.error.is_a?(HTTPX::Socks4Error), "should be a socks 4 error"
+        verify_error_response(response, HTTPX::Socks4Error)
       end
 
       def test_plugin_socks4a_proxy
@@ -88,6 +92,33 @@ module Requests
         verify_body_length(response)
       end
 
+      def test_plugin_socks5_ipv4_proxy
+        session = HTTPX.plugin(:proxy).with_proxy(uri: socks5_proxy)
+        uri = URI(build_uri("/get"))
+        hostname = uri.host
+
+        ipv4 = RESOLVER.getresource(hostname, Resolv::DNS::Resource::IN::A).address.to_s
+        uri.hostname = ipv4
+
+        response = session.get(uri, headers: { "host" => uri.authority }, ssl: { hostname: hostname })
+        verify_status(response, 200)
+        verify_body_length(response)
+      end
+
+      # TODO: enable when docker-compose supports ipv6 out of the box
+      # def test_plugin_socks5_ipv6_proxy
+      #   session = HTTPX.plugin(:proxy).with_proxy(uri: socks5_proxy)
+      #   uri = URI(build_uri("/get"))
+      #   hostname = uri.host
+
+      #   ipv6 = RESOLVER.getresource(hostname, Resolv::DNS::Resource::IN::AAAA).address.to_s
+      #   uri.hostname = ipv6
+
+      #   response = session.get(uri, headers: { "host" => uri.authority }, ssl: { hostname: hostname })
+      #   verify_status(response, 200)
+      #   verify_body_length(response)
+      # end
+
       def test_plugin_socks5_proxy_error
         proxy = URI(socks5_proxy.first)
         proxy.password = nil
@@ -95,8 +126,7 @@ module Requests
         session = HTTPX.plugin(:proxy).with_proxy(uri: [proxy])
         uri = build_uri("/get")
         response = session.get(uri)
-        assert response.is_a?(HTTPX::ErrorResponse), "should be a response error"
-        assert response.error.is_a?(HTTPX::Socks5Error), "should be a socks 5 error"
+        verify_error_response(response, HTTPX::Socks5Error)
       end
 
       def test_plugin_ssh_proxy
