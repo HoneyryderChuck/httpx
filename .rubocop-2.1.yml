@@ -26,3 +26,9 @@ Metrics/LineLength:
 
 Lint/UnneededCopDisableDirective:
   Enabled: false
+
+Lint/UnneededSplatExpansion:
+  Enabled: false
+
+Style/BracesAroundHashParameters:
+  Enabled: false
