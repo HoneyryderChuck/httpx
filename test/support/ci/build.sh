@@ -10,9 +10,9 @@ if [[ "$RUBY_ENGINE" = "truffleruby" ]]; then
 elif [[ "$RUBY_PLATFORM" = "java" ]]; then
   apt-get update && apt-get install -y git iptables
 elif [[ ${RUBY_VERSION:0:3} = "2.1" ]]; then
-  apk --update add g++ make git bash libsodium iptables
+  apk --update add g++ make git bash libsodium iptables file
 else
-  apk --update add g++ make git bash iptables
+  apk --update add g++ make git bash iptables file
 fi
 
 # use port 9090 to test connection timeouts
