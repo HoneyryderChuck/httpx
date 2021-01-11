@@ -15,8 +15,14 @@ module HTTPX::Plugins
         "multipart/form-data; boundary=#{@boundary}"
       end
 
-      def bytesize
-        @parts.map(&:size).sum
+      if RUBY_VERSION > "2.3"
+        def bytesize
+          @parts.map(&:size).sum
+        end
+      else
+        def bytesize
+          @parts.map(&:size).reduce(0, :+)
+        end
       end
 
       def read(length = nil, outbuf = nil)
