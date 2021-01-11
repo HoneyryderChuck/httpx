@@ -3,18 +3,41 @@ module HTTPX
     module Multipart
       def self.load_dependencies: (singleton(Session)) -> void
       def self.configure: (*untyped) -> void
-      def self?.encode: (untyped) -> Encoder
+      def self?.encode: (untyped) -> (Encoder | Transcoder::Form::Encoder)
+
+      type multipart_value = string | Pathname | File | _Reader
+
+      type record_multipart_value = multipart_value |
+                                    { content_type: String, filename: String, body: multipart_value } |
+                                    { content_type: String, body: multipart_value }
+
+      type multipart_nested_value = multipart_value | _ToAry[multipart_value] | _ToHash[string, multipart_value]
+
+      type multipart_input = Enumerable[[string, multipart_value], untyped]
 
       class Encoder
         include Transcoder::_Encoder
-        include _ToS
         include _Reader
+
+        def content_type: () -> String
 
         private
 
-        def initialize: (Hash[Symbol | string, HTTP::FormData::Part | string] multipart_data) -> untyped
+        def initialize: (Hash[Symbol | string, multipart_nested_value] multipart_data) -> untyped
 
-        def multipart?: (top) -> bool
+        def header_part: (string key, String content_type, String? filename) -> StringIO
+
+        def read_chunks: (String buffer, Integer? length) -> void
+
+        def read_from_part: (Integer? max_length) -> void
+      end
+
+      module Part
+        def self?.call: (multipart_nested_value) -> ([_Reader, String, String?] | [_Reader, String])
+      end
+
+      module MimeTypeDetector
+        def self?.call: (IO file, ?String filename) -> String?
       end
     end
   end
