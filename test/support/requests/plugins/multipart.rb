@@ -118,6 +118,28 @@ module Requests
           verify_uploaded_image(body, "q[image]", "image/jpeg")
         end
 
+        define_method :"test_plugin_multipart_pathname_#{meth}" do
+          uri = build_uri("/#{meth}")
+          file = Pathname.new(fixture_file_path)
+          response = HTTPX.plugin(:multipart)
+                          .send(meth, uri, form: { image: file })
+          verify_status(response, 200)
+          body = json_body(response)
+          verify_header(body["headers"], "Content-Type", "multipart/form-data")
+          verify_uploaded_image(body, "image", "image/jpeg")
+        end
+
+        define_method :"test_plugin_multipart_nested_pathname_#{meth}" do
+          uri = build_uri("/#{meth}")
+          file = Pathname.new(fixture_file_path)
+          response = HTTPX.plugin(:multipart)
+                          .send(meth, uri, form: { q: { image: file } })
+          verify_status(response, 200)
+          body = json_body(response)
+          verify_header(body["headers"], "Content-Type", "multipart/form-data")
+          verify_uploaded_image(body, "q[image]", "image/jpeg")
+        end
+
         define_method :"test_plugin_multipart_http_formdata_#{meth}" do
           uri = build_uri("/#{meth}")
           file = HTTP::FormData::File.new(fixture_file_path, content_type: "image/jpeg")
@@ -126,7 +148,7 @@ module Requests
           verify_status(response, 200)
           body = json_body(response)
           verify_header(body["headers"], "Content-Type", "multipart/form-data")
-          verify_uploaded_image(body, "image", file.content_type)
+          verify_uploaded_image(body, "image", "image/jpeg")
         end
 
         define_method :"test_plugin_multipart_nested_http_formdata_#{meth}" do
@@ -137,7 +159,7 @@ module Requests
           verify_status(response, 200)
           body = json_body(response)
           verify_header(body["headers"], "Content-Type", "multipart/form-data")
-          verify_uploaded_image(body, "q[image]", file.content_type)
+          verify_uploaded_image(body, "q[image]", "image/jpeg")
         end
       end
 
