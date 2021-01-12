@@ -20,7 +20,7 @@ module HTTPX
       timeouts = resolv_options.delete(:timeouts)
       resolv_options.delete(:cache)
       @resolver = Resolv::DNS.new(resolv_options.empty? ? nil : resolv_options)
-      @resolver.timeouts = timeouts if timeouts
+      @resolver.timeouts = timeouts || Resolver::RESOLVE_TIMEOUT
     end
 
     def closed?
