@@ -13,6 +13,29 @@ module Requests
         verify_uploaded(body, "form", "foo" => "bar")
       end
 
+      def test_plugin_expect_100_with_delay_form_params
+        # run this only for http/1.1 mode, as this is a local test server
+        return unless origin.start_with?("http://")
+
+        server = Expect100Server.new
+        th = Thread.new { server.start }
+        begin
+          http = HTTPX.plugin(:expect)
+          uri = build_uri("/delay?delay=4", server.origin)
+          response = http.post(uri, body: "helloworld")
+          verify_status(response, 200)
+          body = response.body.to_s
+          assert body == "echo: helloworld"
+          verify_header(response.instance_variable_get(:@request).headers, "expect", "100-continue")
+
+          next_request = http.build_request(:post, build_uri("/", server.origin), body: "helloworld")
+          verify_header(next_request.headers, "expect", "100-continue")
+        ensure
+          server.shutdown
+          th.join
+        end
+      end
+
       def test_plugin_expect_100_form_params_under_threshold
         uri = build_uri("/post")
         session = HTTPX.plugin(:expect, expect_threshold_size: 4)
@@ -31,17 +54,19 @@ module Requests
         # run this only for http/1.1 mode, as this is a local test server
         return unless origin.start_with?("http://")
 
-        server = NoExpect100Server.new
+        server = Expect100Server.new
         th = Thread.new { server.start }
         begin
-          uri = "#{server.origin}/"
-          HTTPX.plugin(:expect).wrap do |http|
-            response = http.post(uri, body: "helloworld")
-            verify_status(response, 200)
-            body = response.body.to_s
-            assert body == "echo: helloworld"
-            verify_no_header(response.instance_variable_get(:@request).headers, "expect")
-          end
+          http = HTTPX.plugin(:expect)
+          uri = build_uri("/no-expect", server.origin)
+          response = http.post(uri, body: "helloworld")
+          verify_status(response, 200)
+          body = response.body.to_s
+          assert body == "echo: helloworld"
+          verify_no_header(response.instance_variable_get(:@request).headers, "expect")
+
+          next_request = http.build_request(:post, build_uri("/", server.origin), body: "helloworld")
+          verify_no_header(next_request.headers, "expect")
         ensure
           server.shutdown
           th.join

@@ -9,7 +9,6 @@ module HTTPX
     include Resolver::ResolverMixin
     using URIExtensions
 
-    RESOLVE_TIMEOUT = 5
     RECORD_TYPES = {
       "A" => Resolv::DNS::Resource::IN::A,
       "AAAA" => Resolv::DNS::Resource::IN::AAAA,
@@ -19,7 +18,7 @@ module HTTPX
       {
         **Resolv::DNS::Config.default_config_hash,
         packet_size: 512,
-        timeouts: RESOLVE_TIMEOUT,
+        timeouts: Resolver::RESOLVE_TIMEOUT,
         record_types: RECORD_TYPES.keys,
       }.freeze
     else
@@ -27,7 +26,7 @@ module HTTPX
         nameserver: nil,
         **Resolv::DNS::Config.default_config_hash,
         packet_size: 512,
-        timeouts: RESOLVE_TIMEOUT,
+        timeouts: Resolver::RESOLVE_TIMEOUT,
         record_types: RECORD_TYPES.keys,
       }.freeze
     end

@@ -37,12 +37,14 @@ module HTTPX
       @connections = []
       @uri = URI(@resolver_options[:uri])
       @uri_addresses = nil
+      @resolver = Resolv::DNS.new
+      @resolver.timeouts = @resolver_options.fetch(:timeouts, Resolver::RESOLVE_TIMEOUT)
     end
 
     def <<(connection)
       return if @uri.origin == connection.origin.to_s
 
-      @uri_addresses ||= Resolv.getaddresses(@uri.host)
+      @uri_addresses ||= ip_resolve(@uri.host) || system_resolve(@uri.host) || @resolver.getaddresses(@uri.host)
 
       if @uri_addresses.empty?
         ex = ResolveError.new("Can't resolve DNS server #{@uri.host}")

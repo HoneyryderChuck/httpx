@@ -1,14 +1,17 @@
 # frozen_string_literal: true
 
 require "resolv"
-require "httpx/resolver/resolver_mixin"
-require "httpx/resolver/system"
-require "httpx/resolver/native"
-require "httpx/resolver/https"
 
 module HTTPX
   module Resolver
     extend Registry
+
+    RESOLVE_TIMEOUT = 5
+
+    require "httpx/resolver/resolver_mixin"
+    require "httpx/resolver/system"
+    require "httpx/resolver/native"
+    require "httpx/resolver/https"
 
     register :system, System
     register :native, Native

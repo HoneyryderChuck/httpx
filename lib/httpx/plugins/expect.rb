@@ -10,6 +10,10 @@ module HTTPX
     module Expect
       EXPECT_TIMEOUT = 2
 
+      def self.no_expect_store
+        @no_expect_store ||= []
+      end
+
       def self.extra_options(options)
         Class.new(options.class) do
           def_option(:expect_timeout) do |seconds|
@@ -28,15 +32,35 @@ module HTTPX
         end.new(options).merge(expect_timeout: EXPECT_TIMEOUT)
       end
 
-      module RequestBodyMethods
-        def initialize(*, options)
+      module RequestMethods
+        def initialize(*)
           super
-          return if @body.nil?
+          return if @body.empty?
 
-          threshold = options.expect_threshold_size
-          return if threshold && !unbounded_body? && @body.bytesize < threshold
+          threshold = @options.expect_threshold_size
+          return if threshold && !@body.unbounded_body? && @body.bytesize < threshold
+
+          return if Expect.no_expect_store.include?(origin)
 
           @headers["expect"] = "100-continue"
+        end
+
+        def response=(response)
+          if response && response.status == 100 &&
+             !@headers.key?("expect") &&
+             (@state == :body || @state == :done)
+
+            # if we're past this point, this means that we just received a 100-Continue response,
+            # but the request doesn't have the expect flag, and is already flushing (or flushed) the body.
+            #
+            # this means that expect was deactivated for this request too soon, i.e. response took longer.
+            #
+            # so we have to reactivate it again.
+            @headers["expect"] = "100-continue"
+            @informational_status = 100
+            Expect.no_expect_store.delete(origin)
+          end
+          super
         end
       end
 
@@ -45,6 +69,7 @@ module HTTPX
           request.once(:expect) do
             @timers.after(@options.expect_timeout) do
               if request.state == :expect && !request.expects?
+                Expect.no_expect_store << request.origin
                 request.headers.delete("expect")
                 consume
               end
