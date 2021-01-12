@@ -81,6 +81,10 @@ module HTTPX
     def response=(response)
       return unless response
 
+      if response.status == 100
+        @informational_status = response.status
+        return
+      end
       @response = response
     end
 
@@ -221,9 +225,11 @@ module HTTPX
                       @state == :expect
 
         if @headers.key?("expect")
-          if @response
+          if @informational_status && @informational_status == 100
             # check for 100 Continue response, and deallocate the var
-            @response = nil if @response.status == 100
+            # if @informational_status == 100
+            #   @response = nil
+            # end
           else
             return if @state == :expect # do not re-set it
 
@@ -239,8 +245,7 @@ module HTTPX
     end
 
     def expects?
-      @headers["expect"] == "100-continue" &&
-        @response && @response.status == 100
+      @headers["expect"] == "100-continue" && @informational_status == 100 && !@response
     end
 
     class ProcIO

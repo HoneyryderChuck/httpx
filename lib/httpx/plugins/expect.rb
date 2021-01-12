@@ -28,6 +28,25 @@ module HTTPX
         end.new(options).merge(expect_timeout: EXPECT_TIMEOUT)
       end
 
+      module RequestMethods
+        def response=(response)
+          if response && response.status == 100 &&
+             !@headers.key?("expect") &&
+             (@state == :body || @state == :done)
+
+            # if we're past this point, this means that we just received a 100-Continue response,
+            # but the request doesn't have the expect flag, and is already flushing (or flushed) the body.
+            #
+            # this means that expect was deactivated for this request too soon, i.e. response took longer.
+            #
+            # so we have to reactivate it again.
+            @headers["expect"] = "100-continue"
+            @informational_status = 100
+          end
+          super
+        end
+      end
+
       module RequestBodyMethods
         def initialize(*, options)
           super
@@ -37,23 +56,6 @@ module HTTPX
           return if threshold && !unbounded_body? && @body.bytesize < threshold
 
           @headers["expect"] = "100-continue"
-        end
-
-        def response=(response)
-          super
-
-          return unless @response && @response == 100 &&
-                        !@request.headers.key?("expect") &&
-                        (@state == :body || @state == :done)
-
-          # if we're past this point, this means that we just received a 100-Continue response,
-          # but the request doesn't have the expect flag, and is already flushing (or flushed) the body.
-          #
-          # this means that expect was deactivated for this request too soon, i.e. response took longer.
-          #
-          # so we have to reactivate it again.
-          request.headers["expect"] = "100-continue"
-          @response = nil
         end
       end
 
