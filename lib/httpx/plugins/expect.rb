@@ -10,6 +10,10 @@ module HTTPX
     module Expect
       EXPECT_TIMEOUT = 2
 
+      def self.no_expect_store
+        @no_expect_store ||= []
+      end
+
       def self.extra_options(options)
         Class.new(options.class) do
           def_option(:expect_timeout) do |seconds|
@@ -29,6 +33,18 @@ module HTTPX
       end
 
       module RequestMethods
+        def initialize(*)
+          super
+          return if @body.empty?
+
+          threshold = @options.expect_threshold_size
+          return if threshold && !@body.unbounded_body? && @body.bytesize < threshold
+
+          return if Expect.no_expect_store.include?(origin)
+
+          @headers["expect"] = "100-continue"
+        end
+
         def response=(response)
           if response && response.status == 100 &&
              !@headers.key?("expect") &&
@@ -42,20 +58,9 @@ module HTTPX
             # so we have to reactivate it again.
             @headers["expect"] = "100-continue"
             @informational_status = 100
+            Expect.no_expect_store.delete(origin)
           end
           super
-        end
-      end
-
-      module RequestBodyMethods
-        def initialize(*, options)
-          super
-          return if @body.nil?
-
-          threshold = options.expect_threshold_size
-          return if threshold && !unbounded_body? && @body.bytesize < threshold
-
-          @headers["expect"] = "100-continue"
         end
       end
 
@@ -64,6 +69,7 @@ module HTTPX
           request.once(:expect) do
             @timers.after(@options.expect_timeout) do
               if request.state == :expect && !request.expects?
+                Expect.no_expect_store << request.origin
                 request.headers.delete("expect")
                 consume
               end
