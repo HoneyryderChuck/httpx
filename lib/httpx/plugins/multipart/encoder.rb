@@ -3,6 +3,8 @@
 module HTTPX::Plugins
   module Multipart
     class Encoder
+      attr_reader :bytesize
+
       def initialize(form)
         @boundary = ("-" * 21) << SecureRandom.hex(21)
         @part_index = 0
@@ -13,16 +15,6 @@ module HTTPX::Plugins
 
       def content_type
         "multipart/form-data; boundary=#{@boundary}"
-      end
-
-      if RUBY_VERSION > "2.3"
-        def bytesize
-          @parts.map(&:size).sum
-        end
-      else
-        def bytesize
-          @parts.map(&:size).reduce(0, :+)
-        end
       end
 
       def read(length = nil, outbuf = nil)
@@ -37,15 +29,27 @@ module HTTPX::Plugins
       private
 
       def to_parts(form)
+        @bytesize = 0
         params = form.each_with_object([]) do |(key, val), aux|
           Multipart.normalize_keys(key, val) do |k, v|
             value, content_type, filename = Part.call(v)
-            aux << header_part(k, content_type, filename)
+
+            header = header_part(k, content_type, filename)
+            @bytesize += header.size
+            aux << header
+
+            @bytesize += value.size
             aux << value
-            aux << StringIO.new("\r\n")
+
+            delimiter = StringIO.new("\r\n")
+            @bytesize += delimiter.size
+            aux << delimiter
           end
         end
-        params << StringIO.new("--#{@boundary}--\r\n")
+        final_delimiter = StringIO.new("--#{@boundary}--\r\n")
+        @bytesize += final_delimiter.size
+        params << final_delimiter
+
         params
       end
 
@@ -78,6 +82,8 @@ module HTTPX::Plugins
         chunk = part.read(max_length, @buffer)
 
         return chunk if chunk && !chunk.empty?
+
+        part.close if part.respond_to?(:close)
 
         @part_index += 1
 
