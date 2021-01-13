@@ -1,5 +1,9 @@
 module HTTPX::Transcoder
-  type urlencoded_input = Enumerable[[string, string], untyped]
+  type form_value = string
+
+  type form_nested_value = form_value | _ToAry[form_value] | _ToHash[string, form_value]
+
+  type urlencoded_input = Enumerable[[string, form_nested_value], untyped]
 
   module Form
     def self?.encode: (urlencoded_input form) -> Encoder
@@ -7,6 +11,8 @@ module HTTPX::Transcoder
     class Encoder
       include _Encoder
       include _ToS
+
+      def content_type: () -> String
 
       private
 

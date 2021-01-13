@@ -10,52 +10,47 @@ module HTTPX
     # https://gitlab.com/honeyryderchuck/httpx/wikis/Multipart-Uploads
     #
     module Multipart
+      MULTIPART_VALUE_COND = lambda do |value|
+        value.respond_to?(:read) ||
+          (value.respond_to?(:to_hash) &&
+            value.key?(:body) &&
+            (value.key?(:filename) || value.key?(:content_type)))
+      end
+
+      class << self
+        def normalize_keys(key, value, &block)
+          Transcoder.normalize_keys(key, value, MULTIPART_VALUE_COND, &block)
+        end
+
+        def load_dependencies(*)
+          require "httpx/plugins/multipart/encoder"
+          require "httpx/plugins/multipart/part"
+          require "httpx/plugins/multipart/mime_type_detector"
+        end
+
+        def configure(*)
+          Transcoder.register("form", FormTranscoder)
+        end
+      end
+
       module FormTranscoder
         module_function
 
-        class Encoder
-          extend Forwardable
-
-          def_delegator :@raw, :content_type
-
-          def_delegator :@raw, :to_s
-
-          def_delegator :@raw, :read
-
-          def initialize(form)
-            @raw = if multipart?(form)
-              HTTP::FormData::Multipart.new(Hash[form.flat_map { |k, v| Transcoder.enum_for(:normalize_keys, k, v).to_a }])
-            else
-              HTTP::FormData::Urlencoded.new(form, :encoder => Transcoder::Form.method(:encode))
-            end
-          end
-
-          def bytesize
-            @raw.content_length
-          end
-
-          private
-
-          def multipart?(data)
-            data.any? do |_, v|
-              v.is_a?(HTTP::FormData::Part) ||
-                (v.respond_to?(:to_ary) && v.to_ary.any? { |e| e.is_a?(HTTP::FormData::Part) }) ||
-                (v.respond_to?(:to_hash) && v.to_hash.any? { |_, e| e.is_a?(HTTP::FormData::Part) })
-            end
-          end
-        end
-
         def encode(form)
-          Encoder.new(form)
+          if multipart?(form)
+            Encoder.new(form)
+          else
+            Transcoder::Form::Encoder.new(form)
+          end
         end
-      end
 
-      def self.load_dependencies(*)
-        require "http/form_data"
-      end
-
-      def self.configure(*)
-        Transcoder.register("form", FormTranscoder)
+        def multipart?(data)
+          data.any? do |_, v|
+            MULTIPART_VALUE_COND.call(v) ||
+              (v.respond_to?(:to_ary) && v.to_ary.any?(&MULTIPART_VALUE_COND)) ||
+              (v.respond_to?(:to_hash) && v.to_hash.any? { |_, e| MULTIPART_VALUE_COND.call(e) })
+          end
+        end
       end
     end
     register_plugin :multipart, Multipart

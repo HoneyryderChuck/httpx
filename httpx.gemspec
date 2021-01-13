@@ -32,5 +32,4 @@ Gem::Specification.new do |gem|
 
   gem.add_runtime_dependency "http-2-next", ">= 0.1.2"
   gem.add_runtime_dependency "timers"
-  gem.add_development_dependency "http-form_data", ">= 2.0.0", "< 3"
 end

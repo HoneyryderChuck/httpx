@@ -4,8 +4,8 @@ module HTTPX
   module Transcoder
     extend HTTPX::Registry[String, Class]
 
-    def self.normalize_keys: (string | Symbol, top) { (string, top) -> void } -> void
-                           | (string | Symbol, top) { (string) -> void } -> void
+    def self.normalize_keys: (string | Symbol, top, ?Proc?) { (string, top) -> void } -> void
+                           | (string | Symbol, top, ?Proc?) { (string) -> void } -> void
 
     interface _Encoder
       def bytesize: () -> Numeric

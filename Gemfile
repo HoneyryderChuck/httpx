@@ -9,6 +9,7 @@ gem "rake", "~> 12.3"
 
 group :test do
   gem "ddtrace"
+  gem "http-form_data", ">= 2.0.0"
   gem "minitest"
   gem "minitest-proveit"
   gem "webmock"

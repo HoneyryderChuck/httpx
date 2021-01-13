@@ -6,9 +6,11 @@ module HTTPX::Transcoder
       include _Encoder
       include _ToS
 
+      def content_type: () -> String
+
       private
 
-      def initalize: (_ToJson json) -> untyped
+      def initialize: (_ToJson json) -> untyped
     end
   end
 end
