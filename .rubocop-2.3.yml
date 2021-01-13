@@ -19,3 +19,6 @@ Layout/LineLength:
 
 Layout/RescueEnsureAlignment:
   Enabled: false
+
+Lint/RedundantSplatExpansion:
+  Enabled: false
