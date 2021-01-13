@@ -10,6 +10,7 @@ module HTTPX::Plugins
         @part_index = 0
         @buffer = "".b
 
+        @form = form
         @parts = to_parts(form)
       end
 
@@ -24,6 +25,22 @@ module HTTPX::Plugins
         read_chunks(data, length)
 
         data unless length && data.empty?
+      end
+
+      def rewind
+        form = @form.each_with_object([]) do |(key, val), aux|
+          v = case val
+              when File
+                val = val.reopen(val.path, File::RDONLY) if val.closed?
+                val.rewind
+                val
+              else
+                v
+          end
+          aux << [key, v]
+        end
+        @form = form
+        @parts = to_parts(form)
       end
 
       private

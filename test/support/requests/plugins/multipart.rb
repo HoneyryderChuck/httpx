@@ -163,6 +163,19 @@ module Requests
         end
       end
 
+      # safety-check test only check if request is successfully rewinded
+      def test_plugin_multipart_retry_file_post
+        check_error = ->(response) { response.is_a?(HTTPX::ErrorResponse) || response.status == 405 }
+        uri = build_uri("/delay/4")
+        retries_session = HTTPX.plugin(RequestInspector)
+                               .plugin(:retries, max_retries: 1, retry_on: check_error) # because CI...
+                               .with_timeout(total_timeout: 2)
+                               .plugin(:multipart)
+        retries_response = retries_session.post(uri, retry_change_requests: true, form: { image: File.new(fixture_file_path) })
+        assert check_error[retries_response]
+        assert retries_session.calls == 1, "expect request to be retried 1 time (was #{retries_session.calls})"
+      end
+
       def fixture
         File.read(fixture_file_path, encoding: Encoding::BINARY)
       end

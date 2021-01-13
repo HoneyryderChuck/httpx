@@ -174,6 +174,12 @@ module HTTPX
         end
       end
 
+      def rewind
+        return if empty?
+
+        @body.rewind if @body.respond_to?(:rewind)
+      end
+
       def empty?
         return true if @body.nil?
         return false if chunked?
@@ -216,6 +222,7 @@ module HTTPX
     def transition(nextstate)
       case nextstate
       when :idle
+        @body.rewind
         @response = nil
         @drainer = nil
       when :headers
