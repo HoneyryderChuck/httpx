@@ -72,8 +72,8 @@ module HTTPX::Plugins
 
       def header_part(key, content_type, filename)
         header = "--#{@boundary}\r\n".b
-        header << "Content-Disposition: form-data; name=#{key}".b
-        header << "; filename=#{filename}" if filename
+        header << "Content-Disposition: form-data; name=#{key.inspect}".b
+        header << "; filename=#{filename.inspect}" if filename
         header << "\r\nContent-Type: #{content_type}\r\n\r\n"
         StringIO.new(header)
       end
