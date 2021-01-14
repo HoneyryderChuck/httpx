@@ -49,6 +49,8 @@ module HTTPX::Plugins
         @bytesize = 0
         params = form.each_with_object([]) do |(key, val), aux|
           Multipart.normalize_keys(key, val) do |k, v|
+            next if v.nil?
+
             value, content_type, filename = Part.call(v)
 
             header = header_part(k, content_type, filename)
