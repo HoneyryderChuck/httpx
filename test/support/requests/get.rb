@@ -11,6 +11,17 @@ module Requests
       verify_body_length(response)
     end
 
+    def test_http_request
+      uri = build_uri("/get")
+      response = HTTPX.request(:get, uri)
+      verify_status(response, 200)
+      verify_body_length(response)
+
+      assert_raises(ArgumentError) do
+        HTTPX.request(:post, uri, uri)
+      end
+    end
+
     def test_http_get_build_request
       uri = build_uri("/get")
       HTTPX.wrap do |http|
