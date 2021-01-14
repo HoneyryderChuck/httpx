@@ -119,14 +119,24 @@ module Requests
       #   verify_body_length(response)
       # end
 
-      def test_plugin_socks5_proxy_error
+      def test_plugin_socks5_proxy_negotiation_error
         proxy = URI(socks5_proxy.first)
         proxy.password = nil
 
         session = HTTPX.plugin(:proxy).with_proxy(uri: [proxy])
         uri = build_uri("/get")
         response = session.get(uri)
-        verify_error_response(response, HTTPX::Socks5Error)
+        verify_error_response(response, /negotiation error/)
+      end
+
+      def test_plugin_socks5_proxy_authentication_error
+        proxy = URI(socks5_proxy.first)
+        proxy.password = "1"
+
+        session = HTTPX.plugin(:proxy).with_proxy(uri: [proxy])
+        uri = build_uri("/get")
+        response = session.get(uri)
+        verify_error_response(response, /authentication error/)
       end
 
       def test_plugin_ssh_proxy
