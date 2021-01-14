@@ -117,6 +117,7 @@ class HTTPX::Selector
     yield io
   rescue IOError, SystemCallError
     @selectables.reject!(&:closed?)
+    raise unless @selectables.empty?
   end
 
   def select(interval, &block)
