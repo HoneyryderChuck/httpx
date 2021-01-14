@@ -49,6 +49,8 @@ module HTTPX::Plugins
         @bytesize = 0
         params = form.each_with_object([]) do |(key, val), aux|
           Multipart.normalize_keys(key, val) do |k, v|
+            next if v.nil?
+
             value, content_type, filename = Part.call(v)
 
             header = header_part(k, content_type, filename)
@@ -72,14 +74,18 @@ module HTTPX::Plugins
 
       def header_part(key, content_type, filename)
         header = "--#{@boundary}\r\n".b
-        header << "Content-Disposition: form-data; name=#{key}".b
-        header << "; filename=#{filename}" if filename
+        header << "Content-Disposition: form-data; name=#{key.inspect}".b
+        header << "; filename=#{filename.inspect}" if filename
         header << "\r\nContent-Type: #{content_type}\r\n\r\n"
         StringIO.new(header)
       end
 
       def read_chunks(buffer, length = nil)
-        while (chunk = read_from_part(length))
+        while @part_index < @parts.size
+          chunk = read_from_part(length)
+
+          next unless chunk
+
           buffer << chunk.force_encoding(Encoding::BINARY)
 
           next unless length
@@ -92,8 +98,6 @@ module HTTPX::Plugins
 
       # if there's a current part to read from, tries to read a chunk.
       def read_from_part(max_length = nil)
-        return unless @part_index < @parts.size
-
         part = @parts[@part_index]
 
         chunk = part.read(max_length, @buffer)

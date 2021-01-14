@@ -23,6 +23,16 @@ module HTTPX
         end
 
         def load_dependencies(*)
+          begin
+            unless defined?(HTTP::FormData)
+              # in order not to break legacy code, we'll keep loading http/form_data for them.
+              require "http/form_data"
+              warn "httpx: http/form_data is no longer a requirement to use HTTPX :multipart plugin. See migration instructions under" \
+                "https://honeyryderchuck.gitlab.io/httpx/wiki/Multipart-Uploads.html#notes. \n\n" \
+                "If you'd like to stop seeing this message, require 'http/form_data' yourself."
+            end
+          rescue LoadError
+          end
           require "httpx/plugins/multipart/encoder"
           require "httpx/plugins/multipart/part"
           require "httpx/plugins/multipart/mime_type_detector"
