@@ -139,10 +139,8 @@ module HTTPX
       elsif @hostname.end_with?(othername) && @hostname[-othername.size - 1, 1] == DOT
         # The other is higher
         -1
-      elsif othername.end_with?(@hostname) && othername[-@hostname.size - 1, 1] == DOT
-        # The other is lower
-        1
       else
+        # The other is lower
         1
       end
     end
