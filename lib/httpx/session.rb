@@ -136,23 +136,20 @@ module HTTPX
     def build_requests(*args, options)
       request_options = @options.merge(options)
 
-      requests = case args.size
-                 when 1
-                   reqs = args.first
-                   reqs.map do |verb, uri, opts = EMPTY_HASH|
-                     build_request(verb, uri, request_options.merge(opts))
-                   end
-                 when 2
-                   verb, uris = args
-                   if uris.respond_to?(:each)
-                     uris.enum_for(:each).map do |uri, opts = EMPTY_HASH|
-                       build_request(verb, uri, request_options.merge(opts))
-                     end
-                   else
-                     [build_request(verb, uris, request_options)]
-                   end
-                 else
-                   raise ArgumentError, "unsupported number of arguments"
+      requests = if args.size == 1
+        reqs = args.first
+        reqs.map do |verb, uri, opts = EMPTY_HASH|
+          build_request(verb, uri, request_options.merge(opts))
+        end
+      else
+        verb, uris = args
+        if uris.respond_to?(:each)
+          uris.enum_for(:each).map do |uri, opts = EMPTY_HASH|
+            build_request(verb, uri, request_options.merge(opts))
+          end
+        else
+          [build_request(verb, uris, request_options)]
+        end
       end
       raise ArgumentError, "wrong number of URIs (given 0, expect 1..+1)" if requests.empty?
 
