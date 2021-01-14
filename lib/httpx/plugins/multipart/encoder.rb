@@ -79,7 +79,11 @@ module HTTPX::Plugins
       end
 
       def read_chunks(buffer, length = nil)
-        while (chunk = read_from_part(length))
+        while @part_index < @parts.size
+          chunk = read_from_part(length)
+
+          next unless chunk
+
           buffer << chunk.force_encoding(Encoding::BINARY)
 
           next unless length
@@ -92,8 +96,6 @@ module HTTPX::Plugins
 
       # if there's a current part to read from, tries to read a chunk.
       def read_from_part(max_length = nil)
-        return unless @part_index < @parts.size
-
         part = @parts[@part_index]
 
         chunk = part.read(max_length, @buffer)
