@@ -42,6 +42,38 @@ end
 
 task :"test:ci" => (RUBY_ENGINE == "ruby" ? %i[test rubocop] : %i[test])
 
+# Gitlab Release
+begin
+  require "gitlab"
+  Gitlab.configure do |config|
+    config.endpoint = "https://gitlab.com/api/v4"
+  end
+  desc "Create a tag release in gitlab"
+  task :gitlab_release, [:tag] do |_t, args|
+    args.with_defaults(tag: HTTPX::VERSION)
+    vtag = "v#{args.tag}"
+
+    project = Gitlab.project("honeyryderchuck/httpx")
+    release = Gitlab.project_release(project.id, vtag)
+
+    if release
+      puts "Release already exists"
+      exit(0)
+    end
+    # TODO: do logic here to skip if release has been done, or update
+
+    release_path = File.join(__dir__, "doc", "release_notes", "#{args.tag.tr(".", "_")}.md")
+    # release_description = File.read(release_path)
+
+    puts <<-OUT
+    Gitlab.create_project_release(project.id, name: "httpx #{vtag}", tag_name: vtag, description: release_description)#{" "}
+    OUT
+
+    puts "Released v#{args.tag} to Gitlab"
+  end
+rescue StandardError
+end
+
 # Doc
 
 rdoc_opts = ["--line-numbers", "--title", "HTTPX: An HTTP client library for ruby"]

@@ -69,6 +69,8 @@ group :website do
 end if RUBY_VERSION > "2.4"
 
 group :assorted do
+  gem "gitlab"
+
   if RUBY_VERSION < "2.2"
     gem "pry", "~> 0.12.2"
   else
