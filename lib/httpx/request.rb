@@ -217,6 +217,18 @@ module HTTPX
         "#{unbounded_body? ? "stream" : "@bytesize=#{bytesize}"}>"
       end
       # :nocov:
+
+      def respond_to_missing?(meth, *args)
+        @body.respond_to?(meth, *args) || super
+      end
+
+      def method_missing(meth, *args, &block)
+        if @body.respond_to?(meth)
+          @body.__send__(meth, *args, &block)
+        else
+          super
+        end
+      end
     end
 
     def transition(nextstate)
