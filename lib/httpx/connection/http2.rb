@@ -83,6 +83,7 @@ module HTTPX
         @streams[request] = stream
         @max_requests -= 1
       end
+      request.once(:headers, &method(:set_protocol_headers))
       handle(request, stream)
       true
     rescue HTTP2Next::Error::StreamLimitExceeded
@@ -125,8 +126,6 @@ module HTTPX
     def headline_uri(request)
       request.path
     end
-
-    def set_request_headers(request); end
 
     def handle(request, stream)
       catch(:buffer_full) do
@@ -172,18 +171,18 @@ module HTTPX
       stream.on(:data, &method(:on_stream_data).curry(3)[stream, request])
     end
 
+    def set_protocol_headers(request)
+      request.headers[":scheme"]    = request.scheme
+      request.headers[":method"]    = request.verb.to_s.upcase
+      request.headers[":path"]      = headline_uri(request)
+      request.headers[":authority"] = request.authority
+    end
+
     def join_headers(stream, request)
-      set_request_headers(request)
-      headers = {}
-      headers[":scheme"]    = request.scheme
-      headers[":method"]    = request.verb.to_s.upcase
-      headers[":path"]      = headline_uri(request)
-      headers[":authority"] = request.authority
-      headers = headers.merge(request.headers)
       log(level: 1, color: :yellow) do
-        headers.map { |k, v| "#{stream.id}: -> HEADER: #{k}: #{v}" }.join("\n")
+        request.headers.each.map { |k, v| "#{stream.id}: -> HEADER: #{k}: #{v}" }.join("\n")
       end
-      stream.headers(headers, end_stream: request.empty?)
+      stream.headers(request.headers.each, end_stream: request.empty?)
     end
 
     def join_body(stream, request)

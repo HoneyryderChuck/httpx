@@ -69,6 +69,7 @@ module HTTPX
 
       return if @requests.include?(request)
 
+      request.once(:headers, &method(:set_protocol_headers))
       @requests << request
       @pipelining = true if @requests.size > 1
     end
@@ -240,7 +241,7 @@ module HTTPX
       @pipelining = false
     end
 
-    def set_request_headers(request)
+    def set_protocol_headers(request)
       request.headers["host"] ||= request.authority
       request.headers["connection"] ||= request.options.persistent ? "keep-alive" : "close"
       if !request.headers.key?("content-length") &&
@@ -254,7 +255,6 @@ module HTTPX
     end
 
     def handle(request)
-      set_request_headers(request)
       catch(:buffer_full) do
         request.transition(:headers)
         join_headers(request) if request.state == :headers

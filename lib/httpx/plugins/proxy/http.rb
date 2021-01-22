@@ -81,7 +81,7 @@ module HTTPX
             request.uri.to_s
           end
 
-          def set_request_headers(request)
+          def set_protocol_headers(request)
             super
             proxy_params = @options.proxy
             request.headers["proxy-authorization"] = "Basic #{proxy_params.token_authentication}" if proxy_params.authenticated?
