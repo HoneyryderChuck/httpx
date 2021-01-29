@@ -88,7 +88,7 @@ certificate = ./ca.crt
 private_key = ./ca.key
 
 # the message digest algorithm. Remember to not use MD5
-default_md = sha1
+default_md = sha256
 
 # for how many days will the signed certificate be valid
 default_days = 365
@@ -130,7 +130,7 @@ certificate = ./ca.crt
 private_key = ./ca.key
 
 # the message digest algorithm. Remember to not use MD5
-default_md = sha1
+default_md = sha256
 
 # for how many days will the signed certificate be valid
 default_days = 365
