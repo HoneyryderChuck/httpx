@@ -49,6 +49,7 @@ group :test do
 
   gem "faraday"
   gem "oga"
+  gem "aws-sdk-s3"
 
   if RUBY_VERSION >= "3.0"
     gem "rbs", git: "https://github.com/ruby/rbs.git", branch: "master"

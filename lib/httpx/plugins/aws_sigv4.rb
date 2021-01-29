@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "set"
+require "aws-sdk-s3"
 
 module HTTPX
   module Plugins
@@ -17,10 +18,13 @@ module HTTPX
           service:,
           region:,
           provider_prefix: "aws",
+          header_provider_field: "amz",
           unsigned_headers: [],
           apply_checksum_header: true,
-          security_token: nil
+          security_token: nil,
+          algorithm: "SHA256"
         )
+          # TODO: add clock skew
           @username = username
           @password = password
           @service = service
@@ -30,31 +34,34 @@ module HTTPX
           @unsigned_headers << "authorization"
           @unsigned_headers << "x-amzn-trace-id"
           @unsigned_headers << "expect"
-          # TODO: remove it
-          @unsigned_headers << "accept"
-          @unsigned_headers << "user-agent"
-          @unsigned_headers << "content-type"
 
           @apply_checksum_header = apply_checksum_header
           @provider_prefix = provider_prefix
+          @header_provider_field = header_provider_field
 
           @security_token = security_token
 
-          @algorithm = "AWS4-HMAC-SHA256"
+          @algorithm = algorithm
         end
 
         def sign!(request)
-          datetime = (request.headers["x-amz-date"] ||= Time.now.utc.strftime("%Y%m%dT%H%M%SZ"))
+          lower_provider_prefix = "#{@provider_prefix}4"
+          upper_provider_prefix = lower_provider_prefix.upcase
+
+          datetime = (request.headers["x-#{@header_provider_field}-date"] ||= Time.now.utc.strftime("%Y%m%dT%H%M%SZ"))
           date = datetime[0, 8]
 
-          content_sha256 = request.headers["x-amz-content-sha256"] || sha256_hexdigest(request.body)
+          content_sha256 = request.headers["x-#{@header_provider_field}-content-sha256"] || sha256_hexdigest(request.body)
 
-          request.headers["x-amz-content-sha256"] ||= content_sha256 if @apply_checksum_header
-          request.headers["x-amz-security-token"] ||= @security_token if @security_token
+          request.headers["x-#{@header_provider_field}-content-sha256"] ||= content_sha256 if @apply_checksum_header
+          request.headers["x-#{@header_provider_field}-security-token"] ||= @security_token if @security_token
 
           signature_headers = request.headers.each.reject do |k, _|
             @unsigned_headers.include?(k)
-          end.sort_by(&:first)
+          end
+          # aws sigv4 needs to declare the host, regardless of protocol version
+          signature_headers << ["host", request.authority] unless request.headers.key?("host")
+          signature_headers.sort_by!(&:first)
 
           signed_headers = signature_headers.map(&:first).join(";")
 
@@ -74,25 +81,27 @@ module HTTPX
           credential_scope = "#{date}" \
             "/#{@region}" \
             "/#{@service}" \
-            "/aws4_request"
+            "/#{lower_provider_prefix}_request"
 
+          algo_line = "#{upper_provider_prefix}-HMAC-#{@algorithm}"
           # string to sign
-          sts = "#{@algorithm}" \
+          sts = "#{algo_line}" \
                 "\n#{datetime}" \
                 "\n#{credential_scope}" \
                 "\n#{sha256_hexdigest(creq)}"
 
           # signature
-          k_date = hmac("AWS4#{@password}", date)
+          k_date = hmac("#{upper_provider_prefix}#{@password}", date)
           k_region = hmac(k_date, @region)
           k_service = hmac(k_region, @service)
-          k_credentials = hmac(k_service, "aws4_request")
+          k_credentials = hmac(k_service, "#{lower_provider_prefix}_request")
           sig = hexhmac(k_credentials, sts)
 
           credential = "#{@username}/#{credential_scope}"
           # apply signature
           request.headers["authorization"] =
-            "AWS4-HMAC-SHA256 Credential=#{credential}, " \
+            "#{algo_line} " \
+            "Credential=#{credential}, " \
             "SignedHeaders=#{signed_headers}, " \
             "Signature=#{sig}"
         end
@@ -120,11 +129,11 @@ module HTTPX
         end
 
         def hmac(key, value)
-          OpenSSL::HMAC.digest(OpenSSL::Digest.new("sha256"), key, value)
+          OpenSSL::HMAC.digest(OpenSSL::Digest.new("SHA256"), key, value)
         end
 
         def hexhmac(key, value)
-          OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), key, value)
+          OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("SHA256"), key, value)
         end
       end
 
