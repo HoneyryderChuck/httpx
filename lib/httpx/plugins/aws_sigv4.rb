@@ -8,6 +8,8 @@ module HTTPX
     #
     # This plugin adds AWS Sigv4 authentication.
     #
+    # https://docs.aws.amazon.com/general/latest/gr/signature-version-4.html
+    #
     # https://gitlab.com/honeyryderchuck/httpx/wikis/AWS-SigV4
     #
     module AWSSigV4
@@ -152,9 +154,8 @@ module HTTPX
           end.new.merge(options)
         end
 
-        def load_dependencies(klass)
+        def load_dependencies(_klass)
           require "openssl"
-          klass.plugin(:authentication)
         end
       end
 

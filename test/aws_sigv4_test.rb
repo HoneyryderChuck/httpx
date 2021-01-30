@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require_relative "support/http_helpers"
-require "aws-sdk-s3"
 
 class HTTPXAwsSigv4Test < Minitest::Test
   include ResponseHelpers
@@ -88,36 +87,6 @@ class HTTPXAwsSigv4Test < Minitest::Test
                                                "AWS4-HMAC-SHA256 Credential=akid/20120101/REGION/SERVICE/aws4_request, " \
                                                "SignedHeaders=bar;bar2;foo;host;x-amz-content-sha256;x-amz-date, " \
                                                "Signature=4a7d3e06d1950eb64a3daa1becaa8ba030d9099858516cb2fa4533fab4e8937d"
-  end
-
-  AWS_URI = ENV.fetch("AMZ_HOST", "aws:4566")
-  USERNAME = ENV.fetch("AWS_ACCESS_KEY_ID", "test")
-  PASSWORD = ENV.fetch("AWS_SECRET_ACCESS_KEY", "test")
-  def test_plugin_aws_sigv4_get_object
-    s3_client = Aws::S3::Client.new(
-      endpoint: "http://#{AWS_URI}",
-      force_path_style: true
-      # http_wire_trace: true,
-      # logger: Logger.new(STDERR)
-    )
-    s3_client.create_bucket(bucket: "test", acl: "private")
-    object = s3_client.put_object(bucket: "test", key: "testimage", body: "bucketz")
-
-    # now let's get it
-    # no_sig_response = HTTPX.get("http://#{AWS_URI}/test/testimage")
-    # verify_error_response(no_sig_response)
-
-    aws_req_headers = object.context.http_request.headers
-
-    response = sigv4_session(username: USERNAME, password: PASSWORD, unsigned_headers: %w[accept content-type content-length])
-               .with(headers: {
-                       "user-agent" => aws_req_headers["user-agent"],
-                       "expect" => "100-continue",
-                       "x-amz-date" => aws_req_headers["x-amz-date"],
-                       "content-md5" => OpenSSL::Digest.base64digest("MD5", "bucketz"),
-                     })
-               .put("http://#{AWS_URI}/test/testimage", body: "bucketz")
-    verify_status(response, 200)
   end
 
   private
