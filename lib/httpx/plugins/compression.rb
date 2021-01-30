@@ -94,7 +94,7 @@ module HTTPX
         end
 
         def write(chunk)
-          return super unless defined?(@_inflaters)
+          return super unless defined?(@_inflaters) && !chunk.empty?
 
           chunk = decompress(chunk)
           super(chunk)
