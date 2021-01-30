@@ -28,7 +28,7 @@ group :test do
     gem "rubocop-performance", "~> 1.5.2"
   end
 
-  platform :mri do
+  platform :mri, :truffleruby do
     gem "bcrypt_pbkdf"
     gem "benchmark-ips"
     gem "brotli"

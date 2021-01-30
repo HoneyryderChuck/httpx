@@ -40,14 +40,15 @@ module HTTPX
     end
 
     def write(buffer)
-      siz = @io.send(buffer, 0, @host, @port)
+      siz = @io.send(buffer.to_s, 0, @host, @port)
       log { "WRITE: #{siz} bytes..." }
       buffer.shift!(siz)
       siz
     end
 
     # :nocov:
-    if RUBY_VERSION < "2.3"
+    if (RUBY_ENGINE == "truffleruby" && RUBY_ENGINE_VERSION < "21.1.0") ||
+       RUBY_VERSION < "2.3"
       def read(size, buffer)
         data, _ = @io.recvfrom_nonblock(size)
         buffer.replace(data)
