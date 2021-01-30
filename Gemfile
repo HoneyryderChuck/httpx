@@ -15,6 +15,7 @@ group :test do
   gem "webmock"
 
   if RUBY_VERSION < "2.2"
+    gem "msgpack", "<= 1.3.3"
     gem "net-ssh", "~> 4.2.0"
     gem "rubocop", "~> 0.57.0"
   elsif RUBY_VERSION < "2.3"
