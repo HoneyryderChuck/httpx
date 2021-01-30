@@ -23,7 +23,7 @@ group :test do
     gem "rubocop", "~> 0.81.0"
     gem "rubocop-performance", "~> 1.5.2"
   else
-    gem "rubocop", "~> 1.0"
+    gem "rubocop", git: "https://github.com/rubocop-hq/rubocop.git", branch: "master" # ~> 1.0"
     gem "rubocop-performance", "~> 1.5.2"
   end
 
