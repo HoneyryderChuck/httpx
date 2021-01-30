@@ -2,7 +2,6 @@ version: '3'
 services:
   httpx:
     environment:
-      - SSL_CERT_FILE=/home/test/support/ci/certs/ca-bundle.crt
       - HTTPBIN_HOST=nghttp2
       - HTTPX_HTTP_PROXY=http://proxyuser:password@httpproxy:3128
       - HTTPX_HTTPS_PROXY=http://proxyuser:password@httpproxy:3128

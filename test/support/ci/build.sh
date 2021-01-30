@@ -6,9 +6,9 @@ RUBY_PLATFORM=`ruby -e 'puts RUBY_PLATFORM'`
 RUBY_ENGINE=`ruby -e 'puts RUBY_ENGINE'`
 
 if [[ "$RUBY_ENGINE" = "truffleruby" ]]; then
-  apt-get update && apt-get install -y git iptables
+  apt-get update && apt-get install -y git iptables file
 elif [[ "$RUBY_PLATFORM" = "java" ]]; then
-  apt-get update && apt-get install -y git iptables
+  apt-get update && apt-get install -y git iptables file
 elif [[ ${RUBY_VERSION:0:3} = "2.1" ]]; then
   apk --update add g++ make git bash libsodium iptables file
 else
@@ -40,6 +40,8 @@ if [[ ${RUBY_VERSION:0:1} = "3" ]]; then
 fi
 
 
+export SSL_CERT_FILE=/home/test/support/ci/certs/ca-bundle.crt
+export PARALLEL=1
 PARALLEL=1 bundle exec rake test:ci
 # third party modules
 COVERAGE_KEY="#$RUBY_ENGINE-$RUBY_VERSION-integration" bundle exec rake integrations
