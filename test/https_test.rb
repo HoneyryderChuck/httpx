@@ -111,9 +111,7 @@ class HTTPSTest < Minitest::Test
   def test_ssl_wrong_hostname
     uri = build_uri("/get")
     response = HTTPX.with(ssl: { hostname: "great-gatsby.com" }).get(uri)
-    assert response.is_a?(HTTPX::ErrorResponse), "response should contain errors"
-    assert response.error.message.include?("certificate verify failed"),
-           "unexpected error: #{response.error.message}"
+    verify_error_response(response, /certificate verify failed|does not match the server certificate/)
   end
 
   private
