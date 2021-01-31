@@ -31,7 +31,7 @@ module HTTPX
             buffer << last
             yield last if block_given?
           ensure
-            deflater.close
+            deflater.close if deflater
           end
         end
 
