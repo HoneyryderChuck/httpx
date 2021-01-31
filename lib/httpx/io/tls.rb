@@ -1,13 +1,11 @@
 # frozen_string_literal: true
 
-require "httpx/io/tls/ffi"
-require "httpx/io/tls/context"
-require "httpx/io/tls/box"
 require "openssl"
 
 module HTTPX
-  TLSError = Class.new(TLS::Error)
-  class SSL < TCP
+  class TLS < TCP
+    Error = Class.new(StandardError)
+
     def initialize(_, _, options)
       super
       @encrypted = Buffer.new(Connection::BUFFER_SIZE)
@@ -100,7 +98,7 @@ module HTTPX
     # signals TLS invalid status / shutdown.
     def close_cb(msg = nil)
       log { "TLS Error: #{msg}, closing" }
-      raise TLSError, "TLSError: certificate verify failed (#{msg})"
+      raise Error, "certificate verify failed (#{msg})"
     end
 
     # TLS callback.
@@ -126,7 +124,7 @@ module HTTPX
     # passed the peer +cert+ to be verified.
     #
     def verify_cb(cert)
-      raise TLSError, "Peer verification enabled, but no certificate received." if cert.nil?
+      raise Error, "Peer verification enabled, but no certificate received." if cert.nil?
 
       log { "TLS verifying #{cert}" }
       @peer_cert = OpenSSL::X509::Certificate.new(cert)
@@ -197,13 +195,24 @@ module HTTPX
 
       "#{super}\n\n" \
         "SSL connection using #{@ctx.ssl_version} / #{Array(@ctx.cipher).first}\n" \
-        "ALPN, server accepted to use #{protocol}\n" \
-        "Server certificate:\n" \
-        " subject: #{server_cert.subject}\n" \
-        " start date: #{server_cert.not_before}\n" \
-        " expire date: #{server_cert.not_after}\n" \
-        " issuer: #{server_cert.issuer}\n" \
-        " SSL certificate verify ok."
+        "ALPN, server accepted to use #{protocol}\n" +
+        (if server_cert
+           "Server certificate:\n" \
+                 " subject: #{server_cert.subject}\n" \
+                 " start date: #{server_cert.not_before}\n" \
+                 " expire date: #{server_cert.not_after}\n" \
+                 " issuer: #{server_cert.issuer}\n" \
+                 " SSL certificate verify ok."
+         else
+           "SSL certificate verify failed."
+         end
+        )
     end
   end
+
+  TLSError = TLS::Error
 end
+
+require "httpx/io/tls/ffi"
+require "httpx/io/tls/context"
+require "httpx/io/tls/box"
