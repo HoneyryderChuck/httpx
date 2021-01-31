@@ -24,12 +24,6 @@ require "concurrent"
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 #
-# ===
-#
-# This license applies to all parts of uvrb (Ruby FFI bindings for libuv only)
-# Libuv itself [is using Node license](https://github.com/joyent/libuv/blob/master/LICENSE)
-
-# frozen_string_literal: true
 
 module HTTPX::TLS::SSL
   Error = HTTPX::TLS::Error
