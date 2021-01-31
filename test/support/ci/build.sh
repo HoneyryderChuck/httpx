@@ -46,5 +46,9 @@ fi
 
 export SSL_CERT_FILE=/home/test/support/ci/certs/ca-bundle.crt
 PARALLEL=1 bundle exec rake test:ci
+
 # third party modules
-COVERAGE_KEY="#$RUBY_ENGINE-$RUBY_VERSION-integration" bundle exec rake integrations
+# Testing them only with main ruby, as some of them work weird with other variants.
+if [[ "$RUBY_ENGINE" = "ruby" ]]; then
+  COVERAGE_KEY="#$RUBY_ENGINE-$RUBY_VERSION-integration" bundle exec rake integrations
+fi
