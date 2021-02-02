@@ -13,22 +13,25 @@ module HTTPX
     # https://gitlab.com/honeyryderchuck/httpx/wikis/AWS-SigV4
     #
     module AWSSigV4
+      Credentials = Struct.new(:username, :password, :security_token)
+
       class Signer
         def initialize(
-          username:,
-          password:,
           service:,
           region:,
+          credentials: nil,
+          username: nil,
+          password: nil,
+          security_token: nil,
           provider_prefix: "aws",
           header_provider_field: "amz",
           unsigned_headers: [],
           apply_checksum_header: true,
-          security_token: nil,
           algorithm: "SHA256"
         )
           # TODO: add clock skew
-          @username = username
-          @password = password
+
+          @credentials = credentials || Credentials.new(username, password, security_token)
           @service = service
           @region = region
 
@@ -40,8 +43,6 @@ module HTTPX
           @apply_checksum_header = apply_checksum_header
           @provider_prefix = provider_prefix
           @header_provider_field = header_provider_field
-
-          @security_token = security_token
 
           @algorithm = algorithm
         end
@@ -56,7 +57,7 @@ module HTTPX
           content_sha256 = request.headers["x-#{@header_provider_field}-content-sha256"] || sha256_hexdigest(request.body)
 
           request.headers["x-#{@header_provider_field}-content-sha256"] ||= content_sha256 if @apply_checksum_header
-          request.headers["x-#{@header_provider_field}-security-token"] ||= @security_token if @security_token
+          request.headers["x-#{@header_provider_field}-security-token"] ||= @credentials.security_token if @credentials.security_token
 
           signature_headers = request.headers.each.reject do |k, _|
             @unsigned_headers.include?(k)
@@ -93,13 +94,13 @@ module HTTPX
                 "\n#{sha256_hexdigest(creq)}"
 
           # signature
-          k_date = hmac("#{upper_provider_prefix}#{@password}", date)
+          k_date = hmac("#{upper_provider_prefix}#{@credentials.password}", date)
           k_region = hmac(k_date, @region)
           k_service = hmac(k_region, @service)
           k_credentials = hmac(k_service, "#{lower_provider_prefix}_request")
           sig = hexhmac(k_credentials, sts)
 
-          credential = "#{@username}/#{credential_scope}"
+          credential = "#{@credentials.username}/#{credential_scope}"
           # apply signature
           request.headers["authorization"] =
             "#{algo_line} " \

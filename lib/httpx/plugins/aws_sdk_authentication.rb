@@ -6,6 +6,24 @@ module HTTPX
     # This plugin adds helper methods to apply AWS Sigv4 to AWS cloud requests.
     #
     module AwsSdkAuthentication
+      class Credentials
+        def initialize(aws_credentials)
+          @aws_credentials = aws_credentials
+        end
+
+        def username
+          @aws_credentials.access_key_id
+        end
+
+        def password
+          @aws_credentials.secret_access_key
+        end
+
+        def security_token
+          @aws_credentials.session_token
+        end
+      end
+
       class << self
         attr_reader :credentials, :region
 
@@ -15,17 +33,16 @@ module HTTPX
 
           client = Class.new(Seahorse::Client::Base) do
             @identifier = :httpx
-            set_api(Aws::S3::ClientApi::API) 
+            set_api(Aws::S3::ClientApi::API)
             add_plugin(Aws::Plugins::CredentialsConfiguration)
             add_plugin(Aws::Plugins::RegionalEndpoint)
             class << self
               attr_reader :identifier
             end
-          end.new 
-          
+          end.new
 
-          @credentials = client.config[:credentials]
-          @region = client.config[:region]  
+          @credentials = Credentials.new(client.config[:credentials])
+          @region = client.config[:region]
         end
       end
 
@@ -35,14 +52,12 @@ module HTTPX
         # aws_authentication(credentials: Aws::Credentials.new('akid', 'secret'))
         # aws_authentication()
         #
-        def aws_sdk_authentication(options = nil)
+        def aws_sdk_authentication(options = {})
           credentials = AwsSdkAuthentication.credentials
           region = AwsSdkAuthentication.region
 
           aws_sigv4_authentication(
-            username: credentials.access_key_id,
-            password: credentials.secret_access_key,
-            security_token: credentials.session_token,
+            credentials: credentials,
             region: region,
             provider_prefix: "aws",
             header_provider_field: "amz",
