@@ -119,10 +119,11 @@ jekyll:
     - blog
 
 coverage:
+  coverage: '/\(\d+.\d+\%\) covered/'
   stage: prepare
   variables:
     BUNDLE_WITHOUT: test:website:assorted
-  dependencies:
+  needs:
     - test_jruby
     - test_ruby21
     - test_ruby27
@@ -151,7 +152,7 @@ coverage:
 
 pages:
   stage: deploy
-  dependencies:
+  needs:
     - coverage
     - jekyll
   script:
