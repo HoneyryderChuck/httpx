@@ -108,6 +108,12 @@ class HTTPSTest < Minitest::Test
     end
   end
 
+  def test_ssl_wrong_hostname
+    uri = build_uri("/get")
+    response = HTTPX.with(ssl: { hostname: "great-gatsby.com" }).get(uri)
+    verify_error_response(response, /certificate verify failed|does not match the server certificate/)
+  end
+
   private
 
   def origin(orig = httpbin)

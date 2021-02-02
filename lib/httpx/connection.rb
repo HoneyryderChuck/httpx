@@ -444,7 +444,7 @@ module HTTPX
       throw(:jump_tick)
     rescue Errno::ECONNREFUSED,
            Errno::EADDRNOTAVAIL,
-           OpenSSL::SSL::SSLError => e
+           TLSError => e
       # connect errors, exit gracefully
       handle_error(e)
       @state = :closed

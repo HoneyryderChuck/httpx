@@ -18,6 +18,8 @@ AllCops:
     - 'vendor/**/*'
     - 'www/**/*'
     - 'lib/httpx/extensions.rb'
+    # Do not lint ffi block, for openssl parity
+    - 'lib/httpx/io/tls/*.rb'
 
 Metrics/ClassLength:
   Max: 400

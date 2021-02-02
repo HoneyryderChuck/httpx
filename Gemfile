@@ -14,8 +14,9 @@ group :test do
   gem "minitest-proveit"
   gem "webmock"
 
+  gem "msgpack", "<= 1.3.3" if RUBY_VERSION < "2.4"
+
   if RUBY_VERSION < "2.2"
-    gem "msgpack", "<= 1.3.3"
     gem "net-ssh", "~> 4.2.0"
     gem "rubocop", "~> 0.57.0"
   elsif RUBY_VERSION < "2.3"
@@ -24,7 +25,7 @@ group :test do
     gem "rubocop", "~> 0.81.0"
     gem "rubocop-performance", "~> 1.5.2"
   else
-    gem "rubocop", git: "https://github.com/rubocop-hq/rubocop.git", branch: "master" # ~> 1.0"
+    gem "rubocop"
     gem "rubocop-performance", "~> 1.5.2"
   end
 
@@ -38,6 +39,12 @@ group :test do
 
   platform :mri_21 do
     gem "rbnacl"
+  end
+
+  platform :jruby do
+    gem "concurrent-ruby"
+    gem "ffi-compiler"
+    gem "ruby-debug"
   end
 
   gem "faraday"

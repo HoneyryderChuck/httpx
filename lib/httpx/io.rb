@@ -2,16 +2,27 @@
 
 require "socket"
 require "httpx/io/tcp"
-require "httpx/io/ssl"
 require "httpx/io/unix"
 require "httpx/io/udp"
 
 module HTTPX
   module IO
     extend Registry
-    register "tcp", TCP
-    register "ssl", SSL
     register "udp", UDP
     register "unix", HTTPX::UNIX
+    register "tcp", TCP
+
+    if RUBY_ENGINE == "jruby"
+      begin
+        require "httpx/io/tls"
+        register "ssl", TLS
+      rescue LoadError
+        require "httpx/io/ssl"
+        register "ssl", SSL
+      end
+    else
+      require "httpx/io/ssl"
+      register "ssl", SSL
+    end
   end
 end
