@@ -33,7 +33,7 @@ cache:
   paths:
     - vendor
 
-test_jruby:
+test jruby:
   <<: *test_settings
   script:
     ./spec.sh jruby 9.0.0.0
@@ -41,45 +41,45 @@ test_jruby:
   artifacts:
     paths:
       - coverage/
-test_ruby21:
+test ruby 2/1:
   <<: *test_settings
   script:
     ./spec.sh ruby 2.1
   artifacts:
     paths:
       - coverage/
-test_ruby22:
+test ruby 2/2:
   <<: *test_settings
   only:
     - master
   script:
     ./spec.sh ruby 2.2
-test_ruby23:
+test ruby 2/3:
   <<: *test_settings
   only:
     - master
   script:
     ./spec.sh ruby 2.3
-test_ruby24:
+test ruby 2/4:
   <<: *test_settings
   only:
     - master
   script:
     ./spec.sh ruby 2.4
-test_ruby25:
+test ruby 2/5:
   <<: *test_settings
   only:
     - master
   script:
     ./spec.sh ruby 2.5
-test_ruby26:
+test ruby 2/6:
   <<: *test_settings
   <<: *jit_matrix
   only:
     - master
   script:
     ./spec.sh ruby 2.6
-test_ruby27:
+test ruby 2/7:
   <<: *test_settings
   <<: *jit_matrix
   script:
@@ -87,12 +87,12 @@ test_ruby27:
   artifacts:
     paths:
       - coverage/
-test_ruby30:
+test ruby 3/0:
   <<: *test_settings
   <<: *jit_matrix
   script:
     ./spec.sh ruby 3.0
-test_truffleruby:
+test truffleruby:
   <<: *test_settings
   script:
     ./spec.sh truffleruby latest
@@ -123,11 +123,6 @@ coverage:
   stage: prepare
   variables:
     BUNDLE_WITHOUT: test:website:assorted
-  needs:
-    - test_jruby
-    - test_ruby21
-    - test_ruby27
-    - test_ruby30
   except:
     - blog
 
