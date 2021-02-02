@@ -42,7 +42,7 @@ module Requests
       private
 
       def aws_s3_session(**options)
-        HTTPX.plugin(:aws_authentication).aws_authentication(service: "s3", **options)
+        HTTPX.plugin(:aws_sdk_authentication).aws_sdk_authentication(service: "s3", **options)
       end
     end
   end
