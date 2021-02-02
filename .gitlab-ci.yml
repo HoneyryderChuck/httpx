@@ -92,6 +92,9 @@ test ruby 3/0:
   <<: *jit_matrix
   script:
     ./spec.sh ruby 3.0
+  artifacts:
+    paths:
+      - coverage/
 test truffleruby:
   <<: *test_settings
   script:
