@@ -15,6 +15,9 @@ deb-src http://deb.debian.org/debian sid main contrib non-free" >> /etc/apt/sour
   update-ca-certificates
 elif [[ ${RUBY_VERSION:0:3} = "2.1" ]]; then
   apk --update add g++ make git bash libsodium iptables file
+elif [[ ${RUBY_VERSION:0:3} = "2.3" ]]; then
+  # installing custom openssl
+  apk --update add g++ make git bash iptables file openssl=1.0.2u-r0 openssl-dev=1.0.2u-r0
 else
   apk --update add g++ make git bash iptables file
 fi

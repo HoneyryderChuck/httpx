@@ -29,8 +29,6 @@ module HTTPX
           apply_checksum_header: true,
           algorithm: "SHA256"
         )
-          # TODO: add clock skew
-
           @credentials = credentials || Credentials.new(username, password, security_token)
           @service = service
           @region = region

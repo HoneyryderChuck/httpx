@@ -14,8 +14,6 @@ group :test do
   gem "minitest-proveit"
   gem "webmock"
 
-  gem "msgpack", "<= 1.3.3" if RUBY_VERSION < "2.4"
-
   if RUBY_VERSION < "2.2"
     gem "net-ssh", "~> 4.2.0"
     gem "rubocop", "~> 0.57.0"
@@ -41,15 +39,22 @@ group :test do
     gem "rbnacl"
   end
 
+  platform :mri_23 do
+    if RUBY_VERSION > "2.2"
+      gem "openssl", "< 2.0.6" # force usage of openssl version we patch against
+    end
+    gem "msgpack", "<= 1.3.3"
+  end
+
   platform :jruby do
     gem "concurrent-ruby"
     gem "ffi-compiler"
     gem "ruby-debug"
   end
 
+  gem "aws-sdk-s3"
   gem "faraday"
   gem "oga"
-  gem "aws-sdk-s3"
 
   if RUBY_VERSION >= "3.0"
     gem "rbs", git: "https://github.com/ruby/rbs.git", branch: "master"
