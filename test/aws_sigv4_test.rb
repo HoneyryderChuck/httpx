@@ -73,16 +73,24 @@ class HTTPXAwsSigv4Test < Minitest::Test
   end
 
   def test_plugin_aws_sigv4_authorization_unsigned_headers
-    request = sigv4_session(service: "SERVICE", region: "REGION", unsigned_headers: %w[accept user-agent content-type content-length])
-              .build_request(:put, "http://domain.com", headers: {
-                               "Host" => "domain.com",
-                               "Foo" => "foo",
-                               "Bar" => "bar  bar",
-                               "Bar2" => '"bar  bar"',
-                               "Content-Length" => 9,
-                               "X-Amz-Date" => "20120101T112233Z",
-                             },
-                                                        body: StringIO.new("http-body"))
+    request = sigv4_session(
+      service: "SERVICE",
+      region: "REGION",
+      unsigned_headers: %w[accept-encoding accept user-agent content-type content-length]
+    ).build_request(
+      :put,
+      "http://domain.com",
+      headers: {
+        "Host" => "domain.com",
+        "Foo" => "foo",
+        "Bar" => "bar  bar",
+        "Bar2" => '"bar  bar"',
+        "Content-Length" => 9,
+        "X-Amz-Date" => "20120101T112233Z",
+      },
+      body: StringIO.new("http-body")
+    )
+
     assert request.headers["authorization"] == "" \
                                                "AWS4-HMAC-SHA256 Credential=akid/20120101/REGION/SERVICE/aws4_request, " \
                                                "SignedHeaders=bar;bar2;foo;host;x-amz-content-sha256;x-amz-date, " \
@@ -92,6 +100,7 @@ class HTTPXAwsSigv4Test < Minitest::Test
   private
 
   def sigv4_session(**options)
-    HTTPX.plugin(:aws_sigv4).aws_sigv4_authentication(service: "s3", region: "us-east-1", username: "akid", password: "secret", **options)
+    HTTPX.plugin(:aws_sigv4).aws_sigv4_authentication(**{ service: "s3", region: "us-east-1", username: "akid",
+                                                          password: "secret" }.merge(options))
   end
 end
