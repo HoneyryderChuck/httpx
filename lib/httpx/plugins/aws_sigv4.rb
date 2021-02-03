@@ -153,8 +153,10 @@ module HTTPX
           end.new.merge(options)
         end
 
-        def load_dependencies(_klass)
+        def load_dependencies(klass)
           require "openssl"
+          klass.plugin(:expect)
+          klass.plugin(:compression)
         end
       end
 
