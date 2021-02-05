@@ -38,6 +38,8 @@ fi
 
 bundle install --quiet
 
+export SSL_CERT_FILE=/home/test/support/ci/certs/ca-bundle.crt
+
 if [[ ${RUBY_VERSION:0:1} = "3" ]]; then
   export RUBYOPT="$RUBYOPT -rbundler/setup -rrbs/test/setup"
   export RBS_TEST_RAISE=true
@@ -46,8 +48,6 @@ if [[ ${RUBY_VERSION:0:1} = "3" ]]; then
   export RBS_TEST_TARGET="HTTP*"
 fi
 
-
-export SSL_CERT_FILE=/home/test/support/ci/certs/ca-bundle.crt
 PARALLEL=1 bundle exec rake test:ci
 
 # third party modules

@@ -75,9 +75,10 @@ module HTTPX
     end
 
     def consume
-      requests_limit = [@max_concurrent_requests, @max_requests, @requests.size].min
+      requests_limit = [@max_requests, @requests.size].min
+      concurrent_requests_limit = [@max_concurrent_requests, requests_limit].min
       @requests.each_with_index do |request, idx|
-        break if idx >= requests_limit
+        break if idx >= concurrent_requests_limit
         next if request.state == :done
 
         request.headers["connection"] ||= request.options.persistent || idx < requests_limit - 1 ? "keep-alive" : "close"
