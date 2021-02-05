@@ -44,6 +44,10 @@ module HTTPX
           @credentials = Credentials.new(client.config[:credentials])
           @region = client.config[:region]
         end
+
+        def extra_options(options)
+          options.merge(max_concurrent_requests: 1)
+        end
       end
 
       module InstanceMethods
