@@ -148,8 +148,6 @@ module HTTPX
                 Signer.new(signer)
               end
             end
-
-            def_option(:sigv4_password)
           end.new.merge(options)
         end
 

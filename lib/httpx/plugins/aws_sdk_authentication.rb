@@ -3,9 +3,15 @@
 module HTTPX
   module Plugins
     #
-    # This plugin adds helper methods to apply AWS Sigv4 to AWS cloud requests.
+    # This plugin applies AWS Sigv4 to requests, using the AWS SDK credentials and configuration.
+    #
+    # It requires the "aws-sdk-core" gem.
     #
     module AwsSdkAuthentication
+
+      #
+      # encapsulates access to an AWS SDK credentials store.
+      #
       class Credentials
         def initialize(aws_credentials)
           @aws_credentials = aws_credentials
@@ -56,7 +62,7 @@ module HTTPX
         # aws_authentication(credentials: Aws::Credentials.new('akid', 'secret'))
         # aws_authentication()
         #
-        def aws_sdk_authentication(options = {})
+        def aws_sdk_authentication(**options)
           credentials = AwsSdkAuthentication.credentials
           region = AwsSdkAuthentication.region
 
