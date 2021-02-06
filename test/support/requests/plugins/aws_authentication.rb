@@ -10,15 +10,19 @@ module Requests
       def test_plugin_aws_authentication_put_object
         amz_uri = origin(AWS_URI)
 
-        s3_client = Aws::S3::Client.new(
-          endpoint: amz_uri,
-          force_path_style: true,
-          ssl_verify_peer: false,
-          # http_wire_trace: true,
-          # logger: Logger.new(STDERR)
-        )
-        s3_client.create_bucket(bucket: "test", acl: "private")
-        object = s3_client.put_object(bucket: "test", key: "testimage", body: "bucketz")
+        begin
+          s3_client = Aws::S3::Client.new(
+            endpoint: amz_uri,
+            force_path_style: true,
+            ssl_verify_peer: false,
+            http_wire_trace: true,
+            logger: Logger.new(STDERR)
+          )
+          s3_client.create_bucket(bucket: "test", acl: "private")
+          object = s3_client.put_object(bucket: "test", key: "testimage", body: "bucketz")
+        rescue Aws::S3::Errors::BucketAlreadyExists
+          # because this test will run 2 times (http and https)
+        end
 
         # now let's get it
         # no_sig_response = HTTPX.get("http://#{AWS_URI}/test/testimage")
