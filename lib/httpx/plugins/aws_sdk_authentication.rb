@@ -8,7 +8,6 @@ module HTTPX
     # It requires the "aws-sdk-core" gem.
     #
     module AwsSdkAuthentication
-
       #
       # encapsulates access to an AWS SDK credentials store.
       #

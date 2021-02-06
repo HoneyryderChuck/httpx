@@ -168,6 +168,7 @@ module Requests
         check_error = ->(response) { response.is_a?(HTTPX::ErrorResponse) || response.status == 405 }
         uri = build_uri("/delay/4")
         retries_session = HTTPX.plugin(RequestInspector)
+                               .with(debug: $stderr, debug_level: 2) # CI Debug
                                .plugin(:retries, max_retries: 1, retry_on: check_error) # because CI...
                                .with_timeout(total_timeout: 2)
                                .plugin(:multipart)
