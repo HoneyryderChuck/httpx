@@ -15,8 +15,8 @@ module Requests
             endpoint: amz_uri,
             force_path_style: true,
             ssl_verify_peer: false,
-            http_wire_trace: true,
-            logger: Logger.new(STDERR)
+            # http_wire_trace: true,
+            # logger: Logger.new(STDERR)
           )
           s3_client.create_bucket(bucket: "test", acl: "private")
           object = s3_client.put_object(bucket: "test", key: "testimage", body: "bucketz")

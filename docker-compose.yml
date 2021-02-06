@@ -20,6 +20,7 @@ services:
       - AWS_DEFAULT_REGION=us-east-1
       - AWS_ACCESS_KEY_ID=test
       - AWS_SECRET_ACCESS_KEY=test
+      - AMZ_HOST=aws:4566
     image: ruby:alpine
     privileged: true
     depends_on:

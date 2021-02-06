@@ -6,20 +6,20 @@ RUBY_PLATFORM=`ruby -e 'puts RUBY_PLATFORM'`
 RUBY_ENGINE=`ruby -e 'puts RUBY_ENGINE'`
 
 if [[ "$RUBY_ENGINE" = "truffleruby" ]]; then
-  apt-get update && apt-get install -y git iptables file
+  apt-get update && apt-get install -y curl git iptables file
 elif [[ "$RUBY_PLATFORM" = "java" ]]; then
   echo "
 deb http://deb.debian.org/debian sid main contrib non-free
 deb-src http://deb.debian.org/debian sid main contrib non-free" >> /etc/apt/sources.list
-  apt-get update && apt-get install -y git iptables file openssl libssl-dev ca-certificates
+  apt-get update && apt-get install -y curl git iptables file openssl libssl-dev ca-certificates
   update-ca-certificates
 elif [[ ${RUBY_VERSION:0:3} = "2.1" ]]; then
-  apk --update add g++ make git bash libsodium iptables file
+  apk --update add g++ make curl git bash libsodium iptables file
 elif [[ ${RUBY_VERSION:0:3} = "2.3" ]]; then
   # installing custom openssl
-  apk --update add g++ make git bash iptables file openssl=1.0.2u-r0 openssl-dev=1.0.2u-r0
+  apk --update add g++ make curl git bash iptables file openssl=1.0.2u-r0 openssl-dev=1.0.2u-r0
 else
-  apk --update add g++ make git bash iptables file
+  apk --update add g++ make curl git bash iptables file
 fi
 
 # use port 9090 to test connection timeouts
@@ -37,6 +37,13 @@ if [[ "$RUBY_ENGINE" = "truffleruby" ]]; then
 fi
 
 bundle install --quiet
+
+echo "Waiting for S3 at address ${AMZ_HOST}/health, attempting every 5s"
+until $(curl --silent --fail ${AMZ_HOST}/health | grep "\"s3\": \"running\"" > /dev/null); do
+    printf '.'
+    sleep 5
+done
+echo ' Success: Reached S3'
 
 export SSL_CERT_FILE=/home/test/support/ci/certs/ca-bundle.crt
 
