@@ -1,0 +1,65 @@
+module HTTPX
+  module Plugins
+
+    interface _SigV4Credentials
+      def username: () -> String
+      def password: () -> String
+      def security_token: () -> String?
+    end
+
+    module AWSSigV4
+
+      Credentials: _SigV4Credentials
+
+
+      class Signer
+
+        def sign!: (Request) -> void
+
+        private
+
+        def initialize: (
+          service: String,
+          region: String,
+          ?credentials: _SigV4Credentials,
+          ?username: String,
+          ?password: String,
+          ?security_token: String,
+          ?provider_prefix: String,
+          ?header_provider_field: String,
+          ?unsigned_headers: Array[String],
+          ?apply_checksum_header: bool,
+          ?algorithm: String
+        ) -> untyped
+
+
+        def sha256_hexdigest: (bodyIO value) -> String
+
+        def hmac: (String key, String value) -> String
+        def hexhmac: (String key, String value) -> String
+      end
+
+
+      interface _SigV4Options
+        def sigv4_signer: () -> Signer?
+        def sigv4_signer=: (Signer) -> Signer
+        def with_sigv4_signer: (Signer) -> instance
+      end
+
+      def self.extra_options: (Options) -> (Options & _SigV4Options)
+      def self.load_dependencies: (singleton(Session)) -> void
+
+      module InstanceMethods
+        def aws_sigv4_authentication: (**untyped) -> instance
+      end
+
+      module RequestMethods
+        def canonical_path: () -> String
+
+        def canonical_query: () -> String
+      end
+    end
+
+    type awsSigV4Session = Session & Plugins::AWSSigV4::InstanceMethods
+  end
+end
