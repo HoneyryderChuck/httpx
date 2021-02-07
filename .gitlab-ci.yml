@@ -22,6 +22,9 @@ variables:
     - docker:dind
   except:
     - blog
+  artifacts:
+    paths:
+      - coverage/
 
 .jit_matrix: &jit_matrix
   parallel:
@@ -38,16 +41,10 @@ test jruby:
   script:
     ./spec.sh jruby 9.0.0.0
   allow_failure: true
-  artifacts:
-    paths:
-      - coverage/
 test ruby 2/1:
   <<: *test_settings
   script:
     ./spec.sh ruby 2.1
-  artifacts:
-    paths:
-      - coverage/
 test ruby 2/2:
   <<: *test_settings
   only:
@@ -56,8 +53,6 @@ test ruby 2/2:
     ./spec.sh ruby 2.2
 test ruby 2/3:
   <<: *test_settings
-  only:
-    - master
   script:
     ./spec.sh ruby 2.3
 test ruby 2/4:
@@ -84,17 +79,11 @@ test ruby 2/7:
   <<: *jit_matrix
   script:
     ./spec.sh ruby 2.7
-  artifacts:
-    paths:
-      - coverage/
 test ruby 3/0:
   <<: *test_settings
   <<: *jit_matrix
   script:
     ./spec.sh ruby 3.0
-  artifacts:
-    paths:
-      - coverage/
 test truffleruby:
   <<: *test_settings
   script:

@@ -3,6 +3,8 @@
 module Requests
   module Plugins
     module Authentication
+      # Basic Auth
+
       def test_plugin_basic_authentication
         no_auth_response = HTTPX.get(basic_auth_uri)
         verify_status(no_auth_response, 401)
@@ -19,6 +21,8 @@ module Requests
         invalid_response = session.basic_authentication(user, "fake").get(basic_auth_uri)
         verify_status(invalid_response, 401)
       end
+
+      # Digest
 
       def test_plugin_digest_authentication
         session = HTTPX.plugin(:digest_authentication).with_headers("cookie" => "fake=fake_value")

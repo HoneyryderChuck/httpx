@@ -51,7 +51,7 @@ module HTTPX
 
     def disable_pipelining: () -> void
 
-    def set_request_headers: (Request) -> void
+    def set_protocol_headers: (Request) -> void
 
     def headline_uri: (Request) -> String
 

@@ -17,6 +17,10 @@ services:
       - BUNDLE_SILENCE_ROOT_WARNING=1
       - BUNDLE_APP_CONFIG=/usr/local/bundle
       - HTTPBIN_ALTSVC_HOST=another2
+      - AWS_DEFAULT_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AMZ_HOST=aws:4566
     image: ruby:alpine
     privileged: true
     depends_on:
@@ -24,10 +28,12 @@ services:
       - socksproxy 
       - sshproxy
       - nghttp2
+      - aws
     volumes:
       - ./:/home
     links:
       - "altsvc-nghttp2:another2"
+      - "aws:test.aws"
     entrypoint:
       /home/test/support/ci/build.sh
 
@@ -92,3 +98,14 @@ services:
     image: citizenstig/httpbin
     command:
       gunicorn --bind=0.0.0.0:8000 --workers=6 --access-logfile - --error-logfile - --log-level debug --capture-output httpbin:app
+
+  aws:
+    image: localstack/localstack
+    environment:
+      - SERVICES=s3
+      - HOSTNAME=aws
+      - DEBUG=1
+    ports:
+      - 4566:4566
+    volumes:
+      - ./test/support/ci/aws:/docker-entrypoint-initaws.d

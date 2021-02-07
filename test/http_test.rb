@@ -27,6 +27,7 @@ class HTTPTest < Minitest::Test
   include Plugins::Expect
   include Plugins::RateLimiter
   include Plugins::Stream
+  include Plugins::AWSAuthentication
 
   def test_verbose_log
     log = StringIO.new

@@ -133,7 +133,7 @@ All Rubies greater or equal to 2.1, and always latest JRuby.
 
 If your requirement is to run requests over HTTP/2 and TLS, make sure you run a version of the gem which compiles OpenSSL 1.0.2 (Ruby 2.3 and higher are guaranteed to).
 
-JRuby's `openssl` is based on Bouncy Castle, which is massively outdated and still doesn't implement ALPN. So HTTP/2 over TLS/ALPN negotiation is off until JRuby figures this out.
+In order to use HTTP/2 under JRuby, [check this link](https://gitlab.com/honeyryderchuck/httpx/-/wikis/JRuby-Truffleruby-Other-Rubies) to know what to do.
 
 ### Known bugs
 

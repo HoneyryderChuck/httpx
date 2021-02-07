@@ -1,0 +1,17 @@
+module HTTPX
+  module Plugins
+    module AwsSdkAuthentication
+      class Credentials
+        include _SigV4Credentials
+      end
+
+      def self.load_dependencies: (singleton(Session)) -> void
+
+      def self.extra_options: (Options) -> (Options)
+
+      module InstanceMethods
+        def aws_sdk_authentication: (**untyped) -> instance
+      end
+    end
+  end
+end
