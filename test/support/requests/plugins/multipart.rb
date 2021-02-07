@@ -165,7 +165,9 @@ module Requests
 
       # safety-check test only check if request is successfully rewinded
       def test_plugin_multipart_retry_file_post
-        check_error = ->(response) { response.is_a?(HTTPX::ErrorResponse) || response.status == 405 }
+        check_error = lambda { |response|
+          (response.is_a?(HTTPX::ErrorResponse) && response.error.is_a?(HTTPX::TimeoutError)) || response.status == 405
+        }
         uri = build_uri("/delay/4")
         retries_session = HTTPX.plugin(RequestInspector)
                                .with(debug: $stderr, debug_level: 2) # CI Debug

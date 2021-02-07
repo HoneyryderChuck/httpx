@@ -229,7 +229,8 @@ module HTTPX
       if error && error != :no_error
         ex = Error.new(stream.id, error)
         ex.set_backtrace(caller)
-        emit(:error, request, ex)
+        response = ErrorResponse.new(request, ex, request.options)
+        emit(:response, request, response)
       else
         response = request.response
         if response.status == 421

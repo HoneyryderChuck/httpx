@@ -37,6 +37,7 @@ module HTTPX
     end
 
     def emit(request, response)
+      return unless response.respond_to?(:headers)
       # Alt-Svc
       return unless response.headers.key?("alt-svc")
 
