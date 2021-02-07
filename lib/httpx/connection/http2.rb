@@ -226,6 +226,10 @@ module HTTPX
     end
 
     def on_stream_close(stream, request, error)
+      log(level: 2) { "#{stream.id}: closing stream" }
+      @drains.delete(request)
+      @streams.delete(request)
+
       if error && error != :no_error
         ex = Error.new(stream.id, error)
         ex.set_backtrace(caller)
@@ -241,9 +245,6 @@ module HTTPX
           emit(:response, request, response)
         end
       end
-      log(level: 2) { "#{stream.id}: closing stream" }
-
-      @streams.delete(request)
       send(@pending.shift) unless @pending.empty?
       return unless @streams.empty? && exhausted?
 
