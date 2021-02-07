@@ -40,7 +40,7 @@ group :test do
   end
 
   platform :mri_23 do
-    if RUBY_VERSION > "2.2"
+    if RUBY_VERSION >= "2.3"
       gem "openssl", "< 2.0.6" # force usage of openssl version we patch against
     end
     gem "msgpack", "<= 1.3.3"
