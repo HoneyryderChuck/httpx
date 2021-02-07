@@ -29,18 +29,13 @@ module HTTPX::Plugins
 
       def rewind
         form = @form.each_with_object([]) do |(key, val), aux|
-          v = case val
-              when File
-                val = val.reopen(val.path, File::RDONLY) if val.closed?
-                val.rewind
-                val
-              else
-                v
-          end
-          aux << [key, v]
+          val = val.reopen(val.path, File::RDONLY) if val.is_a?(File) && val.closed?
+          val.rewind if val.respond_to?(:rewind)
+          aux << [key, val]
         end
         @form = form
         @parts = to_parts(form)
+        @part_index = 0
       end
 
       private
