@@ -49,12 +49,14 @@ module HTTPX
           lower_provider_prefix = "#{@provider_prefix}4"
           upper_provider_prefix = lower_provider_prefix.upcase
 
+          downcased_algorithm = @algorithm.downcase
+
           datetime = (request.headers["x-#{@header_provider_field}-date"] ||= Time.now.utc.strftime("%Y%m%dT%H%M%SZ"))
           date = datetime[0, 8]
 
-          content_sha256 = request.headers["x-#{@header_provider_field}-content-sha256"] || sha256_hexdigest(request.body)
+          content_hashed = request.headers["x-#{@header_provider_field}-content-#{downcased_algorithm}"] || hexdigest(request.body)
 
-          request.headers["x-#{@header_provider_field}-content-sha256"] ||= content_sha256 if @apply_checksum_header
+          request.headers["x-#{@header_provider_field}-content-#{downcased_algorithm}"] ||= content_hashed if @apply_checksum_header
           request.headers["x-#{@header_provider_field}-security-token"] ||= @credentials.security_token if @credentials.security_token
 
           signature_headers = request.headers.each.reject do |k, _|
@@ -77,7 +79,7 @@ module HTTPX
             "\n#{request.canonical_query}" \
             "\n#{canonical_headers}" \
             "\n#{signed_headers}" \
-            "\n#{content_sha256}"
+            "\n#{content_hashed}"
 
           credential_scope = "#{date}" \
             "/#{@region}" \
@@ -89,7 +91,7 @@ module HTTPX
           sts = "#{algo_line}" \
                 "\n#{datetime}" \
                 "\n#{credential_scope}" \
-                "\n#{sha256_hexdigest(creq)}"
+                "\n#{hexdigest(creq)}"
 
           # signature
           k_date = hmac("#{upper_provider_prefix}#{@credentials.password}", date)
@@ -109,32 +111,32 @@ module HTTPX
 
         private
 
-        def sha256_hexdigest(value)
+        def hexdigest(value)
           if value.respond_to?(:to_path)
             # files, pathnames
-            OpenSSL::Digest::SHA256.file(value.to_path).hexdigest
+            OpenSSL::Digest.new(@algorithm).file(value.to_path).hexdigest
           elsif value.respond_to?(:each)
-            sha256 = OpenSSL::Digest.new("SHA256")
+            digest = OpenSSL::Digest.new(@algorithm)
 
             mb_buffer = value.each.each_with_object("".b) do |chunk, buffer|
               buffer << chunk
               break if buffer.bytesize >= 1024 * 1024
             end
 
-            sha256.update(mb_buffer)
+            digest.update(mb_buffer)
             value.rewind
-            sha256.hexdigest
+            digest.hexdigest
           else
-            OpenSSL::Digest::SHA256.hexdigest(value)
+            OpenSSL::Digest.new(@algorithm).hexdigest(value)
           end
         end
 
         def hmac(key, value)
-          OpenSSL::HMAC.digest(OpenSSL::Digest.new("SHA256"), key, value)
+          OpenSSL::HMAC.digest(OpenSSL::Digest.new(@algorithm), key, value)
         end
 
         def hexhmac(key, value)
-          OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("SHA256"), key, value)
+          OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new(@algorithm), key, value)
         end
       end
 
