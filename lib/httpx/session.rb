@@ -269,7 +269,13 @@ module HTTPX
       end
       # :nocov:
     end
+  end
 
-    plugin(:proxy) unless ENV.grep(/https?_proxy$/i).empty?
+  unless ENV.grep(/https?_proxy$/i).empty?
+    proxy_session = plugin(:proxy)
+    ::HTTPX.send(:remove_const, :Session)
+    ::HTTPX.send(:const_set, :Session, proxy_session.class)
+  end
+
   end
 end
