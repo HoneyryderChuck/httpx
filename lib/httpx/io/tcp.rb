@@ -69,7 +69,7 @@ module HTTPX
       @ip_index -= 1
       retry
     rescue Errno::ETIMEDOUT => e
-      raise ConnectTimeoutError, e.message if @ip_index <= 0
+      raise ConnectTimeoutError.new(@options.timeout.connect_timeout, e.message) if @ip_index <= 0
 
       @ip_index -= 1
       retry
