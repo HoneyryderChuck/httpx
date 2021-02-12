@@ -107,7 +107,7 @@ module HTTPX
               case aname
               when "expires"
                 # RFC 6265 5.2.1
-                (avalue &&= Time.httpdate(avalue)) || next
+                (avalue &&= Time.parse(avalue)) || next
               when "max-age"
                 # RFC 6265 5.2.2
                 next unless /\A-?\d+\z/.match?(avalue)
