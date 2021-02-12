@@ -268,6 +268,7 @@ module HTTPX
           # dread
           loop do
             siz = @io.read(@window_size, @read_buffer)
+            log(level: 3, color: :cyan) { "IO READ: #{siz} bytes..." }
             unless siz
               ex = EOFError.new("descriptor closed")
               ex.set_backtrace(caller)
@@ -296,6 +297,7 @@ module HTTPX
             end
 
             siz = @io.write(@write_buffer)
+            log(level: 3, color: :cyan) { "IO WRITE: #{siz} bytes..." }
             unless siz
               ex = EOFError.new("descriptor closed")
               ex.set_backtrace(caller)

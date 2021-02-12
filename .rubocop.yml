@@ -78,6 +78,10 @@ Style/TrailingUnderscoreVariable:
 Style/AccessModifierDeclarations:
   Enabled: false
 
+Style/GlobalVars:
+  Exclude:
+    - lib/httpx/plugins/internal_telemetry.rb
+
 Performance/TimesMap:
   Enabled: false
 
