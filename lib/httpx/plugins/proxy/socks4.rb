@@ -16,6 +16,14 @@ module HTTPX
         Error = Socks4Error
 
         module ConnectionMethods
+          def interests
+            if @state == :connecting
+              return @write_buffer.empty? ? :r : :w
+            end
+
+            super
+          end
+
           private
 
           def transition(nextstate)
