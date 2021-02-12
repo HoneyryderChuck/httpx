@@ -135,7 +135,6 @@ module HTTPX
       connection.on(:close) do
         unregister_connection(connection)
       end
-      return if connection.state == :open
     end
 
     def unregister_connection(connection)
