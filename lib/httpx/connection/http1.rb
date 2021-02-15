@@ -161,6 +161,16 @@ module HTTPX
     end
 
     def handle_error(ex)
+      if ex.is_a?(EOFError) && @request && @request.response &&
+         !@request.response.headers.key?("content-length") &&
+         !@request.response.headers.key?("transfer-encoding")
+        # if the response does not contain a content-length header, the server closing the
+        # connnection is the indicator of response consumed.
+        # https://greenbytes.de/tech/webdav/rfc2616.html#rfc.section.4.4
+        on_complete
+        return
+      end
+
       if @pipelining
         disable
       else
