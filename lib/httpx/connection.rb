@@ -251,6 +251,7 @@ module HTTPX
 
     def consume
       catch(:called) do
+        epiped = false
         loop do
           parser.consume
 
@@ -321,7 +322,19 @@ module HTTPX
               break
             end
 
-            siz = @io.write(@write_buffer)
+            begin
+              siz = @io.write(@write_buffer)
+            rescue Errno::EPIPE
+              # this can happen if we still have bytes in the buffer to send to the server, but
+              # the server wants to respond immediately with some message, or an error. An example is
+              # when one's uploading a big file to an unintended endpoint, and the server stops the
+              # consumption, and responds immediately with an authorization of even method not allowed error.
+              # at this point, we have to let the connection switch to read-mode.
+              log(level: 2) { "pipe broken, could not flush buffer..." }
+              epiped = true
+              read_drained = false
+              break
+            end
             log(level: 3, color: :cyan) { "IO WRITE: #{siz} bytes..." }
             unless siz
               ex = EOFError.new("descriptor closed")
