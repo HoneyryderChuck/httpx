@@ -293,13 +293,14 @@ module HTTPX
             # socket has been drained. mark and exit the read loop.
             if siz.zero?
               read_drained = @read_buffer.empty?
+              epiped = false
               break
             end
 
             parser << @read_buffer.to_s
 
             # continue reading if possible.
-            break if interests == :w
+            break if interests == :w && !epiped
 
             # exit the read loop if connection is preparing to be closed
             break if @state == :closing || @state == :closed
