@@ -21,10 +21,6 @@ module HTTPX
       @state = :negotiated if @keep_open
     end
 
-    def interests
-      @interests || super
-    end
-
     def protocol
       @io.alpn_protocol || super
     rescue StandardError
@@ -66,6 +62,7 @@ module HTTPX
       @io.connect_nonblock
       @io.post_connection_check(@sni_hostname) if @ctx.verify_mode != OpenSSL::SSL::VERIFY_NONE
       transition(:negotiated)
+      @interests = :w
     rescue ::IO::WaitReadable
       @interests = :r
     rescue ::IO::WaitWritable
