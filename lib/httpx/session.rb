@@ -199,7 +199,18 @@ module HTTPX
           responses << response
           requests.shift
 
-          break if requests.empty? || pool.empty?
+          break if requests.empty?
+
+          next unless pool.empty?
+
+          # in some cases, the pool of connections might have been drained because there was some
+          # handshake error, and the error responses have already been emitted, but there was no
+          # opportunity to traverse the requests, hence we're returning only a fraction of the errors
+          # we were supposed to. This effectively fetches the existing responses and return them.
+          while (request = requests.shift)
+            responses << fetch_response(request, connections, request_options)
+          end
+          break
         end
         responses
       ensure
