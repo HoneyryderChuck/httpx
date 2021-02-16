@@ -174,7 +174,7 @@ module Requests
                                .with_timeout(total_timeout: 2)
                                .plugin(:multipart)
         retries_response = retries_session.post(uri, retry_change_requests: true, form: { image: File.new(fixture_file_path) })
-        assert check_error[retries_response]
+        assert check_error[retries_response], "expected #{retries_response} to be an error response"
         assert retries_session.calls == 1, "expect request to be retried 1 time (was #{retries_session.calls})"
       end
 

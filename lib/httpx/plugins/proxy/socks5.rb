@@ -35,6 +35,14 @@ module HTTPX
             super || @state == :authenticating || @state == :negotiating
           end
 
+          def interests
+            if @state == :connecting || @state == :authenticating || @state == :negotiating
+              return @write_buffer.empty? ? :r : :w
+            end
+
+            super
+          end
+
           private
 
           def transition(nextstate)

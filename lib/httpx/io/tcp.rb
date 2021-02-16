@@ -7,7 +7,7 @@ module HTTPX
   class TCP
     include Loggable
 
-    attr_reader :ip, :port, :addresses, :state
+    attr_reader :ip, :port, :addresses, :state, :interests
 
     alias_method :host, :ip
 
@@ -18,6 +18,7 @@ module HTTPX
       @options = Options.new(options)
       @fallback_protocol = @options.fallback_protocol
       @port = origin.port
+      @interests = :w
       if @options.io
         @io = case @options.io
               when Hash
@@ -39,10 +40,6 @@ module HTTPX
       @io ||= build_socket
     end
 
-    def interests
-      :w
-    end
-
     def to_io
       @io.to_io
     end
@@ -62,6 +59,8 @@ module HTTPX
         @io.connect_nonblock(Socket.sockaddr_in(@port, @ip.to_s))
       rescue Errno::EISCONN
       end
+      @interests = :w
+
       transition(:connected)
     rescue Errno::EHOSTUNREACH => e
       raise e if @ip_index <= 0
@@ -69,13 +68,15 @@ module HTTPX
       @ip_index -= 1
       retry
     rescue Errno::ETIMEDOUT => e
-      raise ConnectTimeoutError, e.message if @ip_index <= 0
+      raise ConnectTimeoutError.new(@options.timeout.connect_timeout, e.message) if @ip_index <= 0
 
       @ip_index -= 1
       retry
     rescue Errno::EINPROGRESS,
-           Errno::EALREADY,
-           ::IO::WaitReadable
+           Errno::EALREADY
+      @interests = :w
+    rescue ::IO::WaitReadable
+      @interests = :r
     end
 
     if RUBY_VERSION < "2.3"

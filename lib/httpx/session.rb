@@ -199,7 +199,18 @@ module HTTPX
           responses << response
           requests.shift
 
-          break if requests.empty? || pool.empty?
+          break if requests.empty?
+
+          next unless pool.empty?
+
+          # in some cases, the pool of connections might have been drained because there was some
+          # handshake error, and the error responses have already been emitted, but there was no
+          # opportunity to traverse the requests, hence we're returning only a fraction of the errors
+          # we were supposed to. This effectively fetches the existing responses and return them.
+          while (request = requests.shift)
+            responses << fetch_response(request, connections, request_options)
+          end
+          break
         end
         responses
       ensure
@@ -269,7 +280,17 @@ module HTTPX
       end
       # :nocov:
     end
+  end
 
-    plugin(:proxy) unless ENV.grep(/https?_proxy$/i).empty?
+  unless ENV.grep(/https?_proxy$/i).empty?
+    proxy_session = plugin(:proxy)
+    ::HTTPX.send(:remove_const, :Session)
+    ::HTTPX.send(:const_set, :Session, proxy_session.class)
+  end
+
+  if Session.default_options.debug_level > 2
+    proxy_session = plugin(:internal_telemetry)
+    ::HTTPX.send(:remove_const, :Session)
+    ::HTTPX.send(:const_set, :Session, proxy_session.class)
   end
 end

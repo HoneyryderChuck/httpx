@@ -19,7 +19,6 @@ require "httpx/headers"
 require "httpx/request"
 require "httpx/response"
 require "httpx/chainable"
-require "httpx/session"
 
 # Top-Level Namespace
 #
@@ -59,3 +58,5 @@ module HTTPX
 
   extend Chainable
 end
+
+require "httpx/session"

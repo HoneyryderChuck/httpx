@@ -23,6 +23,8 @@ module HTTPX
 
     def <<: (String) -> void
 
+    def can_buffer_more_requests: () -> bool
+
     def send: (Request) -> void
 
     def consume: () -> void

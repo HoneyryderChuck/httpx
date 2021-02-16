@@ -42,7 +42,7 @@ module HTTPX
         return @buffer.empty? ? :r : :rw
       end
 
-      return :w unless @pending.empty?
+      return :w if !@pending.empty? && can_buffer_more_requests?
 
       return :w if @streams.each_key.any? { |r| r.interests == :w }
 
@@ -70,10 +70,14 @@ module HTTPX
       @connection << data
     end
 
+    def can_buffer_more_requests?
+      @handshake_completed &&
+        @streams.size < @max_concurrent_requests &&
+        @streams.size < @max_requests
+    end
+
     def send(request)
-      if !@handshake_completed ||
-         @streams.size >= @max_concurrent_requests ||
-         @streams.size >= @max_requests
+      unless can_buffer_more_requests?
         @pending << request
         return
       end
