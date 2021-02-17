@@ -130,15 +130,20 @@ module Requests
         assert !path_jar[build_uri("/cookies/set")].empty?
 
         # Test expires
-        expires_jar = HTTPX::Plugins::Cookies::Jar.new
-        expires_jar.parse(%(a=b; Path=/; Max-Age=2))
-        assert !expires_jar[cookies_uri].empty?
+        maxage_jar = HTTPX::Plugins::Cookies::Jar.new
+        maxage_jar.parse(%(a=b; Path=/; Max-Age=2))
+        assert !maxage_jar[cookies_uri].empty?
         sleep 3
+        assert maxage_jar[cookies_uri].empty?
+
+        expires_jar = HTTPX::Plugins::Cookies::Jar.new
+        expires_jar.parse(%(a=b; Path=/; Expires=Sat, 02 Nov 2019 15:24:00 GMT))
         assert expires_jar[cookies_uri].empty?
 
-        maxage_jar = HTTPX::Plugins::Cookies::Jar.new
-        maxage_jar.parse(%(a=b; Path=/; Expires=Sat, 02 Nov 2019 15:24:00 GMT))
-        assert maxage_jar[cookies_uri].empty?
+        # regression test
+        rfc2616_expires_jar = HTTPX::Plugins::Cookies::Jar.new
+        rfc2616_expires_jar.parse(%(a=b; Path=/; Expires=Fri, 17-Feb-2023 12:43:41 GMT))
+        assert !rfc2616_expires_jar[cookies_uri].empty?
 
         # Test domain
         domain_jar = HTTPX::Plugins::Cookies::Jar.new
