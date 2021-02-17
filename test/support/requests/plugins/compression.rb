@@ -85,6 +85,26 @@ module Requests
         assert compressed_data.bytesize < 8012, "body hasn't been compressed"
       end
 
+      # regression test
+      def test_plugin_compression_no_content_length
+        # run this only for http/1.1 mode, as this is a local test server
+        return unless origin.start_with?("http://")
+
+        server = NoContentLengthServer.new
+        th = Thread.new { server.start }
+        begin
+          http = HTTPX.plugin(:compression)
+          uri = build_uri("/", server.origin)
+          response = http.get(uri)
+          verify_status(response, 200)
+          body = response.body.to_s
+          assert body == "helloworld"
+        ensure
+          server.shutdown
+          th.join
+        end
+      end
+
       unless RUBY_ENGINE == "jruby"
         def test_plugin_compression_brotli
           session = HTTPX.plugin(:"compression/brotli")

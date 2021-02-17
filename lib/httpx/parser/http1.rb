@@ -66,7 +66,6 @@ module HTTPX
         @status_code = code.to_i
         raise(Error, "wrong status code (#{@status_code})") unless (100..599).cover?(@status_code)
 
-        # @buffer.slice!(0, idx + 1)
         @buffer = @buffer.byteslice((idx + 1)..-1)
         nextstate(:headers)
       end
@@ -74,7 +73,8 @@ module HTTPX
       def parse_headers
         headers = @headers
         while (idx = @buffer.index("\n"))
-          line = @buffer.slice!(0, idx + 1).sub(/\s+\z/, "")
+          line = @buffer.byteslice(0..idx).sub(/\s+\z/, "")
+          @buffer = @buffer.byteslice((idx + 1)..-1)
           if line.empty?
             case @state
             when :headers
@@ -96,11 +96,11 @@ module HTTPX
           separator_index = line.index(":")
           raise Error, "wrong header format" unless separator_index
 
-          key = line[0..separator_index - 1]
+          key = line.byteslice(0..(separator_index - 1))
           raise Error, "wrong header format" if key.start_with?("\s", "\t")
 
           key.strip!
-          value = line[separator_index + 1..-1]
+          value = line.byteslice((separator_index + 1)..-1)
           value.strip!
           raise Error, "wrong header format" if value.nil?
 
