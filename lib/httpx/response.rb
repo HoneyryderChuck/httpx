@@ -274,7 +274,8 @@ module HTTPX
       end
     else
       def to_s
-        "#{@error.message} (#{@error.class})\n#{@error.backtrace.join("\n")}"
+        "#{@error.message} (#{@error.class})\n" \
+        "#{@error.backtrace.join("\n") if @error.backtrace}"
       end
     end
 
