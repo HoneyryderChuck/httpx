@@ -44,11 +44,9 @@ module HTTPX::Transcoder
       end
 
       def method_missing(meth, *args, &block)
-        if @raw.respond_to?(meth)
-          @raw.__send__(meth, *args, &block)
-        else
-          super
-        end
+        return super unless @raw.respond_to?(meth)
+
+        @raw.__send__(meth, *args, &block)
       end
     end
 

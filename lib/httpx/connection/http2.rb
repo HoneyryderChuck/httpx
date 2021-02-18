@@ -333,11 +333,9 @@ module HTTPX
     end
 
     def method_missing(meth, *args, &blk)
-      if @connection.respond_to?(meth)
-        @connection.__send__(meth, *args, &blk)
-      else
-        super
-      end
+      return super unless @connection.respond_to?(meth)
+
+      @connection.__send__(meth, *args, &blk)
     end
   end
   Connection.register "h2", Connection::HTTP2

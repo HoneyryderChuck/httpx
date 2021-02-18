@@ -223,11 +223,9 @@ module HTTPX
       end
 
       def method_missing(meth, *args, &block)
-        if @body.respond_to?(meth)
-          @body.__send__(meth, *args, &block)
-        else
-          super
-        end
+        return super unless @body.respond_to?(meth)
+
+        @body.__send__(meth, *args, &block)
       end
     end
 

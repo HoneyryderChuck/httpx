@@ -119,11 +119,9 @@ module HTTPX
         end
 
         def method_missing(meth, *args, &block)
-          if @options.response_class.public_method_defined?(meth)
-            response.__send__(meth, *args, &block)
-          else
-            super
-          end
+          return super unless @options.response_class.public_method_defined?(meth)
+
+          response.__send__(meth, *args, &block)
         end
       end
     end
