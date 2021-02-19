@@ -23,6 +23,7 @@ module HTTPX
         end
 
         def load_dependencies(*)
+          # :nocov:
           begin
             unless defined?(HTTP::FormData)
               # in order not to break legacy code, we'll keep loading http/form_data for them.
@@ -33,6 +34,7 @@ module HTTPX
             end
           rescue LoadError
           end
+          # :nocov:
           require "httpx/plugins/multipart/encoder"
           require "httpx/plugins/multipart/part"
           require "httpx/plugins/multipart/mime_type_detector"
