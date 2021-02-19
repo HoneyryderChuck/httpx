@@ -69,6 +69,11 @@ class HTTPX::Selector
 
         if @selectables.empty?
           @selectables = selectables
+
+          # do not run event loop if there's nothing to wait on.
+          # this might happen if connect failed and connection was unregistered.
+          return if (!r || r.empty?) && (!w || w.empty?)
+
           break
         else
           @selectables = [*selectables, @selectables]
