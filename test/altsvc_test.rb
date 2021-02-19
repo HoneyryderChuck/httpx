@@ -5,6 +5,17 @@ require_relative "test_helper"
 class AltSvcTest < Minitest::Test
   include HTTPX
 
+  def test_altsvc_cache
+    assert AltSvc.cached_altsvc("http://www.example.com").empty?
+    AltSvc.cached_altsvc_set("http://www.example.com", { "origin" => "http://alt.example.com", "ma" => 2 })
+    entries = AltSvc.cached_altsvc("http://www.example.com")
+    assert !entries.empty?
+    entry = entries.first
+    assert entry["origin"] == "http://alt.example.com"
+    sleep 3
+    assert AltSvc.cached_altsvc("http://www.example.com").empty?
+  end
+
   def test_altsvc_parse_svc
     assert [["h2=alt.example.com", {}]], AltSvc.parse("h2=alt.example.com").to_a
   end
