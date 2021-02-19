@@ -62,13 +62,7 @@ module HTTPX
         handler = @registry.fetch(tag)
         raise(Error, "#{tag} is not registered in #{self}") unless handler
 
-        case handler
-        when Symbol, String
-          obj = const_get(handler)
-          @registry[tag] = obj
-        else
-          handler
-        end
+        handler
       end
 
       # @param [Object] tag the identifier for the handler in the registry
