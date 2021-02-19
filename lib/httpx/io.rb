@@ -17,8 +17,10 @@ module HTTPX
         require "httpx/io/tls"
         register "ssl", TLS
       rescue LoadError
+        # :nocov:
         require "httpx/io/ssl"
         register "ssl", SSL
+        # :nocov:
       end
     else
       require "httpx/io/ssl"

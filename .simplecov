@@ -3,6 +3,7 @@ SimpleCov.start do
   add_filter "/.bundle/"
   add_filter "/vendor/"
   add_filter "/test/"
+  add_filter "/integrations/"
   add_filter "/lib/httpx/extensions.rb"
   add_filter "/lib/httpx/loggable.rb"
   add_filter "/lib/httpx/plugins/internal_telemetry.rb"
