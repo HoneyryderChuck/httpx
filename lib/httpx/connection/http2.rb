@@ -46,7 +46,11 @@ module HTTPX
 
       return :w if @streams.each_key.any? { |r| r.interests == :w }
 
-      return :r if @buffer.empty?
+      if @buffer.empty?
+        return if @streams.empty? && @pings.empty?
+
+        return :r
+      end
 
       :rw
     end

@@ -3,7 +3,7 @@ module HTTPX
     include Callbacks
     include Loggable
 
-    attr_reader streams: Hash[HTTP2Next::Stream, Response]
+    attr_reader streams: Hash[Request, HTTP2Next::Stream]
     attr_reader pending: Array[Request]
 
     @options: Options
@@ -13,7 +13,7 @@ module HTTPX
     @pings: Array[String]
     @buffer: Buffer
 
-    def interests: () -> io_interests
+    def interests: () -> io_interests?
 
     def close: () -> void
 

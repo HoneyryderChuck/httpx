@@ -43,7 +43,7 @@ module HTTPX
         end
 
         def __on_promise_request(parser, stream, h)
-          log(level: 1) do
+          log(level: 1, color: :yellow) do
             # :nocov:
             h.map { |k, v| "#{stream.id}: -> PROMISE HEADER: #{k}: #{v}" }.join("\n")
             # :nocov:
@@ -57,6 +57,8 @@ module HTTPX
             request.merge_headers(headers)
             promise_headers[stream] = request
             parser.pending.delete(request)
+            parser.streams[request] = stream
+            request.transition(:done)
           else
             stream.refuse
           end
@@ -67,7 +69,6 @@ module HTTPX
           return unless request
 
           parser.__send__(:on_stream_headers, stream, request, h)
-          request.transition(:done)
           response = request.response
           response.mark_as_pushed!
           stream.on(:data, &parser.method(:on_stream_data).curry(3)[stream, request])
