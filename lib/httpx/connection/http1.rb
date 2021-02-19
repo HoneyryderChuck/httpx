@@ -117,7 +117,7 @@ module HTTPX
       response = @request.response
       log(level: 2) { "trailer headers received" }
 
-      log(color: :yellow) { h.each.map { |f, v| "-> HEADER: #{f}: #{v}" }.join("\n") }
+      log(color: :yellow) { h.each.map { |f, v| "-> HEADER: #{f}: #{v.join(", ")}" }.join("\n") }
       response.merge_headers(h)
     end
 
