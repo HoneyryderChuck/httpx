@@ -288,9 +288,11 @@ module HTTPX
     ::HTTPX.send(:const_set, :Session, proxy_session.class)
   end
 
+  # :nocov:
   if Session.default_options.debug_level > 2
     proxy_session = plugin(:internal_telemetry)
     ::HTTPX.send(:remove_const, :Session)
     ::HTTPX.send(:const_set, :Session, proxy_session.class)
   end
+  # :nocov:
 end

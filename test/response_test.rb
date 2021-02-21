@@ -47,7 +47,14 @@ class ResponseTest < Minitest::Test
 
     body3 = Response::Body.new(Response.new(request("head"), 200, "2.0", {}), threshold_size: 1024)
     assert body3.empty?, "body must be empty after initialization"
-    assert body3 == "", "HEAD requets body must be empty"
+    assert body3 == "", "HEAD request body must be empty (#{body3})"
+
+    text = +"heãd"
+    text.force_encoding(Encoding::BINARY)
+    body4 = Response::Body.new(Response.new(request, 200, "2.0", { "content-type" => "text/html; charset=utf" }), threshold_size: 1024)
+    body4.write(text)
+    req_text = body4.to_s
+    assert text == req_text, "request body must be in original encoding (#{req_text})"
   end
 
   def test_response_body_copy_to_memory

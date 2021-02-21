@@ -64,6 +64,24 @@ class HTTPTest < Minitest::Test
     end
   end
 
+  def test_trailers
+    server = HTTPTrailersServer.new
+    th = Thread.new { server.start }
+    begin
+      uri = "#{server.origin}/"
+      HTTPX.plugin(SessionWithPool).wrap do |http|
+        response = http.get(uri)
+        assert response.to_s == "trailers", "expected trailers endpoint"
+        verify_header(response.headers, "trailer", "x-trailer,x-trailer-2")
+        verify_header(response.headers, "x-trailer", "hello")
+        verify_header(response.headers, "x-trailer-2", "world")
+      end
+    ensure
+      server.shutdown
+      th.join
+    end
+  end
+
   private
 
   def origin(orig = httpbin)

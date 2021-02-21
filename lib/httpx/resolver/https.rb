@@ -55,20 +55,12 @@ module HTTPX
       early_resolve(connection) || resolve(connection)
     end
 
-    def timeout
-      @connections.map(&:timeout).min
-    end
-
     def closed?
-      return true unless @resolver_connection
-
-      resolver_connection.closed?
+      true
     end
 
-    def interests
-      return if @queries.empty?
-
-      resolver_connection.__send__(__method__)
+    def empty?
+      true
     end
 
     private

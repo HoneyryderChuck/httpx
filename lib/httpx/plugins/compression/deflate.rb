@@ -18,10 +18,7 @@ module HTTPX
           module_function
 
           def deflate(raw, buffer, chunk_size:)
-            deflater = Zlib::Deflate.new(Zlib::BEST_COMPRESSION,
-                                         Zlib::MAX_WBITS,
-                                         Zlib::MAX_MEM_LEVEL,
-                                         Zlib::HUFFMAN_ONLY)
+            deflater = Zlib::Deflate.new
             while (chunk = raw.read(chunk_size))
               compressed = deflater.deflate(chunk)
               buffer << compressed

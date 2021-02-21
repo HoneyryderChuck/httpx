@@ -30,7 +30,8 @@ module Requests
         # this google host will resolve to a CNAME
         uri.host = "lh3.googleusercontent.com"
         response = session.head(uri, resolver_class: resolver, resolver_options: options)
-        assert response.status < 500
+        assert !response.is_a?(HTTPX::ErrorResponse), "response was an error (#{response})"
+        assert response.status < 500, "unexpected HTTP error (#{response})"
         response.close
       end
 

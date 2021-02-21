@@ -31,7 +31,7 @@ module HTTPX
 
     def on_headers: (Hash[String, Array[String]] headers) -> void
 
-    def on_trailers: (Array[String, String] headers) -> void
+    def on_trailers: (Hash[String, Array[String]] headers) -> void
 
     def on_data: (string chunk) -> void
 

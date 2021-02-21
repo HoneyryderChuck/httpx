@@ -123,11 +123,9 @@ module Faraday
           end
 
           def method_missing(meth, *args, &blk)
-            if @env && @env.respond_to?(meth)
-              @env.__send__(meth, *args, &blk)
-            else
-              super
-            end
+            return super unless @env && @env.respond_to?(meth)
+
+            @env.__send__(meth, *args, &blk)
           end
         end
 
