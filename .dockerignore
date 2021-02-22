@@ -3,7 +3,7 @@
 .gitignore
 .gitlab-ci.yml
 .bundle
-docker-compose.yml
+.docker-compose
 Gemfile.lock
 coverage
 tmp

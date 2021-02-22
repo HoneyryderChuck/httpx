@@ -1,0 +1,38 @@
+Metrics/AbcSize:
+  Max: 185
+
+Metrics/CyclomaticComplexity:
+  Max: 60
+
+Metrics/PerceivedComplexity:
+  Max: 46
+
+Metrics/ModuleLength:
+  Max: 325
+
+Metrics/BlockLength:
+  Max: 200
+
+Metrics/BlockNesting:
+  Enabled: False
+
+  #Naming/MethodName:
+
+Style/SafeNavigation:
+  Enabled: false
+
+Security/Eval:
+  Enabled: false
+
+Style/ClassAndModuleChildren:
+  Enabled: false
+
+Style/NumericPredicate:
+  Exclude:
+    - lib/palanca/extensions/*.rb
+
+Style/Documentation:
+  Enabled: false
+
+Naming/AccessorMethodName:
+  Enabled: false

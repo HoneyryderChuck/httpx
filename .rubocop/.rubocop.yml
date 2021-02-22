@@ -1,0 +1,89 @@
+inherit_from: .rubocop_todo.yml
+
+AllCops:
+  TargetRubyVersion: 2.4
+  DisplayCopNames: true
+  Include:
+    - '**/lib/**/*.rb'
+    - '**/test/**/*.rb'
+    - '**/integrations/**/*.rb'
+    - '**/Rakefile'
+    - '**/httpx.gemspec'
+    - '**/profiler/**/*'
+  Exclude:
+    - '**/bugreports/*'
+    - '**/examples/**/*'
+    - '**/.bundle/**/*'
+    - '**/vendor/**/*'
+    - '**/www/**/*'
+    - '**/lib/httpx/extensions.rb'
+    # Do not lint ffi block, for openssl parity
+    - '**/lib/httpx/io/tls/*.rb'
+
+Metrics/ClassLength:
+  Max: 400
+
+Metrics/MethodLength:
+  Max: 200
+
+Metrics/ParameterLists:
+  Max: 6
+  CountKeywordArgs: false
+
+Naming/FileName:
+  Exclude:
+    - Gemfile
+    - Rakefile
+
+Layout/EndAlignment:
+  EnforcedStyleAlignWith: variable
+
+Style/Alias:
+  EnforcedStyle: prefer_alias_method
+
+Style/TrailingCommaInHashLiteral:
+  EnforcedStyleForMultiline: comma
+
+Style/TrailingCommaInArrayLiteral:
+  EnforcedStyleForMultiline: comma
+
+Style/StringLiterals:
+  EnforcedStyle: double_quotes 
+
+Style/StringLiteralsInInterpolation:
+  EnforcedStyle: double_quotes 
+
+Style/SignalException:
+  Enabled: false
+
+Style/ParallelAssignment:
+  Enabled: false
+
+Style/ParenthesesAroundCondition:
+  Enabled: false
+
+Style/IfInsideElse:
+  Enabled: false
+
+Style/MultilineIfModifier:
+  Enabled: false
+
+Style/TrailingCommaInArguments:
+  Enabled: false
+
+Style/TrailingUnderscoreVariable:
+  Enabled: false
+
+Style/AccessModifierDeclarations:
+  Enabled: false
+
+Style/GlobalVars:
+  Exclude:
+    - lib/httpx/plugins/internal_telemetry.rb
+
+Performance/TimesMap:
+  Enabled: false
+
+Performance/RedundantBlockCall:
+  Enabled: false
+

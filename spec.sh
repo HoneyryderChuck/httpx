@@ -11,9 +11,9 @@ cleanup () {
 trap cleanup exit
 
 if [ -z $VERSION ]; then
-  extra="-f docker-compose-gitlab.yml"
+  extra="-f .docker-compose/docker-compose-gitlab.yml"
 else
-  extra="-f docker-compose-gitlab.yml -f docker-compose-${RUBY}-${VERSION}.yml"
+  extra="-f .docker-compose/docker-compose-gitlab.yml -f .docker-compose/docker-compose-${RUBY}-${VERSION}.yml"
 fi
 
 free -m
