@@ -10,7 +10,7 @@ module HTTPX
     MAX_REQUESTS = 100
     CRLF = "\r\n"
 
-    attr_reader :pending
+    attr_reader :pending, :requests
 
     def initialize(buffer, options)
       @options = Options.new(options)

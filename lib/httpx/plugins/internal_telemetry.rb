@@ -71,7 +71,7 @@ module HTTPX
         def transition(nextstate)
           state = @state
           super
-          meter_elapsed_time("Request[#{@verb} #{@uri}: #{state}] -> #{nextstate}") if nextstate == @state
+          meter_elapsed_time("Request##{object_id}[#{@verb} #{@uri}: #{state}] -> #{nextstate}") if nextstate == @state
         end
       end
 

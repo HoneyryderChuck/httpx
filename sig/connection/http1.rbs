@@ -4,6 +4,7 @@ module HTTPX
     include Loggable
 
     attr_reader pending: Array[Request]
+    attr_reader requests: Array[Request]
 
     @options: Options
     @max_concurrent_requests: Integer

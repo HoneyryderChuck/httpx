@@ -19,6 +19,17 @@ module Requests
         assert response.version == "2.0", "http h2c requests should be in HTTP/2"
         response.close
       end
+
+      def test_plugin_h2c_multiple
+        session = HTTPX.plugin(:h2c)
+        uri = build_uri("/get")
+        responses = session.get(uri, uri, uri)
+        responses.each do |response|
+          verify_status(response, 200)
+          assert response.version == "2.0", "http h2c requests should be in HTTP/2"
+          response.close
+        end
+      end
     end
   end
 end
