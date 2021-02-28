@@ -69,7 +69,6 @@ module HTTPX
 
       return if @requests.include?(request)
 
-      request.once(:headers, &method(:set_protocol_headers))
       @requests << request
       @pipelining = true if @requests.size > 1
     end
@@ -281,6 +280,7 @@ module HTTPX
       log(color: :yellow) { "<- HEADLINE: #{buffer.chomp.inspect}" }
       @buffer << buffer
       buffer.clear
+      set_protocol_headers(request)
       request.headers.each do |field, value|
         buffer << "#{capitalized(field)}: #{value}" << CRLF
         log(color: :yellow) { "<- HEADER: #{buffer.chomp}" }

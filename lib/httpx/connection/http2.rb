@@ -91,7 +91,6 @@ module HTTPX
         @streams[request] = stream
         @max_requests -= 1
       end
-      request.once(:headers, &method(:set_protocol_headers))
       handle(request, stream)
       true
     rescue HTTP2Next::Error::StreamLimitExceeded
@@ -187,6 +186,7 @@ module HTTPX
     end
 
     def join_headers(stream, request)
+      set_protocol_headers(request)
       log(level: 1, color: :yellow) do
         request.headers.each.map { |k, v| "#{stream.id}: -> HEADER: #{k}: #{v}" }.join("\n")
       end

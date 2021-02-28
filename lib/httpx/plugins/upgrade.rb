@@ -24,14 +24,29 @@ module HTTPX
             # TODO: exit it connection already upgraded?
             protocol_handler.call(connection, request, response)
 
-            return
+            # keep in the loop if the server is switching, unless
+            # the connection has been hijacked, in which case you want
+            # to terminante immediately
+            return if response.status == 101 && !connection.hijacked
           end
           response
+        end
+
+        def close(*args)
+          return super if args.empty?
+
+          connections, = args
+
+          pool.close(connections.reject(&:hijacked))
         end
       end
 
       module ConnectionMethods
-        attr_reader :upgrade_protocol
+        attr_reader :upgrade_protocol, :hijacked
+
+        def hijack_io
+          @hijacked = true
+        end
       end
     end
     register_plugin(:upgrade, Upgrade)

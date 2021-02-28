@@ -32,6 +32,10 @@ module HTTPX
 
           return super unless VALID_H2C_VERBS.include?(upgrade_request.verb) && upgrade_request.scheme == "http"
 
+          connection = pool.find_connection(upgrade_request.uri, @options.merge(options))
+
+          return super if connection && connection.upgrade_protocol == :h2c
+
           # build upgrade request
           upgrade_request.headers.add("connection", "upgrade")
           upgrade_request.headers.add("connection", "http2-settings")
@@ -75,10 +79,14 @@ module HTTPX
           set_parser_callbacks(@parser)
           @inflight += 1
           @parser.upgrade(request, response)
+          @upgrade_protocol = :h2c
+
+          if request.options.max_concurrent_requests != @options.max_concurrent_requests
+            @options = @options.merge(max_concurrent_requests: nil)
+          end
 
           prev_parser.requests.each do |req|
             req.transition(:idle)
-            req.callbacks(:headers).clear
             send(req)
           end
         end

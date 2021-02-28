@@ -1,0 +1,12 @@
+module HTTPX
+  module Plugins
+    module Upgrade
+      module ConnectionMethods
+        attr_reader upgrade_protocol: Symbol?
+        attr_reader hijacked: boolish
+
+        def hijack_io: () -> void
+      end
+    end      
+  end
+end
