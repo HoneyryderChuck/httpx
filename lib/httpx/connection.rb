@@ -472,14 +472,7 @@ module HTTPX
           remove_instance_variable(:@total_timeout)
         end
 
-        @io.close if @io
-        @read_buffer.clear
-        if @keep_alive_timer
-          @keep_alive_timer.cancel
-          remove_instance_variable(:@keep_alive_timer)
-        end
-
-        remove_instance_variable(:@timeout) if defined?(@timeout)
+        purge_after_closed
       when :already_open
         nextstate = :open
         send_pending
@@ -497,6 +490,17 @@ module HTTPX
       handle_error(e)
       @state = :closed
       emit(:close)
+    end
+
+    def purge_after_closed
+      @io.close if @io
+      @read_buffer.clear
+      if @keep_alive_timer
+        @keep_alive_timer.cancel
+        remove_instance_variable(:@keep_alive_timer)
+      end
+
+      remove_instance_variable(:@timeout) if defined?(@timeout)
     end
 
     def handle_response

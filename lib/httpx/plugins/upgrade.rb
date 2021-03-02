@@ -5,23 +5,31 @@ module HTTPX
     module Upgrade
       extend Registry
 
+      def self.load_dependencies(klass)
+        klass.plugin(:"upgrade/h2")
+      end
+
       module InstanceMethods
         def fetch_response(request, connections, options)
           response = super
 
-          if response && response.status == 101
-            connection = find_connection(request, connections, options)
-            connections << connection unless connections.include?(connection)
+          if response && response.headers.key?("upgrade")
 
-            upgrade_protocol = (request.headers.get("upgrade") & response.headers.get("upgrade")).first
+            upgrade_protocol = response.headers["upgrade"].split(/ *, */).first
+
+            return response unless upgrade_protocol && Upgrade.registry.key?(upgrade_protocol)
 
             protocol_handler = Upgrade.registry(upgrade_protocol)
 
             return response unless protocol_handler
 
             log { "upgrading to #{upgrade_protocol}..." }
+            connection = find_connection(request, connections, options)
+            connections << connection unless connections.include?(connection)
 
-            # TODO: exit it connection already upgraded?
+            # do not upgrade already upgraded connections
+            return if connection.upgrade_protocol == upgrade_protocol
+
             protocol_handler.call(connection, request, response)
 
             # keep in the loop if the server is switching, unless
@@ -29,6 +37,7 @@ module HTTPX
             # to terminante immediately
             return if response.status == 101 && !connection.hijacked
           end
+
           response
         end
 
