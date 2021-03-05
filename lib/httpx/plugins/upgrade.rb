@@ -5,7 +5,7 @@ module HTTPX
     module Upgrade
       extend Registry
 
-      def self.load_dependencies(klass)
+      def self.configure(klass)
         klass.plugin(:"upgrade/h2")
       end
 

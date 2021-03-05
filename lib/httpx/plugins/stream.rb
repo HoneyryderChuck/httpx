@@ -31,7 +31,7 @@ module HTTPX
       end
 
       module ResponseBodyMethods
-        def initialize(*, **)
+        def initialize(*)
           super
           @stream = @response.stream
         end
