@@ -1,6 +1,18 @@
 module HTTPX
   module Plugins
     module Upgrade
+      type handlers_registry = Registry[Symbol, Class]
+
+      def self.configure: (singleton(Session)) -> void
+
+      interface _UpgradeOptions
+        def upgrade_handlers: () -> handlers_registry?
+        def upgrade_handlers=: (handlers_registry) -> handlers_registry
+        def with_upgrade_handlers: (handlers_registry) -> instance
+      end
+ 
+      def self.extra_options: (Options) -> (Options & _UpgradeOptions)
+
       module ConnectionMethods
         attr_reader upgrade_protocol: Symbol?
         attr_reader hijacked: boolish

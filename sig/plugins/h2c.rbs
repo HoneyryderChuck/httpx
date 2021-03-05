@@ -3,8 +3,8 @@ module HTTPX
     module H2C
       VALID_H2C_VERBS: Array[Symbol]
 
-      def self.load_dependencies: (singleton(Session)) -> void
-      def self.configure: (*untyped) -> void
+      def self.load_dependencies: (*untyped) -> void
+      def self.configure: (singleton(Session)) -> void
       def self.call: (Connection, Request, response) -> void
 
       class H2CParser < Connection::HTTP2
