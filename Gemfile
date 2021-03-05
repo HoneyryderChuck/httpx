@@ -13,6 +13,7 @@ group :test do
   gem "minitest"
   gem "minitest-proveit"
   gem "webmock"
+  gem "websocket-driver"
 
   if RUBY_VERSION < "2.2"
     gem "net-ssh", "~> 4.2.0"

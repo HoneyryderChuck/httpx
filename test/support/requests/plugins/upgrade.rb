@@ -4,6 +4,8 @@ module Requests
   module Plugins
     module Upgrade
       def test_plugin_upgrade_h2
+        return unless origin.start_with?("https://")
+
         http = HTTPX.plugin(SessionWithPool)
 
         if OpenSSL::SSL::SSLContext.instance_methods.include?(:alpn_protocols)
@@ -27,6 +29,36 @@ module Requests
           assert response2.version == "2.0", "second request should already be in HTTP/2"
           response2.close
         end
+      end unless RUBY_ENGINE == "jruby"
+
+      def test_plugin_upgrade_websockets
+        return unless origin.start_with?("http://")
+
+        http = HTTPX.plugin(SessionWithPool).plugin(:upgrade)
+
+        response = http.get("http://ws-echo-server")
+        verify_status(response, 200)
+
+        http = http.plugin(WSTestPlugin)
+
+        response = http.get("http://ws-echo-server")
+        verify_status(response, 101)
+
+        websocket = response.websocket
+
+        assert !websocket.nil?, "websocket wasn't created"
+
+        websocket.send("ping")
+        websocket.send("pong")
+
+        sleep 2
+
+        echo_messages = websocket.messages
+        assert echo_messages.size >= 3
+        assert echo_messages.include?("handshake")
+        assert echo_messages.include?("ping")
+        assert echo_messages.include?("pong")
+        websocket.close
       end
     end
   end
