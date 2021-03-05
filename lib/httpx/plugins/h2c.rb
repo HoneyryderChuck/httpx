@@ -9,65 +9,50 @@ module HTTPX
     # https://gitlab.com/honeyryderchuck/httpx/wikis/Follow-Redirects
     #
     module H2C
-      def self.load_dependencies(*)
-        require "base64"
+      VALID_H2C_VERBS = %i[get options head].freeze
+
+      class << self
+        def load_dependencies(klass)
+          require "base64"
+          klass.plugin(:upgrade)
+        end
+
+        def configure(*)
+          Upgrade.register "h2c", self
+        end
+
+        def call(connection, request, response)
+          connection.upgrade_to_h2c(request, response)
+        end
       end
 
       module InstanceMethods
-        def request(*args, **options)
-          h2c_options = options.merge(fallback_protocol: "h2c")
+        def send_requests(*requests, options)
+          upgrade_request, *remainder = requests
 
-          requests = build_requests(*args, h2c_options)
+          return super unless VALID_H2C_VERBS.include?(upgrade_request.verb) && upgrade_request.scheme == "http"
 
-          upgrade_request = requests.first
-          return super unless valid_h2c_upgrade_request?(upgrade_request)
+          connection = pool.find_connection(upgrade_request.uri, @options.merge(options))
 
+          return super if connection && connection.upgrade_protocol == :h2c
+
+          # build upgrade request
           upgrade_request.headers.add("connection", "upgrade")
           upgrade_request.headers.add("connection", "http2-settings")
           upgrade_request.headers["upgrade"] = "h2c"
           upgrade_request.headers["http2-settings"] = HTTP2Next::Client.settings_header(upgrade_request.options.http2_settings)
-          wrap { send_requests(*upgrade_request, h2c_options).first }
 
-          responses = send_requests(*requests, h2c_options)
-
-          responses.size == 1 ? responses.first : responses
-        end
-
-        private
-
-        def fetch_response(request, connections, options)
-          response = super
-          if response && valid_h2c_upgrade?(request, response, options)
-            log { "upgrading to h2c..." }
-            connection = find_connection(request, connections, options)
-            connections << connection unless connections.include?(connection)
-            connection.upgrade(request, response)
-          end
-          response
-        end
-
-        VALID_H2C_METHODS = %i[get options head].freeze
-        private_constant :VALID_H2C_METHODS
-
-        def valid_h2c_upgrade_request?(request)
-          VALID_H2C_METHODS.include?(request.verb) &&
-            request.scheme == "http"
-        end
-
-        def valid_h2c_upgrade?(request, response, options)
-          options.fallback_protocol == "h2c" &&
-            request.headers.get("connection").include?("upgrade") &&
-            request.headers.get("upgrade").include?("h2c") &&
-            response.status == 101
+          super(upgrade_request, *remainder, options.merge(max_concurrent_requests: 1))
         end
       end
 
       class H2CParser < Connection::HTTP2
         def upgrade(request, response)
-          @connection.send_connection_preface
           # skip checks, it is assumed that this is the first
           # request in the connection
           stream = @connection.upgrade
+
+          # on_settings
           handle_stream(stream, request)
           @streams[request] = stream
 
@@ -81,29 +66,29 @@ module HTTPX
       module ConnectionMethods
         using URIExtensions
 
-        def match?(uri, options)
-          return super unless uri.scheme == "http" && @options.fallback_protocol == "h2c"
+        def upgrade_to_h2c(request, response)
+          prev_parser = @parser
 
-          super && options.fallback_protocol == "h2c"
-        end
+          if prev_parser
+            prev_parser.reset
+            @inflight -= prev_parser.requests.size
+          end
 
-        def coalescable?(connection)
-          return super unless @options.fallback_protocol == "h2c" && @origin.scheme == "http"
-
-          @origin == connection.origin && connection.options.fallback_protocol == "h2c"
-        end
-
-        def upgrade(request, response)
-          @parser.reset if @parser
-          @parser = H2CParser.new(@write_buffer, @options)
+          parser_options = @options.merge(max_concurrent_requests: request.options.max_concurrent_requests)
+          @parser = H2CParser.new(@write_buffer, parser_options)
           set_parser_callbacks(@parser)
+          @inflight += 1
           @parser.upgrade(request, response)
-        end
+          @upgrade_protocol = :h2c
 
-        def build_parser(*)
-          return super unless @origin.scheme == "http"
+          if request.options.max_concurrent_requests != @options.max_concurrent_requests
+            @options = @options.merge(max_concurrent_requests: nil)
+          end
 
-          super("http/1.1")
+          prev_parser.requests.each do |req|
+            req.transition(:idle)
+            send(req)
+          end
         end
       end
     end

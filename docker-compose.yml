@@ -29,6 +29,7 @@ services:
       - sshproxy
       - nghttp2
       - aws
+      - ws-echo-server
     volumes:
       - ./:/home
     links:
@@ -109,3 +110,10 @@ services:
       - 4566:4566
     volumes:
       - ./test/support/ci/aws:/docker-entrypoint-initaws.d
+
+  ws-echo-server:
+    environment:
+      - PORT=80
+    ports:
+      - 8083:80
+    image: jmalloc/echo-server

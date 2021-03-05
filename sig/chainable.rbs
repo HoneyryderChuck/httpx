@@ -18,7 +18,8 @@ module HTTPX
               | (:cookies) -> Plugins::sessionCookies
               | (:expect) -> Session
               | (:follow_redirects) -> Plugins::sessionFollowRedirects
-              | (:h2c) -> Plugins::sessionH2C
+              | (:upgrade) -> Session
+              | (:h2c) -> Session
               | (:multipart) -> Session
               | (:persistent) -> Plugins::sessionPersistent
               | (:proxy) -> Plugins::sessionProxy

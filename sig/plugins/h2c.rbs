@@ -1,23 +1,18 @@
 module HTTPX
   module Plugins
     module H2C
-      def self.load_dependencies: (singleton(Session)) -> void
-      
-      module InstanceMethods
-        VALID_H2C_METHODS: Array[Symbol]
-        
-        private
+      VALID_H2C_VERBS: Array[Symbol]
 
-        def valid_h2c_upgrade_request: (Request) -> bool
-        def valid_h2c_upgrade?: (Request, Response, Options) -> bool
-      end
+      def self.load_dependencies: (singleton(Session)) -> void
+      def self.configure: (*untyped) -> void
+      def self.call: (Connection, Request, response) -> void
 
       class H2CParser < Connection::HTTP2
         def upgrade: (Request, Response) -> void
       end
 
       module ConnectionMethods
-        def upgrade: (Request, Response) -> void
+        def upgrade_to_h2c: (Request, Response) -> void
       end
     end
 
