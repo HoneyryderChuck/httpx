@@ -54,10 +54,26 @@ module HTTPX
            ::IO::WaitReadable
     end
 
+    # :nocov:
+    def inspect
+      id = @io.closed? ? "closed" : @io.fileno
+      "#<UNIX(path: #{@path}): (state: #{@state})>"
+    end
+    # :nocov:
+
     private
 
     def build_socket
       Socket.new(Socket::PF_UNIX, :STREAM, 0)
+    end
+
+    def log_transition_state(nextstate)
+      case nextstate
+      when :connected
+        "Connected to #{@path} (##{@io.fileno})"
+      else
+        "#{@path} #{@state} -> #{nextstate}"
+      end
     end
   end
 end

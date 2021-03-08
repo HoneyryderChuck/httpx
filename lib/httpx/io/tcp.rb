@@ -26,13 +26,13 @@ module HTTPX
               else
                 @options.io
         end
+        raise Error, "Given IO objects do not match the request authority" unless @io
+
         _, _, _, @ip = @io.addr
         @addresses ||= [@ip]
         @ip_index = @addresses.size - 1
-        unless @io.nil?
-          @keep_open = true
-          @state = :connected
-        end
+        @keep_open = true
+        @state = :connected
       else
         @ip_index = @addresses.size - 1
         @ip = @addresses[@ip_index]

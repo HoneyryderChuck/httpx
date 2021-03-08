@@ -8,10 +8,27 @@ class UnixTest < Minitest::Test
 
   def test_unix_session
     skip if RUBY_ENGINE == "jruby"
-    on_unix_server do |path|
-      response = HTTPX.with(transport: "unix", transport_options: { path: path }).get("http://unix.com/ping")
-      verify_status(response, 200)
-      assert response.to_s == "pong", "unexpected body (#{response})"
+    on_unix_server(__method__) do |path|
+      HTTPX.with(transport: "unix", addresses: [path]).wrap do |http|
+        http.get("http://unix.com/ping", "http://unix.com/ping").each do |response|
+          verify_status(response, 200)
+          assert response.to_s == "pong", "unexpected body (#{response})"
+        end
+      end
+    end
+  end
+
+  def test_unix_session_io
+    skip if RUBY_ENGINE == "jruby"
+    on_unix_server(__method__) do |path|
+      io = UNIXSocket.new(path)
+      HTTPX.with(transport: "unix", io: io).wrap do |http|
+        response = http.get("http://unix.com/ping")
+        verify_status(response, 200)
+        assert response.to_s == "pong", "unexpected body (#{response})"
+      end
+      assert io.eof?, "io should have been used and closed (by the server)"
+      io.close
     end
   end
 
@@ -25,21 +42,28 @@ class UnixTest < Minitest::Test
     Connection: close
   HTTP
 
-  def on_unix_server
+  def on_unix_server(sockname)
     mutex = Mutex.new
     resource = ConditionVariable.new
-    path = File.join(Dir.tmpdir, "httpx-unix.sock")
+    path = File.join(Dir.tmpdir, "httpx-unix-#{sockname}.sock")
     server = UNIXServer.new(path)
     begin
       th = Thread.start do
         mutex.synchronize do
           resource.signal
         end
-        socket = server.accept
-        socket.readpartial(4096) # drain the socket for the request
-        socket.write(RESPONSE_HEADER)
-        socket.write("pong")
-        socket.close
+
+        loop do
+          begin
+            socket = server.accept
+            socket.readpartial(4096) # drain the socket for the request
+            socket.write(RESPONSE_HEADER)
+            socket.write("pong")
+            socket.close
+          rescue IOError
+            break
+          end
+        end
       end
       mutex.synchronize do
         resource.wait(mutex)
