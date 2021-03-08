@@ -6,29 +6,45 @@ require_relative "../test_helper"
 class UnixTest < Minitest::Test
   include HTTPHelpers
 
-  def test_unix_session
-    skip if RUBY_ENGINE == "jruby"
-    on_unix_server(__method__) do |path|
-      HTTPX.with(transport: "unix", addresses: [path]).wrap do |http|
-        http.get("http://unix.com/ping", "http://unix.com/ping").each do |response|
-          verify_status(response, 200)
-          assert response.to_s == "pong", "unexpected body (#{response})"
+  using HTTPX::URIExtensions
+
+  unless RUBY_ENGINE == "jruby"
+    def test_unix_session
+      on_unix_server(__method__) do |path|
+        HTTPX.with(transport: "unix", addresses: [path]).wrap do |http|
+          http.get("http://unix.com/ping", "http://unix.com/ping").each do |response|
+            verify_status(response, 200)
+            assert response.to_s == "pong", "unexpected body (#{response})"
+          end
         end
       end
     end
-  end
 
-  def test_unix_session_io
-    skip if RUBY_ENGINE == "jruby"
-    on_unix_server(__method__) do |path|
-      io = UNIXSocket.new(path)
-      HTTPX.with(transport: "unix", io: io).wrap do |http|
-        response = http.get("http://unix.com/ping")
-        verify_status(response, 200)
-        assert response.to_s == "pong", "unexpected body (#{response})"
+    def test_unix_session_io
+      on_unix_server(__method__) do |path|
+        io = UNIXSocket.new(path)
+        HTTPX.with(transport: "unix", io: io).wrap do |http|
+          response = http.get("http://unix.com/ping")
+          verify_status(response, 200)
+          assert response.to_s == "pong", "unexpected body (#{response})"
+        end
+        assert io.eof?, "io should have been used and closed (by the server)"
+        io.close
       end
-      assert io.eof?, "io should have been used and closed (by the server)"
-      io.close
+    end
+
+    def test_unix_session_io_hash
+      on_unix_server(__method__) do |path|
+        io = UNIXSocket.new(path)
+        uri = URI("http://unix.com/ping")
+        HTTPX.with(transport: "unix", io: { uri.authority => io }).wrap do |http|
+          response = http.get(uri)
+          verify_status(response, 200)
+          assert response.to_s == "pong", "unexpected body (#{response})"
+        end
+        assert io.eof?, "io should have been used and closed (by the server)"
+        io.close
+      end
     end
   end
 

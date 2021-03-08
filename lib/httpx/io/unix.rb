@@ -6,22 +6,22 @@ module HTTPX
   class UNIX < TCP
     extend Forwardable
 
-    def_delegator :@uri, :port, :scheme
+    using URIExtensions
 
     attr_reader :path
 
     alias_method :host, :path
 
-    def initialize(uri, addresses, options)
-      @uri = uri
+    def initialize(origin, addresses, options)
       @addresses = addresses
+      @hostname = origin.host
       @state = :idle
       @options = Options.new(options)
       @fallback_protocol = @options.fallback_protocol
       if @options.io
         @io = case @options.io
               when Hash
-                @options.io[@path]
+                @options.io[origin.authority]
               else
                 @options.io
         end
@@ -32,8 +32,10 @@ module HTTPX
         @state = :connected
       else
         if @options.transport_options
+          # :nocov:
           warn ":#{__method__} is deprecated, use :addresses instead"
           @path = @options.transport_options[:path]
+          # :nocov:
         else
           @path = addresses.first
         end

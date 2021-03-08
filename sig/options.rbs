@@ -87,9 +87,10 @@ module HTTPX
     def with_request_class: (singleton(Request)) -> instance
 
     # io
-    attr_reader io: _ToIO?
-    def io=: (_ToIO) -> void
-    def with_io: (_ToIO) -> instance
+    type io_option = _ToIO | Hash[String, _ToIO]
+    attr_reader io: io_option?
+    def io=: (io_option) -> void
+    def with_io: (io_option) -> instance
 
     # fallback_protocol
     attr_reader fallback_protocol: String?
