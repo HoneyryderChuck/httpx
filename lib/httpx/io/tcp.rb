@@ -35,7 +35,6 @@ module HTTPX
         @state = :connected
       else
         @ip_index = @addresses.size - 1
-        @ip = @addresses[@ip_index]
       end
       @io ||= build_socket
     end
@@ -174,6 +173,7 @@ module HTTPX
     private
 
     def build_socket
+      @ip = @addresses[@ip_index]
       Socket.new(@ip.family, :STREAM, 0)
     end
 
