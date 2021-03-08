@@ -196,9 +196,9 @@ module HTTPX
     def log_transition_state(nextstate)
       case nextstate
       when :connected
-        "Connected to #{@hostname} (#{@ip}) port #{@port} (##{@io.fileno})"
+        "Connected to #{host} (##{@io.fileno})"
       else
-        "#{@ip}:#{@port} #{@state} -> #{nextstate}"
+        "#{host} #{@state} -> #{nextstate}"
       end
     end
   end

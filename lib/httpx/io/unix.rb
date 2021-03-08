@@ -8,6 +8,10 @@ module HTTPX
 
     def_delegator :@uri, :port, :scheme
 
+    attr_reader :path
+
+    alias_method :host, :path
+
     def initialize(uri, addresses, options)
       @uri = uri
       @addresses = addresses
@@ -56,7 +60,6 @@ module HTTPX
 
     # :nocov:
     def inspect
-      id = @io.closed? ? "closed" : @io.fileno
       "#<UNIX(path: #{@path}): (state: #{@state})>"
     end
     # :nocov:
@@ -65,15 +68,6 @@ module HTTPX
 
     def build_socket
       Socket.new(Socket::PF_UNIX, :STREAM, 0)
-    end
-
-    def log_transition_state(nextstate)
-      case nextstate
-      when :connected
-        "Connected to #{@path} (##{@io.fileno})"
-      else
-        "#{@path} #{@state} -> #{nextstate}"
-      end
     end
   end
 end
