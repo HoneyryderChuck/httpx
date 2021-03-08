@@ -167,8 +167,7 @@ module HTTPX
 
     # :nocov:
     def inspect
-      id = @io.closed? ? "closed" : @io.fileno
-      "#<TCP(fd: #{id}): #{@ip}:#{@port} (state: #{@state})>"
+      "#<#{self.class}: #{@ip}:#{@port} (state: #{@state})>"
     end
     # :nocov:
 

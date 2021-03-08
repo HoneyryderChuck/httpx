@@ -63,6 +63,7 @@ module HTTPX
     end
 
     if RUBY_VERSION < "2.3"
+      # :nocov:
       def try_ssl_connect
         @io.connect_nonblock
         @io.post_connection_check(@sni_hostname) if @ctx.verify_mode != OpenSSL::SSL::VERIFY_NONE
@@ -86,6 +87,7 @@ module HTTPX
       rescue ::IO::WaitReadable
         0
       end
+      # :nocov:
     else
       def try_ssl_connect
         case @io.connect_nonblock(exception: false)
@@ -101,6 +103,7 @@ module HTTPX
         @interests = :w
       end
 
+      # :nocov:
       if OpenSSL::VERSION < "2.0.6"
         def read(size, buffer)
           @io.read_nonblock(size, buffer)
@@ -113,11 +116,7 @@ module HTTPX
           nil
         end
       end
-    end
-
-    def inspect
-      id = @io.closed? ? "closed" : @io.to_io.fileno
-      "#<SSL(fd: #{id}): #{@ip}:#{@port} state: #{@state}>"
+      # :nocov:
     end
 
     private

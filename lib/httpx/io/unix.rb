@@ -62,7 +62,7 @@ module HTTPX
 
     # :nocov:
     def inspect
-      "#<UNIX(path: #{@path}): (state: #{@state})>"
+      "#<#{self.class}(path: #{@path}): (state: #{@state})>"
     end
     # :nocov:
 
