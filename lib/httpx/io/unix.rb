@@ -13,7 +13,6 @@ module HTTPX
       @addresses = addresses
       @state = :idle
       @options = Options.new(options)
-      @path = @options.transport_options[:path]
       @fallback_protocol = @options.fallback_protocol
       if @options.io
         @io = case @options.io
@@ -22,16 +21,20 @@ module HTTPX
               else
                 @options.io
         end
-        unless @io.nil?
-          @keep_open = true
-          @state = :connected
+        raise Error, "Given IO objects do not match the request authority" unless @io
+
+        @path = @io.path
+        @keep_open = true
+        @state = :connected
+      else
+        if @options.transport_options
+          warn ":#{__method__} is deprecated, use :addresses instead"
+          @path = @options.transport_options[:path]
+        else
+          @path = addresses.first
         end
       end
       @io ||= build_socket
-    end
-
-    def hostname
-      @uri.host
     end
 
     def connect

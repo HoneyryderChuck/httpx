@@ -71,6 +71,8 @@ module HTTPX
       @inflight = 0
       @keep_alive_timeout = options.timeout.keep_alive_timeout
       @keep_alive_timer = nil
+
+      self.addresses = options.addresses if options.addresses
     end
 
     # this is a semi-private method, to be used by the resolver
@@ -104,6 +106,8 @@ module HTTPX
       return false if @state == :closing || @state == :closed || !@io
 
       return false if exhausted?
+
+      return false unless connection.addresses
 
       !(@io.addresses & connection.addresses).empty? && @options == connection.options
     end

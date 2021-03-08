@@ -69,6 +69,7 @@ module HTTPX
         :connection_class => Class.new(Connection),
         :transport => nil,
         :transport_options => nil,
+        :addresses => nil,
         :persistent => false,
         :resolver_class => (ENV["HTTPX_RESOLVER"] || :native).to_sym,
         :resolver_options => { cache: true },
@@ -119,6 +120,10 @@ module HTTPX
       raise Error, "#{transport} is an unsupported transport type" unless IO.registry.key?(transport)
 
       transport
+    end
+
+    def_option(:addresses) do |addrs|
+      Array(addrs)
     end
 
     %w[

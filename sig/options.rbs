@@ -48,6 +48,11 @@ module HTTPX
     def transport_options=: (Hash[untyped, untyped]) -> void
     def with_transport_options: (Hash[untyped, untyped]) -> instance
 
+    # addresses
+    attr_reader addresses: _ToAry[untyped]?
+    def addresses=: (_ToAry[untyped]) -> void
+    def with_addresses: (_ToAry[untyped]) -> instance
+
     # params
     attr_reader params: Transcoder::urlencoded_input?
     def params=: (Transcoder::urlencoded_input) -> void
