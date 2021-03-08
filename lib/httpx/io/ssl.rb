@@ -47,10 +47,6 @@ module HTTPX
 
     def connect
       super
-      if @keep_open
-        @state = :negotiated
-        return
-      end
       return if @state == :negotiated ||
                 @state != :connected
 
