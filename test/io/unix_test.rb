@@ -59,16 +59,10 @@ class UnixTest < Minitest::Test
   HTTP
 
   def on_unix_server(sockname)
-    mutex = Mutex.new
-    resource = ConditionVariable.new
     path = File.join(Dir.tmpdir, "httpx-unix-#{sockname}.sock")
     server = UNIXServer.new(path)
     begin
       th = Thread.start do
-        mutex.synchronize do
-          resource.signal
-        end
-
         loop do
           begin
             socket = server.accept
@@ -80,9 +74,6 @@ class UnixTest < Minitest::Test
             break
           end
         end
-      end
-      mutex.synchronize do
-        resource.wait(mutex)
       end
       yield server.path
     ensure
