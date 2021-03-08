@@ -59,17 +59,21 @@ module HTTPX
         @io.hostname = @sni_hostname
         @io.sync_close = true
       end
-      @io.connect_nonblock
-      @io.post_connection_check(@sni_hostname) if @ctx.verify_mode != OpenSSL::SSL::VERIFY_NONE
-      transition(:negotiated)
-      @interests = :w
-    rescue ::IO::WaitReadable
-      @interests = :r
-    rescue ::IO::WaitWritable
-      @interests = :w
+      try_ssl_connect
     end
 
     if RUBY_VERSION < "2.3"
+      def try_ssl_connect
+        @io.connect_nonblock
+        @io.post_connection_check(@sni_hostname) if @ctx.verify_mode != OpenSSL::SSL::VERIFY_NONE
+        transition(:negotiated)
+        @interests = :w
+      rescue ::IO::WaitReadable
+        @interests = :r
+      rescue ::IO::WaitWritable
+        @interests = :w
+      end
+
       def read(_, buffer)
         super
       rescue ::IO::WaitWritable
@@ -83,6 +87,20 @@ module HTTPX
         0
       end
     else
+      def try_ssl_connect
+        case @io.connect_nonblock(exception: false)
+        when :wait_readable
+          @interests = :r
+          return
+        when :wait_writable
+          @interests = :w
+          return
+        end
+        @io.post_connection_check(@sni_hostname) if @ctx.verify_mode != OpenSSL::SSL::VERIFY_NONE
+        transition(:negotiated)
+        @interests = :w
+      end
+
       if OpenSSL::VERSION < "2.0.6"
         def read(size, buffer)
           @io.read_nonblock(size, buffer)
