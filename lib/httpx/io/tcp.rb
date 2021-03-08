@@ -51,17 +51,11 @@ module HTTPX
     def connect
       return unless closed?
 
-      begin
-        if @io.closed?
-          transition(:idle)
-          @io = build_socket
-        end
-        @io.connect_nonblock(Socket.sockaddr_in(@port, @ip.to_s))
-      rescue Errno::EISCONN
+      if @io.closed?
+        transition(:idle)
+        @io = build_socket
       end
-      @interests = :w
-
-      transition(:connected)
+      try_connect
     rescue Errno::EHOSTUNREACH => e
       raise e if @ip_index <= 0
 
@@ -72,15 +66,25 @@ module HTTPX
 
       @ip_index -= 1
       retry
-    rescue Errno::EINPROGRESS,
-           Errno::EALREADY
-      @interests = :w
-    rescue ::IO::WaitReadable
-      @interests = :r
     end
 
     if RUBY_VERSION < "2.3"
       # :nocov:
+      def try_connect
+        @io.connect_nonblock(Socket.sockaddr_in(@port, @ip.to_s))
+      rescue ::IO::WaitWritable, Errno::EALREADY
+        @interests = :w
+      rescue ::IO::WaitReadable
+        @interests = :r
+      rescue Errno::EISCONN
+        transition(:connected)
+        @interests = :w
+      else
+        transition(:connected)
+        @interests = :w
+      end
+      private :try_connect
+
       def read(size, buffer)
         @io.read_nonblock(size, buffer)
         log { "READ: #{buffer.bytesize} bytes..." }
@@ -104,6 +108,20 @@ module HTTPX
       end
       # :nocov:
     else
+      def try_connect
+        case @io.connect_nonblock(Socket.sockaddr_in(@port, @ip.to_s), exception: false)
+        when :wait_readable
+          @interests = :r
+          return
+        when :wait_writable
+          @interests = :w
+          return
+        end
+        transition(:connected)
+        @interests = :w
+      end
+      private :try_connect
+
       def read(size, buffer)
         ret = @io.read_nonblock(size, buffer, exception: false)
         if ret == :wait_readable
