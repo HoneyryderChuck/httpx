@@ -16,7 +16,6 @@ module HTTPX
     def initialize(origin, addresses, options)
       @state = :idle
       @hostname = origin.host
-      @addresses = addresses
       @options = Options.new(options)
       @fallback_protocol = @options.fallback_protocol
       @port = origin.port
@@ -36,8 +35,9 @@ module HTTPX
         @keep_open = true
         @state = :connected
       else
-        @ip_index = @addresses.size - 1
+        @addresses = addresses.map { |addr| addr.is_a?(IPAddr) ? addr : IPAddr.new(addr) }
       end
+      @ip_index = @addresses.size - 1
       @io ||= build_socket
     end
 
