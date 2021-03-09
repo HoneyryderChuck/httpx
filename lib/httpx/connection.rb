@@ -482,13 +482,9 @@ module HTTPX
         send_pending
       end
       @state = nextstate
-    rescue Errno::EHOSTUNREACH
-      # at this point, all addresses from the IO object have failed
-      reset
-      emit(:unreachable)
-      throw(:jump_tick)
     rescue Errno::ECONNREFUSED,
            Errno::EADDRNOTAVAIL,
+           Errno::EHOSTUNREACH,
            TLSError => e
       # connect errors, exit gracefully
       handle_error(e)

@@ -64,11 +64,6 @@ module HTTPX
       connection.on(:open) do
         @connected_connections += 1
       end
-      connection.on(:unreachable) do
-        resolver = find_resolver_for(connection)
-        resolver.uncache(connection) if resolver
-        resolve_connection(connection)
-      end
     end
 
     # opens a connection to the IP reachable through +uri+.
