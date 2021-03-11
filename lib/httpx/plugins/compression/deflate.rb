@@ -10,8 +10,8 @@ module HTTPX
           klass.plugin(:"compression/gzip")
         end
 
-        def self.configure(*)
-          Compression.register "deflate", self
+        def self.configure(klass)
+          klass.default_options.encodings.register "deflate", self
         end
 
         module Deflater

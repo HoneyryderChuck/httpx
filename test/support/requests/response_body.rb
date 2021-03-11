@@ -37,7 +37,7 @@ module Requests
       custom_body = Class.new(HTTPX::Response::Body) do
         attr_reader :file
 
-        def initialize(_response, **)
+        def initialize(_response, _opts)
           @file = Tempfile.new("httpx-test")
         end
 

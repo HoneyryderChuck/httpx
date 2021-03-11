@@ -6,7 +6,7 @@ module MinitestExtensions
     TestTimeout = Class.new(Timeout::Error)
 
     def run(*)
-      ::Timeout.timeout(60, TestTimeout) { super }
+      ::Timeout.timeout(60 * 5, TestTimeout) { super }
     end
   end
 

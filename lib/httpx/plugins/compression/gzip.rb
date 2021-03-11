@@ -10,8 +10,8 @@ module HTTPX
           require "zlib"
         end
 
-        def self.configure(*)
-          Compression.register "gzip", self
+        def self.configure(klass)
+          klass.default_options.encodings.register "gzip", self
         end
 
         class Deflater

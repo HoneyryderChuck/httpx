@@ -27,8 +27,7 @@ module HTTPX
       @version = version
       @status = Integer(status)
       @headers = @options.headers_class.new(headers)
-      @body = @options.response_body_class.new(self, threshold_size: @options.body_threshold_size,
-                                                     window_size: @options.window_size)
+      @body = @options.response_body_class.new(self, @options)
     end
 
     def merge_headers(h)
@@ -83,11 +82,12 @@ module HTTPX
     end
 
     class Body
-      def initialize(response, threshold_size:, window_size: 1 << 14)
+      def initialize(response, options)
         @response = response
         @headers = response.headers
-        @threshold_size = threshold_size
-        @window_size = window_size
+        @options = options
+        @threshold_size = options.body_threshold_size
+        @window_size = options.window_size
         @encoding = response.content_type.charset || Encoding::BINARY
         @length = 0
         @buffer = nil

@@ -2,11 +2,31 @@
 
 module HTTPX
   module Plugins
+    #
+    # This plugin helps negotiating a new protocol from an HTTP/1.1 connection, via the
+    # Upgrade header.
+    #
+    # https://gitlab.com/honeyryderchuck/httpx/wikis/Upgrade
+    #
     module Upgrade
-      extend Registry
+      class << self
+        def configure(klass)
+          klass.plugin(:"upgrade/h2")
+        end
 
-      def self.load_dependencies(klass)
-        klass.plugin(:"upgrade/h2")
+        def extra_options(options)
+          upgrade_handlers = Module.new do
+            extend Registry
+          end
+
+          Class.new(options.class) do
+            def_option(:upgrade_handlers) do |encs|
+              raise Error, ":upgrade_handlers must be a registry" unless encs.respond_to?(:registry)
+
+              encs
+            end
+          end.new(options).merge(upgrade_handlers: upgrade_handlers)
+        end
       end
 
       module InstanceMethods
@@ -17,9 +37,9 @@ module HTTPX
 
             upgrade_protocol = response.headers["upgrade"].split(/ *, */).first
 
-            return response unless upgrade_protocol && Upgrade.registry.key?(upgrade_protocol)
+            return response unless upgrade_protocol && options.upgrade_handlers.registry.key?(upgrade_protocol)
 
-            protocol_handler = Upgrade.registry(upgrade_protocol)
+            protocol_handler = options.upgrade_handlers.registry(upgrade_protocol)
 
             return response unless protocol_handler
 

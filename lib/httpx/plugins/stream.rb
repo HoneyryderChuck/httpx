@@ -5,6 +5,8 @@ module HTTPX
     #
     # This plugin adds support for stream response (text/event-stream).
     #
+    # https://gitlab.com/honeyryderchuck/httpx/wikis/Stream
+    #
     module Stream
       module InstanceMethods
         private
@@ -31,7 +33,7 @@ module HTTPX
       end
 
       module ResponseBodyMethods
-        def initialize(*, **)
+        def initialize(*)
           super
           @stream = @response.stream
         end

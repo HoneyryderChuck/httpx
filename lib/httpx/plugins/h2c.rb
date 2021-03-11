@@ -6,19 +6,19 @@ module HTTPX
     # This plugin adds support for upgrading a plaintext HTTP/1.1 connection to HTTP/2
     # (https://tools.ietf.org/html/rfc7540#section-3.2)
     #
-    # https://gitlab.com/honeyryderchuck/httpx/wikis/Follow-Redirects
+    # https://gitlab.com/honeyryderchuck/httpx/wikis/Upgrade#h2c
     #
     module H2C
       VALID_H2C_VERBS = %i[get options head].freeze
 
       class << self
-        def load_dependencies(klass)
+        def load_dependencies(*)
           require "base64"
-          klass.plugin(:upgrade)
         end
 
-        def configure(*)
-          Upgrade.register "h2c", self
+        def configure(klass)
+          klass.plugin(:upgrade)
+          klass.default_options.upgrade_handlers.register "h2c", self
         end
 
         def call(connection, request, response)

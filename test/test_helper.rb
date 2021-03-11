@@ -32,15 +32,5 @@ OpenSSL::SSL::SSLContext::DEFAULT_CERT_STORE.add_file(ENV["SSL_CERT_FILE"]) if R
 
 # 9090 drops SYN packets for connect timeout tests, make sure there's a server binding there.
 CONNECT_TIMEOUT_PORT = ENV.fetch("CONNECT_TIMEOUT_PORT", 9090).to_i
-
-server = TCPServer.new("127.0.0.1", CONNECT_TIMEOUT_PORT)
-
-Thread.start do
-  begin
-    sock = server.accept
-    sock.close
-  rescue StandardError => e
-    warn e.message
-    warn e.backtrace
-  end
-end
+ETIMEDOUT_PORT = ENV.fetch("ETIMEDOUT_PORT", 9091).to_i
+EHOSTUNREACH_HOST = ENV.fetch("EHOSTUNREACH_HOST", "192.168.2.1")

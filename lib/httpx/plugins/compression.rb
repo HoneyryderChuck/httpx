@@ -13,15 +13,17 @@ module HTTPX
     # https://gitlab.com/honeyryderchuck/httpx/wikis/Compression
     #
     module Compression
-      extend Registry
-
       class << self
-        def load_dependencies(klass)
+        def configure(klass)
           klass.plugin(:"compression/gzip")
           klass.plugin(:"compression/deflate")
         end
 
         def extra_options(options)
+          encodings = Module.new do
+            extend Registry
+          end
+
           Class.new(options.class) do
             def_option(:compression_threshold_size) do |bytes|
               bytes = Integer(bytes)
@@ -29,7 +31,13 @@ module HTTPX
 
               bytes
             end
-          end.new(options).merge(headers: { "accept-encoding" => Compression.registry.keys })
+
+            def_option(:encodings) do |encs|
+              raise Error, ":encodings must be a registry" unless encs.respond_to?(:registry)
+
+              encs
+            end
+          end.new(options).merge(encodings: encodings)
         end
       end
 
@@ -37,7 +45,11 @@ module HTTPX
         def initialize(*)
           super
           # forego compression in the Range cases
-          @headers.delete("accept-encoding") if @headers.key?("range")
+          if @headers.key?("range")
+            @headers.delete("accept-encoding")
+          else
+            @headers["accept-encoding"] ||= @options.encodings.registry.keys
+          end
         end
       end
 
@@ -52,7 +64,7 @@ module HTTPX
           @headers.get("content-encoding").each do |encoding|
             next if encoding == "identity"
 
-            @body = Encoder.new(@body, Compression.registry(encoding).deflater)
+            @body = Encoder.new(@body, options.encodings.registry(encoding).deflater)
           end
           @headers["content-length"] = @body.bytesize unless chunked?
         end
@@ -61,7 +73,7 @@ module HTTPX
       module ResponseBodyMethods
         attr_reader :encodings
 
-        def initialize(*, **)
+        def initialize(*)
           @encodings = []
 
           super
@@ -80,7 +92,7 @@ module HTTPX
           @_inflaters = @headers.get("content-encoding").map do |encoding|
             next if encoding == "identity"
 
-            inflater = Compression.registry(encoding).inflater(compressed_length)
+            inflater = @options.encodings.registry(encoding).inflater(compressed_length)
             # do not uncompress if there is no decoder available. In fact, we can't reliably
             # continue decompressing beyond that, so ignore.
             break unless inflater

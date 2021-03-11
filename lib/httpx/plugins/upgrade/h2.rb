@@ -3,15 +3,15 @@
 module HTTPX
   module Plugins
     #
-    # This plugin adds support for upgrading a plaintext HTTP/1.1 connection to HTTP/2
-    # (https://tools.ietf.org/html/rfc7540#section-3.2)
+    # This plugin adds support for upgrading an HTTP/1.1 connection to HTTP/2
+    # via an Upgrade: h2 response declaration
     #
-    # https://gitlab.com/honeyryderchuck/httpx/wikis/Follow-Redirects
+    # https://gitlab.com/honeyryderchuck/httpx/wikis/Upgrade#h2
     #
     module H2
       class << self
-        def configure(*)
-          Upgrade.register "h2", self
+        def configure(klass)
+          klass.default_options.upgrade_handlers.register "h2", self
         end
 
         def call(connection, _request, _response)

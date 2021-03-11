@@ -7,6 +7,8 @@ module HTTPX
   class TCP
     include Loggable
 
+    using URIExtensions
+
     attr_reader :ip, :port, :addresses, :state, :interests
 
     alias_method :host, :ip
@@ -14,7 +16,6 @@ module HTTPX
     def initialize(origin, addresses, options)
       @state = :idle
       @hostname = origin.host
-      @addresses = addresses
       @options = Options.new(options)
       @fallback_protocol = @options.fallback_protocol
       @port = origin.port
@@ -26,17 +27,17 @@ module HTTPX
               else
                 @options.io
         end
+        raise Error, "Given IO objects do not match the request authority" unless @io
+
         _, _, _, @ip = @io.addr
         @addresses ||= [@ip]
         @ip_index = @addresses.size - 1
-        unless @io.nil?
-          @keep_open = true
-          @state = :connected
-        end
+        @keep_open = true
+        @state = :connected
       else
-        @ip_index = @addresses.size - 1
-        @ip = @addresses[@ip_index]
+        @addresses = addresses.map { |addr| addr.is_a?(IPAddr) ? addr : IPAddr.new(addr) }
       end
+      @ip_index = @addresses.size - 1
       @io ||= build_socket
     end
 
@@ -51,17 +52,11 @@ module HTTPX
     def connect
       return unless closed?
 
-      begin
-        if @io.closed?
-          transition(:idle)
-          @io = build_socket
-        end
-        @io.connect_nonblock(Socket.sockaddr_in(@port, @ip.to_s))
-      rescue Errno::EISCONN
+      if @io.closed?
+        transition(:idle)
+        @io = build_socket
       end
-      @interests = :w
-
-      transition(:connected)
+      try_connect
     rescue Errno::EHOSTUNREACH => e
       raise e if @ip_index <= 0
 
@@ -72,15 +67,25 @@ module HTTPX
 
       @ip_index -= 1
       retry
-    rescue Errno::EINPROGRESS,
-           Errno::EALREADY
-      @interests = :w
-    rescue ::IO::WaitReadable
-      @interests = :r
     end
 
     if RUBY_VERSION < "2.3"
       # :nocov:
+      def try_connect
+        @io.connect_nonblock(Socket.sockaddr_in(@port, @ip.to_s))
+      rescue ::IO::WaitWritable, Errno::EALREADY
+        @interests = :w
+      rescue ::IO::WaitReadable
+        @interests = :r
+      rescue Errno::EISCONN
+        transition(:connected)
+        @interests = :w
+      else
+        transition(:connected)
+        @interests = :w
+      end
+      private :try_connect
+
       def read(size, buffer)
         @io.read_nonblock(size, buffer)
         log { "READ: #{buffer.bytesize} bytes..." }
@@ -104,6 +109,20 @@ module HTTPX
       end
       # :nocov:
     else
+      def try_connect
+        case @io.connect_nonblock(Socket.sockaddr_in(@port, @ip.to_s), exception: false)
+        when :wait_readable
+          @interests = :r
+          return
+        when :wait_writable
+          @interests = :w
+          return
+        end
+        transition(:connected)
+        @interests = :w
+      end
+      private :try_connect
+
       def read(size, buffer)
         ret = @io.read_nonblock(size, buffer, exception: false)
         if ret == :wait_readable
@@ -148,14 +167,14 @@ module HTTPX
 
     # :nocov:
     def inspect
-      id = @io.closed? ? "closed" : @io.fileno
-      "#<TCP(fd: #{id}): #{@ip}:#{@port} (state: #{@state})>"
+      "#<#{self.class}: #{@ip}:#{@port} (state: #{@state})>"
     end
     # :nocov:
 
     private
 
     def build_socket
+      @ip = @addresses[@ip_index]
       Socket.new(@ip.family, :STREAM, 0)
     end
 
@@ -178,9 +197,9 @@ module HTTPX
     def log_transition_state(nextstate)
       case nextstate
       when :connected
-        "Connected to #{@hostname} (#{@ip}) port #{@port} (##{@io.fileno})"
+        "Connected to #{host} (##{@io.fileno})"
       else
-        "#{@ip}:#{@port} #{@state} -> #{nextstate}"
+        "#{host} #{@state} -> #{nextstate}"
       end
     end
   end

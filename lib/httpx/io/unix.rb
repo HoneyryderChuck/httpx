@@ -6,32 +6,41 @@ module HTTPX
   class UNIX < TCP
     extend Forwardable
 
-    def_delegator :@uri, :port, :scheme
+    using URIExtensions
 
-    def initialize(uri, addresses, options)
-      @uri = uri
+    attr_reader :path
+
+    alias_method :host, :path
+
+    def initialize(origin, addresses, options)
       @addresses = addresses
+      @hostname = origin.host
       @state = :idle
       @options = Options.new(options)
-      @path = @options.transport_options[:path]
       @fallback_protocol = @options.fallback_protocol
       if @options.io
         @io = case @options.io
               when Hash
-                @options.io[@path]
+                @options.io[origin.authority]
               else
                 @options.io
         end
-        unless @io.nil?
-          @keep_open = true
-          @state = :connected
+        raise Error, "Given IO objects do not match the request authority" unless @io
+
+        @path = @io.path
+        @keep_open = true
+        @state = :connected
+      else
+        if @options.transport_options
+          # :nocov:
+          warn ":#{__method__} is deprecated, use :addresses instead"
+          @path = @options.transport_options[:path]
+          # :nocov:
+        else
+          @path = addresses.first
         end
       end
       @io ||= build_socket
-    end
-
-    def hostname
-      @uri.host
     end
 
     def connect
@@ -50,6 +59,12 @@ module HTTPX
            Errno::EALREADY,
            ::IO::WaitReadable
     end
+
+    # :nocov:
+    def inspect
+      "#<#{self.class}(path: #{@path}): (state: #{@state})>"
+    end
+    # :nocov:
 
     private
 

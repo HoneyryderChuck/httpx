@@ -64,11 +64,6 @@ module HTTPX
       connection.on(:open) do
         @connected_connections += 1
       end
-      connection.on(:unreachable) do
-        resolver = find_resolver_for(connection)
-        resolver.uncache(connection) if resolver
-        resolve_connection(connection)
-      end
     end
 
     # opens a connection to the IP reachable through +uri+.
@@ -85,6 +80,20 @@ module HTTPX
 
     def resolve_connection(connection)
       @connections << connection unless @connections.include?(connection)
+
+      if connection.addresses || connection.state == :open
+        #
+        # there are two cases in which we want to activate initialization of
+        # connection immediately:
+        #
+        # 1. when the connection already has addresses, i.e. it doesn't need to
+        #    resolve a name (not the same as name being an IP, yet)
+        # 2. when the connection is initialized with an external already open IO.
+        #
+        on_resolver_connection(connection)
+        return
+      end
+
       resolver = find_resolver_for(connection)
       resolver << connection
       return if resolver.empty?

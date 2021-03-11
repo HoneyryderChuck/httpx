@@ -36,22 +36,23 @@ class ResponseTest < Minitest::Test
   end
 
   def test_response_body_to_s
-    body1 = Response::Body.new(Response.new(request, 200, "2.0", {}), threshold_size: 1024)
+    body1 = Response::Body.new(Response.new(request, 200, "2.0", {}), Options.new(body_threshold_size: 1024))
     assert body1.empty?, "body must be empty after initialization"
     body1.write("foo")
     assert body1 == "foo", "body must be updated"
-    body2 = Response::Body.new(Response.new(request, 200, "2.0", {}), threshold_size: 1024)
+    body2 = Response::Body.new(Response.new(request, 200, "2.0", {}), Options.new(body_threshold_size: 1024))
     body2.write("foo")
     body2.write("bar")
     assert body2 == "foobar", "body buffers chunks"
 
-    body3 = Response::Body.new(Response.new(request("head"), 200, "2.0", {}), threshold_size: 1024)
+    body3 = Response::Body.new(Response.new(request("head"), 200, "2.0", {}), Options.new(body_threshold_size: 1024))
     assert body3.empty?, "body must be empty after initialization"
     assert body3 == "", "HEAD request body must be empty (#{body3})"
 
     text = +"heãd"
     text.force_encoding(Encoding::BINARY)
-    body4 = Response::Body.new(Response.new(request, 200, "2.0", { "content-type" => "text/html; charset=utf" }), threshold_size: 1024)
+    body4 = Response::Body.new(Response.new(request, 200, "2.0", { "content-type" => "text/html; charset=utf" }),
+                               Options.new(body_threshold_size: 1024))
     body4.write(text)
     req_text = body4.to_s
     assert text == req_text, "request body must be in original encoding (#{req_text})"
@@ -59,7 +60,7 @@ class ResponseTest < Minitest::Test
 
   def test_response_body_copy_to_memory
     payload = "a" * 512
-    body = Response::Body.new(Response.new(request, 200, "2.0", {}), threshold_size: 1024)
+    body = Response::Body.new(Response.new(request, 200, "2.0", {}), Options.new(body_threshold_size: 1024))
     body.write(payload)
 
     memory = StringIO.new
@@ -70,7 +71,7 @@ class ResponseTest < Minitest::Test
 
   def test_response_body_copy_to_file
     payload = "a" * 2048
-    body = Response::Body.new(Response.new(request, 200, "2.0", {}), threshold_size: 1024)
+    body = Response::Body.new(Response.new(request, 200, "2.0", {}), Options.new(body_threshold_size: 1024))
     body.write(payload)
 
     file = Tempfile.new("httpx-file-buffer")
@@ -81,7 +82,7 @@ class ResponseTest < Minitest::Test
   end
 
   def test_response_body_read
-    body1 = Response::Body.new(Response.new(request, 200, "2.0", {}), threshold_size: 1024)
+    body1 = Response::Body.new(Response.new(request, 200, "2.0", {}), Options.new(body_threshold_size: 1024))
     body1.write("foo")
     assert body1.bytesize == 3
     assert body1.read(1), "f"
@@ -90,17 +91,17 @@ class ResponseTest < Minitest::Test
   end
 
   def test_response_body_each
-    body1 = Response::Body.new(Response.new(request, 200, "2.0", {}), threshold_size: 1024)
+    body1 = Response::Body.new(Response.new(request, 200, "2.0", {}), Options.new(body_threshold_size: 1024))
     body1.write("foo")
     assert body1.each.to_a == %w[foo], "must yield buffer"
-    body2 = Response::Body.new(Response.new(request, 200, "2.0", {}), threshold_size: 1024)
+    body2 = Response::Body.new(Response.new(request, 200, "2.0", {}), Options.new(body_threshold_size: 1024))
     body2.write("foo")
     body2.write("bar")
     assert body2.each.to_a == %w[foobar], "must yield buffers"
   end
 
   def test_response_body_buffer
-    body = Response::Body.new(Response.new(request, 200, "2.0", {}), threshold_size: 10)
+    body = Response::Body.new(Response.new(request, 200, "2.0", {}), Options.new(body_threshold_size: 10))
     body.extend(Module.new do
       attr_reader :buffer
     end)

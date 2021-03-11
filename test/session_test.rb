@@ -57,11 +57,16 @@ class SessionTest < Minitest::Test
   end
 
   def test_session_timeout_connect_timeout
-    uri = build_uri("/", origin("127.0.0.1:#{CONNECT_TIMEOUT_PORT}"))
-    session = HTTPX.with_timeout(connect_timeout: 0.5, operation_timeout: 30, total_timeout: 2)
-    response = session.get(uri)
-    verify_error_response(response)
-    # verify_error_response(response, HTTPX::ConnectTimeoutError)
+    server = TCPServer.new("127.0.0.1", CONNECT_TIMEOUT_PORT)
+    begin
+      uri = build_uri("/", origin("127.0.0.1:#{CONNECT_TIMEOUT_PORT}"))
+      session = HTTPX.with_timeout(connect_timeout: 0.5, operation_timeout: 30, total_timeout: 2)
+      response = session.get(uri)
+      verify_error_response(response)
+      verify_error_response(response, HTTPX::ConnectTimeoutError)
+    ensure
+      server.close
+    end
   end
 
   # def test_http_timeouts_operation_timeout

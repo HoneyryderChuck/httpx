@@ -112,12 +112,9 @@ end
 
 module WSTestPlugin
   class << self
-    def load_dependencies(klass, *)
+    def configure(klass)
       klass.plugin(:upgrade)
-    end
-
-    def configure(*)
-      HTTPX::Plugins::Upgrade.register("websocket", self)
+      klass.default_options.upgrade_handlers.register("websocket", self)
     end
 
     def call(connection, request, response)

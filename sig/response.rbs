@@ -37,6 +37,8 @@ module HTTPX
       include _ToStr
 
       @state: :idle | :memory | :buffer
+      @threshold_size: Integer
+      @window_size: Integer
 
       def each: () { (String) -> void } -> void
               | () -> Enumerable[String]
@@ -48,7 +50,7 @@ module HTTPX
 
       private
 
-      def initialize: (Response, ?threshold_size: Integer, ?window_size: Integer) -> untyped
+      def initialize: (Response, options) -> untyped
       def rewind: () -> void
       def transition: () -> void
     end
