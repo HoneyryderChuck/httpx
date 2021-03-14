@@ -139,6 +139,8 @@ module HTTPX
 
       h1 = to_hash
 
+      return self if h1 == h2
+
       merged = h1.merge(h2) do |k, v1, v2|
         case k
         when :headers, :ssl, :http2_settings, :timeout
