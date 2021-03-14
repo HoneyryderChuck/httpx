@@ -8,7 +8,6 @@ module HTTPX
       interface _UpgradeOptions
         def upgrade_handlers: () -> handlers_registry?
         def upgrade_handlers=: (handlers_registry) -> handlers_registry
-        def with_upgrade_handlers: (handlers_registry) -> instance
       end
  
       def self.extra_options: (Options) -> (Options & _UpgradeOptions)

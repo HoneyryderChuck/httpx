@@ -28,7 +28,6 @@ module HTTPX
       interface _ProxyOptions
         def proxy: () -> proxyParam?
         def proxy=: (Parameters | _ToHash) -> proxyParam
-        def with_proxy: (Parameters | _ToHash) -> instance
       end
  
       def self.extra_options: (Options) -> (Options & _ProxyOptions)

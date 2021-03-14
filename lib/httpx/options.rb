@@ -6,11 +6,6 @@ module HTTPX
     MAX_BODY_THRESHOLD_SIZE = (1 << 10) * 112 # 112K
 
     class << self
-      def inherited(klass)
-        super
-        klass.instance_variable_set(:@defined_options, @defined_options.dup)
-      end
-
       def new(options = {})
         # let enhanced options go through
         return options if self == Options && options.class > self
@@ -34,16 +29,8 @@ module HTTPX
 
             instance_variable_set(:"@#{name}", instance_exec(value, &interpreter))
           end
-
-          define_method(:"with_#{name}") do |value|
-            merge(name => instance_exec(value, &interpreter))
-          end
         else
           attr_writer name
-
-          define_method(:"with_#{name}") do |value|
-            merge(name => value)
-          end
         end
 
         protected :"#{name}="

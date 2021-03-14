@@ -10,8 +10,6 @@ class OptionsTest < Minitest::Test
     assert opt1.body.nil?, "body shouldn't be set by default"
     opt2 = Options.new(:body => "fat")
     assert opt2.body == "fat", "body was not set"
-    opt3 = opt1.with_body("fat")
-    assert opt3.body == "fat", "body was not set"
   end
 
   %i[form json].each do |meth|
@@ -20,8 +18,6 @@ class OptionsTest < Minitest::Test
       assert opt1.public_send(meth).nil?, "#{meth} shouldn't be set by default"
       opt2 = Options.new(meth => { "foo" => "bar" })
       assert opt2.public_send(meth) == { "foo" => "bar" }, "#{meth} was not set"
-      opt3 = opt1.public_send(:"with_#{meth}", "foo" => "bar")
-      assert opt3.public_send(meth) == { "foo" => "bar" }, "option was not set"
     end
   end
 
@@ -30,8 +26,6 @@ class OptionsTest < Minitest::Test
     assert opt1.headers.to_a.empty?, "headers should be empty"
     opt2 = Options.new(:headers => { "accept" => "*/*" })
     assert opt2.headers.to_a == [%w[accept */*]], "headers are unexpected"
-    opt3 = opt1.with_headers("accept" => "*/*")
-    assert opt3.headers.to_a == [%w[accept */*]], "headers are unexpected"
   end
 
   def test_options_merge
@@ -82,7 +76,7 @@ class OptionsTest < Minitest::Test
       :persistent => false,
       :resolver_class => bar.resolver_class,
       :resolver_options => bar.resolver_options,
-    }
+    }.reject { |_, value| value.nil? }
 
     assert foo.merge(bar).to_hash == expected, "options haven't merged correctly"
   end unless ENV.key?("HTTPX_DEBUG")

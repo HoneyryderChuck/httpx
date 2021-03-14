@@ -6,11 +6,9 @@ module HTTPX
       interface _ExpectOptions
         def expect_timeout: () -> Integer?
         def expect_timeout=: (int) -> Integer
-        def with_expect_timeout: (int) -> instance
 
         def expect_threshold_size: () -> Integer?
         def expect_threshold_size=: (int) -> Integer
-        def with_expect_threshold_size: (int) -> instance
       end
  
       def self.extra_options: (Options) -> (Options & _ExpectOptions)

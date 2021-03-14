@@ -17,12 +17,12 @@ module HTTPX
     # :nocov:
     def timeout(**args)
       warn ":#{__method__} is deprecated, use :with_timeout instead"
-      branch(default_options.with(timeout: args))
+      with(timeout: args)
     end
 
     def headers(headers)
       warn ":#{__method__} is deprecated, use :with_headers instead"
-      branch(default_options.with(headers: headers))
+      with(headers: headers)
     end
     # :nocov:
 
