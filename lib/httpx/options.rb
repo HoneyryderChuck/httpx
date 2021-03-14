@@ -14,13 +14,7 @@ module HTTPX
         super
       end
 
-      def defined_options
-        @defined_options ||= []
-      end
-
       def def_option(name, &interpreter)
-        defined_options << name.to_sym
-
         attr_reader name
 
         if interpreter
@@ -158,10 +152,10 @@ module HTTPX
     end
 
     def to_hash
-      hash_pairs = self.class
-                       .defined_options
-                       .flat_map { |opt_name| [opt_name, send(opt_name)] }
-      Hash[*hash_pairs]
+      hash_pairs = instance_variables.map do |ivar|
+        [ivar[1..-1].to_sym, instance_variable_get(ivar)]
+      end
+      Hash[hash_pairs]
     end
 
     def initialize_dup(other)
