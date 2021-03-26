@@ -235,6 +235,8 @@ module HTTPX
 
     def disable_pipelining
       return if @requests.empty?
+      # do not disable pipelining if already set to 1 request at a time
+      return if @max_concurrent_requests == 1
 
       @requests.each do |r|
         r.transition(:idle)
