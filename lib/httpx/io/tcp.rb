@@ -120,6 +120,8 @@ module HTTPX
         end
         transition(:connected)
         @interests = :w
+      rescue Errno::EALREADY
+        @interests = :w
       end
       private :try_connect
 
