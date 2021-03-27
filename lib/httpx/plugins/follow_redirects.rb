@@ -32,7 +32,7 @@ module HTTPX
 
       module InstanceMethods
         def max_redirects(n)
-          branch(default_options.with_max_redirects(n.to_i))
+          with(max_redirects: n.to_i)
         end
 
         private

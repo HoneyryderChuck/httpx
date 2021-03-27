@@ -6,7 +6,6 @@ module HTTPX
       interface _PersistentOptions
         def persistent: () -> bool?
         def persistent=: (bool) -> bool
-        def with_persistent: (bool) -> instance
       end
  
       def self.extra_options: (Options) -> (Options & _PersistentOptions)

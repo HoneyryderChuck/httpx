@@ -29,7 +29,7 @@ module HTTPX
 
       module InstanceMethods
         def digest_authentication(user, password)
-          branch(default_options.with_digest(Digest.new(user, password)))
+          with(digest: Digest.new(user, password))
         end
 
         alias_method :digest_auth, :digest_authentication

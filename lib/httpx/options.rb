@@ -6,11 +6,6 @@ module HTTPX
     MAX_BODY_THRESHOLD_SIZE = (1 << 10) * 112 # 112K
 
     class << self
-      def inherited(klass)
-        super
-        klass.instance_variable_set(:@defined_options, @defined_options.dup)
-      end
-
       def new(options = {})
         # let enhanced options go through
         return options if self == Options && options.class > self
@@ -19,13 +14,7 @@ module HTTPX
         super
       end
 
-      def defined_options
-        @defined_options ||= []
-      end
-
       def def_option(name, &interpreter)
-        defined_options << name.to_sym
-
         attr_reader name
 
         if interpreter
@@ -34,16 +23,8 @@ module HTTPX
 
             instance_variable_set(:"@#{name}", instance_exec(value, &interpreter))
           end
-
-          define_method(:"with_#{name}") do |value|
-            merge(name => instance_exec(value, &interpreter))
-          end
         else
           attr_writer name
-
-          define_method(:"with_#{name}") do |value|
-            merge(name => value)
-          end
         end
 
         protected :"#{name}="
@@ -158,6 +139,8 @@ module HTTPX
 
       h1 = to_hash
 
+      return self if h1 == h2
+
       merged = h1.merge(h2) do |k, v1, v2|
         case k
         when :headers, :ssl, :http2_settings, :timeout
@@ -171,10 +154,10 @@ module HTTPX
     end
 
     def to_hash
-      hash_pairs = self.class
-                       .defined_options
-                       .flat_map { |opt_name| [opt_name, send(opt_name)] }
-      Hash[*hash_pairs]
+      hash_pairs = instance_variables.map do |ivar|
+        [ivar[1..-1].to_sym, instance_variable_get(ivar)]
+      end
+      Hash[hash_pairs]
     end
 
     def initialize_dup(other)

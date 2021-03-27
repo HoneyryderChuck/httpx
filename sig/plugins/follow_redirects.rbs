@@ -9,11 +9,9 @@ module HTTPX
       interface _FollowRedirectsOptions
         def max_redirects: () -> Integer?
         def max_redirects=: (int) -> Integer
-        def with_max_redirects: (int) -> instance
 
         def follow_insecure_redirects: () -> bool?
         def follow_insecure_redirects=: (bool) -> bool
-        def with_follow_insecure_redirects: (bool) -> instance
       end
  
       def self.extra_options: (Options) -> (Options & _FollowRedirectsOptions)
