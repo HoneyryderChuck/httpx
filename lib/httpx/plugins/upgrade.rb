@@ -33,7 +33,8 @@ module HTTPX
         def fetch_response(request, connections, options)
           response = super
 
-          if response && response.headers.key?("upgrade")
+          if response
+            return response unless response.respond_to?(:headers) && response.headers.key?("upgrade")
 
             upgrade_protocol = response.headers["upgrade"].split(/ *, */).first
 
