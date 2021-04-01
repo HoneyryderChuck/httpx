@@ -101,7 +101,7 @@ module HTTPX
         transition(:open)
       end
 
-      !@write_buffer.empty? || @queries.empty? ? :w : :r
+      calculate_interests
     end
 
     def <<(connection)
@@ -127,10 +127,14 @@ module HTTPX
 
     private
 
+    def calculate_interests
+      !@write_buffer.empty? || @queries.empty? ? :w : :r
+    end
+
     def consume
-      dread
+      dread if calculate_interests == :r
       do_retry
-      dwrite
+      dwrite if calculate_interests == :w
     end
 
     def do_retry
