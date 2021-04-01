@@ -84,6 +84,14 @@ module HTTPX
       rescue IOError
       end
     end
+
+    # In JRuby, sendmsg_nonblock is not implemented
+    def write(buffer)
+      siz = @io.send(buffer.to_s, 0, @host, @port)
+      log { "WRITE: #{siz} bytes..." }
+      buffer.shift!(siz)
+      siz
+    end if RUBY_ENGINE == "jruby"
     # :nocov:
   end
 end

@@ -150,6 +150,7 @@ module HTTPX
         end
 
         def load_dependencies(klass)
+          require "digest/sha2"
           require "openssl"
           klass.plugin(:expect)
           klass.plugin(:compression)
