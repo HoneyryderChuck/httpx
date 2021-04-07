@@ -5,6 +5,11 @@ require_relative "test_helper"
 class OptionsTest < Minitest::Test
   include HTTPX
 
+  def test_options_unknown
+    ex = assert_raises(Error) { Options.new(foo: "bar") }
+    assert ex.message =~ /unknown option: foo/, ex.message
+  end
+
   def test_options_body
     opt1 = Options.new
     assert opt1.body.nil?, "body shouldn't be set by default"

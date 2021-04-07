@@ -60,7 +60,11 @@ module HTTPX
       defaults.each do |(k, v)|
         next if v.nil?
 
-        __send__(:"#{k}=", v)
+        begin
+          __send__(:"#{k}=", v)
+        rescue NoMethodError
+          raise Error, "unknown option: #{k}"
+        end
       end
     end
 
