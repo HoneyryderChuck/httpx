@@ -8,6 +8,34 @@ module HTTPX
     OPERATION_TIMEOUT = 60
     KEEP_ALIVE_TIMEOUT = 20
 
+    DEFAULT_OPTIONS = {
+      :debug => ENV.key?("HTTPX_DEBUG") ? $stderr : nil,
+      :debug_level => (ENV["HTTPX_DEBUG"] || 1).to_i,
+      :ssl => {},
+      :http2_settings => { settings_enable_push: 0 },
+      :fallback_protocol => "http/1.1",
+      :timeout => {
+        connect_timeout: CONNECT_TIMEOUT,
+        operation_timeout: OPERATION_TIMEOUT,
+        keep_alive_timeout: KEEP_ALIVE_TIMEOUT,
+      },
+      :headers => {},
+      :window_size => WINDOW_SIZE,
+      :body_threshold_size => MAX_BODY_THRESHOLD_SIZE,
+      :request_class => Class.new(Request),
+      :response_class => Class.new(Response),
+      :headers_class => Class.new(Headers),
+      :request_body_class => Class.new(Request::Body),
+      :response_body_class => Class.new(Response::Body),
+      :connection_class => Class.new(Connection),
+      :transport => nil,
+      :transport_options => nil,
+      :addresses => nil,
+      :persistent => false,
+      :resolver_class => (ENV["HTTPX_RESOLVER"] || :native).to_sym,
+      :resolver_options => { cache: true },
+    }.freeze
+
     class << self
       def new(options = {})
         # let enhanced options go through
@@ -48,35 +76,7 @@ module HTTPX
     end
 
     def initialize(options = {})
-      defaults = {
-        :debug => ENV.key?("HTTPX_DEBUG") ? $stderr : nil,
-        :debug_level => (ENV["HTTPX_DEBUG"] || 1).to_i,
-        :ssl => {},
-        :http2_settings => { settings_enable_push: 0 },
-        :fallback_protocol => "http/1.1",
-        :timeout => {
-          connect_timeout: CONNECT_TIMEOUT,
-          operation_timeout: OPERATION_TIMEOUT,
-          keep_alive_timeout: KEEP_ALIVE_TIMEOUT,
-        },
-        :headers => {},
-        :window_size => WINDOW_SIZE,
-        :body_threshold_size => MAX_BODY_THRESHOLD_SIZE,
-        :request_class => Class.new(Request),
-        :response_class => Class.new(Response),
-        :headers_class => Class.new(Headers),
-        :request_body_class => Class.new(Request::Body),
-        :response_body_class => Class.new(Response::Body),
-        :connection_class => Class.new(Connection),
-        :transport => nil,
-        :transport_options => nil,
-        :addresses => nil,
-        :persistent => false,
-        :resolver_class => (ENV["HTTPX_RESOLVER"] || :native).to_sym,
-        :resolver_options => { cache: true },
-      }
-
-      defaults.merge!(options)
+      defaults = DEFAULT_OPTIONS.merge(options)
       defaults.each do |(k, v)|
         next if v.nil?
 
