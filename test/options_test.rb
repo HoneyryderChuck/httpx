@@ -89,7 +89,11 @@ class OptionsTest < Minitest::Test
       :window_size => 16_384,
       :body_threshold_size => 114_688,
       :form => { :bar => "bar" },
-      :timeout => Timeout.new,
+      :timeout => {
+        connect_timeout: 60,
+        operation_timeout: 60,
+        keep_alive_timeout: 20,
+      },
       :ssl => { :foo => "bar" },
       :http2_settings => { :settings_enable_push => 0 },
       :fallback_protocol => "http/1.1",

@@ -4,6 +4,9 @@ module HTTPX
   class Options
     WINDOW_SIZE = 1 << 14 # 16K
     MAX_BODY_THRESHOLD_SIZE = (1 << 10) * 112 # 112K
+    CONNECT_TIMEOUT = 60
+    OPERATION_TIMEOUT = 60
+    KEEP_ALIVE_TIMEOUT = 20
 
     class << self
       def new(options = {})
@@ -51,7 +54,11 @@ module HTTPX
         :ssl => {},
         :http2_settings => { settings_enable_push: 0 },
         :fallback_protocol => "http/1.1",
-        :timeout => Timeout.new,
+        :timeout => {
+          connect_timeout: CONNECT_TIMEOUT,
+          operation_timeout: OPERATION_TIMEOUT,
+          keep_alive_timeout: KEEP_ALIVE_TIMEOUT,
+        },
         :headers => {},
         :window_size => WINDOW_SIZE,
         :body_threshold_size => MAX_BODY_THRESHOLD_SIZE,
@@ -90,7 +97,14 @@ module HTTPX
     OUT
 
     def_option(:timeout, <<-OUT)
-      Timeout.new(value)
+      timeouts = Hash[value]
+
+      if timeouts.key?(:loop_timeout)
+        warn ":loop_timeout is deprecated, use :operation_timeout instead"
+        timeouts[:operation_timeout] = timeouts.delete(:loop_timeout)
+      end
+
+      timeouts
     OUT
 
     def_option(:max_concurrent_requests, <<-OUT)
