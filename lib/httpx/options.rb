@@ -14,10 +14,23 @@ module HTTPX
         super
       end
 
-      def def_option(name, &interpreter)
+      def def_option(name, layout = nil, &interpreter)
         attr_reader name
 
-        if interpreter
+        if layout
+          class_eval(<<-OUT, __FILE__, __LINE__ + 1)
+            def #{name}=(value)
+              return if value.nil?
+
+              value = begin
+                #{layout}
+              end
+
+              @#{name} = value
+            end
+          OUT
+
+        elsif interpreter
           define_method(:"#{name}=") do |value|
             return if value.nil?
 
@@ -68,48 +81,85 @@ module HTTPX
       end
     end
 
-    def_option(:headers) do |headers|
+    # def_option(:headers) do |headers|
+    #   if self.headers
+    #     self.headers.merge(headers)
+    #   else
+    #     Headers.new(headers)
+    #   end
+    # end
+
+    def_option(:headers, <<-OUT)
       if self.headers
-        self.headers.merge(headers)
+        self.headers.merge(value)
       else
-        Headers.new(headers)
+        Headers.new(value)
       end
-    end
+    OUT
 
-    def_option(:timeout) do |opts|
-      Timeout.new(opts)
-    end
+    # def_option(:timeout) do |opts|
+    #   Timeout.new(opts)
+    # end
 
-    def_option(:max_concurrent_requests) do |num|
-      raise Error, ":max_concurrent_requests must be positive" unless num.positive?
+    def_option(:timeout, <<-OUT)
+      Timeout.new(value)
+    OUT
 
-      num
-    end
+    def_option(:max_concurrent_requests, <<-OUT)
+      raise Error, ":max_concurrent_requests must be positive" unless value.positive?
 
-    def_option(:max_requests) do |num|
-      raise Error, ":max_requests must be positive" unless num.positive?
+      value
+    OUT
 
-      num
-    end
+    # def_option(:max_requests) do |num|
+    #   raise Error, ":max_requests must be positive" unless num.positive?
 
-    def_option(:window_size) do |num|
-      Integer(num)
-    end
+    #   num
+    # end
 
-    def_option(:body_threshold_size) do |num|
-      Integer(num)
-    end
+    def_option(:max_requests, <<-OUT)
+      raise Error, ":max_requests must be positive" unless value.positive?
 
-    def_option(:transport) do |tr|
-      transport = tr.to_s
-      raise Error, "#{transport} is an unsupported transport type" unless IO.registry.key?(transport)
+      value
+    OUT
+
+    # def_option(:window_size) do |num|
+    #   Integer(num)
+    # end
+
+    def_option(:window_size, <<-OUT)
+      Integer(value)
+    OUT
+
+    # def_option(:body_threshold_size) do |num|
+    #   Integer(num)
+    # end
+
+    def_option(:body_threshold_size, <<-OUT)
+      Integer(value)
+    OUT
+
+    # def_option(:transport) do |tr|
+    #   transport = tr.to_s
+    #   raise Error, "#{transport} is an unsupported transport type" unless IO.registry.key?(transport)
+
+    #   transport
+    # end
+
+    def_option(:transport, <<-OUT)
+      transport = value.to_s
+      raise Error, "\#{transport} is an unsupported transport type" unless IO.registry.key?(transport)
 
       transport
-    end
+    OUT
 
-    def_option(:addresses) do |addrs|
-      Array(addrs)
-    end
+    # def_option(:addresses) do |addrs|
+    #   Array(addrs)
+    # end
+
+    def_option(:addresses, <<-OUT)
+      Array(value)
+    OUT
 
     %w[
       params form json body ssl http2_settings
