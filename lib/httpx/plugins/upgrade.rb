@@ -20,11 +20,11 @@ module HTTPX
           end
 
           Class.new(options.class) do
-            def_option(:upgrade_handlers) do |encs|
-              raise Error, ":upgrade_handlers must be a registry" unless encs.respond_to?(:registry)
+            def_option(:upgrade_handlers, <<-OUT)
+              raise Error, ":upgrade_handlers must be a registry" unless value.respond_to?(:registry)
 
-              encs
-            end
+              value
+            OUT
           end.new(options).merge(upgrade_handlers: upgrade_handlers)
         end
       end

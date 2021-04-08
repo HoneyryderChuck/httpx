@@ -25,31 +25,30 @@ module HTTPX
 
       def self.extra_options(options)
         Class.new(options.class) do
-          # number of seconds after which one can retry the request
-          def_option(:retry_after) do |num|
+          def_option(:retry_after, <<-OUT)
             # return early if callable
-            unless num.respond_to?(:call)
-              num = Integer(num)
-              raise Error, ":retry_after must be positive" unless num.positive?
+            unless value.respond_to?(:call)
+              value = Integer(value)
+              raise Error, ":retry_after must be positive" unless value.positive?
             end
 
-            num
-          end
+            value
+          OUT
 
-          def_option(:max_retries) do |num|
-            num = Integer(num)
+          def_option(:max_retries, <<-OUT)
+            num = Integer(value)
             raise Error, ":max_retries must be positive" unless num.positive?
 
             num
-          end
+          OUT
 
           def_option(:retry_change_requests)
 
-          def_option(:retry_on) do |callback|
-            raise ":retry_on must be called with the response" unless callback.respond_to?(:call)
+          def_option(:retry_on, <<-OUT)
+            raise ":retry_on must be called with the response" unless value.respond_to?(:call)
 
-            callback
-          end
+            value
+          OUT
         end.new(options).merge(max_retries: MAX_RETRIES)
       end
 

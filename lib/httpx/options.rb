@@ -81,14 +81,6 @@ module HTTPX
       end
     end
 
-    # def_option(:headers) do |headers|
-    #   if self.headers
-    #     self.headers.merge(headers)
-    #   else
-    #     Headers.new(headers)
-    #   end
-    # end
-
     def_option(:headers, <<-OUT)
       if self.headers
         self.headers.merge(value)
@@ -96,10 +88,6 @@ module HTTPX
         Headers.new(value)
       end
     OUT
-
-    # def_option(:timeout) do |opts|
-    #   Timeout.new(opts)
-    # end
 
     def_option(:timeout, <<-OUT)
       Timeout.new(value)
@@ -111,40 +99,19 @@ module HTTPX
       value
     OUT
 
-    # def_option(:max_requests) do |num|
-    #   raise Error, ":max_requests must be positive" unless num.positive?
-
-    #   num
-    # end
-
     def_option(:max_requests, <<-OUT)
       raise Error, ":max_requests must be positive" unless value.positive?
 
       value
     OUT
 
-    # def_option(:window_size) do |num|
-    #   Integer(num)
-    # end
-
     def_option(:window_size, <<-OUT)
       Integer(value)
     OUT
 
-    # def_option(:body_threshold_size) do |num|
-    #   Integer(num)
-    # end
-
     def_option(:body_threshold_size, <<-OUT)
       Integer(value)
     OUT
-
-    # def_option(:transport) do |tr|
-    #   transport = tr.to_s
-    #   raise Error, "#{transport} is an unsupported transport type" unless IO.registry.key?(transport)
-
-    #   transport
-    # end
 
     def_option(:transport, <<-OUT)
       transport = value.to_s
@@ -152,10 +119,6 @@ module HTTPX
 
       transport
     OUT
-
-    # def_option(:addresses) do |addrs|
-    #   Array(addrs)
-    # end
 
     def_option(:addresses, <<-OUT)
       Array(value)
