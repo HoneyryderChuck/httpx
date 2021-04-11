@@ -112,7 +112,7 @@ module HTTPX
     end
 
     def ==(other)
-      to_hash == Headers.new(other).to_hash
+      other == to_hash
     end
 
     # the headers store in Hash format

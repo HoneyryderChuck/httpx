@@ -215,6 +215,11 @@ module HTTPX
     ######
 
     def on_stream_headers(stream, request, h)
+      if request.response && request.response.version == "2.0"
+        on_stream_trailers(stream, request, h)
+        return
+      end
+
       log(color: :yellow) do
         h.map { |k, v| "#{stream.id}: <- HEADER: #{k}: #{v}" }.join("\n")
       end
@@ -225,6 +230,13 @@ module HTTPX
       @streams[request] = stream
 
       handle(request, stream) if request.expects?
+    end
+
+    def on_stream_trailers(stream, request, h)
+      log(color: :yellow) do
+        h.map { |k, v| "#{stream.id}: <- HEADER: #{k}: #{v}" }.join("\n")
+      end
+      request.response.merge_headers(h)
     end
 
     def on_stream_data(stream, request, data)

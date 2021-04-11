@@ -57,6 +57,8 @@ module HTTPX
 
     def on_stream_headers: (HTTP2Next::Stream stream, Request request, Array[[String, String]] headers) -> void
 
+    def on_stream_trailers: (HTTP2Next::Stream stream, Request request, Array[[String, String]] headers) -> void
+
     def on_stream_data: (HTTP2Next::Stream stream, Request request, string data) -> void
 
     def on_stream_close: (HTTP2Next::Stream stream, Request request, Symbol? error) -> void
