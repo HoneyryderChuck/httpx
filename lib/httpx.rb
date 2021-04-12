@@ -12,12 +12,11 @@ require "httpx/callbacks"
 require "httpx/loggable"
 require "httpx/registry"
 require "httpx/transcoder"
-require "httpx/options"
-require "httpx/timeout"
 require "httpx/pool"
 require "httpx/headers"
 require "httpx/request"
 require "httpx/response"
+require "httpx/options"
 require "httpx/chainable"
 
 # Top-Level Namespace

@@ -16,19 +16,19 @@ module HTTPX
 
       def self.extra_options(options)
         Class.new(options.class) do
-          def_option(:expect_timeout) do |seconds|
-            seconds = Integer(seconds)
+          def_option(:expect_timeout, <<-OUT)
+            seconds = Integer(value)
             raise Error, ":expect_timeout must be positive" unless seconds.positive?
 
             seconds
-          end
+          OUT
 
-          def_option(:expect_threshold_size) do |bytes|
-            bytes = Integer(bytes)
+          def_option(:expect_threshold_size, <<-OUT)
+            bytes = Integer(value)
             raise Error, ":expect_threshold_size must be positive" unless bytes.positive?
 
             bytes
-          end
+          OUT
         end.new(options).merge(expect_timeout: EXPECT_TIMEOUT)
       end
 

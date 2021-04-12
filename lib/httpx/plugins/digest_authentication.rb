@@ -14,11 +14,11 @@ module HTTPX
 
       def self.extra_options(options)
         Class.new(options.class) do
-          def_option(:digest) do |digest|
-            raise Error, ":digest must be a Digest" unless digest.is_a?(Digest)
+          def_option(:digest, <<-OUT)
+            raise Error, ":digest must be a Digest" unless value.is_a?(#{Digest})
 
-            digest
-          end
+            value
+          OUT
         end.new(options)
       end
 

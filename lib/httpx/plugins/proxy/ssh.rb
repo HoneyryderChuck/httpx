@@ -12,9 +12,9 @@ module HTTPX
 
         def self.extra_options(options)
           Class.new(options.class) do
-            def_option(:proxy) do |pr|
-              Hash[pr]
-            end
+            def_option(:proxy, <<-OUT)
+              Hash[value]
+            OUT
           end.new(options)
         end
 

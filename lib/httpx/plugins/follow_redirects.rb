@@ -19,12 +19,12 @@ module HTTPX
 
       def self.extra_options(options)
         Class.new(options.class) do
-          def_option(:max_redirects) do |num|
-            num = Integer(num)
+          def_option(:max_redirects, <<-OUT)
+            num = Integer(value)
             raise Error, ":max_redirects must be positive" if num.negative?
 
             num
-          end
+          OUT
 
           def_option(:follow_insecure_redirects)
         end.new(options)

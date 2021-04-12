@@ -5,6 +5,9 @@ module HTTPX
     WINDOW_SIZE: Integer
     MAX_BODY_THRESHOLD_SIZE: Integer
 
+    type timeout_type = :connect_timeout  | :operation_timeout | :keep_alive_timeout | :total_timeout
+    type timeout = Hash[timeout_type, Numeric?]
+
     def self.new: (options) -> instance
                 | () -> instance
 
@@ -13,8 +16,8 @@ module HTTPX
     def headers=: (headers) -> void
 
     # timeout
-    attr_reader timeout: Timeout?
-    def timeout=: (Hash[Symbol, untyped] | Timeout) -> void
+    attr_reader timeout: timeout
+    def timeout=: (timeout) -> void
 
     # max_concurrent_requests
     attr_reader max_concurrent_requests: Integer?

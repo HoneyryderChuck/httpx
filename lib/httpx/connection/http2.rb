@@ -21,14 +21,16 @@ module HTTPX
 
     def initialize(buffer, options)
       @options = Options.new(options)
-      @max_concurrent_requests = @options.max_concurrent_requests || MAX_CONCURRENT_REQUESTS
-      @max_requests = @options.max_requests || 0
+      @settings = @options.http2_settings
       @pending = []
       @streams = {}
       @drains  = {}
       @pings = []
       @buffer = buffer
       @handshake_completed = false
+      @wait_for_handshake = @settings.key?(:wait_for_handshake) ? @settings.delete(:wait_for_handshake) : true
+      @max_concurrent_requests = @options.max_concurrent_requests || MAX_CONCURRENT_REQUESTS
+      @max_requests = @options.max_requests || 0
       init_connection
     end
 
@@ -75,9 +77,13 @@ module HTTPX
     end
 
     def can_buffer_more_requests?
-      @handshake_completed &&
+      if @handshake_completed
         @streams.size < @max_concurrent_requests &&
-        @streams.size < @max_requests
+          @streams.size < @max_requests
+      else
+        !@wait_for_handshake &&
+          @streams.size < @max_concurrent_requests
+      end
     end
 
     def send(request)
@@ -145,7 +151,7 @@ module HTTPX
     end
 
     def init_connection
-      @connection = HTTP2Next::Client.new(@options.http2_settings)
+      @connection = HTTP2Next::Client.new(@settings)
       @connection.max_streams = @max_requests if @connection.respond_to?(:max_streams=) && @max_requests.positive?
       @connection.on(:frame, &method(:on_frame))
       @connection.on(:frame_sent, &method(:on_frame_sent))
@@ -215,6 +221,11 @@ module HTTPX
     ######
 
     def on_stream_headers(stream, request, h)
+      if request.response && request.response.version == "2.0"
+        on_stream_trailers(stream, request, h)
+        return
+      end
+
       log(color: :yellow) do
         h.map { |k, v| "#{stream.id}: <- HEADER: #{k}: #{v}" }.join("\n")
       end
@@ -225,6 +236,13 @@ module HTTPX
       @streams[request] = stream
 
       handle(request, stream) if request.expects?
+    end
+
+    def on_stream_trailers(stream, request, h)
+      log(color: :yellow) do
+        h.map { |k, v| "#{stream.id}: <- HEADER: #{k}: #{v}" }.join("\n")
+      end
+      request.response.merge_headers(h)
     end
 
     def on_stream_data(stream, request, data)

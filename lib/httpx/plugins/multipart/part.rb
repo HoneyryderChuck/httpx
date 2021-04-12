@@ -19,7 +19,7 @@ module HTTPX
           value = value[:body]
         end
 
-        value = value.open(:binmode => true) if value.is_a?(Pathname)
+        value = value.open(:binmode => true) if Object.const_defined?(:Pathname) && value.is_a?(Pathname)
 
         if value.is_a?(File)
           filename ||= File.basename(value.path)

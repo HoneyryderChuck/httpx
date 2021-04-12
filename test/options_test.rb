@@ -5,6 +5,38 @@ require_relative "test_helper"
 class OptionsTest < Minitest::Test
   include HTTPX
 
+  def test_options_unknown
+    ex = assert_raises(Error) { Options.new(foo: "bar") }
+    assert ex.message =~ /unknown option: foo/, ex.message
+  end
+
+  def test_options_def_option_plain
+    opts = Class.new(Options) do
+      def_option(:foo)
+    end.new(foo: "1")
+    assert opts.foo == "1", "foo wasn't set"
+  end
+
+  def test_options_def_option_str_eval
+    opts = Class.new(Options) do
+      def_option(:foo, <<-OUT)
+        Integer(value)
+      OUT
+    end.new(foo: "1")
+    assert opts.foo == 1, "foo wasn't set or converted"
+  end
+
+  def test_options_def_option_block
+    bar = nil
+    _opts = Class.new(Options) do
+      def_option(:foo) do |value|
+        bar = 2
+        value
+      end
+    end.new(foo: "1")
+    assert bar == 2, "bar hasn't been set"
+  end unless RUBY_VERSION >= "3.0.0"
+
   def test_options_body
     opt1 = Options.new
     assert opt1.body.nil?, "body shouldn't be set by default"
@@ -57,7 +89,11 @@ class OptionsTest < Minitest::Test
       :window_size => 16_384,
       :body_threshold_size => 114_688,
       :form => { :bar => "bar" },
-      :timeout => Timeout.new,
+      :timeout => {
+        connect_timeout: 60,
+        operation_timeout: 60,
+        keep_alive_timeout: 20,
+      },
       :ssl => { :foo => "bar" },
       :http2_settings => { :settings_enable_push => 0 },
       :fallback_protocol => "http/1.1",

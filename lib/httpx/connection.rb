@@ -69,7 +69,7 @@ module HTTPX
       end
 
       @inflight = 0
-      @keep_alive_timeout = options.timeout.keep_alive_timeout
+      @keep_alive_timeout = options.timeout[:keep_alive_timeout]
       @keep_alive_timer = nil
 
       self.addresses = options.addresses if options.addresses
@@ -238,9 +238,9 @@ module HTTPX
     def timeout
       return @timeout if defined?(@timeout)
 
-      return @options.timeout.connect_timeout if @state == :idle
+      return @options.timeout[:connect_timeout] if @state == :idle
 
-      @options.timeout.operation_timeout
+      @options.timeout[:operation_timeout]
     end
 
     private
@@ -451,7 +451,7 @@ module HTTPX
     def transition(nextstate)
       case nextstate
       when :idle
-        @timeout = @current_timeout = @options.timeout.connect_timeout
+        @timeout = @current_timeout = @options.timeout[:connect_timeout]
 
       when :open
         return if @state == :closed
@@ -463,7 +463,7 @@ module HTTPX
 
         send_pending
 
-        @timeout = @current_timeout = @options.timeout.operation_timeout
+        @timeout = @current_timeout = @options.timeout[:operation_timeout]
         emit(:open)
       when :closing
         return unless @state == :open
@@ -547,7 +547,7 @@ module HTTPX
     end
 
     def total_timeout
-      total = @options.timeout.total_timeout
+      total = @options.timeout[:total_timeout]
 
       return unless total
 

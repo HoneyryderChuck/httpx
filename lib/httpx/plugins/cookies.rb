@@ -20,13 +20,9 @@ module HTTPX
 
       def self.extra_options(options)
         Class.new(options.class) do
-          def_option(:cookies) do |cookies|
-            if cookies.is_a?(Jar)
-              cookies
-            else
-              Jar.new(cookies)
-            end
-          end
+          def_option(:cookies, <<-OUT)
+            value.is_a?(#{Jar}) ? value : #{Jar}.new(value)
+          OUT
         end.new(options)
       end
 

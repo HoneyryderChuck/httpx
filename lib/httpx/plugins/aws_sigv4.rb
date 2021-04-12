@@ -143,9 +143,9 @@ module HTTPX
       class << self
         def extra_options(options)
           Class.new(options.class) do
-            def_option(:sigv4_signer) do |signer|
-              signer.is_a?(Signer) ? signer : Signer.new(signer)
-            end
+            def_option(:sigv4_signer, <<-OUT)
+              value.is_a?(#{Signer}) ? value : #{Signer}.new(value)
+            OUT
           end.new.merge(options)
         end
 
