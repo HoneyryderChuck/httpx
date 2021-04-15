@@ -37,6 +37,11 @@ group :test do
     gem "brotli"
     gem "ed25519"
     gem "net-ssh-gateway"
+
+    if RUBY_VERSION >= "2.3"
+      gem "grpc"
+      gem "logging"
+    end
   end
 
   platform :mri_21 do
