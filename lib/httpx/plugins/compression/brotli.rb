@@ -5,12 +5,12 @@ module HTTPX
     module Compression
       module Brotli
         class << self
-          def load_dependencies(klass)
-            klass.plugin(:compression)
+          def load_dependencies(_klass)
             require "brotli"
           end
 
           def configure(klass)
+            klass.plugin(:compression)
             klass.default_options.encodings.register "br", self
           end
         end

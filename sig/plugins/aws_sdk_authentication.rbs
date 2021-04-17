@@ -7,6 +7,8 @@ module HTTPX
 
       def self.load_dependencies: (singleton(Session)) -> void
 
+      def self.configure: (singleton(Session)) -> void
+
       def self.extra_options: (Options) -> (Options)
 
       module InstanceMethods

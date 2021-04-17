@@ -4,13 +4,13 @@ module HTTPX
   module Plugins
     module Compression
       module Deflate
-        def self.load_dependencies(klass)
+        def self.load_dependencies(_klass)
           require "stringio"
           require "zlib"
-          klass.plugin(:"compression/gzip")
         end
 
         def self.configure(klass)
+          klass.plugin(:"compression/gzip")
           klass.default_options.encodings.register "deflate", self
         end
 
