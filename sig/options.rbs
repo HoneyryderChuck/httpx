@@ -12,6 +12,10 @@ module HTTPX
                 | () -> instance
 
     # headers
+    attr_reader uri: URI?
+    def uri=: (uri) -> void
+
+    # headers
     attr_reader headers: Headers?
     def headers=: (headers) -> void
 

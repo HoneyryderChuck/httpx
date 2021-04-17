@@ -41,8 +41,13 @@ module HTTPX
 
     def initialize(verb, uri, options = {})
       @verb    = verb.to_s.downcase.to_sym
-      @uri     = Utils.uri(uri)
       @options = Options.new(options)
+      @uri     = Utils.uri(uri)
+      if @uri.relative?
+        raise(Error, "invalid URI: #{@uri}") unless @options.origin
+
+        @uri = @options.origin.merge(@uri)
+      end
 
       raise(Error, "unknown method: #{verb}") unless METHODS.include?(@verb)
 

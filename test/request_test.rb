@@ -6,14 +6,14 @@ class RequestTest < Minitest::Test
   include HTTPX
 
   def test_request_unsupported_body
-    ex = assert_raises(HTTPX::Error) { Request.new(:post, "/", body: Object.new) }
+    ex = assert_raises(HTTPX::Error) { Request.new(:post, "http://example.com/", body: Object.new) }
     assert ex.message =~ /cannot determine size of body/
   end
 
   def test_request_verb
-    r1 = Request.new(:get, "/")
+    r1 = Request.new(:get, "http://example.com/")
     assert r1.verb == :get, "unexpected verb (#{r1.verb})"
-    r2 = Request.new("GET", "/")
+    r2 = Request.new("GET", "http://example.com/")
     assert r2.verb == :get, "unexpected verb (#{r1.verb})"
   end
 
@@ -57,21 +57,21 @@ class RequestTest < Minitest::Test
   end
 
   def test_request_body_raw
-    req = Request.new(:post, "/", body: "bang")
+    req = Request.new(:post, "http://example.com/", body: "bang")
     assert !req.body.empty?, "body should exist"
     assert req.headers["content-type"] == "application/octet-stream", "content type is wrong"
     assert req.headers["content-length"] == "4", "content length is wrong"
   end
 
   def test_request_body_form
-    req = Request.new(:post, "/", form: { "foo" => "bar" })
+    req = Request.new(:post, "http://example.com/", form: { "foo" => "bar" })
     assert !req.body.empty?, "body should exist"
     assert req.headers["content-type"] == "application/x-www-form-urlencoded", "content type is wrong"
     assert req.headers["content-length"] == "7", "content length is wrong"
   end
 
   def test_request_body_json
-    req = Request.new(:post, "/", json: { "foo" => "bar" })
+    req = Request.new(:post, "http://example.com/", json: { "foo" => "bar" })
     assert !req.body.empty?, "body should exist"
     assert req.headers["content-type"] == "application/json; charset=utf-8", "content type is wrong"
     assert req.headers["content-length"] == "13", "content length is wrong"

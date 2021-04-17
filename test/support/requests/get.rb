@@ -3,10 +3,19 @@
 require "time"
 
 module Requests
+  using HTTPX::URIExtensions
+
   module Get
     def test_http_get
       uri = build_uri("/get")
       response = HTTPX.get(uri)
+      verify_status(response, 200)
+      verify_body_length(response)
+    end
+
+    def test_http_get_option_origin
+      uri = URI(build_uri("/get"))
+      response = HTTPX.with(origin: uri.origin).get(uri.path)
       verify_status(response, 200)
       verify_body_length(response)
     end
