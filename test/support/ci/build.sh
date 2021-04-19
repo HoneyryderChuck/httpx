@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 set -e
 
@@ -6,20 +6,24 @@ RUBY_PLATFORM=`ruby -e 'puts RUBY_PLATFORM'`
 RUBY_ENGINE=`ruby -e 'puts RUBY_ENGINE'`
 
 if [[ "$RUBY_ENGINE" = "truffleruby" ]]; then
-  apt-get update && apt-get install -y curl git iptables file
+  apt-get update && apt-get install -y iptables
 elif [[ "$RUBY_PLATFORM" = "java" ]]; then
   echo "
 deb http://deb.debian.org/debian sid main contrib non-free
 deb-src http://deb.debian.org/debian sid main contrib non-free" >> /etc/apt/sources.list
-  apt-get update && apt-get install -y curl git iptables file openssl libssl-dev ca-certificates
+  apt-get update && apt-get install -y iptables openssl libssl-dev ca-certificates file
   update-ca-certificates
 elif [[ ${RUBY_VERSION:0:3} = "2.1" ]]; then
-  apk --update add g++ make curl git bash libsodium iptables file
+  apt-get update && apt-get install -y libsodium-dev iptables
 elif [[ ${RUBY_VERSION:0:3} = "2.3" ]]; then
   # installing custom openssl
-  apk --update add g++ make curl git bash iptables file openssl=1.0.2u-r0 openssl-dev=1.0.2u-r0
+  apt-get update && apt-get install -y iptables # openssl=1.0.2l openssl-dev=1.0.2l
+  wget http://deb.debian.org/debian/pool/main/o/openssl1.0/libssl1.0.2_1.0.2u-1~deb9u1_amd64.deb
+  dpkg -i libssl1.0.2_1.0.2u-1~deb9u1_amd64.deb
+  wget http://deb.debian.org/debian/pool/main/o/openssl1.0/libssl1.0-dev_1.0.2u-1~deb9u1_amd64.deb
+  dpkg -i libssl1.0-dev_1.0.2u-1~deb9u1_amd64.deb
 else
-  apk --update add g++ make curl git bash iptables file
+  apt-get update && apt-get install -y iptables
 fi
 
 # use port 9090 to test connection timeouts
