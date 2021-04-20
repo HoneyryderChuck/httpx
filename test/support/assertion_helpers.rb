@@ -49,7 +49,7 @@ module ResponseHelpers
       assert response.error.message.include?(expectation),
              "expected \"#{response.error.message}\" to include \"#{expectation}\""
     when Class
-      assert response.error.is_a?(expectation),
+      assert response.error.is_a?(expectation) || response.error.cause.is_a?(expectation),
              "expected #{response.error} to be a #{expectation}"
     else
       raise "unexpected expectation (#{expectation})"

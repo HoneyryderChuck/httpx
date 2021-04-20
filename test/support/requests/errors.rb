@@ -14,7 +14,7 @@ module Requests
       return unless uri.start_with?("http://")
 
       response = HTTPX.get(uri, addresses: [EHOSTUNREACH_HOST] * 2)
-      verify_error_response(response, /Host is unreachable/)
+      verify_error_response(response, Errno::EHOSTUNREACH)
     end
 
     def test_errors_host_etimedout
@@ -24,7 +24,7 @@ module Requests
       server = TCPServer.new("127.0.0.1", ETIMEDOUT_PORT)
       begin
         response = HTTPX.get(uri, addresses: %w[127.0.0.1] * 2)
-        verify_error_response(response, /Operation timed out/)
+        verify_error_response(response, Errno::ETIMEDOUT)
       ensure
         server.close
       end

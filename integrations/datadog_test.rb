@@ -194,7 +194,6 @@ class DatadogTest < Minitest::Test
   private
 
   def set_datadog(options = {}, &blk)
-    Datadog.reset!
     Datadog.registry[:httpx].reset_configuration!
 
     Datadog.configure do |c|

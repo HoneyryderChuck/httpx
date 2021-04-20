@@ -23,9 +23,12 @@ group :test do
   elsif RUBY_VERSION < "2.4"
     gem "rubocop", "~> 0.81.0"
     gem "rubocop-performance", "~> 1.5.2"
+  elsif RUBY_VERSION < "2.5"
+    gem "rubocop", "~> 1.12.0"
+    gem "rubocop-performance", "~> 1.10.2"
   else
     gem "rubocop"
-    gem "rubocop-performance", "~> 1.5.2"
+    gem "rubocop-performance"
   end
 
   platform :mri, :truffleruby do
