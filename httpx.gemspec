@@ -30,6 +30,6 @@ Gem::Specification.new do |gem|
 
   gem.require_paths = ["lib"]
 
-  gem.add_runtime_dependency "http-2-next", ">= 0.1.2"
+  gem.add_runtime_dependency "http-2-next", ">= 0.4.1"
   gem.add_runtime_dependency "timers"
 end
