@@ -35,11 +35,66 @@ module Requests
         grpc = HTTPX.plugin(:grpc)
 
         # build service
-        test_service_rpcs = grpc.rpc(:an_rpc, EchoMsg, EchoMsg)
+        test_service_rpcs = grpc.rpc(:an_rpc, EchoMsg, EchoMsg, marshal_method: :marshal, unmarshal_method: :unmarshal)
         test_service_stub = test_service_rpcs.build_stub("http://localhost:#{server_port}", TestService)
         echo_response = test_service_stub.an_rpc(EchoMsg.new(msg: "ping"))
 
         assert echo_response.msg == "ping"
+        # assert echo_response.trailing_metadata["status"] == "OK"
+      end
+
+      def test_plugin_grpc_client_stream_protobuf
+        server_port = run_rpc(TestService)
+
+        grpc = HTTPX.plugin(:grpc)
+
+        # build service
+        test_service_rpcs = grpc.rpc(:a_client_streaming_rpc, EchoMsg, EchoMsg, marshal_method: :marshal, unmarshal_method: :unmarshal)
+        test_service_stub = test_service_rpcs.build_stub("http://localhost:#{server_port}", TestService)
+
+        input = [EchoMsg.new(msg: "ping"), EchoMsg.new(msg: "ping")]
+        response = test_service_stub.a_client_streaming_rpc(input)
+
+        assert response.msg == "client stream pong"
+        # assert echo_response.trailing_metadata["status"] == "OK"
+      end
+
+      def test_plugin_grpc_server_stream_protobuf
+        server_port = run_rpc(TestService)
+
+        grpc = HTTPX.plugin(:grpc)
+
+        # build service
+        test_service_rpcs = grpc.rpc(:a_server_streaming_rpc, EchoMsg, EchoMsg, marshal_method: :marshal, unmarshal_method: :unmarshal,
+                                                                                stream: true)
+        test_service_stub = test_service_rpcs.build_stub("http://localhost:#{server_port}", TestService)
+        streaming_response = test_service_stub.a_server_streaming_rpc(EchoMsg.new(msg: "ping"))
+
+        assert streaming_response.respond_to?(:each)
+        # assert streaming_response.trailing_metadata.nil?
+
+        echo_responses = streaming_response.each.to_a
+        assert echo_responses.map(&:msg) == ["server stream pong", "server stream pong"]
+        # assert echo_response.trailing_metadata["status"] == "OK"
+      end
+
+      def test_plugin_grpc_bidi_stream_protobuf
+        server_port = run_rpc(TestService)
+
+        grpc = HTTPX.plugin(:grpc)
+
+        # build service
+        test_service_rpcs = grpc.rpc(:a_bidi_rpc, EchoMsg, EchoMsg, marshal_method: :marshal, unmarshal_method: :unmarshal, stream: true)
+        test_service_stub = test_service_rpcs.build_stub("http://localhost:#{server_port}", TestService)
+        input = [EchoMsg.new(msg: "ping"), EchoMsg.new(msg: "ping")]
+        streaming_response = test_service_stub.a_bidi_rpc(input)
+
+        assert streaming_response.respond_to?(:each)
+        # assert streaming_response.trailing_metadata.nil?
+
+        echo_responses = streaming_response.each.to_a
+        assert echo_responses.map(&:msg) == ["bidi pong", "bidi pong"]
+        # assert echo_response.trailing_metadata["status"] == "OK"
       end
     end
   end

@@ -42,18 +42,18 @@ begin
     def a_client_streaming_rpc(call)
       check_peer_cert(call)
       call.each_remote_read.each { |r| GRPC.logger.info(r) }
-      EchoMsg.new
+      EchoMsg.new(msg: "client stream pong")
     end
 
     def a_server_streaming_rpc(_, call)
       check_peer_cert(call)
-      [EchoMsg.new, EchoMsg.new]
+      [EchoMsg.new(msg: "server stream pong"), EchoMsg.new(msg: "server stream pong")]
     end
 
     def a_bidi_rpc(requests, call)
       check_peer_cert(call)
       requests.each { |r| GRPC.logger.info(r) }
-      [EchoMsg.new, EchoMsg.new]
+      [EchoMsg.new(msg: "bidi pong"), EchoMsg.new(msg: "bidi pong")]
     end
   end
 

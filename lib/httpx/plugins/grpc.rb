@@ -45,25 +45,40 @@ module HTTPX
         # ex "foo-bin" => base64("bar")
       }.freeze
 
+      # Encoding module for GRPC responses
+      #
+      # Can encode and decode grpc messages.
       module Message
         module_function
 
+        # decodes a unary grpc response
         def unary(response)
           verify_status(response)
           decode(response.to_s)
         end
 
-        def stream(response); end
+        # lazy decodes a grpc stream response
+        def stream(response)
+          return enum_for(__method__, response) unless block_given?
 
+          response.each do |frame|
+            yield decode(frame)
+          end
+        end
+
+        # encodes a single grpc message
         def encode(bytes)
           "".b << [0, bytes.bytesize].pack("CL>") << bytes
         end
 
+        # decodes a single grpc message
         def decode(message)
           _compressed, size = message.unpack("CL>")
           message.byteslice(5..size + 5 - 1)
         end
 
+        # interprets the grpc call trailing metadata, and raises an
+        # exception in case of error code
         def verify_status(response)
           status = Integer(response.headers["grpc-status"])
           message = response.headers["grpc-message"]
@@ -76,7 +91,7 @@ module HTTPX
       end
 
       class << self
-        def load_dependencies(_klass)
+        def load_dependencies(*)
           require "google/protobuf"
         end
 
@@ -113,14 +128,12 @@ module HTTPX
       end
 
       module InstanceMethods
-        def rpc(rpc_name, input, output)
+        def rpc(rpc_name, input, output, **opts)
           rpc_name = rpc_name.to_s
           raise Error, "rpc #{rpc_name} already defined" if @options.grpc_rpcs.key?(rpc_name)
 
-          # assert_can_marshal(input)
-          # assert_can_marshal(output)
           with(grpc_rpcs: @options.grpc_rpcs.merge(
-            rpc_name.underscore => [rpc_name, input, output]
+            rpc_name.underscore => [rpc_name, input, output, opts]
           ).freeze)
         end
 
@@ -128,26 +141,44 @@ module HTTPX
           with(origin: origin, grpc_service: service)
         end
 
-        def execute(rpc_method, input, **opts)
-          grpc_request = build_grpc_request(rpc_method, input, **opts)
-          response = request(grpc_request)
+        def execute(rpc_method, input, metadata: nil, **opts)
+          grpc_request = build_grpc_request(rpc_method, input, metadata: metadata, **opts)
+          response = request(grpc_request, **opts)
           return Message.stream(response) if response.respond_to?(:each)
 
           Message.unary(response)
         end
 
-        def rpc_execute(rpc_name, input, **_opts)
-          rpc_name, input_enc, output_enc = @options.grpc_rpcs[rpc_name.to_s] || raise(Error, "#{rpc_name}: undefined service")
-          response = execute(rpc_name, input_enc.marshal(input))
+        private
 
-          return output_enc.stream(response) if response.respond_to?(:each)
+        def rpc_execute(rpc_name, input, marshal_method: nil, unmarshal_method: nil, **opts)
+          rpc_name, input_enc, output_enc, rpc_opts = @options.grpc_rpcs[rpc_name.to_s] || raise(Error, "#{rpc_name}: undefined service")
+
+          marshal_method ||= rpc_opts.fetch(:marshal_method, :encode)
+          unmarshal_method ||= rpc_opts.fetch(:unmarshal_method, :decode)
+
+          messages = if input.respond_to?(:each)
+            Enumerator.new do |y|
+              input.each do |message|
+                y << input_enc.__send__(marshal_method, message)
+              end
+            end
+          else
+            input_enc.marshal(input)
+          end
+
+          response = execute(rpc_name, messages, stream: rpc_opts.fetch(:stream, false), **opts)
+
+          return Enumerator.new do |y|
+            response.each do |message|
+              y << output_enc.__send__(unmarshal_method, message)
+            end
+          end if response.respond_to?(:each)
 
           output_enc.unmarshal(response)
         end
 
-        private
-
-        def build_grpc_request(rpc_method, input, metadata: nil)
+        def build_grpc_request(rpc_method, input, metadata: nil, **)
           uri = @options.origin.dup
           rpc_method = "/#{rpc_method}" unless rpc_method.start_with?("/")
           rpc_method = "/#{@options.grpc_service}#{rpc_method}" if @options.grpc_service
@@ -156,7 +187,16 @@ module HTTPX
           headers = HEADERS
           headers = headers.merge(metadata) if metadata
 
-          build_request(:post, uri, headers: headers, body: Message.encode(input))
+          body = if input.respond_to?(:each)
+            Enumerator.new do |y|
+              input.each do |message|
+                y << Message.encode(message)
+              end
+            end
+          else
+            Message.encode(input)
+          end
+          build_request(:post, uri, headers: headers, body: body)
         end
 
         def respond_to_missing?(meth, *, **, &blk)
