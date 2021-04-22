@@ -5,7 +5,7 @@ module Requests
     module GRPC
       include GRPCHelpers
 
-      def test_plugin_grpc_unary
+      def test_plugin_grpc_unary_plain_bytestreams
         no_marshal = proc { |x| x }
 
         server_port = run_request_response("a_reply", OK, marshal: no_marshal) do |call|
@@ -27,6 +27,19 @@ module Requests
         # result = op.execute
 
         assert result == "a_reply"
+      end
+
+      def test_plugin_grpc_unary_protobuf
+        server_port = run_rpc(TestService)
+
+        grpc = HTTPX.plugin(:grpc)
+
+        # build service
+        test_service_rpcs = grpc.rpc(:an_rpc, EchoMsg, EchoMsg)
+        test_service_stub = test_service_rpcs.build_stub("http://localhost:#{server_port}", TestService)
+        echo_response = test_service_stub.an_rpc(EchoMsg.new(msg: "ping"))
+
+        assert echo_response.msg == "ping"
       end
     end
   end
