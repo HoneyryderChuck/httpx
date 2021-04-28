@@ -61,7 +61,9 @@ module HTTPX
     private
 
     def response
-      @response ||= @session.__send__(:send_requests, @request, @options).first
+      @request.response || begin
+        @response ||= @session.__send__(:send_requests, @request, @options).first
+      end
     end
 
     def respond_to_missing?(*args)
