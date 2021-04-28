@@ -62,6 +62,8 @@ module HTTPX
           response.each do |frame|
             yield decode(frame, encodings: response.headers.get("grpc-encoding"), encoders: response.encoders)
           end
+
+          verify_status(response)
         end
 
         # encodes a single grpc message
@@ -93,6 +95,9 @@ module HTTPX
         # interprets the grpc call trailing metadata, and raises an
         # exception in case of error code
         def verify_status(response)
+          # return standard errors if need be
+          response.raise_for_status
+
           status = Integer(response.headers["grpc-status"])
           message = response.headers["grpc-message"]
 
@@ -105,6 +110,7 @@ module HTTPX
 
       class << self
         def load_dependencies(*)
+          require "stringio"
           require "google/protobuf"
         end
 
@@ -120,13 +126,23 @@ module HTTPX
               String(value)
             OUT
 
+            def_option(:grpc_compression, <<-OUT)
+              case value
+              when true, false
+                value
+              else
+                value.to_s
+              end
+            OUT
+
             def_option(:grpc_rpcs, <<-OUT)
               Hash[value]
             OUT
           end.new(options).merge(
             fallback_protocol: "h2",
             http2_settings: { wait_for_handshake: false },
-            grpc_rpcs: {}.freeze
+            grpc_rpcs: {}.freeze,
+            grpc_compression: false
           )
         end
       end
@@ -154,8 +170,8 @@ module HTTPX
           ).freeze)
         end
 
-        def build_stub(origin, service = nil)
-          with(origin: origin, grpc_service: service)
+        def build_stub(origin, service: nil, compression: false)
+          with(origin: origin, grpc_service: service, grpc_compression: compression)
         end
 
         def execute(rpc_method, input, metadata: nil, **opts)
@@ -207,15 +223,25 @@ module HTTPX
 
           headers = headers.merge(metadata) if metadata
 
+          # prepare compressor
+          deflater = nil
+          compression = @options.grpc_compression == true ? "gzip" : @options.grpc_compression
+
+          if compression
+            headers["grpc-encoding"] = compression
+            deflater = @options.encodings.registry(compression).deflater
+          end
+
           body = if input.respond_to?(:each)
             Enumerator.new do |y|
               input.each do |message|
-                y << Message.encode(message)
+                y << Message.encode(message, deflater: deflater)
               end
             end
           else
-            Message.encode(input)
+            Message.encode(input, deflater: deflater)
           end
+
           build_request(:post, uri, headers: headers, body: body)
         end
 

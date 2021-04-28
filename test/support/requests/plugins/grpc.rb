@@ -22,6 +22,23 @@ module Requests
         assert result == "a_reply"
       end
 
+      def test_plugin_grpc_compressed_request
+        no_marshal = proc { |x| x }
+
+        server_port = run_request_response("a_reply", OK, marshal: no_marshal) do |call|
+          # assert call.metadata["grpc-encoding"] == "gzip", "request wasn't compressed"
+          # TODO: find a way to test if request payload was indeed compressed
+          assert call.remote_read == "A" * 2000
+        end
+
+        grpc = HTTPX.plugin(:grpc)
+        # build service
+        stub = grpc.build_stub("http://localhost:#{server_port}", compression: "gzip")
+        result = stub.execute("an_rpc_method", "A" * 2000)
+
+        assert result == "a_reply"
+      end
+
       def test_plugin_grpc_compressed_response
         no_marshal = proc { |x| x }
 
@@ -47,7 +64,7 @@ module Requests
 
         # build service
         test_service_rpcs = grpc.rpc(:an_rpc, EchoMsg, EchoMsg, marshal_method: :marshal, unmarshal_method: :unmarshal)
-        test_service_stub = test_service_rpcs.build_stub("http://localhost:#{server_port}", TestService)
+        test_service_stub = test_service_rpcs.build_stub("http://localhost:#{server_port}", service: TestService)
         echo_response = test_service_stub.an_rpc(EchoMsg.new(msg: "ping"))
 
         assert echo_response.msg == "ping"
@@ -61,7 +78,7 @@ module Requests
 
         # build service
         test_service_rpcs = grpc.rpc(:a_client_streaming_rpc, EchoMsg, EchoMsg, marshal_method: :marshal, unmarshal_method: :unmarshal)
-        test_service_stub = test_service_rpcs.build_stub("http://localhost:#{server_port}", TestService)
+        test_service_stub = test_service_rpcs.build_stub("http://localhost:#{server_port}", service: TestService)
 
         input = [EchoMsg.new(msg: "ping"), EchoMsg.new(msg: "ping")]
         response = test_service_stub.a_client_streaming_rpc(input)
@@ -78,7 +95,7 @@ module Requests
         # build service
         test_service_rpcs = grpc.rpc(:a_server_streaming_rpc, EchoMsg, EchoMsg, marshal_method: :marshal, unmarshal_method: :unmarshal,
                                                                                 stream: true)
-        test_service_stub = test_service_rpcs.build_stub("http://localhost:#{server_port}", TestService)
+        test_service_stub = test_service_rpcs.build_stub("http://localhost:#{server_port}", service: TestService)
         streaming_response = test_service_stub.a_server_streaming_rpc(EchoMsg.new(msg: "ping"))
 
         assert streaming_response.respond_to?(:each)
@@ -96,7 +113,7 @@ module Requests
 
         # build service
         test_service_rpcs = grpc.rpc(:a_bidi_rpc, EchoMsg, EchoMsg, marshal_method: :marshal, unmarshal_method: :unmarshal, stream: true)
-        test_service_stub = test_service_rpcs.build_stub("http://localhost:#{server_port}", TestService)
+        test_service_stub = test_service_rpcs.build_stub("http://localhost:#{server_port}", service: TestService)
         input = [EchoMsg.new(msg: "ping"), EchoMsg.new(msg: "ping")]
         streaming_response = test_service_stub.a_bidi_rpc(input)
 
