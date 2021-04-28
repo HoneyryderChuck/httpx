@@ -6,8 +6,8 @@ module HTTPX
       type deflatable = _Reader | _ToS
 
       interface _Deflater
-        def deflate: (deflatable, _Writer, chunk_size: Integer) -> void
-                   | (deflatable, _Writer, chunk_size: Integer) { (String) -> void } -> void
+        def deflate: (deflatable, ?_Writer, ?chunk_size: Integer) -> _ToS
+                   | (deflatable, ?_Writer, ?chunk_size: Integer) { (String) -> void } -> _ToS
       end
 
       interface _Inflater

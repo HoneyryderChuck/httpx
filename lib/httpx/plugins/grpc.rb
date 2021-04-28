@@ -35,9 +35,7 @@ module HTTPX
 
       DEADLINE = 60
       HEADERS = {
-        # "accept-encoding" => "identity",
-        "grpc-accept-encoding" => "identity",
-        "content-type" => "application/grpc+proto",
+        "content-type" => "application/grpc",
         "grpc-timeout" => "#{DEADLINE}S",
         "te" => "trailers",
         "accept" => "application/grpc",
@@ -54,7 +52,7 @@ module HTTPX
         # decodes a unary grpc response
         def unary(response)
           verify_status(response)
-          decode(response.to_s)
+          decode(response.to_s, encodings: response.headers.get("grpc-encoding"), encoders: response.encoders)
         end
 
         # lazy decodes a grpc stream response
@@ -62,19 +60,34 @@ module HTTPX
           return enum_for(__method__, response) unless block_given?
 
           response.each do |frame|
-            yield decode(frame)
+            yield decode(frame, encodings: response.headers.get("grpc-encoding"), encoders: response.encoders)
           end
         end
 
         # encodes a single grpc message
-        def encode(bytes)
-          "".b << [0, bytes.bytesize].pack("CL>") << bytes
+        def encode(bytes, deflater:)
+          if deflater
+            compressed_flag = 1
+            bytes = deflater.deflate(StringIO.new(bytes))
+          else
+            compressed_flag = 0
+          end
+
+          "".b << [compressed_flag, bytes.bytesize].pack("CL>") << bytes.to_s
         end
 
         # decodes a single grpc message
-        def decode(message)
-          _compressed, size = message.unpack("CL>")
-          message.byteslice(5..size + 5 - 1)
+        def decode(message, encodings:, encoders:)
+          compressed, size = message.unpack("CL>")
+          data = message.byteslice(5..size + 5 - 1)
+          if compressed == 1
+            encodings.reverse_each do |algo|
+              inflater = encoders.registry(algo).inflater(size)
+              data = inflater.inflate(data)
+              size = data.bytesize
+            end
+          end
+          data
         end
 
         # interprets the grpc call trailing metadata, and raises an
@@ -124,6 +137,10 @@ module HTTPX
         def merge_headers(trailers)
           @trailing_metadata = Hash[trailers]
           super
+        end
+
+        def encoders
+          @options.encodings
         end
       end
 
@@ -184,7 +201,10 @@ module HTTPX
           rpc_method = "/#{@options.grpc_service}#{rpc_method}" if @options.grpc_service
           uri.path = rpc_method
 
-          headers = HEADERS
+          headers = HEADERS.merge(
+            "grpc-accept-encoding" => ["identity", *@options.encodings.registry.keys],
+          )
+
           headers = headers.merge(metadata) if metadata
 
           body = if input.respond_to?(:each)

@@ -17,7 +17,7 @@ module HTTPX
         module Deflater
           module_function
 
-          def deflate(raw, buffer, chunk_size:)
+          def deflate(raw, buffer = "".b, chunk_size: 16_384)
             deflater = Zlib::Deflate.new
             while (chunk = raw.read(chunk_size))
               compressed = deflater.deflate(chunk)
@@ -27,6 +27,7 @@ module HTTPX
             last = deflater.finish
             buffer << last
             yield last if block_given?
+            buffer
           ensure
             deflater.close if deflater
           end

@@ -18,12 +18,13 @@ module HTTPX
         module Deflater
           module_function
 
-          def deflate(raw, buffer, chunk_size:)
+          def deflate(raw, buffer = "".b, chunk_size: 16_384)
             while (chunk = raw.read(chunk_size))
               compressed = ::Brotli.deflate(chunk)
               buffer << compressed
               yield compressed if block_given?
             end
+            buffer
           end
         end
 
