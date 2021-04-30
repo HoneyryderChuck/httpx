@@ -60,6 +60,10 @@ module HTTPX
 
     def join_headers: (Request request) -> void
 
+    def join_trailers: (Request request) -> void
+
+    def join_headers2: (Headers headers) -> void
+
     def join_body: (Request request) -> void
 
     def capitalized: (String field) -> String

@@ -19,6 +19,10 @@ module HTTPX
 
     protected
 
+    def callbacks_for?(type)
+      @callbacks.key?(type) && !@callbacks[type].empty?
+    end
+
     def callbacks(type = nil)
       return @callbacks unless type
 

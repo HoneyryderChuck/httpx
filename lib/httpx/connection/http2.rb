@@ -146,6 +146,8 @@ module HTTPX
         join_headers(stream, request) if request.state == :headers
         request.transition(:body)
         join_body(stream, request) if request.state == :body
+        request.transition(:trailers)
+        join_trailers(stream, request) if request.state == :trailers && !request.body.empty?
         request.transition(:done)
       end
     end
@@ -199,6 +201,18 @@ module HTTPX
       stream.headers(request.headers.each, end_stream: request.empty?)
     end
 
+    def join_trailers(stream, request)
+      unless request.trailers?
+        stream.data("", end_stream: true) if request.callbacks_for?(:trailers)
+        return
+      end
+
+      log(level: 1, color: :yellow) do
+        request.trailers.each.map { |k, v| "#{stream.id}: -> HEADER: #{k}: #{v}" }.join("\n")
+      end
+      stream.headers(request.trailers.each, end_stream: true)
+    end
+
     def join_body(stream, request)
       return if request.empty?
 
@@ -207,8 +221,8 @@ module HTTPX
         next_chunk = request.drain_body
         log(level: 1, color: :green) { "#{stream.id}: -> DATA: #{chunk.bytesize} bytes..." }
         log(level: 2, color: :green) { "#{stream.id}: -> #{chunk.inspect}" }
-        stream.data(chunk, end_stream: !next_chunk)
-        if next_chunk && @buffer.full?
+        stream.data(chunk, end_stream: !(next_chunk || request.trailers? || request.callbacks_for?(:trailers)))
+        if next_chunk && (@buffer.full? || request.body.unbounded_body?)
           @drains[request] = next_chunk
           throw(:buffer_full)
         end

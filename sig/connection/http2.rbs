@@ -53,6 +53,8 @@ module HTTPX
 
     def join_headers: (HTTP2Next::Stream stream, Request request) -> void
 
+    def join_trailers: (HTTP2Next::Stream stream, Request request) -> void
+
     def join_body: (HTTP2Next::Stream stream, Request request) -> void
 
     def on_stream_headers: (HTTP2Next::Stream stream, Request request, Array[[String, String]] headers) -> void

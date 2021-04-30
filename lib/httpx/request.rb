@@ -59,6 +59,14 @@ module HTTPX
       @state = :idle
     end
 
+    def trailers?
+      defined?(@trailers)
+    end
+
+    def trailers
+      @trailers ||= @options.headers_class.new
+    end
+
     def interests
       return :r if @state == :done || @state == :expect
 
@@ -205,7 +213,9 @@ module HTTPX
       end
 
       def unbounded_body?
-        chunked? || @body.bytesize == Float::INFINITY
+        return @unbounded_body if defined?(@unbounded_body)
+
+        @unbounded_body = (chunked? || @body.bytesize == Float::INFINITY)
       end
 
       def chunked?
@@ -258,6 +268,8 @@ module HTTPX
             nextstate = :expect
           end
         end
+      when :trailers
+        return unless @state == :body
       when :done
         return if @state == :expect
       end

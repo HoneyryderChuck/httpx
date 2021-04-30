@@ -108,6 +108,30 @@ class HTTPSTest < Minitest::Test
         verify_error_response(response, /settings_timeout/)
       end
     end
+
+    def test_http2_request_trailers
+      uri = build_uri("/post")
+
+      HTTPX.wrap do |http|
+        total_time = start_time = nil
+        trailered = false
+        request = http.build_request(:post, uri, body: %w[this is chunked])
+        request.on(:headers) do |_written_request|
+          start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+        end
+        request.on(:trailers) do |written_request|
+          total_time = Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time
+          written_request.trailers["x-time-spent"] = total_time
+          trailered = true
+        end
+        response = http.request(request)
+        verify_status(response, 200)
+        body = json_body(response)
+        # verify_header(body["headers"], "x-time-spent", total_time.to_s)
+        assert body.key?("data")
+        assert trailered, "trailer callback wasn't called"
+      end
+    end
   end
 
   def test_ssl_wrong_hostname

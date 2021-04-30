@@ -39,6 +39,10 @@ module HTTPX
 
     def expects?: () -> boolish
 
+    def trailers: () -> Headers
+
+    def trailers?: () -> boolish
+
     class Body
       def initialize: (Headers, Options) -> untyped
       def each: () { (String) -> void } -> void
