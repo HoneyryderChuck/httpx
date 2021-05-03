@@ -2,6 +2,8 @@
 
 module HTTPX
   GRPCError = Class.new(Error) do
+    attr_reader :status, :details, :metadata
+
     def initialize(status, details, metadata)
       @status = status
       @details = details

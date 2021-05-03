@@ -25,6 +25,7 @@ begin
   class TestService
     include GRPC::GenericService
     rpc :an_rpc, EchoMsg, EchoMsg
+    rpc :a_cancellable_rpc, EchoMsg, EchoMsg
     rpc :a_client_streaming_rpc, stream(EchoMsg), EchoMsg
     rpc :a_server_streaming_rpc, EchoMsg, stream(EchoMsg)
     rpc :a_bidi_rpc, stream(EchoMsg), stream(EchoMsg)
@@ -37,6 +38,11 @@ begin
     def an_rpc(req, call)
       check_peer_cert(call)
       req
+    end
+
+    def a_cancellable_rpc(_req, call)
+      check_peer_cert(call)
+      raise GRPC::Cancelled, "dump"
     end
 
     def a_client_streaming_rpc(call)

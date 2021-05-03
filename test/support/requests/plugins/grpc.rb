@@ -57,6 +57,22 @@ module Requests
         assert result == "A" * 2000
       end
 
+      # Cancellation on error
+
+      def test_plugin_grpc_cancellation_on_server_error
+        server_port = run_rpc(TestService)
+
+        grpc = HTTPX.plugin(:grpc)
+
+        # build service
+        test_service_rpcs = grpc.rpc(:a_cancellable_rpc, EchoMsg, EchoMsg, marshal_method: :marshal, unmarshal_method: :unmarshal)
+        test_service_stub = test_service_rpcs.build_stub("http://localhost:#{server_port}", service: TestService)
+        error = assert_raises(HTTPX::GRPCError) { test_service_stub.a_cancellable_rpc(EchoMsg.new(msg: "ping")) }
+
+        assert error.status == 1
+        assert error.details == "dump"
+      end
+
       def test_plugin_grpc_unary_protobuf
         server_port = run_rpc(TestService)
 
