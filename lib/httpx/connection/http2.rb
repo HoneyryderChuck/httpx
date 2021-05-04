@@ -38,7 +38,11 @@ module HTTPX
       # waiting for WINDOW_UPDATE frames
       return :r if @buffer.full?
 
-      return :w if @connection.state == :closed
+      if @connection.state == :closed
+        return unless @handshake_completed
+
+        return :w
+      end
 
       unless (@connection.state == :connected && @handshake_completed)
         return @buffer.empty? ? :r : :rw
@@ -177,6 +181,7 @@ module HTTPX
     public :reset
 
     def handle_stream(stream, request)
+      request.on(:refuse, &method(:on_stream_refuse).curry(3)[stream, request])
       stream.on(:close, &method(:on_stream_close).curry(3)[stream, request])
       stream.on(:half_close) do
         log(level: 2) { "#{stream.id}: waiting for response..." }
@@ -265,6 +270,11 @@ module HTTPX
       log(level: 1, color: :green) { "#{stream.id}: <- DATA: #{data.bytesize} bytes..." }
       log(level: 2, color: :green) { "#{stream.id}: <- #{data.inspect}" }
       request.response << data
+    end
+
+    def on_stream_refuse(stream, request, error)
+      stream.close
+      on_stream_close(stream, request, error)
     end
 
     def on_stream_close(stream, request, error)
