@@ -129,7 +129,10 @@ begin
     def wakey_thread(&blk)
       n = ::GRPC::Notifier.new
       t = Thread.new do
-        blk.call(n)
+        begin
+          blk.call(n)
+        rescue GRPC::Core::CallError
+        end
       end
       t.abort_on_exception = true
       n.wait

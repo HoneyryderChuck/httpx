@@ -35,6 +35,9 @@ module HTTPX
 
     attr_reader :verb, :uri, :headers, :body, :state, :options, :response
 
+    # Exception raised during enumerable body writes
+    attr_reader :drain_error
+
     def_delegator :@body, :empty?
 
     def_delegator :@body, :chunk!
@@ -136,6 +139,9 @@ module HTTPX
       chunk = @drainer.next
       chunk.dup
     rescue StopIteration
+      nil
+    rescue StandardError => e
+      @drain_error = e
       nil
     end
 

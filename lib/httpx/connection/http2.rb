@@ -228,6 +228,8 @@ module HTTPX
         end
         chunk = next_chunk
       end
+
+      on_stream_refuse(stream, request, request.drain_error) if request.drain_error
     end
 
     ######

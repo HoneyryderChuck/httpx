@@ -59,6 +59,31 @@ module Requests
 
       # Cancellation on error
 
+      def test_plugin_grpc_cancellation_on_client_error
+        no_marshal = proc { |x| x }
+
+        input = Enumerator.new do |_y|
+          # y << "a_request"
+          raise "oh crap"
+        end
+
+        server_port = run_request_response("a_reply", OK, marshal: no_marshal) do |call|
+          # not supposed to arrive here
+          begin
+            call.remote_read
+          rescue StandardError
+            nil
+          end
+        end
+
+        grpc = HTTPX.plugin(:grpc)
+        # build service
+        stub = grpc.build_stub("http://localhost:#{server_port}")
+
+        error = assert_raises(HTTPX::Error) { stub.execute("an_rpc_method", input) }
+        assert error.message =~ /oh crap/
+      end
+
       def test_plugin_grpc_cancellation_on_server_error
         server_port = run_rpc(TestService)
 

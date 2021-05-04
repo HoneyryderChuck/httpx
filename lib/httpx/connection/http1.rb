@@ -297,6 +297,8 @@ module HTTPX
         @buffer << chunk
         throw(:buffer_full, request) if @buffer.full?
       end
+
+      raise request.drain_error if request.drain_error
     end
 
     def join_trailers(request)

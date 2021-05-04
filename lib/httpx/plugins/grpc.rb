@@ -14,9 +14,9 @@ module HTTPX
 
   module Plugins
     #
-    # This plugin makes all HTTP/1.1 requests with a body send the "Expect: 100-continue".
+    # This plugin adds DSL to build GRPC interfaces.
     #
-    # https://gitlab.com/honeyryderchuck/httpx/wikis/Expect#expect
+    # https://gitlab.com/honeyryderchuck/httpx/wikis/GRPC
     #
     module GRPC
       unless String.method_defined?(:underscore)
@@ -92,6 +92,10 @@ module HTTPX
             end
           end
           data
+        end
+
+        def cancel(request)
+          request.emit(:refuse, :client_cancellation)
         end
 
         # interprets the grpc call trailing metadata, and raises an

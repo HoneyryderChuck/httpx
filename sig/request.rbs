@@ -12,6 +12,7 @@ module HTTPX
     attr_reader state: Symbol
     attr_reader options: Options
     attr_reader response: Response?
+    attr_reader drain_error: StandardError?
 
     def initialize: (verb | String, uri, ?options?) -> untyped
 
