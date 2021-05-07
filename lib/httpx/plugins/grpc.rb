@@ -36,9 +36,10 @@ module HTTPX
       end
 
       DEADLINE = 60
+      MARSHAL_METHOD = :encode
+      UNMARSHAL_METHOD = :decode
       HEADERS = {
         "content-type" => "application/grpc",
-        "grpc-timeout" => "#{DEADLINE}S",
         "te" => "trailers",
         "accept" => "application/grpc",
         # metadata fits here
@@ -144,11 +145,18 @@ module HTTPX
             def_option(:grpc_rpcs, <<-OUT)
               Hash[value]
             OUT
+
+            def_option(:grpc_deadline, <<-OUT)
+              raise Error, ":grpc_deadline must be positive" unless value.positive?
+
+              value
+            OUT
           end.new(options).merge(
             fallback_protocol: "h2",
             http2_settings: { wait_for_handshake: false },
             grpc_rpcs: {}.freeze,
-            grpc_compression: false
+            grpc_compression: false,
+            grpc_deadline: DEADLINE
           )
         end
       end
@@ -171,8 +179,12 @@ module HTTPX
           rpc_name = rpc_name.to_s
           raise Error, "rpc #{rpc_name} already defined" if @options.grpc_rpcs.key?(rpc_name)
 
+          rpc_opts = {
+            deadline: @options.grpc_deadline,
+          }.merge(opts)
+
           with(grpc_rpcs: @options.grpc_rpcs.merge(
-            rpc_name.underscore => [rpc_name, input, output, opts]
+            rpc_name.underscore => [rpc_name, input, output, rpc_opts]
           ).freeze)
         end
 
@@ -180,8 +192,11 @@ module HTTPX
           with(origin: origin, grpc_service: service, grpc_compression: compression)
         end
 
-        def execute(rpc_method, input, metadata: nil, **opts)
-          grpc_request = build_grpc_request(rpc_method, input, metadata: metadata, **opts)
+        def execute(rpc_method, input,
+                    deadline: DEADLINE,
+                    metadata: nil,
+                    **opts)
+          grpc_request = build_grpc_request(rpc_method, input, deadline: deadline, metadata: metadata, **opts)
           response = request(grpc_request, **opts)
           return Message.stream(response) if response.respond_to?(:each)
 
@@ -190,11 +205,13 @@ module HTTPX
 
         private
 
-        def rpc_execute(rpc_name, input, marshal_method: nil, unmarshal_method: nil, **opts)
+        def rpc_execute(rpc_name, input, **opts)
           rpc_name, input_enc, output_enc, rpc_opts = @options.grpc_rpcs[rpc_name.to_s] || raise(Error, "#{rpc_name}: undefined service")
 
-          marshal_method ||= rpc_opts.fetch(:marshal_method, :encode)
-          unmarshal_method ||= rpc_opts.fetch(:unmarshal_method, :decode)
+          exec_opts = rpc_opts.merge(opts)
+
+          marshal_method ||= exec_opts.delete(:marshal_method) || MARSHAL_METHOD
+          unmarshal_method ||= exec_opts.delete(:unmarshal_method) || UNMARSHAL_METHOD
 
           messages = if input.respond_to?(:each)
             Enumerator.new do |y|
@@ -206,7 +223,7 @@ module HTTPX
             input_enc.marshal(input)
           end
 
-          response = execute(rpc_name, messages, stream: rpc_opts.fetch(:stream, false), **opts)
+          response = execute(rpc_name, messages, **exec_opts)
 
           return Enumerator.new do |y|
             response.each do |message|
@@ -217,15 +234,20 @@ module HTTPX
           output_enc.unmarshal(response)
         end
 
-        def build_grpc_request(rpc_method, input, metadata: nil, **)
+        def build_grpc_request(rpc_method, input, deadline:, metadata: nil, **)
           uri = @options.origin.dup
           rpc_method = "/#{rpc_method}" unless rpc_method.start_with?("/")
           rpc_method = "/#{@options.grpc_service}#{rpc_method}" if @options.grpc_service
           uri.path = rpc_method
 
           headers = HEADERS.merge(
-            "grpc-accept-encoding" => ["identity", *@options.encodings.registry.keys],
+            "grpc-accept-encoding" => ["identity", *@options.encodings.registry.keys]
           )
+          unless deadline == Float::INFINITY
+            # convert to milliseconds
+            deadline = (deadline * 1000.0).to_i
+            headers["grpc-timeout"] = "#{deadline}m"
+          end
 
           headers = headers.merge(metadata) if metadata
 

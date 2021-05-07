@@ -59,6 +59,22 @@ module Requests
 
       # Cancellation on error
 
+      def test_plugin_grpc_deadline_exceeded
+        no_marshal = proc { |x| x }
+
+        server_port = run_request_response("a_reply", OK, marshal: no_marshal) do |call|
+          sleep(3)
+          assert call.remote_read == "a_request"
+        end
+
+        grpc = HTTPX.plugin(:grpc)
+        # build service
+        stub = grpc.build_stub("http://localhost:#{server_port}")
+
+        error = assert_raises(HTTPX::GRPCError) { stub.execute("an_rpc_method", "a request", deadline: 2) }
+        assert error.status == ::GRPC::Core::StatusCodes::DEADLINE_EXCEEDED
+      end
+
       def test_plugin_grpc_cancellation_on_client_error
         no_marshal = proc { |x| x }
 
