@@ -13,7 +13,7 @@ module HTTPX
     private
 
     def response: () -> response
-    def initialize: (Request, Session) -> untyped
+    def initialize: (Request, Session, Array[Connection]) -> untyped
   end
 
   module Plugins

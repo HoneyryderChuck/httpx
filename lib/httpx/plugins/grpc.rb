@@ -200,7 +200,7 @@ module HTTPX
           build_request(:post, uri, headers: headers, body: body)
         end
 
-        def respond_to_missing?(meth, *, **, &blk)
+        def respond_to_missing?(meth, *, &blk)
           @options.grpc_rpcs.key?(meth.to_s) || super
         end
 

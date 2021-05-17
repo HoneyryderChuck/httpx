@@ -2,9 +2,10 @@
 
 module HTTPX
   class StreamResponse
-    def initialize(request, session)
+    def initialize(request, session, connections)
       @request = request
       @session = session
+      @connections = connections
       @options = @request.options
     end
 
@@ -17,6 +18,16 @@ module HTTPX
 
       begin
         @on_chunk = block
+
+        if @request.response
+          # if we've already started collecting the payload, yield it first
+          # before proceeding
+          body = @request.response.body
+
+          body.each do |chunk|
+            on_chunk(chunk)
+          end
+        end
 
         response.raise_for_status
         response.close
@@ -61,17 +72,17 @@ module HTTPX
     private
 
     def response
-      @request.response || begin
-        @response ||= @session.__send__(:send_requests, @request, @options).first
-      end
+      @session.__send__(:receive_requests, [@request], @connections, @options) until @request.response
+
+      @request.response
     end
 
-    def respond_to_missing?(*args)
-      @options.response_class.respond_to?(*args) || super
+    def respond_to_missing?(meth, *args)
+      response.respond_to?(meth, *args) || super
     end
 
     def method_missing(meth, *args, &block)
-      return super unless @options.response_class.public_method_defined?(meth)
+      return super unless response.respond_to?(meth)
 
       response.__send__(meth, *args, &block)
     end
@@ -91,10 +102,13 @@ module HTTPX
           return super(*args, **options) unless stream
 
           requests = args.first.is_a?(Request) ? args : build_requests(*args, options)
-
           raise Error, "only 1 response at a time is supported for streaming requests" unless requests.size == 1
 
-          StreamResponse.new(requests.first, self)
+          request = requests.first
+
+          connections = _send_requests(requests, request.options)
+
+          StreamResponse.new(request, self, connections)
         end
       end
 

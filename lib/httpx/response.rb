@@ -94,6 +94,10 @@ module HTTPX
         @state = :idle
       end
 
+      def closed?
+        @state == :closed
+      end
+
       def write(chunk)
         return if @state == :closed
 

@@ -17,6 +17,16 @@ module HTTPX
           "#GRPC::Call(#{grpc_response})"
         end
 
+        def to_s
+          grpc_response.to_s
+        end
+
+        def trailing_metadata
+          return unless @response.body.closed?
+
+          @response.trailing_metadata
+        end
+
         private
 
         def grpc_response
@@ -33,12 +43,12 @@ module HTTPX
           end
         end
 
-        def respond_to_missing?(meth, *args, **kwargs, &blk)
-          grpc_response.respond_to?(meth, *args, **kwargs, &blk) || super
+        def respond_to_missing?(meth, *args, &blk)
+          grpc_response.respond_to?(meth, *args) || super
         end
 
-        def method_missing(meth, *args, **kwargs, &blk)
-          return grpc_response.__send__(meth, *args, **kwargs, &blk) if grpc_response.respond_to?(meth, *args, **kwargs, &blk)
+        def method_missing(meth, *args, &blk)
+          return grpc_response.__send__(meth, *args, &blk) if grpc_response.respond_to?(meth)
 
           super
         end

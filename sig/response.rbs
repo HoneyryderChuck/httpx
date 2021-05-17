@@ -47,6 +47,7 @@ module HTTPX
       def empty?: () -> bool
       def copy_to: (_ToPath | _Writer destination) -> void
       def close: () -> void
+      def closed?: () -> bool
 
       private
 

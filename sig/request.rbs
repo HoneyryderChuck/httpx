@@ -11,7 +11,7 @@ module HTTPX
     attr_reader body: Body
     attr_reader state: Symbol
     attr_reader options: Options
-    attr_reader response: Response?
+    attr_reader response: response?
     attr_reader drain_error: StandardError?
 
     def initialize: (verb | String, uri, ?options?) -> untyped
@@ -22,7 +22,7 @@ module HTTPX
 
     def scheme: () -> ("http" | "https")
 
-    def response=: (Response response) -> void
+    def response=: (response) -> void
 
     def path: () -> String
 
