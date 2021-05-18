@@ -16,11 +16,11 @@ module HTTPX
         end
 
         # lazy decodes a grpc stream response
-        def stream(response)
+        def stream(response, &block)
           return enum_for(__method__, response) unless block_given?
 
           response.each do |frame|
-            yield decode(frame, encodings: response.headers.get("grpc-encoding"), encoders: response.encoders)
+            decode(frame, encodings: response.headers.get("grpc-encoding"), encoders: response.encoders, &block)
           end
 
           verify_status(response)
@@ -40,16 +40,25 @@ module HTTPX
 
         # decodes a single grpc message
         def decode(message, encodings:, encoders:)
-          compressed, size = message.unpack("CL>")
-          data = message.byteslice(5..size + 5 - 1)
-          if compressed == 1
-            encodings.reverse_each do |algo|
-              inflater = encoders.registry(algo).inflater(size)
-              data = inflater.inflate(data)
-              size = data.bytesize
+          until message.empty?
+
+            compressed, size = message.unpack("CL>")
+
+            data = message.byteslice(5..size + 5 - 1)
+            if compressed == 1
+              encodings.reverse_each do |algo|
+                inflater = encoders.registry(algo).inflater(size)
+                data = inflater.inflate(data)
+                size = data.bytesize
+              end
             end
+
+            return data unless block_given?
+
+            yield data
+
+            message = message.byteslice(5 + size..-1)
           end
-          data
         end
 
         def cancel(request)

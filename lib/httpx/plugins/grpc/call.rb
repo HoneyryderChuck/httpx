@@ -1,16 +1,16 @@
 # frozen_string_literal: true
 
-require "forwardable"
-
 module HTTPX
   module Plugins
     module GRPC
       # Encapsulates call information
       class Call
-        def initialize(response, decoder, options)
+        attr_writer :decoder
+
+        def initialize(response, options)
           @response = response
-          @decoder = decoder
           @options = options
+          @decoder = ->(z) { z }
         end
 
         def inspect
@@ -19,6 +19,10 @@ module HTTPX
 
         def to_s
           grpc_response.to_s
+        end
+
+        def metadata
+          response.headers
         end
 
         def trailing_metadata
@@ -34,12 +38,12 @@ module HTTPX
 
           @grpc_response = if @response.respond_to?(:each)
             Enumerator.new do |y|
-              @response.each do |message|
+              Message.stream(@response).each do |message|
                 y << @decoder.call(message)
               end
             end
           else
-            @decoder.call(@response)
+            @decoder.call(Message.unary(@response))
           end
         end
 

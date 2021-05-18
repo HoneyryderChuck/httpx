@@ -131,9 +131,7 @@ module HTTPX
                     **opts)
           grpc_request = build_grpc_request(rpc_method, input, deadline: deadline, metadata: metadata, **opts)
           response = request(grpc_request, **opts)
-          return Message.stream(response) if response.respond_to?(:each)
-
-          Message.unary(response)
+          GRPC::Call.new(response, opts)
         end
 
         private
@@ -156,9 +154,11 @@ module HTTPX
             input_enc.marshal(input)
           end
 
-          response = execute(rpc_name, messages, **exec_opts)
+          call = execute(rpc_name, messages, **exec_opts)
 
-          GRPC::Call.new(response, output_enc.method(unmarshal_method), rpc_opts)
+          call.decoder = output_enc.method(unmarshal_method)
+
+          call
         end
 
         def build_grpc_request(rpc_method, input, deadline:, metadata: nil, **)

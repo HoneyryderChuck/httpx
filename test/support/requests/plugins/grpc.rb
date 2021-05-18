@@ -19,7 +19,7 @@ module Requests
         stub = grpc.build_stub("http://localhost:#{server_port}")
         result = stub.execute("an_rpc_method", "a_request", metadata: { k1: "v1", k2: "v2" })
 
-        assert result == "a_reply"
+        assert result.to_s == "a_reply"
       end
 
       def test_plugin_grpc_compressed_request
@@ -36,7 +36,7 @@ module Requests
         stub = grpc.build_stub("http://localhost:#{server_port}", compression: "gzip")
         result = stub.execute("an_rpc_method", "A" * 2000)
 
-        assert result == "a_reply"
+        assert result.to_s == "a_reply"
       end
 
       def test_plugin_grpc_compressed_response
@@ -45,8 +45,6 @@ module Requests
         server_port = run_request_response("A" * 2000, OK, marshal: no_marshal,
                                                            server_initial_md: { "grpc-internal-encoding-request" => "gzip" }) do |call|
           assert call.remote_read == "a_request"
-          # assert call.metadata["k1"] == "v1"
-          # assert call.metadata["k2"] == "v2"
         end
 
         grpc = HTTPX.plugin(:grpc)
@@ -54,7 +52,7 @@ module Requests
         stub = grpc.build_stub("http://localhost:#{server_port}")
         result = stub.execute("an_rpc_method", "a_request")
 
-        assert result == "A" * 2000
+        assert result.to_s == "A" * 2000
       end
 
       # Cancellation on error
@@ -71,7 +69,7 @@ module Requests
         # build service
         stub = grpc.build_stub("http://localhost:#{server_port}")
 
-        error = assert_raises(HTTPX::GRPCError) { stub.execute("an_rpc_method", "a request", deadline: 2) }
+        error = assert_raises(HTTPX::GRPCError) { stub.execute("an_rpc_method", "a request", deadline: 2).to_s }
         assert error.status == ::GRPC::Core::StatusCodes::DEADLINE_EXCEEDED
       end
 
@@ -96,7 +94,7 @@ module Requests
         # build service
         stub = grpc.build_stub("http://localhost:#{server_port}")
 
-        error = assert_raises(HTTPX::Error) { stub.execute("an_rpc_method", input) }
+        error = assert_raises(HTTPX::Error) { stub.execute("an_rpc_method", input).to_s }
         assert error.message =~ /oh crap/
       end
 
@@ -108,7 +106,7 @@ module Requests
         # build service
         test_service_rpcs = grpc.rpc(:a_cancellable_rpc, EchoMsg, EchoMsg, marshal_method: :marshal, unmarshal_method: :unmarshal)
         test_service_stub = test_service_rpcs.build_stub("http://localhost:#{server_port}", service: TestService)
-        error = assert_raises(HTTPX::GRPCError) { test_service_stub.a_cancellable_rpc(EchoMsg.new(msg: "ping")) }
+        error = assert_raises(HTTPX::GRPCError) { test_service_stub.a_cancellable_rpc(EchoMsg.new(msg: "ping")).to_s }
 
         assert error.status == 1
         assert error.details == "dump"
@@ -125,7 +123,7 @@ module Requests
         echo_response = test_service_stub.an_rpc(EchoMsg.new(msg: "ping"))
 
         assert echo_response.msg == "ping"
-        # assert echo_response.trailing_metadata["status"] == "OK"
+        assert echo_response.trailing_metadata["grpc-message"] == "OK"
       end
 
       def test_plugin_grpc_client_stream_protobuf
@@ -141,7 +139,7 @@ module Requests
         response = test_service_stub.a_client_streaming_rpc(input)
 
         assert response.msg == "client stream pong"
-        # assert echo_response.trailing_metadata["status"] == "OK"
+        assert response.trailing_metadata["grpc-message"] == "OK"
       end
 
       def test_plugin_grpc_server_stream_protobuf
@@ -156,11 +154,11 @@ module Requests
         streaming_response = test_service_stub.a_server_streaming_rpc(EchoMsg.new(msg: "ping"))
 
         assert streaming_response.respond_to?(:each)
-        # assert streaming_response.trailing_metadata.nil?
+        assert streaming_response.trailing_metadata.nil?
 
         echo_responses = streaming_response.each.to_a
         assert echo_responses.map(&:msg) == ["server stream pong", "server stream pong"]
-        # assert echo_response.trailing_metadata["status"] == "OK"
+        assert streaming_response.trailing_metadata["grpc-message"] == "OK"
       end
 
       def test_plugin_grpc_bidi_stream_protobuf
@@ -175,11 +173,11 @@ module Requests
         streaming_response = test_service_stub.a_bidi_rpc(input)
 
         assert streaming_response.respond_to?(:each)
-        # assert streaming_response.trailing_metadata.nil?
+        assert streaming_response.trailing_metadata.nil?
 
         echo_responses = streaming_response.each.to_a
         assert echo_responses.map(&:msg) == ["bidi pong", "bidi pong"]
-        # assert echo_response.trailing_metadata["status"] == "OK"
+        assert streaming_response.trailing_metadata["grpc-message"] == "OK"
       end
     end
   end

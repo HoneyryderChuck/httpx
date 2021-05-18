@@ -53,12 +53,14 @@ begin
 
     def a_server_streaming_rpc(_, call)
       check_peer_cert(call)
+      call.send_initial_metadata
       [EchoMsg.new(msg: "server stream pong"), EchoMsg.new(msg: "server stream pong")]
     end
 
     def a_bidi_rpc(requests, call)
       check_peer_cert(call)
       requests.each { |r| GRPC.logger.info(r) }
+      call.send_initial_metadata
       [EchoMsg.new(msg: "bidi pong"), EchoMsg.new(msg: "bidi pong")]
     end
   end
