@@ -65,15 +65,19 @@ begin
     end
   end
 
-  # IF HTTPX_DEBUG ....
-  module GRPC
-    extend Logging.globally
+  if ENV.key?("HTTPX_DEBUG")
+    log_level = ENV["HTTPX_DEBUG"].to_i
+    log_level = log_level > 1 ? :debug : :info
+
+    module GRPC
+      extend Logging.globally
+    end
+    Logging.logger.root.appenders = Logging.appenders.stdout
+    Logging.logger.root.level = log_level
+    Logging.logger["GRPC"].level = log_level
+    Logging.logger["GRPC::ActiveCall"].level = log_level
+    Logging.logger["GRPC::BidiCall"].level = log_level
   end
-  Logging.logger.root.appenders = Logging.appenders.stdout
-  Logging.logger.root.level = :info
-  Logging.logger["GRPC"].level = :info
-  Logging.logger["GRPC::ActiveCall"].level = :info
-  Logging.logger["GRPC::BidiCall"].level = :info
 
   module GRPCHelpers
     include ::GRPC::Core::StatusCodes
