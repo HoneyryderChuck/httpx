@@ -84,6 +84,12 @@ module HTTPX
 
               value
             OUT
+
+            def_option(:call_credentials, <<-OUT)
+              raise Error, ":call_credentials must respond to #call" unless value.respond_to?(:call)
+
+              value
+            OUT
           end.new(options).merge(
             fallback_protocol: "h2",
             http2_settings: { wait_for_handshake: false },
@@ -108,6 +114,24 @@ module HTTPX
       end
 
       module InstanceMethods
+        def with_channel_credentials(ca_path, key = nil, cert = nil, **ssl_opts)
+          ssl_params = {
+            **ssl_opts,
+            ca_file: ca_path,
+          }
+          if key
+            key = File.read(key) if File.file?(key)
+            ssl_params[:key] = OpenSSL::PKey.read(key)
+          end
+
+          if cert
+            cert = File.read(cert) if File.file?(cert)
+            ssl_params[:cert] = OpenSSL::X509::Certificate.new(cert)
+          end
+
+          with(ssl: ssl_params)
+        end
+
         def rpc(rpc_name, input, output, **opts)
           rpc_name = rpc_name.to_s
           raise Error, "rpc #{rpc_name} already defined" if @options.grpc_rpcs.key?(rpc_name)
@@ -122,6 +146,10 @@ module HTTPX
         end
 
         def build_stub(origin, service: nil, compression: false)
+          scheme = @options.ssl.empty? ? "http" : "https"
+
+          origin = URI.parse("#{scheme}://#{origin}")
+
           with(origin: origin, grpc_service: service, grpc_compression: compression)
         end
 
@@ -131,6 +159,7 @@ module HTTPX
                     **opts)
           grpc_request = build_grpc_request(rpc_method, input, deadline: deadline, metadata: metadata, **opts)
           response = request(grpc_request, **opts)
+          response.raise_for_status
           GRPC::Call.new(response, opts)
         end
 
@@ -186,6 +215,8 @@ module HTTPX
             headers["grpc-encoding"] = compression
             deflater = @options.encodings.registry(compression).deflater
           end
+
+          headers.merge!(@options.call_credentials.call) if @options.call_credentials
 
           body = if input.respond_to?(:each)
             Enumerator.new do |y|

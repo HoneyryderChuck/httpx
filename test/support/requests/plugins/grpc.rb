@@ -14,9 +14,29 @@ module Requests
           assert call.metadata["k2"] == "v2"
         end
 
-        grpc = HTTPX.plugin(:grpc)
+        grpc = grpc_plugin
         # build service
-        stub = grpc.build_stub("http://localhost:#{server_port}")
+        stub = grpc.build_stub("localhost:#{server_port}")
+        result = stub.execute("an_rpc_method", "a_request", metadata: { k1: "v1", k2: "v2" })
+
+        assert result.to_s == "a_reply"
+      end
+
+      def test_plugin_grpc_call_credentials
+        return unless origin.start_with?("https")
+
+        call_credentials = -> { { "k1" => "updated-k1" } }
+        no_marshal = proc { |x| x }
+
+        server_port = run_request_response("a_reply", OK, marshal: no_marshal) do |call|
+          assert call.remote_read == "a_request"
+          assert call.metadata["k1"] == "updated-k1"
+          assert call.metadata["k2"] == "v2"
+        end
+
+        grpc = grpc_plugin
+        # build service
+        stub = grpc.with_call_credentials(call_credentials).build_stub("localhost:#{server_port}")
         result = stub.execute("an_rpc_method", "a_request", metadata: { k1: "v1", k2: "v2" })
 
         assert result.to_s == "a_reply"
@@ -31,9 +51,9 @@ module Requests
           assert call.remote_read == "A" * 2000
         end
 
-        grpc = HTTPX.plugin(:grpc)
+        grpc = grpc_plugin
         # build service
-        stub = grpc.build_stub("http://localhost:#{server_port}", compression: "gzip")
+        stub = grpc.build_stub("localhost:#{server_port}", compression: "gzip")
         result = stub.execute("an_rpc_method", "A" * 2000)
 
         assert result.to_s == "a_reply"
@@ -47,9 +67,9 @@ module Requests
           assert call.remote_read == "a_request"
         end
 
-        grpc = HTTPX.plugin(:grpc)
+        grpc = grpc_plugin
         # build service
-        stub = grpc.build_stub("http://localhost:#{server_port}")
+        stub = grpc.build_stub("localhost:#{server_port}")
         result = stub.execute("an_rpc_method", "a_request")
 
         assert result.to_s == "A" * 2000
@@ -65,9 +85,9 @@ module Requests
           assert call.remote_read == "a_request"
         end
 
-        grpc = HTTPX.plugin(:grpc)
+        grpc = grpc_plugin
         # build service
-        stub = grpc.build_stub("http://localhost:#{server_port}")
+        stub = grpc.build_stub("localhost:#{server_port}")
 
         error = assert_raises(HTTPX::GRPCError) { stub.execute("an_rpc_method", "a request", deadline: 2).to_s }
         assert error.status == ::GRPC::Core::StatusCodes::DEADLINE_EXCEEDED
@@ -90,9 +110,9 @@ module Requests
           end
         end
 
-        grpc = HTTPX.plugin(:grpc)
+        grpc = grpc_plugin
         # build service
-        stub = grpc.build_stub("http://localhost:#{server_port}")
+        stub = grpc.build_stub("localhost:#{server_port}")
 
         error = assert_raises(HTTPX::Error) { stub.execute("an_rpc_method", input).to_s }
         assert error.message =~ /oh crap/
@@ -101,11 +121,11 @@ module Requests
       def test_plugin_grpc_cancellation_on_server_error
         server_port = run_rpc(TestService)
 
-        grpc = HTTPX.plugin(:grpc)
+        grpc = grpc_plugin
 
         # build service
         test_service_rpcs = grpc.rpc(:a_cancellable_rpc, EchoMsg, EchoMsg, marshal_method: :marshal, unmarshal_method: :unmarshal)
-        test_service_stub = test_service_rpcs.build_stub("http://localhost:#{server_port}", service: TestService)
+        test_service_stub = test_service_rpcs.build_stub("localhost:#{server_port}", service: TestService)
         error = assert_raises(HTTPX::GRPCError) { test_service_stub.a_cancellable_rpc(EchoMsg.new(msg: "ping")).to_s }
 
         assert error.status == 1
@@ -115,11 +135,11 @@ module Requests
       def test_plugin_grpc_unary_protobuf
         server_port = run_rpc(TestService)
 
-        grpc = HTTPX.plugin(:grpc)
+        grpc = grpc_plugin
 
         # build service
         test_service_rpcs = grpc.rpc(:an_rpc, EchoMsg, EchoMsg, marshal_method: :marshal, unmarshal_method: :unmarshal)
-        test_service_stub = test_service_rpcs.build_stub("http://localhost:#{server_port}", service: TestService)
+        test_service_stub = test_service_rpcs.build_stub("localhost:#{server_port}", service: TestService)
         echo_response = test_service_stub.an_rpc(EchoMsg.new(msg: "ping"))
 
         assert echo_response.msg == "ping"
@@ -129,11 +149,11 @@ module Requests
       def test_plugin_grpc_client_stream_protobuf
         server_port = run_rpc(TestService)
 
-        grpc = HTTPX.plugin(:grpc)
+        grpc = grpc_plugin
 
         # build service
         test_service_rpcs = grpc.rpc(:a_client_streaming_rpc, EchoMsg, EchoMsg, marshal_method: :marshal, unmarshal_method: :unmarshal)
-        test_service_stub = test_service_rpcs.build_stub("http://localhost:#{server_port}", service: TestService)
+        test_service_stub = test_service_rpcs.build_stub("localhost:#{server_port}", service: TestService)
 
         input = [EchoMsg.new(msg: "ping"), EchoMsg.new(msg: "ping")]
         response = test_service_stub.a_client_streaming_rpc(input)
@@ -145,12 +165,12 @@ module Requests
       def test_plugin_grpc_server_stream_protobuf
         server_port = run_rpc(TestService)
 
-        grpc = HTTPX.plugin(:grpc)
+        grpc = grpc_plugin
 
         # build service
         test_service_rpcs = grpc.rpc(:a_server_streaming_rpc, EchoMsg, EchoMsg, marshal_method: :marshal, unmarshal_method: :unmarshal,
                                                                                 stream: true)
-        test_service_stub = test_service_rpcs.build_stub("http://localhost:#{server_port}", service: TestService)
+        test_service_stub = test_service_rpcs.build_stub("localhost:#{server_port}", service: TestService)
         streaming_response = test_service_stub.a_server_streaming_rpc(EchoMsg.new(msg: "ping"))
 
         assert streaming_response.respond_to?(:each)
@@ -164,11 +184,11 @@ module Requests
       def test_plugin_grpc_bidi_stream_protobuf
         server_port = run_rpc(TestService)
 
-        grpc = HTTPX.plugin(:grpc)
+        grpc = grpc_plugin
 
         # build service
         test_service_rpcs = grpc.rpc(:a_bidi_rpc, EchoMsg, EchoMsg, marshal_method: :marshal, unmarshal_method: :unmarshal, stream: true)
-        test_service_stub = test_service_rpcs.build_stub("http://localhost:#{server_port}", service: TestService)
+        test_service_stub = test_service_rpcs.build_stub("localhost:#{server_port}", service: TestService)
         input = [EchoMsg.new(msg: "ping"), EchoMsg.new(msg: "ping")]
         streaming_response = test_service_stub.a_bidi_rpc(input)
 

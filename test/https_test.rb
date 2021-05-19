@@ -30,6 +30,7 @@ class HTTPSTest < Minitest::Test
   include Plugins::Stream
   include Plugins::AWSAuthentication
   include Plugins::Upgrade
+  include Plugins::GRPC unless RUBY_ENGINE == "jruby" || RUBY_VERSION < "2.3"
 
   def test_connection_coalescing
     coalesced_origin = "https://#{ENV["HTTPBIN_COALESCING_HOST"]}"

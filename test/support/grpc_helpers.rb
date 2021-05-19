@@ -97,9 +97,25 @@ begin
       @rpc_server_th.join
     end
 
+    def grpc_plugin
+      grpc = HTTPX.plugin(:grpc)
+
+      grpc = grpc.with_channel_credentials(*channel_credentials_paths, hostname: "foo.test.google.fr") if origin.start_with?("https")
+
+      grpc
+    end
+
+    def grpc_channel_uri(server_port)
+      scheme = URI(origin).scheme
+      "#{scheme}://localhost:#{server_port}"
+    end
+
     def run_rpc(service, server_args: {})
       @rpc_server = ::GRPC::RpcServer.new(server_args: server_args.merge("grpc.so_reuseport" => 0))
-      server_port = @rpc_server.add_http2_port("0.0.0.0:0", :this_port_is_insecure)
+
+      cred = origin.start_with?("https") ? server_credentials : :this_port_is_insecure
+
+      server_port = @rpc_server.add_http2_port("localhost:0", cred)
       @rpc_server.handle(service)
 
       @rpc_server_th = Thread.new { @rpc_server.run }
@@ -111,7 +127,9 @@ begin
     def run_request_response(resp, status, marshal: nil, server_args: {}, server_initial_md: {}, server_trailing_md: {})
       @grpc_server = ::GRPC::Core::Server.new(server_args.merge("grpc.so_reuseport" => 0))
 
-      server_port = @grpc_server.add_http2_port("0.0.0.0:0", :this_port_is_insecure)
+      cred = origin.start_with?("https") ? server_credentials : :this_port_is_insecure
+
+      server_port = @grpc_server.add_http2_port("localhost:0", cred)
 
       @grpc_server_th = wakey_thread do |notifier|
         c = expect_server_to_be_invoked(notifier, metadata_to_send: server_initial_md, marshal: marshal)
@@ -149,6 +167,30 @@ begin
       recvd_call.metadata = recvd_rpc.metadata
       recvd_call.run_batch(SEND_INITIAL_METADATA => metadata_to_send)
       ::GRPC::ActiveCall.new(recvd_call, marshal, marshal, INFINITE_FUTURE, metadata_received: true)
+    end
+
+    def server_credentials
+      creds = ["ca.pem", "server1.key", "server1.pem"]
+              .map { |path| File.join(grpc_testdata_path, path) }
+              .map(&File.method(:read))
+
+      GRPC::Core::ServerCredentials.new(
+        creds[0],
+        [{ private_key: creds[1], cert_chain: creds[2] }],
+        true
+      ) # force client auth
+    end
+
+    def channel_credentials_paths
+      ["ca.pem", "client.key", "client.pem"]
+        .map { |path| File.join(grpc_testdata_path, path) }
+      #   .map(&File.method(:read))
+      # GRPC::Core::ChannelCredentials.new(*creds)
+    end
+
+    def grpc_testdata_path
+      grpc_path = Gem::Specification.find_by_path("grpc").full_gem_path
+      File.join(grpc_path, "src", "ruby", "spec", "testdata")
     end
   end
 rescue LoadError
