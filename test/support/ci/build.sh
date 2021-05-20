@@ -6,7 +6,7 @@ RUBY_PLATFORM=`ruby -e 'puts RUBY_PLATFORM'`
 RUBY_ENGINE=`ruby -e 'puts RUBY_ENGINE'`
 
 if [[ "$RUBY_ENGINE" = "truffleruby" ]]; then
-  apt-get update && apt-get install -y iptables
+  microdnf install -y iptables iproute which file
 elif [[ "$RUBY_PLATFORM" = "java" ]]; then
   echo "
 deb http://deb.debian.org/debian sid main contrib non-free
