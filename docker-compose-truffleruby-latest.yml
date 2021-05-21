@@ -1,7 +1,7 @@
 version: '3'
 services:
   httpx:
-    image: flavorjones/truffleruby:nightly
+    image: ghcr.io/graalvm/truffleruby:latest
     entrypoint:
       - bash
       - /home/test/support/ci/build.sh
