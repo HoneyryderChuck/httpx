@@ -77,7 +77,7 @@ module HTTPX
     end
 
     def set_connection_callbacks(connection, connections, options)
-      connection.on(:misdirected) do |misdirected_request|
+      connection.only(:misdirected) do |misdirected_request|
         other_connection = connection.create_idle(ssl: { alpn_protocols: %w[http/1.1] })
         other_connection.merge(connection)
         catch(:coalesced) do
@@ -88,11 +88,11 @@ module HTTPX
         misdirected_request.transition(:idle)
         other_connection.send(misdirected_request)
       end
-      connection.on(:altsvc) do |alt_origin, origin, alt_params|
+      connection.only(:altsvc) do |alt_origin, origin, alt_params|
         other_connection = build_altsvc_connection(connection, connections, alt_origin, origin, alt_params, options)
         connections << other_connection if other_connection
       end
-      connection.on(:exhausted) do
+      connection.only(:exhausted) do
         other_connection = connection.create_idle
         other_connection.merge(connection)
         catch(:coalesced) do

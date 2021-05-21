@@ -6,11 +6,16 @@ module HTTPX
       callbacks(type) << action
     end
 
-    def once(event, &block)
-      on(event) do |*args, &callback|
+    def once(type, &block)
+      on(type) do |*args, &callback|
         block.call(*args, &callback)
         :delete
       end
+    end
+
+    def only(type, &block)
+      callbacks(type).clear
+      on(type, &block)
     end
 
     def emit(type, *args)

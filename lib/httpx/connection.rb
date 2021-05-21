@@ -129,7 +129,7 @@ module HTTPX
     end
 
     def merge(connection)
-      @origins += connection.instance_variable_get(:@origins)
+      @origins |= connection.instance_variable_get(:@origins)
       connection.purge_pending do |req|
         send(req)
       end
@@ -413,7 +413,7 @@ module HTTPX
         emit(:exhausted)
       end
       parser.on(:origin) do |origin|
-        @origins << origin
+        @origins |= [origin]
       end
       parser.on(:close) do |force|
         transition(:closing)
