@@ -109,11 +109,6 @@ begin
       grpc
     end
 
-    def grpc_channel_uri(server_port)
-      scheme = URI(origin).scheme
-      "#{scheme}://localhost:#{server_port}"
-    end
-
     def run_rpc(service, server_args: {})
       @rpc_server = ::GRPC::RpcServer.new(server_args: server_args.merge("grpc.so_reuseport" => 0))
 
