@@ -1,4 +1,21 @@
 module HTTPX
+  class StreamResponse
+    include _ToS
+
+    def each: () { (String) -> void } -> void
+            | () -> Enumerable[String]
+
+    def each_line: () { (String) -> void } -> void
+                 | () -> Enumerable[String]
+
+    def on_chunk: (string) -> void
+
+    private
+
+    def response: () -> response
+    def initialize: (Request, Session, Array[Connection]) -> untyped
+  end
+
   module Plugins
     module Stream
       module InstanceMethods
@@ -16,22 +33,6 @@ module HTTPX
         def stream: () -> StreamResponse?
       end
 
-      class StreamResponse
-        include _ToS
-
-        def each: () { (String) -> void } -> void
-                | () -> Enumerable[String]
-
-        def each_line: () { (String) -> void } -> void
-                     | () -> Enumerable[String]
-
-        def on_chunk: (string) -> void
-
-        private
-
-        def response: () -> response
-        def initialize: (Request, Session) -> untyped
-      end
     end
 
     type sessionStream = Session & Plugins::Stream::InstanceMethods

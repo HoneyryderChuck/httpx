@@ -272,23 +272,18 @@ module HTTPX
         join_headers(request) if request.state == :headers
         request.transition(:body)
         join_body(request) if request.state == :body
+        request.transition(:trailers)
+        # HTTP/1.1 trailers should only work for chunked encoding
+        join_trailers(request) if request.body.chunked? && request.state == :trailers
         request.transition(:done)
       end
     end
 
     def join_headers(request)
-      buffer = +""
-      buffer << "#{request.verb.to_s.upcase} #{headline_uri(request)} HTTP/#{@version.join(".")}" << CRLF
-      log(color: :yellow) { "<- HEADLINE: #{buffer.chomp.inspect}" }
-      @buffer << buffer
-      buffer.clear
+      @buffer << "#{request.verb.to_s.upcase} #{headline_uri(request)} HTTP/#{@version.join(".")}" << CRLF
+      log(color: :yellow) { "<- HEADLINE: #{@buffer.to_s.chomp.inspect}" }
       set_protocol_headers(request)
-      request.headers.each do |field, value|
-        buffer << "#{capitalized(field)}: #{value}" << CRLF
-        log(color: :yellow) { "<- HEADER: #{buffer.chomp}" }
-        @buffer << buffer
-        buffer.clear
-      end
+      join_headers2(request.headers)
       log { "<- " }
       @buffer << CRLF
     end
@@ -301,6 +296,26 @@ module HTTPX
         log(level: 2, color: :green) { "<- #{chunk.inspect}" }
         @buffer << chunk
         throw(:buffer_full, request) if @buffer.full?
+      end
+
+      raise request.drain_error if request.drain_error
+    end
+
+    def join_trailers(request)
+      return unless request.trailers? && request.callbacks_for?(:trailers)
+
+      join_headers2(request.trailers)
+      log { "<- " }
+      @buffer << CRLF
+    end
+
+    def join_headers2(headers)
+      buffer = "".b
+      headers.each do |field, value|
+        buffer << "#{capitalized(field)}: #{value}" << CRLF
+        log(color: :yellow) { "<- HEADER: #{buffer.chomp}" }
+        @buffer << buffer
+        buffer.clear
       end
     end
 

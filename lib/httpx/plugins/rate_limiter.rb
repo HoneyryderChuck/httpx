@@ -15,7 +15,7 @@ module HTTPX
       class << self
         RATE_LIMIT_CODES = [429, 503].freeze
 
-        def load_dependencies(klass)
+        def configure(klass)
           klass.plugin(:retries,
                        retry_change_requests: true,
                        retry_on: method(:retry_on_rate_limited_response),

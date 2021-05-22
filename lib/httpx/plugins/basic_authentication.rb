@@ -8,9 +8,14 @@ module HTTPX
     # https://gitlab.com/honeyryderchuck/httpx/wikis/Authentication#basic-authentication
     #
     module BasicAuthentication
-      def self.load_dependencies(klass)
-        require "base64"
-        klass.plugin(:authentication)
+      class << self
+        def load_dependencies(_klass)
+          require "base64"
+        end
+
+        def configure(klass)
+          klass.plugin(:authentication)
+        end
       end
 
       module InstanceMethods

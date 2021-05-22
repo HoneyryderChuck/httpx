@@ -146,7 +146,7 @@ module HTTPX
             def_option(:sigv4_signer, <<-OUT)
               value.is_a?(#{Signer}) ? value : #{Signer}.new(value)
             OUT
-          end.new.merge(options)
+          end.new(options)
         end
 
         def load_dependencies(klass)

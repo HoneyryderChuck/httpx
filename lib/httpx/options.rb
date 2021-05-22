@@ -88,6 +88,10 @@ module HTTPX
       end
     end
 
+    def_option(:origin, <<-OUT)
+      URI(value)
+    OUT
+
     def_option(:headers, <<-OUT)
       if self.headers
         self.headers.merge(value)

@@ -45,5 +45,9 @@ module HTTPX
     def build_connection: (URI, Options) -> Connection
 
     def send_requests: (*Request, options) -> Array[response]
+
+    def _send_requests: (Array[Request], options) -> Array[Connection]
+
+    def receive_requests: (Array[Request], Array[Connection], options) -> Array[response]
   end
 end

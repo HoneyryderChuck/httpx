@@ -19,7 +19,7 @@ module HTTPX
             @compressed_chunk = "".b
           end
 
-          def deflate(raw, buffer, chunk_size:)
+          def deflate(raw, buffer = "".b, chunk_size: 16_384)
             gzip = Zlib::GzipWriter.new(self)
 
             begin
@@ -38,6 +38,7 @@ module HTTPX
 
             buffer << compressed
             yield compressed if block_given?
+            buffer
           end
 
           private

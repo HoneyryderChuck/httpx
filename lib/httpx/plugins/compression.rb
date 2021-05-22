@@ -66,7 +66,7 @@ module HTTPX
 
             @body = Encoder.new(@body, options.encodings.registry(encoding).deflater)
           end
-          @headers["content-length"] = @body.bytesize unless chunked?
+          @headers["content-length"] = @body.bytesize unless unbounded_body?
         end
       end
 

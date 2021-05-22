@@ -53,6 +53,8 @@ module HTTPX
 
     def join_headers: (HTTP2Next::Stream stream, Request request) -> void
 
+    def join_trailers: (HTTP2Next::Stream stream, Request request) -> void
+
     def join_body: (HTTP2Next::Stream stream, Request request) -> void
 
     def on_stream_headers: (HTTP2Next::Stream stream, Request request, Array[[String, String]] headers) -> void
@@ -61,7 +63,7 @@ module HTTPX
 
     def on_stream_data: (HTTP2Next::Stream stream, Request request, string data) -> void
 
-    def on_stream_close: (HTTP2Next::Stream stream, Request request, Symbol? error) -> void
+    def on_stream_close: (HTTP2Next::Stream stream, Request request, (Symbol | StandardError)? error) -> void
 
     def on_frame: (string bytes) -> void
 

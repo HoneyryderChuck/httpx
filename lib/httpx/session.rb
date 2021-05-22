@@ -175,12 +175,18 @@ module HTTPX
     end
 
     def send_requests(*requests, options)
-      connections = []
       request_options = @options.merge(options)
+
+      connections = _send_requests(requests, request_options)
+      receive_requests(requests, connections, request_options)
+    end
+
+    def _send_requests(requests, options)
+      connections = []
 
       requests.each do |request|
         error = catch(:resolve_error) do
-          connection = find_connection(request, connections, request_options)
+          connection = find_connection(request, connections, options)
           connection.send(request)
         end
         next unless error.is_a?(ResolveError)
@@ -188,13 +194,17 @@ module HTTPX
         request.emit(:response, ErrorResponse.new(request, error, options))
       end
 
+      connections
+    end
+
+    def receive_requests(requests, connections, options)
       responses = []
 
       begin
         # guarantee ordered responses
         loop do
           request = requests.first
-          pool.next_tick until (response = fetch_response(request, connections, request_options))
+          pool.next_tick until (response = fetch_response(request, connections, options))
 
           responses << response
           requests.shift
@@ -208,7 +218,7 @@ module HTTPX
           # opportunity to traverse the requests, hence we're returning only a fraction of the errors
           # we were supposed to. This effectively fetches the existing responses and return them.
           while (request = requests.shift)
-            responses << fetch_response(request, connections, request_options)
+            responses << fetch_response(request, connections, options)
           end
           break
         end

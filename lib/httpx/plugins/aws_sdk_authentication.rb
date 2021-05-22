@@ -32,9 +32,8 @@ module HTTPX
       class << self
         attr_reader :credentials, :region
 
-        def load_dependencies(klass)
+        def load_dependencies(_klass)
           require "aws-sdk-core"
-          klass.plugin(:aws_sigv4)
 
           client = Class.new(Seahorse::Client::Base) do
             @identifier = :httpx
@@ -48,6 +47,10 @@ module HTTPX
 
           @credentials = Credentials.new(client.config[:credentials])
           @region = client.config[:region]
+        end
+
+        def configure(klass)
+          klass.plugin(:aws_sigv4)
         end
 
         def extra_options(options)

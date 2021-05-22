@@ -35,14 +35,22 @@ module HTTPX
 
     attr_reader :verb, :uri, :headers, :body, :state, :options, :response
 
+    # Exception raised during enumerable body writes
+    attr_reader :drain_error
+
     def_delegator :@body, :empty?
 
     def_delegator :@body, :chunk!
 
     def initialize(verb, uri, options = {})
       @verb    = verb.to_s.downcase.to_sym
-      @uri     = Utils.uri(uri)
       @options = Options.new(options)
+      @uri     = Utils.uri(uri)
+      if @uri.relative?
+        raise(Error, "invalid URI: #{@uri}") unless @options.origin
+
+        @uri = @options.origin.merge(@uri)
+      end
 
       raise(Error, "unknown method: #{verb}") unless METHODS.include?(@verb)
 
@@ -52,6 +60,14 @@ module HTTPX
 
       @body = @options.request_body_class.new(@headers, @options)
       @state = :idle
+    end
+
+    def trailers?
+      defined?(@trailers)
+    end
+
+    def trailers
+      @trailers ||= @options.headers_class.new
     end
 
     def interests
@@ -123,6 +139,9 @@ module HTTPX
       chunk = @drainer.next
       chunk.dup
     rescue StopIteration
+      nil
+    rescue StandardError => e
+      @drain_error = e
       nil
     end
 
@@ -200,7 +219,9 @@ module HTTPX
       end
 
       def unbounded_body?
-        chunked? || @body.bytesize == Float::INFINITY
+        return @unbounded_body if defined?(@unbounded_body)
+
+        @unbounded_body = (chunked? || @body.bytesize == Float::INFINITY)
       end
 
       def chunked?
@@ -253,6 +274,8 @@ module HTTPX
             nextstate = :expect
           end
         end
+      when :trailers
+        return unless @state == :body
       when :done
         return if @state == :expect
       end

@@ -20,7 +20,7 @@ module HTTPX::Transcoder
         @raw.each do |chunk|
           yield "#{chunk.bytesize.to_s(16)}#{CRLF}#{chunk}#{CRLF}"
         end
-        yield "0#{CRLF}#{CRLF}"
+        yield "0#{CRLF}"
       end
 
       def respond_to_missing?(meth, *args)

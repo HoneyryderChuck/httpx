@@ -443,6 +443,7 @@ module HTTPX
           emit(:misdirected, request)
         else
           response = ErrorResponse.new(request, ex, @options)
+          request.response = response
           request.emit(:response, response)
         end
       end
@@ -542,7 +543,9 @@ module HTTPX
     def handle_error(error)
       parser.handle_error(error) if @parser && parser.respond_to?(:handle_error)
       while (request = @pending.shift)
-        request.emit(:response, ErrorResponse.new(request, error, @options))
+        response = ErrorResponse.new(request, error, @options)
+        request.response = response
+        request.emit(:response, response)
       end
     end
 
