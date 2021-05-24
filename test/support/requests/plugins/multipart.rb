@@ -26,6 +26,16 @@ module Requests
           verify_uploaded(body, "form", "q[a]" => "z", "a[]" => %w[1 2])
         end
 
+        define_method :"test_plugin_multipart_repeated_field_urlencoded_#{meth}" do
+          uri = build_uri("/#{meth}")
+          response = HTTPX.plugin(:multipart)
+                          .send(meth, uri, form: [%w[foo bar1], %w[foo bar2]])
+          verify_status(response, 200)
+          body = json_body(response)
+          verify_header(body["headers"], "Content-Type", "application/x-www-form-urlencoded")
+          verify_uploaded(body, "form", "foo" => %w[bar1 bar2])
+        end
+
         define_method :"test_plugin_multipart_hash_#{meth}" do
           uri = build_uri("/#{meth}")
           response = HTTPX.plugin(:multipart)
@@ -64,6 +74,23 @@ module Requests
           body = json_body(response)
           verify_header(body["headers"], "Content-Type", "multipart/form-data")
           verify_uploaded_image(body, "image", "image/jpeg")
+        end
+
+        define_method :"test_plugin_multipart_file_repeated_#{meth}" do
+          uri = build_uri("/#{meth}")
+          response = HTTPX.plugin(:multipart)
+                          .send(meth, uri, form: [
+                                  %w[foo bar1],
+                                  ["image1", File.new(fixture_file_path)],
+                                  %w[foo bar2],
+                                  ["image2", File.new(fixture_file_path)],
+                                ])
+          verify_status(response, 200)
+          body = json_body(response)
+          verify_header(body["headers"], "Content-Type", "multipart/form-data")
+          verify_uploaded(body, "form", "foo" => %w[bar1 bar2])
+          verify_uploaded_image(body, "image1", "image/jpeg")
+          verify_uploaded_image(body, "image2", "image/jpeg")
         end
 
         define_method :"test_plugin_multipart_nested_file_#{meth}" do
