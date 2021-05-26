@@ -52,7 +52,7 @@ module HTTPX
 
     def disable_pipelining: () -> void
 
-    def set_protocol_headers: (Request) -> void
+    def set_protocol_headers: (Request) -> _Each[headers_key, String]
 
     def headline_uri: (Request) -> String
 
@@ -62,7 +62,7 @@ module HTTPX
 
     def join_trailers: (Request request) -> void
 
-    def join_headers2: (Headers headers) -> void
+    def join_headers2: (_Each[headers_key, String] headers) -> void
 
     def join_body: (Request request) -> void
 

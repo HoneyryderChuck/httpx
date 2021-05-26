@@ -43,7 +43,7 @@ module HTTPX
 
     def headline_uri: (Request) -> String
 
-    def set_protocol_headers: (Request) -> void
+    def set_protocol_headers: (Request) -> _Each[headers_key, String]
 
     def handle: (Request request, HTTP2Next::Stream stream) -> void
 

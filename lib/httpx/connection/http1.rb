@@ -254,12 +254,15 @@ module HTTPX
     end
 
     def set_protocol_headers(request)
-      request.headers["host"] ||= request.authority
-      request.headers["connection"] ||= request.options.persistent ? "keep-alive" : "close"
       if !request.headers.key?("content-length") &&
          request.body.bytesize == Float::INFINITY
         request.chunk!
       end
+
+      {
+        "host" => (request.headers["host"] || request.authority),
+        "connection" => (request.headers["connection"] || (request.options.persistent ? "keep-alive" : "close")),
+      }
     end
 
     def headline_uri(request)
@@ -282,8 +285,8 @@ module HTTPX
     def join_headers(request)
       @buffer << "#{request.verb.to_s.upcase} #{headline_uri(request)} HTTP/#{@version.join(".")}" << CRLF
       log(color: :yellow) { "<- HEADLINE: #{@buffer.to_s.chomp.inspect}" }
-      set_protocol_headers(request)
-      join_headers2(request.headers)
+      extra_headers = set_protocol_headers(request)
+      join_headers2(request.headers.each(extra_headers))
       log { "<- " }
       @buffer << CRLF
     end
