@@ -82,11 +82,12 @@ module HTTPX
           end
 
           def set_protocol_headers(request)
-            super
+            extra_headers = super
+
             proxy_params = @options.proxy
-            request.headers["proxy-authorization"] = "Basic #{proxy_params.token_authentication}" if proxy_params.authenticated?
-            request.headers["proxy-connection"] = request.headers["connection"]
-            request.headers.delete("connection")
+            extra_headers["proxy-authorization"] = "Basic #{proxy_params.token_authentication}" if proxy_params.authenticated?
+            extra_headers["proxy-connection"] = extra_headers.delete("connection") if extra_headers.key?("connection")
+            extra_headers
           end
         end
 

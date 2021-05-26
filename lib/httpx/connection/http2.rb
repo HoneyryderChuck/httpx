@@ -192,18 +192,20 @@ module HTTPX
     end
 
     def set_protocol_headers(request)
-      request.headers[":scheme"]    = request.scheme
-      request.headers[":method"]    = request.verb.to_s.upcase
-      request.headers[":path"]      = headline_uri(request)
-      request.headers[":authority"] = request.authority
+      {
+        ":scheme" => request.scheme,
+        ":method" => request.verb.to_s.upcase,
+        ":path" => headline_uri(request),
+        ":authority" => request.authority,
+      }
     end
 
     def join_headers(stream, request)
-      set_protocol_headers(request)
+      extra_headers = set_protocol_headers(request)
       log(level: 1, color: :yellow) do
-        request.headers.each.map { |k, v| "#{stream.id}: -> HEADER: #{k}: #{v}" }.join("\n")
+        request.headers.merge(extra_headers).each.map { |k, v| "#{stream.id}: -> HEADER: #{k}: #{v}" }.join("\n")
       end
-      stream.headers(request.headers.each, end_stream: request.empty?)
+      stream.headers(request.headers.each(extra_headers), end_stream: request.empty?)
     end
 
     def join_trailers(stream, request)
