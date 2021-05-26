@@ -60,7 +60,7 @@ services:
     ports:
       - "3128:3128"
     volumes:
-      - ./test/support/ci/squid.conf:/etc/squid/squid.conf
+      - ./test/support/ci/squid/proxy.conf:/etc/squid/squid.conf
       - ./test/support/ci/proxy-users:/etc/squid/proxy-users
     command:
       -d 3
