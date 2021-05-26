@@ -12,6 +12,7 @@ group :test do
   gem "http-form_data", ">= 2.0.0"
   gem "minitest"
   gem "minitest-proveit"
+  gem "ruby-ntlm"
   gem "webmock"
   gem "websocket-driver"
 
