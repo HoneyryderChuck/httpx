@@ -103,12 +103,16 @@ module HTTPX
     # returns the enumerable headers store in pairs of header field + the values in
     # the comma-separated string format
     #
-    def each
-      return enum_for(__method__) { @headers.size } unless block_given?
+    def each(extra_headers = nil)
+      return enum_for(__method__, extra_headers) { @headers.size } unless block_given?
 
       @headers.each do |field, value|
         yield(field, value.join(", ")) unless value.empty?
       end
+
+      extra_headers.each do |field, value|
+        yield(field, value) unless value.empty?
+      end if extra_headers
     end
 
     def ==(other)
