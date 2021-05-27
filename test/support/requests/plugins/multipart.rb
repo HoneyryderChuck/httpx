@@ -161,6 +161,21 @@ module Requests
           verify_header(body["headers"], "Content-Type", "multipart/form-data")
           verify_uploaded_image(body, "q[image]", "image/jpeg")
         end
+
+        define_method :"test_plugin_multipart_spoofed_file_#{meth}" do
+          uri = build_uri("/#{meth}")
+          response = HTTPX.plugin(:multipart)
+                          .send(meth, uri, form: { image: {
+                                  content_type: "image/jpeg",
+                                  filename: "selfie",
+                                  body: "spoofpeg",
+                                } })
+          verify_status(response, 200)
+          body = json_body(response)
+          verify_header(body["headers"], "Content-Type", "multipart/form-data")
+          # httpbin accepts the spoofed part, but it wipes our the content-type header
+          verify_uploaded(body, "form", "image" => "spoofpeg")
+        end
       end
 
       # safety-check test only check if request is successfully rewinded
