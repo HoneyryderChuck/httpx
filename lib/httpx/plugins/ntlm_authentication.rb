@@ -14,10 +14,6 @@ module HTTPX
           require "ntlm"
         end
 
-        def configure(klass)
-          klass.plugin(:authentication)
-        end
-
         def extra_options(options)
           Class.new(options.class) do
             def_option(:ntlm, <<-OUT)

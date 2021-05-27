@@ -10,6 +10,8 @@ module HTTPX
     # https://gitlab.com/honeyryderchuck/httpx/wikis/Authentication#authentication
     #
     module DigestAuthentication
+      using RegexpExtensions unless Regexp.method_defined?(:match?)
+
       DigestError = Class.new(Error)
 
       def self.extra_options(options)
@@ -19,7 +21,7 @@ module HTTPX
 
             value
           OUT
-        end.new(options)
+        end.new(options).merge(max_concurrent_requests: 1)
       end
 
       def self.load_dependencies(*)
@@ -36,32 +38,22 @@ module HTTPX
 
         def request(*args, **options)
           requests = build_requests(*args, options)
-          probe_request = requests.first
-          digest = probe_request.options.digest
+          request = requests.first
+          digest = request.options.digest
 
           return super unless digest
 
-          prev_response = wrap { send_requests(*probe_request, options).first }
+          probe_response = wrap { send_requests(*request, options).first }
 
-          raise Error, "request doesn't require authentication (status: #{prev_response.status})" unless prev_response.status == 401
+          return probe_response unless probe_response.status == 401 && probe_response.headers.key?("www-authenticate") &&
+                                       /Digest .*/.match?(probe_response.headers["www-authenticate"])
 
-          probe_request.transition(:idle)
+          request.transition(:idle)
 
-          responses = []
+          token = digest.generate_header(request, probe_response)
+          request.headers["authorization"] = "Digest #{token}"
 
-          while (request = requests.shift)
-            token = digest.generate_header(request, prev_response)
-            request.headers["authorization"] = "Digest #{token}"
-            response = if requests.empty?
-              send_requests(*request, options).first
-            else
-              wrap { send_requests(*request, options).first }
-            end
-            responses << response
-            prev_response = response
-          end
-
-          responses.size == 1 ? responses.first : responses
+          super(request, **options)
         end
       end
 
