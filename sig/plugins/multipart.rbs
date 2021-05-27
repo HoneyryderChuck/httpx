@@ -33,7 +33,7 @@ module HTTPX
       end
 
       module Part
-        def self?.call: (multipart_nested_value) -> ([_Reader, String, String?] | [_Reader, String])
+        def self?.call: (multipart_nested_value) -> ([_Reader, String, String?])
       end
 
       module MimeTypeDetector

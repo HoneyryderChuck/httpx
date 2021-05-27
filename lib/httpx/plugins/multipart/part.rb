@@ -26,7 +26,7 @@ module HTTPX
           content_type ||= MimeTypeDetector.call(value, filename) || "application/octet-stream"
           [value, content_type, filename]
         else
-          [StringIO.new(value.to_s), content_type || "text/plain"]
+          [StringIO.new(value.to_s), content_type || "text/plain", filename]
         end
       end
     end

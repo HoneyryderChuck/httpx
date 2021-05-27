@@ -174,7 +174,7 @@ module Requests
           body = json_body(response)
           verify_header(body["headers"], "Content-Type", "multipart/form-data")
           # httpbin accepts the spoofed part, but it wipes our the content-type header
-          verify_uploaded(body, "form", "image" => "spoofpeg")
+          verify_uploaded_image(body, "image", "spoofpeg", skip_verify_data: true)
         end
       end
 
@@ -209,10 +209,12 @@ module Requests
         File.join("test", "support", "fixtures", fixture_file_name)
       end
 
-      def verify_uploaded_image(body, key, mime_type)
+      def verify_uploaded_image(body, key, mime_type, skip_verify_data: false)
         assert body.key?("files"), "there were no files uploaded"
         assert body["files"].key?(key), "there is no image in the file"
         # checking mime-type is a bit leaky, as httpbin displays the base64-encoded data
+        return if skip_verify_data
+
         assert body["files"][key].start_with?("data:#{mime_type}"), "data was wrongly encoded (#{body["files"][key][0..64]})"
       end
     end
