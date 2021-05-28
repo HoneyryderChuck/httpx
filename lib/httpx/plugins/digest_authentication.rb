@@ -36,24 +36,30 @@ module HTTPX
 
         alias_method :digest_auth, :digest_authentication
 
-        def request(*args, **options)
-          requests = build_requests(*args, options)
-          request = requests.first
-          digest = request.options.digest
+        def send_requests(*requests, options)
+          requests.flat_map do |request|
+            digest = request.options.digest
 
-          return super unless digest
+            if digest
+              probe_response = wrap { super(request, options).first }
 
-          probe_response = wrap { send_requests(*request, options).first }
+              if digest && !probe_response.is_a?(ErrorResponse) &&
+                 probe_response.status == 401 && probe_response.headers.key?("www-authenticate") &&
+                 /Digest .*/.match?(probe_response.headers["www-authenticate"])
 
-          return probe_response unless probe_response.status == 401 && probe_response.headers.key?("www-authenticate") &&
-                                       /Digest .*/.match?(probe_response.headers["www-authenticate"])
+                request.transition(:idle)
 
-          request.transition(:idle)
+                token = digest.generate_header(request, probe_response)
+                request.headers["authorization"] = "Digest #{token}"
 
-          token = digest.generate_header(request, probe_response)
-          request.headers["authorization"] = "Digest #{token}"
-
-          super(request, **options)
+                super(request, options)
+              else
+                probe_response
+              end
+            else
+              super(request, options)
+            end
+          end
         end
       end
 

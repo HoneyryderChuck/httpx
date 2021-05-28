@@ -32,26 +32,32 @@ module HTTPX
 
         alias_method :ntlm_auth, :ntlm_authentication
 
-        def request(*args, **options)
-          requests = build_requests(*args, options)
-          request = requests.first
-          ntlm = request.options.ntlm
+        def send_requests(*requests, options)
+          requests.flat_map do |request|
+            ntlm = request.options.ntlm
 
-          return super(*requests, **options) unless ntlm
+            if ntlm
+              request.headers["authorization"] = "NTLM #{NTLM.negotiate(domain: ntlm.domain).to_base64}"
+              probe_response = wrap { super(request, options).first }
 
-          request.headers["authorization"] = "NTLM #{NTLM.negotiate(domain: ntlm.domain).to_base64}"
-          probe_response = wrap { send_requests(*request, options).first }
+              if !probe_response.is_a?(ErrorResponse) && probe_response.status == 401 &&
+                 probe_response.headers.key?("www-authenticate") &&
+                 (challenge = probe_response.headers["www-authenticate"][/NTLM (.*)/, 1])
 
-          return probe_response unless probe_response.status == 401 && probe_response.headers.key?("www-authenticate") &&
-                                       (challenge = probe_response.headers["www-authenticate"][/NTLM (.*)/, 1])
+                challenge = Base64.decode64(challenge)
+                ntlm_challenge = NTLM.authenticate(challenge, ntlm.user, ntlm.domain, ntlm.password).to_base64
 
-          challenge = Base64.decode64(challenge)
-          ntlm_challenge = NTLM.authenticate(challenge, ntlm.user, ntlm.domain, ntlm.password).to_base64
+                request.transition(:idle)
 
-          request.transition(:idle)
-
-          request.headers["authorization"] = "NTLM #{ntlm_challenge}"
-          super(request, **options)
+                request.headers["authorization"] = "NTLM #{ntlm_challenge}"
+                super(request, options)
+              else
+                probe_response
+              end
+            else
+              super(request, options)
+            end
+          end
         end
       end
     end
