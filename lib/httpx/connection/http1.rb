@@ -80,7 +80,6 @@ module HTTPX
         break if idx >= concurrent_requests_limit
         next if request.state == :done
 
-        request.headers["connection"] ||= request.options.persistent || idx < requests_limit - 1 ? "keep-alive" : "close"
         handle(request)
       end
     end
@@ -259,9 +258,15 @@ module HTTPX
         request.chunk!
       end
 
+      connection = if request.options.persistent || request != @requests[-1]
+        "keep-alive"
+      else
+        "close"
+      end
+
       {
         "host" => (request.headers["host"] || request.authority),
-        "connection" => (request.headers["connection"] || (request.options.persistent ? "keep-alive" : "close")),
+        "connection" => connection,
       }
     end
 
