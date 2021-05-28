@@ -160,7 +160,7 @@ module HTTPX
           grpc_request = build_grpc_request(rpc_method, input, deadline: deadline, metadata: metadata, **opts)
           response = request(grpc_request, **opts)
           response.raise_for_status
-          GRPC::Call.new(response, opts)
+          GRPC::Call.new(response)
         end
 
         private
