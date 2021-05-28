@@ -66,8 +66,8 @@ group :test do
   gem "faraday"
   gem "oga"
 
-  if RUBY_VERSION >= "3.0"
-    gem "rbs", git: "https://github.com/ruby/rbs.git", branch: "master"
+  if RUBY_VERSION >= "3.0.0"
+    gem "rbs"
     gem "webrick"
   end
 end
