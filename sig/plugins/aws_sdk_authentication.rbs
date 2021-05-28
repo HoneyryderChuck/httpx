@@ -15,5 +15,7 @@ module HTTPX
         def aws_sdk_authentication: (**untyped) -> instance
       end
     end
+
+    type sessionAwsSdkAuthentication = Session & Plugins::AwsSdkAuthentication::InstanceMethods
   end
 end

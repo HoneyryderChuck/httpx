@@ -14,6 +14,8 @@ module HTTPX
     def plugin: (:authentication) -> Plugins::sessionAuthentication
               | (:basic_authentication) -> Plugins::sessionBasicAuthentication
               | (:digest_authentication) -> Plugins::sessionDigestAuthentication
+              | (:ntlm_authentication) -> Plugins::sessionNTLMAuthentication
+              | (:aws_sdk_authentication) -> Plugins::sessionAwsSdkAuthentication
               | (:compression) -> Session
               | (:cookies) -> Plugins::sessionCookies
               | (:expect) -> Session
@@ -25,7 +27,10 @@ module HTTPX
               | (:proxy) -> Plugins::sessionProxy
               | (:push_promise) -> Plugins::sessionPushPromise
               | (:retries) -> Plugins::sessionRetries
+              | (:rate_limiter) -> Session
               | (:stream) -> Plugins::sessionStream
+              | (:aws_sigv4) -> Plugins::awsSigV4Session
+              | (:grpc) -> Plugins::grpcSession
               | (Symbol | Module, ?options?) { (Class) -> void } -> Session
               | (Symbol | Module, ?options?) -> Session
 
