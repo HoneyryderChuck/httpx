@@ -1,0 +1,93 @@
+module HTTPX
+  class GRPCError < Error
+    attr_reader status: Integer
+    attr_reader details: String
+    attr_reader metadata: headers
+  end
+
+  module Plugins
+    module GRPC
+      type compression_option = bool | String
+      type rpc_def = [String, untyped, untyped, Hash[Symbol, untyped]]
+
+      type grpc_message = String | _Each[String]
+
+      type grpc_request = untyped | _Each[untyped]
+      type grpc_response = untyped | _Each[untyped]
+
+      class Call
+        attr_writer decoder: _Callable
+
+        def metadata: () -> headers
+
+        def trailing_metadata: () -> headers?
+
+        private
+
+        def initialize: (Response | StreamResponse response) -> untyped
+
+        def grpc_response: () -> grpc_response
+      end
+
+      module Message
+        def self?.unary: (response) -> grpc_message
+
+        def self?.stream: (StreamResponse) { (String) -> void } -> void
+                        | (StreamResponse) -> Enumerable[String]
+
+        def self?.encode: (String bytes, ?deflater: Compression::_Deflater?) -> String
+
+        def self?.decode: (String message, encodings: Array[String], encoders: Compression::encodings_registry) -> String
+                        | (String message, encodings: Array[String], encoders: Compression::encodings_registry) { (String) -> void } -> void
+        
+        def self?.cancel: (Request) -> void
+
+        def self?.verify_status: (StreamResponse | response) -> void
+      end
+
+      interface _GRPCOptions
+        def grpc_service: () -> String?
+        def grpc_service=: (string) -> String
+
+        def grpc_compression: () -> compression_option?
+        def grpc_compression=: (compression_option) -> compression_option
+
+        def grpc_rpcs: () -> Hash[String, rpc_def]?
+        def grpc_rpcs=: (Hash[String, rpc_def]) -> Hash[String, rpc_def]
+
+        def grpc_deadline: () -> Integer?
+        def grpc_deadline=: (Integer) -> Integer
+
+        def call_credentials: () -> credentials?
+        def call_credentials=: (credentials) -> credentials
+      end
+
+      def self.extra_options: (Options) -> (Options & _GRPCOptions)
+      def self.load_dependencies: (singleton(Session)) -> void
+
+      module ResponseMethods
+        def merge_headers: (headers_input trailers) -> void
+
+        def encoders: () -> Compression::encodings_registry
+      end
+
+      module InstanceMethods
+        def with_channel_credentials: (String ca_path, ?String? key, ?String? cert, **untyped) -> instance
+
+        def rpc: (_ToS rpc_name, untyped input, untyped output, **untyped) -> instance
+
+        def build_stub: (string origin, ?service: _ToS, ?compression: compression_option) -> instance
+
+        def execute:  (_ToS rpc_method, grpc_message input, ?deadline: Integer, ?metadata: headers_input, **untyped) -> Call
+
+        private
+
+        def rpc_execute: (_ToS rpc_method, grpc_request input, **untyped) -> Call
+
+        def build_grpc_request: (string rpc_method, grpc_message input, ?deadline: Integer, ?metadata?: headers_input, **untyped) -> Request
+      end
+    end
+
+    type grpcSession = Session & Plugins::GRPC::InstanceMethods
+  end
+end

@@ -7,9 +7,8 @@ module HTTPX
       class Call
         attr_writer :decoder
 
-        def initialize(response, options)
+        def initialize(response)
           @response = response
-          @options = options
           @decoder = ->(z) { z }
         end
 

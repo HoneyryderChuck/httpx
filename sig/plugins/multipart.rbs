@@ -23,7 +23,7 @@ module HTTPX
 
         private
 
-        def initialize: (Hash[Symbol | string, multipart_nested_value] multipart_data) -> untyped
+        def initialize: (_Each[Symbol | string, multipart_nested_value] multipart_data) -> untyped
 
         def header_part: (string key, String content_type, String? filename) -> StringIO
 

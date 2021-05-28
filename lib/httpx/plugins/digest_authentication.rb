@@ -10,6 +10,8 @@ module HTTPX
     # https://gitlab.com/honeyryderchuck/httpx/wikis/Authentication#authentication
     #
     module DigestAuthentication
+      using RegexpExtensions unless Regexp.method_defined?(:match?)
+
       DigestError = Class.new(Error)
 
       def self.extra_options(options)
@@ -19,7 +21,7 @@ module HTTPX
 
             value
           OUT
-        end.new(options)
+        end.new(options).merge(max_concurrent_requests: 1)
       end
 
       def self.load_dependencies(*)
@@ -34,34 +36,30 @@ module HTTPX
 
         alias_method :digest_auth, :digest_authentication
 
-        def request(*args, **options)
-          requests = build_requests(*args, options)
-          probe_request = requests.first
-          digest = probe_request.options.digest
+        def send_requests(*requests, options)
+          requests.flat_map do |request|
+            digest = request.options.digest
 
-          return super unless digest
+            if digest
+              probe_response = wrap { super(request, options).first }
 
-          prev_response = wrap { send_requests(*probe_request, options).first }
+              if digest && !probe_response.is_a?(ErrorResponse) &&
+                 probe_response.status == 401 && probe_response.headers.key?("www-authenticate") &&
+                 /Digest .*/.match?(probe_response.headers["www-authenticate"])
 
-          raise Error, "request doesn't require authentication (status: #{prev_response.status})" unless prev_response.status == 401
+                request.transition(:idle)
 
-          probe_request.transition(:idle)
+                token = digest.generate_header(request, probe_response)
+                request.headers["authorization"] = "Digest #{token}"
 
-          responses = []
-
-          while (request = requests.shift)
-            token = digest.generate_header(request, prev_response)
-            request.headers["authorization"] = "Digest #{token}"
-            response = if requests.empty?
-              send_requests(*request, options).first
+                super(request, options)
+              else
+                probe_response
+              end
             else
-              wrap { send_requests(*request, options).first }
+              super(request, options)
             end
-            responses << response
-            prev_response = response
           end
-
-          responses.size == 1 ? responses.first : responses
         end
       end
 
