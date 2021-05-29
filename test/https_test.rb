@@ -133,6 +133,22 @@ class HTTPSTest < Minitest::Test
         assert trailered, "trailer callback wasn't called"
       end
     end
+
+    def test_http2_client_sends_settings_timeout
+      server = SettingsTimeoutServer.new
+      th = Thread.new { server.start }
+      begin
+        uri = "#{server.origin}/"
+        http = HTTPX.plugin(SessionWithPool).with(timeout: { settings_timeout: 3 }, ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE })
+        response = http.get(uri)
+        verify_error_response(response, HTTPX::SettingsTimeoutError)
+      ensure
+        server.shutdown
+        th.join
+      end
+      last_frame = server.frames.last
+      assert last_frame[:error] == :settings_timeout
+    end
   end
 
   def test_ssl_wrong_hostname
