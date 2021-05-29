@@ -24,6 +24,10 @@ module HTTPX
       @handshake_completed = false
     end
 
+    def timeout
+      @options.timeout[:operation_timeout]
+    end
+
     def interests
       # this means we're processing incoming response already
       return :r if @request

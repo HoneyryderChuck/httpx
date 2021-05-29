@@ -85,6 +85,10 @@ module HTTPX
             @options = Options.new(options)
           end
 
+          def timeout
+            @options.timeout[:operation_timeout]
+          end
+
           def close; end
 
           def consume(*); end

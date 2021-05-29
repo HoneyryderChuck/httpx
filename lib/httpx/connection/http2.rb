@@ -34,6 +34,10 @@ module HTTPX
       init_connection
     end
 
+    def timeout
+      @options.timeout[:settings_timeout]
+    end
+
     def interests
       # waiting for WINDOW_UPDATE frames
       return :r if @buffer.full?
@@ -312,6 +316,7 @@ module HTTPX
 
     def on_settings(*)
       @handshake_completed = true
+      emit(:current_timeout)
 
       if @max_requests.zero?
         @max_requests = @connection.remote_settings[:settings_max_concurrent_streams]

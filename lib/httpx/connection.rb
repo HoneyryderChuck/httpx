@@ -434,6 +434,9 @@ module HTTPX
           transition(:open)
         end
       end
+      parser.on(:current_timeout) do
+        @current_timeout = @timeout = parser.timeout
+      end
       parser.on(:timeout) do |tout|
         @timeout = tout
       end
@@ -464,7 +467,7 @@ module HTTPX
 
         send_pending
 
-        @timeout = @current_timeout = @options.timeout[:operation_timeout]
+        @timeout = @current_timeout = parser.timeout
         emit(:open)
       when :closing
         return unless @state == :open

@@ -42,6 +42,8 @@ module HTTPX
 
     def ping: () -> void
 
+    def timeout: () -> Integer
+
     private
 
     def initialize: (Buffer, options) -> untyped
