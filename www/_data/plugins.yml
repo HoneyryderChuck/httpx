@@ -5,7 +5,15 @@
 -
   name: DigestAuthentication
   path: Authentication.html#digest-authentication
-  description: API and support for Digest Authentication. 
+  description: API and support for Digest Authentication.
+-
+  name: NTLMAuthentication
+  path: Authentication.html#ntlm-authentication
+  description: API and support for NTLM Authentication.
+-
+  name: AwsSigV4Authentication
+  path: AWS-SigV4.html
+  description: API and support for AWS SigV4 Authentication.
 -
   name: Compression
   path: Compression.html
@@ -23,10 +31,6 @@
   path: Retries.html
   description: Ability to retry requests.
 -
-  name: H2C
-  path: H2C-Upgrade.html
-  description: Upgrade HTTP/1.1 clear-text connections to HTTP/2.
--
   name: Proxy
   path: Proxy.html
   description: Proxy Support (HTTP, HTTPS, Socks 4/4a/5).
@@ -35,9 +39,13 @@
   path: Server-Push.html
   description: Support for HTTP/2 Server Push.
 -
+  name: Upgrade
+  path: Connection-Upgrade.html
+  description: Support for migrating an HTTP/1.1 connection using the "Upgrade" header (h2c, h2...).
+-
   name: Stream
   path: Stream.html
-  description: "API and support for Stream (mime-type: `text/event-stream`) responses."
+  description: API for reading response payloads in chunks (supports endless streams as well).
 -
   name: Multipart Uploads
   path: Multipart-Uploads.html
@@ -46,3 +54,7 @@
   name: Persistent
   path: Persistent.html
   description: "Persist connections over the lifetime of a process."
+-
+  name: GRPC
+  path: GRPC.html
+  description: API for building rich GRPC clients.
