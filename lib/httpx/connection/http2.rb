@@ -35,6 +35,8 @@ module HTTPX
     end
 
     def timeout
+      return @options.timeout[:operation_timeout] if @handshake_completed
+
       @options.timeout[:settings_timeout]
     end
 
@@ -121,6 +123,12 @@ module HTTPX
     end
 
     def handle_error(ex)
+      if ex.instance_of?(TimeoutError) && !@handshake_completed
+        @connection.goaway(:settings_timeout, "closing due to settings timeout")
+        settings_ex = SettingsTimeoutError.new(ex.timeout, ex.message)
+        settings_ex.set_backtrace(ex.backtrace)
+        ex = settings_ex
+      end
       @streams.each_key do |request|
         emit(:error, request, ex)
       end
