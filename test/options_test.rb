@@ -91,6 +91,7 @@ class OptionsTest < Minitest::Test
       :form => { :bar => "bar" },
       :timeout => {
         connect_timeout: 60,
+        settings_timeout: 10,
         operation_timeout: 60,
         keep_alive_timeout: 20,
       },

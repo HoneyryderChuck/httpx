@@ -24,6 +24,8 @@ module HTTPX
 
   ConnectTimeoutError = Class.new(TimeoutError)
 
+  SettingsTimeoutError = Class.new(TimeoutError)
+
   ResolveTimeoutError = Class.new(TimeoutError)
 
   ResolveError = Class.new(Error)

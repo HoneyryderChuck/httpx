@@ -7,6 +7,7 @@ module HTTPX
     CONNECT_TIMEOUT = 60
     OPERATION_TIMEOUT = 60
     KEEP_ALIVE_TIMEOUT = 20
+    SETTINGS_TIMEOUT = 10
 
     DEFAULT_OPTIONS = {
       :debug => ENV.key?("HTTPX_DEBUG") ? $stderr : nil,
@@ -16,6 +17,7 @@ module HTTPX
       :fallback_protocol => "http/1.1",
       :timeout => {
         connect_timeout: CONNECT_TIMEOUT,
+        settings_timeout: SETTINGS_TIMEOUT,
         operation_timeout: OPERATION_TIMEOUT,
         keep_alive_timeout: KEEP_ALIVE_TIMEOUT,
       },
