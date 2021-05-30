@@ -422,6 +422,9 @@ module HTTPX
           emit(:close)
         end
       end
+      parser.on(:close_handshake) do
+        consume
+      end
       parser.on(:reset) do
         if parser.empty?
           reset
@@ -471,6 +474,7 @@ module HTTPX
         emit(:open)
       when :closing
         return unless @state == :open
+
       when :closed
         return unless @state == :closing
         return unless @write_buffer.empty?

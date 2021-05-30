@@ -123,8 +123,9 @@ module HTTPX
     end
 
     def handle_error(ex)
-      if ex.instance_of?(TimeoutError) && !@handshake_completed
+      if ex.instance_of?(TimeoutError) && !@handshake_completed && @connection.state != :closed
         @connection.goaway(:settings_timeout, "closing due to settings timeout")
+        emit(:close_handshake)
         settings_ex = SettingsTimeoutError.new(ex.timeout, ex.message)
         settings_ex.set_backtrace(ex.backtrace)
         ex = settings_ex
