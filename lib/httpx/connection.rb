@@ -254,6 +254,8 @@ module HTTPX
     end
 
     def consume
+      return unless @io
+
       catch(:called) do
         epiped = false
         loop do
@@ -311,7 +313,7 @@ module HTTPX
 
             # exit #consume altogether if all outstanding requests have been dealt with
             return if @pending.size.zero? && @inflight.zero?
-          end unless (interests == :w || @state == :closing) && !epiped
+          end unless (interests.nil? || interests == :w || @state == :closing) && !epiped
 
           #
           # tight write loop.
