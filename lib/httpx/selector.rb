@@ -52,41 +52,41 @@ class HTTPX::Selector
     # first, we group IOs based on interest type. On call to #interests however,
     # things might already happen, and new IOs might be registered, so we might
     # have to start all over again. We do this until we group all selectables
-    loop do
-      begin
-        r = nil
-        w = nil
-
-        selectables = @selectables
-        @selectables = []
-
-        selectables.each do |io|
-          interests = io.interests
-
-          (r ||= []) << io if READ_INTERESTS.include?(interests)
-          (w ||= []) << io if WRITE_INTERESTS.include?(interests)
-        end
-
-        if @selectables.empty?
-          @selectables = selectables
-
-          # do not run event loop if there's nothing to wait on.
-          # this might happen if connect failed and connection was unregistered.
-          return if (!r || r.empty?) && (!w || w.empty?)
-
-          break
-        else
-          @selectables = [*selectables, @selectables]
-        end
-      rescue StandardError
-        @selectables = selectables if selectables
-        raise
-      end
-    end
-
-    # TODO: what to do if there are no selectables?
-
     begin
+      loop do
+        begin
+          r = nil
+          w = nil
+
+          selectables = @selectables
+          @selectables = []
+
+          selectables.each do |io|
+            interests = io.interests
+
+            (r ||= []) << io if READ_INTERESTS.include?(interests)
+            (w ||= []) << io if WRITE_INTERESTS.include?(interests)
+          end
+
+          if @selectables.empty?
+            @selectables = selectables
+
+            # do not run event loop if there's nothing to wait on.
+            # this might happen if connect failed and connection was unregistered.
+            return if (!r || r.empty?) && (!w || w.empty?)
+
+            break
+          else
+            @selectables = [*selectables, @selectables]
+          end
+        rescue StandardError
+          @selectables = selectables if selectables
+          raise
+        end
+      end
+
+      # TODO: what to do if there are no selectables?
+
       readers, writers = IO.select(r, w, nil, interval)
 
       raise HTTPX::TimeoutError.new(interval, "timed out while waiting on select") if readers.nil? && writers.nil?

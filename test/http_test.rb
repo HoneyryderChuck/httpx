@@ -29,7 +29,7 @@ class HTTPTest < Minitest::Test
   include Plugins::Stream
   include Plugins::AWSAuthentication
   include Plugins::Upgrade
-  include Plugins::GRPC unless RUBY_ENGINE == "jruby" || RUBY_VERSION < "2.3"
+  include Plugins::GRPC if RUBY_ENGINE == "ruby" && RUBY_VERSION >= "2.3.0"
 
   def test_verbose_log
     log = StringIO.new

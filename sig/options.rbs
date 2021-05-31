@@ -5,7 +5,7 @@ module HTTPX
     WINDOW_SIZE: Integer
     MAX_BODY_THRESHOLD_SIZE: Integer
 
-    type timeout_type = :connect_timeout  | :operation_timeout | :keep_alive_timeout | :total_timeout
+    type timeout_type = :connect_timeout | :settings_timeout | :operation_timeout | :keep_alive_timeout | :total_timeout
     type timeout = Hash[timeout_type, Numeric?]
 
     def self.new: (options) -> instance

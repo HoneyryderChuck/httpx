@@ -12,7 +12,7 @@ module ResponseHelpers
   %w[header param].each do |meth|
     class_eval <<-DEFINE, __FILE__, __LINE__ + 1
       def verify_#{meth}(#{meth}s, key, expect)
-        assert #{meth}s.key?(key), "#{meth}s don't contain the given key (\#{key})"
+        assert #{meth}s.key?(key), "#{meth}s don't contain the given key (\"\#{key}\", headers: \#{#{meth}s})"
         value = #{meth}s[key]
         if value.respond_to?(:start_with?)
           assert value.start_with?(expect), "#{meth} assertion failed: \#{key}=\#{value} (expected: \#{expect}})"
@@ -33,6 +33,10 @@ module ResponseHelpers
   end
 
   def verify_execution_delta(expected, actual, delta = 0)
+    # truffleruby has a hard time complying reliably with this delta when running in parallel. Therefore,
+    # we give it a bit of leeway.
+    delta += 10 if RUBY_ENGINE == "truffleruby"
+
     assert_in_delta expected, actual, delta, "expected to have executed in #{expected} secs (actual: #{actual} secs)"
   end
 

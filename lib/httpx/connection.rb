@@ -254,6 +254,8 @@ module HTTPX
     end
 
     def consume
+      return unless @io
+
       catch(:called) do
         epiped = false
         loop do
@@ -311,7 +313,7 @@ module HTTPX
 
             # exit #consume altogether if all outstanding requests have been dealt with
             return if @pending.size.zero? && @inflight.zero?
-          end unless (interests == :w || @state == :closing) && !epiped
+          end unless (interests.nil? || interests == :w || @state == :closing) && !epiped
 
           #
           # tight write loop.
@@ -422,6 +424,9 @@ module HTTPX
           emit(:close)
         end
       end
+      parser.on(:close_handshake) do
+        consume
+      end
       parser.on(:reset) do
         if parser.empty?
           reset
@@ -433,6 +438,9 @@ module HTTPX
           transition(:idle)
           transition(:open)
         end
+      end
+      parser.on(:current_timeout) do
+        @current_timeout = @timeout = parser.timeout
       end
       parser.on(:timeout) do |tout|
         @timeout = tout
@@ -464,10 +472,11 @@ module HTTPX
 
         send_pending
 
-        @timeout = @current_timeout = @options.timeout[:operation_timeout]
+        @timeout = @current_timeout = parser.timeout
         emit(:open)
       when :closing
         return unless @state == :open
+
       when :closed
         return unless @state == :closing
         return unless @write_buffer.empty?

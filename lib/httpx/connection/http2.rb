@@ -34,6 +34,12 @@ module HTTPX
       init_connection
     end
 
+    def timeout
+      return @options.timeout[:operation_timeout] if @handshake_completed
+
+      @options.timeout[:settings_timeout]
+    end
+
     def interests
       # waiting for WINDOW_UPDATE frames
       return :r if @buffer.full?
@@ -117,6 +123,13 @@ module HTTPX
     end
 
     def handle_error(ex)
+      if ex.instance_of?(TimeoutError) && !@handshake_completed && @connection.state != :closed
+        @connection.goaway(:settings_timeout, "closing due to settings timeout")
+        emit(:close_handshake)
+        settings_ex = SettingsTimeoutError.new(ex.timeout, ex.message)
+        settings_ex.set_backtrace(ex.backtrace)
+        ex = settings_ex
+      end
       @streams.each_key do |request|
         emit(:error, request, ex)
       end
@@ -312,6 +325,7 @@ module HTTPX
 
     def on_settings(*)
       @handshake_completed = true
+      emit(:current_timeout)
 
       if @max_requests.zero?
         @max_requests = @connection.remote_settings[:settings_max_concurrent_streams]

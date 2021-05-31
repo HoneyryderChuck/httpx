@@ -35,6 +35,8 @@ module HTTPX
 
     alias reset init_connection
 
+    def timeout: () -> Integer
+
     private
 
     def initialize: (Buffer, options) -> untyped
