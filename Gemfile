@@ -32,17 +32,19 @@ group :test do
     gem "rubocop-performance"
   end
 
+  platform :mri do
+    if RUBY_VERSION >= "2.3"
+      gem "grpc"
+      gem "logging"
+    end
+  end
+
   platform :mri, :truffleruby do
     gem "bcrypt_pbkdf"
     gem "benchmark-ips"
     gem "brotli"
     gem "ed25519"
     gem "net-ssh-gateway"
-
-    if RUBY_VERSION >= "2.3"
-      gem "grpc"
-      gem "logging"
-    end
   end
 
   platform :mri_21 do
