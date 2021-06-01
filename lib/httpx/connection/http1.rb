@@ -262,7 +262,9 @@ module HTTPX
         request.chunk!
       end
 
-      connection = if request.options.persistent || request != @requests[-1]
+      requests_limit = [@max_requests, @requests.size].min
+
+      connection = if request.options.persistent || request != @requests[requests_limit - 1]
         "keep-alive"
       else
         "close"
