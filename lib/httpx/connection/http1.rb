@@ -264,7 +264,8 @@ module HTTPX
 
       requests_limit = [@max_requests, @requests.size].min
 
-      connection = if request.options.persistent || request != @requests[requests_limit - 1]
+      connection = if request != @requests[requests_limit - 1] &&
+                      request.options.persistent && @max_requests != 1
         "keep-alive"
       else
         "close"
