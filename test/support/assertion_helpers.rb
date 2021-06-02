@@ -36,6 +36,11 @@ module ResponseHelpers
     assert_in_delta expected, actual, delta, "expected to have executed in #{expected} secs (actual: #{actual} secs)"
   end
 
+  def verify_uploaded(body, type, expect)
+    assert body.key?(type), "there is no #{type} available"
+    assert body[type] == expect, "#{type} is unexpected: #{body[type]} (expected: #{expect})"
+  end
+
   def verify_error_response(response, expectation = nil)
     assert response.is_a?(HTTPX::ErrorResponse), "expected an error response (instead got: #{response.inspect})"
 

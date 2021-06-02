@@ -75,3 +75,9 @@ PARALLEL=1 bundle exec rake test:ci
 if [[ "$RUBY_ENGINE" = "ruby" ]]; then
   COVERAGE_KEY="#$RUBY_ENGINE-$RUBY_VERSION-integration" bundle exec rake integrations
 fi
+
+# regression tests
+# Testing them only with main ruby
+if [[ "$RUBY_ENGINE" = "ruby" ]]; then
+  COVERAGE_KEY="#$RUBY_ENGINE-$RUBY_VERSION-regression" bundle exec rake regressions
+fi
