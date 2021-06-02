@@ -3,7 +3,7 @@
 require "test_helper"
 require "support/http_helpers"
 
-class Bug_14_3_Test < Minitest::Test
+class Bug_0_14_3_Test < Minitest::Test
   include HTTPHelpers
 
   def test_insecure_to_secure_redirect_was_carrying_connection_close_invalid_http2
