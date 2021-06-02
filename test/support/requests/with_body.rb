@@ -133,12 +133,5 @@ module Requests
         end
       end
     end
-
-    private
-
-    def verify_uploaded(body, type, expect)
-      assert body.key?(type), "there is no #{type} available"
-      assert body[type] == expect, "#{type} is unexpected: #{body[type]} (expected: #{expect})"
-    end
   end
 end
