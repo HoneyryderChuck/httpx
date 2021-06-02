@@ -3,7 +3,7 @@
 require "test_helper"
 require "support/http_helpers"
 
-class Bug_14_5_Test < Minitest::Test
+class Bug_0_14_5_Test < Minitest::Test
   include HTTPHelpers
 
   def test_http2_post_with_concurrent_post_requests_with_large_payload_blocking

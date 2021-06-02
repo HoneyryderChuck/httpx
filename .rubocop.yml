@@ -92,3 +92,6 @@ Performance/TimesMap:
 Performance/RedundantBlockCall:
   Enabled: false
 
+Naming/ClassAndModuleCamelCase:
+  Exclude:
+    - regression_tests/**/*.rb
