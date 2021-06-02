@@ -52,7 +52,7 @@ class HTTPTest < Minitest::Test
     server = KeepAliveServer.new
     th = Thread.new { server.start }
     begin
-      uri = "#{server.origin}/"
+      uri = "#{server.origin}/2"
       HTTPX.plugin(SessionWithPool).with(max_concurrent_requests: 1).wrap do |http|
         responses = http.get(uri, uri, uri)
         assert responses.size == 3, "expected 3 responses, got #{responses.size}"
