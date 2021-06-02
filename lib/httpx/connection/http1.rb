@@ -40,6 +40,7 @@ module HTTPX
     def reset
       @max_requests = @options.max_requests || MAX_REQUESTS
       @parser.reset!
+      @handshake_completed = false
     end
 
     def close
