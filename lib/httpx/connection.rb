@@ -362,6 +362,8 @@ module HTTPX
             write_drained = false
           end unless interests == :r
 
+          send_pending if @state == :open
+
           # return if socket is drained
           next unless (interests != :r || read_drained) &&
                       (interests != :w || write_drained)

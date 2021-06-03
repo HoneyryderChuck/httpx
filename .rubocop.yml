@@ -6,6 +6,7 @@ AllCops:
   Include:
     - lib/**/*.rb
     - test/**/*.rb
+    - regression_tests/**/*.rb
     - integrations/**/*.rb
     - Rakefile
     - httpx.gemspec
@@ -91,3 +92,6 @@ Performance/TimesMap:
 Performance/RedundantBlockCall:
   Enabled: false
 
+Naming/ClassAndModuleCamelCase:
+  Exclude:
+    - regression_tests/**/*.rb

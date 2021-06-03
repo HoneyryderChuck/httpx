@@ -40,6 +40,11 @@ module ResponseHelpers
     assert_in_delta expected, actual, delta, "expected to have executed in #{expected} secs (actual: #{actual} secs)"
   end
 
+  def verify_uploaded(body, type, expect)
+    assert body.key?(type), "there is no #{type} available"
+    assert body[type] == expect, "#{type} is unexpected: #{body[type]} (expected: #{expect})"
+  end
+
   def verify_error_response(response, expectation = nil)
     assert response.is_a?(HTTPX::ErrorResponse), "expected an error response (instead got: #{response.inspect})"
 
@@ -58,5 +63,32 @@ module ResponseHelpers
     else
       raise "unexpected expectation (#{expectation})"
     end
+  end
+
+  # test files
+
+  def verify_uploaded_image(body, key, mime_type, skip_verify_data: false)
+    assert body.key?("files"), "there were no files uploaded"
+    assert body["files"].key?(key), "there is no image in the file"
+    # checking mime-type is a bit leaky, as httpbin displays the base64-encoded data
+    return if skip_verify_data
+
+    assert body["files"][key].start_with?("data:#{mime_type}"), "data was wrongly encoded (#{body["files"][key][0..64]})"
+  end
+
+  def fixture
+    File.read(fixture_file_path, encoding: Encoding::BINARY)
+  end
+
+  def fixture_name
+    File.basename(fixture_file_path)
+  end
+
+  def fixture_file_name
+    "image.jpg"
+  end
+
+  def fixture_file_path
+    File.join("test", "support", "fixtures", fixture_file_name)
   end
 end

@@ -17,6 +17,13 @@ Rake::TestTask.new(:integrations) do |t|
   t.warning = false
 end
 
+desc "regression tests for particular incidents"
+Rake::TestTask.new(:regressions) do |t|
+  t.libs = %w[lib test]
+  t.pattern = "regression_tests/**/*_test.rb"
+  t.warning = false
+end
+
 RUBY_MAJOR_MINOR = RUBY_VERSION.split(/\./).first(2).join(".")
 
 begin

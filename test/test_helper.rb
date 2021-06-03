@@ -38,3 +38,5 @@ end
 CONNECT_TIMEOUT_PORT = ENV.fetch("CONNECT_TIMEOUT_PORT", 9090).to_i
 ETIMEDOUT_PORT = ENV.fetch("ETIMEDOUT_PORT", 9091).to_i
 EHOSTUNREACH_HOST = ENV.fetch("EHOSTUNREACH_HOST", "192.168.2.1")
+
+RegressionError = Class.new(StandardError)
