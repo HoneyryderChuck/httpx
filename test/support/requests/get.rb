@@ -94,11 +94,13 @@ module Requests
       response.close
     end
 
-    def test_get_non_ascii
+    def test_get_idn
       response = HTTPX.get("http://bücher.ch")
       verify_status(response, 200)
       response.close
+    end unless RUBY_VERSION < "2.3"
 
+    def test_get_non_ascii
       response = HTTPX.get(build_uri("/get?q=ã"))
       verify_status(response, 200)
       response.close
