@@ -51,7 +51,7 @@ module HTTPX
     def initialize(type, uri, options)
       @type = type
       @origins = [uri.origin]
-      @origin = Utils.uri(uri.origin)
+      @origin = Utils.to_uri(uri.origin)
       @options = Options.new(options)
       @window_size = @options.window_size
       @read_buffer = Buffer.new(BUFFER_SIZE)

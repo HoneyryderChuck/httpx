@@ -45,7 +45,7 @@ module HTTPX
     def initialize(verb, uri, options = {})
       @verb    = verb.to_s.downcase.to_sym
       @options = Options.new(options)
-      @uri     = Utils.uri(uri)
+      @uri     = Utils.to_uri(uri)
       if @uri.relative?
         raise(Error, "invalid URI: #{@uri}") unless @options.origin
 

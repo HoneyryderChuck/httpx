@@ -66,6 +66,7 @@ group :test do
 
   gem "aws-sdk-s3"
   gem "faraday"
+  gem "idnx" if RUBY_VERSION >= "2.4.0"
   gem "oga"
 
   if RUBY_VERSION >= "3.0.0"

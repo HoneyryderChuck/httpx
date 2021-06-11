@@ -18,14 +18,16 @@ module HTTPX
     end
 
     if RUBY_VERSION < "2.3"
-      def uri(*args)
-        URI(*args)
+
+      def to_uri(uri)
+        URI(uri)
       end
+
     else
 
       URIParser = URI::RFC2396_Parser.new
 
-      def uri(uri)
+      def to_uri(uri)
         return Kernel.URI(uri) unless uri.is_a?(String) && !uri.ascii_only?
 
         uri = Kernel.URI(URIParser.escape(uri))
@@ -34,7 +36,7 @@ module HTTPX
 
         non_ascii_hostname.force_encoding(Encoding::UTF_8)
 
-        idna_hostname = DomainName.new(non_ascii_hostname).hostname
+        idna_hostname = Punycode.encode_hostname(non_ascii_hostname)
 
         uri.host = idna_hostname
         uri.non_ascii_hostname = non_ascii_hostname

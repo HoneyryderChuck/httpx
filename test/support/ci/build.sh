@@ -6,12 +6,12 @@ RUBY_PLATFORM=`ruby -e 'puts RUBY_PLATFORM'`
 RUBY_ENGINE=`ruby -e 'puts RUBY_ENGINE'`
 
 if [[ "$RUBY_ENGINE" = "truffleruby" ]]; then
-  microdnf install -y iptables iproute which file
+  microdnf install -y iptables iproute which file idn2
 elif [[ "$RUBY_PLATFORM" = "java" ]]; then
   echo "
 deb http://deb.debian.org/debian sid main contrib non-free
 deb-src http://deb.debian.org/debian sid main contrib non-free" >> /etc/apt/sources.list
-  apt-get update && apt-get install -y iptables openssl libssl-dev ca-certificates file
+  apt-get update && apt-get install -y iptables openssl libssl-dev ca-certificates file idn2
   update-ca-certificates
 elif [[ ${RUBY_VERSION:0:3} = "2.1" ]]; then
   apt-get update && apt-get install -y libsodium-dev iptables
@@ -23,7 +23,7 @@ elif [[ ${RUBY_VERSION:0:3} = "2.3" ]]; then
   wget http://deb.debian.org/debian/pool/main/o/openssl1.0/libssl1.0-dev_1.0.2u-1~deb9u1_amd64.deb
   dpkg -i libssl1.0-dev_1.0.2u-1~deb9u1_amd64.deb
 else
-  apt-get update && apt-get install -y iptables
+  apt-get update && apt-get install -y iptables idn2
 fi
 
 # use port 9090 to test connection timeouts

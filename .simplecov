@@ -10,4 +10,5 @@ SimpleCov.start do
   add_filter "/lib/httpx/plugins/multipart/mime_type_detector.rb"
   add_filter "/lib/httpx/io/tls/"
   add_filter "/lib/httpx/io/tls.rb"
+  add_filter "/lib/httpx/punycode.rb"
 end

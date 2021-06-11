@@ -19,6 +19,7 @@ AllCops:
     - 'vendor/**/*'
     - 'www/**/*'
     - 'lib/httpx/extensions.rb'
+    - 'lib/httpx/punycode.rb'
     # Do not lint ffi block, for openssl parity
     - 'lib/httpx/io/tls/*.rb'
 
