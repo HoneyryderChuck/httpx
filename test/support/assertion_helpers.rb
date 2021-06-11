@@ -17,12 +17,12 @@ module ResponseHelpers
         if value.respond_to?(:start_with?)
           assert value.start_with?(expect), "#{meth} assertion failed: \#{key}=\#{value} (expected: \#{expect}})"
         else
-          assert value == expect, "#{meth} assertion failed: \#{key}=\#{value.to_s} (expected: \#{expect.to_s})"
+          assert value == expect, "#{meth} assertion failed: \#{key}=\#{value.inspect} (expected: \#{expect.to_s})"
         end
       end
 
       def verify_no_#{meth}(#{meth}s, key)
-        assert !#{meth}s.key?(key), "#{meth}s contains the given key (" + key + ": \#{#{meth}s[key]})"
+        assert !#{meth}s.key?(key), "#{meth}s contains the given key (" + key + ": \#{#{meth}s[key].inspect})"
       end
     DEFINE
   end

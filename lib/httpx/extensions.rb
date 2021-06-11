@@ -78,7 +78,7 @@ module HTTPX
 
       def authority
         port_string = port == default_port ? nil : ":#{port}"
-        "#{@non_ascii_hostname || host}#{port_string}"
+        "#{host}#{port_string}"
       end
 
       def origin

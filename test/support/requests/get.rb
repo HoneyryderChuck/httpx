@@ -96,8 +96,12 @@ module Requests
 
     def test_get_idn
       response = HTTPX.get("http://bücher.ch")
-      verify_status(response, 200)
+      verify_status(response, 301)
+      verify_header(response.headers, "location", "https://www.buecher.de")
+
       response.close
+
+      assert response.instance_variable_get(:@request).authority == "xn--bcher-kva.ch"
     end unless RUBY_VERSION < "2.3"
 
     def test_get_non_ascii
