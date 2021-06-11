@@ -2,6 +2,9 @@
 
 set -e
 
+export LANG=C.UTF-8
+export LANGUAGE=C.UTF-8
+
 RUBY_PLATFORM=`ruby -e 'puts RUBY_PLATFORM'`
 RUBY_ENGINE=`ruby -e 'puts RUBY_ENGINE'`
 
