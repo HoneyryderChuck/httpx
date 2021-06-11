@@ -1,104 +1,117 @@
 # frozen_string_literal: true
 
 module HTTPX
-  # :nocov:
-  # -*- coding: utf-8 -*-
-  #--
-  # punycode.rb - PunyCode encoder for the Domain Name library
-  #
-  # Copyright (C) 2011-2017 Akinori MUSHA, All rights reserved.
-  #
-  # Ported from puny.c, a part of VeriSign XCode (encode/decode) IDN
-  # Library.
-  #
-  # Copyright (C) 2000-2002 Verisign Inc., All rights reserved.
-  #
-  # Redistribution and use in source and binary forms, with or
-  # without modification, are permitted provided that the following
-  # conditions are met:
-  #
-  #  1) Redistributions of source code must retain the above copyright
-  #     notice, this list of conditions and the following disclaimer.
-  #
-  #  2) Redistributions in binary form must reproduce the above copyright
-  #     notice, this list of conditions and the following disclaimer in
-  #     the documentation and/or other materials provided with the
-  #     distribution.
-  #
-  #  3) Neither the name of the VeriSign Inc. nor the names of its
-  #     contributors may be used to endorse or promote products derived
-  #     from this software without specific prior written permission.
-  #
-  # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-  # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-  # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-  # FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-  # COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-  # INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-  # BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-  # OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-  # AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-  # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-  # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-  # POSSIBILITY OF SUCH DAMAGE.
-  #
-  # This software is licensed under the BSD open source license. For more
-  # information visit www.opensource.org.
-  #
-  # Authors:
-  #  John Colosi (VeriSign)
-  #  Srikanth Veeramachaneni (VeriSign)
-  #  Nagesh Chigurupati (Verisign)
-  #  Praveen Srinivasan(Verisign)
-  #++
-  module Punycode
-    BASE = 36
-    TMIN = 1
-    TMAX = 26
-    SKEW = 38
-    DAMP = 700
-    INITIAL_BIAS = 72
-    INITIAL_N = 0x80
-    DELIMITER = "-"
+  begin
+    require "idnx"
 
-    MAXINT = (1 << 32) - 1
+    module Punycode
+      module_function
 
-    LOBASE = BASE - TMIN
-    CUTOFF = LOBASE * TMAX / 2
-
-    RE_NONBASIC = /[^\x00-\x7f]/.freeze
-
-    # Returns the numeric value of a basic code point (for use in
-    # representing integers) in the range 0 to base-1, or nil if cp
-    # is does not represent a value.
-    DECODE_DIGIT = {}.tap do |map|
-      # ASCII A..Z map to 0..25
-      # ASCII a..z map to 0..25
-      (0..25).each { |i| map[65 + i] = map[97 + i] = i }
-      # ASCII 0..9 map to 26..35
-      (26..35).each { |i| map[22 + i] = i }
+      def encode_hostname(hostname)
+        Idnx.to_punycode(hostname)
+      end
     end
 
-    # Returns the basic code point whose value (when used for
-    # representing integers) is d, which must be in the range 0 to
-    # BASE-1.  The lowercase form is used unless flag is true, in
-    # which case the uppercase form is used.  The behavior is
-    # undefined if flag is nonzero and digit d has no uppercase
-    # form.
-    ENCODE_DIGIT = proc { |d, flag|
-      (d + 22 + (d < 26 ? 75 : 0) - (flag ? (1 << 5) : 0)).chr
-      #  0..25 map to ASCII a..z or A..Z
-      # 26..35 map to ASCII 0..9
-    }
+  rescue LoadError
+    # :nocov:
+    # -*- coding: utf-8 -*-
+    #--
+    # punycode.rb - PunyCode encoder for the Domain Name library
+    #
+    # Copyright (C) 2011-2017 Akinori MUSHA, All rights reserved.
+    #
+    # Ported from puny.c, a part of VeriSign XCode (encode/decode) IDN
+    # Library.
+    #
+    # Copyright (C) 2000-2002 Verisign Inc., All rights reserved.
+    #
+    # Redistribution and use in source and binary forms, with or
+    # without modification, are permitted provided that the following
+    # conditions are met:
+    #
+    #  1) Redistributions of source code must retain the above copyright
+    #     notice, this list of conditions and the following disclaimer.
+    #
+    #  2) Redistributions in binary form must reproduce the above copyright
+    #     notice, this list of conditions and the following disclaimer in
+    #     the documentation and/or other materials provided with the
+    #     distribution.
+    #
+    #  3) Neither the name of the VeriSign Inc. nor the names of its
+    #     contributors may be used to endorse or promote products derived
+    #     from this software without specific prior written permission.
+    #
+    # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+    # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+    # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+    # FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+    # COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+    # INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+    # BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+    # OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+    # AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+    # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+    # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+    # POSSIBILITY OF SUCH DAMAGE.
+    #
+    # This software is licensed under the BSD open source license. For more
+    # information visit www.opensource.org.
+    #
+    # Authors:
+    #  John Colosi (VeriSign)
+    #  Srikanth Veeramachaneni (VeriSign)
+    #  Nagesh Chigurupati (Verisign)
+    #  Praveen Srinivasan(Verisign)
+    #++
+    module Punycode
+      BASE = 36
+      TMIN = 1
+      TMAX = 26
+      SKEW = 38
+      DAMP = 700
+      INITIAL_BIAS = 72
+      INITIAL_N = 0x80
+      DELIMITER = "-"
 
-    DOT = "."
-    PREFIX = "xn--"
+      MAXINT = (1 << 32) - 1
 
-    # Most errors we raise are basically kind of ArgumentError.
-    class ArgumentError < ::ArgumentError; end
-    class BufferOverflowError < ArgumentError; end
+      LOBASE = BASE - TMIN
+      CUTOFF = LOBASE * TMAX / 2
 
-    class << self
+      RE_NONBASIC = /[^\x00-\x7f]/.freeze
+
+      # Returns the numeric value of a basic code point (for use in
+      # representing integers) in the range 0 to base-1, or nil if cp
+      # is does not represent a value.
+      DECODE_DIGIT = {}.tap do |map|
+        # ASCII A..Z map to 0..25
+        # ASCII a..z map to 0..25
+        (0..25).each { |i| map[65 + i] = map[97 + i] = i }
+        # ASCII 0..9 map to 26..35
+        (26..35).each { |i| map[22 + i] = i }
+      end
+
+      # Returns the basic code point whose value (when used for
+      # representing integers) is d, which must be in the range 0 to
+      # BASE-1.  The lowercase form is used unless flag is true, in
+      # which case the uppercase form is used.  The behavior is
+      # undefined if flag is nonzero and digit d has no uppercase
+      # form.
+      ENCODE_DIGIT = proc { |d, flag|
+        (d + 22 + (d < 26 ? 75 : 0) - (flag ? (1 << 5) : 0)).chr
+        #  0..25 map to ASCII a..z or A..Z
+        # 26..35 map to ASCII 0..9
+      }
+
+      DOT = "."
+      PREFIX = "xn--"
+
+      # Most errors we raise are basically kind of ArgumentError.
+      class ArgumentError < ::ArgumentError; end
+      class BufferOverflowError < ArgumentError; end
+
+      module_function
+
       # Encode a +string+ in Punycode
       def encode(string)
         input = string.unpack("U*")

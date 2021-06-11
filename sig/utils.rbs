@@ -1,0 +1,7 @@
+module HTTPX
+  module Utils
+    def self?.parse_retry_after: (String) -> Numeric
+
+    def self?.to_uri: (generic_uri uri) -> URI::Generic
+  end
+end
