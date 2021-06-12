@@ -6,7 +6,7 @@ class ResponseTest < Minitest::Test
   include HTTPX
   include ResponseHelpers
 
-  if RUBY_VERSION >= "2.7.0"
+  if (RUBY_ENGINE != "truffleruby" && RUBY_VERSION >= "2.7.0")
     require_relative "extensions/response_pattern_match"
     include ResponsePatternMatchTests
   end
