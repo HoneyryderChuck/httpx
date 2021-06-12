@@ -296,3 +296,5 @@ module HTTPX
     # rubocop:enable Style/MissingRespondToMissing
   end
 end
+
+require "httpx/pmatch_extensions" if RUBY_VERSION >= "2.7.0"

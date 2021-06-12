@@ -4,6 +4,12 @@ require_relative "test_helper"
 
 class ResponseTest < Minitest::Test
   include HTTPX
+  include ResponseHelpers
+
+  if RUBY_VERSION >= "2.7.0"
+    require_relative "extensions/response_pattern_match"
+    include ResponsePatternMatchTests
+  end
 
   def test_response_status
     r1 = Response.new(request, 200, "1.1", {})
