@@ -21,7 +21,7 @@ pagination:
     <span class="post-date">{{ post.date | date_to_string }}</span>
 
     {{ post.excerpt }}
-    <a href="{{ post.url }}">Read more...</a><br><br>
+    <a href="{{ post.url | prepend: site.baseurl }}">Read more...</a><br><br>
   </div>
   {% endfor %}
 </div>
