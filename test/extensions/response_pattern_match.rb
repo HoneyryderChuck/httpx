@@ -3,6 +3,16 @@
 module ResponsePatternMatchTests
   include HTTPX
 
+  def test_response_headers_deconstruct
+    response = Response.new(request, 200, "2.0", { "host" => "google.com", "content-type" => "application/json" })
+    case response
+    in [_, [*, ["content-type", content_type], *], _]
+      assert content_type == "application/json"
+    else
+      raise "unexpected response"
+    end
+  end
+
   def test_response_deconstruct
     response_with_body = Response.new(request, 200, "2.0", { "x-with-body" => "true" })
     response_with_body << "OK"

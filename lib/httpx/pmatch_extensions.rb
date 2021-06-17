@@ -3,11 +3,11 @@
 module HTTPX
   module ResponsePatternMatchExtensions
     def deconstruct
-      [@status, @headers.to_h, @body]
+      [@status, @headers, @body]
     end
 
     def deconstruct_keys(_keys)
-      { status: @status, headers: @headers.to_h, body: @body }
+      { status: @status, headers: @headers, body: @body }
     end
   end
 
@@ -21,6 +21,13 @@ module HTTPX
     end
   end
 
+  module HeadersPatternMatchExtensions
+    def deconstruct
+      to_a
+    end
+  end
+
+  Headers.include HeadersPatternMatchExtensions
   Response.include ResponsePatternMatchExtensions
   ErrorResponse.include ErrorResponsePatternMatchExtensions
 end
