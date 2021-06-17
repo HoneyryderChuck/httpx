@@ -80,6 +80,10 @@ group :coverage do
     gem "simplecov", "< 0.11.0"
   elsif RUBY_VERSION < "2.3"
     gem "simplecov", "< 0.11.0"
+  elsif RUBY_VERSION < "2.4"
+    gem "simplecov", "< 0.19.0"
+  elsif RUBY_VERSION < "2.5"
+    gem "simplecov", "< 0.21.0"
   else
     gem "simplecov"
   end
