@@ -297,4 +297,4 @@ module HTTPX
   end
 end
 
-require "httpx/pmatch_extensions" if RUBY_VERSION >= "2.7.0"
+require "httpx/pmatch_extensions" if RUBY_VERSION >= "3.0.0"
