@@ -263,13 +263,24 @@ module HTTPX
         request.chunk!
       end
 
-      requests_limit = [@max_requests, @requests.size].min
-
-      connection = if request != @requests[requests_limit - 1] &&
-                      request.options.persistent && @max_requests != 1
-        "keep-alive"
+      connection = if request.options.persistent
+        # when in a persistent connection, the request can't be at
+        # the edge of a renegotiation
+        if @requests.index(request) + 1 < @max_requests
+          "keep-alive"
+        else
+          "close"
+        end
       else
-        "close"
+        # when it's not a persistent connection, it sets "Connection: close" always
+        # on the last request of the possible batch (either allowed max requests,
+        # or if smaller, the size of the batch itself)
+        requests_limit = [@max_requests, @requests.size].min
+        if request != @requests[requests_limit - 1]
+          "keep-alive"
+        else
+          "close"
+        end
       end
 
       {
