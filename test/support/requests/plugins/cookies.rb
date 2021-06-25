@@ -160,6 +160,12 @@ module Requests
         ipv6_domain_jar.parse(%(a=b; Path=/; Domain=[fe80::1]))
         assert ipv6_domain_jar["http://www.google.com/"].empty?
         assert !ipv6_domain_jar["http://[fe80::1]/"].empty?
+
+        # Test duplicate
+        dup_jar = HTTPX::Plugins::Cookies::Jar.new
+        dup_jar.parse(%(a=c, a=a, a=b))
+        cookies = special_jar[cookies_uri]
+        assert(cookies.one? { |cookie| cookie.name == "a" && cookie.value == "b" })
       end
 
       def test_cookies_cookie
