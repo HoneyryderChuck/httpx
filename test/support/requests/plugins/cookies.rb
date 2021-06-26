@@ -167,7 +167,10 @@ module Requests
         dup_jar = HTTPX::Plugins::Cookies::Jar.new
         dup_jar.parse(%(a=c, a=a, a=b))
         cookies = special_jar[jar_cookies_uri]
-        assert(cookies.one? { |cookie| cookie.name == "a" && cookie.value == "b" })
+        # assert cookies.size == 1, "should only have kept one of the received \"a\" cookies"
+        cookie = cookies.first
+        assert cookie.name == "a", "unexpected name"
+        assert cookie.value == "b", "unexpected value, should have been \"b\", instead it's \"#{cookie.value}\""
       end
 
       def test_cookies_cookie
