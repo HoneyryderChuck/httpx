@@ -3,6 +3,8 @@
 module Requests
   module Plugins
     module Cookies
+      using HTTPX::URIExtensions
+
       def test_plugin_cookies_get
         session = HTTPX.plugin(:cookies)
         response = session.get(cookies_uri)
@@ -107,7 +109,7 @@ module Requests
         # Test special cases
         special_jar = HTTPX::Plugins::Cookies::Jar.new
         special_jar.parse(%(a="b"; Path=/, c=d; Path=/, e="f\\\"; \\\"g"))
-        cookies = special_jar[cookies_uri]
+        cookies = special_jar[jar_cookies_uri]
         assert(cookies.one? { |cookie| cookie.name == "a" && cookie.value == "b" })
         assert(cookies.one? { |cookie| cookie.name == "c" && cookie.value == "d" })
         assert(cookies.one? { |cookie| cookie.name == "e" && cookie.value == "f\"; \"g" })
@@ -115,7 +117,7 @@ module Requests
         # Test secure parameter
         secure_jar = HTTPX::Plugins::Cookies::Jar.new
         secure_jar.parse(%(a=b; Path=/; Secure))
-        cookies = secure_jar[cookies_uri]
+        cookies = secure_jar[jar_cookies_uri]
         if URI(cookies_uri).scheme == "https"
           assert !cookies.empty?, "cookie jar should contain the secure cookie"
         else
@@ -125,30 +127,30 @@ module Requests
         # Test path parameter
         path_jar = HTTPX::Plugins::Cookies::Jar.new
         path_jar.parse(%(a=b; Path=/cookies))
-        assert path_jar[build_uri("/")].empty?
-        assert !path_jar[build_uri("/cookies")].empty?
-        assert !path_jar[build_uri("/cookies/set")].empty?
+        assert path_jar[jar_cookies_uri("/")].empty?
+        assert !path_jar[jar_cookies_uri("/cookies")].empty?
+        assert !path_jar[jar_cookies_uri("/cookies/set")].empty?
 
         # Test expires
         maxage_jar = HTTPX::Plugins::Cookies::Jar.new
         maxage_jar.parse(%(a=b; Path=/; Max-Age=2))
-        assert !maxage_jar[cookies_uri].empty?
+        assert !maxage_jar[jar_cookies_uri].empty?
         sleep 3
-        assert maxage_jar[cookies_uri].empty?
+        assert maxage_jar[jar_cookies_uri].empty?
 
         expires_jar = HTTPX::Plugins::Cookies::Jar.new
         expires_jar.parse(%(a=b; Path=/; Expires=Sat, 02 Nov 2019 15:24:00 GMT))
-        assert expires_jar[cookies_uri].empty?
+        assert expires_jar[jar_cookies_uri].empty?
 
         # regression test
         rfc2616_expires_jar = HTTPX::Plugins::Cookies::Jar.new
         rfc2616_expires_jar.parse(%(a=b; Path=/; Expires=Fri, 17-Feb-2023 12:43:41 GMT))
-        assert !rfc2616_expires_jar[cookies_uri].empty?
+        assert !rfc2616_expires_jar[jar_cookies_uri].empty?
 
         # Test domain
         domain_jar = HTTPX::Plugins::Cookies::Jar.new
         domain_jar.parse(%(a=b; Path=/; Domain=.google.com))
-        assert domain_jar[cookies_uri].empty?
+        assert domain_jar[jar_cookies_uri].empty?
         assert !domain_jar["http://www.google.com/"].empty?
 
         ipv4_domain_jar = HTTPX::Plugins::Cookies::Jar.new
@@ -164,7 +166,7 @@ module Requests
         # Test duplicate
         dup_jar = HTTPX::Plugins::Cookies::Jar.new
         dup_jar.parse(%(a=c, a=a, a=b))
-        cookies = special_jar[cookies_uri]
+        cookies = special_jar[jar_cookies_uri]
         assert(cookies.one? { |cookie| cookie.name == "a" && cookie.value == "b" })
       end
 
@@ -197,6 +199,11 @@ module Requests
       end
 
       private
+
+      def jar_cookies_uri(path = "/cookies")
+        jar_origin = URI(origin).origin
+        build_uri(path, jar_origin)
+      end
 
       def cookies_uri
         build_uri("/cookies")
