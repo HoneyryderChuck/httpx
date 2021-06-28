@@ -17,7 +17,7 @@ module HTTPX
       def self.extra_options(options)
         Class.new(options.class) do
           def_option(:digest, <<-OUT)
-            raise Error, ":digest must be a Digest" unless value.is_a?(#{Digest})
+            raise TypeError, ":digest must be a Digest" unless value.is_a?(#{Digest})
 
             value
           OUT

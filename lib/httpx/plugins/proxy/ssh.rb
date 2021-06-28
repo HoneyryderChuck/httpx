@@ -65,7 +65,7 @@ module HTTPX
             when "http"
               TCPSocket.open("localhost", port)
             else
-              raise Error, "unexpected scheme: #{request_uri.scheme}"
+              raise TypeError, "unexpected scheme: #{request_uri.scheme}"
             end
           end
         end

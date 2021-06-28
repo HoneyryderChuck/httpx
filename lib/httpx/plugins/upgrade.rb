@@ -21,7 +21,7 @@ module HTTPX
 
           Class.new(options.class) do
             def_option(:upgrade_handlers, <<-OUT)
-              raise Error, ":upgrade_handlers must be a registry" unless value.respond_to?(:registry)
+              raise TypeError, ":upgrade_handlers must be a registry" unless value.respond_to?(:registry)
 
               value
             OUT

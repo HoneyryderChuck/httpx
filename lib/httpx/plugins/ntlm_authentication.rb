@@ -17,7 +17,7 @@ module HTTPX
         def extra_options(options)
           Class.new(options.class) do
             def_option(:ntlm, <<-OUT)
-              raise Error, ":ntlm must be a #{NTLMParams}" unless value.is_a?(#{NTLMParams})
+              raise TypeError, ":ntlm must be a #{NTLMParams}" unless value.is_a?(#{NTLMParams})
 
               value
             OUT

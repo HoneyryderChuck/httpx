@@ -114,13 +114,13 @@ module HTTPX
     OUT
 
     def_option(:max_concurrent_requests, <<-OUT)
-      raise Error, ":max_concurrent_requests must be positive" unless value.positive?
+      raise TypeError, ":max_concurrent_requests must be positive" unless value.positive?
 
       value
     OUT
 
     def_option(:max_requests, <<-OUT)
-      raise Error, ":max_requests must be positive" unless value.positive?
+      raise TypeError, ":max_requests must be positive" unless value.positive?
 
       value
     OUT
@@ -135,7 +135,7 @@ module HTTPX
 
     def_option(:transport, <<-OUT)
       transport = value.to_s
-      raise Error, "\#{transport} is an unsupported transport type" unless IO.registry.key?(transport)
+      raise TypeError, "\#{transport} is an unsupported transport type" unless IO.registry.key?(transport)
 
       transport
     OUT

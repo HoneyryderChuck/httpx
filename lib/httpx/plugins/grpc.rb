@@ -80,13 +80,13 @@ module HTTPX
             OUT
 
             def_option(:grpc_deadline, <<-OUT)
-              raise Error, ":grpc_deadline must be positive" unless value.positive?
+              raise TypeError, ":grpc_deadline must be positive" unless value.positive?
 
               value
             OUT
 
             def_option(:call_credentials, <<-OUT)
-              raise Error, ":call_credentials must respond to #call" unless value.respond_to?(:call)
+              raise TypeError, ":call_credentials must respond to #call" unless value.respond_to?(:call)
 
               value
             OUT

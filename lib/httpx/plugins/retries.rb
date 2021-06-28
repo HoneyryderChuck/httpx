@@ -29,7 +29,7 @@ module HTTPX
             # return early if callable
             unless value.respond_to?(:call)
               value = Integer(value)
-              raise Error, ":retry_after must be positive" unless value.positive?
+              raise TypeError, ":retry_after must be positive" unless value.positive?
             end
 
             value
@@ -37,7 +37,7 @@ module HTTPX
 
           def_option(:max_retries, <<-OUT)
             num = Integer(value)
-            raise Error, ":max_retries must be positive" unless num.positive?
+            raise TypeError, ":max_retries must be positive" unless num.positive?
 
             num
           OUT

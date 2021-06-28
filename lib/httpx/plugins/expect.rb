@@ -18,14 +18,14 @@ module HTTPX
         Class.new(options.class) do
           def_option(:expect_timeout, <<-OUT)
             seconds = Integer(value)
-            raise Error, ":expect_timeout must be positive" unless seconds.positive?
+            raise TypeError, ":expect_timeout must be positive" unless seconds.positive?
 
             seconds
           OUT
 
           def_option(:expect_threshold_size, <<-OUT)
             bytes = Integer(value)
-            raise Error, ":expect_threshold_size must be positive" unless bytes.positive?
+            raise TypeError, ":expect_threshold_size must be positive" unless bytes.positive?
 
             bytes
           OUT

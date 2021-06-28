@@ -27,13 +27,13 @@ module HTTPX
           Class.new(options.class) do
             def_option(:compression_threshold_size, <<-OUT)
               bytes = Integer(value)
-              raise Error, ":expect_threshold_size must be positive" unless bytes.positive?
+              raise TypeError, ":expect_threshold_size must be positive" unless bytes.positive?
 
               bytes
             OUT
 
             def_option(:encodings, <<-OUT)
-              raise Error, ":encodings must be a registry" unless value.respond_to?(:registry)
+              raise TypeError, ":encodings must be a registry" unless value.respond_to?(:registry)
 
               value
             OUT
