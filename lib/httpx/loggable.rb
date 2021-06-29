@@ -20,7 +20,7 @@ module HTTPX
       debug_stream = @options.debug
 
       message = (+"" << msg.call << "\n")
-      message = "\e[#{COLORS[color]}m#{message}\e[0m" if debug_stream.respond_to?(:isatty) && debug_stream.isatty
+      message = "\e[#{COLORS[color]}m#{message}\e[0m" if color && debug_stream.respond_to?(:isatty) && debug_stream.isatty
       debug_stream << message
     end
 
