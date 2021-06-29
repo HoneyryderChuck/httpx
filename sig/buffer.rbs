@@ -1,5 +1,7 @@
 module HTTPX
   class Buffer
+    extend Forwardable
+    
     include _ToS
     include _ToStr
 

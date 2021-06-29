@@ -1,7 +1,7 @@
 module HTTPX
   module Plugins::Cookies
     class Jar
-      type cookie = Cookie | Array[String, String, cookie_attributes] | Array[String, String] | cookie_attributes
+      type cookie = Cookie | Array[[String, String, cookie_attributes]] | Array[[String, String]] | cookie_attributes
 
       include Enumerable[Cookie]
 

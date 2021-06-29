@@ -19,8 +19,8 @@ module HTTPX
       def self.configure: (singleton(Session)) -> void
 
       interface _CompressionOptions
-        def compression_threshold_size: () -> _Integer?
-        def compression_threshold_size=: (int) -> int
+        def compression_threshold_size: () -> Integer?
+        def compression_threshold_size=: (int) -> _ToInt
 
         def encodings: () -> encodings_registry?
         def encodings=: (encodings_registry) -> encodings_registry
@@ -31,7 +31,7 @@ module HTTPX
 
       module ResponseBodyMethods
         @encodings: Array[String]
-        @_deflaters: Array[_Decoder]
+        @_deflaters: Array[_Deflater]
 
         private
 

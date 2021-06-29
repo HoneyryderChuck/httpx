@@ -30,6 +30,6 @@ module HTTPX
       end
     end
 
-    type sessionFollowRedirects = Session & Plugins::FollowRedirects::InstanceMethods
+    type sessionFollowRedirects = Session & FollowRedirects::InstanceMethods
   end
 end

@@ -14,11 +14,11 @@ module HTTPX
     attr_reader response: response?
     attr_reader drain_error: StandardError?
 
-    def initialize: (verb | String, uri, ?options?) -> untyped
+    def initialize: (verb | String, generic_uri, ?options?) -> untyped
 
     def interests: () -> (:r | :w)
 
-    def merge_headers: (Headers | Hash) -> void
+    def merge_headers: (_Each[[headers_key, headers_value]]) -> void
 
     def scheme: () -> ("http" | "https")
 

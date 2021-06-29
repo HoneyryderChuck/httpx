@@ -4,6 +4,13 @@ module HTTPX
   type resolver = Resolver::System | Resolver::Native | Resolver::HTTPS
 
   module Resolver
+    RESOLVE_TIMEOUT: Integer | Float
+
+    def self.registry: (Symbol tag) -> Class
+    | () -> Hash[Symbol, Class]
+
+    def self.register: (Symbol tag,  Class handler) -> void
+
     type dns_resource = singleton(Resolv::DNS::Resource)
 
     type dns_result = { "name" => String, "TTL" => Numeric, "alias" => String }

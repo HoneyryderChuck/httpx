@@ -22,6 +22,6 @@ module HTTPX
       end
     end
 
-    type sessionNTLMAuthentication = Plugins::sessionAuthentication & Plugins::NTLMAuthentication::InstanceMethods
+    type sessionNTLMAuthentication = sessionAuthentication & NTLMAuthentication::InstanceMethods
   end
 end

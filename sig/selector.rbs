@@ -1,20 +1,20 @@
 module HTTPX
   class Selector
-    READABLE: :r | :rw
-    WRITABLE: :w | :rw
+    READABLE: Array[Symbol]
+    WRITABLE: Array[Symbol]
     @selectables: Array[_ToIO]
 
     def register: (_ToIO) -> void
     def deregister: (_ToIO) -> void
 
-    def select: (Numeric?) { (_ToIO) -> void } -> void
-    
+    def select: (Numeric? interval) { (_ToIO) -> void } -> void
+
     private
 
     def initialize: () -> untyped
 
-    def select_many: (Numeric?) { (_ToIO) -> void } -> void
-    def select_one: (Numeric?) { (_ToIO) -> void } -> void
+    def select_many: (Numeric? interval) { (_ToIO) -> void } -> void
+    def select_one: (Numeric? interval) { (_ToIO) -> void } -> void
   end
 
   type io_interests = :r | :w | :rw

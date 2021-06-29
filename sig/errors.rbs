@@ -1,3 +1,37 @@
 module HTTPX
-  Error: singleton(StandardError)
+  class Error < StandardError
+  end
+
+  class TimeoutError < Error
+    attr_reader timeout: Numeric
+
+    def to_connection_error: () -> ConnectTimeoutError
+    private
+
+    def initialize: (Numeric timeout, String message) -> untyped
+  end
+
+  class TotalTimeoutError < TimeoutError
+  end
+
+  class ConnectTimeoutError < TimeoutError
+  end
+
+  class SettingsTimeoutError < TimeoutError
+  end
+
+  class ResolveTimeoutError < TimeoutError
+  end
+
+  class ResolveError < Error
+  end
+
+  class NativeResolveError < ResolveError
+    attr_reader connection: Connection
+    attr_reader host: String
+
+    private
+
+    def initialize: (Connection connection, String hostname, ?String message) -> untyped
+  end
 end

@@ -1,5 +1,6 @@
 module HTTPX
-  HTTPProxyError: singleton(Error)
+  class HTTPProxyError < Error
+  end
 
   module Plugins
     module Proxy
@@ -23,11 +24,11 @@ module HTTPX
 
       def self.configure: (singleton(Session)) -> void
       
-      type proxyParam = Parameters | Hash
+      type proxyParam = Parameters | Hash[Symbol, untyped]
       
       interface _ProxyOptions
         def proxy: () -> proxyParam?
-        def proxy=: (Parameters | _ToHash) -> proxyParam
+        def proxy=: (Parameters | _ToHash[Symbol, untyped]) -> proxyParam
       end
  
       def self.extra_options: (Options) -> (Options & _ProxyOptions)
@@ -41,6 +42,6 @@ module HTTPX
       end
     end
 
-    type sessionProxy = Session & Plugins::Proxy::InstanceMethods
+    type sessionProxy = Session & Proxy::InstanceMethods
   end
 end

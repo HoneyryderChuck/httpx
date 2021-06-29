@@ -10,6 +10,6 @@ module HTTPX
       end
     end
 
-    type sessionBasicAuthentication = Plugins::sessionAuthentication & Plugins::BasicAuthentication::InstanceMethods
+    type sessionBasicAuthentication = sessionAuthentication & BasicAuthentication::InstanceMethods
   end
 end

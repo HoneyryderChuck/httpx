@@ -3,16 +3,16 @@ module HTTPX
     module Proxy
       module SSH
         def self.load_dependencies: (singleton(Session)) -> void
-      
-        module InstancenMethods
+
+        module InstanceMethods
           private
 
-          def build_gateway_socket: (int, URI::HTTPS | URI::HTTPS, Options) ->  IO
+          def build_gateway_socket: (int, URI::HTTP | URI::HTTPS, Options) ->  _ToIO
         end
       end
     end
 
 
-    type sessionSSHProxy = Plugins::Proxy::InstanceMethods & Plugins::Proxy::SSH::InstanceMethods
+    type sessionSSHProxy = Proxy::InstanceMethods & Proxy::SSH::InstanceMethods
   end
 end

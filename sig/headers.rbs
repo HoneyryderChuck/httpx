@@ -14,13 +14,13 @@ module HTTPX
     def add: (headers_key field, string value) -> void
     def delete: (headers_key field) -> void
 
-    def each: (?_Each[headers_key, String]? extra_headers) { (headers_key, String) -> void } -> void
-            | (?_Each[headers_key, String]? extra_headers) -> Enumerable[[headers_key, String], void]
+    def each: (?_Each[[headers_key, String]]? extra_headers) { (headers_key, String) -> void } -> void
+            | (?_Each[[headers_key, String]]? extra_headers) -> Enumerable[[headers_key, String]]
 
     def get: (headers_key field) -> Array[String]
     def key?: (headers_key downcased_key) -> bool
 
-    def merge: (_Each[headers_key, headers_value] other) -> Headers
+    def merge: (_Each[[headers_key, headers_value]] other) -> Headers
 
     def same_headers?: (untyped headers) -> bool
 

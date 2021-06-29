@@ -3,41 +3,37 @@ module HTTPX
     def request: (*untyped, **untyped) -> (response | Array[response])
     def accept: (String) -> Session
     def wrap: () { (Session) -> void } -> void
-            | () -> void
 
     def with: (options) -> Session
-            | (options) { (Session) -> Session} -> Session
+            | (options) { (Session) -> void } -> void
 
-
-
-
-    def plugin: (:authentication) -> Plugins::sessionAuthentication
-              | (:basic_authentication) -> Plugins::sessionBasicAuthentication
-              | (:digest_authentication) -> Plugins::sessionDigestAuthentication
-              | (:ntlm_authentication) -> Plugins::sessionNTLMAuthentication
-              | (:aws_sdk_authentication) -> Plugins::sessionAwsSdkAuthentication
-              | (:compression) -> Session
-              | (:cookies) -> Plugins::sessionCookies
-              | (:expect) -> Session
-              | (:follow_redirects) -> Plugins::sessionFollowRedirects
-              | (:upgrade) -> Session
-              | (:h2c) -> Session
-              | (:multipart) -> Session
-              | (:persistent) -> Plugins::sessionPersistent
-              | (:proxy) -> Plugins::sessionProxy
-              | (:push_promise) -> Plugins::sessionPushPromise
-              | (:retries) -> Plugins::sessionRetries
-              | (:rate_limiter) -> Session
-              | (:stream) -> Plugins::sessionStream
-              | (:aws_sigv4) -> Plugins::awsSigV4Session
-              | (:grpc) -> Plugins::grpcSession
-              | (Symbol | Module, ?options?) { (Class) -> void } -> Session
-              | (Symbol | Module, ?options?) -> Session
+    def plugin: (:authentication, ?options) -> Plugins::sessionAuthentication
+              | (:basic_authentication, ?options) -> Plugins::sessionBasicAuthentication
+              | (:digest_authentication, ?options) -> Plugins::sessionDigestAuthentication
+              | (:ntlm_authentication, ?options) -> Plugins::sessionNTLMAuthentication
+              | (:aws_sdk_authentication, ?options) -> Plugins::sessionAwsSdkAuthentication
+              | (:compression, ?options) -> Session
+              | (:cookies, ?options) -> Plugins::sessionCookies
+              | (:expect, ?options) -> Session
+              | (:follow_redirects, ?options) -> Plugins::sessionFollowRedirects
+              | (:upgrade, ?options) -> Session
+              | (:h2c, ?options) -> Session
+              | (:multipart, ?options) -> Session
+              | (:persistent, ?options) -> Plugins::sessionPersistent
+              | (:proxy, ?options) -> Plugins::sessionProxy
+              | (:push_promise, ?options) -> Plugins::sessionPushPromise
+              | (:retries, ?options) -> Plugins::sessionRetries
+              | (:rate_limiter, ?options) -> Session
+              | (:stream, ?options) -> Plugins::sessionStream
+              | (:aws_sigv4, ?options) -> Plugins::awsSigV4Session
+              | (:grpc, ?options) -> Plugins::grpcSession
+              | (Symbol | Module, ?options) { (Class) -> void } -> Session
+              | (Symbol | Module, ?options) -> Session
 
     private
 
     def default_options: () -> Options
     def branch: (options) -> Session
-              | (options) { (Session) -> Session } -> Session
+              | (options) { (Session) -> void } -> Session
   end
 end

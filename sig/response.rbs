@@ -1,15 +1,17 @@
 module HTTPX
   interface _Response
-    def raise_for_status: () -> void 
+    def raise_for_status: () -> void
   end
 
   class Response
+    extend Forwardable
+
     include _Response
     include _ToS
     include _Reader
 
-    attr_reader status: int
-    attr_reader headers: headers
+    attr_reader status: Integer
+    attr_reader headers: Headers
     attr_reader body: Body
     attr_reader version: String
 
@@ -18,50 +20,54 @@ module HTTPX
 
     def copy_to: (_ToPath | _Writer destination) -> void
     def close: () -> void
-    def uri: () -> uri
+    def uri: () -> URI::Generic
 
-    def merge_headers: (headers) -> void
+    def merge_headers: (_Each[[headers_key, headers_value]]) -> void
     def bodyless?: () -> bool
     def content_type: () -> ContentType
     def complete?: () -> bool
 
     private
 
-    def initialize: (Request, _ToS, String, headers?) -> untyped
+    def initialize: (Request request, String | Integer status, String version, headers?) -> untyped
     def no_data?: () -> bool
 
     class Body
-      include _Writer
       include _Reader
       include _ToS
       include _ToStr
 
-      @state: :idle | :memory | :buffer
+      @state: :idle | :memory | :buffer | :closed
       @threshold_size: Integer
       @window_size: Integer
+
+      def write:(String chunk) -> Integer?
 
       def each: () { (String) -> void } -> void
               | () -> Enumerable[String]
 
       def bytesize: () -> Numeric
       def empty?: () -> bool
-      def copy_to: (_ToPath | _Writer destination) -> void
+      def copy_to: (String | File | _Writer destination) -> void
       def close: () -> void
       def closed?: () -> bool
 
       private
 
-      def initialize: (Response, options) -> untyped
+      def initialize: (Response, Options) -> untyped
       def rewind: () -> void
       def transition: () -> void
     end
   end
 
   class ContentType
+    MIME_TYPE_RE: Regexp
+    CHARSET_RE: Regexp
+
     attr_reader mime_type: String?
     attr_reader charset: String?
 
-    def self.parse: (_ToS) -> instance
+    def self.parse: (_ToS) -> ContentType
     def self.mime_type: (_ToS) -> String?
     def self.charset: (_ToS) -> String?
 

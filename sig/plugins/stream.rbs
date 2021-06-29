@@ -35,6 +35,6 @@ module HTTPX
 
     end
 
-    type sessionStream = Session & Plugins::Stream::InstanceMethods
+    type sessionStream = Session & Stream::InstanceMethods
   end
 end

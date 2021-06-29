@@ -1,8 +1,12 @@
 module HTTPX
   module Resolver
     class Native
+      extend Forwardable
       include ResolverMixin
       include _ToIO
+
+      DEFAULTS: Hash[Symbol, untyped]
+      DNS_PORT: Integer
 
       @options: Options
       @ns_index: Integer
@@ -15,7 +19,7 @@ module HTTPX
       @queries: Hash[String, Connection]
       @read_buffer: String
       @write_buffer: Buffer
-      @state: :idle | :closed
+      @state: :idle | :open | :closed
 
       def closed?: () -> bool
 
@@ -35,6 +39,8 @@ module HTTPX
 
       def initialize: (options) -> untyped
 
+      def calculate_interests: () -> (:r | :w)
+
       def consume: () -> void
 
       def do_retry: () -> void
@@ -46,15 +52,13 @@ module HTTPX
 
       def parse: (String) -> void
 
-      def resolve: (Connection, String hostname) -> void
-                 | (Connection) -> void
-                 | () -> void
+      def resolve: (?Connection connection, ?String hostname) -> void
 
       def build_socket: () -> void
 
       def transition: (Symbol nextstate) -> void
 
-      def handle_error: (StandardError) -> void
+      def handle_error: (NativeResolveError | StandardError) -> void
     end
   end
 end
