@@ -4,6 +4,7 @@ SimpleCov.start do
   add_filter "/vendor/"
   add_filter "/test/"
   add_filter "/integrations/"
+  add_filter "/regression_tests/"
   add_filter "/lib/httpx/extensions.rb"
   add_filter "/lib/httpx/loggable.rb"
   add_filter "/lib/httpx/plugins/internal_telemetry.rb"
