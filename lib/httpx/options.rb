@@ -144,7 +144,7 @@ module HTTPX
       Array(value)
     OUT
 
-    %w[
+    %i[
       params form json body ssl http2_settings
       request_class response_class headers_class request_body_class response_body_class connection_class
       io fallback_protocol debug debug_level transport_options resolver_class resolver_options
