@@ -92,7 +92,7 @@ end
 group :website do
   gem "hanna-nouveau"
 
-  gem "jekyll", "~> 4.0.0"
+  gem "jekyll", "~> 4.2.0"
   gem "jekyll-brotli", "~> 2.2.0", platform: :mri
   gem "jekyll-feed", "~> 0.15.1"
   gem "jekyll-gzip", "~> 2.4.1"
