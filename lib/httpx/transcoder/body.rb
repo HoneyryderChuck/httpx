@@ -4,7 +4,7 @@ require "forwardable"
 
 module HTTPX::Transcoder
   module Body
-    Error = Class.new(HTTPX::Error)
+    class Error < HTTPX::Error; end
 
     module_function
 

@@ -32,7 +32,7 @@ module HTTPX
     end
 
     def shift!(fin)
-      @buffer = @buffer.byteslice(fin..-1)
+      @buffer = @buffer.byteslice(fin..-1) || "".b
     end
   end
 end

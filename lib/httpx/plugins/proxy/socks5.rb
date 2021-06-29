@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 module HTTPX
-  Socks5Error = Class.new(Error)
+  class Socks5Error < Error; end
+
   module Plugins
     module Proxy
       module Socks5

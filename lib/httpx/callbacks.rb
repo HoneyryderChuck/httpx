@@ -19,7 +19,7 @@ module HTTPX
     end
 
     def emit(type, *args)
-      callbacks(type).delete_if { |pr| :delete == pr[*args] } # rubocop:disable Style/YodaCondition
+      callbacks(type).delete_if { |pr| :delete == pr.call(*args) } # rubocop:disable Style/YodaCondition
     end
 
     protected

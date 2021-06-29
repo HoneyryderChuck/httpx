@@ -4,7 +4,8 @@ require "forwardable"
 
 module HTTPX::Transcoder
   module Chunker
-    Error = Class.new(HTTPX::Error)
+    class Error < HTTPX::Error; end
+
     CRLF = "\r\n".b
 
     class Encoder

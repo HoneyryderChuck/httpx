@@ -2,7 +2,7 @@
 
 module HTTPX
   module Parser
-    Error = Class.new(Error)
+    class Error < Error; end
 
     class HTTP1
       VERSIONS = %w[1.0 1.1].freeze

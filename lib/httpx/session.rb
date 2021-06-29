@@ -15,8 +15,6 @@ module HTTPX
     end
 
     def wrap
-      return unless block_given?
-
       begin
         prev_persistent = @persistent
         @persistent = true
@@ -31,6 +29,8 @@ module HTTPX
     end
 
     def request(*args, **options)
+      raise ArgumentError, "must perform at least one request" if args.empty?
+
       requests = args.first.is_a?(Request) ? args : build_requests(*args, options)
       responses = send_requests(*requests, options)
       return responses.first if responses.size == 1
@@ -283,8 +283,8 @@ module HTTPX
       # :nocov:
       def plugins(pls)
         warn ":#{__method__} is deprecated, use :plugin instead"
-        pls.each do |pl, *args|
-          plugin(pl, *args)
+        pls.each do |pl|
+          plugin(pl)
         end
         self
       end

@@ -4,7 +4,7 @@ require "openssl"
 
 module HTTPX
   class TLS < TCP
-    Error = Class.new(StandardError)
+    class Error < StandardError; end
 
     def initialize(_, _, options)
       super

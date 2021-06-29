@@ -204,7 +204,7 @@ module HTTPX
             @buffer = Tempfile.new("httpx", encoding: Encoding::BINARY, mode: File::RDWR)
           else
             @state = :memory
-            @buffer = StringIO.new("".b, File::RDWR)
+            @buffer = StringIO.new("".b)
           end
         when :memory
           if @length > @threshold_size

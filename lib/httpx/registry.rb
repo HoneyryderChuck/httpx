@@ -31,7 +31,7 @@ module HTTPX
   #
   module Registry
     # Base Registry Error
-    Error = Class.new(Error)
+    class Error < Error; end
 
     def self.extended(klass)
       super

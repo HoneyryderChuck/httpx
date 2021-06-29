@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 module HTTPX
-  Error = Class.new(StandardError)
+  class Error < StandardError; end
 
-  UnsupportedSchemeError = Class.new(Error)
+  class UnsupportedSchemeError < Error; end
 
-  TimeoutError = Class.new(Error) do
+  class TimeoutError < Error
     attr_reader :timeout
 
     def initialize(timeout, message)
@@ -20,17 +20,17 @@ module HTTPX
     end
   end
 
-  TotalTimeoutError = Class.new(TimeoutError)
+  class TotalTimeoutError < TimeoutError; end
 
-  ConnectTimeoutError = Class.new(TimeoutError)
+  class ConnectTimeoutError < TimeoutError; end
 
-  SettingsTimeoutError = Class.new(TimeoutError)
+  class SettingsTimeoutError < TimeoutError; end
 
-  ResolveTimeoutError = Class.new(TimeoutError)
+  class ResolveTimeoutError < TimeoutError; end
 
-  ResolveError = Class.new(Error)
+  class ResolveError < Error; end
 
-  NativeResolveError = Class.new(ResolveError) do
+  class NativeResolveError < ResolveError
     attr_reader :connection, :host
 
     def initialize(connection, host, message = "Can't resolve #{host}")
@@ -40,7 +40,7 @@ module HTTPX
     end
   end
 
-  HTTPError = Class.new(Error) do
+  class HTTPError < Error
     attr_reader :response
 
     def initialize(response)
@@ -53,5 +53,5 @@ module HTTPX
     end
   end
 
-  MisdirectedRequestError = Class.new(HTTPError)
+  class MisdirectedRequestError < HTTPError; end
 end

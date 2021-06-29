@@ -43,9 +43,6 @@ class HTTPX::Selector
 
   private
 
-  READ_INTERESTS = %i[r rw].freeze
-  WRITE_INTERESTS = %i[w rw].freeze
-
   def select_many(interval, &block)
     selectables, r, w = nil
 
@@ -64,8 +61,8 @@ class HTTPX::Selector
           selectables.each do |io|
             interests = io.interests
 
-            (r ||= []) << io if READ_INTERESTS.include?(interests)
-            (w ||= []) << io if WRITE_INTERESTS.include?(interests)
+            (r ||= []) << io if READABLE.include?(interests)
+            (w ||= []) << io if WRITABLE.include?(interests)
           end
 
           if @selectables.empty?
