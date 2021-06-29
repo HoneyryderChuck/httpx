@@ -95,14 +95,18 @@ class HTTPX::Selector
       retry
     end
 
-    readers.each do |io|
-      yield io
+    if writers
+      readers.each do |io|
+        yield io
 
-      # so that we don't yield 2 times
-      writers.delete(io)
-    end if readers
+        # so that we don't yield 2 times
+        writers.delete(io)
+      end if readers
 
-    writers.each(&block) if writers
+      writers.each(&block)
+    else
+      readers.each(&block) if readers
+    end
   end
 
   def select_one(interval)
