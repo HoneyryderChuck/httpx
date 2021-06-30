@@ -23,6 +23,7 @@ Gem::Specification.new do |gem|
     "changelog_uri" => "https://honeyryderchuck.gitlab.io/httpx/#release-notes",
     "documentation_uri" => "https://honeyryderchuck.gitlab.io/httpx/rdoc/",
     "source_code_uri" => "https://gitlab.com/honeyryderchuck/httpx",
+    "homepage_uri" => "https://honeyryderchuck.gitlab.io/httpx/",
   }
 
   gem.files = Dir["LICENSE.txt", "README.md", "lib/**/*.rb", "sig/**/*.rbs", "doc/release_notes/*.md"]
