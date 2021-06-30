@@ -171,6 +171,8 @@ module HTTPX
     end
 
     def merge(other)
+      raise ArgumentError, "#{other.inspect} is not a valid set of options" unless other.respond_to?(:to_hash)
+
       h2 = other.to_hash
       return self if h2.empty?
 

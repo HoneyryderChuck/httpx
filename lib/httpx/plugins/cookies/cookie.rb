@@ -43,8 +43,7 @@ module HTTPX
         # Precedence: 1. longer path  2. older creation
         (@name <=> other.name).nonzero? ||
           (other.path.length <=> @path.length).nonzero? ||
-          (@created_at <=> other.created_at).nonzero? ||
-          @value <=> other.value
+          (@created_at <=> other.created_at).nonzero?
       end
 
       class << self
