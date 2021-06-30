@@ -7,9 +7,9 @@ module HTTPX
 
   class SSL < TCP
     TLS_OPTIONS = if OpenSSL::SSL::SSLContext.instance_methods.include?(:alpn_protocols)
-      { alpn_protocols: %w[h2 http/1.1] }
+      { alpn_protocols: %w[h2 http/1.1].freeze }.freeze
     else
-      {}
+      {}.freeze
     end
 
     def initialize(_, _, options)

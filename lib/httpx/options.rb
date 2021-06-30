@@ -67,7 +67,7 @@ module HTTPX
           define_method(:"#{name}=") do |value|
             return if value.nil?
 
-            instance_variable_set(:"@#{name}", instance_exec(value, &interpreter))
+            instance_variable_set(:"@#{name}", instance_exec(value, &interpreter).freeze)
           end
         else
           attr_writer name
@@ -88,6 +88,7 @@ module HTTPX
           raise Error, "unknown option: #{k}"
         end
       end
+      freeze
     end
 
     def_option(:origin, <<-OUT)
@@ -199,28 +200,25 @@ module HTTPX
       Hash[hash_pairs]
     end
 
-    def initialize_dup(other)
-      self.headers             = other.headers.dup
-      self.ssl                 = other.ssl.dup
-      self.request_class       = other.request_class.dup
-      self.response_class      = other.response_class.dup
-      self.headers_class       = other.headers_class.dup
-      self.request_body_class  = other.request_body_class.dup
-      self.response_body_class = other.response_body_class.dup
-      self.connection_class    = other.connection_class.dup
-    end
-
-    def freeze
-      super
-
-      headers.freeze
-      ssl.freeze
-      request_class.freeze
-      response_class.freeze
-      headers_class.freeze
-      request_body_class.freeze
-      response_body_class.freeze
-      connection_class.freeze
+    if RUBY_VERSION > "2.4.0"
+      def initialize_dup(other)
+        instance_variables.each do |ivar|
+          instance_variable_set(ivar, other.instance_variable_get(ivar).dup)
+        end
+      end
+    else
+      def initialize_dup(other)
+        instance_variables.each do |ivar|
+          value = other.instance_variable_get(ivar)
+          value = case value
+                  when Symbol, Fixnum, TrueClass, FalseClass # rubocop:disable Lint/UnifiedInteger
+                    value
+                  else
+                    value.dup
+          end
+          instance_variable_set(ivar, value)
+        end
+      end
     end
   end
 end
