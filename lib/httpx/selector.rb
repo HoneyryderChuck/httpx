@@ -77,7 +77,7 @@ class HTTPX::Selector
 
             break
           else
-            @selectables = [*selectables, @selectables]
+            @selectables.concat(selectables)
           end
         rescue StandardError
           @selectables = selectables if selectables
