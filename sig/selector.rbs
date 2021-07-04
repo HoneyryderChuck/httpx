@@ -2,6 +2,7 @@ module HTTPX
   class Selector
     READABLE: :r | :rw
     WRITABLE: :w | :rw
+    @selectables: Array[_ToIO]
 
     def register: (_ToIO) -> void
     def deregister: (_ToIO) -> void
