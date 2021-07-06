@@ -1,7 +1,7 @@
 -
   name: BasicAuthentication
   path: Authentication.html#basic-authentication
-  description: API and support for Basic Authentication. 
+  description: API and support for Basic Authentication.
 -
   name: DigestAuthentication
   path: Authentication.html#digest-authentication
@@ -12,7 +12,7 @@
   description: API and support for NTLM Authentication.
 -
   name: AwsSigV4Authentication
-  path: AWS-SigV4
+  path: AWS-Sigv4
   description: API and support for AWS SigV4 Authentication.
 -
   name: Compression
