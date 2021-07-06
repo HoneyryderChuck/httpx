@@ -43,12 +43,12 @@ module HTTPX
 
     # deprecated
     # :nocov:
-    def plugins(*args, **opts)
+    def plugins(pls)
       warn ":#{__method__} is deprecated, use :plugin instead"
       klass = is_a?(Session) ? self.class : Session
       klass = Class.new(klass)
       klass.instance_variable_set(:@default_options, klass.default_options.merge(default_options))
-      klass.plugins(*args, **opts).new
+      klass.plugins(pls).new
     end
     # :nocov:
 
@@ -71,12 +71,15 @@ module HTTPX
     def method_missing(meth, *args, **options)
       return super unless meth =~ /\Awith_(.+)/
 
-      option = Regexp.last_match(1).to_sym
-      with(option => (args.first || options))
+      option = Regexp.last_match(1)
+
+      return super unless option
+
+      with(option.to_sym => (args.first || options))
     end
 
-    def respond_to_missing?(meth, *args)
-      default_options.respond_to?(meth, *args) || super
+    def respond_to_missing?(meth)
+      default_options.respond_to?(meth) || super
     end
   end
 end
