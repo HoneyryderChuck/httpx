@@ -4,6 +4,11 @@ module HTTPX
 
     WINDOW_SIZE: Integer
     MAX_BODY_THRESHOLD_SIZE: Integer
+    CONNECT_TIMEOUT: Integer
+    OPERATION_TIMEOUT: Integer
+    KEEP_ALIVE_TIMEOUT: Integer
+    SETTINGS_TIMEOUT: Integer
+    DEFAULT_OPTIONS: Hash[Symbol, untyped]
 
     type timeout_type = :connect_timeout | :settings_timeout | :operation_timeout | :keep_alive_timeout | :total_timeout
     type timeout = Hash[timeout_type, Numeric?]
@@ -11,6 +16,8 @@ module HTTPX
     def self.new: (options) -> instance
                 | () -> instance
 
+    def self.def_option: (Symbol, ?String) -> void
+                       | (Symbol) { (*nil) -> untyped } -> void
     # headers
     attr_reader uri: URI?
     def uri=: (uri) -> void
@@ -32,15 +39,15 @@ module HTTPX
     def max_requests=: (Integer) -> void
 
     # window_size
-    attr_reader window_size: int?
+    attr_reader window_size: Integer
     def window_size=: (int) -> void
 
     # body_threshold_size
-    attr_reader body_threshold_size: int?
+    attr_reader body_threshold_size: Integer
     def body_threshold_size=: (int) -> void
 
     # transport
-    attr_reader transport: _ToS?
+    attr_reader transport: String?
     def transport=: (_ToS) -> void
 
     # transport_options
@@ -48,8 +55,8 @@ module HTTPX
     def transport_options=: (Hash[untyped, untyped]) -> void
 
     # addresses
-    attr_reader addresses: _ToAry[untyped]?
-    def addresses=: (_ToAry[untyped]) -> void
+    attr_reader addresses: _ToAry[ipaddr]?
+    def addresses=: (_ToAry[ipaddr]) -> void
 
     # params
     attr_reader params: Transcoder::urlencoded_input?
@@ -71,13 +78,32 @@ module HTTPX
 
     # http2_settings
 
+
+    # classes
+    attr_reader connection_class: singleton(Connection)
+    def connection_class=: (singleton(Connection)) -> void
+
+    attr_reader request_class: singleton(Request)
+    def request_class=: (singleton(Request)) -> void
+
+    attr_reader response_class: singleton(Response)
+    def response_class=: (singleton(Response)) -> void
+
+    attr_reader headers_class: singleton(Headers)
+    def headers_class=: (singleton(Headers)) -> void
+
+    attr_reader request_body_class: singleton(Request::Body)
+    def request_body_class=: (singleton(Request::Body)) -> void
+
+    attr_reader response_body_class: singleton(Response::Body)
+    def response_body_class=: (singleton(Response::Body)) -> void
+
+    attr_reader ssl: Hash[Symbol, untyped]
+    def ssl=: (Hash[Symbol, untyped]) -> void
+
     # request_class response_class headers_class request_body_class
     # response_body_class connection_class
     # resolver_class resolver_options
-
-    # request_class
-    attr_reader request_class: singleton(Request)
-    def request_class=: (singleton(Request)) -> void
 
     # io
     type io_option = _ToIO | Hash[String, _ToIO]
@@ -93,19 +119,24 @@ module HTTPX
     def debug=: (_IOLogger) -> void
 
     # debug_level
-    attr_reader debug_level: Integer?
+    attr_reader debug_level: Integer
     def debug_level=: (Integer) -> void
 
     # persistent
     attr_reader persistent: bool?
     def persistent=: (bool) -> void
 
+    # resolver_options
+    attr_reader resolver_options: Hash[Symbol, untyped]?
+    def resolver_options=: (Hash[Symbol, untyped]) -> void
+
     def ==: (untyped other) -> bool
-    def merge: (_ToHash other) -> instance
+    def merge: (_ToHash[Symbol | String, untyped] other) -> instance
+    def to_hash: () -> Hash[Symbol, untyped]
 
     private
 
-    def initialize: (options) -> untyped
+    def initialize: (?options) -> untyped
   end
 
   type options = Options | Hash[Symbol | String, untyped]

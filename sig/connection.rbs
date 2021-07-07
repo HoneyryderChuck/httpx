@@ -1,28 +1,37 @@
 module HTTPX
   class Connection
+
     interface _Parser
 
       def on: (Symbol) { (*untyped) -> void } -> void
       def empty?: () -> bool
+      # def exhausted?: () -> bool
       def close: () -> void
       def consume: () -> void
       def <<: (string) -> void
+      # def send: (Request) -> void
+      # def ping: () -> void
+      # def timeout: () -> (Integer | Float)
+
     end
 
+    extend Forwardable
     include Loggable
     include Callbacks
-    extend HTTPX::Registry[String, Class]
+    include HTTPX::Registry[String, Class]
 
-    attr_reader origin: generic_uri 
+    BUFFER_SIZE: Integer
+
+    attr_reader origin: URI::Generic
     attr_reader state: Symbol
     attr_reader pending: Array[Request]
-    attr_reader options: options
+    attr_reader options: Options
 
     def addresses: () -> Array[ipaddr]?
 
     def addresses=: (Array[ipaddr]) -> void
 
-    def match?: (generic_uri, options) -> bool
+    def match?: (URI::Generic, options) -> bool
 
     def mergeable?: (Connection) -> bool
 
@@ -35,7 +44,7 @@ module HTTPX
 
     def purge_pending: () { (Request) -> void } -> void
 
-    def match_altsvcs?: (generic_uri) -> bool
+    def match_altsvcs?: (URI::Generic uri) -> bool
 
     def connecting?: () -> bool
     def inflight?: () -> boolish
@@ -55,7 +64,7 @@ module HTTPX
 
     private
 
-    def initialize: (String, generic_uri, options) -> untyped
+    def initialize: (String, URI::Generic, options) -> untyped
 
     def connect: () -> void
 
@@ -76,10 +85,13 @@ module HTTPX
 
     def handle_response: () -> void
 
-    def on_error: (StandardError) -> void
+    def on_error: (HTTPX::TimeoutError | Error | StandardError) -> void
 
     def handle_error: (StandardError) -> void
 
-    def total_timeout: () -> Timers::Timer?
+    def total_timeout: () -> untyped?
+    # def total_timeout: () -> Timers::Timer?
+    #
+    def purge_after_closed: () -> void
   end
 end

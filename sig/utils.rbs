@@ -1,5 +1,7 @@
 module HTTPX
   module Utils
+    URIParser: URI::RFC2396_Parser
+
     def self?.parse_retry_after: (String) -> Numeric
 
     def self?.to_uri: (generic_uri uri) -> URI::Generic

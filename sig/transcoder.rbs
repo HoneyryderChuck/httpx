@@ -1,11 +1,18 @@
 module HTTPX
-  type bodyIO = _Reader | _Each[String, untyped] | _ToS
+  type bodyIO = _Reader | _Each[[String, untyped]] | _ToS
 
   module Transcoder
-    extend HTTPX::Registry[String, Class]
+    def self?.registry: (String tag) -> _Encode
+                   | () -> Hash[String, _Encode]
 
-    def self.normalize_keys: (string | Symbol, top, ?Proc?) { (string, top) -> void } -> void
-                           | (string | Symbol, top, ?Proc?) { (string) -> void } -> void
+    def self?.register: (String tag, _Encode handler) -> void
+                     
+    def self?.normalize_keys: (_ToS key, _ToAry[untyped] | _ToHash[_ToS, untyped] | untyped value) { (String, ?untyped) -> void } -> void
+                           | (_ToS key, untyped value, Proc? cond) { (String, untyped) -> void } -> void
+
+    interface _Encode
+      def encode: (untyped payload) -> (_Encoder | _Each[String])
+    end
 
     interface _Encoder
       def bytesize: () -> Numeric

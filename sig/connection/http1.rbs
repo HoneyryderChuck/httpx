@@ -9,7 +9,7 @@ module HTTPX
     @options: Options
     @max_concurrent_requests: Integer
     @max_requests: Integer
-    @parser: HTTP1
+    @parser: Parser::HTTP1
     @buffer: Buffer
 
     def interests: () -> io_interests?
@@ -54,7 +54,7 @@ module HTTPX
 
     def disable_pipelining: () -> void
 
-    def set_protocol_headers: (Request) -> _Each[headers_key, String]
+    def set_protocol_headers: (Request) -> _Each[[headers_key, String]]
 
     def headline_uri: (Request) -> String
 
@@ -64,7 +64,7 @@ module HTTPX
 
     def join_trailers: (Request request) -> void
 
-    def join_headers2: (_Each[headers_key, String] headers) -> void
+    def join_headers2: (_Each[[headers_key, String]] headers) -> void
 
     def join_body: (Request request) -> void
 

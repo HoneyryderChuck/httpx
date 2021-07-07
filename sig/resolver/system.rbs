@@ -3,6 +3,8 @@ module HTTPX
     class System
       include ResolverMixin
 
+      RESOLV_ERRORS: Array[StandardError] # ResolvError
+
       def closed?: () -> true
 
       def empty?: () -> true

@@ -39,6 +39,6 @@ module HTTPX
       end
     end
 
-    type sessionRetries = Session & Plugins::Retries::InstanceMethods
+    type sessionRetries = Session & Retries::InstanceMethods
   end
 end

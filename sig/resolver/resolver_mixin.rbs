@@ -4,6 +4,8 @@ module HTTPX
       include Callbacks
       include Loggable
 
+      CHECK_IF_IP: Proc
+
       def uncache: (Connection) -> void
 
       private
@@ -16,12 +18,9 @@ module HTTPX
 
       def system_resolve: (String hostname) -> Array[ipaddr]?
 
-      def emit_resolve_error: (Connection, String hostname, StandardError) -> void
-                            | (Connection, String hostname) -> void
-                            | (Connection) -> void
+      def emit_resolve_error: (Connection, ?String hostname, ?StandardError) -> void
 
-      def resolve_error: (String hostname, StandardError?) -> void
-                       | (String hostname) -> void  
+      def resolve_error: (String hostname, ?StandardError?) -> void
     end
   end
 end

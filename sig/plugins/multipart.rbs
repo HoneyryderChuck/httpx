@@ -13,8 +13,6 @@ module HTTPX
 
       type multipart_nested_value = multipart_value | _ToAry[multipart_value] | _ToHash[string, multipart_value]
 
-      type multipart_input = Enumerable[[string, multipart_value], untyped]
-
       class Encoder
         include Transcoder::_Encoder
         include _Reader
@@ -23,7 +21,7 @@ module HTTPX
 
         private
 
-        def initialize: (_Each[Symbol | string, multipart_nested_value] multipart_data) -> untyped
+        def initialize: (_Each[[Symbol | string, multipart_nested_value]] multipart_data) -> untyped
 
         def header_part: (string key, String content_type, String? filename) -> StringIO
 
@@ -37,7 +35,7 @@ module HTTPX
       end
 
       module MimeTypeDetector
-        def self?.call: (IO file, ?String filename) -> String?
+        def self?.call: (::IO file, ?String filename) -> String?
       end
     end
   end

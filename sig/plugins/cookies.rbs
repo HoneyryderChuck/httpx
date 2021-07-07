@@ -1,7 +1,7 @@
 module HTTPX
   module Plugins
     module Cookies
-      type jar = Jar | _Each[cookies]
+      type jar = Jar | _Each[Jar::cookie]
 
       interface _CookieOptions
         def cookies: () -> Jar?
@@ -19,7 +19,7 @@ module HTTPX
       end
     end
 
-    type sessionCookies = Session & Plugins::Cookies::InstanceMethods
-    type headersCookies = Headers & Plugins::Cookies::HeadersMethods
+    type sessionCookies = Session & Cookies::InstanceMethods
+    type headersCookies = Headers & Cookies::HeadersMethods
   end
 end

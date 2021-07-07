@@ -3,6 +3,10 @@ module HTTPX
     module AwsSdkAuthentication
       class Credentials
         include _SigV4Credentials
+
+        private
+        
+        def initialize: (untyped aws_credentials) -> untyped
       end
 
       def self.load_dependencies: (singleton(Session)) -> void
@@ -16,6 +20,6 @@ module HTTPX
       end
     end
 
-    type sessionAwsSdkAuthentication = Session & Plugins::AwsSdkAuthentication::InstanceMethods
+    type sessionAwsSdkAuthentication = Session & AwsSdkAuthentication::InstanceMethods
   end
 end

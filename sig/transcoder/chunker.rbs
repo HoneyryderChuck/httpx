@@ -1,6 +1,11 @@
 module HTTPX::Transcoder
   module Chunker
-    def self?.encode: (_Encoder chunks) -> Encoder
+    CRLF: String
+
+    class Error < HTTPX::Error
+    end
+
+    def self?.encode: (_Each[String] chunks) -> Encoder
 
     class Encoder
       @raw: _Each[String]
@@ -9,10 +14,11 @@ module HTTPX::Transcoder
 
       private
 
-      def initialize: (_Encoder chunks) -> untyped
+      def initialize: (_Each[String] chunks) -> untyped
     end
 
     class Decoder
+      extend Forwardable
       include _ToS
       include _Each[String]
 

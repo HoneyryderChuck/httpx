@@ -4,8 +4,7 @@ module HTTPX
 
     def next_tick: () -> void
 
-    def close: (Array[Connection]) -> void
-             | () -> void
+    def close: (*Array[Connection]) -> void
 
     def init_connection: (Connection, Options) -> void
 

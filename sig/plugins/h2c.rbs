@@ -15,7 +15,5 @@ module HTTPX
         def upgrade_to_h2c: (Request, Response) -> void
       end
     end
-
-    type sessionH2C = Session & Plugins::H2C::InstanceMethods
   end
 end

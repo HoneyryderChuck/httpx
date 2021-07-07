@@ -1,7 +1,12 @@
 module HTTPX
   module Transcoder
     module Body
+      class Error < HTTPX::Error
+      end
+
       class Encoder
+        extend Forwardable
+
         include _Encoder
         include _ToS
 
@@ -11,7 +16,7 @@ module HTTPX
 
         private
 
-        def initialize: (untyped body ) -> untyped
+        def initialize: (untyped body) -> untyped
       end
 
       def self?.encode: (bodyIO body) -> Encoder

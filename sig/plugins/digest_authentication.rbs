@@ -27,6 +27,6 @@ module HTTPX
       end
     end
 
-    type sessionDigestAuthentication = Plugins::sessionAuthentication & Plugins::DigestAuthentication::InstanceMethods
+    type sessionDigestAuthentication = sessionAuthentication & DigestAuthentication::InstanceMethods
   end
 end

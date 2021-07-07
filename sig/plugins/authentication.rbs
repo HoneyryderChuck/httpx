@@ -6,6 +6,6 @@ module HTTPX
       end
     end
 
-    type sessionAuthentication = Session & Plugins::Authentication::InstanceMethods
+    type sessionAuthentication = Session & Authentication::InstanceMethods
   end
 end

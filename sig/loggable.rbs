@@ -4,8 +4,10 @@ module HTTPX
   end
 
   module Loggable
+    COLORS: Hash[Symbol, Integer]
+
     def log: (?level: Integer?, ?color: Symbol?) { () -> String } -> void
 
-    def log_exception: (StandardError, **untyped) -> void
+    def log_exception: (Exception error, ?level: Integer, ?color: Symbol) -> void
   end
 end
