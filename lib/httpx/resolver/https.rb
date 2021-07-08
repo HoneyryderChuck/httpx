@@ -24,8 +24,6 @@ module HTTPX
       record_types: RECORD_TYPES.keys,
     }.freeze
 
-    def_delegator :@connections, :empty?
-
     def_delegators :@resolver_connection, :connecting?, :to_io, :call, :close
 
     def initialize(options)
