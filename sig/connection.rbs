@@ -1,18 +1,14 @@
 module HTTPX
   class Connection
 
-    interface _Parser
+    type protocol = HTTP1 | HTTP2 | _HandshakeHandler
 
+    interface _HandshakeHandler
       def on: (Symbol) { (*untyped) -> void } -> void
       def empty?: () -> bool
-      # def exhausted?: () -> bool
       def close: () -> void
       def consume: () -> void
       def <<: (string) -> void
-      # def send: (Request) -> void
-      # def ping: () -> void
-      # def timeout: () -> (Integer | Float)
-
     end
 
     extend Forwardable
@@ -21,6 +17,8 @@ module HTTPX
     include HTTPX::Registry[String, Class]
 
     BUFFER_SIZE: Integer
+
+    @io: TCP
 
     attr_reader origin: URI::Generic
     attr_reader state: Symbol
@@ -64,7 +62,7 @@ module HTTPX
 
     private
 
-    def initialize: (String, URI::Generic, options) -> untyped
+    def initialize: ("tcp" | "unix" | "ssl", URI::Generic, options) -> untyped
 
     def connect: () -> void
 
@@ -74,12 +72,12 @@ module HTTPX
 
     def send_pending: () -> void
 
-    def parser: () -> _Parser
+    def parser: () -> protocol
 
-    def build_parser: () -> _Parser
-                    | (String) -> _Parser
+    def build_parser: () -> protocol
+                    | (String) -> protocol
 
-    def set_parser_callbacks: (_Parser) -> void
+    def set_parser_callbacks: (protocol) -> void
 
     def transition: (Symbol) -> void
 

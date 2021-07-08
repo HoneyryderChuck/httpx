@@ -1,0 +1,9 @@
+module HTTPX
+  module IO
+    extend HTTPX::Registry[String, Class]
+
+    def self?.registry: ("udp") -> UDP
+                      | ("unix") -> UNIX
+                      | (String) -> TCP
+  end
+end

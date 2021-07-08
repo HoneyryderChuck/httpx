@@ -1,0 +1,28 @@
+module HTTPX
+  class TCP
+
+    attr_reader ip: ipaddr
+    attr_reader port: Integer
+    attr_reader addresses: Array[ipaddr]
+    attr_reader state: Symbol
+    attr_reader interests: io_interests
+
+    def protocol: () -> String
+
+    def to_io: () -> _ToIO
+
+    def read: (?Integer? length, ?string outbuf) -> Integer?
+
+    def write: (string buffer) -> Integer?
+
+    def connected?: () -> bool
+
+    def connect: () -> void
+
+    def close: () -> void
+
+    private
+
+    def initialize: (URI::Generic origin, Array[ipaddr]? addresses, Options options) -> untyped
+  end
+end

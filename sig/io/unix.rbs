@@ -1,0 +1,4 @@
+module HTTPX
+  class UNIX
+  end
+end

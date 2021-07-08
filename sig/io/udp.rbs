@@ -1,0 +1,8 @@
+module HTTPX
+  class UDP
+
+    private
+
+    def initialize: (URI::Generic uri, untyped, Options options) -> untyped
+  end
+end
