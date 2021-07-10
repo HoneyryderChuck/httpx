@@ -17,7 +17,7 @@ module HTTPX
                           Errno::ECONNRESET,
                           Errno::ECONNABORTED,
                           Errno::EPIPE,
-                          (TLSError if defined?(TLSError)),
+                          TLSError,
                           TimeoutError,
                           Parser::Error,
                           Errno::EINVAL,
