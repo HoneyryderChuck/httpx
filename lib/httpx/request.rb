@@ -157,7 +157,7 @@ module HTTPX
 
     class Body
       class << self
-        def new(*, options)
+        def new(_, options)
           return options.body if options.body.is_a?(self)
 
           super
