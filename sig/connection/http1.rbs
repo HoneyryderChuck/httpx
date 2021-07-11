@@ -3,6 +3,8 @@ module HTTPX
     include Callbacks
     include Loggable
 
+    UPCASED: Hash[String, String]
+
     attr_reader pending: Array[Request]
     attr_reader requests: Array[Request]
 

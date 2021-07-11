@@ -11,7 +11,7 @@ module HTTPX
     DEFAULT_OPTIONS: Hash[Symbol, untyped]
 
     type timeout_type = :connect_timeout | :settings_timeout | :operation_timeout | :keep_alive_timeout | :total_timeout
-    type timeout = Hash[timeout_type, Numeric?]
+    type timeout = Hash[timeout_type, Numeric]
 
     def self.new: (?options) -> instance
 
@@ -57,12 +57,16 @@ module HTTPX
     attr_reader json: _ToJson?
 
     # body
-    attr_reader body: bodyIO?
+    attr_reader body: (bodyIO | Request::Body)?
+
+    # origin
+    attr_reader origin: URI::Generic?
 
     # ssl
 
     # http2_settings
-
+    attr_reader http2_settings: Hash[String, Integer]
+    def http2_settings=: (Hash[String, Integer] settings) -> void
 
     # classes
     attr_reader connection_class: singleton(Connection)

@@ -4,14 +4,15 @@ module HTTPX
   module Plugins
     module Proxy
       module Socks5
-      
+
         module ConnectionMethods
           def __socks5_proxy_connect: () ->  void
           def __socks5_on_packet: (String packet) ->  void
           def __socks5_check_version: (int) -> void
           def __on_socks5_error: (string) -> void
+          def parser: () -> (Connection::protocol | SocksParser)
         end
-        
+
         class SocksParser
           include Callbacks
 

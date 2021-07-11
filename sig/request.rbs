@@ -1,12 +1,13 @@
 module HTTPX
   class Request
+    extend Forwardable
     include Callbacks
 
-    METHODS: Array[verb]
+    METHODS: Array[Symbol]
     USER_AGENT: String
 
-    attr_reader verb: verb
-    attr_reader uri: URI::HTTP | URI::HTTPS
+    attr_reader verb: Symbol
+    attr_reader uri: URI::Generic
     attr_reader headers: Headers
     attr_reader body: Body
     attr_reader state: Symbol
@@ -14,13 +15,11 @@ module HTTPX
     attr_reader response: response?
     attr_reader drain_error: StandardError?
 
-    def initialize: (verb | String, generic_uri, ?options?) -> untyped
-
     def interests: () -> (:r | :w)
 
     def merge_headers: (_Each[[headers_key, headers_value]]) -> void
 
-    def scheme: () -> ("http" | "https")
+    def scheme: () -> String
 
     def response=: (response) -> void
 
@@ -44,7 +43,14 @@ module HTTPX
 
     def trailers?: () -> boolish
 
+    private
+
+    def initialize: (Symbol | String verb, generic_uri uri, ?options options) -> untyped
+
     class Body
+      @headers: Headers
+      @body: Transcoder::_Encoder | _Each[String] | nil
+
       def initialize: (Headers, Options) -> untyped
       def each: () { (String) -> void } -> void
               | () -> Enumerable[String]

@@ -3,6 +3,8 @@ module HTTPX
     include Callbacks
     include Loggable
 
+    MAX_CONCURRENT_REQUESTS: Integer
+
     attr_reader streams: Hash[Request, HTTP2Next::Stream]
     attr_reader pending: Array[Request]
 
@@ -23,7 +25,7 @@ module HTTPX
 
     def <<: (String) -> void
 
-    def can_buffer_more_requests: () -> bool
+    def can_buffer_more_requests?: () -> bool
 
     def send: (Request) -> void
 
@@ -35,7 +37,7 @@ module HTTPX
 
     alias reset init_connection
 
-    def timeout: () -> Integer
+    def timeout: () -> Numeric
 
     private
 
@@ -66,6 +68,8 @@ module HTTPX
     def on_stream_data: (HTTP2Next::Stream stream, Request request, string data) -> void
 
     def on_stream_close: (HTTP2Next::Stream stream, Request request, (Symbol | StandardError)? error) -> void
+
+    def on_altsvc:  (String origin, HTTP2Next::frame frame) -> void
 
     def on_frame: (string bytes) -> void
 
