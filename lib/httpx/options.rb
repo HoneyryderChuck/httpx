@@ -30,6 +30,7 @@ module HTTPX
       :request_body_class => Class.new(Request::Body),
       :response_body_class => Class.new(Response::Body),
       :connection_class => Class.new(Connection),
+      :options_class => Class.new(self),
       :transport => nil,
       :transport_options => nil,
       :addresses => nil,
@@ -56,24 +57,20 @@ module HTTPX
 
         attr_reader(optname)
 
-        alias_method(:"__set_#{optname}", meth)
-
         class_eval(<<-OUT, __FILE__, __LINE__ + 1)
           def #{optname}=(value)
             return if value.nil?
 
-            value = __set_#{optname}(value)
+            value = #{meth}(value)
 
-            @#{optname} = value.freeze
+            @#{optname} = value
           end
           protected :#{optname}=
         OUT
-
-        remove_method(meth)
       end
 
       def def_option(optname, *args, &block)
-        if args.size.zero?
+        if args.size.zero? && !block_given?
           class_eval(<<-OUT, __FILE__, __LINE__ + 1)
             def option_#{optname}(v); v; end
           OUT
@@ -84,8 +81,8 @@ module HTTPX
       end
 
       def deprecated_def_option(optname, layout = nil, &interpreter)
-        warn "DEPRECATION WARNING: using `#{__method__}` for setting options is deprecated. " \
-          "Use `def option_\#{optname}` instead."
+        warn "DEPRECATION WARNING: using `def_option(#{optname})` for setting options is deprecated. " \
+          "Define module OptionsMethods and `def option_#{optname}(val)` instead."
 
         if layout
           class_eval(<<-OUT, __FILE__, __LINE__ + 1)
@@ -94,7 +91,7 @@ module HTTPX
             end
           OUT
         elsif block_given?
-          define_method(:"option:#{name}") do |value|
+          define_method(:"option_#{optname}") do |value|
             instance_exec(value, &interpreter)
           end
         end
@@ -171,7 +168,8 @@ module HTTPX
 
     %i[
       params form json body ssl http2_settings
-      request_class response_class headers_class request_body_class response_body_class connection_class
+      request_class response_class headers_class request_body_class
+      response_body_class connection_class options_class
       io fallback_protocol debug debug_level transport_options resolver_class resolver_options
       persistent
     ].each do |method_name|
