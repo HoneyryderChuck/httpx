@@ -47,33 +47,57 @@ module HTTPX
         super
       end
 
-      def def_option(name, layout = nil, &interpreter)
-        attr_reader name
+      def method_added(meth)
+        super
+
+        return unless meth =~ /^option_(.+)$/
+
+        optname = Regexp.last_match(1).to_sym
+
+        attr_reader(optname)
+
+        alias_method(:"__set_#{optname}", meth)
+
+        class_eval(<<-OUT, __FILE__, __LINE__ + 1)
+          def #{optname}=(value)
+            return if value.nil?
+
+            value = __set_#{optname}(value)
+
+            @#{optname} = value.freeze
+          end
+          protected :#{optname}=
+        OUT
+
+        remove_method(meth)
+      end
+
+      def def_option(optname, *args, &block)
+        if args.size.zero?
+          class_eval(<<-OUT, __FILE__, __LINE__ + 1)
+            def option_#{optname}(v); v; end
+          OUT
+          return
+        end
+
+        deprecated_def_option(optname, *args, &block)
+      end
+
+      def deprecated_def_option(optname, layout = nil, &interpreter)
+        warn "DEPRECATION WARNING: using `#{__method__}` for setting options is deprecated. " \
+          "Use `def option_\#{optname}` instead."
 
         if layout
           class_eval(<<-OUT, __FILE__, __LINE__ + 1)
-            def #{name}=(value)
-              return if value.nil?
-
-              value = begin
-                #{layout}
-              end
-
-              @#{name} = value
+            def option_#{optname}(value)
+              #{layout}
             end
           OUT
-
-        elsif interpreter
-          define_method(:"#{name}=") do |value|
-            return if value.nil?
-
-            instance_variable_set(:"@#{name}", instance_exec(value, &interpreter).freeze)
+        elsif block_given?
+          define_method(:"option:#{name}") do |value|
+            instance_exec(value, &interpreter)
           end
-        else
-          attr_writer name
         end
-
-        protected :"#{name}="
       end
     end
 
@@ -91,19 +115,19 @@ module HTTPX
       freeze
     end
 
-    def_option(:origin, <<-OUT)
+    def option_origin(value)
       URI(value)
-    OUT
+    end
 
-    def_option(:headers, <<-OUT)
-      if self.headers
-        self.headers.merge(value)
+    def option_headers(value)
+      if headers
+        headers.merge(value)
       else
         Headers.new(value)
       end
-    OUT
+    end
 
-    def_option(:timeout, <<-OUT)
+    def option_timeout(value)
       timeouts = Hash[value]
 
       if timeouts.key?(:loop_timeout)
@@ -112,38 +136,38 @@ module HTTPX
       end
 
       timeouts
-    OUT
+    end
 
-    def_option(:max_concurrent_requests, <<-OUT)
+    def option_max_concurrent_requests(value)
       raise TypeError, ":max_concurrent_requests must be positive" unless value.positive?
 
       value
-    OUT
+    end
 
-    def_option(:max_requests, <<-OUT)
+    def option_max_requests(value)
       raise TypeError, ":max_requests must be positive" unless value.positive?
 
       value
-    OUT
+    end
 
-    def_option(:window_size, <<-OUT)
+    def option_window_size(value)
       Integer(value)
-    OUT
+    end
 
-    def_option(:body_threshold_size, <<-OUT)
+    def option_body_threshold_size(value)
       Integer(value)
-    OUT
+    end
 
-    def_option(:transport, <<-OUT)
+    def option_transport(value)
       transport = value.to_s
       raise TypeError, "\#{transport} is an unsupported transport type" unless IO.registry.key?(transport)
 
       transport
-    OUT
+    end
 
-    def_option(:addresses, <<-OUT)
+    def option_addresses(value)
       Array(value)
-    OUT
+    end
 
     %i[
       params form json body ssl http2_settings
