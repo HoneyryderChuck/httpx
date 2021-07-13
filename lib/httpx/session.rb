@@ -271,7 +271,7 @@ module HTTPX
             (pl::OptionsMethods.instance_methods - Object.instance_methods).each do |meth|
               opts.options_class.method_added(meth)
             end
-            @default_options = opts.options_class.new(@default_options)
+            @default_options = opts.options_class.new(opts)
           end
 
           @default_options = pl.extra_options(@default_options) if pl.respond_to?(:extra_options)

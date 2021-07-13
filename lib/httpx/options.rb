@@ -42,7 +42,7 @@ module HTTPX
     class << self
       def new(options = {})
         # let enhanced options go through
-        return options if self == Options && options.class > self
+        return options if self == Options && options.class < self
         return options if options.is_a?(self)
 
         super
