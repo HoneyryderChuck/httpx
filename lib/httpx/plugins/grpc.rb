@@ -180,7 +180,7 @@ module HTTPX
               end
             end
           else
-            input_enc.marshal(input)
+            input_enc.__send__(marshal_method, input)
           end
 
           call = execute(rpc_name, messages, **exec_opts)
