@@ -13,8 +13,7 @@ module HTTPX
     type timeout_type = :connect_timeout | :settings_timeout | :operation_timeout | :keep_alive_timeout | :total_timeout
     type timeout = Hash[timeout_type, Numeric?]
 
-    def self.new: (options) -> instance
-                | () -> instance
+    def self.new: (?options) -> instance
 
     def self.def_option: (Symbol, ?String) -> void
                        | (Symbol) { (*nil) -> untyped } -> void
