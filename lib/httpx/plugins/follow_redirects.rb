@@ -17,17 +17,17 @@ module HTTPX
       MAX_REDIRECTS = 3
       REDIRECT_STATUS = (300..399).freeze
 
-      def self.extra_options(options)
-        Class.new(options.class) do
-          def_option(:max_redirects, <<-OUT)
-            num = Integer(value)
-            raise TypeError, ":max_redirects must be positive" if num.negative?
+      module OptionsMethods
+        def option_max_redirects(value)
+          num = Integer(value)
+          raise TypeError, ":max_redirects must be positive" if num.negative?
 
-            num
-          OUT
+          num
+        end
 
-          def_option(:follow_insecure_redirects)
-        end.new(options)
+        def option_follow_insecure_redirects(value)
+          value
+        end
       end
 
       module InstanceMethods

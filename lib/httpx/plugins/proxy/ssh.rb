@@ -6,16 +6,16 @@ module HTTPX
   module Plugins
     module Proxy
       module SSH
-        def self.load_dependencies(*)
-          require "net/ssh/gateway"
+        class << self
+          def load_dependencies(*)
+            require "net/ssh/gateway"
+          end
         end
 
-        def self.extra_options(options)
-          Class.new(options.class) do
-            def_option(:proxy, <<-OUT)
-              Hash[value]
-            OUT
-          end.new(options)
+        module OptionsMethods
+          def option_proxy(value)
+            Hash[value]
+          end
         end
 
         module InstanceMethods

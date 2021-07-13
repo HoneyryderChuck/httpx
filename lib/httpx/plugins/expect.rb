@@ -10,26 +10,30 @@ module HTTPX
     module Expect
       EXPECT_TIMEOUT = 2
 
-      def self.no_expect_store
-        @no_expect_store ||= []
+      class << self
+        def no_expect_store
+          @no_expect_store ||= []
+        end
+
+        def extra_options(options)
+          options.merge(expect_timeout: EXPECT_TIMEOUT)
+        end
       end
 
-      def self.extra_options(options)
-        Class.new(options.class) do
-          def_option(:expect_timeout, <<-OUT)
-            seconds = Integer(value)
-            raise TypeError, ":expect_timeout must be positive" unless seconds.positive?
+      module OptionsMethods
+        def option_expect_timeout(value)
+          seconds = Integer(value)
+          raise TypeError, ":expect_timeout must be positive" unless seconds.positive?
 
-            seconds
-          OUT
+          seconds
+        end
 
-          def_option(:expect_threshold_size, <<-OUT)
-            bytes = Integer(value)
-            raise TypeError, ":expect_threshold_size must be positive" unless bytes.positive?
+        def option_expect_threshold_size(value)
+          bytes = Integer(value)
+          raise TypeError, ":expect_threshold_size must be positive" unless bytes.positive?
 
-            bytes
-          OUT
-        end.new(options).merge(expect_timeout: EXPECT_TIMEOUT)
+          bytes
+        end
       end
 
       module RequestMethods

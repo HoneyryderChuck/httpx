@@ -61,42 +61,44 @@ module HTTPX
         end
 
         def extra_options(options)
-          Class.new(options.class) do
-            def_option(:grpc_service, <<-OUT)
-              String(value)
-            OUT
-
-            def_option(:grpc_compression, <<-OUT)
-              case value
-              when true, false
-                value
-              else
-                value.to_s
-              end
-            OUT
-
-            def_option(:grpc_rpcs, <<-OUT)
-              Hash[value]
-            OUT
-
-            def_option(:grpc_deadline, <<-OUT)
-              raise TypeError, ":grpc_deadline must be positive" unless value.positive?
-
-              value
-            OUT
-
-            def_option(:call_credentials, <<-OUT)
-              raise TypeError, ":call_credentials must respond to #call" unless value.respond_to?(:call)
-
-              value
-            OUT
-          end.new(options).merge(
+          options.merge(
             fallback_protocol: "h2",
             http2_settings: { wait_for_handshake: false },
             grpc_rpcs: {}.freeze,
             grpc_compression: false,
             grpc_deadline: DEADLINE
           )
+        end
+      end
+
+      module OptionsMethods
+        def option_grpc_service(value)
+          String(value)
+        end
+
+        def option_grpc_compression(value)
+          case value
+          when true, false
+            value
+          else
+            value.to_s
+          end
+        end
+
+        def option_grpc_rpcs(value)
+          Hash[value]
+        end
+
+        def option_grpc_deadline(value)
+          raise TypeError, ":grpc_deadline must be positive" unless value.positive?
+
+          value
+        end
+
+        def option_call_credentials(value)
+          raise TypeError, ":call_credentials must respond to #call" unless value.respond_to?(:call)
+
+          value
         end
       end
 

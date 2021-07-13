@@ -14,19 +14,23 @@ module HTTPX
 
       DigestError = Class.new(Error)
 
-      def self.extra_options(options)
-        Class.new(options.class) do
-          def_option(:digest, <<-OUT)
-            raise TypeError, ":digest must be a Digest" unless value.is_a?(#{Digest})
+      class << self
+        def extra_options(options)
+          options.merge(max_concurrent_requests: 1)
+        end
 
-            value
-          OUT
-        end.new(options).merge(max_concurrent_requests: 1)
+        def load_dependencies(*)
+          require "securerandom"
+          require "digest"
+        end
       end
 
-      def self.load_dependencies(*)
-        require "securerandom"
-        require "digest"
+      module OptionsMethods
+        def option_digest(value)
+          raise TypeError, ":digest must be a Digest" unless value.is_a?(Digest)
+
+          value
+        end
       end
 
       module InstanceMethods

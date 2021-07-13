@@ -4,7 +4,7 @@ module HTTPX
       MAX_RETRIES: Integer
       IDEMPOTENT_METHODS: Array[verb]
       RETRYABLE_ERRORS: Array[singleton(StandardError)]
-      
+
       interface _RetryCallback
         def call: (response) -> bool?
       end
@@ -16,13 +16,13 @@ module HTTPX
         def max_retries: () -> Integer?
         def max_retries=: (int) -> Integer
 
-        def retry_change_requests: () -> bool?
-        def retry_change_requests=: (bool) -> bool
+        def retry_change_requests: () -> boolish
+        def retry_change_requests=: (boolish) -> boolish
 
         def retry_on: () -> _RetryCallback?
         def retry_on=: (_RetryCallback) -> _RetryCallback
       end
- 
+
       def self.extra_options: (Options) -> (Options & _RetriesOptions)
 
       module InstanceMethods
