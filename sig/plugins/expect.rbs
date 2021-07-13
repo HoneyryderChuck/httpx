@@ -2,15 +2,13 @@ module HTTPX
   module Plugins
     module Expect
       EXPECT_TIMEOUT: Integer
-      
+
       interface _ExpectOptions
         def expect_timeout: () -> Integer?
-        def expect_timeout=: (int) -> Integer
 
         def expect_threshold_size: () -> Integer?
-        def expect_threshold_size=: (int) -> Integer
       end
- 
+
       def self.extra_options: (Options) -> (Options & _ExpectOptions)
     end
   end

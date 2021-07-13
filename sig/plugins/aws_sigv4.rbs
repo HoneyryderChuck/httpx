@@ -42,7 +42,6 @@ module HTTPX
 
       interface _SigV4Options
         def sigv4_signer: () -> Signer?
-        def sigv4_signer=: (Signer) -> Signer
       end
 
       def self.extra_options: (Options) -> (Options & _SigV4Options)

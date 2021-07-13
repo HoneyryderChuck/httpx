@@ -20,59 +20,45 @@ module HTTPX
                        | (Symbol) { (*nil) -> untyped } -> void
     # headers
     attr_reader uri: URI?
-    def uri=: (uri) -> void
 
     # headers
     attr_reader headers: Headers?
-    def headers=: (headers) -> void
 
     # timeout
     attr_reader timeout: timeout
-    def timeout=: (timeout) -> void
 
     # max_concurrent_requests
     attr_reader max_concurrent_requests: Integer?
-    def max_concurrent_requests=: (Integer) -> void
 
     # max_requests
     attr_reader max_requests: Integer?
-    def max_requests=: (Integer) -> void
 
     # window_size
     attr_reader window_size: Integer
-    def window_size=: (int) -> void
 
     # body_threshold_size
     attr_reader body_threshold_size: Integer
-    def body_threshold_size=: (int) -> void
 
     # transport
     attr_reader transport: String?
-    def transport=: (_ToS) -> void
 
     # transport_options
     attr_reader transport_options: Hash[untyped, untyped]?
-    def transport_options=: (Hash[untyped, untyped]) -> void
 
     # addresses
     attr_reader addresses: _ToAry[ipaddr]?
-    def addresses=: (_ToAry[ipaddr]) -> void
 
     # params
     attr_reader params: Transcoder::urlencoded_input?
-    def params=: (Transcoder::urlencoded_input) -> void
 
     # form
     attr_reader form: Transcoder::urlencoded_input?
-    def form=: (Transcoder::urlencoded_input) -> void
 
     # json
     attr_reader json: _ToJson?
-    def json=: (_ToJson) -> void
 
     # body
     attr_reader body: bodyIO?
-    def body=: (bodyIO) -> void
 
     # ssl
 
@@ -81,25 +67,18 @@ module HTTPX
 
     # classes
     attr_reader connection_class: singleton(Connection)
-    def connection_class=: (singleton(Connection)) -> void
 
     attr_reader request_class: singleton(Request)
-    def request_class=: (singleton(Request)) -> void
 
     attr_reader response_class: singleton(Response)
-    def response_class=: (singleton(Response)) -> void
 
     attr_reader headers_class: singleton(Headers)
-    def headers_class=: (singleton(Headers)) -> void
 
     attr_reader request_body_class: singleton(Request::Body)
-    def request_body_class=: (singleton(Request::Body)) -> void
 
     attr_reader response_body_class: singleton(Response::Body)
-    def response_body_class=: (singleton(Response::Body)) -> void
 
     attr_reader ssl: Hash[Symbol, untyped]
-    def ssl=: (Hash[Symbol, untyped]) -> void
 
     # request_class response_class headers_class request_body_class
     # response_body_class connection_class
@@ -108,27 +87,21 @@ module HTTPX
     # io
     type io_option = _ToIO | Hash[String, _ToIO]
     attr_reader io: io_option?
-    def io=: (io_option) -> void
 
     # fallback_protocol
     attr_reader fallback_protocol: String?
-    def fallback_protocol=: (String) -> void
 
     # debug
     attr_reader debug: _IOLogger?
-    def debug=: (_IOLogger) -> void
 
     # debug_level
     attr_reader debug_level: Integer
-    def debug_level=: (Integer) -> void
 
     # persistent
     attr_reader persistent: bool?
-    def persistent=: (bool) -> void
 
     # resolver_options
     attr_reader resolver_options: Hash[Symbol, untyped]?
-    def resolver_options=: (Hash[Symbol, untyped]) -> void
 
     def ==: (untyped other) -> bool
     def merge: (_ToHash[Symbol | String, untyped] other) -> instance

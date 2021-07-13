@@ -5,15 +5,13 @@ module HTTPX
     module FollowRedirects
       MAX_REDIRECTS: Integer
       REDIRECT_STATUS: Range[Integer]
-      
+
       interface _FollowRedirectsOptions
         def max_redirects: () -> Integer?
-        def max_redirects=: (int) -> Integer
 
         def follow_insecure_redirects: () -> bool?
-        def follow_insecure_redirects=: (bool) -> bool
       end
- 
+
       def self.extra_options: (Options) -> (Options & _FollowRedirectsOptions)
 
       module InstanceMethods

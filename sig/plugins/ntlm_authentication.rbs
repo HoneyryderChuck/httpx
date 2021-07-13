@@ -4,9 +4,8 @@ module HTTPX
 
       interface _NTLMOptions
         def ntlm: () -> NTLMParams?
-        def ntlm=: (NTLMParams) -> NTLMParams
       end
- 
+
       def self.extra_options: (Options) -> (Options & _NTLMOptions)
 
       def self.load_dependencies: (*untyped) -> void

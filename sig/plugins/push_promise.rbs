@@ -1,8 +1,6 @@
 module HTTPX
   module Plugins
     module PushPromise
-      def self.extra_options: (Options) -> Options
-
       module ResponseMethods
         def pushed?: () -> boolish
         def mark_as_pushed!: () -> void

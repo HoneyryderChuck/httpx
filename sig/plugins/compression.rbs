@@ -15,17 +15,15 @@ module HTTPX
 
         def initialize: (Numeric bytesize) -> untyped
       end
-       
+
       def self.configure: (singleton(Session)) -> void
 
       interface _CompressionOptions
         def compression_threshold_size: () -> Integer?
-        def compression_threshold_size=: (int) -> _ToInt
 
         def encodings: () -> encodings_registry?
-        def encodings=: (encodings_registry) -> encodings_registry
       end
- 
+
       def self.extra_options: (Options) -> (Options & _CompressionOptions)
 
 

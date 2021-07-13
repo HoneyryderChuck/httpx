@@ -11,16 +11,12 @@ module HTTPX
 
       interface _RetriesOptions
         def retry_after: () -> Numeric?
-        def retry_after=: (Numeric) -> Numeric
 
         def max_retries: () -> Integer?
-        def max_retries=: (int) -> Integer
 
         def retry_change_requests: () -> boolish
-        def retry_change_requests=: (boolish) -> boolish
 
         def retry_on: () -> _RetryCallback?
-        def retry_on=: (_RetryCallback) -> _RetryCallback
       end
 
       def self.extra_options: (Options) -> (Options & _RetriesOptions)

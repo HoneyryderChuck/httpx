@@ -56,17 +56,6 @@ module HTTPX
         optname = Regexp.last_match(1).to_sym
 
         attr_reader(optname)
-
-        class_eval(<<-OUT, __FILE__, __LINE__ + 1)
-          def #{optname}=(value)
-            return if value.nil?
-
-            value = #{meth}(value)
-
-            @#{optname} = value
-          end
-          protected :#{optname}=
-        OUT
       end
 
       def def_option(optname, *args, &block)
@@ -104,7 +93,8 @@ module HTTPX
         next if v.nil?
 
         begin
-          __send__(:"#{k}=", v)
+          value = __send__(:"option_#{k}", v)
+          instance_variable_set(:"@#{k}", value)
         rescue NoMethodError
           raise Error, "unknown option: #{k}"
         end
@@ -117,11 +107,7 @@ module HTTPX
     end
 
     def option_headers(value)
-      if headers
-        headers.merge(value)
-      else
-        Headers.new(value)
-      end
+      Headers.new(value)
     end
 
     def option_timeout(value)
