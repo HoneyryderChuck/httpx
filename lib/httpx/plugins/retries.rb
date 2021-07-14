@@ -24,32 +24,36 @@ module HTTPX
                           Errno::ETIMEDOUT].freeze
 
       def self.extra_options(options)
-        Class.new(options.class) do
-          def_option(:retry_after, <<-OUT)
-            # return early if callable
-            unless value.respond_to?(:call)
-              value = Integer(value)
-              raise TypeError, ":retry_after must be positive" unless value.positive?
-            end
+        options.merge(max_retries: MAX_RETRIES)
+      end
 
-            value
-          OUT
+      module OptionsMethods
+        def option_retry_after(value)
+          # return early if callable
+          unless value.respond_to?(:call)
+            value = Integer(value)
+            raise TypeError, ":retry_after must be positive" unless value.positive?
+          end
 
-          def_option(:max_retries, <<-OUT)
-            num = Integer(value)
-            raise TypeError, ":max_retries must be positive" unless num.positive?
+          value
+        end
 
-            num
-          OUT
+        def option_max_retries(value)
+          num = Integer(value)
+          raise TypeError, ":max_retries must be positive" unless num.positive?
 
-          def_option(:retry_change_requests)
+          num
+        end
 
-          def_option(:retry_on, <<-OUT)
-            raise ":retry_on must be called with the response" unless value.respond_to?(:call)
+        def option_retry_change_requests(v)
+          v
+        end
 
-            value
-          OUT
-        end.new(options).merge(max_retries: MAX_RETRIES)
+        def option_retry_on(value)
+          raise ":retry_on must be called with the response" unless value.respond_to?(:call)
+
+          value
+        end
       end
 
       module InstanceMethods

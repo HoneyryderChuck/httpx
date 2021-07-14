@@ -16,7 +16,7 @@ module HTTPX
       type grpc_response = untyped | _Each[untyped]
 
       type credentials = Proc
-                       
+
       class Call
         attr_writer decoder: _Callable
 
@@ -41,7 +41,7 @@ module HTTPX
 
         def self?.decode: (String message, encodings: Array[String], encoders: Compression::encodings_registry) -> String
                         | (String message, encodings: Array[String], encoders: Compression::encodings_registry) { (String) -> void } -> void
-        
+
         def self?.cancel: (Request) -> void
 
         def self?.verify_status: (StreamResponse | response) -> void
@@ -49,19 +49,14 @@ module HTTPX
 
       interface _GRPCOptions
         def grpc_service: () -> String?
-        def grpc_service=: (string) -> String
 
         def grpc_compression: () -> compression_option?
-        def grpc_compression=: (compression_option) -> compression_option
 
         def grpc_rpcs: () -> Hash[String, rpc_def]?
-        def grpc_rpcs=: (Hash[String, rpc_def]) -> Hash[String, rpc_def]
 
         def grpc_deadline: () -> Integer?
-        def grpc_deadline=: (Integer) -> Integer
 
         def call_credentials: () -> credentials?
-        def call_credentials=: (credentials) -> credentials
       end
 
       def self.extra_options: (Options) -> (Options & _GRPCOptions)

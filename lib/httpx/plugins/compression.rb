@@ -23,21 +23,22 @@ module HTTPX
           encodings = Module.new do
             extend Registry
           end
+          options.merge(encodings: encodings)
+        end
+      end
 
-          Class.new(options.class) do
-            def_option(:compression_threshold_size, <<-OUT)
-              bytes = Integer(value)
-              raise TypeError, ":expect_threshold_size must be positive" unless bytes.positive?
+      module OptionsMethods
+        def option_compression_threshold_size(value)
+          bytes = Integer(value)
+          raise TypeError, ":expect_threshold_size must be positive" unless bytes.positive?
 
-              bytes
-            OUT
+          bytes
+        end
 
-            def_option(:encodings, <<-OUT)
-              raise TypeError, ":encodings must be a registry" unless value.respond_to?(:registry)
+        def option_encodings(value)
+          raise TypeError, ":encodings must be a registry" unless value.respond_to?(:registry)
 
-              value
-            OUT
-          end.new(options).merge(encodings: encodings)
+          value
         end
       end
 

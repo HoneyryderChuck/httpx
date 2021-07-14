@@ -141,19 +141,20 @@ module HTTPX
       end
 
       class << self
-        def extra_options(options)
-          Class.new(options.class) do
-            def_option(:sigv4_signer, <<-OUT)
-              value.is_a?(#{Signer}) ? value : #{Signer}.new(value)
-            OUT
-          end.new(options)
-        end
-
-        def load_dependencies(klass)
+        def load_dependencies(*)
           require "digest/sha2"
           require "openssl"
+        end
+
+        def configure(klass)
           klass.plugin(:expect)
           klass.plugin(:compression)
+        end
+      end
+
+      module OptionsMethods
+        def option_sigv4_signer(value)
+          value.is_a?(Signer) ? value : Signer.new(value)
         end
       end
 

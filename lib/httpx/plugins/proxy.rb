@@ -64,13 +64,11 @@ module HTTPX
           klass.plugin(:"proxy/socks4")
           klass.plugin(:"proxy/socks5")
         end
+      end
 
-        def extra_options(options)
-          Class.new(options.class) do
-            def_option(:proxy, <<-OUT)
-              value.is_a?(#{Parameters}) ? value : Hash[value]
-            OUT
-          end.new(options)
+      module OptionsMethods
+        def option_proxy(value)
+          value.is_a?(Parameters) ? value : Hash[value]
         end
       end
 

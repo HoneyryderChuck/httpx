@@ -18,14 +18,15 @@ module HTTPX
           upgrade_handlers = Module.new do
             extend Registry
           end
+          options.merge(upgrade_handlers: upgrade_handlers)
+        end
+      end
 
-          Class.new(options.class) do
-            def_option(:upgrade_handlers, <<-OUT)
-              raise TypeError, ":upgrade_handlers must be a registry" unless value.respond_to?(:registry)
+      module OptionsMethods
+        def option_upgrade_handlers(value)
+          raise TypeError, ":upgrade_handlers must be a registry" unless value.respond_to?(:registry)
 
-              value
-            OUT
-          end.new(options).merge(upgrade_handlers: upgrade_handlers)
+          value
         end
       end
 

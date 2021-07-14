@@ -30,6 +30,7 @@ module HTTPX
       :request_body_class => Class.new(Request::Body),
       :response_body_class => Class.new(Response::Body),
       :connection_class => Class.new(Connection),
+      :options_class => Class.new(self),
       :transport => nil,
       :transport_options => nil,
       :addresses => nil,
@@ -41,39 +42,48 @@ module HTTPX
     class << self
       def new(options = {})
         # let enhanced options go through
-        return options if self == Options && options.class > self
+        return options if self == Options && options.class < self
         return options if options.is_a?(self)
 
         super
       end
 
-      def def_option(name, layout = nil, &interpreter)
-        attr_reader name
+      def method_added(meth)
+        super
+
+        return unless meth =~ /^option_(.+)$/
+
+        optname = Regexp.last_match(1).to_sym
+
+        attr_reader(optname)
+      end
+
+      def def_option(optname, *args, &block)
+        if args.size.zero? && !block_given?
+          class_eval(<<-OUT, __FILE__, __LINE__ + 1)
+            def option_#{optname}(v); v; end
+          OUT
+          return
+        end
+
+        deprecated_def_option(optname, *args, &block)
+      end
+
+      def deprecated_def_option(optname, layout = nil, &interpreter)
+        warn "DEPRECATION WARNING: using `def_option(#{optname})` for setting options is deprecated. " \
+          "Define module OptionsMethods and `def option_#{optname}(val)` instead."
 
         if layout
           class_eval(<<-OUT, __FILE__, __LINE__ + 1)
-            def #{name}=(value)
-              return if value.nil?
-
-              value = begin
-                #{layout}
-              end
-
-              @#{name} = value
+            def option_#{optname}(value)
+              #{layout}
             end
           OUT
-
-        elsif interpreter
-          define_method(:"#{name}=") do |value|
-            return if value.nil?
-
-            instance_variable_set(:"@#{name}", instance_exec(value, &interpreter).freeze)
+        elsif block_given?
+          define_method(:"option_#{optname}") do |value|
+            instance_exec(value, &interpreter)
           end
-        else
-          attr_writer name
         end
-
-        protected :"#{name}="
       end
     end
 
@@ -83,7 +93,8 @@ module HTTPX
         next if v.nil?
 
         begin
-          __send__(:"#{k}=", v)
+          value = __send__(:"option_#{k}", v)
+          instance_variable_set(:"@#{k}", value)
         rescue NoMethodError
           raise Error, "unknown option: #{k}"
         end
@@ -91,19 +102,15 @@ module HTTPX
       freeze
     end
 
-    def_option(:origin, <<-OUT)
+    def option_origin(value)
       URI(value)
-    OUT
+    end
 
-    def_option(:headers, <<-OUT)
-      if self.headers
-        self.headers.merge(value)
-      else
-        Headers.new(value)
-      end
-    OUT
+    def option_headers(value)
+      Headers.new(value)
+    end
 
-    def_option(:timeout, <<-OUT)
+    def option_timeout(value)
       timeouts = Hash[value]
 
       if timeouts.key?(:loop_timeout)
@@ -112,42 +119,43 @@ module HTTPX
       end
 
       timeouts
-    OUT
+    end
 
-    def_option(:max_concurrent_requests, <<-OUT)
+    def option_max_concurrent_requests(value)
       raise TypeError, ":max_concurrent_requests must be positive" unless value.positive?
 
       value
-    OUT
+    end
 
-    def_option(:max_requests, <<-OUT)
+    def option_max_requests(value)
       raise TypeError, ":max_requests must be positive" unless value.positive?
 
       value
-    OUT
+    end
 
-    def_option(:window_size, <<-OUT)
+    def option_window_size(value)
       Integer(value)
-    OUT
+    end
 
-    def_option(:body_threshold_size, <<-OUT)
+    def option_body_threshold_size(value)
       Integer(value)
-    OUT
+    end
 
-    def_option(:transport, <<-OUT)
+    def option_transport(value)
       transport = value.to_s
       raise TypeError, "\#{transport} is an unsupported transport type" unless IO.registry.key?(transport)
 
       transport
-    OUT
+    end
 
-    def_option(:addresses, <<-OUT)
+    def option_addresses(value)
       Array(value)
-    OUT
+    end
 
     %i[
       params form json body ssl http2_settings
-      request_class response_class headers_class request_body_class response_body_class connection_class
+      request_class response_class headers_class request_body_class
+      response_body_class connection_class options_class
       io fallback_protocol debug debug_level transport_options resolver_class resolver_options
       persistent
     ].each do |method_name|

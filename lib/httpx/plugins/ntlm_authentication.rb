@@ -15,13 +15,15 @@ module HTTPX
         end
 
         def extra_options(options)
-          Class.new(options.class) do
-            def_option(:ntlm, <<-OUT)
-              raise TypeError, ":ntlm must be a #{NTLMParams}" unless value.is_a?(#{NTLMParams})
+          options.merge(max_concurrent_requests: 1)
+        end
+      end
 
-              value
-            OUT
-          end.new(options).merge(max_concurrent_requests: 1)
+      module OptionsMethods
+        def option_ntlm(value)
+          raise TypeError, ":ntlm must be a #{NTLMParams}" unless value.is_a?(NTLMParams)
+
+          value
         end
       end
 

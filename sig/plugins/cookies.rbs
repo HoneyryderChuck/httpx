@@ -5,9 +5,8 @@ module HTTPX
 
       interface _CookieOptions
         def cookies: () -> Jar?
-        def cookies=: (jar) -> Jar
       end
- 
+
       def self.extra_options: (Options) -> (Options & _CookieOptions)
 
       module InstanceMethods

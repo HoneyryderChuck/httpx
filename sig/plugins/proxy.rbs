@@ -23,14 +23,13 @@ module HTTPX
       end
 
       def self.configure: (singleton(Session)) -> void
-      
+
       type proxyParam = Parameters | Hash[Symbol, untyped]
-      
+
       interface _ProxyOptions
         def proxy: () -> proxyParam?
-        def proxy=: (Parameters | _ToHash[Symbol, untyped]) -> proxyParam
       end
- 
+
       def self.extra_options: (Options) -> (Options & _ProxyOptions)
 
       module InstanceMethods

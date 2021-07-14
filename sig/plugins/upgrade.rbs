@@ -7,9 +7,8 @@ module HTTPX
 
       interface _UpgradeOptions
         def upgrade_handlers: () -> handlers_registry?
-        def upgrade_handlers=: (handlers_registry) -> handlers_registry
       end
- 
+
       def self.extra_options: (Options) -> (Options & _UpgradeOptions)
 
       module ConnectionMethods
@@ -18,6 +17,6 @@ module HTTPX
 
         def hijack_io: () -> void
       end
-    end      
+    end
   end
 end

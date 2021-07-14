@@ -247,9 +247,8 @@ module HTTPX
         if !@plugins.include?(pl)
           @plugins << pl
           pl.load_dependencies(self, &block) if pl.respond_to?(:load_dependencies)
+
           @default_options = @default_options.dup
-          @default_options = pl.extra_options(@default_options, &block) if pl.respond_to?(:extra_options)
-          @default_options = @default_options.merge(options) if options
 
           include(pl::InstanceMethods) if defined?(pl::InstanceMethods)
           extend(pl::ClassMethods) if defined?(pl::ClassMethods)
@@ -266,14 +265,26 @@ module HTTPX
           opts.response_body_class.__send__(:include, pl::ResponseBodyMethods) if defined?(pl::ResponseBodyMethods)
           opts.response_body_class.extend(pl::ResponseBodyClassMethods) if defined?(pl::ResponseBodyClassMethods)
           opts.connection_class.__send__(:include, pl::ConnectionMethods) if defined?(pl::ConnectionMethods)
+          if defined?(pl::OptionsMethods)
+            opts.options_class.__send__(:include, pl::OptionsMethods)
+
+            (pl::OptionsMethods.instance_methods - Object.instance_methods).each do |meth|
+              opts.options_class.method_added(meth)
+            end
+            @default_options = opts.options_class.new(opts)
+          end
+
+          @default_options = pl.extra_options(@default_options) if pl.respond_to?(:extra_options)
+          @default_options = @default_options.merge(options) if options
+
           pl.configure(self, &block) if pl.respond_to?(:configure)
 
           @default_options.freeze
         elsif options
           # this can happen when two plugins are loaded, an one of them calls the other under the hood,
           # albeit changing some default.
-          @default_options = @default_options.dup
-          @default_options = @default_options.merge(options)
+          @default_options = pl.extra_options(@default_options) if pl.respond_to?(:extra_options)
+          @default_options = @default_options.merge(options) if options
 
           @default_options.freeze
         end

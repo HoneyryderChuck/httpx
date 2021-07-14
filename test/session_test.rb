@@ -169,6 +169,11 @@ class SessionTest < Minitest::Test
         self.class.foo
       end
     end
+    self::OptionsMethods = Module.new do
+      def option_foo(v)
+        v
+      end
+    end
 
     def self.load_dependencies(mod)
       mod.__send__(:include, Module.new do
@@ -179,9 +184,7 @@ class SessionTest < Minitest::Test
     end
 
     def self.extra_options(options)
-      Class.new(options.class) do
-        def_option(:foo)
-      end.new(options).merge(foo: "options-foo")
+      options.merge(foo: "options-foo")
     end
 
     def self.configure(mod)

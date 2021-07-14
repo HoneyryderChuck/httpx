@@ -5,9 +5,8 @@ module HTTPX
 
       interface _DigestOptions
         def digest: () -> Digest?
-        def digest=: (Digest) -> Digest
       end
- 
+
       def self.extra_options: (Options) -> (Options & _DigestOptions)
 
       def self.load_dependencies: (*untyped) -> void
