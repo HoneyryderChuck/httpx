@@ -12,7 +12,7 @@ module Requests
         assert body.key?("cookies")
         assert body["cookies"].empty?
 
-        session_response = session.with_cookies("abc" => "def").get(cookies_uri)
+        session_response = session.with(cookies: { "abc" => "def" }).get(cookies_uri)
         body = json_body(session_response)
         assert body.key?("cookies")
         assert body["cookies"]["abc"] == "def", "abc wasn't properly set"
@@ -20,7 +20,7 @@ module Requests
 
       def test_plugin_cookies_get_with_hash
         session = HTTPX.plugin(:cookies)
-        session_response = session.with_cookies([{ "name" => "abc", "value" => "def" }]).get(cookies_uri)
+        session_response = session.with(cookies: [{ "name" => "abc", "value" => "def" }]).get(cookies_uri)
         body = json_body(session_response)
         assert body.key?("cookies")
         assert body["cookies"]["abc"] == "def", "abc wasn't properly set"
@@ -28,7 +28,7 @@ module Requests
 
       def test_plugin_cookies_get_with_cookie
         session = HTTPX.plugin(:cookies)
-        session_response = session.with_cookies([HTTPX::Plugins::Cookies::Cookie.new("abc", "def")]).get(cookies_uri)
+        session_response = session.with(cookies: [HTTPX::Plugins::Cookies::Cookie.new("abc", "def")]).get(cookies_uri)
         body = json_body(session_response)
         assert body.key?("cookies")
         assert body["cookies"]["abc"] == "def", "abc wasn't properly set"
@@ -49,19 +49,19 @@ module Requests
         verify_cookies(body["cookies"], session_cookies)
 
         # second request reuses the session
-        extra_cookie_response = session.with_cookies("e" => "f").get(cookies_uri)
+        extra_cookie_response = session.with(cookies: { "e" => "f" }).get(cookies_uri)
         body = json_body(extra_cookie_response)
         assert body.key?("cookies")
         verify_cookies(body["cookies"], session_cookies.merge("e" => "f"))
 
         # redirect to a different origin only uses the option cookies
-        other_origin_response = session.with_cookies("e" => "f").get(redirect_uri(origin("google.com")))
+        other_origin_response = session.with(cookies: { "e" => "f" }).get(redirect_uri(origin("google.com")))
         verify_status(other_origin_response, 302)
         assert !other_origin_response.headers.key?("set-cookie"), "cookies should not transition to next origin"
       end
 
       def test_cookies_wrap
-        session = HTTPX.plugin(:cookies).with_cookies("abc" => "def")
+        session = HTTPX.plugin(:cookies).with(cookies: { "abc" => "def" })
 
         session.wrap do |_http|
           set_cookie_uri = cookies_set_uri("123" => "456")
