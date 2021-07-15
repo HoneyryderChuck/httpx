@@ -88,7 +88,7 @@ class OptionsTest < Minitest::Test
       :body => nil,
       :window_size => 16_384,
       :body_threshold_size => 114_688,
-      :form => { :bar => "bar" },
+      :form => { foo: "foo", :bar => "bar" },
       :timeout => {
         connect_timeout: 60,
         settings_timeout: 10,
