@@ -73,6 +73,25 @@ module HTTPX
           end
         end
       end
+
+      def merge(other)
+        cookies_dup = dup
+
+        other.each do |elem|
+          cookie = case elem
+                   when Cookie
+                     elem
+                   when Array
+                     Cookie.new(*elem)
+                   else
+                     Cookie.new(elem)
+          end
+
+          cookies_dup.add(cookie)
+        end
+
+        cookies_dup
+      end
     end
   end
 end

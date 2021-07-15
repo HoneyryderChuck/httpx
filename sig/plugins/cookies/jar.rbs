@@ -7,21 +7,20 @@ module HTTPX
 
       @cookies: Array[Cookie]
 
-      def parse: (String) -> void
+      def parse: (String set_cookie) -> void
 
-      def add: (Cookie) -> void
-             | (Cookie, String) -> void
+      def add: (Cookie name, ?String path) -> void
 
       def []: (uri) -> Array[Cookie]
 
-      def each: (uri) { (Cookie) -> void } -> void
-              | (uri) -> Enumerable[Cookie]
-              | () { (Cookie) -> void } -> void
-              | () -> Enumerable[Cookie]
+      def each: (?uri) { (Cookie) -> void } -> void
+              | (?uri) -> Enumerable[Cookie]
+
+      def merge: (_Each[cookie] cookies) -> instance
+
       private
 
-      def initialize: () -> void
-                    | (_Each[cookie]) -> untyped
+      def initialize: (?_Each[cookie] cookies) -> untyped
     end
   end
 end
