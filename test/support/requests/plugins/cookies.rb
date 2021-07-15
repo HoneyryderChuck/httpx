@@ -201,6 +201,26 @@ module Requests
         assert [c4, c3, c2, c1].sort == [c3, c4, c1, c2]
       end
 
+      def test_plugin_cookies_jar_management
+        cookie_header = lambda do |response|
+          JSON.parse(response.to_s)["headers"]
+        end
+        uri = build_uri("/headers")
+
+        http = HTTPX.plugin(:cookies).with(cookies: { :a => 1, :b => 2 })
+        verify_header(cookie_header.call(http.get(uri)), "Cookie", "a=1; b=2")
+
+        http = http.with(cookies: { :a => 3 })
+        verify_header(cookie_header.call(http.get(uri)), "Cookie", "a=3; b=2")
+
+        verify_header(cookie_header.call(http.get(uri, cookies: { :a => 4 })), "Cookie", "a=4; b=2")
+
+        http = http.with(headers: { "Cookie" => "a=1;f=6" })
+        verify_header(cookie_header.call(http.get(uri)), "Cookie", "a=1; b=2; f=6")
+
+        verify_header(cookie_header.call(http.get(uri, cookies: { :a => 4 })), "Cookie", "a=4; b=2; f=6")
+      end
+
       private
 
       def jar_cookies_uri(path = "/cookies")
