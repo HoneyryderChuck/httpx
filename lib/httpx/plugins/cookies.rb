@@ -61,7 +61,7 @@ module HTTPX
 
         def build_request(*, _)
           request = super
-          request.headers.set_cookie(@options.cookies[request.uri])
+          request.headers.set_cookie(request.options.cookies[request.uri])
           request
         end
       end
