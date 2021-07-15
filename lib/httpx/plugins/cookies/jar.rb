@@ -57,7 +57,7 @@ module HTTPX
       def each(uri = nil, &blk)
         return enum_for(__method__, uri) unless block_given?
 
-        return @store.each(&blk) unless uri
+        return @cookies.each(&blk) unless uri
 
         uri = URI(uri)
 
