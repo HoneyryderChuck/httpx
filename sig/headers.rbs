@@ -12,7 +12,7 @@ module HTTPX
     def []=: (headers_key field, headers_value value) -> void
 
     def add: (headers_key field, string value) -> void
-    def delete: (headers_key field) -> void
+    def delete: (headers_key field) -> Array[String]?
 
     def each: (?_Each[[headers_key, String]]? extra_headers) { (headers_key, String) -> void } -> void
             | (?_Each[[headers_key, String]]? extra_headers) -> Enumerable[[headers_key, String]]
@@ -28,7 +28,7 @@ module HTTPX
     def to_hash: () -> Hash[headers_key, String]
     alias to_h to_hash
 
-    def inspect: () -> String 
+    def inspect: () -> String
 
     private
 

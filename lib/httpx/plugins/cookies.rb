@@ -75,6 +75,21 @@ module HTTPX
           add("cookie", header_value)
         end
       end
+
+      module OptionsMethods
+        def initialize(*)
+          super
+
+          return unless @headers.key?("cookie")
+
+          @headers.delete("cookie").each do |ck|
+            ck.split(/ *; */).each do |cookie|
+              name, value = cookie.split("=", 2)
+              @cookies.add(Cookie.new(name, value))
+            end
+          end
+        end
+      end
     end
     register_plugin :cookies, Cookies
   end
