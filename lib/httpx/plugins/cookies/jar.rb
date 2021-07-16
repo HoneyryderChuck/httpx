@@ -57,7 +57,7 @@ module HTTPX
       def each(uri = nil, &blk)
         return enum_for(__method__, uri) unless block_given?
 
-        return @store.each(&blk) unless uri
+        return @cookies.each(&blk) unless uri
 
         uri = URI(uri)
 
@@ -72,6 +72,25 @@ module HTTPX
             false
           end
         end
+      end
+
+      def merge(other)
+        cookies_dup = dup
+
+        other.each do |elem|
+          cookie = case elem
+                   when Cookie
+                     elem
+                   when Array
+                     Cookie.new(*elem)
+                   else
+                     Cookie.new(elem)
+          end
+
+          cookies_dup.add(cookie)
+        end
+
+        cookies_dup
       end
     end
   end

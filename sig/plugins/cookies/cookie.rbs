@@ -31,19 +31,17 @@ module HTTPX
 
       def valid_for_uri?: (uri) -> bool
 
-      def self.new: (Cookie) -> untyped
-                    | (cookie_attributes) -> untyped
-                    | (String, String) -> untyped
-                    | (String, String, cookie_attributes) -> untyped
+      def self.new: (Cookie) -> instance
+                    | (cookie_attributes) -> instance
+                    | (_ToS, _ToS, ?cookie_attributes) -> instance
 
       def self.path_match?: (String, String) -> bool
 
       private
 
       def initialize: (cookie_attributes) -> untyped
-                    | (String, String) -> untyped
-                    | (String, String, cookie_attributes?) -> untyped
-      
+                    | (_ToS, _ToS, ?cookie_attributes) -> untyped
+
       def acceptable_from_uri?: (uri) -> bool
     end
   end

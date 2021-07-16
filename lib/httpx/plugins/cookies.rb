@@ -61,7 +61,7 @@ module HTTPX
 
         def build_request(*, _)
           request = super
-          request.headers.set_cookie(@options.cookies[request.uri])
+          request.headers.set_cookie(request.options.cookies[request.uri])
           request
         end
       end
@@ -73,6 +73,21 @@ module HTTPX
           header_value = cookies.sort.join("; ")
 
           add("cookie", header_value)
+        end
+      end
+
+      module OptionsMethods
+        def initialize(*)
+          super
+
+          return unless @headers.key?("cookie")
+
+          @headers.delete("cookie").each do |ck|
+            ck.split(/ *; */).each do |cookie|
+              name, value = cookie.split("=", 2)
+              @cookies.add(Cookie.new(name, value))
+            end
+          end
         end
       end
     end

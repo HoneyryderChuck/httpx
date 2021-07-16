@@ -189,9 +189,8 @@ module HTTPX
 
       return self if h1 == h2
 
-      merged = h1.merge(h2) do |k, v1, v2|
-        case k
-        when :headers, :ssl, :http2_settings, :timeout
+      merged = h1.merge(h2) do |_k, v1, v2|
+        if v1.respond_to?(:merge) && v2.respond_to?(:merge)
           v1.merge(v2)
         else
           v2

@@ -107,6 +107,8 @@ module HTTPX
 
         @path ||= "/"
         raise ArgumentError, "name must be specified" if @name.nil?
+
+        @name = @name.to_s
       end
 
       def expires
@@ -122,7 +124,7 @@ module HTTPX
       # Returns a string for use in the Cookie header, i.e. `name=value`
       # or `name="value"`.
       def cookie_value
-        "#{@name}=#{Scanner.quote(@value)}"
+        "#{@name}=#{Scanner.quote(@value.to_s)}"
       end
       alias_method :to_s, :cookie_value
 
