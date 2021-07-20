@@ -141,9 +141,19 @@ module HTTPX
             deadline: @options.grpc_deadline,
           }.merge(opts)
 
-          with(grpc_rpcs: @options.grpc_rpcs.merge(
-            rpc_name.underscore => [rpc_name, input, output, rpc_opts]
-          ).freeze)
+          session_class = Class.new(self.class) do
+            class_eval(<<-OUT, __FILE__, __LINE__ + 1)
+              def #{rpc_name}(input, **opts)
+                rpc_execute("#{rpc_name}", input, **opts)
+              end
+            OUT
+          end
+
+          session_class.new(@options.merge(
+                              grpc_rpcs: @options.grpc_rpcs.merge(
+                                rpc_name.underscore => [rpc_name, input, output, rpc_opts]
+                              ).freeze
+                            ))
         end
 
         def build_stub(origin, service: nil, compression: false)
@@ -192,7 +202,7 @@ module HTTPX
         private
 
         def rpc_execute(rpc_name, input, **opts)
-          rpc_name, input_enc, output_enc, rpc_opts = @options.grpc_rpcs[rpc_name.to_s] || raise(Error, "#{rpc_name}: undefined service")
+          rpc_name, input_enc, output_enc, rpc_opts = @options.grpc_rpcs[rpc_name]
 
           exec_opts = rpc_opts.merge(opts)
 
@@ -255,16 +265,6 @@ module HTTPX
           end
 
           build_request(:post, uri, headers: headers, body: body)
-        end
-
-        def respond_to_missing?(meth, *, &blk)
-          @options.grpc_rpcs.key?(meth.to_s) || super
-        end
-
-        def method_missing(meth, *args, **kwargs, &blk)
-          return rpc_execute(meth, *args, **kwargs, &blk) if @options.grpc_rpcs.key?(meth.to_s)
-
-          super
         end
       end
     end
