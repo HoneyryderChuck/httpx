@@ -89,7 +89,7 @@ module HTTPX
 
     def initialize(options = {})
       defaults = DEFAULT_OPTIONS.merge(options)
-      defaults.each do |(k, v)|
+      defaults.each do |k, v|
         next if v.nil?
 
         begin

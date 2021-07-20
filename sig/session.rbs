@@ -27,8 +27,7 @@ module HTTPX
 
     private
 
-    def initialize: (?options) { (instance) -> void } -> untyped
-                  | (?options) -> untyped
+    def initialize: (?options) ?{ (instance) -> void } -> untyped
 
     def pool: -> Pool
     def on_response: (Request, response) -> void

@@ -112,7 +112,7 @@ module HTTPX
 
     private
 
-    def initialize: (?options) -> untyped
+    def initialize: (?Hash[Symbol | String, untyped] options) -> untyped
   end
 
   type options = Options | Hash[Symbol | String, untyped]
