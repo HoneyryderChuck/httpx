@@ -152,7 +152,32 @@ module HTTPX
 
           origin = URI.parse("#{scheme}://#{origin}")
 
-          with(origin: origin, grpc_service: service, grpc_compression: compression)
+          session = self
+
+          if service && service.respond_to?(:rpc_descs)
+            # it's a grpc generic service
+            service.rpc_descs.each do |rpc_name, rpc_desc|
+              rpc_opts = {
+                marshal_method: rpc_desc.marshal_method,
+                unmarshal_method: rpc_desc.unmarshal_method,
+              }
+
+              input = rpc_desc.input
+              input = input.type if input.respond_to?(:type)
+
+              output = rpc_desc.output
+              if output.respond_to?(:type)
+                rpc_opts[:stream] = true
+                output = output.type
+              end
+
+              session = session.rpc(rpc_name, input, output, **rpc_opts)
+            end
+
+            service = service.service_name
+          end
+
+          session.with(origin: origin, grpc_service: service, grpc_compression: compression)
         end
 
         def execute(rpc_method, input,
