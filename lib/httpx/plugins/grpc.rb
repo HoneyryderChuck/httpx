@@ -49,7 +49,6 @@ module HTTPX
       class << self
         def load_dependencies(*)
           require "stringio"
-          require "google/protobuf"
           require "httpx/plugins/grpc/message"
           require "httpx/plugins/grpc/call"
         end
