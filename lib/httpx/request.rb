@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "delegate"
 require "forwardable"
 
 module HTTPX
@@ -155,7 +156,7 @@ module HTTPX
     end
     # :nocov:
 
-    class Body
+    class Body < SimpleDelegator
       class << self
         def new(*, options)
           return options.body if options.body.is_a?(self)
@@ -177,6 +178,7 @@ module HTTPX
 
         @headers["content-type"] ||= @body.content_type
         @headers["content-length"] = @body.bytesize unless unbounded_body?
+        super(@body)
       end
 
       def each(&block)
@@ -238,16 +240,6 @@ module HTTPX
         "#{unbounded_body? ? "stream" : "@bytesize=#{bytesize}"}>"
       end
       # :nocov:
-
-      def respond_to_missing?(meth, *args)
-        @body.respond_to?(meth, *args) || super
-      end
-
-      def method_missing(meth, *args, &block)
-        return super unless @body.respond_to?(meth)
-
-        @body.__send__(meth, *args, &block)
-      end
     end
 
     def transition(nextstate)

@@ -79,7 +79,11 @@ module HTTPX
     end
 
     def respond_to_missing?(meth)
-      default_options.respond_to?(meth) || super
+      return super unless meth =~ /\Awith_(.+)/
+
+      option = Regexp.last_match(1)
+
+      default_options.respond_to?(option) || super
     end
   end
 end
