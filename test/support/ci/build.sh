@@ -31,11 +31,11 @@ fi
 
 # use port 9090 to test connection timeouts
 CONNECT_TIMEOUT_PORT=9090
-iptables -A OUTPUT -p tcp -m tcp --tcp-flags SYN SYN --sport $CONNECT_TIMEOUT_PORT -j DROP
+iptables-translate -A OUTPUT -p tcp -m tcp --tcp-flags SYN SYN --sport $CONNECT_TIMEOUT_PORT -j DROP
 export CONNECT_TIMEOUT_PORT=$CONNECT_TIMEOUT_PORT
 
 ETIMEDOUT_PORT=9091
-iptables -A INPUT -p tcp --sport $ETIMEDOUT_PORT -j DROP
+iptables-translate -A INPUT -p tcp --sport $ETIMEDOUT_PORT -j DROP
 export ETIMEDOUT_PORT=$ETIMEDOUT_PORT
 
 # for errno EHOSTUNREACH error
