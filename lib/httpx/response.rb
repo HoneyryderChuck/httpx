@@ -134,18 +134,28 @@ module HTTPX
       end
 
       def to_s
-        rewind
-        if @buffer
+        case @buffer
+        when StringIO
+          begin
+            @buffer.string.force_encoding(@encoding)
+          rescue ArgumentError
+            @buffer.string
+          end
+        when Tempfile, File
+          rewind
           content = @buffer.read
           begin
-            return content.force_encoding(@encoding)
+            content.force_encoding(@encoding)
           rescue ArgumentError # ex: unknown encoding name - utf
-            return content
+            content
+          ensure
+            close
           end
+        when nil
+          "".b
+        else
+          @buffer
         end
-        "".b
-      ensure
-        close
       end
       alias_method :to_str, :to_s
 
