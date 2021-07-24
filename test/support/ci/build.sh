@@ -7,6 +7,7 @@ export LANGUAGE=C.UTF-8
 
 RUBY_PLATFORM=`ruby -e 'puts RUBY_PLATFORM'`
 RUBY_ENGINE=`ruby -e 'puts RUBY_ENGINE'`
+IPTABLES=iptables-translate
 
 if [[ "$RUBY_ENGINE" = "truffleruby" ]]; then
   microdnf install -y iptables iproute which file idn2
@@ -18,9 +19,10 @@ deb-src http://deb.debian.org/debian sid main contrib non-free" >> /etc/apt/sour
   update-ca-certificates
 elif [[ ${RUBY_VERSION:0:3} = "2.1" ]]; then
   apt-get update && apt-get install -y libsodium-dev iptables
+  IPTABLES=iptables
 elif [[ ${RUBY_VERSION:0:3} = "2.3" ]]; then
   # installing custom openssl
-  apt-get update && apt-get install -y iptables # openssl=1.0.2l openssl-dev=1.0.2l
+  apt-get update && apt-get install -y iptables iptables-nftables-compat # openssl=1.0.2l openssl-dev=1.0.2l
   wget http://deb.debian.org/debian/pool/main/o/openssl1.0/libssl1.0.2_1.0.2u-1~deb9u1_amd64.deb
   dpkg -i libssl1.0.2_1.0.2u-1~deb9u1_amd64.deb
   wget http://deb.debian.org/debian/pool/main/o/openssl1.0/libssl1.0-dev_1.0.2u-1~deb9u1_amd64.deb
@@ -31,11 +33,11 @@ fi
 
 # use port 9090 to test connection timeouts
 CONNECT_TIMEOUT_PORT=9090
-iptables-translate -A OUTPUT -p tcp -m tcp --tcp-flags SYN SYN --sport $CONNECT_TIMEOUT_PORT -j DROP
+$IPTABLES -A OUTPUT -p tcp -m tcp --tcp-flags SYN SYN --sport $CONNECT_TIMEOUT_PORT -j DROP
 export CONNECT_TIMEOUT_PORT=$CONNECT_TIMEOUT_PORT
 
 ETIMEDOUT_PORT=9091
-iptables-translate -A INPUT -p tcp --sport $ETIMEDOUT_PORT -j DROP
+$IPTABLES -A INPUT -p tcp --sport $ETIMEDOUT_PORT -j DROP
 export ETIMEDOUT_PORT=$ETIMEDOUT_PORT
 
 # for errno EHOSTUNREACH error
