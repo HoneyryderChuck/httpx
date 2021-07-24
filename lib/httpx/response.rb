@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "objspace"
 require "stringio"
 require "tempfile"
 require "fileutils"
@@ -92,6 +93,16 @@ module HTTPX
         @length = 0
         @buffer = nil
         @state = :idle
+        ObjectSpace.define_finalizer(self, self.class.finalize(@buffer))
+      end
+
+      def self.finalize(buffer)
+        proc {
+          return unless buffer
+
+          @buffer.close
+          @buffer.unlink if @buffer.respond_to?(:unlink)
+        }
       end
 
       def closed?
@@ -148,8 +159,6 @@ module HTTPX
             content.force_encoding(@encoding)
           rescue ArgumentError # ex: unknown encoding name - utf
             content
-            # ensure
-            # close
           end
         when nil
           "".b
