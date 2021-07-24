@@ -68,6 +68,7 @@ class ResponseTest < Minitest::Test
     body5 = Response::Body.new(Response.new(request, 200, "2.0", {}), Options.new(body_threshold_size: 1024))
     body5.write(payload)
     assert body5 == "a" * 2048, "body messed up with file"
+    assert body5 == StringIO.new("a" * 2048), "body messed up with file"
   end
 
   def test_response_body_copy_to_memory

@@ -143,13 +143,13 @@ module HTTPX
           end
         when Tempfile, File
           rewind
-          content = @buffer.read
+          content = _with_same_buffer_pos { @buffer.read }
           begin
             content.force_encoding(@encoding)
           rescue ArgumentError # ex: unknown encoding name - utf
             content
-          ensure
-            close
+            # ensure
+            # close
           end
         when nil
           "".b
@@ -187,7 +187,11 @@ module HTTPX
       end
 
       def ==(other)
-        to_s == other.to_s
+        if other.respond_to?(:read)
+          _with_same_buffer_pos { FileUtils.compare_stream(@buffer, other) }
+        else
+          to_s == other.to_s
+        end
       end
 
       # :nocov:
@@ -231,6 +235,18 @@ module HTTPX
         end
 
         return unless %i[memory buffer].include?(@state)
+      end
+
+      def _with_same_buffer_pos
+        return yield unless @buffer && @buffer.respond_to?(:pos)
+
+        current_pos = @buffer.pos
+        @buffer.rewind
+        begin
+          yield
+        rescue StandardError
+          @buffer.pos = current_pos
+        end
       end
     end
   end
