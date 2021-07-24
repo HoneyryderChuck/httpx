@@ -20,6 +20,9 @@ deb-src http://deb.debian.org/debian sid main contrib non-free" >> /etc/apt/sour
 elif [[ ${RUBY_VERSION:0:3} = "2.1" ]]; then
   apt-get update && apt-get install -y libsodium-dev iptables
   IPTABLES=iptables
+elif [[ ${RUBY_VERSION:0:3} = "2.2" ]]; then
+  apt-get update && apt-get install -y iptables
+  IPTABLES=iptables
 elif [[ ${RUBY_VERSION:0:3} = "2.3" ]]; then
   # installing custom openssl
   apt-get update && apt-get install -y iptables iptables-nftables-compat # openssl=1.0.2l openssl-dev=1.0.2l
