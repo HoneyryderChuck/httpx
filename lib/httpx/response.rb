@@ -286,14 +286,6 @@ module HTTPX
     def raise_for_status
       raise @error
     end
-
-    # rubocop:disable Style/MissingRespondToMissing
-    def method_missing(meth, *, &block)
-      raise NoMethodError, "undefined response method `#{meth}' for error response" if @options.response_class.public_method_defined?(meth)
-
-      super
-    end
-    # rubocop:enable Style/MissingRespondToMissing
   end
 end
 

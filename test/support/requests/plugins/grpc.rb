@@ -124,8 +124,7 @@ module Requests
         grpc = grpc_plugin
 
         # build service
-        test_service_rpcs = grpc.rpc(:a_cancellable_rpc, EchoMsg, EchoMsg, marshal_method: :marshal, unmarshal_method: :unmarshal)
-        test_service_stub = test_service_rpcs.build_stub("localhost:#{server_port}", service: TestService)
+        test_service_stub = grpc.build_stub("localhost:#{server_port}", service: TestService)
         error = assert_raises(HTTPX::GRPCError) { test_service_stub.a_cancellable_rpc(EchoMsg.new(msg: "ping")).to_s }
 
         assert error.status == 1
@@ -138,8 +137,7 @@ module Requests
         grpc = grpc_plugin
 
         # build service
-        test_service_rpcs = grpc.rpc(:an_rpc, EchoMsg, EchoMsg, marshal_method: :marshal, unmarshal_method: :unmarshal)
-        test_service_stub = test_service_rpcs.build_stub("localhost:#{server_port}", service: TestService)
+        test_service_stub = grpc.build_stub("localhost:#{server_port}", service: TestService)
         echo_response = test_service_stub.an_rpc(EchoMsg.new(msg: "ping"))
 
         assert echo_response.msg == "ping"
@@ -152,8 +150,7 @@ module Requests
         grpc = grpc_plugin
 
         # build service
-        test_service_rpcs = grpc.rpc(:a_client_streaming_rpc, EchoMsg, EchoMsg, marshal_method: :marshal, unmarshal_method: :unmarshal)
-        test_service_stub = test_service_rpcs.build_stub("localhost:#{server_port}", service: TestService)
+        test_service_stub = grpc.build_stub("localhost:#{server_port}", service: TestService)
 
         input = [EchoMsg.new(msg: "ping"), EchoMsg.new(msg: "ping")]
         response = test_service_stub.a_client_streaming_rpc(input)
@@ -168,9 +165,7 @@ module Requests
         grpc = grpc_plugin
 
         # build service
-        test_service_rpcs = grpc.rpc(:a_server_streaming_rpc, EchoMsg, EchoMsg, marshal_method: :marshal, unmarshal_method: :unmarshal,
-                                                                                stream: true)
-        test_service_stub = test_service_rpcs.build_stub("localhost:#{server_port}", service: TestService)
+        test_service_stub = grpc.build_stub("localhost:#{server_port}", service: TestService)
         streaming_response = test_service_stub.a_server_streaming_rpc(EchoMsg.new(msg: "ping"))
 
         assert streaming_response.respond_to?(:each)
@@ -187,8 +182,7 @@ module Requests
         grpc = grpc_plugin
 
         # build service
-        test_service_rpcs = grpc.rpc(:a_bidi_rpc, EchoMsg, EchoMsg, marshal_method: :marshal, unmarshal_method: :unmarshal, stream: true)
-        test_service_stub = test_service_rpcs.build_stub("localhost:#{server_port}", service: TestService)
+        test_service_stub = grpc.build_stub("localhost:#{server_port}", service: TestService)
         input = [EchoMsg.new(msg: "ping"), EchoMsg.new(msg: "ping")]
         streaming_response = test_service_stub.a_bidi_rpc(input)
 

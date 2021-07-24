@@ -49,7 +49,6 @@ module HTTPX
       class << self
         def load_dependencies(*)
           require "stringio"
-          require "google/protobuf"
           require "httpx/plugins/grpc/message"
           require "httpx/plugins/grpc/call"
         end
@@ -142,9 +141,19 @@ module HTTPX
             deadline: @options.grpc_deadline,
           }.merge(opts)
 
-          with(grpc_rpcs: @options.grpc_rpcs.merge(
-            rpc_name.underscore => [rpc_name, input, output, rpc_opts]
-          ).freeze)
+          session_class = Class.new(self.class) do
+            class_eval(<<-OUT, __FILE__, __LINE__ + 1)
+              def #{rpc_name}(input, **opts)
+                rpc_execute("#{rpc_name}", input, **opts)
+              end
+            OUT
+          end
+
+          session_class.new(@options.merge(
+                              grpc_rpcs: @options.grpc_rpcs.merge(
+                                rpc_name.underscore => [rpc_name, input, output, rpc_opts]
+                              ).freeze
+                            ))
         end
 
         def build_stub(origin, service: nil, compression: false)
@@ -152,7 +161,32 @@ module HTTPX
 
           origin = URI.parse("#{scheme}://#{origin}")
 
-          with(origin: origin, grpc_service: service, grpc_compression: compression)
+          session = self
+
+          if service && service.respond_to?(:rpc_descs)
+            # it's a grpc generic service
+            service.rpc_descs.each do |rpc_name, rpc_desc|
+              rpc_opts = {
+                marshal_method: rpc_desc.marshal_method,
+                unmarshal_method: rpc_desc.unmarshal_method,
+              }
+
+              input = rpc_desc.input
+              input = input.type if input.respond_to?(:type)
+
+              output = rpc_desc.output
+              if output.respond_to?(:type)
+                rpc_opts[:stream] = true
+                output = output.type
+              end
+
+              session = session.rpc(rpc_name, input, output, **rpc_opts)
+            end
+
+            service = service.service_name
+          end
+
+          session.with(origin: origin, grpc_service: service, grpc_compression: compression)
         end
 
         def execute(rpc_method, input,
@@ -168,7 +202,7 @@ module HTTPX
         private
 
         def rpc_execute(rpc_name, input, **opts)
-          rpc_name, input_enc, output_enc, rpc_opts = @options.grpc_rpcs[rpc_name.to_s] || raise(Error, "#{rpc_name}: undefined service")
+          rpc_name, input_enc, output_enc, rpc_opts = @options.grpc_rpcs[rpc_name]
 
           exec_opts = rpc_opts.merge(opts)
 
@@ -231,16 +265,6 @@ module HTTPX
           end
 
           build_request(:post, uri, headers: headers, body: body)
-        end
-
-        def respond_to_missing?(meth, *, &blk)
-          @options.grpc_rpcs.key?(meth.to_s) || super
-        end
-
-        def method_missing(meth, *args, **kwargs, &blk)
-          return rpc_execute(meth, *args, **kwargs, &blk) if @options.grpc_rpcs.key?(meth.to_s)
-
-          super
         end
       end
     end

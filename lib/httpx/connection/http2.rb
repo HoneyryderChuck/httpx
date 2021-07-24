@@ -391,16 +391,6 @@ module HTTPX
         emit(:pong)
       end
     end
-
-    def respond_to_missing?(meth, *args)
-      @connection.respond_to?(meth, *args) || super
-    end
-
-    def method_missing(meth, *args, &blk)
-      return super unless @connection.respond_to?(meth)
-
-      @connection.__send__(meth, *args, &blk)
-    end
   end
   Connection.register "h2", Connection::HTTP2
 end

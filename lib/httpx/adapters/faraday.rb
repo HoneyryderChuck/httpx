@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "delegate"
 require "httpx"
 require "faraday"
 
@@ -91,11 +92,12 @@ module Faraday
       end
 
       class ParallelManager
-        class ResponseHandler
+        class ResponseHandler < SimpleDelegator
           attr_reader :env
 
           def initialize(env)
             @env = env
+            super
           end
 
           def on_response(&blk)
@@ -116,16 +118,6 @@ module Faraday
             else
               @on_complete
             end
-          end
-
-          def respond_to_missing?(meth)
-            @env.respond_to?(meth) || super
-          end
-
-          def method_missing(meth, *args, &blk)
-            return super unless @env && @env.respond_to?(meth)
-
-            @env.__send__(meth, *args, &blk)
           end
         end
 
