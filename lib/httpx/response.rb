@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "objspace"
 require "stringio"
 require "tempfile"
 require "fileutils"
@@ -92,6 +93,16 @@ module HTTPX
         @length = 0
         @buffer = nil
         @state = :idle
+        ObjectSpace.define_finalizer(self, self.class.finalize(@buffer))
+      end
+
+      def self.finalize(buffer)
+        proc {
+          return unless buffer
+
+          @buffer.close
+          @buffer.unlink if @buffer.respond_to?(:unlink)
+        }
       end
 
       def closed?
@@ -134,18 +145,26 @@ module HTTPX
       end
 
       def to_s
-        rewind
-        if @buffer
-          content = @buffer.read
+        case @buffer
+        when StringIO
           begin
-            return content.force_encoding(@encoding)
-          rescue ArgumentError # ex: unknown encoding name - utf
-            return content
+            @buffer.string.force_encoding(@encoding)
+          rescue ArgumentError
+            @buffer.string
           end
+        when Tempfile, File
+          rewind
+          content = _with_same_buffer_pos { @buffer.read }
+          begin
+            content.force_encoding(@encoding)
+          rescue ArgumentError # ex: unknown encoding name - utf
+            content
+          end
+        when nil
+          "".b
+        else
+          @buffer
         end
-        "".b
-      ensure
-        close
       end
       alias_method :to_str, :to_s
 
@@ -177,7 +196,11 @@ module HTTPX
       end
 
       def ==(other)
-        to_s == other.to_s
+        if other.respond_to?(:read)
+          _with_same_buffer_pos { FileUtils.compare_stream(@buffer, other) }
+        else
+          to_s == other.to_s
+        end
       end
 
       # :nocov:
@@ -221,6 +244,18 @@ module HTTPX
         end
 
         return unless %i[memory buffer].include?(@state)
+      end
+
+      def _with_same_buffer_pos
+        return yield unless @buffer && @buffer.respond_to?(:pos)
+
+        current_pos = @buffer.pos
+        @buffer.rewind
+        begin
+          yield
+        rescue StandardError
+          @buffer.pos = current_pos
+        end
       end
     end
   end

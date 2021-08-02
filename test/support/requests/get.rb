@@ -50,7 +50,7 @@ module Requests
 
     def test_multiple_get_no_concurrency
       uri = build_uri("/delay/2")
-      response1, response2 = HTTPX.get(uri, uri, max_concurrent_requests: 1)
+      response1, response2 = HTTPX.plugin(:persistent).get(uri, uri, max_concurrent_requests: 1)
 
       verify_status(response1, 200)
       verify_body_length(response1)

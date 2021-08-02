@@ -43,6 +43,7 @@ class ResponseTest < Minitest::Test
 
   def test_response_body_to_s
     body1 = Response::Body.new(Response.new(request, 200, "2.0", {}), Options.new(body_threshold_size: 1024))
+    assert body1 == "", "body should be empty"
     assert body1.empty?, "body must be empty after initialization"
     body1.write("foo")
     assert body1 == "foo", "body must be updated"
@@ -62,6 +63,12 @@ class ResponseTest < Minitest::Test
     body4.write(text)
     req_text = body4.to_s
     assert text == req_text, "request body must be in original encoding (#{req_text})"
+
+    payload = "a" * 2048
+    body5 = Response::Body.new(Response.new(request, 200, "2.0", {}), Options.new(body_threshold_size: 1024))
+    body5.write(payload)
+    assert body5 == "a" * 2048, "body messed up with file"
+    assert body5 == StringIO.new("a" * 2048), "body messed up with file"
   end
 
   def test_response_body_copy_to_memory

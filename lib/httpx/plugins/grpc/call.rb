@@ -10,6 +10,7 @@ module HTTPX
         def initialize(response)
           @response = response
           @decoder = ->(z) { z }
+          @consumed = false
         end
 
         def inspect
@@ -25,7 +26,7 @@ module HTTPX
         end
 
         def trailing_metadata
-          return unless @response.body.closed?
+          return unless @consumed
 
           @response.trailing_metadata
         end
@@ -40,8 +41,10 @@ module HTTPX
               Message.stream(@response).each do |message|
                 y << @decoder.call(message)
               end
+              @consumed = true
             end
           else
+            @consumed = true
             @decoder.call(Message.unary(@response))
           end
         end
