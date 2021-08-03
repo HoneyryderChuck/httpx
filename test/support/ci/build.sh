@@ -76,7 +76,8 @@ if [[ ${RUBY_VERSION:0:1} = "3" ]]; then
   export RBS_TEST_TARGET="HTTP*"
 fi
 
-PARALLEL=1 bundle exec rake test:ci
+# PARALLEL=1 bundle exec rake test:ci
+bundle exec ruby -Itest test/https_test.rb --name /multipart/
 
 # third party modules
 # Testing them only with main ruby, as some of them work weird with other variants.

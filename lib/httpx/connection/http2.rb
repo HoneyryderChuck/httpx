@@ -236,9 +236,12 @@ module HTTPX
     def join_body(stream, request)
       return if request.empty?
 
+      print "previous chunk?: #{@drains.key?(request)} "
       chunk = @drains.delete(request) || request.drain_body
       while chunk
+        puts "(#{chunk.object_id} loop: #{chunk[0, 8].inspect}) "
         next_chunk = request.drain_body
+        puts "after: (#{chunk.object_id}) #{chunk[0, 8].inspect}, (#{next_chunk.object_id}) #{next_chunk[0, 8].inspect}" if next_chunk
         log(level: 1, color: :green) { "#{stream.id}: -> DATA: #{chunk.bytesize} bytes..." }
         log(level: 2, color: :green) { "#{stream.id}: -> #{chunk.inspect}" }
         stream.data(chunk, end_stream: !(next_chunk || request.trailers? || request.callbacks_for?(:trailers)))
