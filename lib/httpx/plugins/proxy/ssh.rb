@@ -19,10 +19,14 @@ module HTTPX
         end
 
         module InstanceMethods
-          private
+          def request(*args, **options)
+            raise ArgumentError, "must perform at least one request" if args.empty?
 
-          def send_requests(*requests, options)
-            request_options = @options.merge(options)
+            requests = args.first.is_a?(Request) ? args : build_requests(*args, options)
+
+            request = requests.first or return super
+
+            request_options = request.options
 
             return super unless request_options.proxy
 
@@ -37,17 +41,20 @@ module HTTPX
             if request_options.debug
               ssh_options[:verbose] = request_options.debug_level == 2 ? :debug : :info
             end
+
             request_uri = URI(requests.first.uri)
             @_gateway = Net::SSH::Gateway.new(ssh_uri.host, ssh_username, ssh_options)
             begin
               @_gateway.open(request_uri.host, request_uri.port) do |local_port|
                 io = build_gateway_socket(local_port, request_uri, request_options)
-                super(*requests, options.merge(io: io))
+                super(*args, **options.merge(io: io))
               end
             ensure
               @_gateway.shutdown!
             end
           end
+
+          private
 
           def build_gateway_socket(port, request_uri, options)
             case request_uri.scheme

@@ -6,6 +6,9 @@ require: rubocop-performance
 Style/HashSyntax:
   Enabled: false
 
+Style/AndOr:
+  Enabled: False
+
 Naming/MethodParameterName:
   Enabled: false
 

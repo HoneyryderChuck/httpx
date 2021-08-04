@@ -223,7 +223,7 @@ module HTTPX
       def unbounded_body?
         return @unbounded_body if defined?(@unbounded_body)
 
-        @unbounded_body = (chunked? || @body.bytesize == Float::INFINITY)
+        @unbounded_body = !@body.nil? && (chunked? || @body.bytesize == Float::INFINITY)
       end
 
       def chunked?

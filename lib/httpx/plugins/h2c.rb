@@ -24,15 +24,19 @@ module HTTPX
         def call(connection, request, response)
           connection.upgrade_to_h2c(request, response)
         end
+
+        def extra_options(options)
+          options.merge(max_concurrent_requests: 1)
+        end
       end
 
       module InstanceMethods
-        def send_requests(*requests, options)
+        def send_requests(*requests)
           upgrade_request, *remainder = requests
 
           return super unless VALID_H2C_VERBS.include?(upgrade_request.verb) && upgrade_request.scheme == "http"
 
-          connection = pool.find_connection(upgrade_request.uri, @options.merge(options))
+          connection = pool.find_connection(upgrade_request.uri, upgrade_request.options)
 
           return super if connection && connection.upgrade_protocol == :h2c
 
@@ -42,7 +46,7 @@ module HTTPX
           upgrade_request.headers["upgrade"] = "h2c"
           upgrade_request.headers["http2-settings"] = HTTP2Next::Client.settings_header(upgrade_request.options.http2_settings)
 
-          super(upgrade_request, *remainder, options.merge(max_concurrent_requests: 1))
+          super(upgrade_request, *remainder)
         end
       end
 

@@ -6,7 +6,6 @@ module HTTPX
       @request = request
       @session = session
       @connections = connections
-      @options = @request.options
     end
 
     def each(&block)
@@ -72,7 +71,7 @@ module HTTPX
     private
 
     def response
-      @session.__send__(:receive_requests, [@request], @connections, @options) until @request.response
+      @session.__send__(:receive_requests, [@request], @connections) until @request.response
 
       @request.response
     end
@@ -106,7 +105,7 @@ module HTTPX
 
           request = requests.first
 
-          connections = _send_requests(requests, request.options)
+          connections = _send_requests(requests)
 
           StreamResponse.new(request, self, connections)
         end

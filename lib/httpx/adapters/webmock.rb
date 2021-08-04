@@ -19,7 +19,7 @@ module WebMock
       module InstanceMethods
         private
 
-        def send_requests(*requests, options)
+        def send_requests(*requests)
           request_signatures = requests.map do |request|
             request_signature = _build_webmock_request_signature(request)
             WebMock::RequestRegistry.instance.requested_signatures.put(request_signature)
@@ -47,7 +47,7 @@ module WebMock
 
           unless real_requests.empty?
             reqs = real_requests.keys
-            reqs.zip(super(*reqs, options)).each do |req, res|
+            reqs.zip(super(*reqs)).each do |req, res|
               idx = real_requests[req]
 
               if WebMock::CallbackRegistry.any_callbacks?
