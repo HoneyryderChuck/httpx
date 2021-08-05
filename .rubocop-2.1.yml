@@ -13,6 +13,9 @@ Layout/IndentHeredoc:
 Style/HashSyntax:
   Enabled: false
 
+Style/AndOr:
+  Enabled: False
+
 Naming/UncommunicativeMethodParamName:
   Enabled: false
 

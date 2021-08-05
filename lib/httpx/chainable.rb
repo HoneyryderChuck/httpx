@@ -78,7 +78,7 @@ module HTTPX
       with(option.to_sym => (args.first || options))
     end
 
-    def respond_to_missing?(meth)
+    def respond_to_missing?(meth, *)
       return super unless meth =~ /\Awith_(.+)/
 
       option = Regexp.last_match(1)

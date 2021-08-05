@@ -59,7 +59,12 @@ module HTTPX
     def empty?
       # this means that for every request there's an available
       # partial response, so there are no in-flight requests waiting.
-      @requests.empty? || @requests.all? { |request| !request.response.nil? }
+      @requests.empty? || (
+        # checking all responses can be time-consuming. Alas, as in HTTP/1, responses
+        # do not come out of order, we can get away with checking first and last.
+        !@requests.first.response.nil? &&
+        (@requests.size == 1 || !@requests.last.response.nil?)
+      )
     end
 
     def <<(data)

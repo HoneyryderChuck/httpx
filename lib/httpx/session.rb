@@ -32,7 +32,7 @@ module HTTPX
       raise ArgumentError, "must perform at least one request" if args.empty?
 
       requests = args.first.is_a?(Request) ? args : build_requests(*args, options)
-      responses = send_requests(*requests, options)
+      responses = send_requests(*requests)
       return responses.first if responses.size == 1
 
       responses
@@ -40,7 +40,8 @@ module HTTPX
 
     def build_request(verb, uri, options = EMPTY_HASH)
       rklass = @options.request_class
-      request = rklass.new(verb, uri, @options.merge(options).merge(persistent: @persistent))
+      options = @options.merge(options) unless options.is_a?(Options)
+      request = rklass.new(verb, uri, options.merge(persistent: @persistent))
       request.on(:response, &method(:on_response).curry(2)[request])
       request.on(:promise, &method(:on_promise))
       request
@@ -174,37 +175,35 @@ module HTTPX
       end
     end
 
-    def send_requests(*requests, options)
-      request_options = @options.merge(options)
-
-      connections = _send_requests(requests, request_options)
-      receive_requests(requests, connections, request_options)
+    def send_requests(*requests)
+      connections = _send_requests(requests)
+      receive_requests(requests, connections)
     end
 
-    def _send_requests(requests, options)
+    def _send_requests(requests)
       connections = []
 
       requests.each do |request|
         error = catch(:resolve_error) do
-          connection = find_connection(request, connections, options)
+          connection = find_connection(request, connections, request.options)
           connection.send(request)
         end
         next unless error.is_a?(ResolveError)
 
-        request.emit(:response, ErrorResponse.new(request, error, options))
+        request.emit(:response, ErrorResponse.new(request, error, request.options))
       end
 
       connections
     end
 
-    def receive_requests(requests, connections, options)
+    def receive_requests(requests, connections)
       responses = []
 
       begin
         # guarantee ordered responses
         loop do
           request = requests.first
-          pool.next_tick until (response = fetch_response(request, connections, options))
+          pool.next_tick until (response = fetch_response(request, connections, request.options))
 
           responses << response
           requests.shift
@@ -218,7 +217,7 @@ module HTTPX
           # opportunity to traverse the requests, hence we're returning only a fraction of the errors
           # we were supposed to. This effectively fetches the existing responses and return them.
           while (request = requests.shift)
-            responses << fetch_response(request, connections, options)
+            responses << fetch_response(request, connections, request.options)
           end
           break
         end

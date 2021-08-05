@@ -62,11 +62,23 @@ class OptionsTest < Minitest::Test
 
   def test_options_merge
     opts = Options.new(body: "fat")
-    assert opts.merge(body: "thin").body == "thin", "parameter hasn't been merged"
+    merged_opts = opts.merge(body: "thin")
+    assert merged_opts.body == "thin", "parameter hasn't been merged"
     assert opts.body == "fat", "original parameter has been mutated after merge"
+    assert !opts.equal?(merged_opts), "merged options should be a different object"
 
-    opt2 = Options.new(body: "short")
-    assert opts.merge(opt2).body == "short", "options parameter hasn't been merged"
+    merged_opts2 = opts.merge(Options.new(body: "short"))
+    assert merged_opts2.body == "short", "options parameter hasn't been merged"
+    assert !opts.equal?(merged_opts2), "merged options should be a different object"
+
+    merged_opts3 = opts.merge({})
+    assert opts.equal?(merged_opts3), "merged options should be the same object"
+
+    merged_opts4 = opts.merge({ body: "fat" })
+    assert opts.equal?(merged_opts4), "merged options should be the same object"
+
+    merged_opts5 = opts.merge(Options.new(body: "fat"))
+    assert opts.equal?(merged_opts5), "merged options should be the same object"
 
     foo = Options.new(
       :form => { :foo => "foo" },
@@ -121,7 +133,13 @@ class OptionsTest < Minitest::Test
 
   def test_options_new
     opts = Options.new
-    assert Options.new(opts) == opts, "it should have kept the same reference"
+    assert Options.new(opts).equal?(opts), "it should be the same options object"
+
+    opts_class = Class.new(Options)
+    opts2 = opts_class.new
+    assert Options.new(opts2).equal?(opts2), "it should return the most enhanced options object if build from Options"
+
+    assert opts_class.new(opts2).equal?(opts2), "returns the same object it using the same meta-class"
   end
 
   def test_options_to_hash

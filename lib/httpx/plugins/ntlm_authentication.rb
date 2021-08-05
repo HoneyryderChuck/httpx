@@ -34,13 +34,13 @@ module HTTPX
 
         alias_method :ntlm_auth, :ntlm_authentication
 
-        def send_requests(*requests, options)
+        def send_requests(*requests)
           requests.flat_map do |request|
             ntlm = request.options.ntlm
 
             if ntlm
               request.headers["authorization"] = "NTLM #{NTLM.negotiate(domain: ntlm.domain).to_base64}"
-              probe_response = wrap { super(request, options).first }
+              probe_response = wrap { super(request).first }
 
               if !probe_response.is_a?(ErrorResponse) && probe_response.status == 401 &&
                  probe_response.headers.key?("www-authenticate") &&
@@ -52,12 +52,12 @@ module HTTPX
                 request.transition(:idle)
 
                 request.headers["authorization"] = "NTLM #{ntlm_challenge}"
-                super(request, options)
+                super(request)
               else
                 probe_response
               end
             else
-              super(request, options)
+              super(request)
             end
           end
         end

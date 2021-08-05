@@ -55,6 +55,7 @@ module HTTPX
         return if ips.empty?
 
         ips.map { |ip| IPAddr.new(ip) }
+      rescue IOError
       end
 
       def emit_resolve_error(connection, hostname = connection.origin.host, ex = nil)

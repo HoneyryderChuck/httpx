@@ -39,6 +39,28 @@ module HTTPX
       :resolver_options => { cache: true },
     }.freeze
 
+    begin
+      module HashExtensions
+        refine Hash do
+          def >=(other)
+            Hash[other] <= self
+          end
+
+          def <=(other)
+            other = Hash[other]
+            return false unless size <= other.size
+
+            each do |k, v|
+              v2 = other.fetch(k) { return false }
+              return false unless v2 == v
+            end
+            true
+          end
+        end
+      end
+      using HashExtensions
+    end unless Hash.method_defined?(:>=)
+
     class << self
       def new(options = {})
         # let enhanced options go through
@@ -187,7 +209,7 @@ module HTTPX
 
       h1 = to_hash
 
-      return self if h1 == h2
+      return self if h1 >= h2
 
       merged = h1.merge(h2) do |_k, v1, v2|
         if v1.respond_to?(:merge) && v2.respond_to?(:merge)
@@ -201,10 +223,9 @@ module HTTPX
     end
 
     def to_hash
-      hash_pairs = instance_variables.map do |ivar|
-        [ivar[1..-1].to_sym, instance_variable_get(ivar)]
+      instance_variables.each_with_object({}) do |ivar, hs|
+        hs[ivar[1..-1].to_sym] = instance_variable_get(ivar)
       end
-      Hash[hash_pairs]
     end
 
     if RUBY_VERSION > "2.4.0"

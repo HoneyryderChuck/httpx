@@ -49,10 +49,10 @@ module HTTPX
 
     def build_connection: (URI::Generic, Options) -> Connection
 
-    def send_requests: (*Request, options) -> Array[response]
+    def send_requests: (*Request) -> Array[response]
 
-    def _send_requests: (Array[Request], Options) -> Array[Connection]
+    def _send_requests: (Array[Request]) -> Array[Connection]
 
-    def receive_requests: (Array[Request], Array[Connection], options) -> Array[response]
+    def receive_requests: (Array[Request], Array[Connection]) -> Array[response]
   end
 end
