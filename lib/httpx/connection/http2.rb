@@ -56,7 +56,7 @@ module HTTPX
 
       return :w if !@pending.empty? && can_buffer_more_requests?
 
-      return :w if @streams.each_key.any? { |r| r.interests == :w }
+      return :w unless @drains.empty?
 
       if @buffer.empty?
         return if @streams.empty? && @pings.empty?
