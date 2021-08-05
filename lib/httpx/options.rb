@@ -223,10 +223,9 @@ module HTTPX
     end
 
     def to_hash
-      hash_pairs = instance_variables.map do |ivar|
-        [ivar[1..-1].to_sym, instance_variable_get(ivar)]
+      instance_variables.each_with_object({}) do |ivar, hs|
+        hs[ivar[1..-1].to_sym] = instance_variable_get(ivar)
       end
-      Hash[hash_pairs]
     end
 
     if RUBY_VERSION > "2.4.0"
