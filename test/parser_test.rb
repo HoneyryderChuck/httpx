@@ -48,8 +48,8 @@ class HTTP1ParserTest < Minitest::Test
         response = observer.response
 
         if res_json.key?("upgrade") && (res_json["upgrade"] != 0)
-          expect(parser.upgrade?).to be true
-          expect(parser.upgrade_data).to eq(res_json["upgrade"])
+          assert parser.upgrade?
+          assert parser.upgrade_data == res_json["upgrade"]
         end
 
         assert parser.http_version[0] == res_json["http_major"]
