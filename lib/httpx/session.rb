@@ -40,7 +40,8 @@ module HTTPX
 
     def build_request(verb, uri, options = EMPTY_HASH)
       rklass = @options.request_class
-      request = rklass.new(verb, uri, @options.merge(options).merge(persistent: @persistent))
+      options = @options.merge(options) unless options.is_a?(Options)
+      request = rklass.new(verb, uri, options.merge(persistent: @persistent))
       request.on(:response, &method(:on_response).curry(2)[request])
       request.on(:promise, &method(:on_promise))
       request
