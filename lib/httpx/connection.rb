@@ -313,7 +313,7 @@ module HTTPX
 
             # exit #consume altogether if all outstanding requests have been dealt with
             return if @pending.size.zero? && @inflight.zero?
-          end unless (interests.nil? || interests == :w || @state == :closing) && !epiped
+          end unless ((ints = interests).nil? || ints == :w || @state == :closing) && !epiped
 
           #
           # tight write loop.
@@ -360,19 +360,18 @@ module HTTPX
             break if interests == :r || @state == :closing || @state == :closed
 
             write_drained = false
-          end unless interests == :r
+          end unless (ints = interests) == :r
 
           send_pending if @state == :open
 
           # return if socket is drained
-          next unless (interests != :r || read_drained) &&
-                      (interests != :w || write_drained)
+          next unless (ints != :r || read_drained) && (ints != :w || write_drained)
 
           # gotta go back to the event loop. It happens when:
           #
           # * the socket is drained of bytes or it's not the interest of the conn to read;
           # * theres nothing more to write, or it's not in the interest of the conn to write;
-          log(level: 3) { "(#{interests}): WAITING FOR EVENTS..." }
+          log(level: 3) { "(#{ints}): WAITING FOR EVENTS..." }
           return
         end
       end
