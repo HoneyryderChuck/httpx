@@ -72,9 +72,14 @@ module HTTPX
 
       def parse_headers
         headers = @headers
-        while (idx = @buffer.index("\n"))
-          line = @buffer.byteslice(0..idx).sub(/\s+\z/, "")
-          @buffer = @buffer.byteslice((idx + 1)..-1)
+        buffer = @buffer
+
+        while (idx = buffer.index("\n"))
+          line = buffer.byteslice(0..idx)
+          raise Error, "wrong header format" if line.start_with?("\s", "\t")
+
+          line.lstrip!
+          buffer = @buffer = buffer.byteslice((idx + 1)..-1)
           if line.empty?
             case @state
             when :headers
@@ -97,9 +102,8 @@ module HTTPX
           raise Error, "wrong header format" unless separator_index
 
           key = line.byteslice(0..(separator_index - 1))
-          raise Error, "wrong header format" if key.start_with?("\s", "\t")
 
-          key.strip!
+          key.rstrip! # was lstripped previously!
           value = line.byteslice((separator_index + 1)..-1)
           value.strip!
           raise Error, "wrong header format" if value.nil?
