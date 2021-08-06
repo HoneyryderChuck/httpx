@@ -27,10 +27,14 @@ module HTTPX
     def content_type: () -> ContentType
     def complete?: () -> bool
 
+    def json: (?json_options opts) -> untyped
+
     private
 
     def initialize: (Request request, String | Integer status, String version, headers?) -> untyped
     def no_data?: () -> bool
+
+    def decode:(String format, ?untyped options) -> untyped
 
     class Body
       include _Reader
