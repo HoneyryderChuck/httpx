@@ -28,7 +28,7 @@ module HTTPX::Transcoder
       Encoder.new(json)
     end
 
-    def decoder
+    def decode(_response)
       ::JSON.method(:parse)
     end
   end

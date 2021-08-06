@@ -45,7 +45,7 @@ module HTTPX
     end
 
     def content_type
-      ContentType.parse(@headers["content-type"])
+      @content_type ||= ContentType.new(@headers["content-type"])
     end
 
     def complete?
@@ -72,17 +72,23 @@ module HTTPX
       decode("json", options)
     end
 
+    def form
+      decode("form")
+    end
+
     private
 
     def decode(format, options = nil)
-      # TODO: check if content-type is a valid format, i.e. "application/json" for json parsinng
+      # TODO: check if content-type is a valid format, i.e. "application/json" for json parsing
       transcoder = Transcoder.registry(format)
 
-      raise Error, "no decoder available for \"#{format}\"" unless transcoder.respond_to?(:decoder)
+      raise Error, "no decoder available for \"#{format}\"" unless transcoder.respond_to?(:decode)
 
-      decoder = transcoder.decoder
+      decoder = transcoder.decode(self)
 
-      decoder.call(@body, options)
+      raise Error, "no decoder available for \"#{format}\"" unless decoder
+
+      decoder.call(self, options)
     rescue Registry::Error
       raise Error, "no decoder available for \"#{format}\""
     end
@@ -281,30 +287,22 @@ module HTTPX
     MIME_TYPE_RE = %r{^([^/]+/[^;]+)(?:$|;)}.freeze
     CHARSET_RE   = /;\s*charset=([^;]+)/i.freeze
 
-    attr_reader :mime_type, :charset
-
-    def initialize(mime_type, charset)
-      @mime_type = mime_type
-      @charset = charset
+    def initialize(header_value)
+      @header_value = header_value
     end
 
-    class << self
-      # Parse string and return ContentType struct
-      def parse(str)
-        new(mime_type(str), charset(str))
-      end
+    def mime_type
+      return @mime_type if defined?(@mime_type)
 
-      private
+      m = @header_value.to_s[MIME_TYPE_RE, 1]
+      m && @mime_type = m.strip.downcase
+    end
 
-      def mime_type(str)
-        m = str.to_s[MIME_TYPE_RE, 1]
-        m && m.strip.downcase
-      end
+    def charset
+      return @charset if defined?(@charset)
 
-      def charset(str)
-        m = str.to_s[CHARSET_RE, 1]
-        m && m.strip.delete('"')
-      end
+      m = @header_value.to_s[CHARSET_RE, 1]
+      m && @charset = m.strip.delete('"')
     end
   end
 

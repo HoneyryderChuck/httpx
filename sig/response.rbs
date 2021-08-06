@@ -29,6 +29,8 @@ module HTTPX
 
     def json: (?json_options opts) -> untyped
 
+    def form: () -> Hash[String, untyped]
+
     private
 
     def initialize: (Request request, String | Integer status, String version, headers?) -> untyped
