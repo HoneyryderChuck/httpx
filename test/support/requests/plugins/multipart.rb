@@ -246,14 +246,21 @@ module Requests
         ].join
         form = form_response.form
 
-        assert form["text"] == "text_default"
-        assert form["file1"].original_filename == "a.txt"
-        assert form["file1"].content_type == "text/plain"
-        assert form["file1"].read == "Content of a.txt."
+        begin
+          assert form["text"] == "text default"
+          assert form["file1"].original_filename == "a.txt"
+          assert form["file1"].content_type == "text/plain"
+          assert form["file1"].read == "Content of a.txt."
 
-        assert form["file2"].original_filename == "a.html"
-        assert form["file2"].content_type == "text/html"
-        assert form["file2"].read == "<!DOCTYPE html><title>Content of a.html.</title>"
+          assert form["file2"].original_filename == "a.html"
+          assert form["file2"].content_type == "text/html"
+          assert form["file2"].read == "<!DOCTYPE html><title>Content of a.html.</title>"
+        ensure
+          form["file1"].close
+          form["file1"].unlink
+          form["file2"].close
+          form["file2"].unlink
+        end
       end
     end
   end

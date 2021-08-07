@@ -36,6 +36,7 @@ module HTTPX
           end
           # :nocov:
           require "httpx/plugins/multipart/encoder"
+          require "httpx/plugins/multipart/decoder"
           require "httpx/plugins/multipart/part"
           require "httpx/plugins/multipart/mime_type_detector"
         end
@@ -54,6 +55,12 @@ module HTTPX
           else
             Transcoder::Form::Encoder.new(form)
           end
+        end
+
+        def decode(response)
+          return Transcoder::Form.decode(response) if response.headers["content-type"] == "application/x-www-form-urlencoded"
+
+          Decoder.new(response)
         end
 
         def multipart?(data)
