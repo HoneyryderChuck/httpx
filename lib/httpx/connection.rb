@@ -540,7 +540,7 @@ module HTTPX
 
         if @total_timeout && @total_timeout.fires_in.negative?
           ex = TotalTimeoutError.new(@total_timeout.interval, "Timed out after #{@total_timeout.interval} seconds")
-          ex.set_backtrace(error.backtrace) if error.backtrace
+          ex.set_backtrace(error.backtrace)
           error = ex
         elsif connecting?
           error = error.to_connection_error

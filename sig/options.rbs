@@ -45,7 +45,7 @@ module HTTPX
     attr_reader transport_options: Hash[untyped, untyped]?
 
     # addresses
-    attr_reader addresses: _ToAry[ipaddr]?
+    attr_reader addresses: Array[ipaddr]?
 
     # params
     attr_reader params: Transcoder::urlencoded_input?
@@ -103,7 +103,7 @@ module HTTPX
     attr_reader resolver_options: Hash[Symbol, untyped]?
 
     def ==: (untyped other) -> bool
-    def merge: (_ToHash[Symbol | String, untyped] other) -> instance
+    def merge: (_ToHash[Symbol, untyped] other) -> instance
     def to_hash: () -> Hash[Symbol, untyped]
 
     private
@@ -113,5 +113,5 @@ module HTTPX
     def initialize: (?options options) -> untyped
   end
 
-  type options = Options | Hash[Symbol | String, untyped]
+  type options = Options | Hash[Symbol, untyped]
 end

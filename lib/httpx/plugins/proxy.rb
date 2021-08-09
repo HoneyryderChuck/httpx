@@ -5,7 +5,8 @@ require "ipaddr"
 require "forwardable"
 
 module HTTPX
-  HTTPProxyError = Class.new(Error)
+  class HTTPProxyError < Error; end
+
   module Plugins
     #
     # This plugin adds support for proxies. It ships with support for:
@@ -136,10 +137,11 @@ module HTTPX
         def __proxy_error?(response)
           error = response.error
           case error
-          when ResolveError
+          when NativeResolveError
             # failed resolving proxy domain
-            proxy_uri = error.connection.options.proxy.uri
-            proxy_uri.to_s == @_proxy_uris.first
+            error.connection.origin.to_s == @_proxy_uris.first
+          when ResolveError
+            error.message.end_with?(@_proxy_uris.first)
           when *PROXY_ERRORS
             # timeout errors connecting to proxy
             true
