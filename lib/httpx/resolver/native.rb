@@ -217,15 +217,27 @@ module HTTPX
         end
       else
         address = addresses.first
-        connection = @queries.delete(address["name"])
-        return unless connection # probably a retried query for which there's an answer
+        name = address["name"]
+
+        connection = @queries.delete(name)
+
+        unless connection
+          # absolute name
+          name_labels = Resolv::DNS::Name.create(name).to_a
+          name = @queries.keys.first { |hname| name_labels == Resolv::DNS::Name.create(hname).to_a }
+
+          # probably a retried query for which there's an answer
+          return unless name
+
+          address["name"] = name
+          connection = @queries.delete(name)
+        end
 
         if address.key?("alias") # CNAME
           if early_resolve(connection, hostname: address["alias"])
             @connections.delete(connection)
           else
             resolve(connection, address["alias"])
-            @queries.delete(address["name"])
             return
           end
         else
