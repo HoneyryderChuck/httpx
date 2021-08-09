@@ -79,7 +79,7 @@ module HTTPX
 
     private
 
-    def initialize: (String?, String?) -> untyped
+    def initialize: (String? header_value) -> void
   end
 
   class ErrorResponse

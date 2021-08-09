@@ -3,7 +3,7 @@ module HTTPX
     class System
       include ResolverMixin
 
-      RESOLV_ERRORS: Array[StandardError] # ResolvError
+      RESOLV_ERRORS: Array[singleton(StandardError)] # ResolvError
 
       def closed?: () -> true
 

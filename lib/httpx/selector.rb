@@ -86,7 +86,7 @@ class HTTPX::Selector
 
       readers, writers = IO.select(r, w, nil, interval)
 
-      raise HTTPX::TimeoutError.new(interval, "timed out while waiting on select") if readers.nil? && writers.nil?
+      raise HTTPX::TimeoutError.new(interval, "timed out while waiting on select") if readers.nil? && writers.nil? && interval
     rescue IOError, SystemCallError
       @selectables.reject!(&:closed?)
       retry
@@ -109,6 +109,8 @@ class HTTPX::Selector
   def select_one(interval)
     io = @selectables.first
 
+    return unless io
+
     interests = io.interests
 
     result = case interests
@@ -118,7 +120,7 @@ class HTTPX::Selector
              when nil then return
     end
 
-    raise HTTPX::TimeoutError.new(interval, "timed out while waiting on select") unless result
+    raise HTTPX::TimeoutError.new(interval, "timed out while waiting on select") unless result || interval.nil?
 
     yield io
   rescue IOError, SystemCallError

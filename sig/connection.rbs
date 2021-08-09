@@ -37,8 +37,7 @@ module HTTPX
 
     def coalescable?: (Connection) -> bool
 
-    def create_idle: (options) -> Connection
-                   | () -> Connection
+    def create_idle: (?Hash[Symbol | String, untyped] options) -> Connection
 
     def merge: (Connection) -> void
 
@@ -51,7 +50,7 @@ module HTTPX
 
     def interests: () -> io_interests?
 
-    def to_io: () -> _ToIO
+    def to_io: () -> IO
 
     def call: () -> void
 

@@ -203,6 +203,9 @@ module HTTPX
         # guarantee ordered responses
         loop do
           request = requests.first
+
+          return responses unless request
+
           pool.next_tick until (response = fetch_response(request, connections, request.options))
 
           responses << response

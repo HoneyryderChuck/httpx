@@ -108,7 +108,9 @@ module HTTPX
 
     private
 
-    def initialize: (?options) -> untyped
+    REQUEST_IVARS: Array[Symbol]
+
+    def initialize: (?options options) -> untyped
   end
 
   type options = Options | Hash[Symbol | String, untyped]

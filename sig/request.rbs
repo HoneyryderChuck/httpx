@@ -60,7 +60,7 @@ module HTTPX
 
     class ProcIO
       include _Writer
-      def initialize: (^(_ToS) -> void) -> untyped
+      def initialize: (^(String) -> void) -> untyped
     end
   end
 end
