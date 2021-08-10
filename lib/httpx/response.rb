@@ -14,6 +14,8 @@ module HTTPX
 
     def_delegator :@body, :to_s
 
+    def_delegator :@body, :to_str
+
     def_delegator :@body, :read
 
     def_delegator :@body, :copy_to
