@@ -5,6 +5,8 @@ require "delegate"
 
 module HTTPX::Plugins
   module Multipart
+    using HTTPX::RegexpExtensions unless Regexp.method_defined?(:match?)
+
     CRLF = "\r\n"
 
     class FilePart < SimpleDelegator
