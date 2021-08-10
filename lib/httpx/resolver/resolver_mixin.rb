@@ -9,7 +9,7 @@ module HTTPX
       include Callbacks
       include Loggable
 
-      CHECK_IF_IP = ->(name) do
+      CHECK_IF_IP = lambda do |name|
         begin
           IPAddr.new(name)
           true
