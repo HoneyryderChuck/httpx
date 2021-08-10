@@ -49,7 +49,9 @@ module HTTPX::Plugins
       def initialize(response)
         @boundary = begin
           m = response.headers["content-type"].to_s[BOUNDARY_RE, 1]
-          m && m.strip
+          raise Error, "no boundary declared in content-type header" unless m
+
+          m.strip
         end
         @buffer = "".b
         @parts = {}
