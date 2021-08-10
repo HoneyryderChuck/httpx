@@ -1,6 +1,7 @@
 module HTTPX::Transcoder
   module JSON
     def self?.encode: (_ToJson json) -> Encoder
+    def self?.decode: (HTTPX::Response response) -> _Decoder
 
     class Encoder
       extend Forwardable
