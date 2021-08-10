@@ -47,7 +47,11 @@ module HTTPX::Transcoder
       Encoder.new(form)
     end
 
-    def decode(_response)
+    def decode(response)
+      content_type = response.content_type.mime_type
+
+      raise Error, "invalid form mime type (#{content_type})" unless content_type == "application/x-www-form-urlencoded"
+
       Decoder
     end
   end

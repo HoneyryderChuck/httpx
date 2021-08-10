@@ -228,7 +228,7 @@ module Requests
                                HTTPX::Request.new(:get, "http://example.com"),
                                200,
                                "2.0",
-                               { "content-type" => "Content-Type: multipart/form-data; boundary=90" }
+                               { "content-type" => "multipart/form-data; boundary=90" }
                              )
         form_response << [
           "--90\r\n",

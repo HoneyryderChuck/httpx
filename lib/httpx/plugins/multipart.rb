@@ -58,9 +58,16 @@ module HTTPX
         end
 
         def decode(response)
-          return Transcoder::Form.decode(response) if response.headers["content-type"] == "application/x-www-form-urlencoded"
+          content_type = response.content_type.mime_type
 
-          Decoder.new(response)
+          case content_type
+          when "application/x-www-form-urlencoded"
+            Transcoder::Form.decode(response)
+          when "multipart/form-data"
+            Decoder.new(response)
+          else
+            raise Error, "invalid form mime type (#{content_type})"
+          end
         end
 
         def multipart?(data)

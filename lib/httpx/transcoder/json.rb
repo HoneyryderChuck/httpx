@@ -5,6 +5,10 @@ require "json"
 
 module HTTPX::Transcoder
   module JSON
+    JSON_REGEX = %r{\bapplication/(?:vnd\.api\+)?json\b}i.freeze
+
+    using HTTPX::RegexpExtensions unless Regexp.method_defined?(:match?)
+
     module_function
 
     class Encoder
@@ -28,7 +32,11 @@ module HTTPX::Transcoder
       Encoder.new(json)
     end
 
-    def decode(_response)
+    def decode(response)
+      content_type = response.content_type.mime_type
+
+      raise Error, "invalid json mime type (#{content_type})" unless JSON_REGEX.match?(content_type)
+
       ::JSON.method(:parse)
     end
   end
