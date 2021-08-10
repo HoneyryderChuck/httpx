@@ -111,7 +111,7 @@ module HTTPX
 
     def initialize(options = {})
       defaults = DEFAULT_OPTIONS.merge(options)
-      defaults.each do |(k, v)|
+      defaults.each do |k, v|
         next if v.nil?
 
         begin
@@ -185,6 +185,7 @@ module HTTPX
     end
 
     REQUEST_IVARS = %i[@params @form @json @body].freeze
+    private_constant :REQUEST_IVARS
 
     def ==(other)
       ivars = instance_variables | other.instance_variables
@@ -202,7 +203,7 @@ module HTTPX
     end
 
     def merge(other)
-      raise ArgumentError, "#{other.inspect} is not a valid set of options" unless other.respond_to?(:to_hash)
+      raise ArgumentError, "#{other} is not a valid set of options" unless other.respond_to?(:to_hash)
 
       h2 = other.to_hash
       return self if h2.empty?

@@ -4,6 +4,7 @@ module HTTPX
       def self.load_dependencies: (singleton(Session)) -> void
       def self.configure: (*untyped) -> void
       def self?.encode: (untyped) -> (Encoder | Transcoder::Form::Encoder)
+      def self?.decode: (HTTPX::Response response) -> Transcoder::_Decoder
 
       type multipart_value = string | Pathname | File | _Reader
 
@@ -28,6 +29,37 @@ module HTTPX
         def read_chunks: (String buffer, Integer? length) -> void
 
         def read_from_part: (Integer? max_length) -> void
+      end
+
+      class Decoder
+        BOUNDARY_RE: Regexp
+
+        @state: :idle | :part_header | :part_body | :parse_boundary | :done
+        @buffer: String
+        @parts: Hash[String, untyped]
+        @boundary: String
+        @intermediate_boundary: String
+
+        def call: (Response response, untyped) -> Hash[String, untyped]
+
+        private
+
+        def initialize: (Response response) -> void
+
+        def parse: () -> void
+
+        def get_filename: (String head) -> String?
+      end
+
+      class FilePart #  < SimpleDelegator
+        attr_reader original_filename: String
+        attr_reader content_type: String
+
+        # @file: Tempfile
+
+        # private
+
+        def initialize: (String filename, String content_type) -> void
       end
 
       module Part

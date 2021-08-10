@@ -26,6 +26,7 @@ module HTTPX
     attr_reader state: Symbol
     attr_reader pending: Array[Request]
     attr_reader options: Options
+    attr_writer timers: untyped # Timers::Timer
 
     def addresses: () -> Array[ipaddr]?
 
@@ -37,8 +38,7 @@ module HTTPX
 
     def coalescable?: (Connection) -> bool
 
-    def create_idle: (options) -> Connection
-                   | () -> Connection
+    def create_idle: (?Hash[Symbol, untyped] options) -> Connection
 
     def merge: (Connection) -> void
 
@@ -51,7 +51,7 @@ module HTTPX
 
     def interests: () -> io_interests?
 
-    def to_io: () -> _ToIO
+    def to_io: () -> IO
 
     def call: () -> void
 

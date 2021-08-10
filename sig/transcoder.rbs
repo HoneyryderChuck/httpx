@@ -6,9 +6,11 @@ module HTTPX
                    | () -> Hash[String, _Encode]
 
     def self?.register: (String tag, _Encode handler) -> void
-                     
+
     def self?.normalize_keys: (_ToS key, _ToAry[untyped] | _ToHash[_ToS, untyped] | untyped value) { (String, ?untyped) -> void } -> void
                            | (_ToS key, untyped value, Proc? cond) { (String, untyped) -> void } -> void
+
+    def self?.normalize_query: (Hash[String, untyped] params, String name, String v, Integer depth) -> void
 
     interface _Encode
       def encode: (untyped payload) -> (_Encoder | _Each[String])
@@ -19,7 +21,7 @@ module HTTPX
     end
 
     interface _Decoder
-      def decode: (string) -> String
+      def call: (Response response, untyped options) -> untyped
     end
   end
 end

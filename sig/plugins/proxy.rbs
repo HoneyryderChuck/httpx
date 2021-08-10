@@ -9,8 +9,8 @@ module HTTPX
 
       class Parameters
         attr_reader uri: URI::Generic
-        attr_reader username: string?
-        attr_reader password: string?
+        attr_reader username: String?
+        attr_reader password: String?
 
         def authenticated?: () -> boolish
         def token_authentication: () -> String?
@@ -19,7 +19,7 @@ module HTTPX
 
         private
 
-        def initialize: (uri: generic_uri, ?username: string, ?password: string) -> untyped
+        def initialize: (uri: generic_uri, ?username: String, ?password: String) -> untyped
       end
 
       def self.configure: (singleton(Session)) -> void
@@ -35,9 +35,9 @@ module HTTPX
       module InstanceMethods
         private
 
-        def proxy_uris: (uri, Options & _ProxyOptions) -> { uri: (URI | string), username: string, password: string }
-                      | (uri, Options & _ProxyOptions) -> { uri: (URI | string) }
-                      | (uri, Options & _ProxyOptions) -> nil
+        def proxy_uris: (generic_uri, Options & _ProxyOptions) -> { uri: generic_uri, username: String, password: String }
+                      | (generic_uri, Options & _ProxyOptions) -> { uri: generic_uri }
+                      | (generic_uri, Options & _ProxyOptions) -> nil
       end
     end
 

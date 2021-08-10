@@ -125,6 +125,38 @@ class ResponseTest < Minitest::Test
     assert body.buffer.is_a?(Tempfile), "body should buffer to file after going over threshold"
   end
 
+  def test_response_decoders
+    json_response = Response.new(request, 200, "2.0", { "content-type" => "application/json" })
+    json_response << %({"a": "b"})
+    assert json_response.json == { "a" => "b" }
+    assert json_response.json(symbolize_names: true) == { :a => "b" }
+
+    form_response = Response.new(request, 200, "2.0", { "content-type" => "application/x-www-form-urlencoded" })
+    form_response << "a=b&c=d"
+    assert form_response.form == { "a" => "b", "c" => "d" }
+
+    form2_response = Response.new(request, 200, "2.0", { "content-type" => "application/x-www-form-urlencoded" })
+    form2_response << "a[]=b&a[]=c&d[e]=f&g[h][i][j]=k&l[m][][n]=o&l[m][][p]=q&l[m][][n]=r&s[=t"
+    assert form2_response.form == {
+      "a" => %w[b c],
+      "d" => { "e" => "f" },
+      "g" => { "h" => { "i" => { "j" => "k" } } },
+      "l" => { "m" => [{ "n" => "o", "p" => "q" }, { "n" => "r" }] },
+      "s[" => "t",
+    }
+
+    form3_response = Response.new(request, 200, "2.0", { "content-type" => "application/x-www-form-urlencoded" })
+    form3_response << "a[][]=3"
+    assert form3_response.form == { "a" => [["3"]] }
+
+    form4_response = Response.new(request, 200, "2.0", { "content-type" => "application/x-www-form-urlencoded" })
+    form4_response << "[]"
+    assert form4_response.form == {}
+
+    error = assert_raises(HTTPX::Error) { form2_response.__send__(:decode, "bla") }
+    assert error.message =~ /no decoder available for/, "failed with unexpected error"
+  end
+
   private
 
   def request(verb = :get, uri = "http://google.com")

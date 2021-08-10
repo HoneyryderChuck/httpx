@@ -1,6 +1,11 @@
 module HTTPX
   module Chainable
-    def request: (*untyped, **untyped) -> (response | Array[response])
+    def request: (*Request, **untyped) -> Array[response]
+               | (Request, **untyped) -> response
+               | (verb | string, uri | [uri], **untyped) -> response
+               | (Array[[verb | string, uri] | [verb | string, uri, options]], **untyped) -> Array[response]
+               | (verb | string, _Each[uri | [uri, options]], **untyped) -> Array[response]
+
     def accept: (String) -> Session
     def wrap: () { (Session) -> void } -> void
 

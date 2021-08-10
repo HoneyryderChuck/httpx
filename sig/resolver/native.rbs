@@ -5,6 +5,8 @@ module HTTPX
       include ResolverMixin
       include _ToIO
 
+      type state = :idle | :open | :closed
+
       DEFAULTS: Hash[Symbol, untyped]
       DNS_PORT: Integer
 
@@ -19,7 +21,7 @@ module HTTPX
       @queries: Hash[String, Connection]
       @read_buffer: String
       @write_buffer: Buffer
-      @state: :idle | :open | :closed
+      @state: state
 
       def closed?: () -> bool
 
@@ -56,7 +58,7 @@ module HTTPX
 
       def build_socket: () -> void
 
-      def transition: (Symbol nextstate) -> void
+      def transition: (state nextstate) -> void
 
       def handle_error: (NativeResolveError | StandardError) -> void
     end

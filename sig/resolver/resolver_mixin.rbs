@@ -4,7 +4,7 @@ module HTTPX
       include Callbacks
       include Loggable
 
-      CHECK_IF_IP: Proc
+      CHECK_IF_IP: ^(String name) -> bool
 
       def uncache: (Connection) -> void
 

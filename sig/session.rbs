@@ -13,9 +13,6 @@ module HTTPX
 
     def close: (*untyped) -> void
 
-    def request: (*Request, **untyped) -> (response | Array[response])
-               | (*untyped, **untyped) -> (response | Array[response])
-
     def build_request: (String | verb, generic_uri, ?options) -> Request
 
     # def self.plugin: (Symbol | Module, ?options) { (Class) -> void } -> singleton(Session)
@@ -27,7 +24,7 @@ module HTTPX
 
     private
 
-    def initialize: (?options) { (instance) -> void } -> untyped
+    def initialize: (?options) { (self) -> void } -> untyped
                   | (?options) -> untyped
 
     def pool: -> Pool

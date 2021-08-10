@@ -28,9 +28,9 @@ module HTTPX
       URIParser = URI::RFC2396_Parser.new
 
       def to_uri(uri)
-        return Kernel.URI(uri) unless uri.is_a?(String) && !uri.ascii_only?
+        return URI(uri) unless uri.is_a?(String) && !uri.ascii_only?
 
-        uri = Kernel.URI(URIParser.escape(uri))
+        uri = URI(URIParser.escape(uri))
 
         non_ascii_hostname = URIParser.unescape(uri.host)
 

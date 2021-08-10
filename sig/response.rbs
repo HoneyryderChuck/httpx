@@ -27,10 +27,16 @@ module HTTPX
     def content_type: () -> ContentType
     def complete?: () -> bool
 
+    def json: (?json_options opts) -> untyped
+
+    def form: () -> Hash[String, untyped]
+
     private
 
     def initialize: (Request request, String | Integer status, String version, headers?) -> untyped
     def no_data?: () -> bool
+
+    def decode:(String format, ?untyped options) -> untyped
 
     class Body
       include _Reader
@@ -73,7 +79,7 @@ module HTTPX
 
     private
 
-    def initialize: (String?, String?) -> untyped
+    def initialize: (String? header_value) -> void
   end
 
   class ErrorResponse

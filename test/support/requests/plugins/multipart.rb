@@ -219,6 +219,49 @@ module Requests
         assert check_error[retries_response], "expected #{retries_response} to be an error response"
         assert retries_session.calls == 1, "expect request to be retried 1 time (was #{retries_session.calls})"
       end
+
+      def test_plugin_multipart_response_decoder
+        form_response = HTTPX.plugin(:multipart)
+                             .class.default_options
+                             .response_class
+                             .new(
+                               HTTPX::Request.new(:get, "http://example.com"),
+                               200,
+                               "2.0",
+                               { "content-type" => "multipart/form-data; boundary=90" }
+                             )
+        form_response << [
+          "--90\r\n",
+          "Content-Disposition: form-data; name=\"text\"\r\n\r\n",
+          "text default\r\n",
+          "--90\r\n",
+          "Content-Disposition: form-data; name=\"file1\"; filename=\"a.txt\"\r\n",
+          "Content-Type: text/plain\r\n\r\n",
+          "Content of a.txt.\r\n\r\n",
+          "--90\r\n",
+          "Content-Disposition: form-data; name=\"file2\"; filename=\"a.html\"\r\n",
+          "Content-Type: text/html\r\n\r\n",
+          "<!DOCTYPE html><title>Content of a.html.</title>\r\n\r\n",
+          "--90--",
+        ].join
+        form = form_response.form
+
+        begin
+          assert form["text"] == "text default"
+          assert form["file1"].original_filename == "a.txt"
+          assert form["file1"].content_type == "text/plain"
+          assert form["file1"].read == "Content of a.txt."
+
+          assert form["file2"].original_filename == "a.html"
+          assert form["file2"].content_type == "text/html"
+          assert form["file2"].read == "<!DOCTYPE html><title>Content of a.html.</title>"
+        ensure
+          form["file1"].close
+          form["file1"].unlink
+          form["file2"].close
+          form["file2"].unlink
+        end
+      end
     end
   end
 end

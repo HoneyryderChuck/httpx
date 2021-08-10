@@ -59,7 +59,7 @@ module HTTPX
         @registry ||= {}
         return @registry if tag.nil?
 
-        handler = @registry.fetch(tag)
+        handler = @registry[tag]
         raise(Error, "#{tag} is not registered in #{self}") unless handler
 
         handler

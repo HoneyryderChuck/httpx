@@ -36,6 +36,7 @@ module HTTPX
           end
           # :nocov:
           require "httpx/plugins/multipart/encoder"
+          require "httpx/plugins/multipart/decoder"
           require "httpx/plugins/multipart/part"
           require "httpx/plugins/multipart/mime_type_detector"
         end
@@ -53,6 +54,19 @@ module HTTPX
             Encoder.new(form)
           else
             Transcoder::Form::Encoder.new(form)
+          end
+        end
+
+        def decode(response)
+          content_type = response.content_type.mime_type
+
+          case content_type
+          when "application/x-www-form-urlencoded"
+            Transcoder::Form.decode(response)
+          when "multipart/form-data"
+            Decoder.new(response)
+          else
+            raise Error, "invalid form mime type (#{content_type})"
           end
         end
 

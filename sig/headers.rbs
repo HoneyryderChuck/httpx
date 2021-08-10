@@ -2,9 +2,9 @@ module HTTPX
   class Headers
     include _ToS
 
-    @headers: headers_hash
+    @headers: Hash[headers_key, Array[String]]
 
-    def self.new: (?untyped headers) -> Headers
+    def self.new: (?untyped headers) -> instance
 
     def ==: (untyped other) -> bool
 
@@ -32,7 +32,7 @@ module HTTPX
 
     private
 
-    def initialize: (headers?) -> untyped
+    def initialize: (?headers?) -> untyped
     def array_value: (headers_value) -> Array[String]
     def downcased: (headers_key) -> String
   end
