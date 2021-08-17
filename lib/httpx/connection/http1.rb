@@ -290,10 +290,9 @@ module HTTPX
         end
       end
 
-      {
-        "host" => (request.headers["host"] || request.authority),
-        "connection" => connection,
-      }
+      extra_headers = { "connection" => connection }
+      extra_headers["host"] = request.authority unless request.headers.key?("host")
+      extra_headers
     end
 
     def headline_uri(request)
