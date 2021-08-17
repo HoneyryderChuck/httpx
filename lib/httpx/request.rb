@@ -41,8 +41,6 @@ module HTTPX
 
     def_delegator :@body, :empty?
 
-    def_delegator :@body, :chunk!
-
     def initialize(verb, uri, options = {})
       @verb    = verb.to_s.downcase.to_sym
       @options = Options.new(options)

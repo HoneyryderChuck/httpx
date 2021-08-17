@@ -265,7 +265,7 @@ module HTTPX
     def set_protocol_headers(request)
       if !request.headers.key?("content-length") &&
          request.body.bytesize == Float::INFINITY
-        request.chunk!
+        request.body.chunk!
       end
 
       connection = request.headers["connection"]
