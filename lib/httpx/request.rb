@@ -46,9 +46,10 @@ module HTTPX
       @options = Options.new(options)
       @uri     = Utils.to_uri(uri)
       if @uri.relative?
-        raise(Error, "invalid URI: #{@uri}") unless @options.origin
+        origin = @options.origin
+        raise(Error, "invalid URI: #{@uri}") unless origin
 
-        @uri = @options.origin.merge(@uri)
+        @uri = origin.merge(@uri)
       end
 
       raise(Error, "unknown method: #{verb}") unless METHODS.include?(@verb)
@@ -96,7 +97,7 @@ module HTTPX
     def response=(response)
       return unless response
 
-      if response.status == 100
+      if response.is_a?(Response) && response.status == 100
         @informational_status = response.status
         return
       end
@@ -156,7 +157,7 @@ module HTTPX
 
     class Body < SimpleDelegator
       class << self
-        def new(*, options)
+        def new(_, options)
           return options.body if options.body.is_a?(self)
 
           super

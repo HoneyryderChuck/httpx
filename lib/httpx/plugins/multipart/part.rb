@@ -8,7 +8,7 @@ module HTTPX
       def call(value)
         # take out specialized objects of the way
         if value.respond_to?(:filename) && value.respond_to?(:content_type) && value.respond_to?(:read)
-          return [value, value.content_type, value.filename]
+          return value, value.content_type, value.filename
         end
 
         content_type = filename = nil
@@ -19,7 +19,7 @@ module HTTPX
           value = value[:body]
         end
 
-        value = value.open(:binmode => true) if Object.const_defined?(:Pathname) && value.is_a?(Pathname)
+        value = value.open(File::RDONLY) if Object.const_defined?(:Pathname) && value.is_a?(Pathname)
 
         if value.is_a?(File)
           filename ||= File.basename(value.path)

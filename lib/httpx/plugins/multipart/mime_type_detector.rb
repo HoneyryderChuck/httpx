@@ -17,7 +17,7 @@ module HTTPX
 
       elsif defined?(MimeMagic)
 
-        def call(file, *)
+        def call(file, _)
           mime = MimeMagic.by_magic(file)
           mime.type if mime
         end
@@ -25,7 +25,7 @@ module HTTPX
       elsif system("which file", out: File::NULL)
         require "open3"
 
-        def call(file, *)
+        def call(file, _)
           return if file.eof? # file command returns "application/x-empty" for empty files
 
           Open3.popen3(*%w[file --mime-type --brief -]) do |stdin, stdout, stderr, thread|
@@ -56,7 +56,7 @@ module HTTPX
 
       else
 
-        def call(*); end
+        def call(_, _); end
 
       end
     end
