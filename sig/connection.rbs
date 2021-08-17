@@ -1,6 +1,5 @@
 module HTTPX
   class Connection
-
     interface _Parser
 
       def on: (Symbol) { (*untyped) -> void } -> void
@@ -47,6 +46,7 @@ module HTTPX
     def match_altsvcs?: (URI::Generic uri) -> bool
 
     def connecting?: () -> bool
+
     def inflight?: () -> boolish
 
     def interests: () -> io_interests?

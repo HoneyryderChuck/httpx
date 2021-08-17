@@ -3,6 +3,10 @@ module HTTPX
     include Callbacks
     include Loggable
 
+    UPCASED: Hash[String, String]
+    MAX_REQUESTS: Integer
+    CRLF: String
+
     attr_reader pending: Array[Request]
     attr_reader requests: Array[Request]
 
@@ -30,11 +34,13 @@ module HTTPX
 
     def handle_error: (StandardError ex) -> void
 
+    def on_start: () -> void
+
     def on_headers: (Hash[String, Array[String]] headers) -> void
 
     def on_trailers: (Hash[String, Array[String]] headers) -> void
 
-    def on_data: (string chunk) -> void
+    def on_data: (String chunk) -> void
 
     def on_complete: () -> void
 
@@ -42,7 +48,7 @@ module HTTPX
 
     def ping: () -> void
 
-    def timeout: () -> Integer
+    def timeout: () -> Numeric
 
     private
 
@@ -54,7 +60,7 @@ module HTTPX
 
     def disable_pipelining: () -> void
 
-    def set_protocol_headers: (Request) -> _Each[[headers_key, String]]
+    def set_protocol_headers: (Request) -> _Each[[String, String]]
 
     def headline_uri: (Request) -> String
 
@@ -64,7 +70,7 @@ module HTTPX
 
     def join_trailers: (Request request) -> void
 
-    def join_headers2: (_Each[[headers_key, String]] headers) -> void
+    def join_headers2: (_Each[[String, String]] headers) -> void
 
     def join_body: (Request request) -> void
 

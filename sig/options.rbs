@@ -11,7 +11,7 @@ module HTTPX
     DEFAULT_OPTIONS: Hash[Symbol, untyped]
 
     type timeout_type = :connect_timeout | :settings_timeout | :operation_timeout | :keep_alive_timeout | :total_timeout
-    type timeout = Hash[timeout_type, Numeric?]
+    type timeout = Hash[timeout_type, Numeric]
 
     def self.new: (?options) -> instance
 
@@ -25,6 +25,9 @@ module HTTPX
 
     # timeout
     attr_reader timeout: timeout
+
+    # http2_settings
+    attr_reader http2_settings: Hash[Symbol, Integer | bool]
 
     # max_concurrent_requests
     attr_reader max_concurrent_requests: Integer?
@@ -58,6 +61,9 @@ module HTTPX
 
     # body
     attr_reader body: bodyIO?
+
+    # body
+    attr_reader origin: URI::Generic?
 
     # ssl
 

@@ -9,18 +9,15 @@ module HTTPX
     @responses: Hash[Request, response]
     @persistent: bool?
 
+    def self.plugin: (Symbol | Module plugin, ?options? options) ?{ (Class) -> void } -> singleton(Session)
+
+    def self.default_options: -> Options
+
     def wrap: () { (instance) -> void } -> void
 
     def close: (*untyped) -> void
 
     def build_request: (String | verb, generic_uri, ?options) -> Request
-
-    # def self.plugin: (Symbol | Module, ?options) { (Class) -> void } -> singleton(Session)
-    #                | (Symbol | Module, ?options) -> singleton(Session)
-
-
-
-    def self.default_options: -> Options
 
     private
 

@@ -2,30 +2,32 @@ module HTTPX
   class Headers
     include _ToS
 
-    @headers: Hash[headers_key, Array[String]]
+    EMPTY: Array[untyped]
+
+    @headers: Hash[String, Array[String]]
 
     def self.new: (?untyped headers) -> instance
 
     def ==: (untyped other) -> bool
 
-    def []: (headers_key field) -> _ToS?
-    def []=: (headers_key field, headers_value value) -> void
+    def []: (String field) -> String?
+    def []=: (String field, headers_value value) -> void
 
-    def add: (headers_key field, string value) -> void
-    def delete: (headers_key field) -> Array[String]?
+    def add: (String field, string value) -> void
+    def delete: (String field) -> Array[String]?
 
-    def each: (?_Each[[headers_key, String]]? extra_headers) { (headers_key, String) -> void } -> void
-            | (?_Each[[headers_key, String]]? extra_headers) -> Enumerable[[headers_key, String]]
+    def each: (?_Each[[String, String]]? extra_headers) { (String k, String v) -> void } -> void
+            | (?_Each[[String, String]]? extra_headers) -> Enumerable[[String, String]]
 
-    def get: (headers_key field) -> Array[String]
-    def key?: (headers_key downcased_key) -> bool
+    def get: (String field) -> Array[String]
+    def key?: (String downcased_key) -> bool
 
-    def merge: (_Each[[headers_key, headers_value]] other) -> Headers
+    def merge: (_Each[[String, headers_value]] other) -> Headers
 
     def same_headers?: (untyped headers) -> bool
 
-    def to_a: () -> Array[[headers_key, String]]
-    def to_hash: () -> Hash[headers_key, String]
+    def to_a: () -> Array[[String, String]]
+    def to_hash: () -> Hash[String, String]
     alias to_h to_hash
 
     def inspect: () -> String
@@ -34,12 +36,11 @@ module HTTPX
 
     def initialize: (?headers?) -> untyped
     def array_value: (headers_value) -> Array[String]
-    def downcased: (headers_key) -> String
+    def downcased: (_ToS field) -> String
   end
 
-  type headers_key = String | Symbol
   type headers_value = _ToS | Array[_ToS]
-  type headers_hash = Hash[headers_key, headers_value]
-  type headers_input = headers_hash | Array[[headers_key, string]]
+  type headers_hash = Hash[_ToS, headers_value]
+  type headers_input = headers_hash | Array[[_ToS, string]]
   type headers = Headers | headers_input
 end

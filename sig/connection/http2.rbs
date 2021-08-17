@@ -3,10 +3,13 @@ module HTTPX
     include Callbacks
     include Loggable
 
+    MAX_CONCURRENT_REQUESTS: Integer
+
     attr_reader streams: Hash[Request, HTTP2Next::Stream]
     attr_reader pending: Array[Request]
 
     @options: Options
+    @settings: Hash[Symbol, Integer | bool]
     @max_concurrent_requests: Integer
     @max_requests: Integer
     @drains: Hash[Request, String]
@@ -23,7 +26,7 @@ module HTTPX
 
     def <<: (String) -> void
 
-    def can_buffer_more_requests: () -> bool
+    def can_buffer_more_requests?: () -> bool
 
     def send: (Request) -> void
 
@@ -35,7 +38,7 @@ module HTTPX
 
     alias reset init_connection
 
-    def timeout: () -> Integer
+    def timeout: () -> Numeric
 
     private
 
@@ -45,7 +48,7 @@ module HTTPX
 
     def headline_uri: (Request) -> String
 
-    def set_protocol_headers: (Request) -> _Each[[headers_key, String]]
+    def set_protocol_headers: (Request) -> _Each[[String, String]]
 
     def handle: (Request request, HTTP2Next::Stream stream) -> void
 
@@ -61,9 +64,11 @@ module HTTPX
 
     def on_stream_headers: (HTTP2Next::Stream stream, Request request, Array[[String, String]] headers) -> void
 
-    def on_stream_trailers: (HTTP2Next::Stream stream, Request request, Array[[String, String]] headers) -> void
+    def on_stream_trailers: (HTTP2Next::Stream stream, Response response, Array[[String, String]] headers) -> void
 
-    def on_stream_data: (HTTP2Next::Stream stream, Request request, string data) -> void
+    def on_stream_data: (HTTP2Next::Stream stream, Request request, String data) -> void
+
+    def on_stream_refuse: (HTTP2Next::Stream stream, Request request, StandardError error) -> void
 
     def on_stream_close: (HTTP2Next::Stream stream, Request request, (Symbol | StandardError)? error) -> void
 
@@ -74,12 +79,18 @@ module HTTPX
     def on_close: (Integer last_frame, Symbol? error, String? payload) -> void
 
     def on_frame_sent: (HTTP2Next::frame) -> void
+
     def on_frame_received: (HTTP2Next::frame) -> void
+
+    def on_altsvc: (String origin, HTTP2Next::frame) -> void
 
     def on_promise: (HTTP2Next::Stream) -> void
 
     def on_origin: (String) -> void
 
     def on_pong: (string ping) -> void
+
+    class Error < ::HTTPX::Error
+    end
   end
 end

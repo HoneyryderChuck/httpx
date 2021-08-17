@@ -1,34 +1,55 @@
 module HTTPX
   module Plugins
     module Multipart
+      interface _MultipartInput
+        def filename: () -> String
+        def content_type: () -> String
+        def read: (?int? length, ?string? output) -> String?
+      end
+
+      MULTIPART_VALUE_COND: ^(_Reader | record_multipart_value value) -> bool
+
       def self.load_dependencies: (singleton(Session)) -> void
       def self.configure: (*untyped) -> void
       def self?.encode: (untyped) -> (Encoder | Transcoder::Form::Encoder)
       def self?.decode: (HTTPX::Response response) -> Transcoder::_Decoder
 
+      def self?.normalize_keys: [U] (_ToS key, _ToAry[untyped] | _ToHash[_ToS, untyped] | untyped value) { (String, ?untyped) -> U } -> U
+
       type multipart_value = string | Pathname | File | _Reader
 
-      type record_multipart_value = multipart_value |
-                                    { content_type: String, filename: String, body: multipart_value } |
+      type record_multipart_value = { content_type: String, filename: String, body: multipart_value } |
                                     { content_type: String, body: multipart_value }
 
       type multipart_nested_value = multipart_value | _ToAry[multipart_value] | _ToHash[string, multipart_value]
 
       class Encoder
         include Transcoder::_Encoder
-        include _Reader
+
+        @boundary: String
+        @part_index: Integer
+        @buffer: String
+
+        @form: Enumerable[[Symbol | string, multipart_nested_value]]
+        @parts: Array[_Reader]
 
         def content_type: () -> String
 
+        def read: (?int? length, ?string? buffer) -> String?
+
+        def rewind: () -> void
+
         private
 
-        def initialize: (_Each[[Symbol | string, multipart_nested_value]] multipart_data) -> untyped
+        def to_parts: (Enumerable[[Symbol | string, multipart_nested_value]] multipart_data) -> Array[_Reader]
+
+        def initialize: (Enumerable[[Symbol | string, multipart_nested_value]] multipart_data) -> untyped
 
         def header_part: (string key, String content_type, String? filename) -> StringIO
 
-        def read_chunks: (String buffer, Integer? length) -> void
+        def read_chunks: (String buffer, ?Integer? length) -> void
 
-        def read_from_part: (Integer? max_length) -> void
+        def read_from_part: (?Integer? max_length) -> String?
       end
 
       class Decoder
@@ -63,11 +84,14 @@ module HTTPX
       end
 
       module Part
-        def self?.call: (multipart_nested_value) -> ([_Reader, String, String?])
+        def self?.call: [U] (_MultipartInput multipart_input) -> [U, String, String]
+                      | (multipart_nested_value input) -> ([StringIO, String, String?] | [File, String, String])
       end
 
       module MimeTypeDetector
-        def self?.call: (::IO file, ?String filename) -> String?
+        DEFAULT_MIMETYPE: String
+
+        def self?.call: (::IO file, String filename) -> String?
       end
     end
   end

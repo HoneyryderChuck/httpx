@@ -5,9 +5,9 @@ module HTTPX
     interface _HTTP1Events
 
       def on_start: () -> void
-      def on_headers: (parsed_headers) -> void
-      def on_trailers: (parsed_headers) -> void
-      def on_data: (String) -> void
+      def on_headers: (parsed_headers headers) -> void
+      def on_trailers: (parsed_headers trailers) -> void
+      def on_data: (String data) -> void
       def on_complete: () -> void
     end
 
