@@ -1,6 +1,7 @@
 ---
 layout: post
 title: HTTPX responses can be pattern matched
+keywords: pattern matching, HTTP responses, status codes, headers, body
 ---
 
 

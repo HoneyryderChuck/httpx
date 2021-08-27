@@ -1,6 +1,7 @@
 ---
 layout: post
 title: Falacies about HTTP
+keywords: HTTP, protocol, mistakes, advanced, streaming, upgrade
 ---
 
 When I first started working on `httpx`, I wanted to support as many HTTP features and corner-cases as possible. Although I wasn't exhaustively devouring the RFCs looking for things to implement, I was rather hoping that my experience with and knowledge about different http tools (cURL, postman, different http libraries from different languages) could help me narrow them down.
@@ -16,11 +17,11 @@ Some of these packages were probably created by the same developers mentioned ab
 
 One of the most spread-out axioms of HTTP is that it is a "request-response" protocol. And in a way, this might have been the way it was designed in the beginning: send a request, receive a response. However, things started getting more complicated.
 
-First, redirects came along. A request would be thrown, a response would come back, but "oh crap!", it has status code 302, 301, the new "Location" is there, so let me send a new request to the new request. It could be quite a few "hops" (see how high level protocols tend to re-use concepts from lower level protocols) until we would get to our resource with a status code 2XX. What is the response in this case? 
+First, redirects came along. A request would be thrown, a response would come back, but "oh crap!", it has status code 302, 301, the new "Location" is there, so let me send a new request to the new request. It could be quite a few "hops" (see how high level protocols tend to re-use concepts from lower level protocols) until we would get to our resource with a status code 2XX. What is the response in this case?
 
-But this is the simplest bending of "request-response". Then HTTP started being used to upload files. Quite good at it actually, but people started noticing that waiting for the whole request to be sent to then fail on an authentication failure was not a great use of the resources at our disposal. Along came: 100 Continue. In this variant, a Request would send the Headers frame with the "Expect: 100-continue" header, wait on a response from the server, and if this had status code 100, then the Body frame would be sent, and then we would get our final response. So, I count two responses for that interaction. Nevermind that a lot of servers don't implement it (cURL, for instance, sends the body frame if the server doesn't send a response after a few seconds, to circumvent this). 
+But this is the simplest bending of "request-response". Then HTTP started being used to upload files. Quite good at it actually, but people started noticing that waiting for the whole request to be sent to then fail on an authentication failure was not a great use of the resources at our disposal. Along came: 100 Continue. In this variant, a Request would send the Headers frame with the "Expect: 100-continue" header, wait on a response from the server, and if this had status code 100, then the Body frame would be sent, and then we would get our final response. So, I count two responses for that interaction. Nevermind that a lot of servers don't implement it (cURL, for instance, sends the body frame if the server doesn't send a response after a few seconds, to circumvent this).
 
-Or take HTTP CONNECT tunnels: In order to send our desired request, we have to first send an HTTP Connect request, receive a successful response (tunnel established) then send our request and get our response. 
+Or take HTTP CONNECT tunnels: In order to send our desired request, we have to first send an HTTP Connect request, receive a successful response (tunnel established) then send our request and get our response.
 
 But one could argue that, for all of the examples above, usually there is a final desired response for a request. So what?
 
@@ -42,7 +43,7 @@ And along came HTTP/2, and TPC-to-HTTP mapping was never the same. Multiple requ
 
 Many of these improvements have benefitted browsers first and foremost, and things have evolved to minimize the number of network interactions necessary to render an HTML page. HTTP/2 having decreased the number of TCP connections necessary, HTTP/3 will aim at decreasing the number of round-trips necessary. All of this without breaking request and response semantics.
 
-Most of these things aren't as relevant when all you want is send a notification request to a third-party. Therefore, most client implementations choose not to implement most of these semantics. And most are fine implementing "open socket, write request, read response, close socket". 
+Most of these things aren't as relevant when all you want is send a notification request to a third-party. Therefore, most client implementations choose not to implement most of these semantics. And most are fine implementing "open socket, write request, read response, close socket".
 
 Ruby's `net-http` by default closes the TCP socket after receiving the response (even sending the `Connection: close` header). It does implement keep-alive, but this requires a bit more set-up.
 
@@ -116,7 +117,7 @@ GIF87a.............,...........D..;
 Later, an addition to HTTP was made: Trailer headers. These are defined as headers which are sent by the peer **after** the data has been transmitted. Its main benefits are beyond the scope of this mention, but this fundamentally changed the expectation of what an HTTP message looks like: after all, headers can be transmitted before and after the data.
 
 
-A lot of client implementations re-use an already existing HTTP parser. Others write their own. I've seen very few supporting trailer headers. I don't know of any, other than `httpx`, that does (and `httpx` only reliably supports it since ditching `http_parser.rb`, ruby bindings for an outdated version of the node HTTP parser). I also don't know of any in python. Go's `net/http` client supports it. 
+A lot of client implementations re-use an already existing HTTP parser. Others write their own. I've seen very few supporting trailer headers. I don't know of any, other than `httpx`, that does (and `httpx` only reliably supports it since ditching `http_parser.rb`, ruby bindings for an outdated version of the node HTTP parser). I also don't know of any in python. Go's `net/http` client supports it.
 
 5. HTTP Bytes are readable
 
@@ -146,12 +147,12 @@ This is not to say that you should not react on data frames sent, but usually a 
 
 Besides, if you're using HTTP/2, there is no other chance: unless you can guarantee that there's only one socket for one HTTP/2 connection, you can't just read chunks from it. And even if you can, reading a data chunk involves so much ceremony (flow control, other streams, etc...) that you might as well end up regretting using it in the first place.
 
-Client implementations that map a 1-to-1 relationship between socket and HTTP connection are able to provide such an API, but won't save you from the trouble. If connections hang from the server, time out, or you get blocked from accessing an origin, consider switching. 
+Client implementations that map a 1-to-1 relationship between socket and HTTP connection are able to provide such an API, but won't save you from the trouble. If connections hang from the server, time out, or you get blocked from accessing an origin, consider switching.
 
 
 7. Using HTTP as a transport "dumb pipe"
 
-According to the OSI model, HTTP belongs to layer 7, to the so called application protocols. These are perceived as the higher-level interfaces which programs use to communicate among each other over the network. HTTP is actually a very feature-rich protocol, supporting feature like content-negotiation, caching, virtual hosting, cross-origin resource sharing, tunneling, load balancing, the list goes on. 
+According to the OSI model, HTTP belongs to layer 7, to the so called application protocols. These are perceived as the higher-level interfaces which programs use to communicate among each other over the network. HTTP is actually a very feature-rich protocol, supporting feature like content-negotiation, caching, virtual hosting, cross-origin resource sharing, tunneling, load balancing, the list goes on.
 
 However, most client use HTTP as a dump pipe where data is sent and received, as if it were a plain TCP stream.
 
@@ -165,7 +166,7 @@ Even cURL is partially to blame: it is probably the most widely used and deploye
 
 You're a) not negotiation payload compression; b) not checking if a cached version of the resource is still up-to-date. Can you do it with cURL? Yes. Do you have to be verbose to do it? Pretty much.
 
-Most 3rd-party JSON API SDKs suffer from this issue, because the underlying library is not doing these things. The only reason why we're sending JSON over HTTP is because proxies have to be bypassed, but it is done in an inefficient way.  
+Most 3rd-party JSON API SDKs suffer from this issue, because the underlying library is not doing these things. The only reason why we're sending JSON over HTTP is because proxies have to be bypassed, but it is done in an inefficient way.
 
 
 

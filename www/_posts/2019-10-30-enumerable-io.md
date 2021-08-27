@@ -1,6 +1,7 @@
 ---
 layout: post
 title: Enumerable IO Streams
+keyowrds: IO, enumerable, streaming, API
 ---
 
 I've been recently working on CSV generation with ruby in my day job, in order to solve a bottleneck we found because of a DB table, whose number or rows grew too large for the infrastructure to handle our poorly optimized code. This led me in a journey of discovery on how to use and play with raw ruby APIs to solve a complex problem.
@@ -107,7 +108,7 @@ An IO-like object must implement a few methods to be usable by certain functions
 
 You know some of ruby's classes which implement a few (some, all) of these APIs: `File`, `TCPSocket`, and the aforementioned `StringIO`.
 
-A few ruby APIs expect arguments which implement the IO interface, but aren't necessarily instances of IO. 
+A few ruby APIs expect arguments which implement the IO interface, but aren't necessarily instances of IO.
 
 * `IO.select` can be passed IO wrappers
 * `IO.copy_stream(src, dst)`, takes an IO reader and an IO writer as arguments.

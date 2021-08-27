@@ -1,6 +1,7 @@
 ---
 layout: post
 title: Ramblings about initial design decisions, internals, and devise
+keywords: authentication, plugins, devise, rodauth, extensibility, features, OTP, modern
 ---
 
 Yesterday I was reading [this twitter thread](https://twitter.com/jankomarohnic/status/1286640026588151808), where [Janko Marohnić](https://twitter.com/jankomarohnic), the maintainer of [Shrine](https://github.com/shrinerb/shrine), who has recently [integrated rodauth in Rails](https://github.com/janko/rodauth-rails) and is preparing a series of articles about it, describes the internals of [devise](https://github.com/heartcombo/devise), the most popular authentication gem for Ruby on Rails, as "making every mistake in the book", claiming that [rodauth](https://github.com/jeremyevans/rodauth), the most advanced authentication framework for ruby, is much better because its internals are "easier to understand", thereby sparking some controversy and replies, with some people taking issue with these claims, and also with his approach of criticizing another gem because of "look how awful its internals look like".
@@ -57,7 +58,7 @@ So why are people making a case against it? Why go with `rodauth` instead?
 ![Desert of the real]({{ '/images/desert-real.gif' | prepend: site.baseurl }})
 
 
-The vision for `devise` was fully accomplished by 2010: a no-friction email/password authentication add-on for Ruby on Rails. 
+The vision for `devise` was fully accomplished by 2010: a no-friction email/password authentication add-on for Ruby on Rails.
 
 In hindsight, I don't think that anyone in 2009 could anticipate today's practices: microservices, SPAs, Mobile applications, cross-device platforms... and authentication also evolved: phone numbers instead of email accounts, multi-factor authentication, SMS tokens, JWTs, OTPs, OpenID, SAML, Yubikeys, Webauthn... and stakes are higher, especially since [Edward Snowden and PRISM proved that theoretically breaking into accounts isn't so theoretical after all](https://en.wikipedia.org/wiki/PRISM_%28surveillance_program%29).
 
@@ -89,7 +90,7 @@ Looking at the [CHANGELOG](https://github.com/heartcombo/devise/blob/master/CHAN
  It does seem that the main concern has been on stability rather than new features. Which I can relate, breaking other people's integration does suck. But is this by design? Is `devise` feature-complete? Did it achieve all its intended initial goals, that nothing is left beyond maintaining it for the community? Is the refactoring of its internals necessary to build new features? Would less logic in models and less AR callbacks help develop new features? I guess only the core maintenanceship can answer that.
 
 
-But it does feel that `devise` is legacy software. 
+But it does feel that `devise` is legacy software.
 
 
 ## To infinity... and beyond!

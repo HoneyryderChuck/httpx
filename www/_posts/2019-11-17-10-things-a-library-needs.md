@@ -1,6 +1,7 @@
 ---
 layout: post
 title: 10 things a library needs
+keywords: top 10, components, library, maintenance, testing, CI, dependencies
 ---
 
 When I first started working on `httpx`, the mission was clear: make an easy-to-use open-source HTTP client that could support both legacy and future versions of the protocol, and all, or at least most, of its quirks.
@@ -143,7 +144,7 @@ I started receiving bug reports which didn't seem to come from `httpx` itself. A
 
 So I decided to fork `http-2` and release it as `http-2-next` (no, I'm not writing an HTTP/2 parser from scratch, ahahahah). The result was a parser that passes all specs of the [`h2spec` suite](https://github.com/summerwind/h2spec). It's probably not gonna stop there, but it's pretty good for now.
 
-So now I own own the runtime dependencies of `httpx` I started with, so a lot of worries I used to have about external dependencies (whether API breaks, bugs aren't fixed or project is abandoned) are not concerns anymore. 
+So now I own own the runtime dependencies of `httpx` I started with, so a lot of worries I used to have about external dependencies (whether API breaks, bugs aren't fixed or project is abandoned) are not concerns anymore.
 
 ## 6. Forwards compatibility
 
@@ -181,7 +182,7 @@ A user of your library works in a completely different setup from you. Not only 
 
 Github tried to solve this with templates. And most projects took them to a level of detail, that they've become a separate form no one has the time nor the desire to fill up. What version? What CPU? What browser? Templates can become just another filter limiting the pool of users who want to reach out to you.
 
-Asking for a stacktrace from the get-go can be invaluable. Some users struggle, but most of them know how to get one. Asking for a reproducible script might help, but sometimes the error lies so deep in the logic of the user's application, that asking him to take it out of its context not only is an awful lot of work, it might even mask the error. 
+Asking for a stacktrace from the get-go can be invaluable. Some users struggle, but most of them know how to get one. Asking for a reproducible script might help, but sometimes the error lies so deep in the logic of the user's application, that asking him to take it out of its context not only is an awful lot of work, it might even mask the error.
 
 Finding an error that happened to a remote user boils down to know 1) when the problem happened, and 2) what was the state of the world at the time. Stacktraces help with the former, but not with the latter.
 
@@ -237,4 +238,4 @@ Now pause for a second. Stripe. AWS. Both serve companies from all sizes. Both s
 
 ## Conclusion
 
-These 10 practices are not to be taken as commandments (I did mention when I couldn't follow them), but they help me maintaining a fairly wide and complex set of features with no budget. And that's the key aspect of this: Open Source projects are not just about writing code; in order to survive long term, they must excel at communication, collaboration, education. And that's the hardest task. 
+These 10 practices are not to be taken as commandments (I did mention when I couldn't follow them), but they help me maintaining a fairly wide and complex set of features with no budget. And that's the key aspect of this: Open Source projects are not just about writing code; in order to survive long term, they must excel at communication, collaboration, education. And that's the hardest task.

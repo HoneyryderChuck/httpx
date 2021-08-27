@@ -1,6 +1,7 @@
 ---
 layout: post
 title: RBS, duck-typing, meta-programming, and typing at httpx
+keywords: RBS, type checking, duck typing, type syntax, runtime type checking
 ---
 
 Ruby 3 is just around the corner, and with the recent release candidate, there's been some experimentation in the ruby community, along with the usual posts, comments and unavoidable rants.
@@ -16,7 +17,7 @@ Ruby 3 has 3 major features:
 
 From the point of view of `httpx`, JIT is implicit, and Ractors won't do much for it (although I have to make sure if calls can be made across ractors). The autofibers feature seems to be interesting, and will be experimented with at some point.
 
-But typing is where, IMO, a library like `httpx` can immediately get the most benefit from. 
+But typing is where, IMO, a library like `httpx` can immediately get the most benefit from.
 
 Typing is a very controversial topic in the Ruby community. Most of us started our journey as Ruby developers by running away from statically-typed languages (mostly Java), and fell in love with the quick feedback loop and fast prototyping that Ruby, and its lack of typing, enabled. Over time, we've crossed the ["Peak of inflated Expectations" all the way into the "Through of Disillusionnment"](https://en.wikipedia.org/wiki/Hype_cycle), where the monolithic codebases most of us find ourselves working in, fail in the most unpredictable ways due to runtime errors out of the happy path (`NoMethodError`s everywhere), and the act of simply updating external dependencies, let alone big refactorings, introduces so much risk, that most businesses prefer to halt upgrades indefinitely, until it's 2020 and you're still running Rails 2 in production.
 

@@ -1,6 +1,7 @@
 ---
 layout: post
 title: Ruby 2 features, and why I really like refinements
+keywords: ruby 2, refinements, extensions
 ---
 
 This is my second entry in a series of thought-pieces around features and enhancements in the ruby 2 series, initiated in the Christmas of 2013, and now scheduled for termination in the Christmas of 2020, when ruby 3 is expected to be released. It's supposed to be about the good, the bad and the ugly. It's not to be read as "preachy", although you're definitely entitled not to like what I write, to what I just say "that's just my opinion", and "I totally respect that you have a different one".
@@ -47,7 +48,7 @@ module Refined
   using Plus
   1 + 2 #=> "1+2"
 end
-1 + 2 #=> 3 
+1 + 2 #=> 3
 ```
 
 
@@ -117,4 +118,3 @@ This is refinements at its finest.
 Refinements are a great way to express your individuality and perception of the world, while not shoveling that perception of the world onto your users; a safe way for you to experiment; and a great way to keep backwards compatibility, and by extension, your end users happy.
 
 Unfortunately they will never accomplish its main goal, which was to "fix" Active Support. But maybe Active Support was never meant to be fixed, and that's all right. Refinements have to keep moving forward, and so do we. Hopefully away from Active Support.
-

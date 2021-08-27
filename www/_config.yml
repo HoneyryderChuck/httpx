@@ -10,6 +10,13 @@ links:
   gitlab: https://gitlab.com/honeyryderchuck/httpx
   rubygems: https://rubygems.org
 
+keywords:
+  - httpx
+  - ruby
+  - documentation
+  - wiki
+  - HTTP/2
+
 pagination:
   enabled: true
   debug: true
