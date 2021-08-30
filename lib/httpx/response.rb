@@ -118,16 +118,6 @@ module HTTPX
         @length = 0
         @buffer = nil
         @state = :idle
-        ObjectSpace.define_finalizer(self, self.class.finalize(@buffer))
-      end
-
-      def self.finalize(buffer)
-        proc {
-          return unless buffer
-
-          @buffer.close
-          @buffer.unlink if @buffer.respond_to?(:unlink)
-        }
       end
 
       def closed?
