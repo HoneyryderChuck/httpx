@@ -1,6 +1,7 @@
 ---
 layout: post
 title: HTTPX AWS Sigv4 plugin - Use cases
+keywords: aws sdk, sigv4, implementation
 ---
 
 
@@ -90,5 +91,3 @@ Also, data migrations. When moving data from AWS to GCP, and from GCP to Rackspa
 The AWS Sigv4 plugins are just another layer in the `httpx` "swiss army knife". Hope it'll be of use to someone, as it'll be for myself (I'll be sure to integrate it in some of the S3 integrations I maintain).
 
 Hack on.
-
-

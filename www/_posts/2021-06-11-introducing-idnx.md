@@ -1,6 +1,7 @@
 ---
 layout: post
 title: Introducing idnx
+keywords: new gem, idnx, IDNA, IDNA 2008, punycode, libidn2, windows, winAPI, mac OS, linux
 ---
 
 

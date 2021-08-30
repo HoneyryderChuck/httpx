@@ -1,6 +1,7 @@
 ---
 layout: post
 title: Gitlab CI suite optimizations, and how I decreased the carbon footprint of my CI suite
+keywords: CI, Gitlab CI, caching, optimizations, fork-join
 ---
 
 
@@ -304,5 +305,3 @@ And that concludes my "jesus complex" post of the month.
   <iframe src="https://www.youtube.com/embed/6wbaGf4fU9w" frameborder="0" allowfullscreen="true"> </iframe>
 </figure>
 <!-- blank line -->
-
-

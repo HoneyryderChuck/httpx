@@ -20,8 +20,6 @@ variables:
   stage: test
   services:
     - docker:dind
-  except:
-    - blog
   artifacts:
     paths:
       - coverage/
@@ -115,8 +113,6 @@ coverage:
   stage: prepare
   variables:
     BUNDLE_WITHOUT: test:website:assorted
-  except:
-    - blog
 
   image: "ruby:3.0-alpine"
   script:

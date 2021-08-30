@@ -1,6 +1,7 @@
 ---
 layout: post
 title: 2020, a year in review
+keywords: year in review, happy new year
 ---
 
 2020 has been an incredibly changing year for humanity. Being thrown head-on into a pandemic no one was prepared to deal with, we were forced to clumsily speed-up the transition into the digital age, being more and more dependent of digital identity, online shopping, remote work, and more gifs and memes than we could ever imagine could exist in the ether. Commuting fatigue was replaced by "notifications" fatigue. For all of its faults, the internet backbone managed to assimilate annd withstand way more activity than naysayers ever thought it was prepared for, and I can tell for a fact that I experience way less interruptions in video calls in 2020 than I used to in 2018. We were unfortunately forced to keep in touch with our loved ones at a "safety distance", in most cases a video chat. I just hope that, whenever we're done with this state of affairs, we can retain the good habits, while swiftly eliminating the bad.
@@ -51,7 +52,7 @@ I've also planned to prepare for its release, and looked at `rbs` in order to im
 
 The runtime type checking layer, which runs alongside the tests, helped fix some critical issues as well.
 
-Since v0.10.0, `httpx` ships with `rbs` type signatures. 
+Since v0.10.0, `httpx` ships with `rbs` type signatures.
 
 The tests also run in "GC auto compact" mode.
 
@@ -81,7 +82,7 @@ Support for the `ORIGIN` frame was added. It was a bittersweet endeavour though,
 
 ### Improvements
 
-Support for more recent rubies, including preparing for ruby 3 and RBS signatures, has been added. Overall, this library tries to use more performant ruby APIs than its parent project, although, to be fair, it'll never compare to a C parser such as `nghttpx`. 
+Support for more recent rubies, including preparing for ruby 3 and RBS signatures, has been added. Overall, this library tries to use more performant ruby APIs than its parent project, although, to be fair, it'll never compare to a C parser such as `nghttpx`.
 
 ### Going forward
 
@@ -169,7 +170,7 @@ And then I wanted to merge coverage results. Except, you can't. So, you have thi
 
 So while I did manage to take a page from all those PRs and migrate the tests, I still don't have a worthy coverage report to show for.
 
-[I asked for help in a community forum, since Github makes it so hard to ask for help or questions](https://github.community/t/workflow-run-not-triggering-for-matrix-job/150204). Still waiting for a reply though. 
+[I asked for help in a community forum, since Github makes it so hard to ask for help or questions](https://github.community/t/workflow-run-not-triggering-for-matrix-job/150204). Still waiting for a reply though.
 
 All in all, Github Actions seems to fit application flows better (test-build-deploy) than libraries. So yeah, stick to Gitlab if you don't want to dea so much with the "side-stuff".
 
@@ -182,17 +183,3 @@ A thing I've been working in is [a MIB parser]|(https://github.com/swisscom/ruby
 
 
 That's it folks. Stay healthy!
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -1,6 +1,7 @@
 ---
 layout: post
 title: Ruby 2 features, and why I avoid keyword arguments
+keywords: ruby 2, keyword arguments, inconsistencies
 ---
 
 Some politician one day said "may you live in interesting times". Recently, it was announced that the next ruby release will be the long-awaited [next major ruby version, ruby 3](https://github.com/ruby/ruby/commit/21c62fb670b1646c5051a46d29081523cd782f11). That's pretty interesting, if you ask me.
@@ -172,5 +173,3 @@ Do keyword argument-only method signatures get more maintainable? I guess you'll
 Reality check time: keyword arguments aren't going anywhere any time soon. They're a language feature now. Some people like it, inconsistencies notwithstanding. And let's face it, where's the value in removing keyword arguments from your projects? Code is running. Don't change it! I know I didn't. [ruby-netsnmp, a gem I maintain, still uses keyword arguments](https://github.com/swisscom/ruby-netsnmp/blob/master/lib/netsnmp/client.rb#L26), and that ain't gonna change, not by my hand at least.
 
 But if you're authoring a new gem in 2020, or writing new code in the application you work at daily, do consider the advice: avoid keyword arguments. Your future upgrading self will thank you.
-
-

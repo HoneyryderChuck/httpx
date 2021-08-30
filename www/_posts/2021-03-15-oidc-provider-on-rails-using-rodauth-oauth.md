@@ -1,6 +1,7 @@
 ---
 layout: post
 title: How to build an OIDC provider using rodauth-oauth on Rails
+keywords: rodauth-oauth, rodauth, rails, rodauth-rails, OAuth2, OIDC, OIDC Connect, tutorial
 ---
 
 One of my most recent ruby open-source projects is [rodauth-oauth](https://honeyryderchuck.gitlab.io/rodauth-oauth), a rack-based toolkit to help easily build OAuth and OpenID Connect providers, built on top of [rodauth](http://rodauth.jeremyevans.net/) (the most advanced authentication provider library for ruby). I summarized my [initial motivation for "rolling my own" in the project Wiki](https://honeyryderchuck.gitlab.io/rodauth-oauth/wiki/FAQ), namely the lack of a decent framework-agnostic alternative (I didn't want to have to use Rails), and what I perceived as the limitations of the "de-facto" OAuth provider Rails extension, "doorkeeper".
@@ -366,7 +367,7 @@ before_authorize do
   require_two_factor_authenticated
 end
 
-```  
+```
 
 So now I setup TOTP in my test account:
 

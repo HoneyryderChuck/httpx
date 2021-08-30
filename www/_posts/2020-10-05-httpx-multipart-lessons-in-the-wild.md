@@ -1,6 +1,7 @@
 ---
 layout: post
 title: HTTPX multipart plugin, lessons in the wild
+keywords: multipart, dependencies, enumerable readers
 ---
 
 Some say that open source maintainers should "dogfood" their own software, in order to "feel the pain" of its users, and apply their lessons learned "from the trenches" in order to improve it. Given that no one else is better positioned to make improvements big and small, it's hard to dispute against this.
@@ -23,7 +24,7 @@ Where I work, we handle a lot of media files, such as photos and videos. Users u
 
 Some tasks often involve uploading data in bulk. And although uploading photos is not a big deal, uploading videos is, as some information about what happens in the video must also be transferred, as extra metadata, in a widely known encoding format.
 
-And for that, the `multipart/form-data` media type is used. 
+And for that, the `multipart/form-data` media type is used.
 
 ## multipart/form-data
 
@@ -66,7 +67,7 @@ POST /upload-picture HTTP/1.1
 Content-Type: multipart/form-data; boundary=--abc123--
 ....
 
---abc123-- 
+--abc123--
 Content-Disposition: form-data; name="file"; filename="in-the-shower.jpg"
 Content-Type: image/jpeg
 
@@ -134,7 +135,7 @@ session = HTTPX.plugin(:multipart)
 
 opts = {
   metadata1: HTTP::Part.new(
-    JSON.encode(foo: "bar"), 
+    JSON.encode(foo: "bar"),
     content_type: "application/json"
   ),
   metadata2: HTTP::Part.new(
@@ -208,4 +209,3 @@ So I decided to do something about it. Firstly, I updated the wiki from the `mul
 Second, I'll probably be replacing `http-form_data` at some point in the future. As a dependency should, it served me quite well, and allowed me to iterate quickly and concentrate on other parts of the project. I've even contributed to it. But at this point, owning the multipart encoding is something I'd like to keep closer to the project, and I think that I know enough about multipart requests by now, to warrant "writing my own" and kill yet another dependency. It'll not happen immediately, though.
 
 Lastly, I'll try to make a better job at talking about my work, so that hopefully my co-workers one day ask me if I know `httpx`. And it starts with this post.
-
