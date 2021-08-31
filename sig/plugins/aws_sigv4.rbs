@@ -9,13 +9,21 @@ module HTTPX
 
     module AWSSigV4
 
-      Credentials: _SigV4Credentials
+      class Credentials < Struct[[String, String, String?]]
+        attr_reader username: String
+        attr_reader password: String
+        attr_reader security_token: String?
+      end
 
 
       class Signer
 
-        def sign!: (Request) -> void
+        @unsigned_headers: Set[String]
 
+        def sign!: (Request & RequestMethods request) -> void
+
+        def self.new: (instance) -> instance
+                    | (**untyped params) -> instance
         private
 
         def initialize: (
@@ -33,9 +41,10 @@ module HTTPX
         ) -> untyped
 
 
-        def sha256_hexdigest: (bodyIO value) -> String
+        def hexdigest: (bodyIO value) -> String
 
         def hmac: (String key, String value) -> String
+
         def hexhmac: (String key, String value) -> String
       end
 

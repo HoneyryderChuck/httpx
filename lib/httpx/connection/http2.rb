@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "securerandom"
-require "io/wait"
 require "http/2/next"
 
 module HTTPX
@@ -218,7 +217,7 @@ module HTTPX
       log(level: 1, color: :yellow) do
         request.headers.merge(extra_headers).each.map { |k, v| "#{stream.id}: -> HEADER: #{k}: #{v}" }.join("\n")
       end
-      stream.headers(request.headers.each(extra_headers), end_stream: request.empty?)
+      stream.headers(request.headers.each(extra_headers), end_stream: request.body.empty?)
     end
 
     def join_trailers(stream, request)
@@ -234,7 +233,7 @@ module HTTPX
     end
 
     def join_body(stream, request)
-      return if request.empty?
+      return if request.body.empty?
 
       chunk = @drains.delete(request) || request.drain_body
       while chunk
@@ -249,7 +248,9 @@ module HTTPX
         chunk = next_chunk
       end
 
-      on_stream_refuse(stream, request, request.drain_error) if request.drain_error
+      return unless (error = request.drain_error)
+
+      on_stream_refuse(stream, request, error)
     end
 
     ######
@@ -257,8 +258,10 @@ module HTTPX
     ######
 
     def on_stream_headers(stream, request, h)
-      if request.response && request.response.version == "2.0"
-        on_stream_trailers(stream, request, h)
+      response = request.response
+
+      if response.is_a?(Response) && response.version == "2.0"
+        on_stream_trailers(stream, response, h)
         return
       end
 
@@ -274,11 +277,11 @@ module HTTPX
       handle(request, stream) if request.expects?
     end
 
-    def on_stream_trailers(stream, request, h)
+    def on_stream_trailers(stream, response, h)
       log(color: :yellow) do
         h.map { |k, v| "#{stream.id}: <- HEADER: #{k}: #{v}" }.join("\n")
       end
-      request.response.merge_headers(h)
+      response.merge_headers(h)
     end
 
     def on_stream_data(stream, request, data)
@@ -304,7 +307,7 @@ module HTTPX
         emit(:response, request, response)
       else
         response = request.response
-        if response.status == 421
+        if response && response.status == 421
           ex = MisdirectedRequestError.new(response)
           ex.set_backtrace(caller)
           emit(:error, request, ex)

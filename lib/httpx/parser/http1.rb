@@ -60,7 +60,7 @@ module HTTPX
         (m = %r{\AHTTP(?:/(\d+\.\d+))?\s+(\d\d\d)(?:\s+(.*))?}in.match(@buffer)) ||
           raise(Error, "wrong head line format")
         version, code, _ = m.captures
-        raise(Error, "unsupported HTTP version (HTTP/#{version})") unless VERSIONS.include?(version)
+        raise(Error, "unsupported HTTP version (HTTP/#{version})") unless version && VERSIONS.include?(version)
 
         @http_version = version.split(".").map(&:to_i)
         @status_code = code.to_i

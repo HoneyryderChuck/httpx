@@ -57,7 +57,7 @@ module HTTPX
     def merge(other)
       headers = dup
       other.each do |field, value|
-        headers[field] = value
+        headers[downcased(field)] = value
       end
       headers
     end

@@ -22,7 +22,7 @@ module HTTPX
     def close: () -> void
     def uri: () -> URI::Generic
 
-    def merge_headers: (_Each[[headers_key, headers_value]]) -> void
+    def merge_headers: (_Each[[String, headers_value]]) -> void
     def bodyless?: () -> bool
     def content_type: () -> ContentType
     def complete?: () -> bool

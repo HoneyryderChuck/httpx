@@ -265,7 +265,7 @@ module HTTPX
     def set_protocol_headers(request)
       if !request.headers.key?("content-length") &&
          request.body.bytesize == Float::INFINITY
-        request.chunk!
+        request.body.chunk!
       end
 
       connection = request.headers["connection"]
@@ -322,7 +322,7 @@ module HTTPX
     end
 
     def join_body(request)
-      return if request.empty?
+      return if request.body.empty?
 
       while (chunk = request.drain_body)
         log(color: :green) { "<- DATA: #{chunk.bytesize} bytes..." }
@@ -331,7 +331,9 @@ module HTTPX
         throw(:buffer_full, request) if @buffer.full?
       end
 
-      raise request.drain_error if request.drain_error
+      return unless (error = request.drain_error)
+
+      raise error
     end
 
     def join_trailers(request)
@@ -358,7 +360,7 @@ module HTTPX
     }.freeze
 
     def capitalized(field)
-      UPCASED[field] || field.to_s.split("-").map(&:capitalize).join("-")
+      UPCASED[field] || field.split("-").map(&:capitalize).join("-")
     end
   end
   Connection.register "http/1.1", Connection::HTTP1

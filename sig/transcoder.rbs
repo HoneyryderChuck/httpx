@@ -7,8 +7,7 @@ module HTTPX
 
     def self?.register: (String tag, _Encode handler) -> void
 
-    def self?.normalize_keys: (_ToS key, _ToAry[untyped] | _ToHash[_ToS, untyped] | untyped value) { (String, ?untyped) -> void } -> void
-                           | (_ToS key, untyped value, Proc? cond) { (String, untyped) -> void } -> void
+    def self?.normalize_keys: [U] (_ToS key, _ToAry[untyped] | _ToHash[_ToS, untyped] | untyped value, ?(^(untyped value) -> bool | nil) cond) { (String, ?untyped) -> U } -> U
 
     def self?.normalize_query: (Hash[String, untyped] params, String name, String v, Integer depth) -> void
 
