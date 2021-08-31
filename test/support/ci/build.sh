@@ -76,7 +76,7 @@ if [[ ${RUBY_VERSION:0:1} = "3" ]]; then
   export RBS_TEST_TARGET="HTTP*"
 fi
 
-PARALLEL=1 bundle exec rake test:ci
+PARALLEL=1 bundle exec rake test
 
 # third party modules
 # Testing them only with main ruby, as some of them work weird with other variants.
@@ -88,6 +88,8 @@ if [[ ${RUBY_VERSION:0:1} = "3" ]]; then
   # regression tests
   # Testing them only with main ruby
   if [[ "$RUBY_ENGINE" = "ruby" ]]; then
+    bundle exec rake rubocop
+
     COVERAGE_KEY="#$RUBY_ENGINE-$RUBY_VERSION-regression" bundle exec rake regressions
   fi
 fi

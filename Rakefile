@@ -31,7 +31,7 @@ begin
   desc "Run rubocop"
   RuboCop::RakeTask.new(:rubocop) do |task|
     # rubocop 0.81 seems to have a race condition somewhere when loading the configs
-    task.options += RUBY_MAJOR_MINOR > "2.3" ? %W[-c.rubocop-#{RUBY_MAJOR_MINOR}.yml --parallel] : %W[-c.rubocop-#{RUBY_MAJOR_MINOR}.yml]
+    task.options += %w[--parallel]
   end
 rescue LoadError
 end
@@ -46,8 +46,6 @@ namespace :coverage do
     SimpleCov.collate Dir["coverage/**/.resultset.json"]
   end
 end
-
-task :"test:ci" => (RUBY_ENGINE == "ruby" ? %i[test rubocop] : %i[test])
 
 # Doc
 
