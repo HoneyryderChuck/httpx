@@ -18,18 +18,6 @@ group :test do
 
   if RUBY_VERSION < "2.2"
     gem "net-ssh", "~> 4.2.0"
-    gem "rubocop", "~> 0.57.0"
-  elsif RUBY_VERSION < "2.3"
-    gem "rubocop", "~> 0.68.1"
-  elsif RUBY_VERSION < "2.4"
-    gem "rubocop", "~> 0.81.0"
-    gem "rubocop-performance", "~> 1.5.2"
-  elsif RUBY_VERSION < "2.5"
-    gem "rubocop", "~> 1.12.0"
-    gem "rubocop-performance", "~> 1.10.2"
-  else
-    gem "rubocop"
-    gem "rubocop-performance"
   end
 
   platform :mri do
@@ -72,6 +60,8 @@ group :test do
   if RUBY_VERSION >= "3.0.0"
     gem "rbs"
     gem "webrick"
+    gem "rubocop"
+    gem "rubocop-performance"
   end
 end
 
