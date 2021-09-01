@@ -7,6 +7,7 @@ module HTTPX
   class Request
     extend Forwardable
     include Callbacks
+    include Loggable
     using URIExtensions
 
     METHODS = [
@@ -97,8 +98,12 @@ module HTTPX
     def response=(response)
       return unless response
 
+        if response
+          log { "(#{Thread.current.object_id}-#{object_id}) here: #{response.is_a?(Response)}, #{response.status == 100}" }
+        end
       if response.is_a?(Response) && response.status == 100
         @informational_status = response.status
+        log { "(#{Thread.current.object_id}-#{object_id}) it's info: #{@informational_status}"}
         return
       end
       @response = response
@@ -276,6 +281,9 @@ module HTTPX
     end
 
     def expects?
+          if @response
+            log { "(#{Thread.current.object_id}-#{object_id}): here 2: #{@headers["expect"]}, #{@informational_status}, #{!@response}" }
+          end
       @headers["expect"] == "100-continue" && @informational_status == 100 && !@response
     end
 

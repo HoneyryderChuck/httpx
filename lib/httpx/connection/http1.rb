@@ -112,8 +112,8 @@ module HTTPX
                                                      @parser.status_code,
                                                      @parser.http_version.join("."),
                                                      headers)
-      log(color: :yellow) { "-> HEADLINE: #{response.status} HTTP/#{@parser.http_version.join(".")}" }
-      log(color: :yellow) { response.headers.each.map { |f, v| "-> HEADER: #{f}: #{v}" }.join("\n") }
+      log(color: :yellow) { "(#{@request.object_id}) -> HEADLINE: #{response.status} HTTP/#{@parser.http_version.join(".")}" }
+      log(color: :yellow) { response.headers.each.map { |f, v| "#{@request.object_id})-> HEADER: #{f}: #{v}" }.join("\n") }
 
       @request.response = response
       on_complete if response.complete?
@@ -125,7 +125,7 @@ module HTTPX
       response = @request.response
       log(level: 2) { "trailer headers received" }
 
-      log(color: :yellow) { h.each.map { |f, v| "-> HEADER: #{f}: #{v.join(", ")}" }.join("\n") }
+      log(color: :yellow) { h.each.map { |f, v| "(#{Thread.current.object_id}-#{@request.object_id})-> HEADER: #{f}: #{v.join(", ")}" }.join("\n") }
       response.merge_headers(h)
     end
 
@@ -314,10 +314,10 @@ module HTTPX
 
     def join_headers(request)
       @buffer << "#{request.verb.to_s.upcase} #{headline_uri(request)} HTTP/#{@version.join(".")}" << CRLF
-      log(color: :yellow) { "<- HEADLINE: #{@buffer.to_s.chomp.inspect}" }
+      log(color: :yellow) { "(#{Thread.current.object_id}-#{request.object_id}) <- HEADLINE: #{@buffer.to_s.chomp.inspect}" }
       extra_headers = set_protocol_headers(request)
       join_headers2(request.headers.each(extra_headers))
-      log { "<- " }
+      log { "(#{request.object_id}) <- " }
       @buffer << CRLF
     end
 
@@ -325,8 +325,8 @@ module HTTPX
       return if request.body.empty?
 
       while (chunk = request.drain_body)
-        log(color: :green) { "<- DATA: #{chunk.bytesize} bytes..." }
-        log(level: 2, color: :green) { "<- #{chunk.inspect}" }
+        log(color: :green) { "(#{Thread.current.object_id}-#{request.object_id}) <- DATA: #{chunk.bytesize} bytes..." }
+        log(level: 2, color: :green) { "(#{Thread.current.object_id}-#{request.object_id}) <- #{chunk.inspect}" }
         @buffer << chunk
         throw(:buffer_full, request) if @buffer.full?
       end

@@ -5,7 +5,7 @@ module Requests
     module Expect
       def test_plugin_expect_100_form_params
         uri = build_uri("/post")
-        response = HTTPX.plugin(:expect).post(uri, form: { "foo" => "bar" })
+        response = HTTPX.plugin(:expect, debug: $stderr, debug_level: 1).post(uri, form: { "foo" => "bar" })
         verify_status(response, 200)
         body = json_body(response)
         verify_header(body["headers"], "Content-Type", "application/x-www-form-urlencoded")
@@ -20,7 +20,7 @@ module Requests
         server = Expect100Server.new
         th = Thread.new { server.start }
         begin
-          http = HTTPX.plugin(:expect)
+          http = HTTPX.plugin(:expect, debug: $stderr, debug_level: 1)
           uri = build_uri("/delay?delay=4", server.origin)
           response = http.post(uri, body: "helloworld")
           verify_status(response, 200)
@@ -38,7 +38,7 @@ module Requests
 
       def test_plugin_expect_100_form_params_under_threshold
         uri = build_uri("/post")
-        session = HTTPX.plugin(:expect, expect_threshold_size: 4)
+        session = HTTPX.plugin(:expect, debug: $stderr, debug_level: 1, expect_threshold_size: 4)
         response = session.post(uri, body: "a" * 3)
         verify_status(response, 200)
         body = json_body(response)
@@ -57,7 +57,7 @@ module Requests
         server = Expect100Server.new
         th = Thread.new { server.start }
         begin
-          http = HTTPX.plugin(:expect)
+          http = HTTPX.plugin(:expect, debug: $stderr, debug_level: 1)
           uri = build_uri("/no-expect", server.origin)
           response = http.post(uri, body: "helloworld")
           verify_status(response, 200)
@@ -75,7 +75,7 @@ module Requests
 
       def test_plugin_expect_100_form_params_417
         uri = build_uri("/status/417")
-        response = HTTPX.plugin(:expect).post(uri, form: { "foo" => "bar" })
+        response = HTTPX.plugin(:expect, debug: $stderr, debug_level: 1).post(uri, form: { "foo" => "bar" })
 
         # we can't really test that the request would be successful without it, however we can
         # test whether the header has been removed from the request.
