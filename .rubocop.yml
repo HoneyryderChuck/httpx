@@ -100,6 +100,9 @@ Performance/TimesMap:
 Performance/RedundantBlockCall:
   Enabled: false
 
+Performance/CollectionLiteralInLoop:
+  Enabled: false # most useless perf cop ever...
+
 Naming/ClassAndModuleCamelCase:
   Exclude:
     - regression_tests/**/*.rb
@@ -138,6 +141,11 @@ Lint/MissingSuper:
   Exclude:
     - 'lib/httpx/io/unix.rb'
 
+Lint/DuplicateBranch:
+  Enabled: false # this doesn't work correctly
+
+Lint/EmptyBlock:
+  Enabled: false # and neither does this. I don't control 3rd party methods.
 Style/HashTransformValues:
   Exclude:
     - 'lib/httpx/plugins/digest_authentication.rb'
