@@ -4,6 +4,7 @@ require_relative "test_helper"
 
 class OptionsTest < Minitest::Test
   include HTTPX
+  using HashExtensions
 
   def test_options_unknown
     ex = assert_raises(Error) { Options.new(foo: "bar") }

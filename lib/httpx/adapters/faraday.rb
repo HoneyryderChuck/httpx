@@ -22,6 +22,8 @@ module Faraday
       # :nocov:
 
       module RequestMixin
+        using ::HTTPX::HashExtensions
+
         private
 
         def build_request(env)

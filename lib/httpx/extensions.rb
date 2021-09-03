@@ -54,6 +54,51 @@ module HTTPX
     Numeric.__send__(:include, NegMethods)
   end
 
+  module HashExtensions
+    refine Hash do
+      def compact
+        h = {}
+        each do |key, value|
+          h[key] = value unless value == nil
+        end
+        h
+      end unless Hash.method_defined?(:compact)
+    end
+  end
+
+  module ArrayExtensions
+    refine Array do
+
+      def filter_map
+        return to_enum(:filter_map) unless block_given?
+
+        each_with_object([]) do |item, res|
+          processed = yield(item)
+          res << processed if processed
+        end
+      end unless Array.method_defined?(:filter_map)
+
+      def sum(accumulator = 0, &block)
+        values = block_given? ? map(&block) : self
+        values.inject(accumulator, :+)
+      end unless Array.method_defined?(:sum)
+    end
+  end
+
+  module IOExtensions
+    refine IO do
+      # provides a fallback for rubies where IO#wait isn't implemented,
+      # but IO#wait_readable and IO#wait_writable are.
+      def wait(timeout = nil, _mode = :read_write)
+        r, w = IO.select([self], [self], nil, timeout)
+
+        return unless r || w
+
+        self
+      end unless IO.method_defined?(:wait) && IO.instance_method(:wait).arity == 2
+    end
+  end
+
   module RegexpExtensions
     # If you wonder why this is there: the oauth feature uses a refinement to enhance the
     # Regexp class locally with #match? , but this is never tested, because ActiveSupport

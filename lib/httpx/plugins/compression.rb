@@ -72,6 +72,8 @@ module HTTPX
       end
 
       module ResponseBodyMethods
+        using ArrayExtensions
+
         attr_reader :encodings
 
         def initialize(*)
@@ -90,7 +92,7 @@ module HTTPX
             Float::INFINITY
           end
 
-          @_inflaters = @headers.get("content-encoding").map do |encoding|
+          @_inflaters = @headers.get("content-encoding").filter_map do |encoding|
             next if encoding == "identity"
 
             inflater = @options.encodings.registry(encoding).inflater(compressed_length)
@@ -100,7 +102,7 @@ module HTTPX
 
             @encodings << encoding
             inflater
-          end.compact
+          end
 
           # this can happen if the only declared encoding is "identity"
           remove_instance_variable(:@_inflaters) if @_inflaters.empty?
@@ -134,7 +136,7 @@ module HTTPX
         end
 
         def each(&blk)
-          return enum_for(__method__) unless block_given?
+          return enum_for(__method__) unless blk
 
           return deflate(&blk) if @buffer.size.zero?
 
