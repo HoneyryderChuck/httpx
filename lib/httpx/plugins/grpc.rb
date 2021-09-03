@@ -143,9 +143,9 @@ module HTTPX
 
           session_class = Class.new(self.class) do
             class_eval(<<-OUT, __FILE__, __LINE__ + 1)
-              def #{rpc_name}(input, **opts)
-                rpc_execute("#{rpc_name}", input, **opts)
-              end
+              def #{rpc_name}(input, **opts)              # def grpc_action(input, **opts)
+                rpc_execute("#{rpc_name}", input, **opts) #   rpc_execute("grpc_action", input, **opts)
+              end                                         # end
             OUT
           end
 

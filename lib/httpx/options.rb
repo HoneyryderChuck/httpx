@@ -83,7 +83,7 @@ module HTTPX
       def def_option(optname, *args, &block)
         if args.size.zero? && !block
           class_eval(<<-OUT, __FILE__, __LINE__ + 1)
-            def option_#{optname}(v); v; end
+            def option_#{optname}(v); v; end # def option_smth(v); v; end
           OUT
           return
         end
@@ -97,9 +97,9 @@ module HTTPX
 
         if layout
           class_eval(<<-OUT, __FILE__, __LINE__ + 1)
-            def option_#{optname}(value)
-              #{layout}
-            end
+            def option_#{optname}(value)  # def option_origin(v)
+              #{layout}                   #   URI(v)
+            end                           # end
           OUT
         elsif interpreter
           define_method(:"option_#{optname}") do |value|
