@@ -81,7 +81,7 @@ module HTTPX
       end
 
       def def_option(optname, *args, &block)
-        if args.size.zero? && !block_given?
+        if args.size.zero? && !block
           class_eval(<<-OUT, __FILE__, __LINE__ + 1)
             def option_#{optname}(v); v; end
           OUT
@@ -93,7 +93,7 @@ module HTTPX
 
       def deprecated_def_option(optname, layout = nil, &interpreter)
         warn "DEPRECATION WARNING: using `def_option(#{optname})` for setting options is deprecated. " \
-          "Define module OptionsMethods and `def option_#{optname}(val)` instead."
+             "Define module OptionsMethods and `def option_#{optname}(val)` instead."
 
         if layout
           class_eval(<<-OUT, __FILE__, __LINE__ + 1)
@@ -101,7 +101,7 @@ module HTTPX
               #{layout}
             end
           OUT
-        elsif block_given?
+        elsif interpreter
           define_method(:"option_#{optname}") do |value|
             instance_exec(value, &interpreter)
           end

@@ -388,10 +388,10 @@ module HTTPX
     end
 
     def on_pong(ping)
-      if !@pings.delete(ping.to_s)
-        close(:protocol_error, "ping payload did not match")
-      else
+      if @pings.delete(ping.to_s)
         emit(:pong)
+      else
+        close(:protocol_error, "ping payload did not match")
       end
     end
   end

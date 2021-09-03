@@ -92,9 +92,9 @@ class HTTPXAwsSigv4Test < Minitest::Test
     )
 
     expected_authorization = "" \
-"AWS4-HMAC-SHA256 Credential=akid/20120101/REGION/SERVICE/aws4_request, " \
-"SignedHeaders=bar;bar2;foo;host;x-amz-content-sha256;x-amz-date, " \
-"Signature=4a7d3e06d1950eb64a3daa1becaa8ba030d9099858516cb2fa4533fab4e8937d"
+                             "AWS4-HMAC-SHA256 Credential=akid/20120101/REGION/SERVICE/aws4_request, " \
+                             "SignedHeaders=bar;bar2;foo;host;x-amz-content-sha256;x-amz-date, " \
+                             "Signature=4a7d3e06d1950eb64a3daa1becaa8ba030d9099858516cb2fa4533fab4e8937d"
     assert request.headers["authorization"] == expected_authorization,
            "expected: \"#{expected_authorization}\", got \"#{request.headers["authorization"]}\" inspected"
   end

@@ -33,19 +33,19 @@ class HTTPTest < Minitest::Test
 
   def test_verbose_log
     log = StringIO.new
-    uri = build_uri("/get")
+    uri = URI(build_uri("/get"))
     response = HTTPX.get(uri, debug: log, debug_level: 2)
     verify_status(response, 200)
     log_output = log.string
     # assert request headers
-    assert log_output.match(%r{HEADLINE: "GET .+ HTTP/1\.1"})
-    assert log_output.match(%r{HEADER: Accept: */*})
-    assert log_output.match(/HEADER: Host: \w+/)
-    assert log_output.match(/HEADER: Connection: close/)
+    assert log_output.include?("HEADLINE: \"GET #{uri.path} HTTP/1.1\"")
+    assert log_output.include?("HEADER: Accept: */*")
+    assert log_output.include?("HEADER: Host: ")
+    assert log_output.include?("HEADER: Connection: close")
     # assert response headers
-    assert log_output.match(%r{HEADLINE: 200 HTTP/1\.1})
-    assert log_output.match(/HEADER: content-type: \w+/)
-    assert log_output.match(/HEADER: content-length: \d+/)
+    assert log_output.include?("HEADLINE: 200 HTTP/1.1")
+    assert log_output.include?("HEADER: content-type: ")
+    assert log_output.include?("HEADER: content-length: ")
   end
 
   def test_max_streams

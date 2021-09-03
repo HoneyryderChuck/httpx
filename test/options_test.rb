@@ -7,7 +7,7 @@ class OptionsTest < Minitest::Test
 
   def test_options_unknown
     ex = assert_raises(Error) { Options.new(foo: "bar") }
-    assert ex.message =~ /unknown option: foo/, ex.message
+    assert ex.message == "unknown option: foo", ex.message
   end
 
   def test_options_def_option_plain
@@ -126,7 +126,7 @@ class OptionsTest < Minitest::Test
       :persistent => false,
       :resolver_class => bar.resolver_class,
       :resolver_options => bar.resolver_options,
-    }.reject { |_, value| value.nil? }
+    }.compact
 
     assert foo.merge(bar).to_hash == expected, "options haven't merged correctly"
   end unless ENV.key?("HTTPX_DEBUG")

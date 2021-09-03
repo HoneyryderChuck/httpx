@@ -115,7 +115,7 @@ module Requests
         stub = grpc.build_stub("localhost:#{server_port}")
 
         error = assert_raises(HTTPX::Error) { stub.execute("an_rpc_method", input).to_s }
-        assert error.message =~ /oh crap/
+        assert error.message.include?("oh crap")
       end
 
       def test_plugin_grpc_cancellation_on_server_error

@@ -17,7 +17,7 @@ module HTTPX
 
         # lazy decodes a grpc stream response
         def stream(response, &block)
-          return enum_for(__method__, response) unless block_given?
+          return enum_for(__method__, response) unless block
 
           response.each do |frame|
             decode(frame, encodings: response.headers.get("grpc-encoding"), encoders: response.encoders, &block)
@@ -57,7 +57,7 @@ module HTTPX
 
             yield data
 
-            message = message.byteslice(5 + size..-1)
+            message = message.byteslice((5 + size)..-1)
           end
         end
 

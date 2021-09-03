@@ -75,16 +75,16 @@ module HTTPX
 
           # canonical request
           creq = "#{request.verb.to_s.upcase}" \
-            "\n#{request.canonical_path}" \
-            "\n#{request.canonical_query}" \
-            "\n#{canonical_headers}" \
-            "\n#{signed_headers}" \
-            "\n#{content_hashed}"
+                 "\n#{request.canonical_path}" \
+                 "\n#{request.canonical_query}" \
+                 "\n#{canonical_headers}" \
+                 "\n#{signed_headers}" \
+                 "\n#{content_hashed}"
 
           credential_scope = "#{date}" \
-            "/#{@region}" \
-            "/#{@service}" \
-            "/#{lower_provider_prefix}_request"
+                             "/#{@region}" \
+                             "/#{@service}" \
+                             "/#{lower_provider_prefix}_request"
 
           algo_line = "#{upper_provider_prefix}-HMAC-#{@algorithm}"
           # string to sign

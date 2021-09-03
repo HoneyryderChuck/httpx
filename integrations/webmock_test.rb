@@ -58,8 +58,8 @@ class WebmockTest < Minitest::Test
 
   def test_verification_that_expected_request_didnt_occur
     expected_message = "The request GET #{MOCK_URL_HTTP}/ was expected to execute 1 time but it executed 0 times" \
-      "\n\nThe following requests were made:\n\nNo requests were made.\n" \
-      "============================================================"
+                       "\n\nThe following requests were made:\n\nNo requests were made.\n" \
+                       "============================================================"
     assert_raise_with_message(MiniTest::Assertion, expected_message) do
       assert_requested(:get, MOCK_URL_HTTP)
     end
@@ -67,8 +67,8 @@ class WebmockTest < Minitest::Test
 
   def test_verification_that_expected_stub_didnt_occur
     expected_message = "The request ANY #{MOCK_URL_HTTP}/ was expected to execute 1 time but it executed 0 times" \
-      "\n\nThe following requests were made:\n\nNo requests were made.\n" \
-      "============================================================"
+                       "\n\nThe following requests were made:\n\nNo requests were made.\n" \
+                       "============================================================"
     assert_raise_with_message(MiniTest::Assertion, expected_message) do
       assert_requested(@stub_http)
     end

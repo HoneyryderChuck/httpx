@@ -38,7 +38,7 @@ module Faraday
           timeout_options = {
             connect_timeout: env.request.open_timeout,
             operation_timeout: env.request.timeout,
-          }.reject { |_, v| v.nil? }
+          }.compact
 
           options = {
             ssl: {},
@@ -101,7 +101,7 @@ module Faraday
           end
 
           def on_response(&blk)
-            if block_given?
+            if blk
               @on_response = lambda do |response|
                 blk.call(response)
               end
@@ -112,7 +112,7 @@ module Faraday
           end
 
           def on_complete(&blk)
-            if block_given?
+            if blk
               @on_complete = blk
               self
             else

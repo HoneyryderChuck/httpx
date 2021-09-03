@@ -7,7 +7,7 @@ class RequestTest < Minitest::Test
 
   def test_request_unsupported_body
     ex = assert_raises(HTTPX::Error) { Request.new(:post, "http://example.com/", body: Object.new) }
-    assert ex.message =~ /cannot determine size of body/
+    assert ex.message.include?("cannot determine size of body")
   end
 
   def test_request_verb

@@ -55,27 +55,27 @@ class HTTPSTest < Minitest::Test
     verify_status(response, 200)
     log_output = log.string
     # assert tls output
-    assert log_output.match(%r{SSL connection using TLSv\d+\.\d+ / \w+})
-    assert log_output.match(/ALPN, server accepted to use h2/) unless RUBY_ENGINE == "jruby" || RUBY_VERSION < "2.3"
-    assert log_output.match(/Server certificate:/)
-    assert log_output.match(/ subject: .+/)
-    assert log_output.match(/ start date: .+ UTC/)
-    assert log_output.match(/ expire date: .+ UTC/)
-    assert log_output.match(/ issuer: .+/)
-    assert log_output.match(/ SSL certificate verify ok./)
+    assert log_output.include?("SSL connection using TLSv")
+    assert log_output.include?("ALPN, server accepted to use h2") unless RUBY_ENGINE == "jruby" || RUBY_VERSION < "2.3"
+    assert log_output.include?("Server certificate:")
+    assert log_output.include?(" subject: ")
+    assert log_output.include?(" start date: ")
+    assert log_output.include?(" expire date: ")
+    assert log_output.include?(" issuer: ")
+    assert log_output.include?(" SSL certificate verify ok")
 
     return if RUBY_ENGINE == "jruby" || RUBY_VERSION < "2.3"
 
     # assert request headers
-    assert log_output.match(/HEADER: :scheme: https/)
-    assert log_output.match(/HEADER: :method: GET/)
-    assert log_output.match(/HEADER: :path: .+/)
-    assert log_output.match(/HEADER: :authority: .+/)
-    assert log_output.match(%r{HEADER: accept: */*})
+    assert log_output.include?("HEADER: :scheme: https")
+    assert log_output.include?("HEADER: :method: GET")
+    assert log_output.include?("HEADER: :path: ")
+    assert log_output.include?("HEADER: :authority: ")
+    assert log_output.include?("HEADER: accept: */*")
     # assert response headers
-    assert log_output.match(/HEADER: :status: 200/)
-    assert log_output.match(/HEADER: content-type: \w+/)
-    assert log_output.match(/HEADER: content-length: \d+/)
+    assert log_output.include?("HEADER: :status: 200")
+    assert log_output.include?("HEADER: content-type: ")
+    assert log_output.include?("HEADER: content-length: ")
   end
 
   unless RUBY_ENGINE == "jruby" || RUBY_VERSION < "2.3"

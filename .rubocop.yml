@@ -91,6 +91,9 @@ Style/GlobalVars:
 Style/RedundantBegin:
   Enabled: false
 
+Style/HashConversion:
+  Enabled: False
+
 Performance/TimesMap:
   Enabled: false
 
