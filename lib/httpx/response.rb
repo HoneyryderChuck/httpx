@@ -57,10 +57,10 @@ module HTTPX
     # :nocov:
     def inspect
       "#<Response:#{object_id} "\
-      "HTTP/#{version} " \
-      "@status=#{@status} " \
-      "@headers=#{@headers} " \
-      "@body=#{@body.bytesize}>"
+        "HTTP/#{version} " \
+        "@status=#{@status} " \
+        "@headers=#{@headers} " \
+        "@body=#{@body.bytesize}>"
     end
     # :nocov:
 
@@ -221,8 +221,8 @@ module HTTPX
       # :nocov:
       def inspect
         "#<HTTPX::Response::Body:#{object_id} " \
-        "@state=#{@state} " \
-        "@length=#{@length}>"
+          "@state=#{@state} " \
+          "@length=#{@length}>"
       end
       # :nocov:
 
@@ -321,7 +321,7 @@ module HTTPX
     else
       def to_s
         "#{@error.message} (#{@error.class})\n" \
-        "#{@error.backtrace.join("\n") if @error.backtrace}"
+          "#{@error.backtrace.join("\n") if @error.backtrace}"
       end
     end
 

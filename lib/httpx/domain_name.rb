@@ -123,7 +123,7 @@ module HTTPX
 
       # RFC 6265 #4.1.1
       # Domain-value must be a subdomain.
-      @domain && self <= domain && domain <= @domain ? true : false
+      @domain && self <= domain && domain <= @domain
     end
 
     # def ==(other)

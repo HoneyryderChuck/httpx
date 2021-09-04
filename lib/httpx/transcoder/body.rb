@@ -9,6 +9,7 @@ module HTTPX::Transcoder
     module_function
 
     class Encoder
+      using HTTPX::ArrayExtensions
       extend Forwardable
 
       def_delegator :@raw, :to_s
@@ -21,7 +22,7 @@ module HTTPX::Transcoder
         if @raw.respond_to?(:bytesize)
           @raw.bytesize
         elsif @raw.respond_to?(:to_ary)
-          @raw.map(&:bytesize).reduce(0, :+)
+          @raw.sum(&:bytesize)
         elsif @raw.respond_to?(:size)
           @raw.size || Float::INFINITY
         elsif @raw.respond_to?(:length)

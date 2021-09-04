@@ -2,20 +2,6 @@
 
 require "io/wait"
 
-module IOExtensions
-  refine IO do
-    # provides a fallback for rubies where IO#wait isn't implemented,
-    # but IO#wait_readable and IO#wait_writable are.
-    def wait(timeout = nil, _mode = :read_write)
-      r, w = IO.select([self], [self], nil, timeout)
-
-      return unless r || w
-
-      self
-    end
-  end
-end
-
 class HTTPX::Selector
   READABLE = %i[rw r].freeze
   WRITABLE = %i[rw w].freeze
@@ -23,7 +9,7 @@ class HTTPX::Selector
   private_constant :READABLE
   private_constant :WRITABLE
 
-  using IOExtensions unless IO.method_defined?(:wait) && IO.instance_method(:wait).arity == 2
+  using HTTPX::IOExtensions
 
   def initialize
     @selectables = []

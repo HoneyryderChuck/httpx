@@ -154,7 +154,7 @@ class ResponseTest < Minitest::Test
     assert form4_response.form == {}
 
     error = assert_raises(HTTPX::Error) { form2_response.__send__(:decode, "bla") }
-    assert error.message =~ /no decoder available for/, "failed with unexpected error"
+    assert error.message.include?("no decoder available for"), "failed with unexpected error"
   end
 
   private

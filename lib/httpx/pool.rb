@@ -8,6 +8,7 @@ require "httpx/resolver"
 
 module HTTPX
   class Pool
+    using ArrayExtensions
     extend Forwardable
 
     def_delegator :@timers, :after
@@ -162,7 +163,7 @@ module HTTPX
     end
 
     def next_timeout
-      @resolvers.values.reject(&:closed?).map(&:timeout).compact.min || @connections.map(&:timeout).compact.min
+      @resolvers.values.reject(&:closed?).filter_map(&:timeout).min || @connections.filter_map(&:timeout).min
     end
 
     def find_resolver_for(connection)

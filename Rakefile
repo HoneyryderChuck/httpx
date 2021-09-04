@@ -24,15 +24,12 @@ Rake::TestTask.new(:regressions) do |t|
   t.warning = false
 end
 
-RUBY_MAJOR_MINOR = RUBY_VERSION.split(/\./).first(2).join(".")
+RUBY_MAJOR_MINOR = RUBY_VERSION.split(".").first(2).join(".")
 
 begin
   require "rubocop/rake_task"
   desc "Run rubocop"
-  RuboCop::RakeTask.new(:rubocop) do |task|
-    # rubocop 0.81 seems to have a race condition somewhere when loading the configs
-    task.options += %w[--parallel]
-  end
+  RuboCop::RakeTask.new
 rescue LoadError
 end
 

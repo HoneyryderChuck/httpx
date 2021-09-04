@@ -3,6 +3,7 @@ inherit_from: .rubocop_todo.yml
 require: rubocop-performance
 
 AllCops:
+  NewCops: enable
   TargetRubyVersion: 2.7
   DisplayCopNames: true
   Include:
@@ -90,11 +91,17 @@ Style/GlobalVars:
 Style/RedundantBegin:
   Enabled: false
 
+Style/HashConversion:
+  Enabled: False
+
 Performance/TimesMap:
   Enabled: false
 
 Performance/RedundantBlockCall:
   Enabled: false
+
+Performance/CollectionLiteralInLoop:
+  Enabled: false # most useless perf cop ever...
 
 Naming/ClassAndModuleCamelCase:
   Exclude:
@@ -134,6 +141,11 @@ Lint/MissingSuper:
   Exclude:
     - 'lib/httpx/io/unix.rb'
 
+Lint/DuplicateBranch:
+  Enabled: false # this doesn't work correctly
+
+Lint/EmptyBlock:
+  Enabled: false # and neither does this. I don't control 3rd party methods.
 Style/HashTransformValues:
   Exclude:
     - 'lib/httpx/plugins/digest_authentication.rb'

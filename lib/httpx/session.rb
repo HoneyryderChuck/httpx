@@ -11,7 +11,7 @@ module HTTPX
       @options = self.class.default_options.merge(options)
       @responses = {}
       @persistent = @options.persistent
-      wrap(&blk) if block_given?
+      wrap(&blk) if blk
     end
 
     def wrap

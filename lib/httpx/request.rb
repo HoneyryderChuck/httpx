@@ -148,10 +148,10 @@ module HTTPX
     # :nocov:
     def inspect
       "#<HTTPX::Request:#{object_id} " \
-      "#{@verb.to_s.upcase} " \
-      "#{uri} " \
-      "@headers=#{@headers} " \
-      "@body=#{@body}>"
+        "#{@verb.to_s.upcase} " \
+        "#{uri} " \
+        "@headers=#{@headers} " \
+        "@body=#{@body}>"
     end
     # :nocov:
 
@@ -181,7 +181,7 @@ module HTTPX
       end
 
       def each(&block)
-        return enum_for(__method__) unless block_given?
+        return enum_for(__method__) unless block
         return if @body.nil?
 
         body = stream(@body)
@@ -236,7 +236,7 @@ module HTTPX
       # :nocov:
       def inspect
         "#<HTTPX::Request::Body:#{object_id} " \
-        "#{unbounded_body? ? "stream" : "@bytesize=#{bytesize}"}>"
+          "#{unbounded_body? ? "stream" : "@bytesize=#{bytesize}"}>"
       end
       # :nocov:
     end

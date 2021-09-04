@@ -194,15 +194,15 @@ module HTTPX
       server_cert = @peer_cert
 
       "#{super}\n\n" \
-        "SSL connection using #{@ctx.ssl_version} / #{Array(@ctx.cipher).first}\n" \
-        "ALPN, server accepted to use #{protocol}\n" +
+      "SSL connection using #{@ctx.ssl_version} / #{Array(@ctx.cipher).first}\n" \
+      "ALPN, server accepted to use #{protocol}\n" +
         (if server_cert
            "Server certificate:\n" \
-                 " subject: #{server_cert.subject}\n" \
-                 " start date: #{server_cert.not_before}\n" \
-                 " expire date: #{server_cert.not_after}\n" \
-                 " issuer: #{server_cert.issuer}\n" \
-                 " SSL certificate verify ok."
+             " subject: #{server_cert.subject}\n" \
+             " start date: #{server_cert.not_before}\n" \
+             " expire date: #{server_cert.not_after}\n" \
+             " issuer: #{server_cert.issuer}\n" \
+             " SSL certificate verify ok."
          else
            "SSL certificate verify failed."
          end

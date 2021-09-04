@@ -24,15 +24,13 @@ module HTTPX
       debug_stream << message
     end
 
-    if !Exception.instance_methods.include?(:full_message)
+    if Exception.instance_methods.include?(:full_message)
 
       def log_exception(ex, level: @options.debug_level, color: nil)
         return unless @options.debug
         return unless @options.debug_level >= level
 
-        message = +"#{ex.message} (#{ex.class})"
-        message << "\n" << ex.backtrace.join("\n") unless ex.backtrace.nil?
-        log(level: level, color: color) { message }
+        log(level: level, color: color) { ex.full_message }
       end
 
     else
@@ -41,7 +39,9 @@ module HTTPX
         return unless @options.debug
         return unless @options.debug_level >= level
 
-        log(level: level, color: color) { ex.full_message }
+        message = +"#{ex.message} (#{ex.class})"
+        message << "\n" << ex.backtrace.join("\n") unless ex.backtrace.nil?
+        log(level: level, color: color) { message }
       end
 
     end

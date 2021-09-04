@@ -36,3 +36,6 @@ Style/Documentation:
 
 Naming/AccessorMethodName:
   Enabled: false
+
+Performance/MethodObjectAsBlock:
+  Enabled: false

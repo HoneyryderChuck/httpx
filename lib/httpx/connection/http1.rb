@@ -283,10 +283,10 @@ module HTTPX
         # on the last request of the possible batch (either allowed max requests,
         # or if smaller, the size of the batch itself)
         requests_limit = [@max_requests, @requests.size].min
-        if request != @requests[requests_limit - 1]
-          "keep-alive"
-        else
+        if request == @requests[requests_limit - 1]
           "close"
+        else
+          "keep-alive"
         end
       end
 

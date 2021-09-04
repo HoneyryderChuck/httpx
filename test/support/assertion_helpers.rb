@@ -11,19 +11,19 @@ module ResponseHelpers
 
   %w[header param].each do |meth|
     class_eval <<-DEFINE, __FILE__, __LINE__ + 1
-      def verify_#{meth}(#{meth}s, key, expect)
-        assert #{meth}s.key?(key), "#{meth}s don't contain the given key (\"\#{key}\", headers: \#{#{meth}s})"
-        value = #{meth}s[key]
-        if value.respond_to?(:start_with?)
-          assert value.start_with?(expect), "#{meth} assertion failed: \#{key}=\#{value} (expected: \#{expect}})"
-        else
-          assert value == expect, "#{meth} assertion failed: \#{key}=\#{value.inspect} (expected: \#{expect.to_s})"
-        end
-      end
+      def verify_#{meth}(#{meth}s, key, expect)                                                                     # def verify_header(headers, key, expect)
+        assert #{meth}s.key?(key), "#{meth}s don't contain the given key (\"\#{key}\", headers: \#{#{meth}s})"      #   assert headers.key?(key), "headers ...
+        value = #{meth}s[key]                                                                                       #   value = headers[key]
+        if value.respond_to?(:start_with?)                                                                          #   if value.respond_to?(:start_with?)
+          assert value.start_with?(expect), "#{meth} assertion failed: \#{key}=\#{value} (expected: \#{expect}})"   #     assert value.start_with?(expect), "headers assertion failed:  ...
+        else                                                                                                        #   else
+          assert value == expect, "#{meth} assertion failed: \#{key}=\#{value.inspect} (expected: \#{expect.to_s})" #     assert value == expect, "headers assertion failed: ...
+        end                                                                                                         #   end
+      end                                                                                                           # end
 
-      def verify_no_#{meth}(#{meth}s, key)
-        assert !#{meth}s.key?(key), "#{meth}s contains the given key (" + key + ": \#{#{meth}s[key].inspect})"
-      end
+      def verify_no_#{meth}(#{meth}s, key)                                                                          # def verify_no_header(headers, key)
+        assert !#{meth}s.key?(key), "#{meth}s contains the given key (" + key + ": \#{#{meth}s[key].inspect})"      #   assert !headers.key?(key), "headers contains ...
+      end                                                                                                           # end
     DEFINE
   end
 

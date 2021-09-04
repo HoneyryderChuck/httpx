@@ -11,11 +11,11 @@ class NTLMServer < TestServer
         case authorization
         when /^NTLMSSP\000\001/
           type2 = "TlRMTVNTUAACAAAADAAMADAAAAABAoEAASNFZ4mr" \
-            "ze8AAAAAAAAAAGIAYgA8AAAARABPAE0AQQBJAE4A" \
-            "AgAMAEQATwBNAEEASQBOAAEADABTAEUAUgBWAEUA" \
-            "UgAEABQAZABvAG0AYQBpAG4ALgBjAG8AbQADACIA" \
-            "cwBlAHIAdgBlAHIALgBkAG8AbQBhAGkAbgAuAGMA" \
-            "bwBtAAAAAAA="
+                  "ze8AAAAAAAAAAGIAYgA8AAAARABPAE0AQQBJAE4A" \
+                  "AgAMAEQATwBNAEEASQBOAAEADABTAEUAUgBWAEUA" \
+                  "UgAEABQAZABvAG0AYQBpAG4ALgBjAG8AbQADACIA" \
+                  "cwBlAHIAdgBlAHIALgBkAG8AbQBhAGkAbgAuAGMA" \
+                  "bwBtAAAAAAA="
 
           res["WWW-Authenticate"] = "NTLM #{type2}"
           res.status = 401
