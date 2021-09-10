@@ -9,12 +9,18 @@ class WebmockTest < Minitest::Test
   include HTTPHelpers
 
   MOCK_URL_HTTP = "http://www.example.com"
+  MOCK_URL_HTTP_EXCEPTION = "http://exception.example.com"
+  MOCK_URL_HTTP_TIMEOUT = "http://timeout.example.com"
 
   def setup
     super
     WebMock.enable!
     WebMock.disable_net_connect!
     @stub_http = stub_http_request(:any, MOCK_URL_HTTP)
+
+    @exception_class = Class.new(StandardError)
+    @stub_exception = stub_http_request(:any, MOCK_URL_HTTP_EXCEPTION).to_raise(@exception_class.new("exception message"))
+    @stub_timeout = stub_http_request(:any, MOCK_URL_HTTP_TIMEOUT).to_timeout
   end
 
   def teardown
@@ -33,6 +39,18 @@ class WebmockTest < Minitest::Test
     assert_raises ArgumentError do
       assert_not_requested(@stub_http) {}
     end
+  end
+
+  def test_to_raise
+    response = http_request(:get, MOCK_URL_HTTP_EXCEPTION)
+    assert_requested(@stub_exception)
+    assert_equal(@exception_class.new("exception message"), response.error)
+  end
+
+  def test_to_timeout
+    response = http_request(:get, MOCK_URL_HTTP_TIMEOUT)
+    assert_requested(@stub_timeout)
+    assert_equal(HTTPX::TimeoutError.new(1, "Timed out"), response.error)
   end
 
   def test_error_on_non_stubbed_request
