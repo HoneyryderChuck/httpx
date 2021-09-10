@@ -130,10 +130,18 @@ class ResponseTest < Minitest::Test
     json_response << %({"a": "b"})
     assert json_response.json == { "a" => "b" }
     assert json_response.json(symbolize_names: true) == { :a => "b" }
+    json_response << "bogus"
+    assert_raises(JSON::ParserError) { json_response.json }
+    err = assert_raises(HTTPX::Error) { json_response.form }
+    assert err.message == "invalid form mime type (application/json)"
 
     form_response = Response.new(request, 200, "2.0", { "content-type" => "application/x-www-form-urlencoded" })
     form_response << "a=b&c=d"
     assert form_response.form == { "a" => "b", "c" => "d" }
+    err = assert_raises(HTTPX::Error) { form_response.json }
+    assert err.message == "invalid json mime type (application/x-www-form-urlencoded)"
+    form_response << "богус"
+    assert_raises(ArgumentError) { form_response.form }
 
     form2_response = Response.new(request, 200, "2.0", { "content-type" => "application/x-www-form-urlencoded" })
     form2_response << "a[]=b&a[]=c&d[e]=f&g[h][i][j]=k&l[m][][n]=o&l[m][][p]=q&l[m][][n]=r&s[=t"

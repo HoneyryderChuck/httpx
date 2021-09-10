@@ -35,7 +35,7 @@ module HTTPX::Transcoder
     def decode(response)
       content_type = response.content_type.mime_type
 
-      raise Error, "invalid json mime type (#{content_type})" unless JSON_REGEX.match?(content_type)
+      raise HTTPX::Error, "invalid json mime type (#{content_type})" unless JSON_REGEX.match?(content_type)
 
       ::JSON.method(:parse)
     end
