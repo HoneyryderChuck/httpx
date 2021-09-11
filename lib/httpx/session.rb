@@ -50,7 +50,11 @@ module HTTPX
     private
 
     def pool
-      Thread.current[:httpx_connection_pool] ||= Pool.new
+      Thread.current.thread_variable_get(:httpx_connection_pool) || begin
+        pool = Pool.new
+        Thread.current.thread_variable_set(:httpx_connection_pool, pool)
+        pool
+      end
     end
 
     def on_response(request, response)
