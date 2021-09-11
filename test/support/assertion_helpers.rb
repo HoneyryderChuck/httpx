@@ -33,6 +33,8 @@ module ResponseHelpers
   end
 
   def verify_execution_delta(expected, actual, delta = 0)
+    delta += 1 # because of jitter
+
     # truffleruby has a hard time complying reliably with this delta when running in parallel. Therefore,
     # we give it a bit of leeway.
     delta += 10 if RUBY_ENGINE == "truffleruby"
