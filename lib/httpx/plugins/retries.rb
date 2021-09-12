@@ -87,6 +87,8 @@ module HTTPX
             retry_after = retry_after.call(request, response) if retry_after.respond_to?(:call)
 
             if retry_after
+              # apply some jitter
+              retry_after *= (0.5 * (1 + rand))
 
               log { "retrying after #{retry_after} secs..." }
               pool.after(retry_after) do
