@@ -70,7 +70,6 @@ module HTTPX
 
       @inflight = 0
       @keep_alive_timeout = @options.timeout[:keep_alive_timeout]
-      @keep_alive_timer = nil
 
       self.addresses = @options.addresses if @options.addresses
     end
@@ -201,10 +200,6 @@ module HTTPX
 
     def close
       @parser.close if @parser
-      return unless @keep_alive_timer
-
-      @keep_alive_timer.cancel
-      remove_instance_variable(:@keep_alive_timer)
     end
 
     def reset
@@ -216,18 +211,17 @@ module HTTPX
     def send(request)
       if @parser && !@write_buffer.full?
         request.headers["alt-used"] = @origin.authority if match_altsvcs?(request.uri)
-        if @keep_alive_timer
+
+        if @response_received_at &&
+           (Process.clock_gettime(Process::CLOCK_MONOTONIC) - @response_received_at) > @keep_alive_timeout
           # when pushing a request into an existing connection, we have to check whether there
           # is the possibility that the connection might have extended the keep alive timeout.
           # for such cases, we want to ping for availability before deciding to shovel requests.
-          if @keep_alive_timer.fires_in.negative?
-            @pending << request
-            parser.ping
-            return
-          end
-
-          @keep_alive_timer.pause
+          @pending << request
+          parser.ping
+          return
         end
+
         @inflight += 1
         parser.send(request)
       else
@@ -380,7 +374,6 @@ module HTTPX
     def send_pending
       while !@write_buffer.full? && (request = @pending.shift)
         @inflight += 1
-        @keep_alive_timer.pause if @keep_alive_timer
         parser.send(request)
       end
     end
@@ -506,29 +499,11 @@ module HTTPX
     def purge_after_closed
       @io.close if @io
       @read_buffer.clear
-      if @keep_alive_timer
-        @keep_alive_timer.cancel
-        remove_instance_variable(:@keep_alive_timer)
-      end
-
       remove_instance_variable(:@timeout) if defined?(@timeout)
     end
 
     def handle_response
       @inflight -= 1
-      return unless @inflight.zero?
-
-      if @keep_alive_timer
-        @keep_alive_timer.resume
-        @keep_alive_timer.reset
-      else
-        @keep_alive_timer = @timers.after(@keep_alive_timeout) do
-          unless @inflight.zero?
-            log { "(#{@origin}): keep alive timeout expired" }
-            parser.ping
-          end
-        end
-      end
     end
 
     def on_error(error)
