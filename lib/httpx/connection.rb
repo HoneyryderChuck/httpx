@@ -70,6 +70,7 @@ module HTTPX
 
       @inflight = 0
       @keep_alive_timeout = @options.timeout[:keep_alive_timeout]
+      @total_timeout = @options.timeout[:total_timeout]
 
       self.addresses = @options.addresses if @options.addresses
     end
@@ -230,6 +231,21 @@ module HTTPX
     end
 
     def timeout
+      if @total_timeout
+        return @total_timeout unless @connected_at
+
+        elapsed_time = @total_timeout - (Process.clock_gettime(Process::CLOCK_MONOTONIC) - @connected_at)
+
+        if elapsed_time.negative?
+          ex = TotalTimeoutError.new(@total_timeout, "Timed out after #{@total_timeout} seconds")
+          ex.set_backtrace(error.backtrace)
+          on_error(@total_timeout)
+          return
+        end
+
+        return elapsed_time
+      end
+
       return @timeout if defined?(@timeout)
 
       return @options.timeout[:connect_timeout] if @state == :idle
@@ -459,10 +475,10 @@ module HTTPX
       when :open
         return if @state == :closed
 
-        total_timeout
-
         @io.connect
         return unless @io.connected?
+
+        @connected_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
         send_pending
 
@@ -474,11 +490,6 @@ module HTTPX
       when :closed
         return unless @state == :closing
         return unless @write_buffer.empty?
-
-        if @total_timeout
-          @total_timeout.cancel
-          remove_instance_variable(:@total_timeout)
-        end
 
         purge_after_closed
       when :already_open
@@ -503,22 +514,25 @@ module HTTPX
     end
 
     def handle_response
+      @response_received_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       @inflight -= 1
     end
 
     def on_error(error)
       if error.instance_of?(TimeoutError)
-        if @timeout
-          @timeout -= error.timeout
-          return unless @timeout <= 0
-        end
 
-        if @total_timeout && @total_timeout.fires_in.negative?
-          ex = TotalTimeoutError.new(@total_timeout.interval, "Timed out after #{@total_timeout.interval} seconds")
+        if @total_timeout && @connected_at &&
+           (Process.clock_gettime(Process::CLOCK_MONOTONIC) - @connected_at) > @total_timeout
+          ex = TotalTimeoutError.new(@total_timeout, "Timed out after #{@total_timeout} seconds")
           ex.set_backtrace(error.backtrace)
           error = ex
-        elsif connecting?
-          error = error.to_connection_error
+        else
+          if @timeout
+            @timeout -= error.timeout
+            return unless @timeout <= 0
+          end
+
+          error = error.to_connection_error if connecting?
         end
       end
       handle_error(error)
@@ -531,19 +545,6 @@ module HTTPX
         response = ErrorResponse.new(request, error, @options)
         request.response = response
         request.emit(:response, response)
-      end
-    end
-
-    def total_timeout
-      total = @options.timeout[:total_timeout]
-
-      return unless total
-
-      @total_timeout ||= @timers.after(total) do
-        ex = TotalTimeoutError.new(total, "Timed out after #{total} seconds")
-        ex.set_backtrace(caller)
-        on_error(ex)
-        @parser.close if @parser
       end
     end
   end
