@@ -64,10 +64,16 @@ module HTTPX
     end
     # :nocov:
 
-    def raise_for_status
+    def error
       return if @status < 400
 
-      raise HTTPError, self
+      HTTPError.new(self)
+    end
+
+    def raise_for_status
+      return self unless (err = error)
+
+      raise err
     end
 
     def json(options = nil)

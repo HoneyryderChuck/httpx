@@ -1,6 +1,8 @@
 module HTTPX
   interface _Response
-    def raise_for_status: () -> void
+    def raise_for_status: () -> self
+
+    def error: () -> StandardError?
   end
 
   class Response
@@ -89,7 +91,6 @@ module HTTPX
     @options: Options
 
     attr_reader request: Request
-    attr_reader error: Exception
 
     def status: () -> (Integer | _ToS)
 

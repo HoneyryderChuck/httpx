@@ -10,6 +10,12 @@ class ErrorResponseTest < Minitest::Test
     assert r1.status == "wow"
   end
 
+  def test_error_response_error
+    error = RuntimeError.new("wow")
+    r1 = ErrorResponse.new(request_mock, error, {})
+    assert r1.error == error
+  end
+
   def test_error_response_raise_for_status
     some_error = Class.new(RuntimeError)
     r1 = ErrorResponse.new(request_mock, some_error.new("wow"), {})

@@ -64,7 +64,7 @@ module Datadog
           def finish(response)
             return unless @span
 
-            if response.respond_to?(:error)
+            if response.is_a?(::HTTPX::ErrorResponse)
               @span.set_error(response.error)
             else
               @span.set_tag(Datadog::Ext::HTTP::STATUS_CODE, response.status.to_s)
