@@ -317,6 +317,7 @@ module HTTPX
     end
 
     def status
+      warn ":#{__method__} is deprecated, use :error.message instead"
       @error.message
     end
 
