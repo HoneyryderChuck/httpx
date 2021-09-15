@@ -25,7 +25,15 @@ module HTTPX
     attr_reader state: Symbol
     attr_reader pending: Array[Request]
     attr_reader options: Options
-    attr_writer timers: untyped # Timers::Timer
+    attr_writer timers: Timers
+
+    @origins: Array[URI::Generic]
+    @window_size: Integer
+    @read_buffer: Buffer
+    @write_buffer: Buffer
+    @inflight: Integer
+    @keep_alive_timeout: Numeric?
+    @total_timeout: Numeric?
 
     def addresses: () -> Array[ipaddr]?
 
@@ -76,6 +84,8 @@ module HTTPX
 
     def parser: () -> _Parser
 
+    def send_request_to_parser: (Request request) -> void
+
     def build_parser: () -> _Parser
                     | (String) -> _Parser
 
@@ -89,9 +99,6 @@ module HTTPX
 
     def handle_error: (StandardError) -> void
 
-    def total_timeout: () -> untyped?
-    # def total_timeout: () -> Timers::Timer?
-    #
     def purge_after_closed: () -> void
   end
 end

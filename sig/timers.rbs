@@ -1,0 +1,31 @@
+module HTTPX
+  class Timers
+    @interval: Array[Interval]
+
+    def after: (Numeric interval_in_secs) { () -> void } -> void
+
+    def wait_interval: () -> Numeric?
+
+    def fire: (?StandardError error) -> void
+
+    def cancel: () -> void
+    private
+
+    def initialize: () -> void
+
+    class Interval
+      include Comparable
+
+      attr_reader interval: Numeric
+
+      def to_f: () -> Float
+
+      def <<: (^() -> void) -> void
+
+      def elapse: (Numeric elapsed) -> Numeric
+      private
+
+      def initialize: (Numeric interval) -> void
+    end
+  end
+end

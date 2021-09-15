@@ -213,7 +213,7 @@ module HTTPX
       if @parser && !@write_buffer.full?
         request.headers["alt-used"] = @origin.authority if match_altsvcs?(request.uri)
 
-        if @response_received_at &&
+        if @response_received_at && @keep_alive_timeout &&
            (Process.clock_gettime(Process::CLOCK_MONOTONIC) - @response_received_at) > @keep_alive_timeout
           # when pushing a request into an existing connection, we have to check whether there
           # is the possibility that the connection might have extended the keep alive timeout.
@@ -223,8 +223,7 @@ module HTTPX
           return
         end
 
-        @inflight += 1
-        parser.send(request)
+        send_request_to_parser(request)
       else
         @pending << request
       end
@@ -389,13 +388,17 @@ module HTTPX
 
     def send_pending
       while !@write_buffer.full? && (request = @pending.shift)
-        @inflight += 1
-        parser.send(request)
+        send_request_to_parser(request)
       end
     end
 
     def parser
       @parser ||= build_parser
+    end
+
+    def send_request_to_parser(request)
+      @inflight += 1
+      parser.send(request)
     end
 
     def build_parser(protocol = @io.protocol)
