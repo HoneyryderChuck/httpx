@@ -9,6 +9,7 @@ services:
       - HTTPX_SOCKS4A_PROXY=socks4a://user4:@socksproxy:8080
       - HTTPX_SOCKS5_PROXY=socks5://user5:password@socksproxy:8080
       - HTTPX_SSH_PROXY=ssh://sshproxy:22
+      - HTTPX_NO_JITTER=1
       - N=6 # minitest workers
       - MT_CPU=6 # minitest workers
       - CI=1
