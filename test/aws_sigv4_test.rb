@@ -24,7 +24,7 @@ class HTTPXAwsSigv4Test < Minitest::Test
     assert_in_delta(amz_date, Time.now.utc, 3)
 
     # date already set
-    date = Time.now.utc - 60 * 60 * 24
+    date = Time.now.utc - (60 * 60 * 24)
     date_amz = date.strftime("%Y%m%dT%H%M%SZ")
     x_date_request = sigv4_session.build_request(:get, "http://domain.com", headers: { "x-amz-date" => date_amz })
     verify_header(x_date_request.headers, "x-amz-date", date_amz)
