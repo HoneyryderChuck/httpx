@@ -9,6 +9,7 @@ module HTTPX
     def fire: (?StandardError error) -> void
 
     def cancel: () -> void
+
     private
 
     def initialize: () -> void

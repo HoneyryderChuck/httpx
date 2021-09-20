@@ -6,6 +6,14 @@ module HTTPX
 
     module_function
 
+    def now
+      Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    end
+
+    def elapsed_time(monotonic_timestamp)
+      Process.clock_gettime(Process::CLOCK_MONOTONIC) - monotonic_timestamp
+    end
+
     # The value of this field can be either an HTTP-date or a number of
     # seconds to delay after the response is received.
     def parse_retry_after(retry_after)

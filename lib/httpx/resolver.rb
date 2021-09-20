@@ -26,14 +26,14 @@ module HTTPX
     module_function
 
     def cached_lookup(hostname)
-      now = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      now = Utils.now
       @lookup_mutex.synchronize do
         lookup(hostname, now)
       end
     end
 
     def cached_lookup_set(hostname, entries)
-      now = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      now = Utils.now
       entries.each do |entry|
         entry["TTL"] += now
       end

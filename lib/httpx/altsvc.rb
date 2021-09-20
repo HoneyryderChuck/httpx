@@ -10,14 +10,14 @@ module HTTPX
     module_function
 
     def cached_altsvc(origin)
-      now = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      now = Utils.now
       @altsvc_mutex.synchronize do
         lookup(origin, now)
       end
     end
 
     def cached_altsvc_set(origin, entry)
-      now = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      now = Utils.now
       @altsvc_mutex.synchronize do
         return if @altsvcs[origin].any? { |altsvc| altsvc["origin"] == entry["origin"] }
 

@@ -25,7 +25,7 @@ module HTTPX
     def wait_interval
       return if @intervals.empty?
 
-      @next_interval_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      @next_interval_at = Utils.now
 
       @intervals.first.interval
     end
@@ -34,7 +34,7 @@ module HTTPX
       raise error if error && error.timeout != @intervals.first
       return if @intervals.empty? || !@next_interval_at
 
-      elapsed_time = Process.clock_gettime(Process::CLOCK_MONOTONIC) - @next_interval_at
+      elapsed_time = Utils.elapsed_time(@next_interval_at)
 
       @intervals.delete_if { |interval| interval.elapse(elapsed_time) <= 0 }
     end

@@ -214,7 +214,7 @@ module HTTPX
         request.headers["alt-used"] = @origin.authority if match_altsvcs?(request.uri)
 
         if @response_received_at && @keep_alive_timeout &&
-           (Process.clock_gettime(Process::CLOCK_MONOTONIC) - @response_received_at) > @keep_alive_timeout
+           Utils.elapsed_time(@response_received_at) > @keep_alive_timeout
           # when pushing a request into an existing connection, we have to check whether there
           # is the possibility that the connection might have extended the keep alive timeout.
           # for such cases, we want to ping for availability before deciding to shovel requests.
@@ -233,7 +233,7 @@ module HTTPX
       if @total_timeout
         return @total_timeout unless @connected_at
 
-        elapsed_time = @total_timeout - (Process.clock_gettime(Process::CLOCK_MONOTONIC) - @connected_at)
+        elapsed_time = @total_timeout - Utils.elapsed_time(@connected_at)
 
         if elapsed_time.negative?
           ex = TotalTimeoutError.new(@total_timeout, "Timed out after #{@total_timeout} seconds")
@@ -481,7 +481,7 @@ module HTTPX
         @io.connect
         return unless @io.connected?
 
-        @connected_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+        @connected_at = Utils.now
 
         send_pending
 
@@ -517,7 +517,7 @@ module HTTPX
     end
 
     def handle_response
-      @response_received_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      @response_received_at = Utils.now
       @inflight -= 1
     end
 
@@ -525,7 +525,7 @@ module HTTPX
       if error.instance_of?(TimeoutError)
 
         if @total_timeout && @connected_at &&
-           (Process.clock_gettime(Process::CLOCK_MONOTONIC) - @connected_at) > @total_timeout
+           Utils.elapsed_time(@connected_at) > @total_timeout
           ex = TotalTimeoutError.new(@total_timeout, "Timed out after #{@total_timeout} seconds")
           ex.set_backtrace(error.backtrace)
           error = ex
