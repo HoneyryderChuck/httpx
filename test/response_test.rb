@@ -28,16 +28,24 @@ class ResponseTest < Minitest::Test
     assert resource.body == "data", "body should have been updated"
   end
 
-  def test_raise_for_status
+  def test_response_error
     r1 = Response.new(request, 200, "2.0", {})
-    r1.raise_for_status
+    assert r1.error.nil?
+    r2 = Response.new(request, 404, "2.0", {})
+    assert !r2.error.nil?
+    assert r2.error.is_a?(HTTPError)
+  end
+
+  def test_response_raise_for_status
+    r1 = Response.new(request, 200, "2.0", {})
+    assert r1.raise_for_status == r1
     r2 = Response.new(request, 302, "2.0", {})
-    r2.raise_for_status
+    assert r2.raise_for_status == r2
     r3 = Response.new(request, 404, "2.0", {})
-    error = assert_raises(HTTPX::HTTPError) { r3.raise_for_status }
+    error = assert_raises(HTTPError) { r3.raise_for_status }
     assert error.status == 404
     r4 = Response.new(request, 500, "2.0", {})
-    error = assert_raises(HTTPX::HTTPError) { r4.raise_for_status }
+    error = assert_raises(HTTPError) { r4.raise_for_status }
     assert error.status == 500
   end
 
