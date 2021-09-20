@@ -4,6 +4,7 @@ module HTTPX
       MAX_RETRIES: Integer
       IDEMPOTENT_METHODS: Array[verb]
       RETRYABLE_ERRORS: Array[singleton(StandardError)]
+      DEFAULT_JITTER: ^(Numeric) -> Numeric
 
       interface _RetryCallback
         def call: (response) -> bool?
@@ -11,6 +12,8 @@ module HTTPX
 
       interface _RetriesOptions
         def retry_after: () -> Numeric?
+
+        def retry_jitter: () -> ^(Numeric) -> Numeric
 
         def max_retries: () -> Integer?
 

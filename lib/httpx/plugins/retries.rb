@@ -22,9 +22,16 @@ module HTTPX
                           Parser::Error,
                           Errno::EINVAL,
                           Errno::ETIMEDOUT].freeze
+      DEFAULT_JITTER = ->(interval) { interval * (0.5 * (1 + rand)) }
 
-      def self.extra_options(options)
-        options.merge(max_retries: MAX_RETRIES)
+      if ENV.key?("HTTPX_NO_JITTER")
+        def self.extra_options(options)
+          options.merge(max_retries: MAX_RETRIES)
+        end
+      else
+        def self.extra_options(options)
+          options.merge(max_retries: MAX_RETRIES, retry_jitter: DEFAULT_JITTER)
+        end
       end
 
       module OptionsMethods
@@ -34,6 +41,13 @@ module HTTPX
             value = Integer(value)
             raise TypeError, ":retry_after must be positive" unless value.positive?
           end
+
+          value
+        end
+
+        def option_retry_jitter(value)
+          # return early if callable
+          raise TypeError, ":retry_jitter must be callable" unless value.respond_to?(:call)
 
           value
         end
@@ -87,8 +101,10 @@ module HTTPX
             retry_after = retry_after.call(request, response) if retry_after.respond_to?(:call)
 
             if retry_after
-              # apply some jitter
-              retry_after *= (0.5 * (1 + rand))
+              # apply jitter
+              if (jitter = request.options.retry_jitter)
+                retry_after = jitter.call(retry_after)
+              end
 
               log { "retrying after #{retry_after} secs..." }
               pool.after(retry_after) do

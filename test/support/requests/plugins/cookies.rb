@@ -197,7 +197,7 @@ module Requests
         c3 = HTTPX::Plugins::Cookies::Cookie.new("a", "b", path: "/cookies")
         assert [c3, c2, c1].sort == [c3, c1, c2]
 
-        c4 = HTTPX::Plugins::Cookies::Cookie.new("a", "b", created_at: (Time.now - 60 * 60 * 24))
+        c4 = HTTPX::Plugins::Cookies::Cookie.new("a", "b", created_at: (Time.now - (60 * 60 * 24)))
         assert [c4, c3, c2, c1].sort == [c3, c4, c1, c2]
       end
 
