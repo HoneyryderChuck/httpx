@@ -69,9 +69,14 @@ module HTTPX
       end
 
       module ConnectionMethods
-        def send(request)
+        def send_request_to_parser(request)
+          super
+
+          return unless request.headers["expect"] == "100-continue"
+
           request.once(:expect) do
-            @timers.after(@options.expect_timeout) do
+            @timers.after(request.options.expect_timeout) do
+              # expect timeout expired
               if request.state == :expect && !request.expects?
                 Expect.no_expect_store << request.origin
                 request.headers.delete("expect")
@@ -79,7 +84,6 @@ module HTTPX
               end
             end
           end
-          super
         end
       end
 

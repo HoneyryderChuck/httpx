@@ -70,7 +70,7 @@ module HTTPX
 
       @inflight = 0
       @keep_alive_timeout = @options.timeout[:keep_alive_timeout]
-      @keep_alive_timer = nil
+      @total_timeout = @options.timeout[:total_timeout]
 
       self.addresses = @options.addresses if @options.addresses
     end
@@ -201,10 +201,6 @@ module HTTPX
 
     def close
       @parser.close if @parser
-      return unless @keep_alive_timer
-
-      @keep_alive_timer.cancel
-      remove_instance_variable(:@keep_alive_timer)
     end
 
     def reset
@@ -216,26 +212,39 @@ module HTTPX
     def send(request)
       if @parser && !@write_buffer.full?
         request.headers["alt-used"] = @origin.authority if match_altsvcs?(request.uri)
-        if @keep_alive_timer
+
+        if @response_received_at && @keep_alive_timeout &&
+           Utils.elapsed_time(@response_received_at) > @keep_alive_timeout
           # when pushing a request into an existing connection, we have to check whether there
           # is the possibility that the connection might have extended the keep alive timeout.
           # for such cases, we want to ping for availability before deciding to shovel requests.
-          if @keep_alive_timer.fires_in.negative?
-            @pending << request
-            parser.ping
-            return
-          end
-
-          @keep_alive_timer.pause
+          @pending << request
+          parser.ping
+          return
         end
-        @inflight += 1
-        parser.send(request)
+
+        send_request_to_parser(request)
       else
         @pending << request
       end
     end
 
     def timeout
+      if @total_timeout
+        return @total_timeout unless @connected_at
+
+        elapsed_time = @total_timeout - Utils.elapsed_time(@connected_at)
+
+        if elapsed_time.negative?
+          ex = TotalTimeoutError.new(@total_timeout, "Timed out after #{@total_timeout} seconds")
+          ex.set_backtrace(error.backtrace)
+          on_error(@total_timeout)
+          return
+        end
+
+        return elapsed_time
+      end
+
       return @timeout if defined?(@timeout)
 
       return @options.timeout[:connect_timeout] if @state == :idle
@@ -379,14 +388,17 @@ module HTTPX
 
     def send_pending
       while !@write_buffer.full? && (request = @pending.shift)
-        @inflight += 1
-        @keep_alive_timer.pause if @keep_alive_timer
-        parser.send(request)
+        send_request_to_parser(request)
       end
     end
 
     def parser
       @parser ||= build_parser
+    end
+
+    def send_request_to_parser(request)
+      @inflight += 1
+      parser.send(request)
     end
 
     def build_parser(protocol = @io.protocol)
@@ -466,10 +478,10 @@ module HTTPX
       when :open
         return if @state == :closed
 
-        total_timeout
-
         @io.connect
         return unless @io.connected?
+
+        @connected_at = Utils.now
 
         send_pending
 
@@ -481,11 +493,6 @@ module HTTPX
       when :closed
         return unless @state == :closing
         return unless @write_buffer.empty?
-
-        if @total_timeout
-          @total_timeout.cancel
-          remove_instance_variable(:@total_timeout)
-        end
 
         purge_after_closed
       when :already_open
@@ -506,44 +513,29 @@ module HTTPX
     def purge_after_closed
       @io.close if @io
       @read_buffer.clear
-      if @keep_alive_timer
-        @keep_alive_timer.cancel
-        remove_instance_variable(:@keep_alive_timer)
-      end
-
       remove_instance_variable(:@timeout) if defined?(@timeout)
     end
 
     def handle_response
+      @response_received_at = Utils.now
       @inflight -= 1
-      return unless @inflight.zero?
-
-      if @keep_alive_timer
-        @keep_alive_timer.resume
-        @keep_alive_timer.reset
-      else
-        @keep_alive_timer = @timers.after(@keep_alive_timeout) do
-          unless @inflight.zero?
-            log { "(#{@origin}): keep alive timeout expired" }
-            parser.ping
-          end
-        end
-      end
     end
 
     def on_error(error)
       if error.instance_of?(TimeoutError)
-        if @timeout
-          @timeout -= error.timeout
-          return unless @timeout <= 0
-        end
 
-        if @total_timeout && @total_timeout.fires_in.negative?
-          ex = TotalTimeoutError.new(@total_timeout.interval, "Timed out after #{@total_timeout.interval} seconds")
+        if @total_timeout && @connected_at &&
+           Utils.elapsed_time(@connected_at) > @total_timeout
+          ex = TotalTimeoutError.new(@total_timeout, "Timed out after #{@total_timeout} seconds")
           ex.set_backtrace(error.backtrace)
           error = ex
-        elsif connecting?
-          error = error.to_connection_error
+        else
+          if @timeout
+            @timeout -= error.timeout
+            return unless @timeout <= 0
+          end
+
+          error = error.to_connection_error if connecting?
         end
       end
       handle_error(error)
@@ -556,19 +548,6 @@ module HTTPX
         response = ErrorResponse.new(request, error, @options)
         request.response = response
         request.emit(:response, response)
-      end
-    end
-
-    def total_timeout
-      total = @options.timeout[:total_timeout]
-
-      return unless total
-
-      @total_timeout ||= @timers.after(total) do
-        ex = TotalTimeoutError.new(total, "Timed out after #{total} seconds")
-        ex.set_backtrace(caller)
-        on_error(ex)
-        @parser.close if @parser
       end
     end
   end

@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "forwardable"
-require "timers"
 require "httpx/selector"
 require "httpx/connection"
 require "httpx/resolver"
@@ -16,7 +15,7 @@ module HTTPX
     def initialize
       @resolvers = {}
       @_resolver_ios = {}
-      @timers = Timers::Group.new
+      @timers = Timers.new
       @selector = Selector.new
       @connections = []
       @connected_connections = 0
@@ -28,15 +27,18 @@ module HTTPX
 
     def next_tick
       catch(:jump_tick) do
-        timeout = [next_timeout, @timers.wait_interval].compact.min
+        timeout = [@timers.wait_interval, next_timeout].compact.min
         if timeout && timeout.negative?
           @timers.fire
           throw(:jump_tick)
         end
 
-        @selector.select(timeout, &:call)
-
-        @timers.fire
+        begin
+          @selector.select(timeout, &:call)
+          @timers.fire
+        rescue TimeoutError => e
+          @timers.fire(e)
+        end
       end
     rescue StandardError => e
       @connections.each do |connection|

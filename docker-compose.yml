@@ -9,6 +9,7 @@ services:
       - HTTPX_SOCKS4A_PROXY=socks4a://user4:@socksproxy:8080
       - HTTPX_SOCKS5_PROXY=socks5://user5:password@socksproxy:8080
       - HTTPX_SSH_PROXY=ssh://sshproxy:22
+      - HTTPX_NO_JITTER=1
       - N=6 # minitest workers
       - MT_CPU=6 # minitest workers
       - CI=1
@@ -77,7 +78,7 @@ services:
     volumes:
       - ./test/support/ci:/home
     command:
-      --conf /home/nghttp.conf --no-ocsp --frontend 0.0.0.0,80;no-tls --frontend 0.0.0.0,443
+      --conf /home/nghttp.conf --no-ocsp --frontend '*,80;no-tls' --frontend '*,443'
 
   altsvc-nghttp2:
     image: registry.gitlab.com/honeyryderchuck/httpx/nghttp2:2
@@ -91,7 +92,7 @@ services:
     volumes:
       - ./test/support/ci:/home
     command:
-      --conf /home/nghttp.conf --no-ocsp --frontend 0.0.0.0,80;no-tls --frontend 0.0.0.0,443 --altsvc "h2,443,nghttp2"
+      --conf /home/nghttp.conf --no-ocsp --frontend '*,80;no-tls' --frontend '*,443' --altsvc "h2,443,nghttp2"
 
   httpbin:
     environment:

@@ -24,10 +24,10 @@ module Requests
         trailered = false
         request = http.build_request(meth, uri, headers: { "trailer" => "X-Time-Spent" }, body: %w[this is a chunked response])
         request.on(:headers) do |_written_request|
-          start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+          start_time = HTTPX::Utils.now
         end
         request.on(:trailers) do |written_request|
-          total_time = Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time
+          total_time = HTTPX::Utils.elapsed_time(start_time)
           written_request.trailers["x-time-spent"] = total_time
           trailered = true
         end

@@ -120,7 +120,7 @@ module HTTPX
     def timeout
       return if @connections.empty?
 
-      @start_timeout = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      @start_timeout = Utils.now
       hosts = @queries.keys
       @timeouts.values_at(*hosts).reject(&:empty?).map(&:first).min
     end
@@ -140,7 +140,7 @@ module HTTPX
     def do_retry
       return if @queries.empty?
 
-      loop_time = Process.clock_gettime(Process::CLOCK_MONOTONIC) - @start_timeout
+      loop_time = Utils.elapsed_time(@start_timeout)
       connections = []
       queries = {}
       while (query = @queries.shift)
