@@ -316,7 +316,7 @@ module HTTPX
 
     if Exception.method_defined?(:full_message)
       def to_s
-        @error.full_message
+        @error.full_message(highlight: false)
       end
     else
       def to_s
