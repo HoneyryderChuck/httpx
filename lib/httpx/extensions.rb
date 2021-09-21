@@ -122,13 +122,14 @@ module HTTPX
       end
 
       def authority
-        port_string = port == default_port ? nil : ":#{port}"
-        "#{host}#{port_string}"
-      end
+        return host if port == default_port
+
+        "#{host}:#{port}"
+      end unless URI::HTTP.method_defined?(:authority)
 
       def origin
         "#{scheme}://#{authority}"
-      end
+      end unless URI::HTTP.method_defined?(:origin)
 
       def altsvc_match?(uri)
         uri = URI.parse(uri)
