@@ -106,9 +106,10 @@ module HTTPX
                 retry_after = jitter.call(retry_after)
               end
 
+              retry_start = Utils.now
               log { "retrying after #{retry_after} secs..." }
               pool.after(retry_after) do
-                log { "retrying!!" }
+                log { "retrying (elapsed time: #{Utils.elapsed_time(retry_start)})!!" }
                 connection = find_connection(request, connections, options)
                 connection.send(request)
               end
