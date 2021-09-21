@@ -27,7 +27,7 @@ module HTTPX
 
     def next_tick
       catch(:jump_tick) do
-        timeout = [@timers.wait_interval, next_timeout].compact.min
+        timeout = next_timeout
         if timeout && timeout.negative?
           @timers.fire
           throw(:jump_tick)
@@ -165,7 +165,11 @@ module HTTPX
     end
 
     def next_timeout
-      @resolvers.values.reject(&:closed?).filter_map(&:timeout).min || @connections.filter_map(&:timeout).min
+      [
+        @timers.wait_interval,
+        *@resolvers.values.reject(&:closed?).filter_map(&:timeout),
+        *@connections.filter_map(&:timeout),
+      ].compact.min
     end
 
     def find_resolver_for(connection)
