@@ -47,6 +47,8 @@ module HTTPX
 
     def_delegator :@connections, :empty?
 
+    attr_reader :state
+
     def initialize(options)
       @options = Options.new(options)
       @ns_index = 0

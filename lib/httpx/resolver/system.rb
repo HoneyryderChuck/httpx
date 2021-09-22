@@ -12,6 +12,8 @@ module HTTPX
                      Resolv::DNS::EncodeError,
                      Resolv::DNS::DecodeError].freeze
 
+    attr_reader :state
+
     def initialize(options)
       @options = Options.new(options)
       @resolver_options = @options.resolver_options

@@ -5,6 +5,8 @@ module HTTPX
 
       RESOLV_ERRORS: Array[singleton(StandardError)] # ResolvError
 
+      attr_reader state: Symbol
+
       def closed?: () -> true
 
       def empty?: () -> true

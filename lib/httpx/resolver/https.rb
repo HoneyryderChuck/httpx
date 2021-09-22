@@ -24,7 +24,7 @@ module HTTPX
       record_types: RECORD_TYPES.keys,
     }.freeze
 
-    def_delegators :@resolver_connection, :connecting?, :to_io, :call, :close
+    def_delegators :@resolver_connection, :state, :connecting?, :to_io, :call, :close
 
     def initialize(options)
       @options = Options.new(options)
