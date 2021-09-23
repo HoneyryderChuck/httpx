@@ -93,8 +93,6 @@ module HTTPX
 
     def transition: (Symbol) -> void
 
-    def handle_response: () -> void
-
     def on_error: (HTTPX::TimeoutError | Error | StandardError) -> void
 
     def handle_error: (StandardError) -> void

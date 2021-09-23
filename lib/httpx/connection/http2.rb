@@ -291,11 +291,13 @@ module HTTPX
     end
 
     def on_stream_refuse(stream, request, error)
-      stream.close
       on_stream_close(stream, request, error)
+      stream.close
     end
 
     def on_stream_close(stream, request, error)
+      return if error == :stream_closed && !@streams.key?(request)
+
       log(level: 2) { "#{stream.id}: closing stream" }
       @drains.delete(request)
       @streams.delete(request)

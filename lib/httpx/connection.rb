@@ -412,7 +412,8 @@ module HTTPX
         AltSvc.emit(request, response) do |alt_origin, origin, alt_params|
           emit(:altsvc, alt_origin, origin, alt_params)
         end
-        handle_response
+        @response_received_at = Utils.now
+        @inflight -= 1
         request.emit(:response, response)
       end
       parser.on(:altsvc) do |alt_origin, origin, alt_params|
@@ -514,11 +515,6 @@ module HTTPX
       @io.close if @io
       @read_buffer.clear
       remove_instance_variable(:@timeout) if defined?(@timeout)
-    end
-
-    def handle_response
-      @response_received_at = Utils.now
-      @inflight -= 1
     end
 
     def on_error(error)
