@@ -10,16 +10,17 @@ module Requests
         response = non_persistent_session.get(uri)
         verify_status(response, 200)
         response.close
-        assert non_persistent_session.pool.connections.empty?, "unexpected connections ()"
+        assert non_persistent_session.pool.connections.empty?, "unexpected connections (#{non_persistent_session.pool.connections.size})"
 
         persistent_session = non_persistent_session.plugin(:persistent)
         response = persistent_session.get(uri)
         verify_status(response, 200)
         response.close
-        assert persistent_session.pool.connections.size == 1, "unexpected connections ()"
+        assert persistent_session.pool.connections.size == 1, "unexpected connections (#{persistent_session.pool.connections.size})"
+        assert persistent_session.pool.selectable_count.zero?, "expected selectable connection pool to be empty"
 
         persistent_session.close
-        assert persistent_session.pool.connections.empty?, "unexpected connections ()"
+        assert persistent_session.pool.connections.empty?, "unexpected connections (#{persistent_session.pool.connections.size})"
       end
 
       def test_persistent_options
