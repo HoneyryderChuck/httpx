@@ -21,6 +21,7 @@ module HTTPX
         yield self
       ensure
         @persistent = prev_persistent
+        close unless @persistent
       end
     end
 
@@ -226,7 +227,11 @@ module HTTPX
         end
         responses
       ensure
-        close(connections) unless @persistent
+        if @persistent
+          pool.deactivate(connections)
+        else
+          close(connections)
+        end
       end
     end
 

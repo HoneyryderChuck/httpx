@@ -70,6 +70,7 @@ module HTTPX
 
     def timeout: () -> Numeric?
 
+    def deactivate: () -> void
     private
 
     def initialize: (String, URI::Generic, options) -> untyped
