@@ -44,6 +44,11 @@ module HTTPX
           meter_elapsed_time("Session: initialized!!!")
         end
 
+        def close(*)
+          super
+          meter_elapsed_time("Session -> close")
+        end
+
         private
 
         def build_requests(*)
@@ -54,11 +59,6 @@ module HTTPX
           response = super
           meter_elapsed_time("Session -> response") if response
           response
-        end
-
-        def close(*)
-          super
-          meter_elapsed_time("Session -> close")
         end
       end
 
@@ -84,7 +84,7 @@ module HTTPX
         def transition(nextstate)
           state = @state
           super
-          meter_elapsed_time("Connection[#{@origin}]: #{state} -> #{nextstate}") if nextstate == @state
+          meter_elapsed_time("Connection##{object_id}[#{@origin}]: #{state} -> #{nextstate}") if nextstate == @state
         end
       end
     end
