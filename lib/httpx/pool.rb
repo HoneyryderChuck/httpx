@@ -197,6 +197,7 @@ module HTTPX
 
       @resolvers[resolver_type] ||= begin
         resolver = resolver_type.new(connection_options)
+        resolver.pool = self if resolver.respond_to?(:pool=)
         resolver.on(:resolve, &method(:on_resolver_connection))
         resolver.on(:error, &method(:on_resolver_error))
         resolver.on(:close) { on_resolver_close(resolver) }
