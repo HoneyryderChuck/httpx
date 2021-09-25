@@ -448,7 +448,7 @@ module HTTPX
       end
       parser.on(:close) do |force|
         transition(:closing)
-        if force
+        if force || @state == :idle
           transition(:closed)
           emit(:close)
         end
