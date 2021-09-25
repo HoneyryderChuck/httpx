@@ -25,8 +25,8 @@ services:
     image: ruby:alpine
     privileged: true
     depends_on:
-      - httpproxy 
-      - socksproxy 
+      - httpproxy
+      - socksproxy
       - sshproxy
       - nghttp2
       - aws
