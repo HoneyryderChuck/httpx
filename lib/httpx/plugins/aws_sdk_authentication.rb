@@ -8,6 +8,23 @@ module HTTPX
     # It requires the "aws-sdk-core" gem.
     #
     module AwsSdkAuthentication
+      # Mock configuration, to be used only when resolving credentials
+      class Configuration
+        attr_reader :profile
+
+        def initialize(profile)
+          @profile = profile
+        end
+
+        def respond_to_missing?(*)
+          true
+        end
+
+        def method_missing(*)
+          nil
+        end
+      end
+
       #
       # encapsulates access to an AWS SDK credentials store.
       #
@@ -30,23 +47,8 @@ module HTTPX
       end
 
       class << self
-        attr_reader :credentials, :region
-
         def load_dependencies(_klass)
           require "aws-sdk-core"
-
-          client = Class.new(Seahorse::Client::Base) do
-            @identifier = :httpx
-            set_api(Aws::S3::ClientApi::API)
-            add_plugin(Aws::Plugins::CredentialsConfiguration)
-            add_plugin(Aws::Plugins::RegionalEndpoint)
-            class << self
-              attr_reader :identifier
-            end
-          end.new
-
-          @credentials = Credentials.new(client.config[:credentials])
-          @region = client.config[:region]
         end
 
         def configure(klass)
@@ -56,6 +58,26 @@ module HTTPX
         def extra_options(options)
           options.merge(max_concurrent_requests: 1)
         end
+
+        def credentials(profile)
+          mock_configuration = Configuration.new(profile)
+          Credentials.new(Aws::CredentialProviderChain.new(mock_configuration).resolve)
+        end
+
+        def region(profile)
+          # https://github.com/aws/aws-sdk-ruby/blob/version-3/gems/aws-sdk-core/lib/aws-sdk-core/plugins/regional_endpoint.rb#L62
+          keys = %w[AWS_REGION AMAZON_REGION AWS_DEFAULT_REGION]
+          env_region = ENV.values_at(*keys).compact.first
+          env_region = nil if env_region == ""
+          cfg_region = Aws.shared_config.region(profile: profile)
+          env_region || cfg_region
+        end
+      end
+
+      module OptionsMethods
+        def option_aws_profile(value)
+          String(value)
+        end
       end
 
       module InstanceMethods
@@ -64,9 +86,11 @@ module HTTPX
         # aws_authentication(credentials: Aws::Credentials.new('akid', 'secret'))
         # aws_authentication()
         #
-        def aws_sdk_authentication(**options)
-          credentials = AwsSdkAuthentication.credentials
-          region = AwsSdkAuthentication.region
+        def aws_sdk_authentication(
+          credentials: AwsSdkAuthentication.credentials(@options.aws_profile),
+          region: AwsSdkAuthentication.region(@options.aws_profile),
+          **options
+        )
 
           aws_sigv4_authentication(
             credentials: credentials,
