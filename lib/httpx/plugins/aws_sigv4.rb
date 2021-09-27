@@ -1,8 +1,5 @@
 # frozen_string_literal: true
 
-require "set"
-require "aws-sdk-s3"
-
 module HTTPX
   module Plugins
     #
@@ -142,6 +139,7 @@ module HTTPX
 
       class << self
         def load_dependencies(*)
+          require "set"
           require "digest/sha2"
           require "openssl"
         end
