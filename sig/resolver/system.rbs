@@ -3,6 +3,8 @@ module HTTPX
     class System < Resolver
       RESOLV_ERRORS: Array[singleton(StandardError)] # ResolvError
 
+      @resolver: Resolv::DNS
+
       def <<: (Connection) -> void
 
       private

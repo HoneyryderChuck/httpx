@@ -13,15 +13,13 @@ module HTTPX
     attr_reader :state
 
     def initialize(options)
-      @options = Options.new(options)
+      super
       @resolver_options = @options.resolver_options
-      @state = :idle
       resolv_options = @resolver_options.dup
       timeouts = resolv_options.delete(:timeouts)
       resolv_options.delete(:cache)
-      @resolver = Resolv::DNS.new(resolv_options.empty? ? nil : resolv_options)
+      @resolver = resolv_options.empty? ? Resolv::DNS.new : Resolv::DNS.new(resolv_options)
       @resolver.timeouts = timeouts || Resolver::RESOLVE_TIMEOUT
-      super()
     end
 
     def <<(connection)
@@ -36,7 +34,5 @@ module HTTPX
     rescue Errno::EHOSTUNREACH, *RESOLV_ERRORS => e
       emit_resolve_error(connection, hostname, e)
     end
-
-    def uncache(*); end
   end
 end

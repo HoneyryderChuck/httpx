@@ -45,12 +45,6 @@ module HTTPX
       end
     end
 
-    def uncache(hostname)
-      @lookup_mutex.synchronize do
-        @lookups.delete(hostname)
-      end
-    end
-
     # do not use directly!
     def lookup(hostname, ttl)
       return unless @lookups.key?(hostname)

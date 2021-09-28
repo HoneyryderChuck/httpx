@@ -24,7 +24,7 @@ module HTTPX
     attr_writer :pool
 
     def initialize(options)
-      @options = Options.new(options)
+      super
       @resolver_options = DEFAULTS.merge(@options.resolver_options)
       @_record_types = Hash.new { |types, host| types[host] = @resolver_options[:record_types].dup }
       @queries = {}
@@ -34,7 +34,6 @@ module HTTPX
       @uri_addresses = nil
       @resolver = Resolv::DNS.new
       @resolver.timeouts = @resolver_options.fetch(:timeouts, Resolver::RESOLVE_TIMEOUT)
-      super()
     end
 
     def <<(connection)
@@ -155,7 +154,7 @@ module HTTPX
           end.compact
           next if addresses.empty?
 
-          hostname = hostname.delete_suffix!(".") if hostname.end_with?(".")
+          hostname.delete_suffix!(".") if hostname.end_with?(".")
           connection = @queries.delete(hostname)
           next unless connection # probably a retried query for which there's an answer
 
