@@ -4,13 +4,15 @@ module HTTPX
       include Callbacks
       include Loggable
 
-      @_record_types: Hash[String, Hash["A" | "AAAA", dns_resource]]
+      RECORD_TYPES: Hash[String, singleton(Resolv::DNS::Resource)]
+
+      @options: Options
+      @resolver_options: Hash[Symbol, untyped]
+      @_record_types: Hash[String, ["A" | "AAAA", dns_resource]]
       @queries: Hash[String, Connection]
       @system_resolver: Resolv::Hosts
 
       CHECK_IF_IP: ^(String name) -> bool
-
-      def uncache: (Connection) -> void
 
       def close: () -> void
 
@@ -20,7 +22,9 @@ module HTTPX
 
       private
 
-      def emit_addresses: (Connection, Array[ipaddr]) -> void
+      def initialize: (options) -> void
+
+      def emit_addresses: (Connection, Array[ipaddr | Resolv::DNS::ip_address]) -> void
 
       def early_resolve: (Connection, ?hostname: String) -> void
 

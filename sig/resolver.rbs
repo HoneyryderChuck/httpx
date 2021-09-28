@@ -18,8 +18,6 @@ module HTTPX
 
     def self?.cached_lookup_set: (String hostname, Array[dns_result] addresses) -> void
 
-    def self?.uncache: (String hostname) -> void
-
     def self?.lookup: (String hostname, Numeric ttl) -> Array[String]?
 
     def self?.generate_id: () -> Integer

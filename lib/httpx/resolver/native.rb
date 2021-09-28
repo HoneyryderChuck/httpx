@@ -44,7 +44,7 @@ module HTTPX
     attr_reader :state
 
     def initialize(options)
-      @options = HTTPX::Options.new(options)
+      super
       @ns_index = 0
       @resolver_options = DEFAULTS.merge(@options.resolver_options)
       @nameserver = @resolver_options[:nameserver]
@@ -56,7 +56,6 @@ module HTTPX
       @read_buffer = "".b
       @write_buffer = Buffer.new(@resolver_options[:packet_size])
       @state = :idle
-      super()
     end
 
     def close

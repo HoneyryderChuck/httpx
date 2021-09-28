@@ -1,24 +1,20 @@
 module HTTPX
   module Resolver
     class HTTPS < Resolver
-      include _ToIO
+      NAMESERVER: String
+
+      DEFAULTS: Hash[Symbol, untyped]
 
       @options: Options
-      @resolver_options: Hash[Symbol, untyped]
-      @_record_types: Hash[String, Hash["A" | "AAAA", dns_resource]]
-      @queries: Hash[String, Connection]
       @requests: Hash[Request, Connection]
       @connections: Array[Connection]
-      @uri: URI::HTTPS
+      @uri: URI::Generic
       @uri_addresses: Array[String]?
+      @resolver: Resolv::DNS
+      @resolver_connection: Connection
+
 
       def <<: (Connection) -> void
-
-      def timeout: () -> Numeric?
-
-      def call: () -> void
-
-      def interests: () -> io_interests?
 
       private
 
@@ -28,13 +24,11 @@ module HTTPX
 
       def resolver_connection: () -> Connection
 
-      def resolve: (Connection, String hostname) -> void
-                 | (Connection) -> void
-                 | () -> void
+      def resolve: (?Connection connection, ?String? hostname) -> void
 
       def on_response: (Request, response) -> void
 
-      def response: (Response) -> void
+      def parse: (Response response) -> void
 
       def build_request: (String hostname, "A" | "AAAA") -> Request
 

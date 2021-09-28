@@ -9,7 +9,6 @@ module HTTPX
 
       @options: Options
       @ns_index: Integer
-      @resolver_options: Hash[Symbol, untyped]
       @nameserver: String
       @_timeouts: Array[Numeric]
       @timeouts: Hash[String, Array[Numeric]]

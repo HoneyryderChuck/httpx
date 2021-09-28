@@ -13,7 +13,6 @@ module HTTPX
       "AAAA" => Resolv::DNS::Resource::IN::AAAA,
     }.freeze
 
-
     CHECK_IF_IP = ->(name) do
       begin
         IPAddr.new(name)
@@ -23,10 +22,8 @@ module HTTPX
       end
     end
 
-    def uncache(connection)
-      hostname = hostname || @queries.key(connection) || connection.origin.host
-      HTTPX::Resolver.uncache(hostname)
-      @_record_types[hostname].shift
+    def initialize(options)
+      @options = Options.new(options)
     end
 
     def close; end
@@ -53,7 +50,7 @@ module HTTPX
     def early_resolve(connection, hostname: connection.origin.host)
       addresses = connection.addresses ||
                   ip_resolve(hostname) ||
-                  (@resolver_options[:cache] && Resolver.cached_lookup(hostname)) ||
+                  (@resolver_options[:cache] && HTTPX::Resolver.cached_lookup(hostname)) ||
                   system_resolve(hostname)
       return unless addresses
 
