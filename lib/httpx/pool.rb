@@ -14,7 +14,6 @@ module HTTPX
 
     def initialize
       @resolvers = {}
-      @_resolver_ios = {}
       @timers = Timers.new
       @selector = Selector.new
       @connections = []
@@ -111,7 +110,7 @@ module HTTPX
       resolver << connection
       return if resolver.empty?
 
-      @_resolver_ios[resolver] ||= select_connection(resolver)
+      select_connection(resolver)
     end
 
     def on_resolver_connection(connection)
@@ -143,7 +142,6 @@ module HTTPX
       @resolvers.delete(resolver_type)
 
       deselect_connection(resolver)
-      @_resolver_ios.delete(resolver)
       resolver.close unless resolver.closed?
     end
 

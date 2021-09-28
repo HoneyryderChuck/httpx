@@ -1,14 +1,20 @@
 module HTTPX
   class Pool
+    @resolvers: Hash[Class, Resolver::Resolver]
+    @timers: Timers
+    @selector: Selector
+    @connections: Array[Connection]
+    @connected_connections: Integer
+
     def empty?: () -> void
 
     def next_tick: () -> void
 
-    def close: (*Array[Connection]) -> void
+    def close: (?Array[Connection] connections) -> void
 
-    def init_connection: (Connection, Options) -> void
+    def init_connection: (Connection connection, Options options) -> void
 
-    def find_connection: (generic_uri, Options) -> Connection?
+    def find_connection: (URI::Generic uri, Options options) -> Connection?
 
     def deactivate: (*Array[Connection]) -> void
 
@@ -28,13 +34,13 @@ module HTTPX
 
     def unregister_connection: (Connection) -> void
 
-    def select_connection: (resolver | Connection connection) -> void
+    def select_connection: (Resolver::Resolver | Connection connection) -> void
 
-    def deselect_connection: (resolver | Connection connection) -> void
+    def deselect_connection: (Resolver::Resolver | Connection connection) -> void
 
-    def coalesce_connections: (Connection, Connection) -> void
+    def coalesce_connections: (Connection coalescable, Connection coalescing) -> void
 
-    def next_timeout: () -> Numeric?
+    def next_timeout: () -> (Integer | Float | nil)
 
     def find_resolver_for: (Connection) -> Resolver::Resolver
   end
