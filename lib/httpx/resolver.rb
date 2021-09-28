@@ -8,7 +8,7 @@ module HTTPX
 
     RESOLVE_TIMEOUT = 5
 
-    require "httpx/resolver/resolver_mixin"
+    require "httpx/resolver/resolver"
     require "httpx/resolver/system"
     require "httpx/resolver/native"
     require "httpx/resolver/https"

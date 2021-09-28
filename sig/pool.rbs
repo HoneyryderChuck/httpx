@@ -22,7 +22,7 @@ module HTTPX
 
     def on_resolver_error: (Connection, StandardError) -> void
 
-    def on_resolver_close: (resolver) -> void
+    def on_resolver_close: (Resolver::Resolver) -> void
 
     def register_connection: (Connection) -> void
 
@@ -36,6 +36,6 @@ module HTTPX
 
     def next_timeout: () -> Numeric?
 
-    def find_resolver_for: (Connection) -> resolver
+    def find_resolver_for: (Connection) -> Resolver::Resolver
   end
 end

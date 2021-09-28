@@ -6,17 +6,12 @@ require "cgi"
 require "forwardable"
 
 module HTTPX
-  class Resolver::HTTPS
+  class Resolver::HTTPS < Resolver::Resolver
     extend Forwardable
-    include Resolver::ResolverMixin
     using URIExtensions
+    using StringExtensions
 
     NAMESERVER = "https://1.1.1.1/dns-query"
-
-    RECORD_TYPES = {
-      "A" => Resolv::DNS::Resource::IN::A,
-      "AAAA" => Resolv::DNS::Resource::IN::AAAA,
-    }.freeze
 
     DEFAULTS = {
       uri: NAMESERVER,
@@ -39,6 +34,7 @@ module HTTPX
       @uri_addresses = nil
       @resolver = Resolv::DNS.new
       @resolver.timeouts = @resolver_options.fetch(:timeouts, Resolver::RESOLVE_TIMEOUT)
+      super()
     end
 
     def <<(connection)
@@ -78,6 +74,7 @@ module HTTPX
 
     def resolve(connection = @connections.first, hostname = nil)
       return if @building_connection
+      return unless connection
 
       hostname ||= @queries.key(connection)
 
@@ -107,6 +104,7 @@ module HTTPX
       hostname = @queries.key(connection)
       emit_resolve_error(connection, hostname, e)
     else
+      # @type var response: HTTPX::Response
       parse(response)
     ensure
       @requests.delete(request)
@@ -157,7 +155,7 @@ module HTTPX
           end.compact
           next if addresses.empty?
 
-          hostname = hostname[0..-2] if hostname.end_with?(".")
+          hostname = hostname.delete_suffix!(".") if hostname.end_with?(".")
           connection = @queries.delete(hostname)
           next unless connection # probably a retried query for which there's an answer
 
