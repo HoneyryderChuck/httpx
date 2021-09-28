@@ -158,3 +158,6 @@ Naming/VariableNumber:
 
 Style/SlicingWithRange:
   Enabled: false
+
+Style/Lambda:
+  Enabled: false
