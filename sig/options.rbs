@@ -83,6 +83,8 @@ module HTTPX
 
     attr_reader response_body_class: singleton(Response::Body)
 
+    attr_reader resolver_class: singleton(Resolver::Resolver)
+
     attr_reader ssl: Hash[Symbol, untyped]
 
     # request_class response_class headers_class request_body_class

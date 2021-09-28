@@ -1,15 +1,7 @@
 module HTTPX
   module Resolver
-    class System
-      include ResolverMixin
-
+    class System < Resolver
       RESOLV_ERRORS: Array[singleton(StandardError)] # ResolvError
-
-      attr_reader state: Symbol
-
-      def closed?: () -> true
-
-      def empty?: () -> true
 
       def <<: (Connection) -> void
 

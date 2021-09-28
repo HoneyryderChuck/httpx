@@ -1,7 +1,6 @@
 module HTTPX
   module Resolver
-    class HTTPS
-      include ResolverMixin
+    class HTTPS < Resolver
       include _ToIO
 
       @options: Options
@@ -16,12 +15,6 @@ module HTTPX
       def <<: (Connection) -> void
 
       def timeout: () -> Numeric?
-
-      def closed?: () -> bool
-
-      def empty?: () -> bool
-
-      def close: () -> void
 
       def call: () -> void
 

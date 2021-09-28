@@ -4,15 +4,9 @@ require "forwardable"
 require "resolv"
 
 module HTTPX
-  class Resolver::Native
+  class Resolver::Native < Resolver::Resolver
     extend Forwardable
-    include Resolver::ResolverMixin
     using URIExtensions
-
-    RECORD_TYPES = {
-      "A" => Resolv::DNS::Resource::IN::A,
-      "AAAA" => Resolv::DNS::Resource::IN::AAAA,
-    }.freeze
 
     DEFAULTS = if RUBY_VERSION < "2.2"
       {
@@ -62,6 +56,7 @@ module HTTPX
       @read_buffer = "".b
       @write_buffer = Buffer.new(@resolver_options[:packet_size])
       @state = :idle
+      super()
     end
 
     def close

@@ -4,9 +4,7 @@ require "forwardable"
 require "resolv"
 
 module HTTPX
-  class Resolver::System
-    include Resolver::ResolverMixin
-
+  class Resolver::System < Resolver::Resolver
     RESOLV_ERRORS = [Resolv::ResolvError,
                      Resolv::DNS::Requester::RequestError,
                      Resolv::DNS::EncodeError,
@@ -23,14 +21,7 @@ module HTTPX
       resolv_options.delete(:cache)
       @resolver = Resolv::DNS.new(resolv_options.empty? ? nil : resolv_options)
       @resolver.timeouts = timeouts || Resolver::RESOLVE_TIMEOUT
-    end
-
-    def closed?
-      true
-    end
-
-    def empty?
-      true
+      super()
     end
 
     def <<(connection)

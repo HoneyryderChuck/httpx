@@ -1,8 +1,7 @@
 module HTTPX
   module Resolver
-    class Native
+    class Native < Resolver
       extend Forwardable
-      include ResolverMixin
       include _ToIO
 
       DEFAULTS: Hash[Symbol, untyped]
@@ -14,19 +13,11 @@ module HTTPX
       @nameserver: String
       @_timeouts: Array[Numeric]
       @timeouts: Hash[String, Array[Numeric]]
-      @_record_types: Hash[String, Hash["A" | "AAAA", dns_resource]]
       @connections: Array[Connection]
-      @queries: Hash[String, Connection]
       @read_buffer: String
       @write_buffer: Buffer
 
       attr_reader state: Symbol
-
-      def closed?: () -> bool
-
-      def empty?: () -> bool
-
-      def close: () -> void
 
       def call: () -> void
 
