@@ -2,12 +2,11 @@ module HTTPX
   type ipaddr = IPAddr | String
 
   module Resolver
+    extend Registry[Symbol, Class]
+
     RESOLVE_TIMEOUT: Integer | Float
 
-    def self.registry: (Symbol tag) -> Class
-    | () -> Hash[Symbol, Class]
-
-    def self.register: (Symbol tag,  Class handler) -> void
+    @lookup_mutex: Thread::Mutex
 
     type dns_resource = singleton(Resolv::DNS::Resource)
 

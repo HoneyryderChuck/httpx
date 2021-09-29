@@ -1,12 +1,13 @@
 module HTTPX
   class Timers
-    @interval: Array[Interval]
+    @intervals: Array[Interval]
+    @next_interval_at: Numeric
 
     def after: (Numeric interval_in_secs) { () -> void } -> void
 
     def wait_interval: () -> Numeric?
 
-    def fire: (?StandardError error) -> void
+    def fire: (?TimeoutError error) -> void
 
     def cancel: () -> void
 
@@ -18,6 +19,8 @@ module HTTPX
       include Comparable
 
       attr_reader interval: Numeric
+
+      @callbacks: Array[^() -> void]
 
       def to_f: () -> Float
 

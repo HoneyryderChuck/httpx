@@ -19,6 +19,7 @@ module HTTPX
 
     @options: Options
     @request: Request
+    @content_type: ContentType
 
     def copy_to: (_ToPath | _Writer destination) -> void
     def close: () -> void
@@ -45,9 +46,15 @@ module HTTPX
       include _ToS
       include _ToStr
 
+      @response: Response
+      @headers: Headers
+      @options: Options
       @state: :idle | :memory | :buffer | :closed
       @threshold_size: Integer
       @window_size: Integer
+      @encoding: String
+      @length: Integer
+      @buffer: StringIO | Tempfile | nil
 
       def write:(String chunk) -> Integer?
 
@@ -65,6 +72,7 @@ module HTTPX
       def initialize: (Response, Options) -> untyped
       def rewind: () -> void
       def transition: () -> void
+      def _with_same_buffer_pos: [A] () { () -> A } -> A
     end
   end
 
@@ -72,12 +80,13 @@ module HTTPX
     MIME_TYPE_RE: Regexp
     CHARSET_RE: Regexp
 
-    attr_reader mime_type: String?
-    attr_reader charset: String?
+    @header_value: String?
+    @mime_type: String?
+    @charset: String?
 
-    def self.parse: (_ToS) -> ContentType
-    def self.mime_type: (_ToS) -> String?
-    def self.charset: (_ToS) -> String?
+    def mime_type: () -> String?
+
+    def charset: () -> String?
 
     private
 
@@ -89,6 +98,7 @@ module HTTPX
     include Loggable
 
     @options: Options
+    @error: Exception
 
     attr_reader request: Request
 

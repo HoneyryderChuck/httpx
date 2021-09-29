@@ -15,6 +15,11 @@ module HTTPX
     attr_reader response: response?
     attr_reader drain_error: StandardError?
 
+    @trailers: Headers?
+    @informational_status: Integer?
+    @query: String?
+    @drainer: Enumerator[String, void]?
+
     def initialize: (Symbol | String, generic_uri, ?options) -> untyped
 
     def interests: () -> (:r | :w)
@@ -46,6 +51,10 @@ module HTTPX
     def trailers?: () -> boolish
 
     class Body
+      @headers: Headers
+      @body: body_encoder?
+      @unbounded_body: bool
+
       def initialize: (Headers, Options) -> untyped
       def each: () { (String) -> void } -> void
               | () -> Enumerable[String]
@@ -61,6 +70,8 @@ module HTTPX
     end
 
     class ProcIO
+      @block: ^(String) -> void
+
       def initialize: (^(String) -> void) -> untyped
 
       def write: (String data) -> Integer

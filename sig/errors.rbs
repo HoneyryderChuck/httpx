@@ -26,6 +26,14 @@ module HTTPX
   class ResolveError < Error
   end
 
+  class HTTPError < Error
+    attr_reader response: Response
+
+    private
+
+    def initialize: (Response response) -> void
+  end
+
   class NativeResolveError < ResolveError
     attr_reader connection: Connection
     attr_reader host: String

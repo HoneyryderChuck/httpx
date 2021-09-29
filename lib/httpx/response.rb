@@ -173,7 +173,7 @@ module HTTPX
           rescue ArgumentError
             @buffer.string
           end
-        when Tempfile, File
+        when Tempfile
           rewind
           content = _with_same_buffer_pos { @buffer.read }
           begin
@@ -253,6 +253,7 @@ module HTTPX
             @buffer = StringIO.new("".b)
           end
         when :memory
+          # @type ivar @buffer: StringIO | Tempfile
           if @length > @threshold_size
             aux = @buffer
             @buffer = Tempfile.new("httpx", encoding: Encoding::BINARY, mode: File::RDWR)
@@ -272,11 +273,12 @@ module HTTPX
       def _with_same_buffer_pos
         return yield unless @buffer && @buffer.respond_to?(:pos)
 
+        # @type ivar @buffer: StringIO | Tempfile
         current_pos = @buffer.pos
         @buffer.rewind
         begin
           yield
-        rescue StandardError
+        ensure
           @buffer.pos = current_pos
         end
       end

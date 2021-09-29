@@ -41,6 +41,7 @@ Naming/FileName:
   Exclude:
     - Gemfile
     - Rakefile
+    - Steepfile
 
 Layout/EndAlignment:
   EnforcedStyleAlignWith: variable
