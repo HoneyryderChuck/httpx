@@ -1,4 +1,7 @@
 module HTTPX::Registry[T, V]
+  class Error < HTTPX::Error
+  end
+
   # type registrable = Symbol | String | Class
 
   def self.registry: (T tag) -> Class

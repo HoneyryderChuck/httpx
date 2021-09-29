@@ -10,27 +10,38 @@ module HTTPX::Transcoder
     class Encoder
       @raw: _Each[String]
 
-      include _Each[String]
+      def each: () { (String) -> void } -> void
+              | () -> Enumerator[String, void]
 
       private
 
-      def initialize: (_Each[String] chunks) -> untyped
+      def initialize: (_Each[String] chunks) -> void
     end
 
     class Decoder
       extend Forwardable
       include _ToS
-      include _Each[String]
+
+      @buffer: String
+      @chunk_length: Integer
+      @chunk_buffer: String
+      @finished: bool
+      @state: Symbol
+      @trailers: bool
+
+      def each: () { (String) -> void } -> void
 
       def finished?: () -> bool
+
       def empty?: () -> bool
+
       def <<: (string) -> void
+
       def clear: () -> void
 
       private
 
-      def initialize: (String, bool) -> untyped
-                    | (String) -> untyped
+      def initialize: (String, ?bool) -> void
 
       def nextstate: (Symbol) -> void
     end
