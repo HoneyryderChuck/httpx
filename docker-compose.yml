@@ -40,9 +40,7 @@ services:
       /home/test/support/ci/build.sh
 
   sshproxy:
-    build:
-      context: .
-      dockerfile: ./test/support/ssh/Dockerfile
+    image: connesc/ssh-gateway
     volumes:
       - ./test/support/ssh:/config
     depends_on:
