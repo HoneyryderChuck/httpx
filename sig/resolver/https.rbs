@@ -13,14 +13,13 @@ module HTTPX
       @resolver: Resolv::DNS
       @resolver_connection: Connection
 
+      attr_writer pool: Pool
 
       def <<: (Connection) -> void
 
       private
 
       def initialize: (options) -> untyped
-
-      def pool: () -> Pool
 
       def resolver_connection: () -> Connection
 
