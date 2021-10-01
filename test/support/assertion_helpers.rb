@@ -35,9 +35,14 @@ module ResponseHelpers
   def verify_execution_delta(expected, actual, delta = 0)
     delta += 3 # because of jitter
 
-    # truffleruby has a hard time complying reliably with this delta when running in parallel. Therefore,
-    # we give it a bit of leeway.
-    delta += 10 if RUBY_ENGINE == "truffleruby"
+    delta += if RUBY_ENGINE == "truffleruby"
+      # truffleruby has a hard time complying reliably with this delta when running in parallel. Therefore,
+      # we give it a bit of leeway.
+      10
+    else
+      # delta checks become very innacurate under multi-thread mode, and elapsed time. we give it some leeway too.
+      3
+    end
 
     assert_in_delta expected, actual, delta, "expected to have executed in #{expected} secs (actual: #{actual} secs)"
   end
