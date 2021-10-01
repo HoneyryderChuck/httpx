@@ -1,0 +1,35 @@
+module HTTPX
+  module Plugins
+    module ResponseCache
+      CACHEABLE_VERBS: Array[Symbol]
+
+      def self?.cacheable_request?: (Request request) -> bool
+      def self?.cacheable_response?: (response response) -> bool
+      def self?.cached_response?: (response response) -> bool
+
+      class Store
+        @store: Hash[URI::Generic, Response]
+
+        def lookup: (URI::Generic uri) -> Response?
+
+        def cached?: (URI::Generic uri) -> bool
+
+        def cache: (URI::Generic uri, Response response) -> void
+
+        def prepare: (Request request) -> void
+      end
+
+      module InstanceMethods
+        @response_cache: Store
+
+        def clear_response_cache: () -> void
+      end
+
+      module ResponseMethods
+        def copy_from_cached: (Response other) -> void
+      end
+    end
+
+    type sessionResponseCache = Session & ResponseCache::InstanceMethods
+  end
+end

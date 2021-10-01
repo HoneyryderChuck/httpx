@@ -217,10 +217,12 @@ module HTTPX
       end
 
       def ==(other)
-        if other.respond_to?(:read)
-          _with_same_buffer_pos { FileUtils.compare_stream(@buffer, other) }
-        else
-          to_s == other.to_s
+        object_id == other.object_id || begin
+          if other.respond_to?(:read)
+            _with_same_buffer_pos { FileUtils.compare_stream(@buffer, other) }
+          else
+            to_s == other.to_s
+          end
         end
       end
 

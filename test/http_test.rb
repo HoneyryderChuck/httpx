@@ -30,6 +30,7 @@ class HTTPTest < Minitest::Test
   include Plugins::AWSAuthentication
   include Plugins::Upgrade
   include Plugins::GRPC if RUBY_ENGINE == "ruby" && RUBY_VERSION >= "2.3.0"
+  include Plugins::ResponseCache
 
   def test_verbose_log
     log = StringIO.new
