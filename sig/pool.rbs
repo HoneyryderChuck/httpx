@@ -10,6 +10,8 @@ module HTTPX
 
     def find_connection: (generic_uri, Options) -> Connection?
 
+    def deactivate: (*Array[Connection]) -> void
+
     private
 
     def initialize: () -> untyped
@@ -25,6 +27,10 @@ module HTTPX
     def register_connection: (Connection) -> void
 
     def unregister_connection: (Connection) -> void
+
+    def select_connection: (resolver | Connection connection) -> void
+
+    def deselect_connection: (resolver | Connection connection) -> void
 
     def coalesce_connections: (Connection, Connection) -> void
 

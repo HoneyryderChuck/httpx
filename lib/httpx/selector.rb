@@ -44,11 +44,13 @@ class HTTPX::Selector
           selectables = @selectables
           @selectables = []
 
-          selectables.each do |io|
+          selectables.delete_if do |io|
             interests = io.interests
 
             (r ||= []) << io if READABLE.include?(interests)
             (w ||= []) << io if WRITABLE.include?(interests)
+
+            io.state == :closed
           end
 
           if @selectables.empty?
@@ -56,7 +58,7 @@ class HTTPX::Selector
 
             # do not run event loop if there's nothing to wait on.
             # this might happen if connect failed and connection was unregistered.
-            return if (!r || r.empty?) && (!w || w.empty?)
+            return if (!r || r.empty?) && (!w || w.empty?) && !selectables.empty?
 
             break
           else

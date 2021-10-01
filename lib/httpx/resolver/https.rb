@@ -24,7 +24,9 @@ module HTTPX
       record_types: RECORD_TYPES.keys,
     }.freeze
 
-    def_delegators :@resolver_connection, :connecting?, :to_io, :call, :close
+    def_delegators :@resolver_connection, :state, :connecting?, :to_io, :call, :close
+
+    attr_writer :pool
 
     def initialize(options)
       @options = Options.new(options)
@@ -63,15 +65,11 @@ module HTTPX
 
     private
 
-    def pool
-      Thread.current[:httpx_connection_pool] ||= Pool.new
-    end
-
     def resolver_connection
-      @resolver_connection ||= pool.find_connection(@uri, @options) || begin
+      @resolver_connection ||= @pool.find_connection(@uri, @options) || begin
         @building_connection = true
         connection = @options.connection_class.new("ssl", @uri, @options.merge(ssl: { alpn_protocols: %w[h2] }))
-        pool.init_connection(connection, @options)
+        @pool.init_connection(connection, @options)
         emit_addresses(connection, @uri_addresses)
         @building_connection = false
         connection

@@ -27,7 +27,7 @@ module HTTPX
 
     def next_tick
       catch(:jump_tick) do
-        timeout = [@timers.wait_interval, next_timeout].compact.min
+        timeout = next_timeout
         if timeout && timeout.negative?
           @timers.fire
           throw(:jump_tick)
@@ -67,6 +67,16 @@ module HTTPX
       connection.on(:open) do
         @connected_connections += 1
       end
+      connection.on(:activate) do
+        select_connection(connection)
+      end
+    end
+
+    def deactivate(connections)
+      connections.each do |connection|
+        connection.deactivate
+        deselect_connection(connection) if connection.state == :inactive
+      end
     end
 
     # opens a connection to the IP reachable through +uri+.
@@ -84,7 +94,7 @@ module HTTPX
     def resolve_connection(connection)
       @connections << connection unless @connections.include?(connection)
 
-      if connection.addresses || connection.state == :open
+      if connection.addresses || connection.open?
         #
         # there are two cases in which we want to activate initialization of
         # connection immediately:
@@ -101,7 +111,7 @@ module HTTPX
       resolver << connection
       return if resolver.empty?
 
-      @_resolver_ios[resolver] ||= @selector.register(resolver)
+      @_resolver_ios[resolver] ||= select_connection(resolver)
     end
 
     def on_resolver_connection(connection)
@@ -110,7 +120,7 @@ module HTTPX
       end
       return register_connection(connection) unless found_connection
 
-      if found_connection.state == :open
+      if found_connection.open?
         coalesce_connections(found_connection, connection)
         throw(:coalesced, found_connection)
       else
@@ -132,7 +142,7 @@ module HTTPX
 
       @resolvers.delete(resolver_type)
 
-      @selector.deregister(resolver)
+      deselect_connection(resolver)
       @_resolver_ios.delete(resolver)
       resolver.close unless resolver.closed?
     end
@@ -143,7 +153,7 @@ module HTTPX
         # consider it connected already.
         @connected_connections += 1
       end
-      @selector.register(connection)
+      select_connection(connection)
       connection.on(:close) do
         unregister_connection(connection)
       end
@@ -151,8 +161,16 @@ module HTTPX
 
     def unregister_connection(connection)
       @connections.delete(connection)
-      @selector.deregister(connection)
+      deselect_connection(connection)
       @connected_connections -= 1
+    end
+
+    def select_connection(connection)
+      @selector.register(connection)
+    end
+
+    def deselect_connection(connection)
+      @selector.deregister(connection)
     end
 
     def coalesce_connections(conn1, conn2)
@@ -165,7 +183,11 @@ module HTTPX
     end
 
     def next_timeout
-      @resolvers.values.reject(&:closed?).filter_map(&:timeout).min || @connections.filter_map(&:timeout).min
+      [
+        @timers.wait_interval,
+        *@resolvers.values.reject(&:closed?).filter_map(&:timeout),
+        *@connections.filter_map(&:timeout),
+      ].compact.min
     end
 
     def find_resolver_for(connection)
@@ -175,6 +197,7 @@ module HTTPX
 
       @resolvers[resolver_type] ||= begin
         resolver = resolver_type.new(connection_options)
+        resolver.pool = self if resolver.respond_to?(:pool=)
         resolver.on(:resolve, &method(:on_resolver_connection))
         resolver.on(:error, &method(:on_resolver_error))
         resolver.on(:close) { on_resolver_close(resolver) }

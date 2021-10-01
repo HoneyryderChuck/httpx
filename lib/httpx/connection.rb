@@ -200,6 +200,8 @@ module HTTPX
     end
 
     def close
+      transition(:active) if @state == :inactive
+
       @parser.close if @parser
     end
 
@@ -220,6 +222,7 @@ module HTTPX
           # for such cases, we want to ping for availability before deciding to shovel requests.
           @pending << request
           parser.ping
+          transition(:active) if @state == :inactive
           return
         end
 
@@ -250,6 +253,14 @@ module HTTPX
       return @options.timeout[:connect_timeout] if @state == :idle
 
       @options.timeout[:operation_timeout]
+    end
+
+    def deactivate
+      transition(:inactive)
+    end
+
+    def open?
+      @state == :open || @state == :inactive
     end
 
     private
@@ -399,6 +410,10 @@ module HTTPX
     def send_request_to_parser(request)
       @inflight += 1
       parser.send(request)
+
+      return unless @state == :inactive
+
+      transition(:active)
     end
 
     def build_parser(protocol = @io.protocol)
@@ -412,7 +427,8 @@ module HTTPX
         AltSvc.emit(request, response) do |alt_origin, origin, alt_params|
           emit(:altsvc, alt_origin, origin, alt_params)
         end
-        handle_response
+        @response_received_at = Utils.now
+        @inflight -= 1
         request.emit(:response, response)
       end
       parser.on(:altsvc) do |alt_origin, origin, alt_params|
@@ -432,7 +448,7 @@ module HTTPX
       end
       parser.on(:close) do |force|
         transition(:closing)
-        if force
+        if force || @state == :idle
           transition(:closed)
           emit(:close)
         end
@@ -487,6 +503,8 @@ module HTTPX
 
         @timeout = @current_timeout = parser.timeout
         emit(:open)
+      when :inactive
+        return unless @state == :open
       when :closing
         return unless @state == :open
 
@@ -498,6 +516,11 @@ module HTTPX
       when :already_open
         nextstate = :open
         send_pending
+      when :active
+        return unless @state == :inactive
+
+        nextstate = :open
+        emit(:activate)
       end
       @state = nextstate
     rescue Errno::ECONNREFUSED,
@@ -514,11 +537,6 @@ module HTTPX
       @io.close if @io
       @read_buffer.clear
       remove_instance_variable(:@timeout) if defined?(@timeout)
-    end
-
-    def handle_response
-      @response_received_at = Utils.now
-      @inflight -= 1
     end
 
     def on_error(error)
