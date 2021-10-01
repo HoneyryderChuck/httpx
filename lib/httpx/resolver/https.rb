@@ -39,14 +39,6 @@ module HTTPX
     def <<(connection)
       return if @uri.origin == connection.origin.to_s
 
-      @uri_addresses ||= ip_resolve(@uri.host) || system_resolve(@uri.host) || @resolver.getaddresses(@uri.host)
-
-      if @uri_addresses.empty?
-        ex = ResolveError.new("Can't resolve DNS server #{@uri.host}")
-        ex.set_backtrace(caller)
-        throw(:resolve_error, ex)
-      end
-
       early_resolve(connection) || resolve(connection)
     end
 
@@ -63,9 +55,18 @@ module HTTPX
     def resolver_connection
       @resolver_connection ||= @pool.find_connection(@uri, @options) || begin
         @building_connection = true
+
+        @uri_addresses ||= begin
+          addresses = ip_resolve(@uri.host) || system_resolve(@uri.host) || @resolver.getaddresses(@uri.host)
+
+          raise resolve_error(@uri.host) if addresses.empty?
+
+          addresses
+        end
+
         connection = @options.connection_class.new("ssl", @uri, @options.merge(ssl: { alpn_protocols: %w[h2] }))
-        @pool.init_connection(connection, @options)
         emit_addresses(connection, @uri_addresses)
+        @pool.init_connection(connection, @options)
         @building_connection = false
         connection
       end
@@ -91,7 +92,7 @@ module HTTPX
         resolver_connection.send(request)
         @queries[hostname] = connection
         @connections << connection
-      rescue Resolv::DNS::EncodeError, JSON::JSONError => e
+      rescue ResolveError, Resolv::DNS::EncodeError, JSON::JSONError => e
         emit_resolve_error(connection, hostname, e)
       end
     end

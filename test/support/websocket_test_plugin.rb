@@ -150,8 +150,15 @@ module WSTestPlugin
     attr_reader :websocket
 
     def init_websocket(connection)
-      socket = connection.to_io
-      @websocket = WSCLient.new(socket, @headers)
+      if connection.state == :open
+        socket = connection.to_io
+        @websocket = WSCLient.new(socket, @headers)
+      else
+        connection.once(:open) do
+          socket = connection.to_io
+          @websocket = WSCLient.new(socket, @headers)
+        end
+      end
     end
   end
 

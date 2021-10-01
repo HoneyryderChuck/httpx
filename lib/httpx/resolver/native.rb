@@ -106,11 +106,12 @@ module HTTPX
       if @nameserver.nil?
         ex = ResolveError.new("No available nameserver")
         ex.set_backtrace(caller)
-        throw(:resolve_error, ex)
-      else
-        @connections << connection
-        resolve
+        emit_resolve_error(connection, nil, ex)
+        return
       end
+
+      @connections << connection
+      resolve
     end
 
     def timeout
@@ -136,7 +137,7 @@ module HTTPX
     def do_retry
       return if @queries.empty?
 
-      loop_time = Utils.elapsed_time(@start_timeout)
+      loop_time = @start_timeout ? Utils.elapsed_time(@start_timeout) : 0
       connections = []
       queries = {}
       while (query = @queries.shift)

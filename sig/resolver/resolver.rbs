@@ -34,7 +34,7 @@ module HTTPX
 
       def emit_resolve_error: (Connection, ?String hostname, ?StandardError) -> void
 
-      def resolve_error: (String hostname, ?StandardError?) -> void
+      def resolve_error: (String hostname, ?StandardError?) -> ResolveError
     end
   end
 end

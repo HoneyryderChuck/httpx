@@ -18,7 +18,7 @@ module HTTPX
 
             case nextstate
             when :connecting
-              return unless @state == :idle
+              return unless @state == :idle || @state == :resolve
 
               @io.connect
               return unless @io.connected?
@@ -29,13 +29,13 @@ module HTTPX
               __http_proxy_connect
               return if @state == :connected
             when :connected
-              return unless @state == :idle || @state == :connecting
+              return unless @state == :idle || @state == :resolve || @state == :connecting
 
               case @state
               when :connecting
                 @parser.close
                 @parser = nil
-              when :idle
+              when :idle, :resolve
                 @parser = ProxyParser.new(@write_buffer, @options)
                 set_parser_callbacks(@parser)
               end

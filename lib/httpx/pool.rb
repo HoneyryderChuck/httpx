@@ -93,6 +93,7 @@ module HTTPX
     def resolve_connection(connection)
       @connections << connection unless @connections.include?(connection)
 
+      register_connection(connection)
       if connection.addresses || connection.open?
         #
         # there are two cases in which we want to activate initialization of
@@ -106,18 +107,18 @@ module HTTPX
         return
       end
 
-      resolver = find_resolver_for(connection)
-      resolver << connection
-      return if resolver.empty?
-
-      select_connection(resolver)
+      connection.on(:resolve) do
+        resolver = find_resolver_for(connection)
+        resolver << connection
+        select_connection(resolver) unless resolver.empty?
+      end
     end
 
     def on_resolver_connection(connection)
       found_connection = @connections.find do |ch|
         ch != connection && ch.mergeable?(connection)
       end
-      return register_connection(connection) unless found_connection
+      return unless found_connection
 
       if found_connection.open?
         coalesce_connections(found_connection, connection)
@@ -172,12 +173,10 @@ module HTTPX
     end
 
     def coalesce_connections(conn1, conn2)
-      if conn1.coalescable?(conn2)
-        conn1.merge(conn2)
-        @connections.delete(conn2)
-      else
-        register_connection(conn2)
-      end
+      return unless conn1.coalescable?(conn2)
+
+      conn1.merge(conn2)
+      unregister_connection(conn2)
     end
 
     def next_timeout

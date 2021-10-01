@@ -185,13 +185,8 @@ module HTTPX
       connections = []
 
       requests.each do |request|
-        error = catch(:resolve_error) do
-          connection = find_connection(request, connections, request.options)
-          connection.send(request)
-        end
-        next unless error.is_a?(ResolveError)
-
-        request.emit(:response, ErrorResponse.new(request, error, request.options))
+        connection = find_connection(request, connections, request.options)
+        connection.send(request)
       end
 
       connections

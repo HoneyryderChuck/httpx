@@ -159,7 +159,7 @@ module HTTPX
     end
 
     def connecting?
-      @state == :idle
+      @state == :idle || @state == :resolve
     end
 
     def inflight?
@@ -170,6 +170,8 @@ module HTTPX
       # connecting
       if connecting?
         connect
+
+        return unless @io
 
         return @io.interests if connecting?
       end
@@ -267,6 +269,10 @@ module HTTPX
     private
 
     def connect
+      unless @io
+        transition(:resolve)
+        return unless @io
+      end
       transition(:open)
     end
 
@@ -493,6 +499,10 @@ module HTTPX
       when :idle
         @timeout = @current_timeout = @options.timeout[:connect_timeout]
 
+      when :resolve
+        return unless @state == :idle
+
+        emit(:resolve)
       when :open
         return if @state == :closed
 

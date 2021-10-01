@@ -51,7 +51,7 @@ module HTTPX
 
             case nextstate
             when :connecting
-              return unless @state == :idle
+              return unless @state == :idle || @state == :resolve
 
               @io.connect
               return unless @io.connected?

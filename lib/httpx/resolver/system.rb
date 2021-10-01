@@ -28,7 +28,11 @@ module HTTPX
                   ip_resolve(hostname) ||
                   system_resolve(hostname) ||
                   @resolver.getaddresses(hostname)
-      throw(:resolve_error, resolve_error(hostname)) if addresses.empty?
+
+      if addresses.empty?
+        emit_resolve_error(connection)
+        return
+      end
 
       emit_addresses(connection, addresses)
     rescue Errno::EHOSTUNREACH, *RESOLV_ERRORS => e
