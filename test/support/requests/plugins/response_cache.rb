@@ -44,21 +44,22 @@ module Requests
       end
 
       def test_plugin_response_cache_vary
+        skip
         return unless origin.start_with?("https://")
-
-        cache_client = HTTPX.plugin(:response_cache)
 
         vary_uri = "https://github.com/HoneyryderChuck/httpx"
 
-        uncached = cache_client.get(vary_uri)
-        verify_status(uncached, 200)
-        cached = cache_client.get(vary_uri)
-        verify_status(cached, 304)
+        HTTPX.plugin(:response_cache).wrap do |cache_client|
+          uncached = cache_client.get(vary_uri)
+          verify_status(uncached, 200)
+          cached = cache_client.get(vary_uri)
+          verify_status(cached, 304)
 
-        assert uncached.body == cached.body
+          assert uncached.body == cached.body
 
-        uncached = cache_client.get(vary_uri, headers: { "accept" => "text/plain" })
-        verify_status(uncached, 200)
+          uncached = cache_client.get(vary_uri, headers: { "accept" => "text/plain" })
+          verify_status(uncached, 200)
+        end
       end
     end
   end
