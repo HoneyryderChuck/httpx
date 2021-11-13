@@ -15,6 +15,11 @@ module HTTPX
     @max_requests: Integer
     @parser: Parser::HTTP1
     @buffer: Buffer
+    @version: [Integer, Integer]
+    @handshake_completed: bool
+    @pipelining: bool
+
+    @request: Request?
 
     def interests: () -> io_interests?
 

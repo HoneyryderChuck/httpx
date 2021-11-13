@@ -36,6 +36,8 @@ module HTTPX
 
       request = @requests.first
 
+      return unless request
+
       return :w if request.interests == :w || !@buffer.empty?
 
       :r
