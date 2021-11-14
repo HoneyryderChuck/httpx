@@ -60,7 +60,7 @@ fi
 bundle install --quiet
 
 echo "Waiting for S3 at address ${AMZ_HOST}/health, attempting every 5s"
-until $(curl --silent --fail ${AMZ_HOST}/health | grep "\"s3\": \"running\"" > /dev/null); do
+until $(curl --silent --fail ${AMZ_HOST}/health | grep "\"s3\": \"available\"" > /dev/null); do
     printf '.'
     sleep 5
 done
