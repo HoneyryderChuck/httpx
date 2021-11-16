@@ -36,6 +36,8 @@ module HTTPX
 
       request = @requests.first
 
+      return unless request
+
       return :w if request.interests == :w || !@buffer.empty?
 
       :r
@@ -313,8 +315,9 @@ module HTTPX
     end
 
     def join_headers(request)
-      @buffer << "#{request.verb.to_s.upcase} #{headline_uri(request)} HTTP/#{@version.join(".")}" << CRLF
-      log(color: :yellow) { "<- HEADLINE: #{@buffer.to_s.chomp.inspect}" }
+      headline = "#{request.verb.to_s.upcase} #{headline_uri(request)} HTTP/#{@version.join(".")}"
+      @buffer << headline << CRLF
+      log(color: :yellow) { "<- HEADLINE: #{headline.chomp.inspect}" }
       extra_headers = set_protocol_headers(request)
       join_headers2(request.headers.each(extra_headers))
       log { "<- " }
