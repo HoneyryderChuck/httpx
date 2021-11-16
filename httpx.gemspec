@@ -24,6 +24,7 @@ Gem::Specification.new do |gem|
     "documentation_uri" => "https://honeyryderchuck.gitlab.io/httpx/rdoc/",
     "source_code_uri" => "https://gitlab.com/honeyryderchuck/httpx",
     "homepage_uri" => "https://honeyryderchuck.gitlab.io/httpx/",
+    "rubygems_mfa_required" => "true",
   }
 
   gem.files = Dir["LICENSE.txt", "README.md", "lib/**/*.rb", "sig/**/*.rbs", "doc/release_notes/*.md"]
