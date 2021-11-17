@@ -160,7 +160,7 @@ class HTTPSTest < Minitest::Test
           response = http.get(uri)
           verify_status(response, 200)
           response = http.get(uri)
-          verify_error_response(response, /stream 0 closed with error: no_error/)
+          verify_error_response(response, HTTPX::Connection::HTTP2::GoawayError)
         end
       ensure
         server.shutdown

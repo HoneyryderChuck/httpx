@@ -16,6 +16,12 @@ module HTTPX
       end
     end
 
+    class GoawayError < Error
+      def initialize
+        super(0, :no_error)
+      end
+    end
+
     attr_reader :streams, :pending
 
     def initialize(buffer, options)
@@ -302,7 +308,7 @@ module HTTPX
       @drains.delete(request)
       @streams.delete(request)
 
-      if error && error != :no_error
+      if error
         ex = Error.new(stream.id, error)
         ex.set_backtrace(caller)
         response = ErrorResponse.new(request, ex, request.options)
@@ -344,9 +350,9 @@ module HTTPX
 
     def on_close(_last_frame, error, _payload)
       is_connection_closed = @connection.state == :closed
-      if error && error != :no_error
+      if error
         @buffer.clear if is_connection_closed
-        ex = Error.new(0, error)
+        ex = error == :no_error ? GoawayError.new : Error.new(0, error)
         ex.set_backtrace(caller)
         handle_error(ex)
       end
