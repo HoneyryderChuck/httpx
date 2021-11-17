@@ -137,7 +137,7 @@ class HTTPSTest < Minitest::Test
 
     def test_http2_client_sends_settings_timeout
       server = SettingsTimeoutServer.new
-      th = Thread.new { server.start }
+      th = Thread.new { server.accept }
       begin
         uri = "#{server.origin}/"
         http = HTTPX.plugin(SessionWithPool).with(timeout: { settings_timeout: 3 }, ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE })
@@ -149,6 +149,23 @@ class HTTPSTest < Minitest::Test
       end
       last_frame = server.frames.last
       assert last_frame[:error] == :settings_timeout
+    end
+
+    def test_http2_client_goaway_with_no_response
+      server = KeepAlivePongServer.new
+      th = Thread.new { server.accept }
+      begin
+        uri = "#{server.origin}/"
+        HTTPX.plugin(SessionWithPool).with(ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE }) do |http|
+          response = http.get(uri)
+          verify_status(response, 200)
+          response = http.get(uri)
+          verify_error_response(response, /stream 0 closed with error: no_error/)
+        end
+      ensure
+        server.shutdown
+        th.join
+      end
     end
   end
 
