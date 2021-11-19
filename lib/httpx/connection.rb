@@ -242,7 +242,7 @@ module HTTPX
         if elapsed_time.negative?
           ex = TotalTimeoutError.new(@total_timeout, "Timed out after #{@total_timeout} seconds")
           ex.set_backtrace(caller)
-          on_error(@total_timeout)
+          on_error(ex)
           return
         end
 
