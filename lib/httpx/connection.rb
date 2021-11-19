@@ -117,7 +117,8 @@ module HTTPX
     def coalescable?(connection)
       if @io.protocol == "h2" &&
          @origin.scheme == "https" &&
-         connection.origin.scheme == "https"
+         connection.origin.scheme == "https" &&
+         @io.can_verify_peer?
         @io.verify_hostname(connection.origin.host)
       else
         @origin == connection.origin
@@ -463,6 +464,7 @@ module HTTPX
           transition(:closing)
           transition(:closed)
           emit(:reset)
+
           @parser.reset if @parser
           transition(:idle)
           transition(:open)

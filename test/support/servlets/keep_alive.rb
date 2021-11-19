@@ -28,3 +28,25 @@ class KeepAliveServer < TestServer
     mount("/2", KeepAliveMax2App)
   end
 end
+
+class KeepAlivePongServer < TestHTTP2Server
+  attr_reader :pings, :pongs
+
+  def initialize
+    @sent = false
+    super
+  end
+
+  private
+
+  def handle_stream(conn, stream)
+    # responds once, then closes the connection
+    if @sent
+      conn.goaway
+      @sent = false
+    else
+      super
+      @sent = true
+    end
+  end
+end

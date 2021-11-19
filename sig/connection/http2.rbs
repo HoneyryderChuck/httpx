@@ -92,5 +92,8 @@ module HTTPX
 
     class Error < ::HTTPX::Error
     end
+
+    class GoawayError < Error
+    end
   end
 end

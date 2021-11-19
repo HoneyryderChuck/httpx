@@ -27,6 +27,10 @@ module HTTPX
       super
     end
 
+    def can_verify_peer?
+      @ctx.verify_mode == OpenSSL::SSL::VERIFY_PEER
+    end
+
     def verify_hostname(host)
       return false if @ctx.verify_mode == OpenSSL::SSL::VERIFY_NONE
       return false if !@io.respond_to?(:peer_cert) || @io.peer_cert.nil?
