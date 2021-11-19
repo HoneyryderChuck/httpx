@@ -352,7 +352,14 @@ module HTTPX
       is_connection_closed = @connection.state == :closed
       if error
         @buffer.clear if is_connection_closed
-        ex = error == :no_error ? GoawayError.new : Error.new(0, error)
+        if error == :no_error
+          ex = GoawayError.new
+          @pending.unshift(*@streams.keys)
+          @drains.clear
+          @streams.clear
+        else
+          ex = Error.new(0, error)
+        end
         ex.set_backtrace(caller)
         handle_error(ex)
       end

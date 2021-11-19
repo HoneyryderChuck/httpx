@@ -34,14 +34,16 @@ class KeepAlivePongServer < TestHTTP2Server
 
   def initialize
     @sent = false
-    super()
+    super
   end
 
   private
 
   def handle_stream(conn, stream)
+    # responds once, then closes the connection
     if @sent
       conn.goaway
+      @sent = false
     else
       super
       @sent = true

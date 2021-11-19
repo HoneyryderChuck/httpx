@@ -55,11 +55,16 @@ class TestHTTP2Server
   end
 
   def accept
-    sock = @server.accept
+    begin
+      loop do
+        sock = @server.accept
 
-    conn = HTTP2Next::Server.new
-    handle_connection(conn, sock)
-    handle_socket(conn, sock)
+        conn = HTTP2Next::Server.new
+        handle_connection(conn, sock)
+        handle_socket(conn, sock)
+      end
+    rescue IOError
+    end
   end
 
   private
