@@ -74,7 +74,9 @@ module HTTPX
 
     def close
       @connection.goaway unless @connection.state == :closed
-      emit(:close)
+
+      force_close_connection = @connection.state == :closed && @buffer.empty?
+      emit(:close, force_close_connection)
     end
 
     def empty?
