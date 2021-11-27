@@ -106,7 +106,7 @@ module HTTPX
       if @nameserver.nil?
         ex = ResolveError.new("No available nameserver")
         ex.set_backtrace(caller)
-        emit_resolve_error(connection, nil, ex)
+        emit_resolve_error(connection, connection.origin.host, ex)
         return
       end
 
