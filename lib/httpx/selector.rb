@@ -117,6 +117,13 @@ class HTTPX::Selector
   end
 
   def select(interval, &block)
+    # do not cause an infinite loop here.
+    #
+    # this may happen if timeout calculation actually triggered an error which causes
+    # the connections to be reaped (such as the total timeout error) before #select
+    # gets called.
+    return if interval.nil? && @selectables.empty?
+
     return select_one(interval, &block) if @selectables.size == 1
 
     select_many(interval, &block)
