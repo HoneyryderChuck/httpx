@@ -45,7 +45,7 @@ response = HTTPX.get("https://nghttp2.org")
 puts response.status #=> 200
 body = response.body
 puts body #=> #<HTTPX::Response ...
-``` 
+```
 
 You can also send as many requests as you want simultaneously:
 
@@ -79,7 +79,7 @@ In Ruby, HTTP client implementations are a known cheap commodity. Why this one?
 
 ### Concurrency
 
-This library supports HTTP/2 seamlessly (which means, if the request is secure, and the server support ALPN negotiation AND HTTP/2, the request will be made through HTTP/2). If you pass multiple URIs, and they can utilize the same connection, they will run concurrently in it. 
+This library supports HTTP/2 seamlessly (which means, if the request is secure, and the server support ALPN negotiation AND HTTP/2, the request will be made through HTTP/2). If you pass multiple URIs, and they can utilize the same connection, they will run concurrently in it.
 
 However if the server supports HTTP/1.1, it will try to use HTTP pipelining, falling back to 1 request at a time if the server doesn't support it (if the server support Keep-Alive connections, it will reuse the same connection).
 
@@ -137,7 +137,8 @@ In order to use HTTP/2 under JRuby, [check this link](https://gitlab.com/honeyry
 
 ### Known bugs
 
-Doesn't work with ruby 2.4.0 for Windows (see [#36](https://gitlab.com/honeyryderchuck/httpx/issues/36)).
+* Doesn't work with ruby 2.4.0 for Windows (see [#36](https://gitlab.com/honeyryderchuck/httpx/issues/36)).
+* Using `total_timeout` along with the `:persistent` plugin [does not work as you might expect](https://gitlab.com/honeyryderchuck/httpx/-/wikis/Timeouts#total_timeout).
 
 ## Contributing
 
