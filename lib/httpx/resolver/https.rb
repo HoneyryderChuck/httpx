@@ -16,17 +16,20 @@ module HTTPX
     DEFAULTS = {
       uri: NAMESERVER,
       use_get: false,
-      record_types: RECORD_TYPES.keys,
+    }.freeze
+
+    FAMILY_TYPES = {
+      Resolv::DNS::Resource::IN::AAAA => "AAAA",
+      Resolv::DNS::Resource::IN::A => "A",
     }.freeze
 
     def_delegators :@resolver_connection, :state, :connecting?, :to_io, :call, :close
 
     attr_writer :pool
 
-    def initialize(options)
+    def initialize(_, options)
       super
       @resolver_options = DEFAULTS.merge(@options.resolver_options)
-      @_record_types = Hash.new { |types, host| types[host] = @resolver_options[:record_types].dup }
       @queries = {}
       @requests = {}
       @connections = []
@@ -81,17 +84,16 @@ module HTTPX
         hostname = connection.origin.host
         log { "resolver: resolve IDN #{connection.origin.non_ascii_hostname} as #{hostname}" } if connection.origin.non_ascii_hostname
       end
-      type = @_record_types[hostname].first || "A"
-      log { "resolver: query #{type} for #{hostname}" }
+      log { "resolver: query #{FAMILY_TYPES[@family]} for #{hostname}" }
       begin
-        request = build_request(hostname, type)
+        request = build_request(hostname)
         request.on(:response, &method(:on_response).curry(2)[request])
         request.on(:promise, &method(:on_promise))
         @requests[request] = connection
         resolver_connection.send(request)
         @queries[hostname] = connection
         @connections << connection
-      rescue Resolv::DNS::EncodeError, JSON::JSONError => e
+      rescue ResolveError, Resolv::DNS::EncodeError, JSON::JSONError => e
         emit_resolve_error(connection, hostname, e)
       end
     end
@@ -119,21 +121,15 @@ module HTTPX
         answers = decode_response_body(response)
       rescue Resolv::DNS::DecodeError, JSON::JSONError => e
         host, connection = @queries.first
-        if @_record_types[host].empty?
-          @queries.delete(host)
-          emit_resolve_error(connection, host, e)
-          return
-        end
+        @queries.delete(host)
+        emit_resolve_error(connection, host, e)
+        return
       end
       if answers.nil? || answers.empty?
         host, connection = @queries.first
-        @_record_types[host].shift
-        if @_record_types[host].empty?
-          @queries.delete(host)
-          @_record_types.delete(host)
-          emit_resolve_error(connection, host)
-          return
-        end
+        @queries.delete(host)
+        emit_resolve_error(connection, host)
+        return
       else
         answers = answers.group_by { |answer| answer["name"] }
         answers.each do |hostname, addresses|
@@ -168,14 +164,14 @@ module HTTPX
       resolve
     end
 
-    def build_request(hostname, type)
+    def build_request(hostname)
       uri = @uri.dup
       rklass = @options.request_class
-      payload = Resolver.encode_dns_query(hostname, type: RECORD_TYPES[type])
+      payload = Resolver.encode_dns_query(hostname, type: @record_type)
 
       if @resolver_options[:use_get]
         params = URI.decode_www_form(uri.query.to_s)
-        params << ["type", type]
+        params << ["type", FAMILY_TYPES[@record_type]]
         params << ["dns", Base64.urlsafe_encode64(payload, padding: false)]
         uri.query = URI.encode_www_form(params)
         request = rklass.new("GET", uri, @options)

@@ -12,6 +12,7 @@ module HTTPX
     require "httpx/resolver/system"
     require "httpx/resolver/native"
     require "httpx/resolver/https"
+    require "httpx/resolver/multi"
 
     register :system, System
     register :native, Native

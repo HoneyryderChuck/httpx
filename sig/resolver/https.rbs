@@ -4,6 +4,7 @@ module HTTPX
       NAMESERVER: String
 
       DEFAULTS: Hash[Symbol, untyped]
+      FAMILY_TYPES: Hash[singleton(Resolv::DNS::Resource), String]
 
       @options: Options
       @requests: Hash[Request, Connection]
@@ -19,8 +20,6 @@ module HTTPX
 
       private
 
-      def initialize: (options) -> untyped
-
       def resolver_connection: () -> Connection
 
       def resolve: (?Connection connection, ?String? hostname) -> void
@@ -29,7 +28,7 @@ module HTTPX
 
       def parse: (Response response) -> void
 
-      def build_request: (String hostname, "A" | "AAAA") -> Request
+      def build_request: (String hostname) -> Request
 
       def decode_response_body: (Response) -> Array[dns_result]
     end

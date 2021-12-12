@@ -28,8 +28,6 @@ module HTTPX
 
       private
 
-      def initialize: (options) -> untyped
-
       def calculate_interests: () -> (:r | :w)
 
       def consume: () -> void

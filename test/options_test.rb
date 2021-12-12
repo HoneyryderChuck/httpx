@@ -127,6 +127,7 @@ class OptionsTest < Minitest::Test
       :persistent => false,
       :resolver_class => bar.resolver_class,
       :resolver_options => bar.resolver_options,
+      :ip_families => bar.ip_families,
     }.compact
 
     assert foo.merge(bar).to_hash == expected, "options haven't merged correctly"

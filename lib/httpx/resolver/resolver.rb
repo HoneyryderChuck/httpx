@@ -9,8 +9,8 @@ module HTTPX
     include Loggable
 
     RECORD_TYPES = {
-      "A" => Resolv::DNS::Resource::IN::A,
-      "AAAA" => Resolv::DNS::Resource::IN::AAAA,
+      Socket::AF_INET6 => Resolv::DNS::Resource::IN::AAAA,
+      Socket::AF_INET => Resolv::DNS::Resource::IN::A,
     }.freeze
 
     CHECK_IF_IP = ->(name) do
@@ -22,7 +22,11 @@ module HTTPX
       end
     end
 
-    def initialize(options)
+    attr_reader :family
+
+    def initialize(family, options)
+      @family = family
+      @record_type = RECORD_TYPES[family]
       @options = Options.new(options)
     end
 

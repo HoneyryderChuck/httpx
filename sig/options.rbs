@@ -87,10 +87,6 @@ module HTTPX
 
     attr_reader ssl: Hash[Symbol, untyped]
 
-    # request_class response_class headers_class request_body_class
-    # response_body_class connection_class
-    # resolver_class resolver_options
-
     # io
     type io_option = _ToIO | Hash[String, _ToIO]
     attr_reader io: io_option?
@@ -109,6 +105,9 @@ module HTTPX
 
     # resolver_options
     attr_reader resolver_options: Hash[Symbol, untyped]
+
+    # ip_families
+    attr_reader ip_families: Array[Integer]
 
     def ==: (untyped other) -> bool
     def merge: (_ToHash[Symbol, untyped] other) -> instance

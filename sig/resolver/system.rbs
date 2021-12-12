@@ -6,10 +6,6 @@ module HTTPX
       @resolver: Resolv::DNS
 
       def <<: (Connection) -> void
-
-      private
-
-      def initialize: (options) -> untyped
     end
   end
 end

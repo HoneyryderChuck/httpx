@@ -1,9 +1,5 @@
 # frozen_string_literal: true
 
-require "resolv"
-require "ipaddr"
-require "forwardable"
-
 module HTTPX
   class HTTPProxyError < Error; end
 
@@ -252,7 +248,7 @@ module HTTPX
           case nextstate
           when :closing
             # this is a hack so that we can use the super method
-            # and it'll thing that the current state is open
+            # and it'll think that the current state is open
             @state = :open if @state == :connecting
           end
           super

@@ -106,11 +106,12 @@ module HTTPX
         return
       end
 
-      resolver = find_resolver_for(connection)
-      resolver << connection
-      return if resolver.empty?
+      find_resolver_for(connection) do |resolver|
+        resolver << connection
+        return if resolver.empty?
 
-      select_connection(resolver)
+        select_connection(resolver)
+      end
     end
 
     def on_resolver_connection(connection)
@@ -137,7 +138,7 @@ module HTTPX
 
     def on_resolver_close(resolver)
       resolver_type = resolver.class
-      return unless @resolvers[resolver_type] == resolver
+      return if resolver.closed?
 
       @resolvers.delete(resolver_type)
 
@@ -172,12 +173,10 @@ module HTTPX
     end
 
     def coalesce_connections(conn1, conn2)
-      if conn1.coalescable?(conn2)
-        conn1.merge(conn2)
-        @connections.delete(conn2)
-      else
-        register_connection(conn2)
-      end
+      return register_connection(conn2) unless conn1.coalescable?(conn2)
+
+      conn1.merge(conn2)
+      @connections.delete(conn2)
     end
 
     def next_timeout
@@ -194,13 +193,19 @@ module HTTPX
       resolver_type = Resolver.registry(resolver_type) if resolver_type.is_a?(Symbol)
 
       @resolvers[resolver_type] ||= begin
-        resolver = resolver_type.new(connection_options)
-        resolver.pool = self if resolver.respond_to?(:pool=)
-        resolver.on(:resolve, &method(:on_resolver_connection))
-        resolver.on(:error, &method(:on_resolver_error))
-        resolver.on(:close) { on_resolver_close(resolver) }
-        resolver
+        resolver_manager = Resolver::Multi.new(resolver_type, connection_options)
+        resolver_manager.on(:resolve, &method(:on_resolver_connection))
+        resolver_manager.on(:error, &method(:on_resolver_error))
+        resolver_manager.on(:close, &method(:on_resolver_close))
+        resolver_manager
       end
+
+      manager = @resolvers[resolver_type]
+      manager.resolvers.each do |resolver|
+        resolver.pool = self if resolver.respond_to?(:pool=)
+        yield resolver
+      end
+      manager
     end
   end
 end

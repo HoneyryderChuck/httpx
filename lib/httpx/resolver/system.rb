@@ -12,7 +12,7 @@ module HTTPX
 
     attr_reader :state
 
-    def initialize(options)
+    def initialize(_, options)
       super
       @resolver_options = @options.resolver_options
       resolv_options = @resolver_options.dup
@@ -28,6 +28,7 @@ module HTTPX
                   ip_resolve(hostname) ||
                   system_resolve(hostname) ||
                   @resolver.getaddresses(hostname)
+
       throw(:resolve_error, resolve_error(hostname)) if addresses.empty?
 
       emit_addresses(connection, addresses)
