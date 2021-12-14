@@ -285,7 +285,7 @@ module HTTPX
       end
 
       def write(data)
-        @block.call(data)
+        @block.call(data.dup)
         data.bytesize
       end
     end
