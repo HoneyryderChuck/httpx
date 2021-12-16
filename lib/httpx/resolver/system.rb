@@ -22,6 +22,10 @@ module HTTPX
       @resolver.timeouts = timeouts || Resolver::RESOLVE_TIMEOUT
     end
 
+    def connections
+      EMPTY
+    end
+
     def <<(connection)
       hostname = connection.origin.host
       addresses = connection.addresses ||

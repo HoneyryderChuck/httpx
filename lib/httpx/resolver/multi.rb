@@ -35,6 +35,10 @@ module HTTPX
       @resolvers.each(&:close)
     end
 
+    def connections
+      @resolvers.filter_map { |r| r.resolver_connection if r.respond_to?(:resolver_connection) }
+    end
+
     private
 
     def on_resolver_connection(connection)

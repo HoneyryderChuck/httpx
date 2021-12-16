@@ -55,9 +55,19 @@ module HTTPX
       connections = connections.reject(&:inflight?)
       connections.each(&:close)
       next_tick until connections.none? { |c| c.state != :idle && @connections.include?(c) }
-      @resolvers.each_value do |resolver|
-        resolver.close unless resolver.closed?
-      end if @connections.empty?
+
+      # close resolvers
+      outstanding_connections = @connections
+      resolver_connections = @resolvers.each_value.flat_map(&:connections).compact
+      outstanding_connections -= resolver_connections
+      if outstanding_connections.empty?
+        @resolvers.each_value do |resolver|
+          resolver.close unless resolver.closed?
+        end
+        # for https resolver
+        resolver_connections.each(&:close)
+        next_tick until resolver_connections.none? { |c| c.state != :idle && @connections.include?(c) }
+      end
     end
 
     def init_connection(connection, _options)

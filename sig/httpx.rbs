@@ -1,6 +1,8 @@
 module HTTPX
   extend Chainable
 
+  EMPTY: Array[untyped]
+
   VERSION: String
 
   type uri = URI::HTTP | URI::HTTPS | string

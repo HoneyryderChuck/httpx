@@ -2,8 +2,6 @@
 
 module HTTPX
   class Headers
-    EMPTY = [].freeze
-
     class << self
       def new(headers = nil)
         return headers if headers.is_a?(self)

@@ -2,8 +2,6 @@ module HTTPX
   class Headers
     include _ToS
 
-    EMPTY: Array[untyped]
-
     @headers: Hash[String, Array[String]]
 
     def self.new: (?untyped headers) -> instance
