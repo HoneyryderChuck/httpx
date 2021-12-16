@@ -6,6 +6,7 @@ module HTTPX
       DEFAULTS: Hash[Symbol, untyped]
       FAMILY_TYPES: Hash[singleton(Resolv::DNS::Resource), String]
 
+      @family: ip_family
       @options: Options
       @requests: Hash[Request, Connection]
       @connections: Array[Connection]
@@ -19,6 +20,8 @@ module HTTPX
       def <<: (Connection) -> void
 
       private
+
+      def initialize: (ip_family family, options options) -> void
 
       def resolver_connection: () -> Connection
 

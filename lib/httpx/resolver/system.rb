@@ -10,16 +10,28 @@ module HTTPX
                      Resolv::DNS::EncodeError,
                      Resolv::DNS::DecodeError].freeze
 
+    class << self
+      def multi?
+        false
+      end
+    end
+
     attr_reader :state
 
-    def initialize(_, options)
-      super
+    def initialize(options)
+      super(nil, options)
       @resolver_options = @options.resolver_options
       resolv_options = @resolver_options.dup
       timeouts = resolv_options.delete(:timeouts)
       resolv_options.delete(:cache)
       @resolver = resolv_options.empty? ? Resolv::DNS.new : Resolv::DNS.new(resolv_options)
       @resolver.timeouts = timeouts || Resolver::RESOLVE_TIMEOUT
+    end
+
+    def resolvers
+      return enum_for(__method__) unless block_given?
+
+      yield self
     end
 
     def connections

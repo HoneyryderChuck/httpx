@@ -22,7 +22,15 @@ module HTTPX
       end
     end
 
+    class << self
+      def multi?
+        true
+      end
+    end
+
     attr_reader :family
+
+    attr_writer :pool
 
     def initialize(family, options)
       @family = family
@@ -47,8 +55,19 @@ module HTTPX
         address.is_a?(IPAddr) ? address : IPAddr.new(address.to_s)
       end
       log { "resolver: answer #{connection.origin.host}: #{addresses.inspect}" }
-      connection.addresses = addresses
-      emit(:resolve, connection)
+      if !connection.io &&
+         connection.options.ip_families.size > 1 &&
+         addresses.first.ipv4? &&
+         addresses.first.to_s != connection.origin.host.to_s
+        log { "resolver: A response, applying resolution delay..." }
+        @pool.after(0.05) do
+          connection.addresses = addresses
+          emit(:resolve, connection)
+        end
+      else
+        connection.addresses = addresses
+        emit(:resolve, connection)
+      end
     end
 
     def early_resolve(connection, hostname: connection.origin.host)

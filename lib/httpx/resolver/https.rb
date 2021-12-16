@@ -25,8 +25,6 @@ module HTTPX
 
     def_delegators :@resolver_connection, :state, :connecting?, :to_io, :call, :close
 
-    attr_writer :pool
-
     def initialize(_, options)
       super
       @resolver_options = DEFAULTS.merge(@options.resolver_options)
@@ -61,8 +59,6 @@ module HTTPX
       true
     end
 
-    private
-
     def resolver_connection
       @resolver_connection ||= @pool.find_connection(@uri, @options) || begin
         @building_connection = true
@@ -74,6 +70,8 @@ module HTTPX
       end
     end
 
+    private
+
     def resolve(connection = @connections.first, hostname = nil)
       return if @building_connection
       return unless connection
@@ -84,7 +82,7 @@ module HTTPX
         hostname = connection.origin.host
         log { "resolver: resolve IDN #{connection.origin.non_ascii_hostname} as #{hostname}" } if connection.origin.non_ascii_hostname
       end
-      log { "resolver: query #{FAMILY_TYPES[@family]} for #{hostname}" }
+      log { "resolver: query #{FAMILY_TYPES[RECORD_TYPES[@family]]} for #{hostname}" }
       begin
         request = build_request(hostname)
         request.on(:response, &method(:on_response).curry(2)[request])
@@ -155,7 +153,7 @@ module HTTPX
           next unless connection # probably a retried query for which there's an answer
 
           @connections.delete(connection)
-          Resolver.cached_lookup_set(hostname, addresses) if @resolver_options[:cache]
+          Resolver.cached_lookup_set(hostname, @family, addresses) if @resolver_options[:cache]
           emit_addresses(connection, addresses.map { |addr| addr["data"] })
         end
       end

@@ -7,7 +7,7 @@ module HTTPX
       RECORD_TYPES: Hash[Integer, singleton(Resolv::DNS::Resource)]
       CHECK_IF_IP: ^(String name) -> bool
 
-      attr_reader family: Integer
+      attr_reader family: ip_family
 
       @record_type: singleton(Resolv::DNS::Resource)
       @options: Options
@@ -23,7 +23,7 @@ module HTTPX
 
       private
 
-      def initialize: (Integer family, options options) -> void
+      def initialize: (ip_family? family, options options) -> void
 
       def emit_addresses: (Connection, Array[ipaddr | Resolv::DNS::ip_address]) -> void
 

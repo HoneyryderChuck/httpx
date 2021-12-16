@@ -60,14 +60,15 @@ module HTTPX
       outstanding_connections = @connections
       resolver_connections = @resolvers.each_value.flat_map(&:connections).compact
       outstanding_connections -= resolver_connections
-      if outstanding_connections.empty?
-        @resolvers.each_value do |resolver|
-          resolver.close unless resolver.closed?
-        end
-        # for https resolver
-        resolver_connections.each(&:close)
-        next_tick until resolver_connections.none? { |c| c.state != :idle && @connections.include?(c) }
+
+      return unless outstanding_connections.empty?
+
+      @resolvers.each_value do |resolver|
+        resolver.close unless resolver.closed?
       end
+      # for https resolver
+      resolver_connections.each(&:close)
+      next_tick until resolver_connections.none? { |c| c.state != :idle && @connections.include?(c) }
     end
 
     def init_connection(connection, _options)
@@ -118,7 +119,7 @@ module HTTPX
 
       find_resolver_for(connection) do |resolver|
         resolver << connection
-        return if resolver.empty?
+        next if resolver.empty?
 
         select_connection(resolver)
       end
@@ -203,7 +204,11 @@ module HTTPX
       resolver_type = Resolver.registry(resolver_type) if resolver_type.is_a?(Symbol)
 
       @resolvers[resolver_type] ||= begin
-        resolver_manager = Resolver::Multi.new(resolver_type, connection_options)
+        resolver_manager = if resolver_type.multi?
+          Resolver::Multi.new(resolver_type, connection_options)
+        else
+          resolver_type.new(connection_options)
+        end
         resolver_manager.on(:resolve, &method(:on_resolver_connection))
         resolver_manager.on(:error, &method(:on_resolver_error))
         resolver_manager.on(:close, &method(:on_resolver_close))
@@ -212,7 +217,7 @@ module HTTPX
 
       manager = @resolvers[resolver_type]
       manager.resolvers.each do |resolver|
-        resolver.pool = self if resolver.respond_to?(:pool=)
+        resolver.pool = self
         yield resolver
       end
       manager

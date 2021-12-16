@@ -7,6 +7,7 @@ module HTTPX
       DEFAULTS: Hash[Symbol, untyped]
       DNS_PORT: Integer
 
+      @family: ip_family
       @options: Options
       @ns_index: Integer
       @nameserver: String
@@ -27,6 +28,8 @@ module HTTPX
       def timeout: () -> Numeric?
 
       private
+
+      def initialize: (ip_family family, options options) -> void
 
       def calculate_interests: () -> (:r | :w)
 

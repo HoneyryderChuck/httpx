@@ -15,9 +15,10 @@ module HTTPX
     ip_address_families = begin
       list = Socket.ip_address_list
       if list.any? { |a| a.ipv6? && !a.ipv6_loopback? && !a.ipv6_linklocal? }
-        # [Socket::AF_INET6, Socket::AF_INET]
+        [Socket::AF_INET6, Socket::AF_INET]
+      else
+        [Socket::AF_INET]
       end
-      [Socket::AF_INET]
     rescue NotImplementedError
       [Socket::AF_INET]
     end

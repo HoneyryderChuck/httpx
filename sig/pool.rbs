@@ -1,6 +1,8 @@
 module HTTPX
   class Pool
-    @resolvers: Hash[Class, Resolver::Multi]
+    type resolver_manager = Resolver::Multi | Resolver::System
+
+    @resolvers: Hash[Class, resolver_manager]
     @timers: Timers
     @selector: Selector
     @connections: Array[Connection]
@@ -42,6 +44,6 @@ module HTTPX
 
     def next_timeout: () -> (Integer | Float | nil)
 
-    def find_resolver_for: (Connection) { (Resolver::Resolver) -> void } -> Resolver::Multi
+    def find_resolver_for: (Connection) { (Resolver::Resolver resolver) -> void } -> resolver_manager
   end
 end

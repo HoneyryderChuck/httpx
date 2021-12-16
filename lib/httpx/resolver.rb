@@ -33,15 +33,27 @@ module HTTPX
       end
     end
 
-    def cached_lookup_set(hostname, entries)
+    def cached_lookup_set(hostname, family, entries)
       now = Utils.now
       entries.each do |entry|
         entry["TTL"] += now
       end
       @lookup_mutex.synchronize do
-        @lookups[hostname] += entries
+        case family
+        when Socket::AF_INET6
+          @lookups[hostname].concat(entries)
+        when Socket::AF_INET
+          @lookups[hostname].unshift(*entries)
+        end
         entries.each do |entry|
-          @lookups[entry["name"]] << entry if entry["name"] != hostname
+          next unless entry["name"] != hostname
+
+          case family
+          when Socket::AF_INET6
+            @lookups[entry["name"]] << entry
+          when Socket::AF_INET
+            @lookups[entry["name"]].unshift(entry)
+          end
         end
       end
     end

@@ -107,7 +107,7 @@ module HTTPX
     attr_reader resolver_options: Hash[Symbol, untyped]
 
     # ip_families
-    attr_reader ip_families: Array[Integer]
+    attr_reader ip_families: Array[ip_family]
 
     def ==: (untyped other) -> bool
     def merge: (_ToHash[Symbol, untyped] other) -> instance
