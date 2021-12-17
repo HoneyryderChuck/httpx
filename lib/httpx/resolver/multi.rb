@@ -6,6 +6,7 @@ require "resolv"
 module HTTPX
   class Resolver::Multi
     include Callbacks
+    using ArrayExtensions
 
     attr_reader :resolvers
 

@@ -18,11 +18,6 @@ module HTTPX
       use_get: false,
     }.freeze
 
-    FAMILY_TYPES = {
-      Resolv::DNS::Resource::IN::AAAA => "AAAA",
-      Resolv::DNS::Resource::IN::A => "A",
-    }.freeze
-
     def_delegators :@resolver_connection, :state, :connecting?, :to_io, :call, :close
 
     def initialize(_, options)
@@ -64,7 +59,7 @@ module HTTPX
         @building_connection = true
         connection = @options.connection_class.new("ssl", @uri, @options.merge(ssl: { alpn_protocols: %w[h2] }))
         @pool.init_connection(connection, @options)
-        emit_addresses(connection, @uri_addresses)
+        emit_addresses(connection, @family, @uri_addresses)
         @building_connection = false
         connection
       end
@@ -154,7 +149,7 @@ module HTTPX
 
           @connections.delete(connection)
           Resolver.cached_lookup_set(hostname, @family, addresses) if @resolver_options[:cache]
-          emit_addresses(connection, addresses.map { |addr| addr["data"] })
+          emit_addresses(connection, @family, addresses.map { |addr| addr["data"] })
         end
       end
       return if @connections.empty?

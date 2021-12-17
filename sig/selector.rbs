@@ -1,6 +1,6 @@
 module HTTPX
   class Selector
-    type selectable = Connection | Resolver::Native
+    type selectable = Connection | Resolver::Native | Resolver::System
 
     READABLE: Array[Symbol]
     WRITABLE: Array[Symbol]

@@ -237,7 +237,7 @@ module HTTPX
           @timeouts.delete(connection.origin.host)
           @connections.delete(connection)
           Resolver.cached_lookup_set(connection.origin.host, @family, addresses) if @resolver_options[:cache]
-          emit_addresses(connection, addresses.map { |addr| addr["data"] })
+          emit_addresses(connection, @family, addresses.map { |addr| addr["data"] })
         end
       end
       return emit(:close) if @connections.empty?

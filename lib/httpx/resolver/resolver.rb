@@ -13,6 +13,11 @@ module HTTPX
       Socket::AF_INET => Resolv::DNS::Resource::IN::A,
     }.freeze
 
+    FAMILY_TYPES = {
+      Resolv::DNS::Resource::IN::AAAA => "AAAA",
+      Resolv::DNS::Resource::IN::A => "A",
+    }.freeze
+
     CHECK_IF_IP = ->(name) do
       begin
         IPAddr.new(name)
@@ -50,14 +55,14 @@ module HTTPX
 
     private
 
-    def emit_addresses(connection, addresses)
+    def emit_addresses(connection, family, addresses)
       addresses.map! do |address|
         address.is_a?(IPAddr) ? address : IPAddr.new(address.to_s)
       end
       log { "resolver: answer #{connection.origin.host}: #{addresses.inspect}" }
       if !connection.io &&
          connection.options.ip_families.size > 1 &&
-         addresses.first.ipv4? &&
+         family == Socket::AF_INET &&
          addresses.first.to_s != connection.origin.host.to_s
         log { "resolver: A response, applying resolution delay..." }
         @pool.after(0.05) do
@@ -77,11 +82,12 @@ module HTTPX
                   system_resolve(hostname)
       return unless addresses
 
-      emit_addresses(connection, addresses)
+      emit_addresses(connection, nil, addresses)
     end
 
     def ip_resolve(hostname)
-      [hostname] if CHECK_IF_IP[hostname]
+      [IPAddr.new(hostname)]
+    rescue ArgumentError
     end
 
     def system_resolve(hostname)

@@ -25,7 +25,7 @@ module HTTPX
 
       def initialize: (ip_family? family, options options) -> void
 
-      def emit_addresses: (Connection, Array[ipaddr | Resolv::DNS::ip_address]) -> void
+      def emit_addresses: (Connection, ip_family? family, Array[ipaddr | Resolv::DNS::ip_address]) -> void
 
       def early_resolve: (Connection, ?hostname: String) -> void
 
