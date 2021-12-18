@@ -55,10 +55,10 @@ module ProfilerHelpers
     http2_next_classes = HTTP2Next.constants.map { |sym| HTTP2Next.const_get(sym) }.grep(Class)
 
     obj_memsize_proc = lambda do
-      [*httpx_classes, *http2_next_classes, Hash, Array, String].map do |klass|
+      [*httpx_classes, *http2_next_classes, Hash, Array, String].to_h do |klass|
         count, size = ObjectSpace.memsize_of_all(klass)
         [klass, [count, size]]
-      end.to_h
+      end
     end
 
     prev_memsize = obj_memsize_proc.call
