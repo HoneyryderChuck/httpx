@@ -8,11 +8,19 @@ module HTTPX
       DEFAULT_MIMETYPE = "application/octet-stream"
 
       # inspired by https://github.com/shrinerb/shrine/blob/master/lib/shrine/plugins/determine_mime_type.rb
-      if defined?(MIME::Types)
+      if defined?(FileMagic)
+        def call(file, _)
+          return nil if file.eof? # FileMagic returns "application/x-empty" for empty files
 
-        def call(_file, filename)
-          mime = MIME::Types.of(filename).first
-          mime.content_type if mime
+          FileMagic.open(FileMagic::MAGIC_MIME_TYPE) do |filemagic|
+            filemagic.buffer(file.read(MAGIC_NUMBER))
+          end
+        end
+      elsif defined?(Marcel)
+        def call(file, filename)
+          return nil if file.eof? # marcel returns "application/octet-stream" for empty files
+
+          Marcel::MimeType.for(file, name: filename)
         end
 
       elsif defined?(MimeMagic)
