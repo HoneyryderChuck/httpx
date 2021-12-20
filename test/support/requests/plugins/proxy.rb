@@ -16,13 +16,45 @@ module Requests
         assert_raises(HTTPX::HTTPProxyError) { session.get(uri) }
       end
 
-      def test_plugin_http_proxy
-        session = HTTPX.plugin(:proxy).with_proxy(uri: http_proxy)
+      def test_plugin_http_http1_proxy
+        return unless origin.start_with?("http://")
+
+        session = HTTPX.plugin(:proxy, fallback_protocol: "http/1.1").with_proxy(uri: http_proxy)
         uri = build_uri("/get")
         response = session.get(uri)
         verify_status(response, 200)
         verify_body_length(response)
       end
+
+      def test_plugin_http_h2_proxy
+        return unless origin.start_with?("http://")
+
+        session = HTTPX.plugin(:proxy, fallback_protocol: "h2").with_proxy(uri: http2_proxy)
+        uri = build_uri("/get")
+        response = session.get(uri)
+        verify_status(response, 200)
+        verify_body_length(response)
+      end
+
+      def test_plugin_https_connect_http1_proxy
+        # return unless origin.start_with?("https://")
+        session = HTTPX.plugin(:proxy).with_proxy(uri: http_proxy)
+        uri = build_uri("/get")
+        response = session.get(uri)
+        verify_status(response, 200)
+        verify_body_length(response)
+      end if OpenSSL::SSL::SSLContext.method_defined?(:alpn_protocols=)
+
+      # TODO: uncomment when supporting H2 CONNECT
+      # def test_plugin_https_connect_h2_proxy
+      #   return unless origin.start_with?("https://")
+
+      #   session = HTTPX.plugin(:proxy, alpn_protocols: %w[h2]).with_proxy(uri: http2_proxy)
+      #   uri = build_uri("/get")
+      #   response = session.get(uri)
+      #   verify_status(response, 200)
+      #   verify_body_length(response)
+      # end if OpenSSL::SSL::SSLContext.method_defined?(:alpn_protocols=)
 
       def test_plugin_http_next_proxy
         session = HTTPX.plugin(SessionWithPool)

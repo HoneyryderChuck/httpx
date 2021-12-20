@@ -67,8 +67,6 @@ module HTTPX
 
     def set_protocol_headers: (Request) -> _Each[[String, String]]
 
-    def headline_uri: (Request) -> String
-
     def handle: (Request request) -> void
 
     def join_headers: (Request request) -> void

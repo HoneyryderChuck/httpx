@@ -36,6 +36,10 @@ module ProxyHelper
     end)
   end
 
+  def http2_proxy
+    Array(ENV["HTTPX_HTTP2_PROXY"])
+  end
+
   def https_proxy
     Array(ENV["HTTPX_HTTPS_PROXY"] || begin
       http_proxies_list.select { |_, _, https| https }.map do |ip, port, _|
