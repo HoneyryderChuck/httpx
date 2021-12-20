@@ -21,6 +21,17 @@ module Faraday
       end
       # :nocov:
 
+      unless Faraday::RequestOptions.method_defined?(:stream_response?)
+        module RequestOptionsExtensions
+          refine Faraday::RequestOptions do
+            def stream_response?
+              false
+            end
+          end
+        end
+        using RequestOptionsExtensions
+      end
+
       module RequestMixin
         using ::HTTPX::HashExtensions
 
@@ -63,6 +74,27 @@ module Faraday
       end
 
       include RequestMixin
+
+      module OnDataPlugin
+        module RequestMethods
+          attr_writer :response_on_data
+
+          def response=(response)
+            super
+            response.body.on_data = @response_on_data
+          end
+        end
+
+        module ResponseBodyMethods
+          attr_writer :on_data
+
+          def write(chunk)
+            return super unless @on_data
+
+            @on_data.call(chunk, chunk.bytesize)
+          end
+        end
+      end
 
       class Session < ::HTTPX::Session
         plugin(:compression)
@@ -137,15 +169,21 @@ module Faraday
         end
 
         def run
-          requests = @handlers.map { |handler| build_request(handler.env) }
           env = @handlers.last.env
 
-          proxy_options = { uri: env.request.proxy }
-
           session = @session.with(options_from_env(env))
-          session = session.plugin(:proxy).with(proxy: proxy_options) if env.request.proxy
+          session = session.plugin(:proxy).with(proxy: { uri: env.request.proxy }) if env.request.proxy
+          session = session.plugin(OnDataPlugin) if env.request.stream_response?
 
-          responses = session.request(requests)
+          requests = @handlers.map { |handler| session.build_request(*build_request(handler.env)) }
+
+          if env.request.stream_response?
+            requests.each do |request|
+              request.response_on_data = env.request.on_data
+            end
+          end
+
+          responses = session.request(*requests)
           Array(responses).each_with_index do |response, index|
             handler = @handlers[index]
             handler.on_response.call(response)
@@ -179,11 +217,15 @@ module Faraday
           return handler
         end
 
-        meth, uri, request_options = build_request(env)
-
         session = @session.with(options_from_env(env))
-        session = session.plugin(:proxy).with(proxy: proxy_options) if env.request.proxy
-        response = session.__send__(meth, uri, **request_options)
+        session = session.plugin(:proxy).with(proxy: { uri: env.request.proxy }) if env.request.proxy
+        session = session.plugin(OnDataPlugin) if env.request.stream_response?
+
+        request = session.build_request(*build_request(env))
+
+        request.response_on_data = env.request.on_data if env.request.stream_response?
+
+        response = session.request(request)
         response.raise_for_status unless response.is_a?(::HTTPX::Response)
         save_response(env, response.status, response.body.to_s, response.headers, response.reason) do |response_headers|
           response_headers.merge!(response.headers)

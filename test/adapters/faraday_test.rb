@@ -118,6 +118,17 @@ class FaradayTest < Minitest::Test
     assert_match(%r{application/json}, delete(build_path("/delete")).headers["content-type"])
   end
 
+  def test_adapter_get_data
+    streamed = []
+    get(build_path("/stream/3")) do |req|
+      req.options.on_data = proc do |chunk, _overall_received_bytes|
+        streamed << chunk
+      end
+    end
+    assert !streamed.empty?
+    assert streamed.join.lines.size == 3
+  end if Faraday::VERSION >= "1.0.0"
+
   # def test_adapter_timeout
   #   conn = create_connection(request: { timeout: 1, open_timeout: 1 })
   #   assert_raises Faraday::Error::TimeoutError do
