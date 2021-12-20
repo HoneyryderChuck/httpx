@@ -57,7 +57,9 @@ module HTTPX
         @io = build_socket
       end
       try_connect
-    rescue Errno::EHOSTUNREACH => e
+    rescue Errno::ECONNREFUSED,
+           Errno::EADDRNOTAVAIL,
+           Errno::EHOSTUNREACH => e
       raise e if @ip_index <= 0
 
       @ip_index -= 1

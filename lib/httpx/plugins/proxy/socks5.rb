@@ -46,7 +46,7 @@ module HTTPX
 
           private
 
-          def transition(nextstate)
+          def handle_transition(nextstate)
             return super unless @options.proxy && @options.proxy.uri.scheme == "socks5"
 
             case nextstate

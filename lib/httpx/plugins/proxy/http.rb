@@ -13,7 +13,7 @@ module HTTPX
 
           private
 
-          def transition(nextstate)
+          def handle_transition(nextstate)
             return super unless @options.proxy && @options.proxy.uri.scheme == "http"
 
             case nextstate
@@ -54,7 +54,7 @@ module HTTPX
               @inflight += 1
               parser.send(connect_request)
             else
-              transition(:connected)
+              handle_transition(:connected)
             end
           end
 

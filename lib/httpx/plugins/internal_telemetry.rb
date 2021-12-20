@@ -81,7 +81,7 @@ module HTTPX
           super
         end
 
-        def transition(nextstate)
+        def handle_transition(nextstate)
           state = @state
           super
           meter_elapsed_time("Connection##{object_id}[#{@origin}]: #{state} -> #{nextstate}") if nextstate == @state

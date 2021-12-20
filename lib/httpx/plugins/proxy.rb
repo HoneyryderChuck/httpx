@@ -234,7 +234,7 @@ module HTTPX
           end
         end
 
-        def transition(nextstate)
+        def handle_transition(nextstate)
           return super unless @options.proxy
 
           case nextstate

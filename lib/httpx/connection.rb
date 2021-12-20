@@ -489,6 +489,18 @@ module HTTPX
     end
 
     def transition(nextstate)
+      handle_transition(nextstate)
+   rescue Errno::ECONNREFUSED,
+          Errno::EADDRNOTAVAIL,
+          Errno::EHOSTUNREACH,
+          TLSError => e
+     # connect errors, exit gracefully
+     handle_error(e)
+     @state = :closed
+     emit(:close)
+    end
+
+    def handle_transition(nextstate)
       case nextstate
       when :idle
         @timeout = @current_timeout = @options.timeout[:connect_timeout]
@@ -525,14 +537,6 @@ module HTTPX
         emit(:activate)
       end
       @state = nextstate
-    rescue Errno::ECONNREFUSED,
-           Errno::EADDRNOTAVAIL,
-           Errno::EHOSTUNREACH,
-           TLSError => e
-      # connect errors, exit gracefully
-      handle_error(e)
-      @state = :closed
-      emit(:close)
     end
 
     def purge_after_closed
