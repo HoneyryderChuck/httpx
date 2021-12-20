@@ -77,12 +77,16 @@ module HTTPX
            Errno::EHOSTUNREACH => e
       raise e if @ip_index <= 0
 
+      log { "failed connecting to #{@ip} (#{e.message}), trying next..." }
       @ip_index -= 1
+      @io = build_socket
       retry
     rescue Errno::ETIMEDOUT => e
       raise ConnectTimeoutError.new(@options.timeout[:connect_timeout], e.message) if @ip_index <= 0
 
+      log { "failed connecting to #{@ip} (#{e.message}), trying next..." }
       @ip_index -= 1
+      @io = build_socket
       retry
     end
 

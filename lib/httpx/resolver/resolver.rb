@@ -95,7 +95,8 @@ module HTTPX
       ips = @system_resolver.getaddresses(hostname)
       return if ips.empty?
 
-      ips.map { |ip| IPAddr.new(ip) }
+      ips.map! { |ip| IPAddr.new(ip) }
+      ips.sort! { |ip1, ip2| ip1.ipv6? && ip2.ipv4? ? 1 : 0 }
     rescue IOError
     end
 
