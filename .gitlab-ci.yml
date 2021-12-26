@@ -29,6 +29,12 @@ variables:
   parallel:
     matrix:
       - RUBYOPT: ["", "--jit --jit-warnings --jit-wait"]
+
+.yjit_matrix: &yjit_matrix
+  parallel:
+    matrix:
+      - RUBYOPT: ["", "--jit --jit-warnings --jit-wait", "--yjit"]
+
 # Cache gems in between builds
 cache:
   key: "$CI_JOB_NAME-$CI_COMMIT_REF_SLUG"
@@ -83,6 +89,11 @@ test ruby 3/0:
   <<: *jit_matrix
   script:
     ./spec.sh ruby 3.0
+test ruby 3/1:
+  <<: *test_settings
+  <<: *yjit_matrix
+  script:
+    ./spec.sh ruby 3.1
 test truffleruby:
   <<: *test_settings
   script:
@@ -91,12 +102,11 @@ test truffleruby:
 
 jekyll:
   stage: test
-  image: "ruby:2.7-alpine"
+  image: "ruby:3.1"
   variables:
     JEKYLL_ENV: production
     BUNDLE_WITHOUT: test:coverage:assorted
   script:
-    - apk --update add g++ make git
     - bundle install --quiet
     - bundle exec rake prepare_website
     - mv rdoc/ www
@@ -115,10 +125,9 @@ coverage:
   variables:
     BUNDLE_WITHOUT: test:website:assorted
 
-  image: "ruby:3.0-alpine"
+  image: "ruby:3.1"
   script:
-    - apk --update add g++ make git
-    - bundle install --quiet
+    - gem install simplecov --no-doc
     # this is a workaround, because simplecov doesn't support relative paths.
     #
     # https://github.com/simplecov-ruby/simplecov/issues/887
@@ -129,7 +138,7 @@ coverage:
     # all of those have to be rewritten before the merge happens.
     #
     - find coverage -name "*resultset.json" -exec sed -i 's?/home?'`pwd`'?' {} \;
-    - bundle exec rake coverage:report
+    - rake coverage:report
   artifacts:
     paths:
       - "coverage/"
