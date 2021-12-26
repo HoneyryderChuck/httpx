@@ -158,3 +158,8 @@ Naming/VariableNumber:
 
 Style/SlicingWithRange:
   Enabled: false
+
+Performance/StringIdentifierArgument:
+  Exclude:
+    - 'test/support/websocket_test_plugin.rb'
+    - 'test/support/requests/plugins/upgrade.rb'

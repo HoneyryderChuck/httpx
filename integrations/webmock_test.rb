@@ -11,6 +11,7 @@ class WebmockTest < Minitest::Test
   MOCK_URL_HTTP = "http://www.example.com"
   MOCK_URL_HTTP_EXCEPTION = "http://exception.example.com"
   MOCK_URL_HTTP_TIMEOUT = "http://timeout.example.com"
+  MOCK_URL_HTTP_TIMEOUT_RETRIES = "http://timeout-x-times.example.com"
 
   def setup
     super
@@ -21,6 +22,7 @@ class WebmockTest < Minitest::Test
     @exception_class = Class.new(StandardError)
     @stub_exception = stub_http_request(:any, MOCK_URL_HTTP_EXCEPTION).to_raise(@exception_class.new("exception message"))
     @stub_timeout = stub_http_request(:any, MOCK_URL_HTTP_TIMEOUT).to_timeout
+    @stub_timeout_retries = stub_http_request(:any, MOCK_URL_HTTP_TIMEOUT_RETRIES).to_timeout.times(2).then.to_return(body: "body")
   end
 
   def teardown
@@ -51,6 +53,13 @@ class WebmockTest < Minitest::Test
     response = http_request(:get, MOCK_URL_HTTP_TIMEOUT)
     assert_requested(@stub_timeout)
     assert_equal(HTTPX::TimeoutError.new(1, "Timed out"), response.error)
+  end
+
+  def test_to_timeout_with_retries
+    response = HTTPX.plugin(:retries, max_retries: 3).get(MOCK_URL_HTTP_TIMEOUT_RETRIES)
+    assert_requested(@stub_timeout_retries, times: 3)
+    assert !response.is_a?(HTTPX::ErrorResponse)
+    assert_equal("body", response.to_s)
   end
 
   def test_error_on_non_stubbed_request
@@ -170,10 +179,11 @@ class WebmockTest < Minitest::Test
     real_request_uri = build_uri("/get", "http://#{httpbin}")
     http_request(:get, "#{MOCK_URL_HTTP}/", real_request_uri)
 
-    assert responses.size == 2
+    assert responses.size == 2, "received #{responses.size} instead (#{responses.keys})"
     assert(responses.values.all? { |r| r.status.first == 200 })
   ensure
     WebMock.reset_callbacks
+    WebMock.disable_net_connect!
   end
 
   private
