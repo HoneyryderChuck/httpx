@@ -163,7 +163,7 @@ module HTTPX
         case uri.scheme
         when "http"
           "tcp"
-        when "https", "h2"
+        when "https"
           "ssl"
         else
           raise UnsupportedSchemeError, "#{uri}: #{uri.scheme}: unsupported URI scheme"
