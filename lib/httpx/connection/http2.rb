@@ -220,6 +220,12 @@ module HTTPX
 
     def join_headers(stream, request)
       extra_headers = set_protocol_headers(request)
+
+      if request.headers.key?("host")
+        log { "forbidden \"host\" header found (#{request.headers["host"]}), will use it as authority..." }
+        extra_headers[":authority"] = request.headers["host"]
+      end
+
       log(level: 1, color: :yellow) do
         request.headers.merge(extra_headers).each.map { |k, v| "#{stream.id}: -> HEADER: #{k}: #{v}" }.join("\n")
       end
