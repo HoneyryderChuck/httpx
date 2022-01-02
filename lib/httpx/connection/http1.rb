@@ -184,7 +184,7 @@ module HTTPX
       end
 
       if @pipelining
-        disable
+        catch(:called) { disable }
       else
         @requests.each do |request|
           emit(:error, request, ex)
