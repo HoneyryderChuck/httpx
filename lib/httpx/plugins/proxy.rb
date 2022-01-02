@@ -138,10 +138,20 @@ module HTTPX
           error = response.error
           case error
           when NativeResolveError
+            return false unless @_proxy_uris && !@_proxy_uris.empty?
+
+            proxy_uri = URI(@_proxy_uris.first)
+
+            origin = error.connection.origin
+
             # failed resolving proxy domain
-            error.connection.origin.to_s == @_proxy_uris.first
+            origin.host == proxy_uri.host && origin.port == proxy_uri.port
           when ResolveError
-            error.message.end_with?(@_proxy_uris.first)
+            return false unless @_proxy_uris && !@_proxy_uris.empty?
+
+            proxy_uri = URI(@_proxy_uris.first)
+
+            error.message.end_with?(proxy_uri.to_s)
           when *PROXY_ERRORS
             # timeout errors connecting to proxy
             true
@@ -160,7 +170,9 @@ module HTTPX
 
           # redefining the connection origin as the proxy's URI,
           # as this will be used as the tcp peer ip.
-          @origin = URI(@options.proxy.uri.origin)
+          proxy_uri = URI(@options.proxy.uri)
+          @origin.host = proxy_uri.host
+          @origin.port = proxy_uri.port
         end
 
         def match?(uri, options)
