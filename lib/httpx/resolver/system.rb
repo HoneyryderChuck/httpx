@@ -158,10 +158,18 @@ module HTTPX
     def async_resolve(connection, hostname, scheme)
       families = connection.options.ip_families
       log { "resolver: query for #{hostname}" }
+      resolve_timeout = @timeouts[connection.origin.host].first
+
       Thread.start do
         Thread.current.report_on_exception = false
         begin
-          addrs = __addrinfo_resolve(hostname, scheme)
+          addrs = if resolve_timeout
+            Timeout.timeout(resolve_timeout) do
+              __addrinfo_resolve(hostname, scheme)
+            end
+          else
+            __addrinfo_resolve(hostname, scheme)
+          end
           addrs = addrs.sort_by(&:afamily).group_by(&:afamily)
           families.each do |family|
             addresses = addrs[family]
@@ -172,6 +180,15 @@ module HTTPX
             @pipe_mutex.synchronize do
               @ips.unshift([family, connection, addresses])
               @pipe_write.putc(DONE) unless @pipe_write.closed?
+            end
+          end
+        rescue Timeout::Error => e
+          ex = ResolveTimeoutError.new(resolve_timeout, e.message)
+          ex.set_backtrace(ex.backtrace)
+          @pipe_mutex.synchronize do
+            families.each do |family|
+              @ips.unshift([family, connection, ex])
+              @pipe_write.putc(ERROR) unless @pipe_write.closed?
             end
           end
         rescue StandardError => e
