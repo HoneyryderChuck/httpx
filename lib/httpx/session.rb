@@ -310,7 +310,7 @@ module HTTPX
     end
   end
 
-  unless ENV.grep(/https?_proxy$/i).empty?
+  unless ENV.keys.grep(/\Ahttps?_proxy\z/i).empty?
     proxy_session = plugin(:proxy)
     ::HTTPX.send(:remove_const, :Session)
     ::HTTPX.send(:const_set, :Session, proxy_session.class)
