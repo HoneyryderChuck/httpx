@@ -554,6 +554,10 @@ module HTTPX
           ex.set_backtrace(error.backtrace)
           error = ex
         else
+          # inactive connections do not contribute to the select loop, therefore
+          # they should fail due to such errors.
+          return if @state == :inactive
+
           if @timeout
             @timeout -= error.timeout
             return unless @timeout <= 0
