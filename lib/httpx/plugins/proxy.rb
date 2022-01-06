@@ -85,7 +85,7 @@ module HTTPX
             end
             uris
           end
-          options.proxy.merge(uri: @_proxy_uris.first) unless @_proxy_uris.empty?
+          { uri: @_proxy_uris.first } unless @_proxy_uris.empty?
         end
 
         def find_connection(request, connections, options)
