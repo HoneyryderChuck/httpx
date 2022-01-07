@@ -47,6 +47,8 @@ services:
       - ./test/support/ssh:/config
     depends_on:
       - nghttp2
+    links:
+      - "nghttp2:another"
 
   socksproxy:
     image: qautomatron/docker-3proxy
@@ -55,6 +57,8 @@ services:
       - "3129:3129"
     volumes:
       - ./test/support/ci:/etc/3proxy
+    links:
+      - "nghttp2:another"
 
   httpproxy:
     image: sameersbn/squid:3.5.27-2
@@ -63,6 +67,8 @@ services:
     volumes:
       - ./test/support/ci/squid/proxy.conf:/etc/squid/squid.conf
       - ./test/support/ci/proxy-users:/etc/squid/proxy-users
+    links:
+      - "nghttp2:another"
     command:
       -d 3
 
