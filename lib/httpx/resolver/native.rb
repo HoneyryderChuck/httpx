@@ -236,7 +236,7 @@ module HTTPX
         end
 
         if address.key?("alias") # CNAME
-          if early_resolve(connection, hostname: address["alias"])
+          if catch(:coalesced) { early_resolve(connection, hostname: address["alias"]) }
             @connections.delete(connection)
           else
             resolve(connection, address["alias"])

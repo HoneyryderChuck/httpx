@@ -44,7 +44,7 @@ module HTTPX
 
     def_delegator :@write_buffer, :empty?
 
-    attr_reader :origin, :state, :pending, :options
+    attr_reader :origin, :origins, :state, :pending, :options
 
     attr_writer :timers
 

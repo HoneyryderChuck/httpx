@@ -207,7 +207,7 @@ module HTTPX
 
           return responses unless request
 
-          pool.next_tick until (response = fetch_response(request, connections, request.options))
+          catch(:coalesced) { pool.next_tick } until (response = fetch_response(request, connections, request.options))
 
           responses << response
           requests.shift

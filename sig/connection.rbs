@@ -22,6 +22,7 @@ module HTTPX
     BUFFER_SIZE: Integer
 
     attr_reader origin: URI::Generic
+    attr_reader origins: Array[String]
     attr_reader state: Symbol
     attr_reader pending: Array[Request]
     attr_reader options: Options

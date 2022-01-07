@@ -109,8 +109,10 @@ module HTTPX
           return super unless proxy
 
           connection = options.connection_class.new("tcp", uri, options)
-          pool.init_connection(connection, options)
-          connection
+          catch(:coalesced) do
+            pool.init_connection(connection, options)
+            connection
+          end
         end
 
         def fetch_response(request, connections, options)
@@ -181,11 +183,20 @@ module HTTPX
           super && @options.proxy == options.proxy
         end
 
-        # should not coalesce connections here, as the IP is the IP of the proxy
-        def coalescable?(*)
+        def coalescable?(connection)
           return super unless @options.proxy
 
-          false
+          if @io.protocol == "h2" &&
+             @origin.scheme == "https" &&
+             connection.origin.scheme == "https" &&
+             @io.can_verify_peer?
+            # in proxied connections, .origin is the proxy ; Given names
+            # are stored in .origins, this is what is used.
+            origin = URI(connection.origins.first)
+            @io.verify_hostname(origin.host)
+          else
+            @origin == connection.origin
+          end
         end
 
         def send(request)

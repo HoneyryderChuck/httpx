@@ -32,7 +32,7 @@ module HTTPX
         end
         log { "resolver: answer #{connection.origin.host}: #{addresses.inspect}" }
         connection.addresses = addresses
-        catch(:coalesced) { emit(:resolve, connection) }
+        emit(:resolve, connection)
       end
 
       def early_resolve(connection, hostname: connection.origin.host)
