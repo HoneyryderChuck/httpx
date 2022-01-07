@@ -76,16 +76,6 @@ class FaradayTest < Minitest::Test
     assert_match(%r{application/json}, post(build_path("/post")).headers["content-type"])
   end
 
-  def test_adapter_post_sends_files
-    resp = post(build_path("/post")) do |req|
-      req.body = { "uploaded_file" => Faraday::UploadIO.new(__FILE__, "text/x-ruby") }
-    end
-    json = JSON.parse resp.body.to_s
-    assert json.key?("files")
-    assert json["files"].key?("uploaded_file")
-    assert_equal(json["files"]["uploaded_file"].bytesize, File.size(__FILE__))
-  end
-
   def test_adapter_put_send_url_encoded_params
     json = JSON.parse put(build_path("/put"), name: "zack").body.to_s
     assert_equal({ "name" => "zack" }, json["form"])
@@ -182,7 +172,6 @@ class FaradayTest < Minitest::Test
 
   def create_connection(options = {}, &optional_connection_config_blk)
     builder_block = proc do |b|
-      b.request :multipart
       b.request :url_encoded
       b.adapter :httpx, *adapter_options, &optional_connection_config_blk
     end
