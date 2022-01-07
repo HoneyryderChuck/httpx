@@ -64,3 +64,4 @@ module HTTPX
 end
 
 require "httpx/session"
+require "httpx/session_extensions"
