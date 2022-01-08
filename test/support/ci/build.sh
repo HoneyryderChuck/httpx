@@ -90,6 +90,6 @@ if [[ ${RUBY_VERSION:0:1} = "3" ]]; then
   if [[ "$RUBY_ENGINE" = "ruby" ]]; then
     bundle exec rake rubocop
 
-    COVERAGE_KEY="#$RUBY_ENGINE-$RUBY_VERSION-regression" bundle exec rake regressions
+    COVERAGE_KEY="$RUBY_ENGINE-$RUBY_VERSION-regression" bundle exec rake regressions
   fi
 fi

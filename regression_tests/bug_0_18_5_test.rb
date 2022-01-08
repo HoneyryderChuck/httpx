@@ -13,8 +13,7 @@ class Bug_0_18_5_Test < Minitest::Test
       https_proxy = ENV["HTTPX_HTTPS_PROXY"]
       ENV["HTTPS_PROXY"] = https_proxy
 
-      # force class to be reevaluated and load the proxy plugin
-      load File.expand_path("../lib/httpx/session_extensions.rb", __dir__)
+      require "httpx"
 
       HTTPX.plugin(SessionWithPool).wrap do |session|
         response = session.get("https://#{httpbin}/get")
@@ -30,5 +29,6 @@ class Bug_0_18_5_Test < Minitest::Test
       end
     end
     Process.waitpid(pid)
+    assert Process.last_status.success?
   end
 end
