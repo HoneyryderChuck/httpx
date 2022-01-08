@@ -5,6 +5,7 @@ services:
       - HTTPBIN_HOST=nghttp2
       - HTTPX_HTTP_PROXY=http://proxyuser:password@httpproxy:3128
       - HTTPX_HTTPS_PROXY=http://proxyuser:password@httpproxy:3128
+      - HTTPX_HTTP2_PROXY=http://proxyuser:password@http2proxy:80
       - HTTPX_SOCKS4_PROXY=socks4://user4:@socksproxy:8080
       - HTTPX_SOCKS4A_PROXY=socks4a://user4:@socksproxy:8080
       - HTTPX_SOCKS5_PROXY=socks5://user5:password@socksproxy:8080
@@ -26,6 +27,7 @@ services:
     privileged: true
     depends_on:
       - httpproxy
+      - http2proxy
       - socksproxy
       - sshproxy
       - nghttp2
@@ -45,6 +47,8 @@ services:
       - ./test/support/ssh:/config
     depends_on:
       - nghttp2
+    links:
+      - "nghttp2:another"
 
   socksproxy:
     image: qautomatron/docker-3proxy
@@ -53,6 +57,8 @@ services:
       - "3129:3129"
     volumes:
       - ./test/support/ci:/etc/3proxy
+    links:
+      - "nghttp2:another"
 
   httpproxy:
     image: sameersbn/squid:3.5.27-2
@@ -61,11 +67,24 @@ services:
     volumes:
       - ./test/support/ci/squid/proxy.conf:/etc/squid/squid.conf
       - ./test/support/ci/proxy-users:/etc/squid/proxy-users
+    links:
+      - "nghttp2:another"
     command:
       -d 3
 
+  http2proxy:
+    image: registry.gitlab.com/honeyryderchuck/httpx/nghttp2:3
+    ports:
+      - 3300:80
+    depends_on:
+      - httpproxy
+    entrypoint:
+      /usr/local/bin/nghttpx
+    command:
+      --no-ocsp --frontend '*,80;no-tls' --backend 'httpproxy,3128' --http2-proxy
+
   nghttp2:
-    image: registry.gitlab.com/honeyryderchuck/httpx/nghttp2:2
+    image: registry.gitlab.com/honeyryderchuck/httpx/nghttp2:3
     ports:
       - 80:80
       - 443:443
@@ -79,7 +98,7 @@ services:
       --conf /home/nghttp.conf --no-ocsp --frontend '*,80;no-tls' --frontend '*,443'
 
   altsvc-nghttp2:
-    image: registry.gitlab.com/honeyryderchuck/httpx/nghttp2:2
+    image: registry.gitlab.com/honeyryderchuck/httpx/nghttp2:3
     ports:
       - 81:80
       - 444:443

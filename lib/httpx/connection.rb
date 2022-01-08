@@ -44,7 +44,7 @@ module HTTPX
 
     def_delegator :@write_buffer, :empty?
 
-    attr_reader :origin, :state, :pending, :options
+    attr_reader :origin, :origins, :state, :pending, :options
 
     attr_writer :timers
 
@@ -489,6 +489,18 @@ module HTTPX
     end
 
     def transition(nextstate)
+      handle_transition(nextstate)
+   rescue Errno::ECONNREFUSED,
+          Errno::EADDRNOTAVAIL,
+          Errno::EHOSTUNREACH,
+          TLSError => e
+     # connect errors, exit gracefully
+     handle_error(e)
+     @state = :closed
+     emit(:close)
+    end
+
+    def handle_transition(nextstate)
       case nextstate
       when :idle
         @timeout = @current_timeout = @options.timeout[:connect_timeout]
@@ -525,14 +537,6 @@ module HTTPX
         emit(:activate)
       end
       @state = nextstate
-    rescue Errno::ECONNREFUSED,
-           Errno::EADDRNOTAVAIL,
-           Errno::EHOSTUNREACH,
-           TLSError => e
-      # connect errors, exit gracefully
-      handle_error(e)
-      @state = :closed
-      emit(:close)
     end
 
     def purge_after_closed
@@ -550,6 +554,10 @@ module HTTPX
           ex.set_backtrace(error.backtrace)
           error = ex
         else
+          # inactive connections do not contribute to the select loop, therefore
+          # they should fail due to such errors.
+          return if @state == :inactive
+
           if @timeout
             @timeout -= error.timeout
             return unless @timeout <= 0

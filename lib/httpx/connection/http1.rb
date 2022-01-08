@@ -297,10 +297,6 @@ module HTTPX
       extra_headers
     end
 
-    def headline_uri(request)
-      request.path
-    end
-
     def handle(request)
       catch(:buffer_full) do
         request.transition(:headers)
@@ -314,8 +310,12 @@ module HTTPX
       end
     end
 
+    def join_headline(request)
+      "#{request.verb.to_s.upcase} #{request.path} HTTP/#{@version.join(".")}"
+    end
+
     def join_headers(request)
-      headline = "#{request.verb.to_s.upcase} #{headline_uri(request)} HTTP/#{@version.join(".")}"
+      headline = join_headline(request)
       @buffer << headline << CRLF
       log(color: :yellow) { "<- HEADLINE: #{headline.chomp.inspect}" }
       extra_headers = set_protocol_headers(request)

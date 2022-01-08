@@ -200,6 +200,7 @@ module HTTPX
         hostname, connection = @queries.first
         if @_record_types[hostname].empty?
           @queries.delete(hostname)
+          @timeouts.delete(hostname)
           @connections.delete(connection)
           ex = NativeResolveError.new(connection, hostname, e.message)
           ex.set_backtrace(e.backtrace)
@@ -213,6 +214,7 @@ module HTTPX
         if @_record_types[hostname].empty?
           @queries.delete(hostname)
           @_record_types.delete(hostname)
+          @timeouts.delete(hostname)
           @connections.delete(connection)
 
           raise NativeResolveError.new(connection, hostname)
@@ -236,13 +238,18 @@ module HTTPX
         end
 
         if address.key?("alias") # CNAME
-          if early_resolve(connection, hostname: address["alias"])
+          # clean up intermediate queries
+          @timeouts.delete(address["name"]) unless connection.origin.host == address["name"]
+
+          if catch(:coalesced) { early_resolve(connection, hostname: address["alias"]) }
+            @timeouts.delete(connection.origin.host)
             @connections.delete(connection)
           else
             resolve(connection, address["alias"])
             return
           end
         else
+          @timeouts.delete(connection.origin.host)
           @connections.delete(connection)
           Resolver.cached_lookup_set(connection.origin.host, addresses) if @resolver_options[:cache]
           emit_addresses(connection, addresses.map { |addr| addr["data"] })

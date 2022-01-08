@@ -46,8 +46,6 @@ module HTTPX
 
     def send_pending: () -> void
 
-    def headline_uri: (Request) -> String
-
     def set_protocol_headers: (Request) -> _Each[[String, String]]
 
     def handle: (Request request, HTTP2Next::Stream stream) -> void
@@ -55,6 +53,8 @@ module HTTPX
     def init_connection: () -> void
 
     def handle_stream: (HTTP2Next::Stream stream, Request request) -> void
+
+    def join_headline: (Request request) -> String
 
     def join_headers: (HTTP2Next::Stream stream, Request request) -> void
 

@@ -27,7 +27,7 @@ module HTTPX
 
           private
 
-          def transition(nextstate)
+          def handle_transition(nextstate)
             return super unless @options.proxy && PROTOCOLS.include?(@options.proxy.uri.scheme)
 
             case nextstate

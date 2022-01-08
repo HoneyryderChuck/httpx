@@ -11,7 +11,7 @@ services:
       - doh
 
   doh:
-    image: registry.gitlab.com/honeyryderchuck/httpx/nghttp2:2
+    image: registry.gitlab.com/honeyryderchuck/httpx/nghttp2:3
     depends_on:
       - doh-proxy
     entrypoint:

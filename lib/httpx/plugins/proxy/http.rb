@@ -13,7 +13,7 @@ module HTTPX
 
           private
 
-          def transition(nextstate)
+          def handle_transition(nextstate)
             return super unless @options.proxy && @options.proxy.uri.scheme == "http"
 
             case nextstate
@@ -23,7 +23,8 @@ module HTTPX
               @io.connect
               return unless @io.connected?
 
-              @parser = ConnectProxyParser.new(@write_buffer, @options.merge(max_concurrent_requests: 1))
+              @parser = registry(@io.protocol).new(@write_buffer, @options.merge(max_concurrent_requests: 1))
+              @parser.extend(ProxyParser)
               @parser.once(:response, &method(:__http_on_connect))
               @parser.on(:close) { transition(:closing) }
               __http_proxy_connect
@@ -36,7 +37,7 @@ module HTTPX
                 @parser.close
                 @parser = nil
               when :idle
-                @parser = ProxyParser.new(@write_buffer, @options)
+                @parser.callbacks.clear
                 set_parser_callbacks(@parser)
               end
             end
@@ -54,7 +55,7 @@ module HTTPX
               @inflight += 1
               parser.send(connect_request)
             else
-              transition(:connected)
+              handle_transition(:connected)
             end
           end
 
@@ -76,9 +77,11 @@ module HTTPX
           end
         end
 
-        class ProxyParser < Connection::HTTP1
-          def headline_uri(request)
-            request.uri.to_s
+        module ProxyParser
+          def join_headline(request)
+            return super if request.verb == :connect
+
+            "#{request.verb.to_s.upcase} #{request.uri} HTTP/#{@version.join(".")}"
           end
 
           def set_protocol_headers(request)
@@ -88,22 +91,6 @@ module HTTPX
             extra_headers["proxy-authorization"] = "Basic #{proxy_params.token_authentication}" if proxy_params.authenticated?
             extra_headers["proxy-connection"] = extra_headers.delete("connection") if extra_headers.key?("connection")
             extra_headers
-          end
-        end
-
-        class ConnectProxyParser < ProxyParser
-          attr_reader :pending
-
-          def headline_uri(request)
-            return super unless request.verb == :connect
-
-            tunnel = request.path
-            log { "establishing HTTP proxy tunnel to #{tunnel}" }
-            tunnel
-          end
-
-          def empty?
-            @requests.reject { |r| r.verb == :connect }.empty? || @requests.all? { |request| !request.response.nil? }
           end
         end
 

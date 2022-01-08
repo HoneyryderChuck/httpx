@@ -16,12 +16,11 @@ group :test do
   gem "webmock"
   gem "websocket-driver"
 
-  if RUBY_VERSION < "2.2"
-    gem "net-ssh", "~> 4.2.0"
-  end
+  gem "net-ssh", "~> 4.2.0" if RUBY_VERSION < "2.2"
 
   platform :mri do
     if RUBY_VERSION >= "2.3"
+      gem "google-protobuf", "< 3.19.2" if RUBY_VERSION < "2.5.0"
       gem "grpc"
       gem "logging"
     end
@@ -59,9 +58,9 @@ group :test do
 
   if RUBY_VERSION >= "3.0.0"
     gem "rbs"
-    gem "webrick"
     gem "rubocop"
     gem "rubocop-performance"
+    gem "webrick"
   end
 end
 

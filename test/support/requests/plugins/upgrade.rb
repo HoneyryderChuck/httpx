@@ -8,7 +8,7 @@ module Requests
 
         http = HTTPX.plugin(SessionWithPool)
 
-        if OpenSSL::SSL::SSLContext.instance_methods.include?(:alpn_protocols)
+        if OpenSSL::SSL::SSLContext.method_defined?(:alpn_protocols=)
           http = http.with(ssl: { alpn_protocols: %w[http/1.1] }) # disable alpn negotiation
         end
 

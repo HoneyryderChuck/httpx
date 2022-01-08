@@ -158,10 +158,6 @@ module HTTPX
       end
     end
 
-    def headline_uri(request)
-      request.path
-    end
-
     def handle(request, stream)
       catch(:buffer_full) do
         request.transition(:headers)
@@ -213,7 +209,7 @@ module HTTPX
       {
         ":scheme" => request.scheme,
         ":method" => request.verb.to_s.upcase,
-        ":path" => headline_uri(request),
+        ":path" => request.path,
         ":authority" => request.authority,
       }
     end
