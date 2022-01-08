@@ -29,7 +29,7 @@ module HTTPX
     attr_writer :pool
 
     def initialize(options)
-      @options = Options.new(options)
+      @options = HTTPX::Options.new(options)
       @resolver_options = DEFAULTS.merge(@options.resolver_options)
       @_record_types = Hash.new { |types, host| types[host] = @resolver_options[:record_types].dup }
       @queries = {}
