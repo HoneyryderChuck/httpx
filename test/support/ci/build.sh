@@ -69,7 +69,8 @@ echo ' Success: Reached S3'
 
 export SSL_CERT_FILE=/home/test/support/ci/certs/ca-bundle.crt
 
-if [[ ${RUBY_VERSION:0:1} = "3" ]]; then
+if [[ ${RUBY_VERSION:0:1} = "3" ]] && ![[ $RUBYOPT =~ "jit" ]]; then
+  echo "running runtime type checking..."
   export RUBYOPT="$RUBYOPT -rbundler/setup -rrbs/test/setup"
   export RBS_TEST_RAISE=true
   export RBS_TEST_LOGLEVEL=error
@@ -77,13 +78,12 @@ if [[ ${RUBY_VERSION:0:1} = "3" ]]; then
   export RBS_TEST_TARGET="HTTP*"
 fi
 
-PARALLEL=1 bundle exec rake test
+# Lint first
+if [[ ${RUBY_VERSION:0:3} = "3.1" ]] && [[ "$RUBY_ENGINE" = "ruby" ]]; then
+  bundle exec rake rubocop
+fi
 
-# standalone tests
-for f in standalone_tests/*_test.rb
-do
-  COVERAGE_KEY="$RUBY_ENGINE-$RUBY_VERSION-$(basename $f .rb)" bundle exec ruby -Itest $f > /dev/nulll
-done
+PARALLEL=1 bundle exec rake test
 
 # third party modules
 # Testing them only with main ruby, as some of them work weird with other variants.
@@ -91,12 +91,13 @@ if [[ "$RUBY_ENGINE" = "ruby" ]]; then
   COVERAGE_KEY="$RUBY_ENGINE-$RUBY_VERSION-integration-tests" bundle exec rake integration_tests
 fi
 
-if [[ ${RUBY_VERSION:0:1} = "3" ]]; then
+if [[ ${RUBY_VERSION:0:1} = "3" ]] && [[ "$RUBY_ENGINE" = "ruby" ]]; then
   # regression tests
   # Testing them only with main ruby
-  if [[ "$RUBY_ENGINE" = "ruby" ]]; then
-    bundle exec rake rubocop
+  COVERAGE_KEY="$RUBY_ENGINE-$RUBY_VERSION-regression-tests" bundle exec rake regression_tests
 
-    COVERAGE_KEY="$RUBY_ENGINE-$RUBY_VERSION-regression-tests" bundle exec rake regression_tests
-  fi
+  # standalone tests
+  for f in standalone_tests/*_test.rb; do
+    COVERAGE_KEY="$RUBY_ENGINE-$RUBY_VERSION-$(basename $f .rb)" bundle exec ruby -Itest $f
+  done
 fi
