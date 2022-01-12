@@ -78,10 +78,16 @@ fi
 
 PARALLEL=1 bundle exec rake test
 
+# standalone tests
+for f in standalone_tests/*_test.rb
+do
+  COVERAGE_KEY="$RUBY_ENGINE-$RUBY_VERSION-$(basename $f .rb)" bundle exec ruby -Itest $f
+done
+
 # third party modules
 # Testing them only with main ruby, as some of them work weird with other variants.
 if [[ "$RUBY_ENGINE" = "ruby" ]]; then
-  COVERAGE_KEY="#$RUBY_ENGINE-$RUBY_VERSION-integration" bundle exec rake integrations
+  COVERAGE_KEY="$RUBY_ENGINE-$RUBY_VERSION-integration-tests" bundle exec rake integration_tests
 fi
 
 if [[ ${RUBY_VERSION:0:1} = "3" ]]; then
@@ -90,6 +96,6 @@ if [[ ${RUBY_VERSION:0:1} = "3" ]]; then
   if [[ "$RUBY_ENGINE" = "ruby" ]]; then
     bundle exec rake rubocop
 
-    COVERAGE_KEY="#$RUBY_ENGINE-$RUBY_VERSION-regression" bundle exec rake regressions
+    COVERAGE_KEY="$RUBY_ENGINE-$RUBY_VERSION-regression-tests" bundle exec rake regression_tests
   fi
 fi

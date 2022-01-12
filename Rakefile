@@ -11,14 +11,14 @@ Rake::TestTask.new do |t|
 end
 
 desc "integration tests for third party modules"
-Rake::TestTask.new(:integrations) do |t|
+Rake::TestTask.new(:integration_tests) do |t|
   t.libs = %w[lib test]
-  t.pattern = "integrations/**/*_test.rb"
+  t.pattern = "integration_tests/**/*_test.rb"
   t.warning = false
 end
 
 desc "regression tests for particular incidents"
-Rake::TestTask.new(:regressions) do |t|
+Rake::TestTask.new(:regression_tests) do |t|
   t.libs = %w[lib test]
   t.pattern = "regression_tests/**/*_test.rb"
   t.warning = false

@@ -10,7 +10,8 @@ AllCops:
     - lib/**/*.rb
     - test/**/*.rb
     - regression_tests/**/*.rb
-    - integrations/**/*.rb
+    - integration_tests/**/*.rb
+    - standalone_tests/**/*.rb
     - Rakefile
     - httpx.gemspec
     - profiler/**/*

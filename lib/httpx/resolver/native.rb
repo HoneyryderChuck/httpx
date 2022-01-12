@@ -50,7 +50,7 @@ module HTTPX
     attr_reader :state
 
     def initialize(options)
-      @options = Options.new(options)
+      @options = HTTPX::Options.new(options)
       @ns_index = 0
       @resolver_options = DEFAULTS.merge(@options.resolver_options)
       @nameserver = @resolver_options[:nameserver]

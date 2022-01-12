@@ -15,7 +15,7 @@ module HTTPX
     attr_reader :state
 
     def initialize(options)
-      @options = Options.new(options)
+      @options = HTTPX::Options.new(options)
       @resolver_options = @options.resolver_options
       @state = :idle
       resolv_options = @resolver_options.dup
