@@ -490,14 +490,14 @@ module HTTPX
 
     def transition(nextstate)
       handle_transition(nextstate)
-   rescue Errno::ECONNREFUSED,
-          Errno::EADDRNOTAVAIL,
-          Errno::EHOSTUNREACH,
-          TLSError => e
-     # connect errors, exit gracefully
-     handle_error(e)
-     @state = :closed
-     emit(:close)
+    rescue Errno::ECONNREFUSED,
+           Errno::EADDRNOTAVAIL,
+           Errno::EHOSTUNREACH,
+           TLSError => e
+      # connect errors, exit gracefully
+      handle_error(e)
+      @state = :closed
+      emit(:close)
     end
 
     def handle_transition(nextstate)
