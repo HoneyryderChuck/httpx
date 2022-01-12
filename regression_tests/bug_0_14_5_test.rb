@@ -27,7 +27,7 @@ class Bug_0_14_5_Test < Minitest::Test
     end
   rescue MinitestExtensions::TimeoutForTest::TestTimeout => e
     ex = RegressionError.new(e.message)
-    ex.set_backtrace(e)
+    ex.set_backtrace(e.backtrace)
     raise ex
   end
 
