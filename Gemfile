@@ -5,7 +5,11 @@ ruby RUBY_VERSION
 source "https://rubygems.org"
 gemspec
 
-gem "rake", "~> 12.3"
+if RUBY_VERSION < "2.2.0"
+  gem "rake", "~> 12.3"
+else
+  gem "rake", "~> 13.0"
+end
 
 group :test do
   gem "ddtrace"
@@ -13,6 +17,7 @@ group :test do
   gem "minitest"
   gem "minitest-proveit"
   gem "ruby-ntlm"
+  gem "spy"
   gem "webmock"
   gem "websocket-driver"
 
@@ -23,6 +28,9 @@ group :test do
       gem "google-protobuf", "< 3.19.2" if RUBY_VERSION < "2.5.0"
       gem "grpc"
       gem "logging"
+      gem "marcel", require: false
+      gem "mimemagic", require: false
+      gem "ruby-filemagic", require: false
     end
   end
 

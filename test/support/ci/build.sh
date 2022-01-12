@@ -18,20 +18,20 @@ deb-src http://deb.debian.org/debian sid main contrib non-free" >> /etc/apt/sour
   apt-get update && apt-get install -y build-essential iptables iproute2 openssl libssl-dev ca-certificates file idn2
   update-ca-certificates
 elif [[ ${RUBY_VERSION:0:3} = "2.1" ]]; then
-  apt-get update && apt-get install -y libsodium-dev iptables iproute2
+  apt-get update && apt-get install -y libsodium-dev iptables iproute2 libmagic-dev shared-mime-info
   IPTABLES=iptables
 elif [[ ${RUBY_VERSION:0:3} = "2.2" ]]; then
-  apt-get update && apt-get install -y iptables iproute2
+  apt-get update && apt-get install -y iptables iproute2 libmagic-dev shared-mime-info
   IPTABLES=iptables
 elif [[ ${RUBY_VERSION:0:3} = "2.3" ]]; then
   # installing custom openssl
-  apt-get update && apt-get install -y iptables iproute2 iptables-nftables-compat # openssl=1.0.2l openssl-dev=1.0.2l
+  apt-get update && apt-get install -y iptables iproute2 iptables-nftables-compat libmagic-dev shared-mime-info # openssl=1.0.2l openssl-dev=1.0.2l
   wget http://deb.debian.org/debian/pool/main/o/openssl1.0/libssl1.0.2_1.0.2u-1~deb9u1_amd64.deb
   dpkg -i libssl1.0.2_1.0.2u-1~deb9u1_amd64.deb
   wget http://deb.debian.org/debian/pool/main/o/openssl1.0/libssl1.0-dev_1.0.2u-1~deb9u1_amd64.deb
   dpkg -i libssl1.0-dev_1.0.2u-1~deb9u1_amd64.deb
 else
-  apt-get update && apt-get install -y iptables iproute2 idn2
+  apt-get update && apt-get install -y iptables iproute2 idn2 libmagic-dev shared-mime-info
 fi
 
 # use port 9090 to test connection timeouts
@@ -57,6 +57,7 @@ if [[ "$RUBY_ENGINE" = "truffleruby" ]]; then
   gem install bundler -v="2.1.4" --no-doc --conservative
 fi
 
+export BUNDLE_WITHOUT=website
 bundle install --quiet
 
 echo "Waiting for S3 at address ${AMZ_HOST}/health, attempting every 5s"
@@ -81,7 +82,7 @@ PARALLEL=1 bundle exec rake test
 # standalone tests
 for f in standalone_tests/*_test.rb
 do
-  COVERAGE_KEY="$RUBY_ENGINE-$RUBY_VERSION-$(basename $f .rb)" bundle exec ruby -Itest $f
+  COVERAGE_KEY="$RUBY_ENGINE-$RUBY_VERSION-$(basename $f .rb)" bundle exec ruby -Itest $f > /dev/nulll
 done
 
 # third party modules
