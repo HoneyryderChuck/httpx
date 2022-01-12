@@ -14,9 +14,13 @@ module HTTPX
         def call(file, _)
           return nil if file.eof? # FileMagic returns "application/x-empty" for empty files
 
-          FileMagic.open(FileMagic::MAGIC_MIME_TYPE) do |filemagic|
+          mime = FileMagic.open(FileMagic::MAGIC_MIME_TYPE) do |filemagic|
             filemagic.buffer(file.read(MAGIC_NUMBER))
           end
+
+          file.rewind
+
+          mime
         end
       elsif defined?(Marcel)
         def call(file, filename)
