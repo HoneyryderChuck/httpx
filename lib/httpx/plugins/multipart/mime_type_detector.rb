@@ -9,6 +9,8 @@ module HTTPX
 
       # inspired by https://github.com/shrinerb/shrine/blob/master/lib/shrine/plugins/determine_mime_type.rb
       if defined?(FileMagic)
+        MAGIC_NUMBER = 256 * 1024
+
         def call(file, _)
           return nil if file.eof? # FileMagic returns "application/x-empty" for empty files
 
