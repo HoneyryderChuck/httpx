@@ -160,7 +160,7 @@ module HTTPX
           @connections.delete(connection)
           # This loop_time passed to the exception is bogus. Ideally we would pass the total
           # resolve timeout, including from the previous retries.
-          raise ResolveTimeoutError.new(loop_time, "Timed out")
+          raise ResolveTimeoutError.new(loop_time, "Timed out while resolving #{host}")
           # raise NativeResolveError.new(connection, host)
         else
           log { "resolver: timeout after #{timeout}s, retry(#{@timeouts[host].first}) #{host}..." }

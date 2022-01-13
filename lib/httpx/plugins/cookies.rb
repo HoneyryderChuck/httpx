@@ -18,12 +18,6 @@ module HTTPX
         require "httpx/plugins/cookies/set_cookie_parser"
       end
 
-      module OptionsMethods
-        def option_cookies(value)
-          value.is_a?(Jar) ? value : Jar.new(value)
-        end
-      end
-
       module InstanceMethods
         extend Forwardable
 
@@ -77,7 +71,7 @@ module HTTPX
       end
 
       module OptionsMethods
-        def initialize(*)
+        def __initialize__(*)
           super
 
           return unless @headers.key?("cookie")
@@ -88,6 +82,10 @@ module HTTPX
               @cookies.add(Cookie.new(name, value))
             end
           end
+        end
+
+        def option_cookies(value)
+          value.is_a?(Jar) ? value : Jar.new(value)
         end
       end
     end
