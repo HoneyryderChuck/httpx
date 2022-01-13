@@ -5,8 +5,15 @@ module HTTPX
     proxy_session = plugin(:proxy)
     remove_const(:Session)
     const_set(:Session, proxy_session.class)
-    remove_const(:Options)
-    const_set(:Options, proxy_session.class.default_options.class)
+
+    # redefine the default options static var, which needs to
+    # refresh options_class
+    options = proxy_session.class.default_options.to_hash
+    options.freeze
+    original_verbosity = $VERBOSE
+    $VERBOSE = nil
+    Options.send(:const_set, :DEFAULT_OPTIONS, options)
+    $VERBOSE = original_verbosity
   end
 
   # :nocov:
