@@ -200,7 +200,7 @@ module Faraday
         end
       end
 
-      def initialize(app, options={})
+      def initialize(app, options = {})
         super(app)
         @session = Session.new(options)
       end
