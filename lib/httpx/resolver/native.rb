@@ -239,16 +239,16 @@ module HTTPX
 
         if address.key?("alias") # CNAME
           # clean up intermediate queries
-          @timeouts.delete(address["name"]) unless connection.origin.host == address["name"]
+          @timeouts.delete(name) unless connection.origin.host == name
 
           if catch(:coalesced) { early_resolve(connection, hostname: address["alias"]) }
-            @timeouts.delete(connection.origin.host)
             @connections.delete(connection)
           else
             resolve(connection, address["alias"])
             return
           end
         else
+          @timeouts.delete(name)
           @timeouts.delete(connection.origin.host)
           @connections.delete(connection)
           Resolver.cached_lookup_set(connection.origin.host, addresses) if @resolver_options[:cache]
