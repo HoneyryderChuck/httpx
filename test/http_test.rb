@@ -35,7 +35,7 @@ class HTTPTest < Minitest::Test
   def test_verbose_log
     log = StringIO.new
     uri = URI(build_uri("/get"))
-    response = HTTPX.get(uri, debug: log, debug_level: 2)
+    response = HTTPX.get(uri, debug: log, debug_level: 3)
     verify_status(response, 200)
     log_output = log.string
     # assert request headers
@@ -47,6 +47,28 @@ class HTTPTest < Minitest::Test
     assert log_output.include?("HEADLINE: 200 HTTP/1.1")
     assert log_output.include?("HEADER: content-type: ")
     assert log_output.include?("HEADER: content-length: ")
+  end
+
+  def test_debug_with_and_without_color_codes
+    log = StringIO.new
+    def log.isatty
+      true
+    end
+    uri = URI(build_uri("/get"))
+    response = HTTPX.get(uri, debug: log, debug_level: 3)
+    verify_status(response, 200)
+    log_output = log.string
+    assert log_output.include?("\e[33m<- HEADER: Connection: close\n\e[0m")
+
+    Tempfile.create("httpx-log") do |file|
+      uri = URI(build_uri("/get"))
+      response = HTTPX.get(uri, debug: file, debug_level: 3)
+      verify_status(response, 200)
+      file.rewind
+      log_output = file.read
+      assert log_output.include?("<- HEADER: Connection: close\n")
+      assert !log_output.include?("\e[33m<- HEADER: Connection: close\n\e[0m")
+    end
   end
 
   def test_max_streams

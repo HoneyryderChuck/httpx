@@ -52,7 +52,7 @@ class HTTPSTest < Minitest::Test
   def test_verbose_log
     log = StringIO.new
     uri = build_uri("/get")
-    response = HTTPX.get(uri, debug: log, debug_level: 2)
+    response = HTTPX.get(uri, debug: log, debug_level: 3)
     verify_status(response, 200)
     log_output = log.string
     # assert tls output
