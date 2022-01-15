@@ -313,6 +313,8 @@ module HTTPX
         return unless @state == :open
 
         @io.close if @io
+        @write_buffer.clear
+        @read_buffer.clear
       end
       @state = nextstate
     end
