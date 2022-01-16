@@ -18,15 +18,6 @@ module HTTPX
       Resolv::DNS::Resource::IN::A => "A",
     }.freeze
 
-    CHECK_IF_IP = ->(name) do
-      begin
-        IPAddr.new(name)
-        true
-      rescue ArgumentError
-        false
-      end
-    end
-
     class << self
       def multi?
         true

@@ -5,7 +5,6 @@ module HTTPX
       include Loggable
 
       RECORD_TYPES: Hash[Integer, singleton(Resolv::DNS::Resource)]
-      CHECK_IF_IP: ^(String name) -> bool
 
       attr_reader family: ip_family
 

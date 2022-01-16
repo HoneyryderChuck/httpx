@@ -136,7 +136,7 @@ module Faraday
 
           def on_response(&blk)
             if blk
-              @on_response = lambda do |response|
+              @on_response = ->(response) do
                 blk.call(response)
               end
               self
