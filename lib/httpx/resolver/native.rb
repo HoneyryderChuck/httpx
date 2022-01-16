@@ -140,7 +140,7 @@ module HTTPX
     end
 
     def do_retry
-      return if @queries.empty?
+      return if @queries.empty? || !@start_timeout
 
       loop_time = Utils.elapsed_time(@start_timeout)
       connections = []
@@ -313,6 +313,7 @@ module HTTPX
         return unless @state == :open
 
         @io.close if @io
+        @start_timeout = nil
         @write_buffer.clear
         @read_buffer.clear
       end
