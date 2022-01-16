@@ -35,7 +35,7 @@ class HTTPTest < Minitest::Test
   def test_verbose_log
     log = StringIO.new
     uri = URI(build_uri("/get"))
-    response = HTTPX.get(uri, debug: log, debug_level: 3)
+    response = HTTPX.plugin(SessionWithPool).get(uri, debug: log, debug_level: 3)
     verify_status(response, 200)
     log_output = log.string
     # assert request headers
@@ -55,14 +55,14 @@ class HTTPTest < Minitest::Test
       true
     end
     uri = URI(build_uri("/get"))
-    response = HTTPX.get(uri, debug: log, debug_level: 3)
+    response = HTTPX.plugin(SessionWithPool).get(uri, debug: log, debug_level: 3)
     verify_status(response, 200)
     log_output = log.string
     assert log_output.include?("\e[33m<- HEADER: Connection: close\n\e[0m")
 
     Tempfile.create("httpx-log") do |file|
       uri = URI(build_uri("/get"))
-      response = HTTPX.get(uri, debug: file, debug_level: 3)
+      response = HTTPX.plugin(SessionWithPool).get(uri, debug: file, debug_level: 3)
       verify_status(response, 200)
       file.rewind
       log_output = file.read

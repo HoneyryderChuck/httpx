@@ -13,7 +13,7 @@ module Requests
       log = StringIO.new
       unavailable_host = URI(origin("localhost"))
       unavailable_host.port = next_available_port
-      response = HTTPX.get(unavailable_host.to_s, debug: log, debug_level: 3)
+      response = HTTPX.plugin(SessionWithPool).get(unavailable_host.to_s, debug: log, debug_level: 3)
       output = log.string
       assert output.include?(response.error.message)
     end
