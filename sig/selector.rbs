@@ -1,13 +1,13 @@
 module HTTPX
   class Selector
-    type selectable = Connection | Resolver::Native | Resolver::HTTPS
+    type selectable = Connection | Resolver::Native | Resolver::System
 
     READABLE: Array[Symbol]
     WRITABLE: Array[Symbol]
     @selectables: Array[selectable]
 
-    def register: (selectable) -> void
-    def deregister: (selectable) -> void
+    def register: (selectable io) -> void
+    def deregister: (selectable io) -> void
 
     def select: (Numeric? interval) { (selectable) -> void } -> void
 

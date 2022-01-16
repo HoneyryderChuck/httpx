@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "resolv"
+require "ipaddr"
 
 module HTTPX
   module Resolver
@@ -8,10 +9,11 @@ module HTTPX
 
     RESOLVE_TIMEOUT = 5
 
-    require "httpx/resolver/resolver_mixin"
+    require "httpx/resolver/resolver"
     require "httpx/resolver/system"
     require "httpx/resolver/native"
     require "httpx/resolver/https"
+    require "httpx/resolver/multi"
 
     register :system, System
     register :native, Native
@@ -22,8 +24,26 @@ module HTTPX
 
     @identifier_mutex = Mutex.new
     @identifier = 1
+    @system_resolver = Resolv::Hosts.new
 
     module_function
+
+    def nolookup_resolve(hostname)
+      ip_resolve(hostname) || cached_lookup(hostname) || system_resolve(hostname)
+    end
+
+    def ip_resolve(hostname)
+      [IPAddr.new(hostname)]
+    rescue ArgumentError
+    end
+
+    def system_resolve(hostname)
+      ips = @system_resolver.getaddresses(hostname)
+      return if ips.empty?
+
+      ips.map { |ip| IPAddr.new(ip) }
+    rescue IOError
+    end
 
     def cached_lookup(hostname)
       now = Utils.now
@@ -32,22 +52,28 @@ module HTTPX
       end
     end
 
-    def cached_lookup_set(hostname, entries)
+    def cached_lookup_set(hostname, family, entries)
       now = Utils.now
       entries.each do |entry|
         entry["TTL"] += now
       end
       @lookup_mutex.synchronize do
-        @lookups[hostname] += entries
-        entries.each do |entry|
-          @lookups[entry["name"]] << entry if entry["name"] != hostname
+        case family
+        when Socket::AF_INET6
+          @lookups[hostname].concat(entries)
+        when Socket::AF_INET
+          @lookups[hostname].unshift(*entries)
         end
-      end
-    end
+        entries.each do |entry|
+          next unless entry["name"] != hostname
 
-    def uncache(hostname)
-      @lookup_mutex.synchronize do
-        @lookups.delete(hostname)
+          case family
+          when Socket::AF_INET6
+            @lookups[entry["name"]] << entry
+          when Socket::AF_INET
+            @lookups[entry["name"]].unshift(entry)
+          end
+        end
       end
     end
 
@@ -62,7 +88,7 @@ module HTTPX
         if address.key?("alias")
           lookup(address["alias"], ttl)
         else
-          address["data"]
+          IPAddr.new(address["data"])
         end
       end
       ips unless ips.empty?

@@ -83,18 +83,16 @@ module HTTPX
 
     attr_reader response_body_class: singleton(Response::Body)
 
-    attr_reader ssl: Hash[Symbol, untyped]
+    attr_reader resolver_class: Symbol | Class
 
-    # request_class response_class headers_class request_body_class
-    # response_body_class connection_class
-    # resolver_class resolver_options
+    attr_reader ssl: Hash[Symbol, untyped]
 
     # io
     type io_option = _ToIO | Hash[String, _ToIO]
     attr_reader io: io_option?
 
     # fallback_protocol
-    attr_reader fallback_protocol: String?
+    attr_reader fallback_protocol: String
 
     # debug
     attr_reader debug: _IOLogger?
@@ -103,10 +101,13 @@ module HTTPX
     attr_reader debug_level: Integer
 
     # persistent
-    attr_reader persistent: bool?
+    attr_reader persistent: bool
 
     # resolver_options
-    attr_reader resolver_options: Hash[Symbol, untyped]?
+    attr_reader resolver_options: Hash[Symbol, untyped]
+
+    # ip_families
+    attr_reader ip_families: Array[ip_family]
 
     def ==: (untyped other) -> bool
     def merge: (_ToHash[Symbol, untyped] other) -> instance

@@ -40,7 +40,6 @@ module HTTPX::Transcoder
 
       def initialize(buffer, trailers = false)
         @buffer = buffer
-        @chunk_length = nil
         @chunk_buffer = "".b
         @finished = false
         @state = :length

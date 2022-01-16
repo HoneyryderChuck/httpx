@@ -25,6 +25,8 @@ require "mutex_m"
 # Top-Level Namespace
 #
 module HTTPX
+  EMPTY = [].freeze
+
   # All plugins should be stored under this module/namespace. Can register and load
   # plugins.
   #

@@ -1,6 +1,8 @@
 module HTTPX
   extend Chainable
 
+  EMPTY: Array[untyped]
+
   VERSION: String
 
   type uri = URI::HTTP | URI::HTTPS | string
@@ -9,6 +11,8 @@ module HTTPX
   type verb = :options | :get | :head | :post | :put | :delete | :trace | :connect |
               :propfind | :proppatch | :mkcol | :copy | :move | :lock | :unlock | :orderpatch |
               :acl | :report | :patch | :search
+
+  type ip_family = Integer #Socket::AF_INET6 | Socket::AF_INET
 
   module Plugins
     def self?.load_plugin: (Symbol) -> Module

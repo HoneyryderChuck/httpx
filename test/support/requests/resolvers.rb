@@ -57,7 +57,7 @@ module Requests
           session = HTTPX.plugin(SessionWithPool)
           uri = URI(build_uri("/get"))
           resolver_class = Class.new(HTTPX::Resolver::HTTPS) do
-            def build_request(_hostname, _type)
+            def build_request(_hostname)
               @options.request_class.new("POST", @uri)
             end
           end

@@ -64,7 +64,7 @@ module HTTPX
       end
 
       def to_f
-        @interval
+        Float(@interval)
       end
 
       def <<(callback)

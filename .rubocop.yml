@@ -42,6 +42,7 @@ Naming/FileName:
   Exclude:
     - Gemfile
     - Rakefile
+    - Steepfile
 
 Layout/EndAlignment:
   EnforcedStyleAlignWith: variable
@@ -164,3 +165,6 @@ Performance/StringIdentifierArgument:
   Exclude:
     - 'test/support/websocket_test_plugin.rb'
     - 'test/support/requests/plugins/upgrade.rb'
+
+Style/Lambda:
+  Enabled: false

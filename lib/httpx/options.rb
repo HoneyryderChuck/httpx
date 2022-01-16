@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "socket"
+
 module HTTPX
   class Options
     WINDOW_SIZE = 1 << 14 # 16K
@@ -8,6 +10,18 @@ module HTTPX
     OPERATION_TIMEOUT = 60
     KEEP_ALIVE_TIMEOUT = 20
     SETTINGS_TIMEOUT = 10
+
+    # https://github.com/ruby/resolv/blob/095f1c003f6073730500f02acbdbc55f83d70987/lib/resolv.rb#L408
+    ip_address_families = begin
+      list = Socket.ip_address_list
+      if list.any? { |a| a.ipv6? && !a.ipv6_loopback? && !a.ipv6_linklocal? }
+        [Socket::AF_INET6, Socket::AF_INET]
+      else
+        [Socket::AF_INET]
+      end
+    rescue NotImplementedError
+      [Socket::AF_INET]
+    end
 
     DEFAULT_OPTIONS = {
       :debug => ENV.key?("HTTPX_DEBUG") ? $stderr : nil,
@@ -37,6 +51,7 @@ module HTTPX
       :persistent => false,
       :resolver_class => (ENV["HTTPX_RESOLVER"] || :native).to_sym,
       :resolver_options => { cache: true },
+      :ip_families => ip_address_families,
     }.freeze
 
     begin
@@ -169,6 +184,10 @@ module HTTPX
     end
 
     def option_addresses(value)
+      Array(value)
+    end
+
+    def option_ip_families(value)
       Array(value)
     end
 

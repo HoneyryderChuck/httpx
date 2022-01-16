@@ -1,32 +1,23 @@
 module HTTPX
   module Resolver
-    class Native
+    class Native < Resolver
       extend Forwardable
-      include ResolverMixin
       include _ToIO
 
       DEFAULTS: Hash[Symbol, untyped]
       DNS_PORT: Integer
 
+      @family: ip_family
       @options: Options
       @ns_index: Integer
-      @resolver_options: Hash[Symbol, untyped]
       @nameserver: String
       @_timeouts: Array[Numeric]
       @timeouts: Hash[String, Array[Numeric]]
-      @_record_types: Hash[String, Hash["A" | "AAAA", dns_resource]]
       @connections: Array[Connection]
-      @queries: Hash[String, Connection]
       @read_buffer: String
       @write_buffer: Buffer
 
       attr_reader state: Symbol
-
-      def closed?: () -> bool
-
-      def empty?: () -> bool
-
-      def close: () -> void
 
       def call: () -> void
 
@@ -38,7 +29,7 @@ module HTTPX
 
       private
 
-      def initialize: (options) -> untyped
+      def initialize: (ip_family family, options options) -> void
 
       def calculate_interests: () -> (:r | :w)
 

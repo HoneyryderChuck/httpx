@@ -4,22 +4,15 @@ require "forwardable"
 require "resolv"
 
 module HTTPX
-  class Resolver::Native
+  class Resolver::Native < Resolver::Resolver
     extend Forwardable
-    include Resolver::ResolverMixin
     using URIExtensions
-
-    RECORD_TYPES = {
-      "A" => Resolv::DNS::Resource::IN::A,
-      "AAAA" => Resolv::DNS::Resource::IN::AAAA,
-    }.freeze
 
     DEFAULTS = if RUBY_VERSION < "2.2"
       {
         **Resolv::DNS::Config.default_config_hash,
         packet_size: 512,
         timeouts: Resolver::RESOLVE_TIMEOUT,
-        record_types: RECORD_TYPES.keys,
       }.freeze
     else
       {
@@ -27,7 +20,6 @@ module HTTPX
         **Resolv::DNS::Config.default_config_hash,
         packet_size: 512,
         timeouts: Resolver::RESOLVE_TIMEOUT,
-        record_types: RECORD_TYPES.keys,
       }.freeze
     end
 
@@ -49,14 +41,13 @@ module HTTPX
 
     attr_reader :state
 
-    def initialize(options)
-      @options = HTTPX::Options.new(options)
+    def initialize(_, options)
+      super
       @ns_index = 0
       @resolver_options = DEFAULTS.merge(@options.resolver_options)
       @nameserver = @resolver_options[:nameserver]
       @_timeouts = Array(@resolver_options[:timeouts])
       @timeouts = Hash.new { |timeouts, host| timeouts[host] = @_timeouts.dup }
-      @_record_types = Hash.new { |types, host| types[host] = @resolver_options[:record_types].dup }
       @connections = []
       @queries = {}
       @read_buffer = "".b
@@ -107,8 +98,6 @@ module HTTPX
     end
 
     def <<(connection)
-      return if early_resolve(connection)
-
       if @nameserver.nil?
         ex = ResolveError.new("No available nameserver")
         ex.set_backtrace(caller)
@@ -198,27 +187,21 @@ module HTTPX
         addresses = Resolver.decode_dns_answer(buffer)
       rescue Resolv::DNS::DecodeError => e
         hostname, connection = @queries.first
-        if @_record_types[hostname].empty?
-          @queries.delete(hostname)
-          @timeouts.delete(hostname)
-          @connections.delete(connection)
-          ex = NativeResolveError.new(connection, hostname, e.message)
-          ex.set_backtrace(e.backtrace)
-          raise ex
-        end
+        @queries.delete(hostname)
+        @timeouts.delete(hostname)
+        @connections.delete(connection)
+        ex = NativeResolveError.new(connection, hostname, e.message)
+        ex.set_backtrace(e.backtrace)
+        raise ex
       end
 
       if addresses.nil? || addresses.empty?
         hostname, connection = @queries.first
-        @_record_types[hostname].shift
-        if @_record_types[hostname].empty?
-          @queries.delete(hostname)
-          @_record_types.delete(hostname)
-          @timeouts.delete(hostname)
-          @connections.delete(connection)
+        @queries.delete(hostname)
+        @timeouts.delete(hostname)
+        @connections.delete(connection)
 
-          raise NativeResolveError.new(connection, hostname)
-        end
+        raise NativeResolveError.new(connection, hostname)
       else
         address = addresses.first
         name = address["name"]
@@ -251,8 +234,8 @@ module HTTPX
           @timeouts.delete(name)
           @timeouts.delete(connection.origin.host)
           @connections.delete(connection)
-          Resolver.cached_lookup_set(connection.origin.host, addresses) if @resolver_options[:cache]
-          emit_addresses(connection, addresses.map { |addr| addr["data"] })
+          Resolver.cached_lookup_set(connection.origin.host, @family, addresses) if @resolver_options[:cache]
+          emit_addresses(connection, @family, addresses.map { |addr| addr["data"] })
         end
       end
       return emit(:close) if @connections.empty?
@@ -271,10 +254,9 @@ module HTTPX
         log { "resolver: resolve IDN #{connection.origin.non_ascii_hostname} as #{hostname}" } if connection.origin.non_ascii_hostname
       end
       @queries[hostname] = connection
-      type = @_record_types[hostname].first || "A"
-      log { "resolver: query #{type} for #{hostname}" }
+      log { "resolver: query #{@record_type.name.split("::").last} for #{hostname}" }
       begin
-        @write_buffer << Resolver.encode_dns_query(hostname, type: RECORD_TYPES[type])
+        @write_buffer << Resolver.encode_dns_query(hostname, type: @record_type)
       rescue Resolv::DNS::EncodeError => e
         emit_resolve_error(connection, hostname, e)
       end

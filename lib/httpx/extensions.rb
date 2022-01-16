@@ -54,6 +54,22 @@ module HTTPX
     Numeric.__send__(:include, NegMethods)
   end
 
+  module StringExtensions
+    refine String do
+      def delete_suffix!(suffix)
+        suffix = Backports.coerce_to_str(suffix)
+        chomp! if frozen?
+        len = suffix.length
+        if len > 0 && index(suffix, -len)
+          self[-len..-1] = ''
+          self
+        else
+          nil
+        end
+      end unless String.method_defined?(:delete_suffix!)
+    end
+  end
+
   module HashExtensions
     refine Hash do
       def compact

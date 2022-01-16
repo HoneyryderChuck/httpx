@@ -14,7 +14,6 @@ module HTTPX
 
     def initialize
       @resolvers = {}
-      @_resolver_ios = {}
       @timers = Timers.new
       @selector = Selector.new
       @connections = []
@@ -56,9 +55,20 @@ module HTTPX
       connections = connections.reject(&:inflight?)
       connections.each(&:close)
       next_tick until connections.none? { |c| c.state != :idle && @connections.include?(c) }
+
+      # close resolvers
+      outstanding_connections = @connections
+      resolver_connections = @resolvers.each_value.flat_map(&:connections).compact
+      outstanding_connections -= resolver_connections
+
+      return unless outstanding_connections.empty?
+
       @resolvers.each_value do |resolver|
         resolver.close unless resolver.closed?
-      end if @connections.empty?
+      end
+      # for https resolver
+      resolver_connections.each(&:close)
+      next_tick until resolver_connections.none? { |c| c.state != :idle && @connections.include?(c) }
     end
 
     def init_connection(connection, _options)
@@ -107,11 +117,12 @@ module HTTPX
         return
       end
 
-      resolver = find_resolver_for(connection)
-      resolver << connection
-      return if resolver.empty?
+      find_resolver_for(connection) do |resolver|
+        resolver << connection
+        next if resolver.empty?
 
-      @_resolver_ios[resolver] ||= select_connection(resolver)
+        select_connection(resolver)
+      end
     end
 
     def on_resolver_connection(connection)
@@ -138,12 +149,11 @@ module HTTPX
 
     def on_resolver_close(resolver)
       resolver_type = resolver.class
-      return unless @resolvers[resolver_type] == resolver
+      return if resolver.closed?
 
       @resolvers.delete(resolver_type)
 
       deselect_connection(resolver)
-      @_resolver_ios.delete(resolver)
       resolver.close unless resolver.closed?
     end
 
@@ -174,12 +184,10 @@ module HTTPX
     end
 
     def coalesce_connections(conn1, conn2)
-      if conn1.coalescable?(conn2)
-        conn1.merge(conn2)
-        @connections.delete(conn2)
-      else
-        register_connection(conn2)
-      end
+      return register_connection(conn2) unless conn1.coalescable?(conn2)
+
+      conn1.merge(conn2)
+      @connections.delete(conn2)
     end
 
     def next_timeout
@@ -196,13 +204,25 @@ module HTTPX
       resolver_type = Resolver.registry(resolver_type) if resolver_type.is_a?(Symbol)
 
       @resolvers[resolver_type] ||= begin
-        resolver = resolver_type.new(connection_options)
-        resolver.pool = self if resolver.respond_to?(:pool=)
-        resolver.on(:resolve, &method(:on_resolver_connection))
-        resolver.on(:error, &method(:on_resolver_error))
-        resolver.on(:close) { on_resolver_close(resolver) }
-        resolver
+        resolver_manager = if resolver_type.multi?
+          Resolver::Multi.new(resolver_type, connection_options)
+        else
+          resolver_type.new(connection_options)
+        end
+        resolver_manager.on(:resolve, &method(:on_resolver_connection))
+        resolver_manager.on(:error, &method(:on_resolver_error))
+        resolver_manager.on(:close, &method(:on_resolver_close))
+        resolver_manager
       end
+
+      manager = @resolvers[resolver_type]
+
+      (manager.is_a?(Resolver::Multi) && manager.early_resolve(connection)) || manager.resolvers.each do |resolver|
+        resolver.pool = self
+        yield resolver
+      end
+
+      manager
     end
   end
 end

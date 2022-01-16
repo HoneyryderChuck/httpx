@@ -15,6 +15,7 @@ module HTTPX
 
     def initialize(origin, addresses, options)
       @state = :idle
+      @addresses = []
       @hostname = origin.host
       @options = Options.new(options)
       @fallback_protocol = @options.fallback_protocol
@@ -30,15 +31,29 @@ module HTTPX
         raise Error, "Given IO objects do not match the request authority" unless @io
 
         _, _, _, @ip = @io.addr
-        @addresses ||= [@ip]
-        @ip_index = @addresses.size - 1
+        @addresses << @ip
         @keep_open = true
         @state = :connected
       else
-        @addresses = addresses.map { |addr| addr.is_a?(IPAddr) ? addr : IPAddr.new(addr) }
+        add_addresses(addresses)
       end
       @ip_index = @addresses.size - 1
-      @io ||= build_socket
+      # @io ||= build_socket
+    end
+
+    def add_addresses(addrs)
+      return if addrs.empty?
+
+      addrs = addrs.map { |addr| addr.is_a?(IPAddr) ? addr : IPAddr.new(addr) }
+
+      ip_index = @ip_index || (@addresses.size - 1)
+      if addrs.first.ipv6?
+        # should be the next in line
+        @addresses = [*@addresses[0, ip_index], *addrs, *@addresses[ip_index..-1]]
+      else
+        @addresses.unshift(*addrs)
+        @ip_index += addrs.size if @ip_index
+      end
     end
 
     def to_io
@@ -52,7 +67,7 @@ module HTTPX
     def connect
       return unless closed?
 
-      if @io.closed?
+      if !@io || @io.closed?
         transition(:idle)
         @io = build_socket
       end
@@ -62,12 +77,16 @@ module HTTPX
            Errno::EHOSTUNREACH => e
       raise e if @ip_index <= 0
 
+      log { "failed connecting to #{@ip} (#{e.message}), trying next..." }
       @ip_index -= 1
+      @io = build_socket
       retry
     rescue Errno::ETIMEDOUT => e
       raise ConnectTimeoutError.new(@options.timeout[:connect_timeout], e.message) if @ip_index <= 0
 
+      log { "failed connecting to #{@ip} (#{e.message}), trying next..." }
       @ip_index -= 1
+      @io = build_socket
       retry
     end
 

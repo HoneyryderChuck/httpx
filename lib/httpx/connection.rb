@@ -44,7 +44,7 @@ module HTTPX
 
     def_delegator :@write_buffer, :empty?
 
-    attr_reader :origin, :origins, :state, :pending, :options
+    attr_reader :io, :origin, :origins, :state, :pending, :options
 
     attr_writer :timers
 
@@ -78,7 +78,11 @@ module HTTPX
     # this is a semi-private method, to be used by the resolver
     # to initiate the io object.
     def addresses=(addrs)
-      @io ||= IO.registry(@type).new(@origin, addrs, @options) # rubocop:disable Naming/MemoizedInstanceVariableName
+      if @io
+        @io.add_addresses(addrs)
+      else
+        @io = IO.registry(@type).new(@origin, addrs, @options)
+      end
     end
 
     def addresses
