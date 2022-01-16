@@ -117,6 +117,7 @@ module HTTPX
 
         def fetch_response(request, connections, options)
           response = super
+
           if response.is_a?(ErrorResponse) &&
              __proxy_error?(response) && !@_proxy_uris.empty?
             @_proxy_uris.shift

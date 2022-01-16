@@ -140,7 +140,7 @@ module HTTPX
     end
 
     def do_retry
-      return if @queries.empty?
+      return if @queries.empty? || !@start_timeout
 
       loop_time = Utils.elapsed_time(@start_timeout)
       connections = []
@@ -160,7 +160,7 @@ module HTTPX
           @connections.delete(connection)
           # This loop_time passed to the exception is bogus. Ideally we would pass the total
           # resolve timeout, including from the previous retries.
-          raise ResolveTimeoutError.new(loop_time, "Timed out")
+          raise ResolveTimeoutError.new(loop_time, "Timed out while resolving #{host}")
           # raise NativeResolveError.new(connection, host)
         else
           log { "resolver: timeout after #{timeout}s, retry(#{@timeouts[host].first}) #{host}..." }
@@ -239,16 +239,16 @@ module HTTPX
 
         if address.key?("alias") # CNAME
           # clean up intermediate queries
-          @timeouts.delete(address["name"]) unless connection.origin.host == address["name"]
+          @timeouts.delete(name) unless connection.origin.host == name
 
           if catch(:coalesced) { early_resolve(connection, hostname: address["alias"]) }
-            @timeouts.delete(connection.origin.host)
             @connections.delete(connection)
           else
             resolve(connection, address["alias"])
             return
           end
         else
+          @timeouts.delete(name)
           @timeouts.delete(connection.origin.host)
           @connections.delete(connection)
           Resolver.cached_lookup_set(connection.origin.host, addresses) if @resolver_options[:cache]
@@ -313,6 +313,9 @@ module HTTPX
         return unless @state == :open
 
         @io.close if @io
+        @start_timeout = nil
+        @write_buffer.clear
+        @read_buffer.clear
       end
       @state = nextstate
     end

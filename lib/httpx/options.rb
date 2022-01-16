@@ -110,18 +110,16 @@ module HTTPX
     end
 
     def initialize(options = {})
-      defaults = DEFAULT_OPTIONS.merge(options)
-      defaults.each do |k, v|
-        next if v.nil?
-
-        begin
-          value = __send__(:"option_#{k}", v)
-          instance_variable_set(:"@#{k}", value)
-        rescue NoMethodError
-          raise Error, "unknown option: #{k}"
-        end
-      end
+      __initialize__(options)
       freeze
+    end
+
+    def freeze
+      super
+      @origin.freeze
+      @timeout.freeze
+      @headers.freeze
+      @addresses.freeze
     end
 
     def option_origin(value)
@@ -246,6 +244,22 @@ module HTTPX
                     value.dup
           end
           instance_variable_set(ivar, value)
+        end
+      end
+    end
+
+    private
+
+    def __initialize__(options = {})
+      defaults = DEFAULT_OPTIONS.merge(options)
+      defaults.each do |k, v|
+        next if v.nil?
+
+        begin
+          value = __send__(:"option_#{k}", v)
+          instance_variable_set(:"@#{k}", value)
+        rescue NoMethodError
+          raise Error, "unknown option: #{k}"
         end
       end
     end

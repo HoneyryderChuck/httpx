@@ -69,7 +69,7 @@ echo ' Success: Reached S3'
 
 export SSL_CERT_FILE=/home/test/support/ci/certs/ca-bundle.crt
 
-if [[ ${RUBY_VERSION:0:1} = "3" ]] && ![[ $RUBYOPT =~ "jit" ]]; then
+if [[ ${RUBY_VERSION:0:1} = "3" ]] && [[ ! $RUBYOPT =~ "jit" ]]; then
   echo "running runtime type checking..."
   export RUBYOPT="$RUBYOPT -rbundler/setup -rrbs/test/setup"
   export RBS_TEST_RAISE=true

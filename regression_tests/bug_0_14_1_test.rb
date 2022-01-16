@@ -6,7 +6,7 @@ require "support/http_helpers"
 class Bug_0_14_1_Test < Minitest::Test
   include HTTPHelpers
 
-  def test_multipart_can_have_arbitrary_conntent_type
+  def test_multipart_can_have_arbitrary_content_type
     uri = "https://#{httpbin}/post"
 
     response = HTTPX.plugin(:multipart)
