@@ -98,8 +98,6 @@ module HTTPX
     end
 
     def <<(connection)
-      return if early_resolve(connection)
-
       if @nameserver.nil?
         ex = ResolveError.new("No available nameserver")
         ex.set_backtrace(caller)

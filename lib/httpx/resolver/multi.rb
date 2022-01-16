@@ -12,6 +12,7 @@ module HTTPX
 
     def initialize(resolver_type, options)
       @options = options
+      @resolver_options = @options.resolver_options
 
       @resolvers = options.ip_families.map do |ip_family|
         resolver = resolver_type.new(ip_family, options)
@@ -38,6 +39,22 @@ module HTTPX
 
     def connections
       @resolvers.filter_map { |r| r.resolver_connection if r.respond_to?(:resolver_connection) }
+    end
+
+    def early_resolve(connection)
+      hostname = connection.origin.host
+      addresses = @resolver_options[:cache] && (connection.addresses || HTTPX::Resolver.nolookup_resolve(hostname))
+      return unless addresses
+
+      addresses = addresses.group_by(&:family)
+
+      @resolvers.each do |resolver|
+        addrs = addresses[resolver.family]
+
+        next if !addrs || addrs.empty?
+
+        resolver.emit_addresses(connection, resolver.family, addrs)
+      end
     end
 
     private

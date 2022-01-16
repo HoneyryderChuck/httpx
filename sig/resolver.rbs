@@ -13,11 +13,18 @@ module HTTPX
     type dns_result = { "name" => String, "TTL" => Numeric, "alias" => String }
                     | { "name" => String, "TTL" => Numeric, "data" => String }
 
-    def self?.cached_lookup: (String hostname) -> Array[String]?
+
+    def nolookup_resolve: (String hostname) -> Array[IPAddr]
+
+    def ip_resolve: (String hostname) -> Array[IPAddr]?
+
+    def system_resolve: (String hostname) -> Array[IPAddr]?
+
+    def self?.cached_lookup: (String hostname) -> Array[IPAddr]?
 
     def self?.cached_lookup_set: (String hostname, ip_family family, Array[dns_result] addresses) -> void
 
-    def self?.lookup: (String hostname, Numeric ttl) -> Array[String]?
+    def self?.lookup: (String hostname, Numeric ttl) -> Array[IPAddr]?
 
     def self?.generate_id: () -> Integer
 

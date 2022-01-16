@@ -53,8 +53,6 @@ module HTTPX
       true
     end
 
-    private
-
     def emit_addresses(connection, family, addresses)
       addresses.map! do |address|
         address.is_a?(IPAddr) ? address : IPAddr.new(address.to_s)
@@ -75,29 +73,16 @@ module HTTPX
       end
     end
 
+    private
+
     def early_resolve(connection, hostname: connection.origin.host)
-      addresses = connection.addresses ||
-                  ip_resolve(hostname) ||
-                  (@resolver_options[:cache] && HTTPX::Resolver.cached_lookup(hostname)) ||
-                  system_resolve(hostname)
+      addresses = @resolver_options[:cache] && (connection.addresses || HTTPX::Resolver.nolookup_resolve(hostname))
+
       return unless addresses
 
-      emit_addresses(connection, nil, addresses)
-    end
+      addresses.select! { |addr| addr.family == @family }
 
-    def ip_resolve(hostname)
-      [IPAddr.new(hostname)]
-    rescue ArgumentError
-    end
-
-    def system_resolve(hostname)
-      @system_resolver ||= Resolv::Hosts.new
-      ips = @system_resolver.getaddresses(hostname)
-      return if ips.empty?
-
-      ips.map! { |ip| IPAddr.new(ip) }
-      ips.sort! { |ip1, ip2| ip1.ipv6? && ip2.ipv4? ? 1 : 0 }
-    rescue IOError
+      emit_addresses(connection, @family, addresses)
     end
 
     def emit_resolve_error(connection, hostname = connection.origin.host, ex = nil)

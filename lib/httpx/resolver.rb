@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "resolv"
+require "ipaddr"
 
 module HTTPX
   module Resolver
@@ -23,8 +24,26 @@ module HTTPX
 
     @identifier_mutex = Mutex.new
     @identifier = 1
+    @system_resolver = Resolv::Hosts.new
 
     module_function
+
+    def nolookup_resolve(hostname)
+      ip_resolve(hostname) || cached_lookup(hostname) || system_resolve(hostname)
+    end
+
+    def ip_resolve(hostname)
+      [IPAddr.new(hostname)]
+    rescue ArgumentError
+    end
+
+    def system_resolve(hostname)
+      ips = @system_resolver.getaddresses(hostname)
+      return if ips.empty?
+
+      ips.map { |ip| IPAddr.new(ip) }
+    rescue IOError
+    end
 
     def cached_lookup(hostname)
       now = Utils.now
@@ -69,7 +88,7 @@ module HTTPX
         if address.key?("alias")
           lookup(address["alias"], ttl)
         else
-          address["data"]
+          IPAddr.new(address["data"])
         end
       end
       ips unless ips.empty?

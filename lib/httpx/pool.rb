@@ -216,10 +216,12 @@ module HTTPX
       end
 
       manager = @resolvers[resolver_type]
-      manager.resolvers.each do |resolver|
+
+      (manager.is_a?(Resolver::Multi) && manager.early_resolve(connection)) || manager.resolvers.each do |resolver|
         resolver.pool = self
         yield resolver
       end
+
       manager
     end
   end

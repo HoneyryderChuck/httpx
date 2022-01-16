@@ -86,8 +86,6 @@ module HTTPX
     end
 
     def <<(connection)
-      return if early_resolve(connection)
-
       @connections << connection
       resolve
     end

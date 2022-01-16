@@ -35,7 +35,7 @@ module HTTPX
     def <<(connection)
       return if @uri.origin == connection.origin.to_s
 
-      @uri_addresses ||= ip_resolve(@uri.host) || system_resolve(@uri.host) || @resolver.getaddresses(@uri.host)
+      @uri_addresses ||= HTTPX::Resolver.nolookup_resolve(@uri.host) || @resolver.getaddresses(@uri.host)
 
       if @uri_addresses.empty?
         ex = ResolveError.new("Can't resolve DNS server #{@uri.host}")
@@ -43,7 +43,7 @@ module HTTPX
         throw(:resolve_error, ex)
       end
 
-      early_resolve(connection) || resolve(connection)
+      resolve(connection)
     end
 
     def closed?
@@ -132,8 +132,12 @@ module HTTPX
               if alias_address.nil?
                 connection = @queries[hostname]
                 @queries.delete(address["name"])
-                resolve(connection, address["alias"])
-                return # rubocop:disable Lint/NonLocalExitFromIterator
+                if catch(:coalesced) { early_resolve(connection, hostname: address["alias"]) }
+                  @connections.delete(connection)
+                else
+                  resolve(connection, address["alias"])
+                  return # rubocop:disable Lint/NonLocalExitFromIterator
+                end
               else
                 alias_address
               end
