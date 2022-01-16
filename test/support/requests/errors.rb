@@ -9,6 +9,15 @@ module Requests
       verify_error_response(response, /Connection refused| not available/)
     end
 
+    def test_errors_log_error
+      log = StringIO.new
+      unavailable_host = URI(origin("localhost"))
+      unavailable_host.port = next_available_port
+      response = HTTPX.get(unavailable_host.to_s, debug: log, debug_level: 3)
+      output = log.string
+      assert output.include?(response.error.message)
+    end
+
     def test_errors_host_unreachable
       uri = URI(origin("localhost")).to_s
       return unless uri.start_with?("http://")
