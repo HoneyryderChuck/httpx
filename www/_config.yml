@@ -26,8 +26,7 @@ pagination:
 include:
   - wiki
 exclude:
-  - Gemfile
-  - Gemfile.lock
+  - scripts/curl_to_ruby.js.rb
 plugins:
   - jekyll-gzip
   - jekyll-brotli

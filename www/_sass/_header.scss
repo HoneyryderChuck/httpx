@@ -54,13 +54,36 @@
 .code-preview {
   margin-bottom: 25px;
   font-size: 0.7em;
-  code {
+
+  code, #curl-command {
     border-radius: 10px;
     padding: 10px;
     font-weight: bold;
     background-color: black;
     color: white;
   }
+
+  #curl-command:before {
+    content: ">";
+    color: white;
+  }
+
+  #curl-command input,
+  #curl-command textarea {
+    background: transparent;
+    border: none;
+    width: 95%;
+  }
+
+  #curl-command textarea {
+    padding-top: 10px;
+    font-family: monospace;
+    color: #87cefa;
+    &.error {
+      color: red;
+    }
+  }
+
 }
 
 @media screen and (min-width: 1000px) {

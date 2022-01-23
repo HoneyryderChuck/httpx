@@ -21,6 +21,13 @@ layout: default
         HTTPX.get("https://news.ycombinator.com")
       </code>
     </div>
+    <div class="code-preview">
+      <p><span class="text">Convert curl commands into httpx</span></p>
+      <div id="curl-command">
+        <input id="curl-command-input" type="text" placeholder="insert curl command here..."/>
+        <textarea id="curl-command-output" rows=0 style="display:none"></textarea>
+      </div>
+    </div>
     <a class="btn" href="{{ '/posts/index.html' | prepend: site.baseurl }}">
       Blog
     </a>
@@ -95,3 +102,4 @@ layout: default
     <p>A production of <a href="{{ site.authorurl }}">HoneyryderChuck</a> and published under the <a href="{{ site.repourl | append: '/blob/master/LICENSE.txt' }}">Apache 2.0 License</a>.</p>
   </div>
 </footer>
+<script src="{{ '/scripts/curl_to_ruby.js' | prepend: site.baseurl }}"></script>

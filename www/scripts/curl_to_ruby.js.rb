@@ -1,5 +1,5 @@
 require "optparse"
-require "uri"
+# require "uri"
 
 def parse_options(command, options)
   OptionParser.new do |opts|
@@ -446,16 +446,16 @@ http = HTTPX
 
   # load plugins
   options[:plugins].each do |plugin|
-    template << ".plugin(#{plugin.inspect}"
+    template += ".plugin(#{plugin.inspect}"
     options[:plugin_options][plugin].each do |key, value|
-      template << ", #{key}: #{value.inspect}"
+      template += ", #{key}: #{value.inspect}"
     end
-    template << ")"
+    template += ")"
   end
 
   # handle auth
   if (auth = options[:auth])
-    template << ".plugin(#{auth.inspect})." \
+    template += ".plugin(#{auth.inspect})." \
                 "#{auth}(#{options[:username].inspect}, " \
                 "#{options[:password].inspect})"
   end
@@ -468,40 +468,77 @@ http = HTTPX
   end.compact
 
   if not with_options.empty?
-    template << ".with(#{with_options.join(', ')})"
+    template += ".with(#{with_options.join(', ')})"
   end
 
 
   # send request
-  template << "\nresponse = http"
-  template << ".#{options.fetch(:verb, :get)}("
-  template << (urls + options[:urls]).map(&:inspect).join(", ")
+  template += "\nresponse = http"
+  template += ".#{options.fetch(:verb, :get)}("
+  template += (urls + options[:urls]).map(&:inspect).join(", ")
 
   # send body
   if options.key?(:body)
-    template << ", body: #{options[:body].inspect}"
+    template += ", body: #{options[:body].inspect}"
   end
   if options.key?(:form)
-    template << ", form: {"
-    template << options[:form].map do |k, v|
+    template += ", form: {"
+    template += options[:form].map do |k, v|
       "#{k}: #{v}"
     end.join(", ")
-    template << "}"
+    template += "}"
   end
-  template << ")\n"
+  template += ")\n"
 
-  template << "response.raise_for_status\n" if options[:raise_for_status]
-  template << "puts response.to_s"
+  template += "response.raise_for_status\n" if options[:raise_for_status]
+  template += "puts response.to_s"
   template
 end
 
-if $0 == __FILE__
-  command = ARGV.first
+def to_httpx
+  on_txt_change = lambda do |evt|
+    command = `#{evt}.target.value`
+    unless command.start_with?("curl ")
+      `document.getElementById('curl-command-output').style.display = "none"`
+      return
+    end
 
-  return unless command.start_with?("curl ")
+    %x{
+      var output = document.getElementById('curl-command-output');
+      output.classList.remove("error");
+    }
+    begin
+      options = {}
+      urls = parse_options(command.slice(5..-1).split(/ +/), options)
+      result = to_ruby(urls, options)
+    rescue OptionParser::InvalidOption => error
+      result = error.message
+      result.sub("invalid", "unsupported")
+      `output.classList.add("error")`
+    end
 
-  options = {}
+    `console.log(#{result})`
+    %x{
+      output.value = #{result};
+      output.rows = #{result.lines.size};
+      output.style.display = "block";
+    }
+  end
 
-  urls = parse_options(command.slice(5..-1).split(/ +/), options)
-  puts to_ruby(urls, options)
+  %x{
+    var input = document.getElementById('curl-command-input');
+    input.addEventListener('change', on_txt_change, false);
+  }
 end
+to_httpx
+
+# if $0 == __FILE__
+#   command = ARGV.first
+
+#   return unless command.start_with?("curl ")
+
+#   options = {}
+
+#   urls = parse_options(command.slice(5..-1).split(/ +/), options)
+#   puts to_ruby(urls, options)
+# end

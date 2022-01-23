@@ -88,6 +88,7 @@ end
 
 group :website do
   gem "hanna-nouveau"
+  gem "opal", git: "https://github.com/HoneyryderChuck/opal.git", branch: "stdlib-uri"
 
   gem "jekyll", "~> 4.2.0"
   gem "jekyll-brotli", "~> 2.2.0", platform: :mri
