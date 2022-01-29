@@ -70,13 +70,14 @@
   }
 
   #curl-command input,
+  #curl-command textarea,
   #curl-command pre {
     background: transparent;
     border: none;
     font-size: 20px;
   }
 
-  #curl-command input {
+  #curl-command input, #curl-command textarea {
     padding: 10px;
     width: 95%;
   }
@@ -99,6 +100,11 @@
     }
   }
 
+}
+
+.curl-widget {
+  margin-top: 10px;
+  text-align: justify;
 }
 
 @media screen and (min-width: 1000px) {

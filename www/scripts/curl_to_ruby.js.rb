@@ -1,5 +1,6 @@
 require "optparse"
-# require "uri"
+require "uri"
+require "json"
 
 def parse_options(command, options)
   OptionParser.new do |opts|
@@ -30,21 +31,21 @@ def parse_options(command, options)
     opts.on("--capath DIR") do |path|
       options[:options][:ssl][:ca_path] = path
     end # CA directory to verify peer against
-    opts.on("-E", "--cert PASSWORD") do |cert|
-      (options[:options][:ssl][:certificate] ||= {})[:cert] = "OpenSSL::X509::Certificate.new(File.read(#{path.inspect}))"
+    opts.on("-E", "--cert <certificate[:password]>") do |cert|
+      (options[:options][:ssl][:certificate] ||= {})[:cert] = "OpenSSL::X509::Certificate.new(File.read(#{cert.inspect}))"
     end # Client certificate file and password
     # opts.on("--cert-status") #   Verify the status of the server certificate
     # opts.on("--cert-type TYPE") # Certificate file type (DER/PEM/ENG)
     opts.on("--ciphers CIPHERLIST") do |ciphers| # SSL ciphers to use
-      options[:options][:ssl][:ciphers] = ciphers
+      options[:options][:ssl][:ciphers] = ciphers.inspect
     end
     opts.on("--compressed") do
       options[:plugins] << :compression
     end #    Request compressed response
     # opts.on("--compressed-ssh") # Enable SSH compression
     # opts.on("-K, --config FILE") # Read config from a file
-    opts.on("--connect-timeout SECS", Integer) do |timeout|
-      options[:options][:timeout][:connect_timeout] = timeout
+    opts.on("--connect-timeout SECS") do |timeout|
+      options[:options][:timeout][:connect_timeout] = Float(timeout)
     end # Maximum time allowed for connection
     opts.on("--connect-to HOST1:PORT1:HOST2:PORT2") do |ios| # Connect to host
       options[:options][:io] = ios.split(":").each_slice(2).map{|*a|a.join(":s")}
@@ -138,9 +139,9 @@ def parse_options(command, options)
     end # Resolve host names over DOH
     # opts.on("-D", "--dump-header FILENAME") # Write the received headers to <filename>
     # opts.on("--egd-file FILE") # EGD socket path for random data
-    opts.on("--expect100-timeout SECONDS", Integer) do |secs|
+    opts.on("--expect100-timeout SECONDS") do |secs|
       options[:plugins] << :expect
-      options[:plugin_options][:expect][:expect_timeout] = secs
+      options[:plugin_options][:expect][:expect_timeout] = Float(secs)
     end # How long to wait for 100-continue
     opts.on("-f", "--fail") #          Fail silently (no output at all) on HTTP errors
     opts.on("--fail-early") do
@@ -157,11 +158,13 @@ def parse_options(command, options)
       end
 
       options[:verb] ||= :post
-      options[:form] = data
+      options[:form] ||= []
+      options[:form] += data
     end # Specify multipart MIME data
     opts.on("--form-string <NAME=STRING") do |data|
       options[:verb] ||= :post
-      options[:form] = URI.decode_www_form(data)
+      options[:form] ||= []
+      options[:form] += URI.decode_www_form(data)
     end # Specify multipart MIME data
     # opts.on("--ftp-account DATA") # Account data string
     # opts.on("--ftp-alternative-to-user <command> String to replace USER [name]
@@ -188,7 +191,7 @@ def parse_options(command, options)
       k, v = data[1..-2].split(/ *: */)
       v = v.start_with?("@") ? "File.open(#{v[1..-1].inspect})" : v
 
-      options[:options][:headers][k] = v
+      options[:options][:headers][k.downcase] = v
     end # Pass custom header(s) to server
     # opts.on("-h, --help          This help text
     # opts.on("--hostpubmd5 <md5> Acceptable MD5 hash of the host public key
@@ -386,10 +389,10 @@ def parse_options(command, options)
     # opts.on("--ssl-no-revoke Disable cert revocation checks (Schannel)
     # opts.on("--ssl-reqd      Require SSL/TLS
     opts.on("-2", "--sslv2") do
-      options[:options][:ssl][:min_version] = :SSL2
+      options[:options][:ssl][:min_version] = ":SSL2"
     end #        Use SSLv2
     opts.on("-3", "--sslv3") do
-      options[:options][:ssl][:min_version] = :SSL3
+      options[:options][:ssl][:min_version] = ":SSL3"
     end #         Use SSLv3
     opts.on("--stderr") #        Where to redirect stderr
     # opts.on("--styled-output Enable styled output for HTTP headers
@@ -408,19 +411,19 @@ def parse_options(command, options)
     # opts.on("--tlspassword   TLS password
     # opts.on("--tlsuser <name> TLS user name
     opts.on("-1", "--tlsv1") do
-      options[:options][:ssl][:min_version] = :TLS1_0
+      options[:options][:ssl][:min_version] = ":TLS1_0"
     end #         Use TLSv1.0 or greater
     opts.on("--tlsv1.0") do
-      options[:options][:ssl][:min_version] = :TLS1_0
+      options[:options][:ssl][:min_version] = ":TLS1_0"
     end #       Use TLSv1.0 or greater
     opts.on("--tlsv1.1") do
-      options[:options][:ssl][:min_version] = :TLS1_1
+      options[:options][:ssl][:min_version] = ":TLS1_1"
     end #       Use TLSv1.1 or greater
     opts.on("--tlsv1.2") do
-      options[:options][:ssl][:min_version] = :TLS1_2
+      options[:options][:ssl][:min_version] = ":TLS1_2"
     end #       Use TLSv1.2 or greater
     opts.on("--tlsv1.3") do
-      options[:options][:ssl][:min_version] = :TLS1_3
+      options[:options][:ssl][:min_version] = ":TLS1_3"
     end #       Use TLSv1.3 or greater
     opts.on("--tr-encoding") #   Request compressed transfer encoding
     # opts.on("--trace <file>  Write a debug trace to FILE
@@ -470,13 +473,39 @@ require "httpx"
     template.prepend("require \"#{lib}\"\n")
   end
 
+  if options[:options][:headers]["content-type"] == "application/json" && options.key?(:body)
+    begin
+      options[:json] = JSON.parse(options[:body])
+      options.delete(:body)
+      options[:options][:headers].delete("content-type")
+    rescue JSON::ParserError
+    end
+  end
+
 
   # handle general options
   with_options = options[:options].map do |k, v|
     next if %i[body form json].include?(k)
 
-    "#{k.inspect} => #{v.inspect}" unless v.respond_to?(:empty?) && v.empty?
+    unless v.respond_to?(:empty?) && v.empty?
+      v = case k
+          when :ssl, :timeout
+            vstr = "{"
+            vstr += v.map do |sk, sv|
+              " #{sk}: #{sv}"
+            end.join(",")
+            vstr += " }"
+            vstr
+          # when :headers
+          else
+            v.inspect
+          end
+
+      "#{k}: #{v}"
+    end
   end.compact
+
+
 
   if (http_custom = !options[:plugins].empty? || options[:auth] || !with_options.empty?)
     template += "\nhttp = HTTPX"
@@ -486,7 +515,7 @@ require "httpx"
   options[:plugins].each do |plugin|
     template += ".plugin(:#{plugin}"
     options[:plugin_options][plugin].each do |key, value|
-      template += ", #{key}: #{value.inspect}"
+      template += ", #{key}: #{value}"
     end
     template += ")\n\t"
   end
@@ -517,8 +546,9 @@ require "httpx"
   # send body
   if options.key?(:body)
     template += ", body: #{options[:body]}"
-  end
-  if options.key?(:form)
+  elsif options.key?(:json)
+    template += ", json: #{options[:json]}"
+  elsif options.key?(:form)
     template += ", form: {"
     template += options[:form].map do |k, v|
       "#{k.inspect} => #{v.inspect}"
@@ -548,7 +578,7 @@ def to_httpx
       options = {}
       urls = parse_options(command.slice(5..-1).scan(/"[^"]+"|'[^']+'|\S+/), options)
       result = to_ruby(urls, options)
-    rescue OptionParser::InvalidOption => error
+    rescue OptionParser::InvalidOption, OptionParser::InvalidArgument => error
       result = error.message
       result.sub("invalid", "unsupported")
       `output.classList.add("error")`

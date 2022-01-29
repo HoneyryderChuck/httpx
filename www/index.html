@@ -30,10 +30,12 @@ layout: default
         <button class="btn btn-small" onclick="javascript: setexample('complexjson')">Complex JSON</button>
         <button class="btn btn-small" onclick="javascript: setexample('formdata')">Form Data</button>
       </div>
-      <label for="curl-command-input">"insert curl command here..."</label>
-      <div id="curl-command">
-        <input id="curl-command-input" type="text" placeholder="curl http://..."/>
-        <pre id="curl-command-output" style="display:none"></pre>
+      <div class="curl-widget">
+        <label for="curl-command-input">insert curl command here...</label>
+        <div id="curl-command">
+          <input id="curl-command-input" type="text" placeholder="curl http://..."/>
+          <pre id="curl-command-output" style="display:none"></pre>
+        </div>
       </div>
     </div>
     <a class="btn" href="{{ '/posts/index.html' | prepend: site.baseurl }}">
