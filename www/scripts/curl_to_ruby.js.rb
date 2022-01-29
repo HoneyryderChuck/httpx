@@ -22,6 +22,7 @@ def parse_options(command, options)
     # end
     opts.on("--basic") do #         Use HTTP Basic Authentication
       options[:auth] = :basic_authentication
+      options[:auth_method] = :basic_auth
     end
     opts.on("--cacert FILE") do |path| # CA certificate to verify peer against
       options[:options][:ssl][:ca_file] = "OpenSSL::X509::Certificate.new(File.read(#{path.inspect}))"
@@ -57,43 +58,62 @@ def parse_options(command, options)
     # opts.on("--crlf") #         Convert LF to CRLF in upload
     # opts.on("--crlfile FILE") # Get a CRL list in PEM format from the given file
     opts.on("-d", "--data DATA") do |data|
+      data = data.sub(/\A'(.*)'\z/, '\\1')
       options[:verb] ||= :post
       if data.start_with?("@")
         options[:body] = "File.open(#{data[1..-1].inspect})"
       else
-        options[:form] ||= []
         k, v = data.split("=")
-        v = v.start_with?("@") ? "File.open(#{v[1..-1].inspect})" : v.inspect
-        options[:form] << [k, v]
+        if v
+          options[:form] ||= []
+          v = v.start_with?("@") ? "File.open(#{v[1..-1].inspect})" : v
+          options[:form] << [k, v]
+        else
+          options[:body] = k
+        end
       end
     end #   HTTP POST data
     opts.on("--data-ascii DATA") do |data|
+      data = data.sub(/\A'(.*)'\z/, '\\1')
       options[:verb] ||= :post
       if data.start_with?("@")
         options[:body] = "File.open(#{data[1..-1].inspect})"
       else
-        options[:form] ||= []
         k, v = data.split("=")
-        v = v.start_with?("@") ? "File.open(#{v[1..-1].inspect})" : v.inspect
-        options[:form] << [k, v]
+        if v
+          options[:form] ||= []
+          v = v.start_with?("@") ? "File.open(#{v[1..-1].inspect})" : v
+          options[:form] << [k, v]
+        else
+          options[:body] = k
+        end
       end
     end # HTTP POST ASCII data
     opts.on("--data-binary DATA") do |data|
+      data = data.sub(/\A'(.*)'\z/, '\\1')
       options[:verb] ||= :post
       if data.start_with?("@")
         options[:body] = "File.open(#{data[1..-1].inspect})"
       else
-        options[:form] ||= []
         k, v = data.split("=")
-        v = v.start_with?("@") ? "File.open(#{v[1..-1].inspect})" : v.inspect
-        options[:form] << [k, v]
+        if v
+          options[:form] ||= []
+          v = v.start_with?("@") ? "File.open(#{v[1..-1].inspect})" : v
+          options[:form] << [k, v]
+        else
+          options[:body] = k
+        end
       end
     end # HTTP POST binary data
     opts.on("--data-raw DATA") do |data|
       options[:form] ||= []
       k, v = data.split("=")
-      v = v.start_with?("@") ? "File.open(#{v[1..-1].inspect})" : v.inspect
-      options[:form] << [k, v]
+      if v
+        v = v.start_with?("@") ? "File.open(#{v[1..-1].inspect})" : v
+        options[:form] << [k, v]
+      else
+        options[:body] = k
+      end
     end # HTTP POST data, '@' allowed
     opts.on("--data-urlencode DATA") do |data|
       options[:verb] ||= :post
@@ -103,6 +123,7 @@ def parse_options(command, options)
     # opts.on("--delegation LEVEL") # GSS-API delegation permission
     opts.on("--digest") do
       options[:auth] = :digest_authentication
+      options[:auth_method] = :digest_auth
     end #        Use HTTP Digest Authentication
     # opts.on("-q", "--disable") #       Disable .curlrc
     # opts.on("--disable-eprt") #  Inhibit using EPRT or LPRT
@@ -164,8 +185,8 @@ def parse_options(command, options)
       options[:options][:debug_level] = 1
     end #          Show document info only
     opts.on("-H", "--header HEADER/@FILE") do |data|
-      k, v = data.split("/")
-      v = v.start_with?("@") ? "File.open(#{v[1..-1].inspect})" : v.inspect
+      k, v = data[1..-2].split(/ *: */)
+      v = v.start_with?("@") ? "File.open(#{v[1..-1].inspect})" : v
 
       options[:options][:headers][k] = v
     end # Pass custom header(s) to server
@@ -249,7 +270,10 @@ def parse_options(command, options)
       options[:copy_to] = path
     end # Write to file instead of stdout
     opts.on("--pass PHRASE") do |pass|
-      options[:auth] ||= :basic_authentication
+      if !options.key?(:auth)
+        options[:auth] = :basic_authentication
+        options[:auth_method] = :basic_auth
+      end
       options[:password] = pass
     end# Pass phrase for the private key
     # opts.on("--path-as-is    Do not squash .. sequences in URL path
@@ -414,9 +438,12 @@ def parse_options(command, options)
       options[:urls] << url
     end #    URL to work with
     opts.on("-B", "--use-ascii") #     Use ASCII/text transfer
-    opts.on("-u", "--user <user:password>") do |user_pass|
-      options[:auth] ||= :basic_authentication
-      user, pass = user_pass.split(":")
+    opts.on("-u <user:password>", "--user <user:password>") do |user_pass|
+      if !options.key?(:auth)
+        options[:auth] = :basic_authentication
+        options[:auth_method] = :basic_auth
+      end
+      user, pass = user_pass.sub(/\A"(.*)"\z/, '\\1').split(":")
       options[:username] = user
       options[:password] = pass
     end # Server user and password
@@ -436,7 +463,6 @@ def to_ruby(urls, options)
   template = <<-HTTPX.slice(0..-2)
 require "httpx"
 
-http = HTTPX
   HTTPX
 
   # load extra deps
@@ -444,47 +470,58 @@ http = HTTPX
     template.prepend("require \"#{lib}\"\n")
   end
 
-  # load plugins
-  options[:plugins].each do |plugin|
-    template += ".plugin(#{plugin.inspect}"
-    options[:plugin_options][plugin].each do |key, value|
-      template += ", #{key}: #{value.inspect}"
-    end
-    template += ")"
-  end
-
-  # handle auth
-  if (auth = options[:auth])
-    template += ".plugin(#{auth.inspect})." \
-                "#{auth}(#{options[:username].inspect}, " \
-                "#{options[:password].inspect})"
-  end
 
   # handle general options
   with_options = options[:options].map do |k, v|
     next if %i[body form json].include?(k)
 
-    "#{k}: #{v.inspect}" unless v.respond_to?(:empty?) && v.empty?
+    "#{k.inspect} => #{v.inspect}" unless v.respond_to?(:empty?) && v.empty?
   end.compact
 
-  if not with_options.empty?
-    template += ".with(#{with_options.join(', ')})"
+  if (http_custom = !options[:plugins].empty? || options[:auth] || !with_options.empty?)
+    template += "\nhttp = HTTPX"
+  end
+
+  # load plugins
+  options[:plugins].each do |plugin|
+    template += ".plugin(:#{plugin}"
+    options[:plugin_options][plugin].each do |key, value|
+      template += ", #{key}: #{value.inspect}"
+    end
+    template += ")\n\t"
   end
 
 
+  # handle auth
+  if (auth = options[:auth])
+    template += ".plugin(:#{auth})\n\t" \
+                ".#{options.fetch(:auth_method, auth)}(#{options[:username].inspect}, " \
+                "#{options[:password].inspect})\n\t"
+  end
+
+  # handle general options
+  if !with_options.empty?
+    template += ".with(#{with_options.join(', ')})\n\t"
+  end
+
   # send request
-  template += "\nresponse = http"
+  template += "\nresponse = "
+  template += http_custom ? "http" : "HTTPX"
   template += ".#{options.fetch(:verb, :get)}("
-  template += (urls + options[:urls]).map(&:inspect).join(", ")
+  template += (urls + options[:urls]).map do |h|
+    h = h.sub(/\A"(.*)"\z/, '\\1')
+    (h.start_with?("http://") || h.start_with?("https://")) ?
+    h : "http://#{h}"
+  end.map(&:inspect).join(", ")
 
   # send body
   if options.key?(:body)
-    template += ", body: #{options[:body].inspect}"
+    template += ", body: #{options[:body]}"
   end
   if options.key?(:form)
     template += ", form: {"
     template += options[:form].map do |k, v|
-      "#{k}: #{v}"
+      "#{k.inspect} => #{v.inspect}"
     end.join(", ")
     template += "}"
   end
@@ -509,7 +546,7 @@ def to_httpx
     }
     begin
       options = {}
-      urls = parse_options(command.slice(5..-1).split(/ +/), options)
+      urls = parse_options(command.slice(5..-1).scan(/"[^"]+"|'[^']+'|\S+/), options)
       result = to_ruby(urls, options)
     rescue OptionParser::InvalidOption => error
       result = error.message
@@ -517,20 +554,46 @@ def to_httpx
       `output.classList.add("error")`
     end
 
-    `console.log(#{result})`
     %x{
-      output.value = #{result};
-      output.rows = #{result.lines.size};
+      output.innerHTML = #{result};
       output.style.display = "block";
     }
   end
 
   %x{
     var input = document.getElementById('curl-command-input');
+    input.addEventListener('input', on_txt_change, false);
     input.addEventListener('change', on_txt_change, false);
   }
 end
+
 to_httpx
+
+EXAMPLES = {
+  "simple" => "curl echoip.com",
+  "basicauth" => %Q{curl https://api.example.com/surprise -u banana:coconuts -d "sample data"},
+  "json" => %Q{curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer b7d03a6947b217efb6f3ec3bd3504582" -d '{"type":"A","name":"www","data":"162.10.66.0","priority":null,"port":null,"weight":null}' "https://api.digitalocean.com/v2/domains/example.com/records"},
+  "complexjson" => %Q{curl -u "demo:" -X POST -H "Content-Type: application/json" -d '{"array": [1,2,3], "object": {"foo": "bar", "nested": {"baz": true}}}' https://example.com/},
+  "formdata" => %Q{
+curl -X POST https://api.easypost.com/v2/shipments \
+    -u API_KEY: \
+    -d 'shipment[to_address][id]=adr_HrBKVA85' \
+    -d 'shipment[from_address][id]=adr_VtuTOj7o' \
+    -d 'shipment[parcel][id]=prcl_WDv2VzHp' \
+    -d 'shipment[is_return]=true' \
+    -d 'shipment[customs_info][id]=cstinfo_bl5sE20Y'}
+}
+
+setexample = lambda do |ex|
+  %x{
+    var input = document.getElementById('curl-command-input');
+    input.value = #{EXAMPLES[ex]};
+    var event = new Event("input");
+    input.dispatchEvent(event);
+  }
+end
+
+`window.setexample = setexample`
 
 # if $0 == __FILE__
 #   command = ARGV.first

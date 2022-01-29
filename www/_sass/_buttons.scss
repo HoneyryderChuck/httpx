@@ -1,3 +1,7 @@
+.buttons {
+  display: block;
+  text-align: center;
+}
 .btn {
   display: inline-block;
   padding: 0.75em 1.25em;
@@ -16,6 +20,12 @@
 
   svg {
     vertical-align: -1px;
+  }
+
+  &.btn-small {
+    background-color: green;
+    border-radius: 0.2em;
+    padding: 0 0.4em;
   }
 }
 

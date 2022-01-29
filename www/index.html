@@ -23,9 +23,17 @@ layout: default
     </div>
     <div class="code-preview">
       <p><span class="text">Convert curl commands into httpx</span></p>
+      <div class="buttons">
+        <button class="btn btn-small" onclick="javascript: setexample('simple')">Simple</button>
+        <button class="btn btn-small" onclick="javascript: setexample('basicauth')">Basic Auth</button>
+        <button class="btn btn-small" onclick="javascript: setexample('json')">JSON</button>
+        <button class="btn btn-small" onclick="javascript: setexample('complexjson')">Complex JSON</button>
+        <button class="btn btn-small" onclick="javascript: setexample('formdata')">Form Data</button>
+      </div>
+      <label for="curl-command-input">"insert curl command here..."</label>
       <div id="curl-command">
-        <input id="curl-command-input" type="text" placeholder="insert curl command here..."/>
-        <textarea id="curl-command-output" rows=0 style="display:none"></textarea>
+        <input id="curl-command-input" type="text" placeholder="curl http://..."/>
+        <pre id="curl-command-output" style="display:none"></pre>
       </div>
     </div>
     <a class="btn" href="{{ '/posts/index.html' | prepend: site.baseurl }}">
