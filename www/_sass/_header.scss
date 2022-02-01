@@ -54,13 +54,57 @@
 .code-preview {
   margin-bottom: 25px;
   font-size: 0.7em;
-  code {
+
+  code, #curl-command {
     border-radius: 10px;
-    padding: 10px;
+    padding: 0 10px;
     font-weight: bold;
     background-color: black;
     color: white;
+    text-align: justify;
   }
+
+  #curl-command:before {
+    content: ">";
+    color: white;
+  }
+
+  #curl-command input,
+  #curl-command textarea,
+  #curl-command pre {
+    background: transparent;
+    border: none;
+    font-size: 20px;
+  }
+
+  #curl-command input, #curl-command textarea {
+    padding: 10px;
+    width: 95%;
+  }
+
+  #curl-command pre {
+    width: 100%;
+    background-image: radial-gradient(
+      rgba(0, 70, 0, 0.75), black 120%
+    );
+    padding-top: 10px;
+    font-family: Inconsolata, monospace;
+    text-shadow: 0 0 5px #C8C8C8;
+    color: #87cefa;
+    &.error {
+      color: red;
+    }
+    &::selection {
+      background: #0080FF;
+      text-shadow: none;
+    }
+  }
+
+}
+
+.curl-widget {
+  margin-top: 10px;
+  text-align: justify;
 }
 
 @media screen and (min-width: 1000px) {

@@ -22,8 +22,10 @@ module SessionWithMockResponse
 
       @mock_responses_counter -= 1
 
-      response.status = Thread.current[:httpx_mock_response_status]
-      response.merge_headers(Thread.current[:httpx_mock_response_headers])
+      unless response.is_a?(HTTPX::ErrorResponse)
+        response.status = Thread.current[:httpx_mock_response_status]
+        response.merge_headers(Thread.current[:httpx_mock_response_headers])
+      end
       super(request, response)
     end
   end

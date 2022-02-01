@@ -81,6 +81,9 @@ module Faraday
 
           def response=(response)
             super
+
+            return if response.is_a?(::HTTPX::ErrorResponse)
+
             response.body.on_data = @response_on_data
           end
         end
@@ -210,6 +213,7 @@ module Faraday
         if parallel?(env)
           handler = env[:parallel_manager].enqueue(env)
           handler.on_response do |response|
+            response.raise_for_status
             save_response(env, response.status, response.body.to_s, response.headers, response.reason) do |response_headers|
               response_headers.merge!(response.headers)
             end
