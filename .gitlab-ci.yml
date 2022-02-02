@@ -111,6 +111,7 @@ jekyll:
     - bundle exec rake prepare_website
     - mv rdoc/ www
     - mv wiki/ www
+    - bundle exec opal -c www/scripts/curl_to_ruby.js.rb > www/scripts/curl_to_ruby.js
     - bundle exec jekyll build -s www -d public
   artifacts:
     paths:
