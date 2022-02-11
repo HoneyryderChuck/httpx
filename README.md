@@ -140,11 +140,15 @@ In order to use HTTP/2 under JRuby, [check this link](https://gitlab.com/honeyry
 * Doesn't work with ruby 2.4.0 for Windows (see [#36](https://gitlab.com/honeyryderchuck/httpx/issues/36)).
 * Using `total_timeout` along with the `:persistent` plugin [does not work as you might expect](https://gitlab.com/honeyryderchuck/httpx/-/wikis/Timeouts#total_timeout).
 
+## Versioning Policy
+
+Although 0.x software, `httpx` is considered API-stable and production-ready, i.e. current API or options may be subject to deprecation and emit log warnings, but can only effectively be removed in a major version change.
+
 ## Contributing
 
 * Discuss your contribution in an issue
 * Fork it
 * Make your changes, add some tests
-* Ensure all tests pass (`bundle exec rake test`)
+* Ensure all tests pass (`docker-compose -f docker-compose.yml -f docker-compose-ruby-{RUBY_VERSION}.yml run httpx bundle exec rake test`)
 * Open a Merge Request (that's Pull Request in Github-ish)
 * Wait for feedback
