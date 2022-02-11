@@ -30,7 +30,7 @@ module HTTPX
     end
 
     def timeout
-      @resolvers.map(&:timeout).min
+      @resolvers.filter_map(&:timeout).min
     end
 
     def close
