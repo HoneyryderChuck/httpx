@@ -54,8 +54,7 @@ group :test do
   end
 
   platform :jruby do
-    gem "concurrent-ruby"
-    gem "ffi-compiler"
+    gem "jruby-openssl"#, git: "https://github.com/jruby/jruby-openssl.git", branch: "master"
     gem "ruby-debug"
   end
 
