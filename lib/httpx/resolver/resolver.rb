@@ -49,7 +49,8 @@ module HTTPX
         address.is_a?(IPAddr) ? address : IPAddr.new(address.to_s)
       end
       log { "resolver: answer #{connection.origin.host}: #{addresses.inspect}" }
-      if !connection.io &&
+      if @pool && # if triggered by early resolve, pool may not be here yet
+         !connection.io &&
          connection.options.ip_families.size > 1 &&
          family == Socket::AF_INET &&
          addresses.first.to_s != connection.origin.host.to_s
