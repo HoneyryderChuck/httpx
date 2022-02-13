@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-GC.auto_compact = true if GC.respond_to?(:auto_compact=)
+GC.auto_compact = true if !defined?(MimeMagic) && GC.respond_to?(:auto_compact=) # https://github.com/mimemagicrb/mimemagic/issues/166
 
 if ENV.key?("CI")
   require "simplecov"
