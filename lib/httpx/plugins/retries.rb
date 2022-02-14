@@ -41,7 +41,7 @@ module HTTPX
         def option_retry_after(value)
           # return early if callable
           unless value.respond_to?(:call)
-            value = Integer(value)
+            value = Float(value)
             raise TypeError, ":retry_after must be positive" unless value.positive?
           end
 
