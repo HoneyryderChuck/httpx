@@ -74,6 +74,8 @@ module HTTPX
 
       addresses.select! { |addr| addr.family == @family }
 
+      return if addresses.empty?
+
       emit_addresses(connection, @family, addresses)
     end
 
