@@ -19,6 +19,7 @@ module WebMock
       class << self
         def build_webmock_request_signature(request)
           uri = WebMock::Util::URI.heuristic_parse(request.uri)
+          uri.query = request.query
           uri.path = uri.normalized_path.gsub("[^:]//", "/")
 
           WebMock::RequestSignature.new(

@@ -115,6 +115,25 @@ class WebmockTest < Minitest::Test
                      query: hash_including("a" => %w[b c]))
   end
 
+  def test_verification_that_requests_with_query_parameters_correctly_called
+    stub_request(:get, MOCK_URL_HTTP).to_return(body: "1")
+    stub_request(:get, "#{MOCK_URL_HTTP}/?a[]=b&a[]=c").to_return(body: "2")
+    stub_request(:get, "#{MOCK_URL_HTTP}/?test=value").to_return(body: "3")
+
+    response_1 = http_request(:get, MOCK_URL_HTTP)
+    response_2 = http_request(:get, MOCK_URL_HTTP, params: {"a" => %w[b c]})
+    response_3 = http_request(:get, MOCK_URL_HTTP, params: {test: "value"})
+
+
+    assert_equal "1", response_1.body.to_s
+    assert_equal "2", response_2.body.to_s
+    assert_equal "3", response_3.body.to_s
+
+    assert_requested(:get, MOCK_URL_HTTP)
+    assert_requested(:get, "#{MOCK_URL_HTTP}/?a[]=b&a[]=c")
+    assert_requested(:get, "#{MOCK_URL_HTTP}/?test=value")
+  end
+
   def test_verification_that_expected_request_not_occured_with_query_params
     stub_request(:any, MOCK_URL_HTTP).with(query: hash_including(a: %w[b c]))
     stub_request(:any, MOCK_URL_HTTP).with(query: hash_excluding(a: %w[b c]))
