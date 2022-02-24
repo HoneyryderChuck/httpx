@@ -121,9 +121,8 @@ class WebmockTest < Minitest::Test
     stub_request(:get, "#{MOCK_URL_HTTP}/?test=value").to_return(body: "3")
 
     response_1 = http_request(:get, MOCK_URL_HTTP)
-    response_2 = http_request(:get, MOCK_URL_HTTP, params: {"a" => %w[b c]})
-    response_3 = http_request(:get, MOCK_URL_HTTP, params: {test: "value"})
-
+    response_2 = http_request(:get, MOCK_URL_HTTP, params: { "a" => %w[b c] })
+    response_3 = http_request(:get, MOCK_URL_HTTP, params: { test: "value" })
 
     assert_equal "1", response_1.body.to_s
     assert_equal "2", response_2.body.to_s
