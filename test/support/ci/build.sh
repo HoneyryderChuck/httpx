@@ -67,7 +67,15 @@ until $(curl --silent --fail ${AMZ_HOST}/health | grep "\"s3\": \"available\"" >
 done
 echo ' Success: Reached S3'
 
-export SSL_CERT_FILE=/home/test/support/ci/certs/ca-bundle.crt
+CABUNDLEDIR=/home/test/support/ci/certs
+if [[ "$RUBY_PLATFORM" = "java" ]]; then
+
+  keytool -import -alias ca -file $CABUNDLEDIR/ca.crt \
+    -keystore $JAVA_HOME/lib/security/cacerts \
+    -storepass changeit -noprompt
+else
+  export SSL_CERT_FILE=$CABUNDLEDIR/ca-bundle.crt
+fi
 
 if [[ ${RUBY_VERSION:0:1} = "3" ]] && [[ ! $RUBYOPT =~ "jit" ]]; then
   echo "running runtime type checking..."
