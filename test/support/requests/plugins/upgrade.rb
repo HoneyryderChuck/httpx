@@ -29,7 +29,7 @@ module Requests
           assert response2.version == "2.0", "second request should already be in HTTP/2"
           response2.close
         end
-      end unless RUBY_ENGINE == "jruby" || RUBY_VERSION.start_with?("2.3")
+      end unless RUBY_VERSION.start_with?("2.3")
 
       def test_plugin_upgrade_websockets
         return unless origin.start_with?("http://")

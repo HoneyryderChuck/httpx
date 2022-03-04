@@ -12,11 +12,7 @@ IPTABLES=iptables-translate
 if [[ "$RUBY_ENGINE" = "truffleruby" ]]; then
   microdnf install -y iptables iproute which file idn2 git
 elif [[ "$RUBY_PLATFORM" = "java" ]]; then
-  echo "
-deb http://deb.debian.org/debian sid main contrib non-free
-deb-src http://deb.debian.org/debian sid main contrib non-free" >> /etc/apt/sources.list
-  apt-get update && apt-get install -y build-essential iptables iproute2 openssl libssl-dev ca-certificates file idn2 git
-  update-ca-certificates
+  apt-get update && apt-get install -y build-essential iptables iproute2 file idn2 git
 elif [[ ${RUBY_VERSION:0:3} = "2.1" ]]; then
   apt-get update && apt-get install -y libsodium-dev iptables iproute2 libmagic-dev shared-mime-info
   IPTABLES=iptables
