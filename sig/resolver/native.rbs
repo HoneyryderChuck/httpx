@@ -21,7 +21,7 @@ module HTTPX
 
       def call: () -> void
 
-      def interests: () -> io_interests
+      def interests: () -> (:r | :w | nil)
 
       def <<: (Connection) -> void
 
@@ -31,7 +31,7 @@ module HTTPX
 
       def initialize: (ip_family family, options options) -> void
 
-      def calculate_interests: () -> (:r | :w)
+      def calculate_interests: () -> (:r | :w | nil)
 
       def consume: () -> void
 
