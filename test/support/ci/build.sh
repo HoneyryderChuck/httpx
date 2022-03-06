@@ -10,7 +10,7 @@ RUBY_ENGINE=`ruby -e 'puts RUBY_ENGINE'`
 IPTABLES=iptables-translate
 
 if [[ "$RUBY_ENGINE" = "truffleruby" ]]; then
-  microdnf install -y iptables iproute which file idn2 git
+  dnf install -y iptables iproute which file idn2 git
 elif [[ "$RUBY_PLATFORM" = "java" ]]; then
   apt-get update && apt-get install -y build-essential iptables iproute2 file idn2 git
 elif [[ ${RUBY_VERSION:0:3} = "2.1" ]]; then
