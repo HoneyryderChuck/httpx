@@ -2,30 +2,28 @@
 
 module Requests
   module IO
-    unless defined?(HTTPX::TLS)
-      using HTTPX::URIExtensions
+    using HTTPX::URIExtensions
 
-      def test_http_io
-        io = origin_io
-        uri = build_uri("/get")
-        response = HTTPX.get(uri, io: io)
-        verify_status(response, 200)
-        verify_body_length(response)
-        assert !io.closed?, "io should have been left open"
-      ensure
-        io.close if io
-      end
+    def test_http_io
+      io = origin_io
+      uri = build_uri("/get")
+      response = HTTPX.get(uri, io: io)
+      verify_status(response, 200)
+      verify_body_length(response)
+      assert !io.closed?, "io should have been left open"
+    ensure
+      io.close if io
+    end
 
-      def test_http_io_hash
-        io = origin_io
-        uri = build_uri("/get")
-        response = HTTPX.get(uri, io: { URI(origin).authority => io })
-        verify_status(response, 200)
-        verify_body_length(response)
-        assert !io.closed?, "io should have been left open"
-      ensure
-        io.close if io
-      end
+    def test_http_io_hash
+      io = origin_io
+      uri = build_uri("/get")
+      response = HTTPX.get(uri, io: { URI(origin).authority => io })
+      verify_status(response, 200)
+      verify_body_length(response)
+      assert !io.closed?, "io should have been left open"
+    ensure
+      io.close if io
     end
   end
 
