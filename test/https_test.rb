@@ -26,7 +26,7 @@ class HTTPSTest < Minitest::Test
   include Plugins::Multipart
   include Plugins::Expect
   include Plugins::RateLimiter
-  include Plugins::Persistent unless RUBY_ENGINE == "jruby" || RUBY_VERSION < "2.3"
+  include Plugins::Persistent unless RUBY_VERSION < "2.3"
   include Plugins::Stream
   include Plugins::AWSAuthentication
   include Plugins::Upgrade
@@ -57,7 +57,7 @@ class HTTPSTest < Minitest::Test
     log_output = log.string
     # assert tls output
     assert log_output.include?("SSL connection using TLSv")
-    assert log_output.include?("ALPN, server accepted to use h2") unless RUBY_ENGINE == "jruby" || RUBY_VERSION < "2.3"
+    assert log_output.include?("ALPN, server accepted to use h2") unless RUBY_VERSION < "2.3"
     assert log_output.include?("Server certificate:")
     assert log_output.include?(" subject: ")
     assert log_output.include?(" start date: ")
@@ -65,7 +65,7 @@ class HTTPSTest < Minitest::Test
     assert log_output.include?(" issuer: ")
     assert log_output.include?(" SSL certificate verify ok")
 
-    return if RUBY_ENGINE == "jruby" || RUBY_VERSION < "2.3"
+    return if RUBY_VERSION < "2.3"
 
     # assert request headers
     assert log_output.include?("HEADER: :scheme: https")
@@ -79,7 +79,7 @@ class HTTPSTest < Minitest::Test
     assert log_output.include?("HEADER: content-length: ")
   end
 
-  unless RUBY_ENGINE == "jruby" || RUBY_VERSION < "2.3"
+  unless RUBY_VERSION < "2.3"
     # HTTP/2-specific tests
 
     def test_http2_max_streams
@@ -109,7 +109,7 @@ class HTTPSTest < Minitest::Test
         response = http.get(uri)
         verify_error_response(response, /settings_timeout/)
       end
-    end
+    end unless RUBY_ENGINE == "jruby"
 
     def test_http2_request_trailers
       uri = build_uri("/post")

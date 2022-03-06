@@ -1,9 +1,10 @@
 # frozen_string_literal: true
 
 require "socket"
+require "httpx/io/udp"
 require "httpx/io/tcp"
 require "httpx/io/unix"
-require "httpx/io/udp"
+require "httpx/io/ssl"
 
 module HTTPX
   module IO
@@ -11,20 +12,6 @@ module HTTPX
     register "udp", UDP
     register "unix", HTTPX::UNIX
     register "tcp", TCP
-
-    if RUBY_ENGINE == "jruby"
-      begin
-        require "httpx/io/tls"
-        register "ssl", TLS
-      rescue LoadError
-        # :nocov:
-        require "httpx/io/ssl"
-        register "ssl", SSL
-        # :nocov:
-      end
-    else
-      require "httpx/io/ssl"
-      register "ssl", SSL
-    end
+    register "ssl", SSL
   end
 end

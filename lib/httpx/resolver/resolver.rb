@@ -72,7 +72,7 @@ module HTTPX
 
       return unless addresses
 
-      addresses.select! { |addr| addr.family == @family }
+      addresses = addresses.select { |addr| addr.family == @family }
 
       return if addresses.empty?
 

@@ -172,7 +172,6 @@ module Requests
       end
 
       def test_plugin_ssh_proxy
-        skip if RUBY_ENGINE == "jruby"
         session = HTTPX.plugin(:"proxy/ssh").with_proxy(uri: ssh_proxy,
                                                         username: "root",
                                                         auth_methods: %w[publickey],
@@ -182,7 +181,7 @@ module Requests
         response = session.get(uri)
         verify_status(response, 200)
         verify_body_length(response)
-      end if ENV.key?("HTTPX_SSH_PROXY")
+      end if ENV.key?("HTTPX_SSH_PROXY") && RUBY_ENGINE != "jruby"
     end
   end
 end
