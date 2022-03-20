@@ -11,6 +11,15 @@ module HTTPX
     using URIExtensions
     using StringExtensions
 
+    module DNSExtensions
+      refine Resolv::DNS do
+        def generate_candidates(name)
+          @config.generate_candidates(name)
+        end
+      end
+    end
+    using DNSExtensions
+
     NAMESERVER = "https://1.1.1.1/dns-query"
 
     DEFAULTS = {
@@ -78,15 +87,20 @@ module HTTPX
         log { "resolver: resolve IDN #{connection.origin.non_ascii_hostname} as #{hostname}" } if connection.origin.non_ascii_hostname
       end
       log { "resolver: query #{FAMILY_TYPES[RECORD_TYPES[@family]]} for #{hostname}" }
+
+      hostname = @resolver.generate_candidates(hostname).each do |name|
+        @queries[name.to_s] = connection
+      end.first.to_s
+
       begin
         request = build_request(hostname)
         request.on(:response, &method(:on_response).curry(2)[request])
         request.on(:promise, &method(:on_promise))
         @requests[request] = connection
         resolver_connection.send(request)
-        @queries[hostname] = connection
         @connections << connection
       rescue ResolveError, Resolv::DNS::EncodeError, JSON::JSONError => e
+        @queries.delete(hostname)
         emit_resolve_error(connection, hostname, e)
       end
     end
@@ -120,9 +134,12 @@ module HTTPX
       end
       if answers.nil? || answers.empty?
         host, connection = @queries.first
+
         @queries.delete(host)
-        emit_resolve_error(connection, host)
-        return
+        unless @queries.value?(connection)
+          emit_resolve_error(connection, host)
+          return
+        end
       else
         answers = answers.group_by { |answer| answer["name"] }
         answers.each do |hostname, addresses|
@@ -152,6 +169,10 @@ module HTTPX
           next unless connection # probably a retried query for which there's an answer
 
           @connections.delete(connection)
+
+          # eliminate other candidates
+          @queries.delete_if { |_, conn| connection == conn }
+
           Resolver.cached_lookup_set(hostname, @family, addresses) if @resolver_options[:cache]
           emit_addresses(connection, @family, addresses.map { |addr| addr["data"] })
         end
