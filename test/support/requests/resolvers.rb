@@ -81,7 +81,9 @@ module Requests
         # this test mocks an unresponsive DNS server which doesn't return a DNS asnwer back.
         define_method :"test_resolver_#{resolver}_timeout" do
           session = HTTPX.plugin(SessionWithPool)
-          uri = build_uri("/get")
+          uri = URI(build_uri("/get"))
+          # absolute URL, just to shorten the impact of resolv.conf search.
+          uri.host = "#{uri.host}."
 
           resolver_class = Class.new(HTTPX::Resolver::Native) do
             def interests

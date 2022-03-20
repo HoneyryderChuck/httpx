@@ -85,12 +85,14 @@ module HTTPX
       if hostname.nil?
         hostname = connection.origin.host
         log { "resolver: resolve IDN #{connection.origin.non_ascii_hostname} as #{hostname}" } if connection.origin.non_ascii_hostname
+
+        hostname = @resolver.generate_candidates(hostname).each do |name|
+          @queries[name.to_s] = connection
+        end.first.to_s
+      else
+        @queries[hostname] = connection
       end
       log { "resolver: query #{FAMILY_TYPES[RECORD_TYPES[@family]]} for #{hostname}" }
-
-      hostname = @resolver.generate_candidates(hostname).each do |name|
-        @queries[name.to_s] = connection
-      end.first.to_s
 
       begin
         request = build_request(hostname)
@@ -133,9 +135,8 @@ module HTTPX
         return
       end
       if answers.nil? || answers.empty?
-        host, connection = @queries.first
+        host, connection = @queries.shift
 
-        @queries.delete(host)
         unless @queries.value?(connection)
           emit_resolve_error(connection, host)
           return
@@ -147,7 +148,6 @@ module HTTPX
             if address.key?("alias")
               alias_address = answers[address["alias"]]
               if alias_address.nil?
-                connection = @queries[hostname]
                 @queries.delete(address["name"])
                 if catch(:coalesced) { early_resolve(connection, hostname: address["alias"]) }
                   @connections.delete(connection)
