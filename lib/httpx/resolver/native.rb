@@ -46,6 +46,8 @@ module HTTPX
       @ns_index = 0
       @resolver_options = DEFAULTS.merge(@options.resolver_options)
       @nameserver = @resolver_options[:nameserver]
+      @ndots = @resolver_options[:ndots]
+      @search = Array(@resolver_options[:search]).map { |srch| srch.scan(/[^.]+/) }
       @_timeouts = Array(@resolver_options[:timeouts])
       @timeouts = Hash.new { |timeouts, host| timeouts[host] = @_timeouts.dup }
       @connections = []
@@ -203,9 +205,11 @@ module HTTPX
         hostname, connection = @queries.first
         @queries.delete(hostname)
         @timeouts.delete(hostname)
-        @connections.delete(connection)
 
-        raise NativeResolveError.new(connection, hostname)
+        unless @queries.value?(connection)
+          @connections.delete(connection)
+          raise NativeResolveError.new(connection, hostname)
+        end
       else
         address = addresses.first
         name = address["name"]
@@ -223,6 +227,9 @@ module HTTPX
           address["name"] = name
           connection = @queries.delete(name)
         end
+
+        # eliminate other candidates
+        @queries.delete_if { |_, conn| connection == conn }
 
         if address.key?("alias") # CNAME
           # clean up intermediate queries
@@ -257,13 +264,27 @@ module HTTPX
         hostname = connection.origin.host
         log { "resolver: resolve IDN #{connection.origin.non_ascii_hostname} as #{hostname}" } if connection.origin.non_ascii_hostname
       end
-      @queries[hostname] = connection
+      hostname = generate_candidates(hostname).each do |name|
+        @queries[name] = connection
+      end.first
       log { "resolver: query #{@record_type.name.split("::").last} for #{hostname}" }
       begin
         @write_buffer << Resolver.encode_dns_query(hostname, type: @record_type)
       rescue Resolv::DNS::EncodeError => e
         emit_resolve_error(connection, hostname, e)
       end
+    end
+
+    def generate_candidates(name)
+      return [name] if name.end_with?(".")
+
+      candidates = []
+      name_parts = name.scan(/[^.]+/)
+      candidates = [name] if @ndots <= name_parts.size - 1
+      candidates.concat(@search.map { |domain| [*name_parts, *domain].join(".") })
+      candidates << name unless candidates.include?(name)
+
+      candidates
     end
 
     def build_socket
