@@ -7,8 +7,13 @@ class ResponseTest < Minitest::Test
   include ResponseHelpers
 
   if RUBY_VERSION >= "3.0.0"
-    require_relative "extensions/response_pattern_match"
-    include ResponsePatternMatchTests
+    begin
+      eval("case 1; in 1 ;then true; end") # rubocop:disable Style/EvalWithLocation
+      require_relative "extensions/response_pattern_match"
+      include ResponsePatternMatchTests
+    rescue SyntaxError
+      # truffleruby advertises ruby 3 support, but still hasn't implemented pattern matching
+    end
   end
 
   def test_response_status
