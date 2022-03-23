@@ -82,6 +82,8 @@ module HTTPX
 
       _, connection = @queries.first
 
+      return unless connection
+
       @timeouts[connection.origin.host].first
     end
 
