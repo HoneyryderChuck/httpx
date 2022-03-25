@@ -42,6 +42,8 @@ module HTTPX
     def same_headers?(headers)
       @headers.empty? || begin
         headers.each do |k, v|
+          next unless key?(k)
+
           return false unless v == self[k]
         end
         true
