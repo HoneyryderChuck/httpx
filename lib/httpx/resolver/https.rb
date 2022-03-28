@@ -98,24 +98,24 @@ module HTTPX
         request = build_request(hostname)
         request.on(:response, &method(:on_response).curry(2)[request])
         request.on(:promise, &method(:on_promise))
-        @requests[request] = connection
+        @requests[request] = hostname
         resolver_connection.send(request)
         @connections << connection
       rescue ResolveError, Resolv::DNS::EncodeError, JSON::JSONError => e
         @queries.delete(hostname)
-        emit_resolve_error(connection, hostname, e)
+        emit_resolve_error(connection, connection.origin.host, e)
       end
     end
 
     def on_response(request, response)
       response.raise_for_status
     rescue StandardError => e
-      connection = @requests[request]
-      hostname = @queries.key(connection)
-      emit_resolve_error(connection, hostname, e)
+      hostname = @requests.delete(request)
+      connection = @queries.delete(hostname)
+      emit_resolve_error(connection, connection.origin.host, e)
     else
       # @type var response: HTTPX::Response
-      parse(response)
+      parse(request, response)
     ensure
       @requests.delete(request)
     end
@@ -125,22 +125,21 @@ module HTTPX
       stream.refuse
     end
 
-    def parse(response)
+    def parse(request, response)
       begin
         answers = decode_response_body(response)
       rescue Resolv::DNS::DecodeError, JSON::JSONError => e
         host, connection = @queries.first
         @queries.delete(host)
-        emit_resolve_error(connection, host, e)
+        emit_resolve_error(connection, connection.origin.host, e)
         return
       end
       if answers.nil? || answers.empty?
-        host, connection = @queries.shift
+        host = @requests.delete(request)
+        connection = @queries.delete(host)
+        emit_resolve_error(connection)
+        return
 
-        unless @queries.value?(connection)
-          emit_resolve_error(connection, host)
-          return
-        end
       else
         answers = answers.group_by { |answer| answer["name"] }
         answers.each do |hostname, addresses|
