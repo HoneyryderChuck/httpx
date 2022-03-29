@@ -17,9 +17,7 @@ module Requests
         # run this only for http/1.1 mode, as this is a local test server
         return unless origin.start_with?("http://")
 
-        server = Expect100Server.new
-        th = Thread.new { server.start }
-        begin
+        start_test_servlet(Expect100Server) do |server|
           http = HTTPX.plugin(:expect)
           uri = build_uri("/delay?delay=4", server.origin)
           response = http.post(uri, body: "helloworld")
@@ -30,9 +28,6 @@ module Requests
 
           next_request = http.build_request(:post, build_uri("/", server.origin), body: "helloworld")
           verify_header(next_request.headers, "expect", "100-continue")
-        ensure
-          server.shutdown
-          th.join
         end
       end
 
@@ -54,9 +49,7 @@ module Requests
         # run this only for http/1.1 mode, as this is a local test server
         return unless origin.start_with?("http://")
 
-        server = Expect100Server.new
-        th = Thread.new { server.start }
-        begin
+        start_test_servlet(Expect100Server) do |server|
           http = HTTPX.plugin(:expect)
           uri = build_uri("/no-expect", server.origin)
           response = http.post(uri, body: "helloworld")
@@ -67,9 +60,6 @@ module Requests
 
           next_request = http.build_request(:post, build_uri("/", server.origin), body: "helloworld")
           verify_no_header(next_request.headers, "expect")
-        ensure
-          server.shutdown
-          th.join
         end
       end
 

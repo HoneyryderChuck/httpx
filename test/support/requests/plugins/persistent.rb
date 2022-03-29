@@ -40,23 +40,18 @@ module Requests
       def test_persistent_retry_http2_goaway
         return unless origin.start_with?("https")
 
-        server = KeepAlivePongServer.new
-        th = Thread.new { server.accept }
-        http = HTTPX.plugin(SessionWithPool)
-                    .plugin(RequestInspector)
-                    .plugin(:persistent) # implicit max_retries == 1
-                    .with(ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE })
-        begin
+        start_test_servlet(KeepAlivePongServer) do |server|
+          http = HTTPX.plugin(SessionWithPool)
+                      .plugin(RequestInspector)
+                      .plugin(:persistent) # implicit max_retries == 1
+                      .with(ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE })
           uri = "#{server.origin}/"
           response = http.get(uri)
           verify_status(response, 200)
           response = http.get(uri)
           verify_status(response, 200)
           assert http.calls == 2, "expect request to be built 2 times (was #{http.calls})"
-        ensure
           http.close
-          server.shutdown
-          th.join
         end
       end
     end

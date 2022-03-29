@@ -72,9 +72,7 @@ class HTTPTest < Minitest::Test
   end
 
   def test_max_streams
-    server = KeepAliveServer.new
-    th = Thread.new { server.start }
-    begin
+    start_test_servlet(KeepAliveServer) do |server|
       uri = "#{server.origin}/2"
       HTTPX.plugin(SessionWithPool).with(max_concurrent_requests: 1).wrap do |http|
         responses = http.get(uri, uri, uri)
@@ -82,16 +80,11 @@ class HTTPTest < Minitest::Test
         connection_count = http.pool.connection_count
         assert connection_count == 2, "expected to have 2 connections, instead have #{connection_count}"
       end
-    ensure
-      server.shutdown
-      th.join
     end
   end
 
   def test_trailers
-    server = HTTPTrailersServer.new
-    th = Thread.new { server.start }
-    begin
+    start_test_servlet(HTTPTrailersServer) do |server|
       uri = "#{server.origin}/"
       HTTPX.plugin(SessionWithPool).wrap do |http|
         response = http.get(uri)
@@ -100,9 +93,6 @@ class HTTPTest < Minitest::Test
         verify_header(response.headers, "x-trailer", "hello")
         verify_header(response.headers, "x-trailer-2", "world")
       end
-    ensure
-      server.shutdown
-      th.join
     end
   end
 

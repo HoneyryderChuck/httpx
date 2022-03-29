@@ -38,7 +38,7 @@ module ResponseHelpers
     delta += if RUBY_ENGINE == "truffleruby"
       # truffleruby has a hard time complying reliably with this delta when running in parallel. Therefore,
       # we give it a bit of leeway.
-      10
+      20
     else
       # delta checks become very innacurate under multi-thread mode, and elapsed time. we give it some leeway too.
       3
@@ -97,5 +97,21 @@ module ResponseHelpers
 
   def fixture_file_path
     File.join("test", "support", "fixtures", fixture_file_name)
+  end
+
+  def start_test_servlet(servlet_class)
+    server = servlet_class.new
+    th = Thread.new { server.start }
+    begin
+      yield server
+    ensure
+      server.shutdown
+
+      begin
+        Timeout.timeout(3) { th.join }
+      rescue Timeout::Error
+        th.kill
+      end
+    end
   end
 end

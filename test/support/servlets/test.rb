@@ -54,7 +54,7 @@ class TestHTTP2Server
     @server.close
   end
 
-  def accept
+  def start
     begin
       loop do
         sock = @server.accept
