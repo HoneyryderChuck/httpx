@@ -49,9 +49,7 @@ module Requests
       def test_plugin_ntlm_authentication
         return if origin.start_with?("https")
 
-        server = NTLMServer.new
-        th = Thread.new { server.start }
-        begin
+        start_test_servlet(NTLMServer) do |server|
           uri = "#{server.origin}/"
           HTTPX.plugin(SessionWithPool).plugin(:ntlm_authentication).wrap do |http|
             # skip unless NTLM
@@ -65,9 +63,6 @@ module Requests
             # invalid_response = http.ntlm_authentication("user", "fake").get(uri)
             # verify_status(invalid_response, 401)
           end
-        ensure
-          server.shutdown
-          th.join
         end
       end
 

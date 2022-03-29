@@ -78,12 +78,6 @@ module HTTPX
         end
 
         module ConnectionMethods
-          def match?(uri, options)
-            return super unless @options.proxy
-
-            super && @options.proxy == options.proxy
-          end
-
           # should not coalesce connections here, as the IP is the IP of the proxy
           def coalescable?(*)
             return super unless @options.proxy

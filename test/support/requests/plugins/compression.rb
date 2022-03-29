@@ -90,18 +90,13 @@ module Requests
         # run this only for http/1.1 mode, as this is a local test server
         return unless origin.start_with?("http://")
 
-        server = NoContentLengthServer.new
-        th = Thread.new { server.start }
-        begin
+        start_test_servlet(NoContentLengthServer) do |server|
           http = HTTPX.plugin(:compression)
           uri = build_uri("/", server.origin)
           response = http.get(uri)
           verify_status(response, 200)
           body = response.body.to_s
           assert body == "helloworld"
-        ensure
-          server.shutdown
-          th.join
         end
       end
 

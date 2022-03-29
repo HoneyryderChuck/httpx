@@ -11,6 +11,15 @@ module HTTPX
     using URIExtensions
     using StringExtensions
 
+    module DNSExtensions
+      refine Resolv::DNS do
+        def generate_candidates(name)
+          @config.generate_candidates(name)
+        end
+      end
+    end
+    using DNSExtensions
+
     NAMESERVER = "https://1.1.1.1/dns-query"
 
     DEFAULTS = {
@@ -76,30 +85,37 @@ module HTTPX
       if hostname.nil?
         hostname = connection.origin.host
         log { "resolver: resolve IDN #{connection.origin.non_ascii_hostname} as #{hostname}" } if connection.origin.non_ascii_hostname
+
+        hostname = @resolver.generate_candidates(hostname).each do |name|
+          @queries[name.to_s] = connection
+        end.first.to_s
+      else
+        @queries[hostname] = connection
       end
       log { "resolver: query #{FAMILY_TYPES[RECORD_TYPES[@family]]} for #{hostname}" }
+
       begin
         request = build_request(hostname)
         request.on(:response, &method(:on_response).curry(2)[request])
         request.on(:promise, &method(:on_promise))
-        @requests[request] = connection
+        @requests[request] = hostname
         resolver_connection.send(request)
-        @queries[hostname] = connection
         @connections << connection
       rescue ResolveError, Resolv::DNS::EncodeError, JSON::JSONError => e
-        emit_resolve_error(connection, hostname, e)
+        @queries.delete(hostname)
+        emit_resolve_error(connection, connection.origin.host, e)
       end
     end
 
     def on_response(request, response)
       response.raise_for_status
     rescue StandardError => e
-      connection = @requests[request]
-      hostname = @queries.key(connection)
-      emit_resolve_error(connection, hostname, e)
+      hostname = @requests.delete(request)
+      connection = @queries.delete(hostname)
+      emit_resolve_error(connection, connection.origin.host, e)
     else
       # @type var response: HTTPX::Response
-      parse(response)
+      parse(request, response)
     ensure
       @requests.delete(request)
     end
@@ -109,20 +125,21 @@ module HTTPX
       stream.refuse
     end
 
-    def parse(response)
+    def parse(request, response)
       begin
         answers = decode_response_body(response)
       rescue Resolv::DNS::DecodeError, JSON::JSONError => e
         host, connection = @queries.first
         @queries.delete(host)
-        emit_resolve_error(connection, host, e)
+        emit_resolve_error(connection, connection.origin.host, e)
         return
       end
       if answers.nil? || answers.empty?
-        host, connection = @queries.first
-        @queries.delete(host)
-        emit_resolve_error(connection, host)
+        host = @requests.delete(request)
+        connection = @queries.delete(host)
+        emit_resolve_error(connection)
         return
+
       else
         answers = answers.group_by { |answer| answer["name"] }
         answers.each do |hostname, addresses|
@@ -130,7 +147,6 @@ module HTTPX
             if address.key?("alias")
               alias_address = answers[address["alias"]]
               if alias_address.nil?
-                connection = @queries[hostname]
                 @queries.delete(address["name"])
                 if catch(:coalesced) { early_resolve(connection, hostname: address["alias"]) }
                   @connections.delete(connection)
@@ -152,6 +168,10 @@ module HTTPX
           next unless connection # probably a retried query for which there's an answer
 
           @connections.delete(connection)
+
+          # eliminate other candidates
+          @queries.delete_if { |_, conn| connection == conn }
+
           Resolver.cached_lookup_set(hostname, @family, addresses) if @resolver_options[:cache]
           emit_addresses(connection, @family, addresses.map { |addr| addr["data"] })
         end

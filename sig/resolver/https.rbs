@@ -8,7 +8,7 @@ module HTTPX
 
       @family: ip_family
       @options: Options
-      @requests: Hash[Request, Connection]
+      @requests: Hash[Request, String]
       @connections: Array[Connection]
       @uri: URI::Generic
       @uri_addresses: Array[String]?
@@ -29,7 +29,7 @@ module HTTPX
 
       def on_response: (Request, response) -> void
 
-      def parse: (Response response) -> void
+      def parse: (Request request, Response response) -> void
 
       def build_request: (String hostname) -> Request
 

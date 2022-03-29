@@ -209,8 +209,9 @@ module HTTPX
       ivars.all? do |ivar|
         case ivar
         when :@headers
-          headers = instance_variable_get(ivar)
-          headers.same_headers?(other.instance_variable_get(ivar))
+          # currently, this is used to pick up an available matching connection.
+          # the headers do not play a role, as they are relevant only for the request.
+          true
         when *REQUEST_IVARS
           true
         else

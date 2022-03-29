@@ -174,12 +174,6 @@ module HTTPX
           @origin.port = proxy_uri.port
         end
 
-        def match?(uri, options)
-          return super unless @options.proxy
-
-          super && @options.proxy == options.proxy
-        end
-
         def coalescable?(connection)
           return super unless @options.proxy
 
