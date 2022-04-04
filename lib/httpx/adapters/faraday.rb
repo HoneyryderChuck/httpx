@@ -99,33 +99,31 @@ module Faraday
         end
       end
 
-      class Session < ::HTTPX::Session
-        plugin(:compression)
-        plugin(:persistent)
-
-        module ReasonPlugin
+      module ReasonPlugin
+        if RUBY_VERSION < "2.5"
+          def self.load_dependencies(*)
+            require "webrick"
+          end
+        else
+          def self.load_dependencies(*)
+            require "net/http/status"
+          end
+        end
+        module ResponseMethods
           if RUBY_VERSION < "2.5"
-            def self.load_dependencies(*)
-              require "webrick"
+            def reason
+              WEBrick::HTTPStatus::StatusMessage.fetch(@status)
             end
           else
-            def self.load_dependencies(*)
-              require "net/http/status"
-            end
-          end
-          module ResponseMethods
-            if RUBY_VERSION < "2.5"
-              def reason
-                WEBrick::HTTPStatus::StatusMessage.fetch(@status)
-              end
-            else
-              def reason
-                Net::HTTP::STATUS_CODES.fetch(@status)
-              end
+            def reason
+              Net::HTTP::STATUS_CODES.fetch(@status)
             end
           end
         end
-        plugin(ReasonPlugin)
+      end
+
+      def self.session
+        @session ||= ::HTTPX.plugin(:compression).plugin(:persistent).plugin(ReasonPlugin)
       end
 
       class ParallelManager
@@ -161,7 +159,6 @@ module Faraday
         include RequestMixin
 
         def initialize
-          @session = Session.new
           @handlers = []
         end
 
@@ -174,7 +171,7 @@ module Faraday
         def run
           env = @handlers.last.env
 
-          session = @session.with(options_from_env(env))
+          session = HTTPX.session.with(options_from_env(env))
           session = session.plugin(:proxy).with(proxy: { uri: env.request.proxy }) if env.request.proxy
           session = session.plugin(OnDataPlugin) if env.request.stream_response?
 
@@ -205,7 +202,7 @@ module Faraday
 
       def initialize(app, options = {})
         super(app)
-        @session = Session.new(options)
+        @session_options = options
       end
 
       def call(env)
@@ -221,7 +218,9 @@ module Faraday
           return handler
         end
 
-        session = @session.with(options_from_env(env))
+        session = HTTPX.session
+        session = session.with(@session_options) unless @session_options.empty?
+        session = session.with(options_from_env(env))
         session = session.plugin(:proxy).with(proxy: { uri: env.request.proxy }) if env.request.proxy
         session = session.plugin(OnDataPlugin) if env.request.stream_response?
 
