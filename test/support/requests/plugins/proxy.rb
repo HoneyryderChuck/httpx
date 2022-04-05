@@ -66,6 +66,26 @@ module Requests
         verify_body_length(response)
       end
 
+      def test_plugin_http_proxy_auth_options
+        auth_proxy = URI(http_proxy.first)
+        return unless auth_proxy.user
+
+        user = auth_proxy.user
+        pass = auth_proxy.password
+        auth_proxy.user = nil
+        auth_proxy.password = nil
+
+        session = HTTPX.plugin(:proxy).with_proxy(
+          uri: auth_proxy.to_s,
+          username: user,
+          password: pass
+        )
+        uri = build_uri("/get")
+        response = session.get(uri)
+        verify_status(response, 200)
+        verify_body_length(response)
+      end
+
       def test_plugin_http_proxy_auth_error
         no_auth_proxy = URI(http_proxy.first)
         return unless no_auth_proxy.user
