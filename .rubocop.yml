@@ -93,6 +93,9 @@ Style/RedundantBegin:
   Enabled: false
 
 Style/HashConversion:
+  Enabled: false
+
+Style/FetchEnvVar:
   Enabled: False
 
 Performance/TimesMap:

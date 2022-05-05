@@ -12,7 +12,6 @@ else
 end
 
 group :test do
-  gem "ddtrace"
   gem "http-form_data", ">= 2.0.0"
   gem "minitest"
   gem "minitest-proveit"
@@ -22,6 +21,12 @@ group :test do
   gem "websocket-driver"
 
   gem "net-ssh", "~> 4.2.0" if RUBY_VERSION < "2.2"
+
+  if RUBY_VERSION >= "2.3"
+    gem "ddtrace"
+  else
+    gem "ddtrace", "< 1.0"
+  end
 
   platform :mri do
     if RUBY_VERSION >= "2.3"
@@ -54,7 +59,7 @@ group :test do
   end
 
   platform :jruby do
-    gem "jruby-openssl"#, git: "https://github.com/jruby/jruby-openssl.git", branch: "master"
+    gem "jruby-openssl" # , git: "https://github.com/jruby/jruby-openssl.git", branch: "master"
     gem "ruby-debug"
   end
 
