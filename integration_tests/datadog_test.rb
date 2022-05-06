@@ -8,18 +8,6 @@ require "httpx/adapters/datadog"
 class DatadogTest < Minitest::Test
   include HTTPHelpers
 
-  def test_datadog_disabled
-    set_datadog
-    tracer.configure(enabled: false)
-    uri = URI(build_uri("/status/200", "http://#{httpbin}"))
-
-    response = HTTPX.get(uri)
-    verify_status(response, 200)
-
-    assert fetch_spans.empty?, "expected not to have spans"
-    verify_no_distributed_headers(response)
-  end
-
   def test_datadog_successful_get_request
     set_datadog
     uri = URI(build_uri("/status/200", "http://#{httpbin}"))
@@ -132,9 +120,7 @@ class DatadogTest < Minitest::Test
     uri = URI(build_uri("/status/200", "http://#{httpbin}"))
 
     sampling_priority = 10
-    tracer.configure(enabled: true)
-    response = tracer.trace("foo.bar") do |span|
-      span.context.sampling_priority = sampling_priority
+    response = trace_with_sampling_priority(sampling_priority) do
       HTTPX.get(uri)
     end
     verify_status(response, 200)
@@ -151,11 +137,10 @@ class DatadogTest < Minitest::Test
     uri = URI(build_uri("/status/200", "http://#{httpbin}"))
 
     sampling_priority = 10
-    tracer.configure(enabled: true)
-    response = tracer.trace("foo.bar") do |span|
-      span.context.sampling_priority = sampling_priority
+    response = trace_with_sampling_priority(sampling_priority) do
       HTTPX.get(uri)
     end
+
     verify_status(response, 200)
 
     assert !fetch_spans.empty?, "expected to have spans"
@@ -193,38 +178,37 @@ class DatadogTest < Minitest::Test
 
   private
 
-  def set_datadog(options = {}, &blk)
+  def setup
+    super
     Datadog.registry[:httpx].reset_configuration!
+  end
 
-    Datadog.configure do |c|
-      c.use(:httpx, options, &blk)
-    end
-
-    tracer # initialize tracer patches
+  def teardown
+    super
+    Datadog.registry[:httpx].reset_configuration!
   end
 
   def verify_instrumented_request(response, verb:, uri:, span: fetch_spans.first, service: "httpx", error: nil)
-    assert span.is_a?(Datadog::Span)
     assert span.span_type == "http"
     assert span.name == "httpx.request"
     assert span.service == service
 
-    assert span.get_tag(Datadog::Ext::NET::TARGET_HOST) == uri.host
-    assert span.get_tag(Datadog::Ext::NET::TARGET_PORT) == "80"
-    assert span.get_tag(Datadog::Ext::HTTP::METHOD) == verb
-    assert span.get_tag(Datadog::Ext::HTTP::URL) == uri.path
+    assert span.get_tag("out.host") == uri.host
+    assert span.get_tag("out.port") == "80"
+    assert span.get_tag("http.method") == verb
+    assert span.get_tag("http.url") == uri.path
     if error
       assert span.get_tag("error.type") == error
       assert !span.get_tag("error.msg").nil?
       assert span.status == 1
     elsif response.status >= 400
-      assert span.get_tag(Datadog::Ext::HTTP::STATUS_CODE) == response.status.to_s
+      assert span.get_tag("http.status_code") == response.status.to_s
       assert span.get_tag("error.type") == "HTTPX::HTTPError"
       assert !span.get_tag("error.msg").nil?
       assert span.status == 1
     else
       assert span.status.zero?
-      assert span.get_tag(Datadog::Ext::HTTP::STATUS_CODE) == response.status.to_s
+      assert span.get_tag("http.status_code") == response.status.to_s
       # peer service
       assert span.get_tag("peer.service") == span.service
     end
@@ -233,31 +217,76 @@ class DatadogTest < Minitest::Test
   def verify_no_distributed_headers(response)
     request = response.instance_variable_get(:@request)
 
-    assert !request.headers.key?(Datadog::Ext::DistributedTracing::HTTP_HEADER_PARENT_ID)
-    assert !request.headers.key?(Datadog::Ext::DistributedTracing::HTTP_HEADER_TRACE_ID)
-    assert !request.headers.key?(Datadog::Ext::DistributedTracing::HTTP_HEADER_SAMPLING_PRIORITY)
+    assert !request.headers.key?("x-datadog-parent-id")
+    assert !request.headers.key?("x-datadog-trace-id")
+    assert !request.headers.key?("x-datadog-sampling-priority")
   end
 
   def verify_distributed_headers(response, span: fetch_spans.first, sampling_priority: 1)
     request = response.instance_variable_get(:@request)
 
-    assert request.headers[Datadog::Ext::DistributedTracing::HTTP_HEADER_PARENT_ID] == span.span_id.to_s
-    assert request.headers[Datadog::Ext::DistributedTracing::HTTP_HEADER_TRACE_ID] == span.trace_id.to_s
-    assert request.headers[Datadog::Ext::DistributedTracing::HTTP_HEADER_SAMPLING_PRIORITY] == sampling_priority.to_s
+    assert request.headers["x-datadog-parent-id"] == span.span_id.to_s
+    assert request.headers["x-datadog-trace-id"] == span.trace_id.to_s
+    assert request.headers["x-datadog-sampling-priority"] == sampling_priority.to_s
   end
 
   def verify_analytics_headers(span, sample_rate: nil)
-    assert span.get_metric(Datadog::Ext::Analytics::TAG_SAMPLE_RATE) == sample_rate
+    assert span.get_metric("_dd1.sr.eausr") == sample_rate
   end
 
-  def tracer
-    @tracer ||= begin
-      tr = Datadog.tracer
-      def tr.write(trace)
-        @spans ||= []
-        @spans << trace
+  if defined?(::DDTrace) && ::DDTrace::VERSION::STRING >= "1.0.0"
+
+    def set_datadog(options = {}, &blk)
+      Datadog.configure do |c|
+        c.tracing.instrument(:httpx, options, &blk)
       end
-      tr
+
+      tracer # initialize tracer patches
+    end
+
+    def tracer
+      @tracer ||= begin
+        tr =  Datadog::Tracing.send(:tracer)
+        def tr.write(trace)
+          @traces ||= []
+          @traces << trace
+        end
+        tr
+      end
+    end
+
+    def trace_with_sampling_priority(priority)
+      tracer.trace("foo.bar") do
+        tracer.active_trace.sampling_priority = priority
+        yield
+      end
+    end
+  else
+
+    def set_datadog(options = {}, &blk)
+      Datadog.configure do |c|
+        c.use(:httpx, options, &blk)
+      end
+
+      tracer # initialize tracer patches
+    end
+
+    def tracer
+      @tracer ||= begin
+        tr = Datadog.tracer
+        def tr.write(trace)
+          @spans ||= []
+          @spans << trace
+        end
+        tr
+      end
+    end
+
+    def trace_with_sampling_priority(priority)
+      tracer.trace("foo.bar") do |span|
+        span.context.sampling_priority = priority
+        yield
+      end
     end
   end
 
@@ -269,7 +298,11 @@ class DatadogTest < Minitest::Test
   # Retrieves and sorts all spans in the current tracer instance.
   # This method does not cache its results.
   def fetch_spans
-    spans = tracer.instance_variable_get(:@spans) || []
+    spans = if defined?(::DDTrace) && ::DDTrace::VERSION::STRING >= "1.0.0"
+      (tracer.instance_variable_get(:@traces) || []).map(&:spans)
+    else
+      tracer.instance_variable_get(:@spans) || []
+    end
     spans.flatten.sort! do |a, b|
       if a.name == b.name
         if a.resource == b.resource
