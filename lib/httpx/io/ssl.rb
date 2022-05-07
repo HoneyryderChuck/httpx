@@ -4,8 +4,11 @@ require "openssl"
 
 module HTTPX
   TLSError = OpenSSL::SSL::SSLError
+  IPRegex = Regexp.union(Resolv::IPv4::Regex, Resolv::IPv6::Regex)
 
   class SSL < TCP
+    using RegexpExtensions unless Regexp.method_defined?(:match?)
+
     TLS_OPTIONS = if OpenSSL::SSL::SSLContext.instance_methods.include?(:alpn_protocols)
       { alpn_protocols: %w[h2 http/1.1].freeze }.freeze
     else
@@ -19,6 +22,8 @@ module HTTPX
       @sni_hostname = ctx_options.delete(:hostname) || @hostname
       @ctx.set_params(ctx_options) unless ctx_options.empty?
       @state = :negotiated if @keep_open
+
+      @hostname_is_ip = IPRegex.match?(@sni_hostname)
     end
 
     def protocol
@@ -56,7 +61,7 @@ module HTTPX
 
       unless @io.is_a?(OpenSSL::SSL::SSLSocket)
         @io = OpenSSL::SSL::SSLSocket.new(@io, @ctx)
-        @io.hostname = @sni_hostname
+        @io.hostname = @sni_hostname unless @hostname_is_ip
         @io.sync_close = true
       end
       try_ssl_connect
@@ -66,7 +71,7 @@ module HTTPX
       # :nocov:
       def try_ssl_connect
         @io.connect_nonblock
-        @io.post_connection_check(@sni_hostname) if @ctx.verify_mode != OpenSSL::SSL::VERIFY_NONE
+        @io.post_connection_check(@sni_hostname) if @ctx.verify_mode != OpenSSL::SSL::VERIFY_NONE && !@hostname_is_ip
         transition(:negotiated)
         @interests = :w
       rescue ::IO::WaitReadable
@@ -98,7 +103,7 @@ module HTTPX
           @interests = :w
           return
         end
-        @io.post_connection_check(@sni_hostname) if @ctx.verify_mode != OpenSSL::SSL::VERIFY_NONE
+        @io.post_connection_check(@sni_hostname) if @ctx.verify_mode != OpenSSL::SSL::VERIFY_NONE && !@hostname_is_ip
         transition(:negotiated)
         @interests = :w
       end

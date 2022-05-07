@@ -167,6 +167,15 @@ class HTTPSTest < Minitest::Test
     verify_error_response(response, /certificate verify failed|does not match the server certificate/)
   end
 
+  def test_https_request_with_ip_not_set_sni
+    uri = URI(build_uri("/get"))
+    uri.host = Resolv.getaddress(uri.host)
+    response = HTTPX.get(uri)
+
+    # this means it did not fail because of sni, just post certificate identity verification.
+    verify_status(response, 200)
+  end
+
   private
 
   def origin(orig = httpbin)
