@@ -10,7 +10,7 @@ module HTTPX
     module BasicAuthentication
       class << self
         def load_dependencies(_klass)
-          require "base64"
+          require_relative "authentication/basic"
         end
 
         def configure(klass)
@@ -20,7 +20,7 @@ module HTTPX
 
       module InstanceMethods
         def basic_authentication(user, password)
-          authentication("Basic #{Base64.strict_encode64("#{user}:#{password}")}")
+          authentication(Authentication::Basic.new(user, password).authenticate)
         end
         alias_method :basic_auth, :basic_authentication
       end

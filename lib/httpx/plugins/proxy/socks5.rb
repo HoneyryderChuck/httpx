@@ -18,6 +18,10 @@ module HTTPX
 
         Error = Socks5Error
 
+        def self.load_dependencies(*)
+          require_relative "../authentication/socks5"
+        end
+
         module ConnectionMethods
           def call
             super
@@ -156,16 +160,14 @@ module HTTPX
 
           def negotiate(parameters)
             methods = [NOAUTH]
-            methods << PASSWD if parameters.authenticated?
+            methods << PASSWD if parameters.can_authenticate?
             methods.unshift(methods.size)
             methods.unshift(VERSION)
             methods.pack("C*")
           end
 
           def authenticate(parameters)
-            user = parameters.username
-            password = parameters.password
-            [0x01, user.bytesize, user, password.bytesize, password].pack("CCA*CA*")
+            parameters.authenticate
           end
 
           def connect(uri)

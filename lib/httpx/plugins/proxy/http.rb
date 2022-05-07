@@ -59,7 +59,7 @@ module HTTPX
             end
           end
 
-          def __http_on_connect(_, response)
+          def __http_on_connect(request, response)
             @inflight -= 1
             if response.status == 200
               req = @pending.first
@@ -67,6 +67,11 @@ module HTTPX
               @io = ProxySSL.new(@io, request_uri, @options)
               transition(:connected)
               throw(:called)
+            elsif @options.proxy.can_authenticate?(response)
+              request.transition(:idle)
+              request.headers["proxy-authorization"] = @options.proxy.authenticate(request, response)
+              @inflight += 1
+              parser.send(connect_request)
             else
               pending = @pending + @parser.pending
               while (req = pending.shift)
@@ -88,7 +93,10 @@ module HTTPX
             extra_headers = super
 
             proxy_params = @options.proxy
-            extra_headers["proxy-authorization"] = "Basic #{proxy_params.token_authentication}" if proxy_params.authenticated?
+            if proxy_params.scheme == "basic"
+              # opt for basic auth
+              extra_headers["proxy-authorization"] = proxy_params.authenticate(extra_headers)
+            end
             extra_headers["proxy-connection"] = extra_headers.delete("connection") if extra_headers.key?("connection")
             extra_headers
           end

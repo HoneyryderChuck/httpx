@@ -1,0 +1,24 @@
+module HTTPX
+  module Plugins
+    module Authentication
+      class Digest
+        @user: String
+        @password: String
+
+        def can_authenticate?: (response) -> boolish
+
+        def authenticate: (Request request, Response response) -> String
+
+        private
+
+        def generate_header: (Request request, Response response, ?bool? iis) -> String
+
+        def initialize: (string user, string password) -> void
+
+        def make_cnonce: () -> String
+
+        def next_nonce: () -> Integer
+      end
+    end
+  end
+end

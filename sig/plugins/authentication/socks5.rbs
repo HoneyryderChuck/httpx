@@ -1,0 +1,18 @@
+module HTTPX
+  module Plugins
+    module Authentication
+      class Socks5
+        @user: String
+        @password: String
+
+        def can_authenticate?: (*untyped) -> boolish
+
+        def authenticate: (*untyped) -> String
+
+        private
+
+        def initialize: (string user, string password) -> void
+      end
+    end
+  end
+end

@@ -6,12 +6,9 @@ module HTTPX
     # https://gitlab.com/honeyryderchuck/httpx/wikis/Authentication#ntlm-authentication
     #
     module NTLMAuthentication
-      NTLMParams = Struct.new(:user, :domain, :password)
-
       class << self
         def load_dependencies(_klass)
-          require "base64"
-          require "ntlm"
+          require_relative "authentication/ntlm"
         end
 
         def extra_options(options)
@@ -21,7 +18,7 @@ module HTTPX
 
       module OptionsMethods
         def option_ntlm(value)
-          raise TypeError, ":ntlm must be a #{NTLMParams}" unless value.is_a?(NTLMParams)
+          raise TypeError, ":ntlm must be a #{Authentication::Ntlm}" unless value.is_a?(Authentication::Ntlm)
 
           value
         end
@@ -29,7 +26,7 @@ module HTTPX
 
       module InstanceMethods
         def ntlm_authentication(user, password, domain = nil)
-          with(ntlm: NTLMParams.new(user, domain, password))
+          with(ntlm: Authentication::Ntlm.new(user, password, domain: domain))
         end
 
         alias_method :ntlm_auth, :ntlm_authentication
@@ -39,19 +36,12 @@ module HTTPX
             ntlm = request.options.ntlm
 
             if ntlm
-              request.headers["authorization"] = "NTLM #{NTLM.negotiate(domain: ntlm.domain).to_base64}"
+              request.headers["authorization"] = ntlm.negotiate
               probe_response = wrap { super(request).first }
 
-              if !probe_response.is_a?(ErrorResponse) && probe_response.status == 401 &&
-                 probe_response.headers.key?("www-authenticate") &&
-                 (challenge = probe_response.headers["www-authenticate"][/NTLM (.*)/, 1])
-
-                challenge = Base64.decode64(challenge)
-                ntlm_challenge = NTLM.authenticate(challenge, ntlm.user, ntlm.domain, ntlm.password).to_base64
-
+              if ntlm.can_authenticate?(probe_response)
                 request.transition(:idle)
-
-                request.headers["authorization"] = "NTLM #{ntlm_challenge}"
+                request.headers["authorization"] = ntlm.authenticate(request, probe_response)
                 super(request)
               else
                 probe_response

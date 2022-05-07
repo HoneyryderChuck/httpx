@@ -3,7 +3,7 @@ module HTTPX
     module NTLMAuthentication
 
       interface _NTLMOptions
-        def ntlm: () -> NTLMParams?
+        def ntlm: () -> Authentication::Ntlm?
       end
 
       def self.extra_options: (Options) -> (Options & _NTLMOptions)
@@ -14,11 +14,6 @@ module HTTPX
         def ntlm_authentication: (string user, string password, ?string? domain) -> instance
       end
 
-      class NTLMParams
-        attr_reader user: String
-        attr_reader password: String
-        attr_reader domain: String?
-      end
     end
 
     type sessionNTLMAuthentication = sessionAuthentication & NTLMAuthentication::InstanceMethods
