@@ -6,7 +6,7 @@ module HTTPX
   module Plugins
     module Authentication
       class Socks5
-        def initialize(user, password)
+        def initialize(user, password, **)
           @user = user
           @password = password
         end

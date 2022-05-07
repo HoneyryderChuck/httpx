@@ -5,13 +5,13 @@ module HTTPX
         @user: String
         @password: String
 
-        def can_authenticate?: (response) -> boolish
+        def can_authenticate?: (String? authenticate) -> boolish
 
-        def authenticate: (Request request, Response response) -> String
+        def authenticate: (Request request, String authenticate) -> String
 
         private
 
-        def generate_header: (Request request, Response response, ?bool? iis) -> String
+        def generate_header: (String meth, String uri, String authenticate) -> String
 
         def initialize: (string user, string password) -> void
 

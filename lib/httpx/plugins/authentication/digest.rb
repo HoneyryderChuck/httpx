@@ -10,32 +10,25 @@ module HTTPX
       class Digest
         using RegexpExtensions unless Regexp.method_defined?(:match?)
 
-        def initialize(user, password)
+        def initialize(user, password, **)
           @user = user
           @password = password
           @nonce = 0
         end
 
-        def can_authenticate?(response)
-          !response.is_a?(ErrorResponse) &&
-            response.status == 401 && response.headers.key?("www-authenticate") &&
-            /Digest .*/.match?(response.headers["www-authenticate"])
+        def can_authenticate?(authenticate)
+          authenticate && /Digest .*/.match?(authenticate)
         end
 
-        def authenticate(request, response)
-          "Digest #{generate_header(request, response)}"
+        def authenticate(request, authenticate)
+          "Digest #{generate_header(request.verb.to_s.upcase, request.path, authenticate)}"
         end
 
         private
 
-        def generate_header(request, response, iis = false)
-          meth = request.verb.to_s.upcase
-          www = response.headers["www-authenticate"]
-
+        def generate_header(meth, uri, authenticate)
           # discard first token, it's Digest
-          auth_info = www[/^(\w+) (.*)/, 2]
-
-          uri = request.path
+          auth_info = authenticate[/^(\w+) (.*)/, 2]
 
           params = Hash[auth_info.split(/ *, */)
                                  .map { |val| val.split("=") }
@@ -88,9 +81,7 @@ module HTTPX
           header << %(opaque="#{params["opaque"]}") if params.key?("opaque")
           header << %(cnonce="#{cnonce}") if cnonce
           header << %(nc=#{nc})
-          if qop
-            header << iis ? %(qop="#{qop}") : %(qop=#{qop})
-          end
+          header << %(qop=#{qop}) if qop
           header.join ", "
         end
 

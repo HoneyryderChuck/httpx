@@ -6,6 +6,42 @@ module HTTPX
   module Plugins
     module Proxy
       module HTTP
+        module InstanceMethods
+          def with_proxy_basic_auth(opts)
+            with(proxy: opts.merge(scheme: "basic"))
+          end
+
+          def with_proxy_digest_auth(opts)
+            with(proxy: opts.merge(scheme: "digest"))
+          end
+
+          def with_proxy_ntlm_auth(opts)
+            with(proxy: opts.merge(scheme: "ntlm"))
+          end
+
+          def fetch_response(request, connections, options)
+            response = super
+
+            if response &&
+               response.status == 407 &&
+               !request.headers.key?("proxy-authorization") &&
+               response.headers.key?("proxy-authenticate")
+
+              connection = find_connection(request, connections, options)
+
+              if connection.options.proxy.can_authenticate?(response.headers["proxy-authenticate"])
+                request.transition(:idle)
+                request.headers["proxy-authorization"] =
+                  connection.options.proxy.authenticate(request, response.headers["proxy-authenticate"])
+                connection.send(request)
+                return
+              end
+            end
+
+            response
+          end
+        end
+
         module ConnectionMethods
           def connecting?
             super || @state == :connecting || @state == :connected
@@ -23,11 +59,27 @@ module HTTPX
               @io.connect
               return unless @io.connected?
 
-              @parser = registry(@io.protocol).new(@write_buffer, @options.merge(max_concurrent_requests: 1))
-              @parser.extend(ProxyParser)
-              @parser.once(:response, &method(:__http_on_connect))
-              @parser.on(:close) { transition(:closing) }
-              __http_proxy_connect
+              @parser || begin
+                @parser = registry(@io.protocol).new(@write_buffer, @options.merge(max_concurrent_requests: 1))
+                parser = @parser
+                parser.extend(ProxyParser)
+                parser.on(:response, &method(:__http_on_connect))
+                parser.on(:close) { transition(:closing) }
+                parser.on(:reset) do
+                  if parser.empty?
+                    reset
+                  else
+                    transition(:closing)
+                    transition(:closed)
+                    emit(:reset)
+
+                    parser.reset if @parser
+                    transition(:idle)
+                    transition(:connecting)
+                  end
+                end
+                __http_proxy_connect(parser)
+              end
               return if @state == :connected
             when :connected
               return unless @state == :idle || @state == :connecting
@@ -44,13 +96,13 @@ module HTTPX
             super
           end
 
-          def __http_proxy_connect
+          def __http_proxy_connect(parser)
             req = @pending.first
-            # if the first request after CONNECT is to an https address, it is assumed that
-            # all requests in the queue are not only ALL HTTPS, but they also share the certificate,
-            # and therefore, will share the connection.
-            #
-            if req.uri.scheme == "https"
+            if req && req.uri.scheme == "https"
+              # if the first request after CONNECT is to an https address, it is assumed that
+              # all requests in the queue are not only ALL HTTPS, but they also share the certificate,
+              # and therefore, will share the connection.
+              #
               connect_request = ConnectRequest.new(req.uri, @options)
               @inflight += 1
               parser.send(connect_request)
@@ -67,11 +119,14 @@ module HTTPX
               @io = ProxySSL.new(@io, request_uri, @options)
               transition(:connected)
               throw(:called)
-            elsif @options.proxy.can_authenticate?(response)
+            elsif response.status == 407 &&
+                  !request.headers.key?("proxy-authorization") &&
+                  @options.proxy.can_authenticate?(response.headers["proxy-authenticate"])
+
               request.transition(:idle)
-              request.headers["proxy-authorization"] = @options.proxy.authenticate(request, response)
+              request.headers["proxy-authorization"] = @options.proxy.authenticate(request, response.headers["proxy-authenticate"])
+              @parser.send(request)
               @inflight += 1
-              parser.send(connect_request)
             else
               pending = @pending + @parser.pending
               while (req = pending.shift)

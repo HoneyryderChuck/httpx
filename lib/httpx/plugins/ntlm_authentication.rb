@@ -39,9 +39,9 @@ module HTTPX
               request.headers["authorization"] = ntlm.negotiate
               probe_response = wrap { super(request).first }
 
-              if ntlm.can_authenticate?(probe_response)
+              if probe_response.status == 401 && ntlm.can_authenticate?(probe_response.headers["www-authenticate"])
                 request.transition(:idle)
-                request.headers["authorization"] = ntlm.authenticate(request, probe_response)
+                request.headers["authorization"] = ntlm.authenticate(request, probe_response.headers["www-authenticate"])
                 super(request)
               else
                 probe_response

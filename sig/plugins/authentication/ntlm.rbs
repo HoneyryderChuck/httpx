@@ -6,9 +6,9 @@ module HTTPX
         @password: String
         @domain: String?
 
-        def can_authenticate?: (response) -> boolish
+        def can_authenticate?: (String? authenticate) -> boolish
 
-        def authenticate: (*untyped) -> String
+        def authenticate: (Request request, String authenticate) -> String
 
         private
 

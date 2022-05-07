@@ -41,7 +41,7 @@ module HTTPX
 
           auth_scheme = scheme.to_s.capitalize
 
-          require_relative "authentication/#{scheme}" unless defined?(Authentication) && Authentication.const_defined?(auth_scheme)
+          require_relative "authentication/#{scheme}" unless defined?(Authentication) && Authentication.const_defined?(auth_scheme, false)
 
           @authenticator = Authentication.const_get(auth_scheme).new(@username, @password, **extra)
         end

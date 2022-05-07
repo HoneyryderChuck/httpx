@@ -5,7 +5,7 @@ module HTTPX
         @user: String
         @password: String
 
-        def can_authenticate?: (response) -> boolish
+        def can_authenticate?: (String? authenticate) -> boolish
 
         def authenticate: (*untyped) -> String
 

@@ -6,15 +6,13 @@ module HTTPX
   module Plugins
     module Authentication
       class Basic
-        def initialize(user, password, *)
+        def initialize(user, password, **)
           @user = user
           @password = password
         end
 
-        def can_authenticate?(response)
-          !response.is_a?(ErrorResponse) &&
-            response.status == 401 && response.headers.key?("www-authenticate") &&
-            /Basic .*/.match?(response.headers["www-authenticate"])
+        def can_authenticate?(authenticate)
+          authenticate && /Basic .*/.match?(authenticate)
         end
 
         def authenticate(*)
