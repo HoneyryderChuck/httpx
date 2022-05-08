@@ -304,14 +304,20 @@ def parse_options(command, options)
     # opts.on("--proxy-cert-type <type> Client certificate type for HTTPS proxy
     # opts.on("--proxy-ciphers <list> SSL ciphers to use for proxy
     # opts.on("--proxy-crlfile <file> Set a CRL list for proxy
-    # opts.on("--proxy-digest  Use Digest authentication on the proxy
+    opts.on("--proxy-digest") do
+      options[:plugins] << :proxy
+      options[:plugin_options][:proxy][:authentication] = :digest
+    end # Use Digest authentication on the proxy
     opts.on("--proxy-header <header/@file>") do |header|
     end # Pass custom header(s) to proxy
     opts.on("--proxy-insecure") # Do HTTPS proxy connections without verifying the proxy
     opts.on("--proxy-key <key>") # Private key for HTTPS proxy
     opts.on("--proxy-key-type <type>") # Private key file type for proxy
     opts.on("--proxy-negotiate") # Use HTTP Negotiate (SPNEGO) authentication on the proxy
-    opts.on("--proxy-ntlm") #    Use NTLM authentication on the proxy
+    opts.on("--proxy-ntlm") do
+      options[:plugins] << :proxy
+      options[:plugin_options][:proxy][:authentication] = :ntlm
+    end #    Use NTLM authentication on the proxy
     opts.on("--proxy-pass <phrase>") do |pass|
       options[:plugins] << :proxy
       options[:plugin_options][:proxy][:password] = pass
@@ -326,7 +332,9 @@ def parse_options(command, options)
     # opts.on("--proxy-tlsv1   Use TLSv1 for HTTPS proxy
     opts.on("-U", "--proxy-user <user:password>") do |user|
       options[:plugins] << :proxy
+      user, pass = user.split(":")
       options[:plugin_options][:proxy][:username] = user
+      options[:plugin_options][:proxy][:password] = pass if pass
     end # Proxy user and password
     # opts.on("--proxy1.0 <host[:port]> Use HTTP/1.0 proxy on given port
     # opts.on("-p", "--proxytunnel")   Operate through an HTTP proxy tunnel (using CONNECT)
@@ -448,7 +456,7 @@ def parse_options(command, options)
       end
       user, pass = user_pass.sub(/\A"(.*)"\z/, '\\1').split(":")
       options[:username] = user
-      options[:password] = pass
+      options[:password] = pass if pass
     end # Server user and password
     opts.on("-A", "--user-agent <name>") do |uagent|
       options[:options][:headers]["user-agent"] = uagent
