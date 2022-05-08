@@ -49,7 +49,9 @@ module HTTPX
         origin = @options.origin
         raise(Error, "invalid URI: #{@uri}") unless origin
 
-        @uri = origin.merge(@uri)
+        base_path = @options.base_path
+
+        @uri = origin.merge("#{base_path}#{@uri}")
       end
 
       raise(Error, "unknown method: #{verb}") unless METHODS.include?(@verb)
