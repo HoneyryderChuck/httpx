@@ -7,7 +7,7 @@ module HTTPX
     #
     # https://gitlab.com/honeyryderchuck/httpx/wikis/Authentication#authentication
     #
-    module DigestAuthentication
+    module DigestAuth
       DigestError = Class.new(Error)
 
       class << self
@@ -58,6 +58,6 @@ module HTTPX
       end
     end
 
-    register_plugin :digest_authentication, DigestAuthentication
+    register_plugin :digest_authentication, DigestAuth
   end
 end

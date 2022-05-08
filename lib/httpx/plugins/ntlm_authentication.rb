@@ -5,7 +5,7 @@ module HTTPX
     #
     # https://gitlab.com/honeyryderchuck/httpx/wikis/Authentication#ntlm-authentication
     #
-    module NTLMAuthentication
+    module NTLMAuth
       class << self
         def load_dependencies(_klass)
           require_relative "authentication/ntlm"
@@ -53,6 +53,6 @@ module HTTPX
         end
       end
     end
-    register_plugin :ntlm_authentication, NTLMAuthentication
+    register_plugin :ntlm_authentication, NTLMAuth
   end
 end

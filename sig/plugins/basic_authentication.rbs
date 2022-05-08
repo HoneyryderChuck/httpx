@@ -1,6 +1,6 @@
 module HTTPX
   module Plugins
-    module BasicAuthentication
+    module BasicAuth
       def self.load_dependencies: (singleton(Session)) -> void
 
       def self.configure: (singleton(Session)) -> void
@@ -10,6 +10,6 @@ module HTTPX
       end
     end
 
-    type sessionBasicAuthentication = sessionAuthentication & Authentication::InstanceMethods & BasicAuthentication::InstanceMethods
+    type sessionBasicAuth = sessionAuthentication & Authentication::InstanceMethods & BasicAuth::InstanceMethods
   end
 end

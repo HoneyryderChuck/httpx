@@ -13,9 +13,9 @@ module HTTPX
             | (options) { (Session) -> void } -> void
 
     def plugin: (:authentication, ?options) -> Plugins::sessionAuthentication
-              | (:basic_authentication, ?options) -> Plugins::sessionBasicAuthentication
-              | (:digest_authentication, ?options) -> Plugins::sessionDigestAuthentication
-              | (:ntlm_authentication, ?options) -> Plugins::sessionNTLMAuthentication
+              | (:basic_authentication, ?options) -> Plugins::sessionBasicAuth
+              | (:digest_authentication, ?options) -> Plugins::sessionDigestAuth
+              | (:ntlm_authentication, ?options) -> Plugins::sessionNTLMAuth
               | (:aws_sdk_authentication, ?options) -> Plugins::sessionAwsSdkAuthentication
               | (:compression, ?options) -> Session
               | (:cookies, ?options) -> Plugins::sessionCookies

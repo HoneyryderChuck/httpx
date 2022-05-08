@@ -1,6 +1,6 @@
 module HTTPX
   module Plugins
-    module NTLMAuthentication
+    module NTLMAuth
 
       interface _NTLMOptions
         def ntlm: () -> Authentication::Ntlm?
@@ -16,6 +16,6 @@ module HTTPX
 
     end
 
-    type sessionNTLMAuthentication = sessionAuthentication & NTLMAuthentication::InstanceMethods
+    type sessionNTLMAuth = sessionAuthentication & NTLMAuth::InstanceMethods
   end
 end

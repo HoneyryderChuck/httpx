@@ -1,6 +1,6 @@
 module HTTPX
   module Plugins
-    module DigestAuthentication
+    module DigestAuth
       DigestError: singleton(Error)
 
       interface _DigestOptions
@@ -16,6 +16,6 @@ module HTTPX
       end
     end
 
-    type sessionDigestAuthentication = sessionAuthentication & DigestAuthentication::InstanceMethods
+    type sessionDigestAuth = sessionAuthentication & DigestAuth::InstanceMethods
   end
 end
