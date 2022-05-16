@@ -12,13 +12,13 @@ module Requests
         no_auth_response.close
 
         session = HTTPX.plugin(:basic_authentication)
-        response = session.basic_authentication(user, pass).get(basic_auth_uri)
+        response = session.basic_auth(user, pass).get(basic_auth_uri)
         verify_status(response, 200)
         body = json_body(response)
         verify_header(body, "authenticated", true)
         verify_header(body, "user", user)
 
-        invalid_response = session.basic_authentication(user, "fake").get(basic_auth_uri)
+        invalid_response = session.basic_auth(user, "fake").get(basic_auth_uri)
         verify_status(invalid_response, 401)
       end
 
@@ -26,7 +26,7 @@ module Requests
 
       def test_plugin_digest_authentication
         session = HTTPX.plugin(:digest_authentication).with_headers("cookie" => "fake=fake_value")
-        response = session.digest_authentication(user, pass).get(digest_auth_uri)
+        response = session.digest_auth(user, pass).get(digest_auth_uri)
         verify_status(response, 200)
         body = json_body(response)
         verify_header(body, "authenticated", true)
@@ -36,7 +36,7 @@ module Requests
       %w[SHA1 SHA2 SHA256 SHA384 SHA512 RMD160].each do |alg|
         define_method "test_plugin_digest_authentication_#{alg}" do
           session = HTTPX.plugin(:digest_authentication).with_headers("cookie" => "fake=fake_value")
-          response = session.digest_authentication(user, pass).get("#{digest_auth_uri}/#{alg}")
+          response = session.digest_auth(user, pass).get("#{digest_auth_uri}/#{alg}")
           verify_status(response, 200)
           body = json_body(response)
           verify_header(body, "authenticated", true)
@@ -57,7 +57,7 @@ module Requests
             verify_status(no_auth_response, 401)
             no_auth_response.close
 
-            response = http.ntlm_authentication("user", "password").get(uri)
+            response = http.ntlm_auth("user", "password").get(uri)
             verify_status(response, 200)
 
             # invalid_response = http.ntlm_authentication("user", "fake").get(uri)

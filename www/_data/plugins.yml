@@ -1,5 +1,5 @@
 -
-  name: BasicAuthentication
+  name: BasicAuth
   path: Authentication.html#basic-authentication
   description: API and support for Basic Authentication.
 -

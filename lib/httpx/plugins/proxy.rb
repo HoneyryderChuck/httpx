@@ -19,22 +19,43 @@ module HTTPX
       PROXY_ERRORS = [TimeoutError, IOError, SystemCallError, Error].freeze
 
       class Parameters
-        attr_reader :uri, :username, :password
+        attr_reader :uri, :username, :password, :scheme
 
-        def initialize(uri:, username: nil, password: nil)
+        def initialize(uri:, scheme: nil, username: nil, password: nil, **extra)
           @uri = uri.is_a?(URI::Generic) ? uri : URI(uri)
           @username = username || @uri.user
           @password = password || @uri.password
+
+          return unless @username && @password
+
+          scheme ||= case @uri.scheme
+                     when "socks5"
+                       @uri.scheme
+                     when "http", "https"
+                       "basic"
+                     else
+                       return
+          end
+
+          @scheme = scheme
+
+          auth_scheme = scheme.to_s.capitalize
+
+          require_relative "authentication/#{scheme}" unless defined?(Authentication) && Authentication.const_defined?(auth_scheme, false)
+
+          @authenticator = Authentication.const_get(auth_scheme).new(@username, @password, **extra)
         end
 
-        def authenticated?
-          @username && @password
+        def can_authenticate?(*args)
+          return false unless @authenticator
+
+          @authenticator.can_authenticate?(*args)
         end
 
-        def token_authentication
-          return unless authenticated?
+        def authenticate(*args)
+          return unless @authenticator
 
-          Base64.strict_encode64("#{@username}:#{@password}")
+          @authenticator.authenticate(*args)
         end
 
         def ==(other)
@@ -42,7 +63,8 @@ module HTTPX
           when Parameters
             @uri == other.uri &&
               @username == other.username &&
-              @password == other.password
+              @password == other.password &&
+              @scheme == other.scheme
           when URI::Generic, String
             proxy_uri = @uri.dup
             proxy_uri.user = @username

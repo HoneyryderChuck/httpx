@@ -11,15 +11,17 @@ module HTTPX
         attr_reader uri: URI::Generic
         attr_reader username: String?
         attr_reader password: String?
+        attr_reader scheme: String?
 
-        def authenticated?: () -> boolish
-        def token_authentication: () -> String?
+        def can_authenticate?: (*untyped) -> boolish
+
+        def authenticate: (*untyped) -> String?
 
         def ==: (untyped) -> bool
 
         private
 
-        def initialize: (uri: generic_uri, ?username: String, ?password: String) -> untyped
+        def initialize: (uri: generic_uri, ?scheme: String, ?username: String, ?password: String, **extra) -> untyped
       end
 
       def self.configure: (singleton(Session)) -> void

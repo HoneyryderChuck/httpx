@@ -7,10 +7,10 @@ module HTTPX
     #
     # https://gitlab.com/honeyryderchuck/httpx/wikis/Authentication#basic-authentication
     #
-    module BasicAuthentication
+    module BasicAuth
       class << self
         def load_dependencies(_klass)
-          require "base64"
+          require_relative "authentication/basic"
         end
 
         def configure(klass)
@@ -19,12 +19,12 @@ module HTTPX
       end
 
       module InstanceMethods
-        def basic_authentication(user, password)
-          authentication("Basic #{Base64.strict_encode64("#{user}:#{password}")}")
+        def basic_auth(user, password)
+          authentication(Authentication::Basic.new(user, password).authenticate)
         end
-        alias_method :basic_auth, :basic_authentication
+        alias_method :basic_authentication, :basic_auth
       end
     end
-    register_plugin :basic_authentication, BasicAuthentication
+    register_plugin :basic_authentication, BasicAuth
   end
 end

@@ -152,7 +152,7 @@ Lint/EmptyBlock:
   Enabled: false # and neither does this. I don't control 3rd party methods.
 Style/HashTransformValues:
   Exclude:
-    - 'lib/httpx/plugins/digest_authentication.rb'
+    - 'lib/httpx/plugins/authentication/digest.rb'
 
 Bundler/DuplicatedGem:
   Enabled: false

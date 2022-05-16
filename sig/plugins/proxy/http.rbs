@@ -2,13 +2,23 @@ module HTTPX
   module Plugins
     module Proxy
       module HTTP
-      
+
+        module InstanceMethods
+          def with_proxy_basic_auth: (Hash[Symbol, untyped] opts) -> instance
+
+          def with_proxy_digest_auth: (Hash[Symbol, untyped] opts) -> instance
+
+          def with_proxy_ntlm_auth: (Hash[Symbol, untyped] opts) -> instance
+        end
+
         module ConnectionMethods
-          def __http_proxy_connect: () ->  void
+          def __http_proxy_connect: (Connection::_Parser parser) ->  void
           def __http_on_connect: (top, Response) ->  void
         end
-        
+
       end
     end
+
+    type httpProxy = Session & Proxy::HTTP::InstanceMethods
   end
 end

@@ -1,0 +1,20 @@
+module HTTPX
+  module Plugins
+    module Authentication
+      class Ntlm
+        @user: String
+        @password: String
+        @domain: String?
+
+        def can_authenticate?: (String? authenticate) -> boolish
+
+        def authenticate: (Request request, String authenticate) -> String
+
+        private
+
+        def initialize: (string user, string password, ?domain: String?) -> void
+
+      end
+    end
+  end
+end

@@ -1,10 +1,10 @@
 module HTTPX
   module Plugins
-    module DigestAuthentication
+    module DigestAuth
       DigestError: singleton(Error)
 
       interface _DigestOptions
-        def digest: () -> Digest?
+        def digest: () -> Authentication::Digest?
       end
 
       def self.extra_options: (Options) -> (Options & _DigestOptions)
@@ -14,18 +14,8 @@ module HTTPX
       module InstanceMethods
         def digest_authentication: (string user, string password) -> instance
       end
-
-      class Digest
-        def generate_header: (Request, Response, ?bool?) -> String
-
-        private
-
-        def initialize: (string user, string password) -> untyped
-        def make_cnonce: () -> String
-        def next_nonce: () -> Integer
-      end
     end
 
-    type sessionDigestAuthentication = sessionAuthentication & DigestAuthentication::InstanceMethods
+    type sessionDigestAuth = sessionAuthentication & DigestAuth::InstanceMethods
   end
 end
