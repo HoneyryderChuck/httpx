@@ -132,6 +132,7 @@ module HTTPX
     def freeze
       super
       @origin.freeze
+      @base_path.freeze
       @timeout.freeze
       @headers.freeze
       @addresses.freeze
@@ -139,6 +140,10 @@ module HTTPX
 
     def option_origin(value)
       URI(value)
+    end
+
+    def option_base_path(value)
+      String(value)
     end
 
     def option_headers(value)

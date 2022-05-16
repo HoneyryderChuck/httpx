@@ -20,6 +20,14 @@ module Requests
       verify_body_length(response)
     end
 
+    def test_http_get_option_origin_base_path
+      status_uri = URI(build_uri("/status"))
+      http = HTTPX.with(origin: status_uri.origin, base_path: status_uri.request_uri)
+      response = http.get("/200")
+      verify_status(response, 200)
+      assert response.uri.request_uri == "#{status_uri.request_uri}/200"
+    end
+
     def test_http_request
       uri = build_uri("/get")
       response = HTTPX.request(:get, uri)
