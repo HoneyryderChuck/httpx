@@ -33,7 +33,7 @@ module HTTPX
 
     def set_connection_callbacks: (Connection, Array[Connection], Options) -> void
 
-    def build_altsvc_connection: (Connection, Array[Connection], URI::Generic, String, Hash[String, String], Options) -> Connection?
+    def build_altsvc_connection: (Connection existing_connection, Array[Connection] connections, URI::Generic alt_origin, String origin, Hash[String, String] alt_params, Options options) -> Connection?
 
     def build_requests: (verb | string, uri, options) -> Array[Request]
                       | (Array[[verb | string, uri, options]], options) -> Array[Request]

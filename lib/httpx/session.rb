@@ -106,6 +106,9 @@ module HTTPX
     end
 
     def build_altsvc_connection(existing_connection, connections, alt_origin, origin, alt_params, options)
+      # do not allow security downgrades on altsvc negotiation
+      return if existing_connection.origin.scheme == "https" && alt_origin.scheme != "https"
+
       altsvc = AltSvc.cached_altsvc_set(origin, alt_params.merge("origin" => alt_origin))
 
       # altsvc already exists, somehow it wasn't advertised, probably noop
