@@ -44,7 +44,6 @@ module Requests
       end
 
       def test_plugin_response_cache_vary
-        skip
         return unless origin.start_with?("https://")
 
         vary_uri = "https://github.com/HoneyryderChuck/httpx"
