@@ -37,6 +37,7 @@ module HTTPX::Plugins
             return unless request.headers.same_headers?(original_request.headers)
           else
             return unless vary.split(/ *, */).all? do |cache_field|
+              cache_field.downcase!
               !original_request.headers.key?(cache_field) || request.headers[cache_field] == original_request.headers[cache_field]
             end
           end

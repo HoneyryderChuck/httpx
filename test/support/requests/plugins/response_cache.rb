@@ -42,24 +42,6 @@ module Requests
 
         # assert expired.body != uncached.body
       end
-
-      def test_plugin_response_cache_vary
-        return unless origin.start_with?("https://")
-
-        vary_uri = "https://github.com/HoneyryderChuck/httpx"
-
-        HTTPX.plugin(:response_cache).wrap do |cache_client|
-          uncached = cache_client.get(vary_uri)
-          verify_status(uncached, 200)
-          cached = cache_client.get(vary_uri)
-          verify_status(cached, 304)
-
-          assert uncached.body == cached.body
-
-          uncached = cache_client.get(vary_uri, headers: { "accept" => "text/plain" })
-          verify_status(uncached, 200)
-        end
-      end
     end
   end
 end
