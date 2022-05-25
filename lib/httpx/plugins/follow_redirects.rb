@@ -44,7 +44,7 @@ module HTTPX
 
           max_redirects = redirect_request.max_redirects
 
-          return response unless REDIRECT_STATUS.include?(response.status)
+          return response unless REDIRECT_STATUS.include?(response.status) && response.headers.key?("location")
           return response unless max_redirects.positive?
 
           retry_request = build_redirect_request(redirect_request, response, options)
@@ -86,10 +86,22 @@ module HTTPX
           redirect_uri = __get_location_from_response(response)
           max_redirects = request.max_redirects
 
-          # redirects are **ALWAYS** GET
-          retry_options = options.merge(headers: request.headers,
-                                        body: request.body,
-                                        max_redirects: max_redirects - 1)
+          if response.status == 305 && options.respond_to?(:proxy)
+            # The requested resource MUST be accessed through the proxy given by
+            # the Location field. The Location field gives the URI of the proxy.
+            retry_options = options.merge(headers: request.headers,
+                                          proxy: { uri: redirect_uri },
+                                          body: request.body,
+                                          max_redirects: max_redirects - 1)
+            redirect_uri = request.url
+          else
+
+            # redirects are **ALWAYS** GET
+            retry_options = options.merge(headers: request.headers,
+                                          body: request.body,
+                                          max_redirects: max_redirects - 1)
+          end
+
           build_request(:get, redirect_uri, retry_options)
         end
 

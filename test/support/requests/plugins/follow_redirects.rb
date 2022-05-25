@@ -16,6 +16,13 @@ module Requests
         assert body["url"] == redirect_location, "url should have been the given redirection url"
       end
 
+      def test_plugin_follow_redirects_no_location_no_follow
+        session = HTTPX.plugin(:follow_redirects)
+
+        response = session.headers("if-none-match" => "justforcingcachedresponse").get(redirect_no_follow_uri)
+        verify_status(response, 304)
+      end
+
       def test_plugin_follow_redirects_default_max_redirects
         session = HTTPX.plugin(:follow_redirects)
 
@@ -70,6 +77,10 @@ module Requests
 
       def redirect_uri(redirect_uri = redirect_location)
         build_uri("/redirect-to?url=#{redirect_uri}")
+      end
+
+      def redirect_no_follow_uri
+        build_uri("/cache") # 304
       end
 
       def max_redirect_uri(n)
