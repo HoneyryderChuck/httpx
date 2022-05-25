@@ -28,7 +28,7 @@ AllCops:
     - 'test/extensions/response_pattern_match.rb'
 
 Metrics/ClassLength:
-  Max: 400
+  Enabled: false
 
 Metrics/MethodLength:
   Max: 200

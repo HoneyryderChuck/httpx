@@ -106,16 +106,21 @@ module HTTPX
     end
 
     def build_altsvc_connection(existing_connection, connections, alt_origin, origin, alt_params, options)
+      # do not allow security downgrades on altsvc negotiation
+      return if existing_connection.origin.scheme == "https" && alt_origin.scheme != "https"
+
       altsvc = AltSvc.cached_altsvc_set(origin, alt_params.merge("origin" => alt_origin))
 
       # altsvc already exists, somehow it wasn't advertised, probably noop
       return unless altsvc
 
-      connection = pool.find_connection(alt_origin, options) || build_connection(alt_origin, options)
+      alt_options = options.merge(ssl: options.ssl.merge(hostname: URI(origin).host))
+
+      connection = pool.find_connection(alt_origin, alt_options) || build_connection(alt_origin, alt_options)
       # advertised altsvc is the same origin being used, ignore
       return if connection == existing_connection
 
-      set_connection_callbacks(connection, connections, options)
+      set_connection_callbacks(connection, connections, alt_options)
 
       log(level: 1) { "#{origin} alt-svc: #{alt_origin}" }
 

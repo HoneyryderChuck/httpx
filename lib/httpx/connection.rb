@@ -102,8 +102,8 @@ module HTTPX
           # origin came from an ORIGIN frame, we're going to verify the hostname with the
           # SSL certificate
           (@origins.size == 1 || @origin == uri.origin || (@io && @io.verify_hostname(uri.host)))
-        ) || match_altsvcs?(uri)
-      ) && @options == options
+        ) && @options == options
+      ) || (match_altsvcs?(uri) && match_altsvc_options?(uri, options))
     end
 
     def mergeable?(connection)
@@ -160,6 +160,14 @@ module HTTPX
           origin = altsvc["origin"]
           origin.altsvc_match?(uri.origin)
         end
+    end
+
+    def match_altsvc_options?(uri, options)
+      return @options == options unless @options.ssl[:hostname] == uri.host
+
+      dup_options = @options.merge(ssl: { hostname: nil })
+      dup_options.ssl.delete(:hostname)
+      dup_options == options
     end
 
     def connecting?

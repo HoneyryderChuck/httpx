@@ -50,4 +50,18 @@ class AltSvcTest < Minitest::Test
             ["h3-Q043=:443", { "ma" => "2592000" }]],
            AltSvc.parse("quic=\":443\"; ma=2592000; v=\"46,43\",h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000").to_a
   end
+
+  def test_altsvc_clear_cache
+    AltSvc.cached_altsvc_set("http://www.example.com", { "origin" => "http://alt.example.com", "ma" => 2 })
+    entries = AltSvc.cached_altsvc("http://www.example.com")
+    assert !entries.empty?
+
+    req = Request.new(:get, "http://www.example.com/")
+    res = Response.new(req, 200, "2.0", { "alt-svc" => "clear" })
+
+    AltSvc.emit(req, res)
+
+    entries = AltSvc.cached_altsvc("http://www.example.com")
+    assert entries.empty?
+  end
 end
