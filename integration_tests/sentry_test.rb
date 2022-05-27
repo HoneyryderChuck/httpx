@@ -4,8 +4,10 @@ require "logger"
 require "stringio"
 require "test_helper"
 require "support/http_helpers"
-require "sentry-ruby"
-require "httpx/adapters/sentry"
+begin
+  require "httpx/adapters/sentry"
+rescue LoadError
+end
 
 class SentryTest < Minitest::Test
   include HTTPHelpers
@@ -50,6 +52,21 @@ class SentryTest < Minitest::Test
     end
   end
 
+  def test_sentry_post_request
+    before_pii = Sentry.configuration.send_default_pii
+    begin
+      Sentry.configuration.send_default_pii = true
+      transaction = Sentry.start_transaction
+      Sentry.get_current_scope.set_span(transaction)
+
+      response = HTTPX.post(build_uri("/post"), form: { foo: "bar" })
+      verify_status(response, 200)
+      verify_spans(transaction, response, verb: "POST")
+    ensure
+      Sentry.configuration.send_default_pii = before_pii
+    end
+  end
+
   def test_sentry_multiple_requests
     transaction = Sentry.start_transaction
     Sentry.get_current_scope.set_span(transaction)
@@ -62,7 +79,7 @@ class SentryTest < Minitest::Test
 
   private
 
-  def verify_spans(transaction, *responses)
+  def verify_spans(transaction, *responses, verb: nil, description: nil)
     assert transaction.span_recorder.spans.count == responses.size + 1
     assert transaction.span_recorder.spans[0] == transaction
 
@@ -74,7 +91,7 @@ class SentryTest < Minitest::Test
       assert !request_span.start_timestamp.nil?
       assert !request_span.timestamp.nil?
       assert request_span.start_timestamp != request_span.timestamp
-      assert request_span.description == response.uri
+      assert request_span.description == (description || "#{verb || "GET"} #{response.uri}")
       assert request_span.data == { status: response.status }
     end
   end
@@ -98,4 +115,4 @@ class SentryTest < Minitest::Test
   def origin
     "https://#{httpbin}"
   end
-end
+end if RUBY_VERSION >= "2.4.0"

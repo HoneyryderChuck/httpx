@@ -16,6 +16,7 @@ group :test do
   gem "minitest"
   gem "minitest-proveit"
   gem "ruby-ntlm"
+  gem "sentry-ruby" if RUBY_VERSION >= "2.4"
   gem "spy"
   gem "webmock"
   gem "websocket-driver"
