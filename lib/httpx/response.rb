@@ -31,6 +31,7 @@ module HTTPX
       @status = Integer(status)
       @headers = @options.headers_class.new(headers)
       @body = @options.response_body_class.new(self, @options)
+      @finished = complete?
     end
 
     def merge_headers(h)
@@ -41,13 +42,22 @@ module HTTPX
       @body.write(data)
     end
 
+    def content_type
+      @content_type ||= ContentType.new(@headers["content-type"])
+    end
+
+    def finished?
+      @finished
+    end
+
+    def finish!
+      @finished = true
+      @headers.freeze
+    end
+
     def bodyless?
       @request.verb == :head ||
         no_data?
-    end
-
-    def content_type
-      @content_type ||= ContentType.new(@headers["content-type"])
     end
 
     def complete?
@@ -102,7 +112,7 @@ module HTTPX
     end
 
     def no_data?
-      @status < 200 ||
+      @status < 200 || # informational response
         @status == 204 ||
         @status == 205 ||
         @status == 304 || begin
@@ -337,6 +347,10 @@ module HTTPX
         "#{@error.message} (#{@error.class})\n" \
           "#{@error.backtrace.join("\n") if @error.backtrace}"
       end
+    end
+
+    def finished?
+      true
     end
 
     def raise_for_status

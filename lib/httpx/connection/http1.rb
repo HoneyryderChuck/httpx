@@ -118,7 +118,7 @@ module HTTPX
       log(color: :yellow) { response.headers.each.map { |f, v| "-> HEADER: #{f}: #{v}" }.join("\n") }
 
       @request.response = response
-      on_complete if response.complete?
+      on_complete if response.finished?
     end
 
     def on_trailers(h)
@@ -158,6 +158,7 @@ module HTTPX
       @request = nil
       @requests.shift
       response = request.response
+      response.finish!
       emit(:response, request, response)
 
       if @parser.upgrade?
