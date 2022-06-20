@@ -69,6 +69,30 @@ class SessionTest < Minitest::Test
     end
   end
 
+  def test_session_timeouts_read_timeout
+    uri = build_uri("/drip?numbytes=10&duration=4&delay=2&code=200")
+    session = HTTPX.with_timeout(read_timeout: 3, operation_timeout: 10)
+    response = session.get(uri)
+    verify_error_response(response, HTTPX::ReadTimeoutError)
+
+    uri = build_uri("/drip?numbytes=10&duration=2&delay=0&code=200")
+    response1 = session.get(uri)
+    verify_status(response1, 200)
+  end
+
+  def test_session_timeouts_write_timeout
+    start_test_servlet(SlowReader) do |server|
+      uri = URI("#{server.origin}/")
+      session = HTTPX.with(timeout: { write_timeout: 4, operation_timeout: 10 })
+      response = session.post(uri, body: StringIO.new("a" * 65_536 * 2 * 5))
+      verify_error_response(response, HTTPX::WriteTimeoutError)
+
+      session = HTTPX.with_timeout(write_timeout: 8, operation_timeout: 60)
+      response1 = session.post(uri, body: StringIO.new("a" * 65_536 * 2 * 5))
+      verify_status(response1, 200)
+    end
+  end
+
   # def test_http_timeouts_operation_timeout
   #   uri = build_uri("/delay/2")
   #   session = HTTPX.with_timeout(operation_timeout: 1)
