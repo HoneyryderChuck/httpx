@@ -24,6 +24,26 @@ module HTTPX
 
   class ConnectTimeoutError < TimeoutError; end
 
+  class RequestTimeoutError < TimeoutError
+    attr_reader :request
+
+    def initialize(request, timeout)
+      @request = request
+      super(timeout, "Timed out after #{timeout} seconds")
+    end
+  end
+
+  class ReadTimeoutError < RequestTimeoutError
+    attr_reader :response
+
+    def initialize(request, response, timeout)
+      @response = response
+      super(request, timeout)
+    end
+  end
+
+  class WriteTimeoutError < RequestTimeoutError; end
+
   class SettingsTimeoutError < TimeoutError; end
 
   class ResolveTimeoutError < TimeoutError; end

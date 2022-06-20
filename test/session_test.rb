@@ -3,19 +3,18 @@
 require_relative "test_helper"
 
 class SessionTest < Minitest::Test
-  include HTTPX
   include HTTPHelpers
 
   def test_session_block
     yielded = nil
-    Session.new do |cli|
+    HTTPX::Session.new do |cli|
       yielded = cli
     end
-    assert yielded.is_a?(Session), "session should have been yielded"
+    assert yielded.is_a?(HTTPX::Session), "session should have been yielded"
   end
 
   def test_session_plugin
-    klient_class = Class.new(Session)
+    klient_class = Class.new(HTTPX::Session)
     klient_class.plugin(TestPlugin)
     session = klient_class.new
     assert session.respond_to?(:foo), "instance methods weren't added"
@@ -84,10 +83,9 @@ class SessionTest < Minitest::Test
     start_test_servlet(SlowReader) do |server|
       uri = URI("#{server.origin}/")
       session = HTTPX.with(timeout: { write_timeout: 4, operation_timeout: 10 })
-      response = session.post(uri, body: StringIO.new("a" * 65_536 * 2 * 5))
+      response = session.post(uri, body: StringIO.new("a" * 65_536 * 3 * 5))
       verify_error_response(response, HTTPX::WriteTimeoutError)
 
-      session = HTTPX.with_timeout(write_timeout: 8, operation_timeout: 60)
       response1 = session.post(uri, body: StringIO.new("a" * 65_536 * 2 * 5))
       verify_status(response1, 200)
     end

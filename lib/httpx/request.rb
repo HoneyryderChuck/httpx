@@ -64,6 +64,14 @@ module HTTPX
       @state = :idle
     end
 
+    def read_timeout
+      @options.timeout[:read_timeout]
+    end
+
+    def write_timeout
+      @options.timeout[:write_timeout]
+    end
+
     def trailers?
       defined?(@trailers)
     end

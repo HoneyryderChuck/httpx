@@ -233,6 +233,7 @@ module HTTPX
           # when pushing a request into an existing connection, we have to check whether there
           # is the possibility that the connection might have extended the keep alive timeout.
           # for such cases, we want to ping for availability before deciding to shovel requests.
+          log(level: 3) { "keep alive timeout expired, pinging connection..." }
           @pending << request
           parser.ping
           transition(:active) if @state == :inactive
@@ -430,6 +431,28 @@ module HTTPX
       @inflight += 1
       parser.send(request)
 
+      write_timeout = request.write_timeout
+      request.once(:headers) do
+        @timers.after(write_timeout) do
+          if request.state != :done
+            @write_buffer.clear
+            error = WriteTimeoutError.new(request, write_timeout)
+            on_error(error)
+          end
+        end
+      end unless write_timeout.nil? || write_timeout.infinite?
+
+      read_timeout = request.read_timeout
+      request.once(:done) do
+        @timers.after(read_timeout) do
+          if request.response.nil? || !request.response.finished?
+            @write_buffer.clear
+            error = ReadTimeoutError.new(request, request.response, read_timeout)
+            on_error(error)
+          end
+        end
+      end unless read_timeout.nil? || read_timeout.infinite?
+
       return unless @state == :inactive
 
       transition(:active)
@@ -591,7 +614,7 @@ module HTTPX
     def handle_error(error)
       parser.handle_error(error) if @parser && parser.respond_to?(:handle_error)
       while (request = @pending.shift)
-        response = ErrorResponse.new(request, error, @options)
+        response = ErrorResponse.new(request, error, request.options)
         request.response = response
         request.emit(:response, response)
       end
