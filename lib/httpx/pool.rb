@@ -80,6 +80,9 @@ module HTTPX
       connection.on(:activate) do
         select_connection(connection)
       end
+      connection.on(:close) do
+        unregister_connection(connection)
+      end
     end
 
     def deactivate(connections)
@@ -143,8 +146,6 @@ module HTTPX
 
     def on_resolver_error(connection, error)
       connection.emit(:error, error)
-      # must remove connection by hand, hasn't been started yet
-      unregister_connection(connection)
     end
 
     def on_resolver_close(resolver)
@@ -171,8 +172,7 @@ module HTTPX
 
     def unregister_connection(connection)
       @connections.delete(connection)
-      deselect_connection(connection)
-      @connected_connections -= 1
+      @connected_connections -= 1 if deselect_connection(connection)
     end
 
     def select_connection(connection)

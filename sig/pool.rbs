@@ -36,9 +36,9 @@ module HTTPX
 
     def unregister_connection: (Connection) -> void
 
-    def select_connection: (Resolver::Resolver | Connection connection) -> void
+    def select_connection: (Selector::selectable) -> void
 
-    def deselect_connection: (Resolver::Resolver | Connection connection) -> void
+    def deselect_connection: (Selector::selectable) -> Selector::selectable?
 
     def coalesce_connections: (Connection coalescable, Connection coalescing) -> void
 

@@ -7,7 +7,7 @@ module HTTPX
     @selectables: Array[selectable]
 
     def register: (selectable io) -> void
-    def deregister: (selectable io) -> void
+    def deregister: (selectable io) -> selectable?
 
     def select: (Numeric? interval) { (selectable) -> void } -> void
 
