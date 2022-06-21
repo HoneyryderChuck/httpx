@@ -118,6 +118,10 @@ module HTTPX
       @timeouts.values_at(*hosts).reject(&:empty?).map(&:first).min
     end
 
+    def raise_timeout_error(interval)
+      do_retry(interval)
+    end
+
     private
 
     def calculate_interests
@@ -134,10 +138,10 @@ module HTTPX
       dwrite if calculate_interests == :w
     end
 
-    def do_retry
+    def do_retry(loop_time = nil)
       return if @queries.empty? || !@start_timeout
 
-      loop_time = Utils.elapsed_time(@start_timeout)
+      loop_time ||= Utils.elapsed_time(@start_timeout)
 
       query = @queries.first
 
