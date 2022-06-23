@@ -276,6 +276,12 @@ module HTTPX
       @state == :open || @state == :inactive
     end
 
+    def raise_timeout_error(interval)
+      error = HTTPX::TimeoutError.new(interval, "timed out while waiting on select")
+      error.set_backtrace(caller)
+      on_error(error)
+    end
+
     private
 
     def connect

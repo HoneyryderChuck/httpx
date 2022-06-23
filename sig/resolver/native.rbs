@@ -27,6 +27,8 @@ module HTTPX
 
       def timeout: () -> Numeric?
 
+      def raise_timeout_error: (Numeric interval) -> void
+
       private
 
       def initialize: (ip_family family, options options) -> void
@@ -35,7 +37,7 @@ module HTTPX
 
       def consume: () -> void
 
-      def do_retry: () -> void
+      def do_retry: (?Numeric loop_time) -> void
 
       def dread: (Integer) -> void
                | () -> void
