@@ -31,6 +31,10 @@ module HTTPX
       @request = request
       super(timeout, "Timed out after #{timeout} seconds")
     end
+
+    def marshal_dump
+      [message]
+    end
   end
 
   class ReadTimeoutError < RequestTimeoutError
