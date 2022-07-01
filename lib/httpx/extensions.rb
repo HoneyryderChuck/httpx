@@ -54,6 +54,14 @@ module HTTPX
     Numeric.__send__(:include, NegMethods)
   end
 
+  module NumericExtensions
+    refine Numeric do
+      def infinite?
+        self == Float::INFINITY
+      end unless Numeric.method_defined?(:infinite?)
+    end
+  end
+
   module StringExtensions
     refine String do
       def delete_suffix!(suffix)
