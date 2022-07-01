@@ -56,7 +56,7 @@ module HTTPX
 
     # :nocov:
     def inspect
-      "#<Response:#{object_id} "\
+      "#<Response:#{object_id} " \
         "HTTP/#{version} " \
         "@status=#{@status} " \
         "@headers=#{@headers} " \
