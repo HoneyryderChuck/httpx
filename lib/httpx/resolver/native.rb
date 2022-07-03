@@ -45,7 +45,7 @@ module HTTPX
       super
       @ns_index = 0
       @resolver_options = DEFAULTS.merge(@options.resolver_options)
-      @nameserver = @resolver_options[:nameserver]
+      @nameserver = Array(@resolver_options[:nameserver]) if @resolver_options[:nameserver]
       @ndots = @resolver_options[:ndots]
       @search = Array(@resolver_options[:search]).map { |srch| srch.scan(/[^.]+/) }
       @_timeouts = Array(@resolver_options[:timeouts])

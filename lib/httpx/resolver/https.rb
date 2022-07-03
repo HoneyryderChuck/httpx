@@ -39,6 +39,7 @@ module HTTPX
       @uri_addresses = nil
       @resolver = Resolv::DNS.new
       @resolver.timeouts = @resolver_options.fetch(:timeouts, Resolver::RESOLVE_TIMEOUT)
+      @resolver.lazy_initialize
     end
 
     def <<(connection)
