@@ -6,14 +6,14 @@ class AltSvcTest < Minitest::Test
   include HTTPX
 
   def test_altsvc_cache
-    assert AltSvc.cached_altsvc("http://www.example.com").empty?
-    AltSvc.cached_altsvc_set("http://www.example.com", { "origin" => "http://alt.example.com", "ma" => 2 })
-    entries = AltSvc.cached_altsvc("http://www.example.com")
+    assert AltSvc.cached_altsvc("http://www.example-altsvc-cache.com").empty?
+    AltSvc.cached_altsvc_set("http://www.example-altsvc-cache.com", { "origin" => "http://alt.example-altsvc-cache.com", "ma" => 2 })
+    entries = AltSvc.cached_altsvc("http://www.example-altsvc-cache.com")
     assert !entries.empty?
     entry = entries.first
-    assert entry["origin"] == "http://alt.example.com"
+    assert entry["origin"] == "http://alt.example-altsvc-cache.com"
     sleep 3
-    assert AltSvc.cached_altsvc("http://www.example.com").empty?
+    assert AltSvc.cached_altsvc("http://www.example-altsvc-cache.com").empty?
   end
 
   def test_altsvc_parse_svc
@@ -52,16 +52,16 @@ class AltSvcTest < Minitest::Test
   end
 
   def test_altsvc_clear_cache
-    AltSvc.cached_altsvc_set("http://www.example.com", { "origin" => "http://alt.example.com", "ma" => 2 })
-    entries = AltSvc.cached_altsvc("http://www.example.com")
+    AltSvc.cached_altsvc_set("http://www.example-clear-cache.com", { "origin" => "http://alt.example-clear-cache.com", "ma" => 2 })
+    entries = AltSvc.cached_altsvc("http://www.example-clear-cache.com")
     assert !entries.empty?
 
-    req = Request.new(:get, "http://www.example.com/")
+    req = Request.new(:get, "http://www.example-clear-cache.com/")
     res = Response.new(req, 200, "2.0", { "alt-svc" => "clear" })
 
     AltSvc.emit(req, res)
 
-    entries = AltSvc.cached_altsvc("http://www.example.com")
+    entries = AltSvc.cached_altsvc("http://www.example-clear-cache.com")
     assert entries.empty?
   end
 end
