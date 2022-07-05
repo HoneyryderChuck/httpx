@@ -1,0 +1,62 @@
+module HTTPX
+  module Plugins
+    module CircuitBreaker
+
+      class CircuitStore
+        @circuits: Hash[String, Circuit]
+
+        def try_open: (generic_uri uri, response response) -> void
+
+        def try_close: (generic_uri uri) -> void
+
+        def try_respond: (Request request) -> response?
+
+        private
+
+        def get_circuit_for_uri: (generic_uri uri) -> Circuit
+
+        def initialize: (Options options) -> void
+      end
+
+      class Circuit
+        @state: :closed | :open | :half_open
+        @max_attempts: Integer
+        @reset_attempts_in: Float
+        @break_in: Float
+        @circuit_breaker_half_open_drip_rate: Float
+        @attempts: Integer
+
+        @response: response?
+        @opened_at: Float?
+        @attempted_at: Float?
+
+        def respond: () -> response?
+
+        def try_open: (response) -> void
+
+        def try_close: () -> void
+
+        private
+
+        def initialize: (Integer max_attempts, Float reset_attempts_in, Float break_in, Float circuit_breaker_half_open_drip_rate) -> void
+      end
+
+      interface _CircuitOptions
+        def circuit_breaker_max_attempts: () -> Integer
+        def circuit_breaker_reset_attempts_in: () -> Float
+        def circuit_breaker_break_in: () -> Float
+        def circuit_breaker_half_open_drip_rate: () -> Float
+        def circuit_breaker_break_on: () -> (^(Response) -> boolish | nil)
+      end
+
+      def self.extra_options: (Options) -> (Options & _CircuitOptions)
+
+      module InstanceMethods
+        @store: CircuitStore
+      end
+
+    end
+
+    type sessionCircuitBreaker = Session & CircuitBreaker::InstanceMethods
+  end
+end

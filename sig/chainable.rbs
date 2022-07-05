@@ -33,6 +33,7 @@ module HTTPX
               | (:aws_sigv4, ?options) -> Plugins::awsSigV4Session
               | (:grpc, ?options) -> Plugins::grpcSession
               | (:response_cache, ?options) -> Plugins::sessionResponseCache
+              | (:circuit_breaker, ?options) -> Plugins::sessionCircuitBreaker
               | (Symbol | Module, ?options) { (Class) -> void } -> Session
               | (Symbol | Module, ?options) -> Session
 

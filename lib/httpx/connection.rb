@@ -577,7 +577,7 @@ module HTTPX
           error = ex
         else
           # inactive connections do not contribute to the select loop, therefore
-          # they should fail due to such errors.
+          # they should not fail due to such errors.
           return if @state == :inactive
 
           if @timeout
