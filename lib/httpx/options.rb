@@ -267,7 +267,7 @@ module HTTPX
         instance_variables.each do |ivar|
           value = other.instance_variable_get(ivar)
           value = case value
-                  when Symbol, Fixnum, TrueClass, FalseClass # rubocop:disable Lint/UnifiedInteger
+                  when Symbol, Numeric, TrueClass, FalseClass
                     value
                   else
                     value.dup
