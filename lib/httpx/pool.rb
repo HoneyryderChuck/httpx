@@ -7,7 +7,7 @@ require "httpx/resolver"
 
 module HTTPX
   class Pool
-    using ArrayExtensions
+    using ArrayExtensions::FilterMap
     extend Forwardable
 
     def_delegator :@timers, :after

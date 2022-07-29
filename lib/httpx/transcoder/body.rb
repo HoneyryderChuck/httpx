@@ -9,7 +9,7 @@ module HTTPX::Transcoder
     module_function
 
     class Encoder
-      using HTTPX::ArrayExtensions
+      using HTTPX::ArrayExtensions::Sum
       extend Forwardable
 
       def_delegator :@raw, :to_s

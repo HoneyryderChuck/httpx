@@ -8,6 +8,8 @@ module HTTPX
     include Callbacks
     include Loggable
 
+    using ArrayExtensions::Intersect
+
     RECORD_TYPES = {
       Socket::AF_INET6 => Resolv::DNS::Resource::IN::AAAA,
       Socket::AF_INET => Resolv::DNS::Resource::IN::A,
@@ -48,6 +50,10 @@ module HTTPX
       addresses.map! do |address|
         address.is_a?(IPAddr) ? address : IPAddr.new(address.to_s)
       end
+
+      # double emission check
+      return if connection.addresses && !addresses.intersect?(connection.addresses)
+
       log { "resolver: answer #{connection.origin.host}: #{addresses.inspect}" }
       if @pool && # if triggered by early resolve, pool may not be here yet
          !connection.io &&
@@ -56,8 +62,12 @@ module HTTPX
          addresses.first.to_s != connection.origin.host.to_s
         log { "resolver: A response, applying resolution delay..." }
         @pool.after(0.05) do
-          connection.addresses = addresses
-          emit(:resolve, connection)
+          # double emission check
+          unless connection.addresses && addresses.intersect?(connection.addresses)
+
+            connection.addresses = addresses
+            emit(:resolve, connection)
+          end
         end
       else
         connection.addresses = addresses

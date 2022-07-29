@@ -72,7 +72,7 @@ module HTTPX
       end
 
       module ResponseBodyMethods
-        using ArrayExtensions
+        using ArrayExtensions::FilterMap
 
         attr_reader :encodings
 
