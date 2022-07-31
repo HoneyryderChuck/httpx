@@ -13,20 +13,20 @@ module HTTPX::Plugins
         @store = {}
       end
 
-      def lookup(uri)
-        @store[uri]
+      def lookup(request)
+        @store[request.response_cache_key]
       end
 
-      def cached?(uri)
-        @store.key?(uri)
+      def cached?(request)
+        @store.key?(request.response_cache_key)
       end
 
-      def cache(uri, response)
-        @store[uri] = response
+      def cache(request, response)
+        @store[request.response_cache_key] = response
       end
 
       def prepare(request)
-        cached_response = @store[request.uri]
+        cached_response = @store[request.response_cache_key]
 
         return unless cached_response
 

@@ -52,7 +52,7 @@ module HTTPX
 
         def build_request(*)
           request = super
-          return request unless ResponseCache.cacheable_request?(request) && @options.response_cache_store.cached?(request.uri)
+          return request unless ResponseCache.cacheable_request?(request) && @options.response_cache_store.cached?(request)
 
           @options.response_cache_store.prepare(request)
 
@@ -64,14 +64,20 @@ module HTTPX
 
           if response && ResponseCache.cached_response?(response)
             log { "returning cached response for #{request.uri}" }
-            cached_response = @options.response_cache_store.lookup(request.uri)
+            cached_response = @options.response_cache_store.lookup(request)
 
             response.copy_from_cached(cached_response)
           end
 
-          @options.response_cache_store.cache(request.uri, response) if response && ResponseCache.cacheable_response?(response)
+          @options.response_cache_store.cache(request, response) if response && ResponseCache.cacheable_response?(response)
 
           response
+        end
+      end
+
+      module RequestMethods
+        def response_cache_key
+          @response_cache_key ||= Digest::SHA1.hexdigest("httpx-response-cache-#{@verb}#{@uri}")
         end
       end
 

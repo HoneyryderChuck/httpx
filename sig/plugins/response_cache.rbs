@@ -8,13 +8,13 @@ module HTTPX
       def self?.cached_response?: (response response) -> bool
 
       class Store
-        @store: Hash[URI::Generic, Response]
+        @store: Hash[String, Response]
 
-        def lookup: (URI::Generic uri) -> Response?
+        def lookup: (Request request) -> Response?
 
-        def cached?: (URI::Generic uri) -> bool
+        def cached?: (Request request) -> bool
 
-        def cache: (URI::Generic uri, Response response) -> void
+        def cache: (Request request, Response response) -> void
 
         def prepare: (Request request) -> void
       end
@@ -23,6 +23,10 @@ module HTTPX
         @response_cache: Store
 
         def clear_response_cache: () -> void
+      end
+
+      module RequestMethods
+        def response_cache_key: () -> String
       end
 
       module ResponseMethods
