@@ -9,7 +9,9 @@ module HTTPX
     #
     module ResponseCache
       CACHEABLE_VERBS = %i[get head].freeze
+      CACHEABLE_STATUS_CODES = [200, 203, 206, 300, 301, 410].freeze
       private_constant :CACHEABLE_VERBS
+      private_constant :CACHEABLE_STATUS_CODES
 
       class << self
         def load_dependencies(*)
@@ -17,14 +19,28 @@ module HTTPX
         end
 
         def cacheable_request?(request)
-          CACHEABLE_VERBS.include?(request.verb)
+          CACHEABLE_VERBS.include?(request.verb) &&
+            (
+              !request.headers.key?("cache-control") || !request.headers.get("cache-control").include?("no-store")
+            )
         end
 
         def cacheable_response?(response)
           response.is_a?(Response) &&
-            # partial responses shall not be cached, only full ones.
+            (
+              response.cache_control.nil? ||
+              # TODO: !response.cache_control.include?("private") && is shared cache
+              !response.cache_control.include?("no-store")
+            ) &&
+            CACHEABLE_STATUS_CODES.include?(response.status) &&
+            # RFC 2616 13.4 - A response received with a status code of 200, 203, 206, 300, 301 or
+            # 410 MAY be stored by a cache and used in reply to a subsequent
+            # request, subject to the expiration mechanism, unless a cache-control
+            # directive prohibits caching. However, a cache that does not support
+            # the Range and Content-Range headers MUST NOT cache 206 (Partial
+            # Content) responses.
             response.status != 206 && (
-            response.headers.key?("etag") || response.headers.key?("last-modified-at")
+            response.headers.key?("etag") || response.headers.key?("last-modified-at") || response.fresh?
           )
         end
 
@@ -62,14 +78,17 @@ module HTTPX
         def fetch_response(request, *)
           response = super
 
-          if response && ResponseCache.cached_response?(response)
+          return unless response
+
+          if ResponseCache.cached_response?(response)
             log { "returning cached response for #{request.uri}" }
             cached_response = @options.response_cache_store.lookup(request)
 
             response.copy_from_cached(cached_response)
-          end
 
-          @options.response_cache_store.cache(request, response) if response && ResponseCache.cacheable_response?(response)
+          else
+            @options.response_cache_store.cache(request, response)
+          end
 
           response
         end
@@ -86,6 +105,61 @@ module HTTPX
           @body = other.body
 
           @body.__send__(:rewind)
+        end
+
+        # A response is fresh if its age has not yet exceeded its freshness lifetime.
+        def fresh?
+          if cache_control
+            return false if cache_control.include?("no-cache")
+
+            # check age: max-age
+            max_age = cache_control.find { |directive| directive.start_with?("s-maxage") }
+
+            max_age ||= cache_control.find { |directive| directive.start_with?("max-age") }
+
+            max_age = max_age[/age=(\d+)/, 1] if max_age
+
+            max_age = max_age.to_i if max_age
+
+            return max_age > age if max_age
+          end
+
+          # check age: expires
+          if @headers.key?("expires")
+            begin
+              expires = Time.httpdate(@headers["expires"])
+            rescue ArgumentError
+              return true
+            end
+
+            return (expires - Time.now).to_i.positive?
+          end
+
+          true
+        end
+
+        def cache_control
+          return @cache_control if defined?(@cache_control)
+
+          @cache_control = begin
+            return unless @headers.key?("cache-control")
+
+            @headers["cache-control"].split(/ *, */)
+          end
+        end
+
+        private
+
+        def age
+          return @headers["age"].to_i if @headers.key?("age")
+
+          (Time.now - date).to_i
+        end
+
+        def date
+          @date ||= Time.httpdate(@headers["date"])
+        rescue NoMethodError, ArgumentError
+          Time.now.httpdate
         end
       end
     end

@@ -17,12 +17,51 @@ class ResponseCacheStoreTest < Minitest::Test
     assert store.lookup(request2) == response
 
     request3 = request_class.new(:post, "http://example.com/", headers: { "accept" => "text/plain" })
-    assert store.lookup(request3) != response
+    assert store.lookup(request3).nil?
+  end
+
+  def test_store_error_status
+    request = request_class.new(:get, "http://example.com/")
+    _response = cached_response(request, status: 404)
+    assert !store.cached?(request)
+
+    _response = cached_response(request, status: 410)
+    assert store.cached?(request)
+  end
+
+  def test_store_no_store
+    request = request_class.new(:get, "http://example.com/")
+    _response = cached_response(request, extra_headers: { "cache-control" => "private, no-store" })
+    assert !store.cached?(request)
+  end
+
+  def test_store_maxage
+    request = request_class.new(:get, "http://example.com/")
+    response = cached_response(request, extra_headers: { "cache-control" => "max-age=2" })
+    assert store.lookup(request) == response
+    sleep(3)
+    assert store.lookup(request).nil?
+
+    request2 = request_class.new(:get, "http://example2.com/")
+    _response2 = cached_response(request2, extra_headers: { "cache-control" => "no-cache, max-age=2" })
+    assert store.lookup(request2).nil?
+  end
+
+  def test_store_expires
+    request = request_class.new(:get, "http://example.com/")
+    response = cached_response(request, extra_headers: { "expires" => (Time.now + 2).httpdate })
+    assert store.lookup(request) == response
+    sleep(3)
+    assert store.lookup(request).nil?
+
+    request2 = request_class.new(:get, "http://example2.com/")
+    _response2 = cached_response(request2, extra_headers: { "cache-control" => "no-cache", "expires" => (Time.now + 2).httpdate })
+    assert store.lookup(request2).nil?
   end
 
   def test_prepare_vary
     request = request_class.new(:get, "http://example.com/", headers: { "accept" => "text/plain" })
-    cached_response(request, { "vary" => "Accept" })
+    cached_response(request, extra_headers: { "vary" => "Accept" })
 
     request2 = request_class.new(:get, "http://example.com/", headers: { "accept" => "text/html" })
     store.prepare(request2)
@@ -37,7 +76,7 @@ class ResponseCacheStoreTest < Minitest::Test
 
   def test_prepare_vary_asterisk
     request = request_class.new(:get, "http://example.com/", headers: { "accept" => "text/plain" })
-    cached_response(request, { "vary" => "*" })
+    cached_response(request, extra_headers: { "vary" => "*" })
 
     request2 = request_class.new(:get, "http://example.com/", headers: { "accept" => "text/html" })
     store.prepare(request2)
@@ -53,15 +92,19 @@ class ResponseCacheStoreTest < Minitest::Test
   private
 
   def request_class
-    @request_class = HTTPX.plugin(:response_cache).class.default_options.request_class
+    @request_class ||= HTTPX.plugin(:response_cache).class.default_options.request_class
+  end
+
+  def response_class
+    @response_class ||= HTTPX.plugin(:response_cache).class.default_options.response_class
   end
 
   def store
     @store ||= Plugins::ResponseCache::Store.new
   end
 
-  def cached_response(request, extra_headers = {})
-    response = Response.new(request, 200, "2.0", { "etag" => "ETAG" }.merge(extra_headers))
+  def cached_response(request, status: 200, extra_headers: {})
+    response = response_class.new(request, status, "2.0", { "date" => Time.now.httpdate, "etag" => "ETAG" }.merge(extra_headers))
     store.cache(request, response)
     response
   end

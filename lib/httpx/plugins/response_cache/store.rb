@@ -14,19 +14,25 @@ module HTTPX::Plugins
       end
 
       def lookup(request)
+        return unless cached?(request)
+
         @store[request.response_cache_key]
       end
 
       def cached?(request)
-        @store.key?(request.response_cache_key)
+        cache_key = request.response_cache_key
+
+        @store.key?(cache_key) && @store[cache_key].fresh?
       end
 
       def cache(request, response)
+        return unless ResponseCache.cacheable_request?(request) && ResponseCache.cacheable_response?(response)
+
         @store[request.response_cache_key] = response
       end
 
       def prepare(request)
-        cached_response = @store[request.response_cache_key]
+        cached_response = lookup(request)
 
         return unless cached_response
 
