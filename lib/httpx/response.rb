@@ -310,8 +310,11 @@ module HTTPX
 
   class ErrorResponse
     include Loggable
+    extend Forwardable
 
     attr_reader :request, :error
+
+    def_delegator :@request, :uri
 
     def initialize(request, error, options)
       @request = request

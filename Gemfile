@@ -116,6 +116,7 @@ group :assorted do
       gem "pry-byebug", "~> 3.4.3"
     else
       gem "pry-byebug"
+      gem "debug" if RUBY_VERSION >= "3.1.0"
     end
   end
 end

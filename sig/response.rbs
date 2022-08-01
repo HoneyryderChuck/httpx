@@ -96,6 +96,7 @@ module HTTPX
   class ErrorResponse
     include _Response
     include Loggable
+    extend Forwardable
 
     @options: Options
     @error: Exception
@@ -103,6 +104,8 @@ module HTTPX
     attr_reader request: Request
 
     def status: () -> (Integer | _ToS)
+
+    def uri: () -> URI::Generic
 
     private
 

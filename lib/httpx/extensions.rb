@@ -83,21 +83,40 @@ module HTTPX
   end
 
   module ArrayExtensions
-    refine Array do
+    module FilterMap
+      refine Array do
 
-      def filter_map
-        return to_enum(:filter_map) unless block_given?
+        def filter_map
+          return to_enum(:filter_map) unless block_given?
 
-        each_with_object([]) do |item, res|
-          processed = yield(item)
-          res << processed if processed
+          each_with_object([]) do |item, res|
+            processed = yield(item)
+            res << processed if processed
+          end
         end
       end unless Array.method_defined?(:filter_map)
+    end
 
-      def sum(accumulator = 0, &block)
-        values = block_given? ? map(&block) : self
-        values.inject(accumulator, :+)
+    module Sum
+      refine Array do
+        def sum(accumulator = 0, &block)
+          values = block_given? ? map(&block) : self
+          values.inject(accumulator, :+)
+        end
       end unless Array.method_defined?(:sum)
+    end
+
+    module Intersect
+      refine Array do
+        def intersect?(arr)
+          if size < arr.size
+            smaller = self
+          else
+            smaller, arr = arr, self
+          end
+          (array & smaller).size > 0
+        end
+      end unless Array.method_defined?(:intersect?)
     end
   end
 
