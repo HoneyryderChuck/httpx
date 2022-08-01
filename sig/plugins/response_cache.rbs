@@ -8,15 +8,19 @@ module HTTPX
       def self?.cached_response?: (response response) -> bool
 
       class Store
-        @store: Hash[String, Response]
+        @store: Hash[String, Array[Response]]
 
         def lookup: (Request request) -> Response?
 
-        def cached?: (Request request) -> bool
+        def cached?: (Request request) -> boolish
 
         def cache: (Request request, Response response) -> void
 
         def prepare: (Request request) -> void
+
+        private
+
+        def match_by_vary?: (Request request, Response response) -> bool
       end
 
       module InstanceMethods
@@ -31,6 +35,18 @@ module HTTPX
 
       module ResponseMethods
         def copy_from_cached: (Response other) -> void
+
+        def fresh?: () -> bool
+
+        def cache_control: () -> Array[String]?
+
+        def vary: () -> Array[String]?
+
+        private
+
+        def age: () -> Integer
+
+        def date: () -> Time
       end
     end
 

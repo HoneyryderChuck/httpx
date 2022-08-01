@@ -148,6 +148,16 @@ module HTTPX
           end
         end
 
+        def vary
+          return @vary if defined?(@vary)
+
+          @vary = begin
+            return unless @headers.key?("vary")
+
+            @headers["vary"].split(/ *, */)
+          end
+        end
+
         private
 
         def age
