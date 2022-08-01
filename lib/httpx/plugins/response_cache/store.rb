@@ -13,35 +13,38 @@ module HTTPX::Plugins
         @store = {}
       end
 
-      def lookup(uri)
-        @store[uri]
+      def lookup(request)
+        responses = @store[request.response_cache_key]
+
+        return unless responses
+
+        response = responses.find(&method(:match_by_vary?).curry(2)[request])
+
+        return unless response && response.fresh?
+
+        response
       end
 
-      def cached?(uri)
-        @store.key?(uri)
+      def cached?(request)
+        lookup(request)
       end
 
-      def cache(uri, response)
-        @store[uri] = response
+      def cache(request, response)
+        return unless ResponseCache.cacheable_request?(request) && ResponseCache.cacheable_response?(response)
+
+        responses = (@store[request.response_cache_key] ||= [])
+
+        responses.reject!(&method(:match_by_vary?).curry(2)[request])
+
+        responses << response
       end
 
       def prepare(request)
-        cached_response = @store[request.uri]
+        cached_response = lookup(request)
 
         return unless cached_response
 
-        original_request = cached_response.instance_variable_get(:@request)
-
-        if (vary = cached_response.headers["vary"])
-          if vary == "*"
-            return unless request.headers.same_headers?(original_request.headers)
-          else
-            return unless vary.split(/ *, */).all? do |cache_field|
-              cache_field.downcase!
-              !original_request.headers.key?(cache_field) || request.headers[cache_field] == original_request.headers[cache_field]
-            end
-          end
-        end
+        return unless match_by_vary?(request, cached_response)
 
         if !request.headers.key?("if-modified-since") && (last_modified = cached_response.headers["last-modified"])
           request.headers.add("if-modified-since", last_modified)
@@ -49,6 +52,23 @@ module HTTPX::Plugins
 
         if !request.headers.key?("if-none-match") && (etag = cached_response.headers["etag"]) # rubocop:disable Style/GuardClause
           request.headers.add("if-none-match", etag)
+        end
+      end
+
+      private
+
+      def match_by_vary?(request, response)
+        vary = response.vary
+
+        return true unless vary
+
+        original_request = response.instance_variable_get(:@request)
+
+        return request.headers.same_headers?(original_request.headers) if vary == %w[*]
+
+        vary.all? do |cache_field|
+          cache_field.downcase!
+          !original_request.headers.key?(cache_field) || request.headers[cache_field] == original_request.headers[cache_field]
         end
       end
     end
