@@ -3,6 +3,7 @@ services:
   httpx:
     environment:
       - HTTPBIN_HOST=nghttp2
+      - HTTPBIN_NO_PROXY_HOST=http://httpbin:8000
       - HTTPX_HTTP_PROXY=http://proxyuser:password@httpproxy:3128
       - HTTPX_HTTPS_PROXY=http://proxyuser:password@httpproxy:3128
       - HTTPX_HTTP2_PROXY=http://proxyuser:password@http2proxy:80

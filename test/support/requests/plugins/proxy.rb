@@ -16,7 +16,7 @@ module Requests
         assert_raises(HTTPX::HTTPProxyError) { session.get(uri) }
       end
 
-      def test_plugin_http_http1_proxy
+      def test_plugin_http_http_proxy
         return unless origin.start_with?("http://")
 
         session = HTTPX.plugin(:proxy, fallback_protocol: "http/1.1").plugin(ProxyResponseDetector).with_proxy(uri: http_proxy)
@@ -25,6 +25,26 @@ module Requests
         verify_status(response, 200)
         verify_body_length(response)
         assert response.proxied?
+      end
+
+      def test_plugin_http_no_proxy
+        return unless origin.start_with?("http://")
+
+        session = HTTPX.plugin(:proxy).plugin(ProxyResponseDetector).with_proxy(uri: http_proxy, no_proxy: [httpbin_no_proxy.host])
+
+        # proxy
+        uri = build_uri("/get")
+        response = session.get(uri)
+        verify_status(response, 200)
+        verify_body_length(response)
+        assert response.proxied?
+
+        # no proxy
+        no_proxy_uri = build_uri("/get", httpbin_no_proxy)
+        no_proxy_response = session.get(no_proxy_uri)
+        verify_status(no_proxy_response, 200)
+        verify_body_length(no_proxy_response)
+        assert !no_proxy_response.proxied?
       end
 
       def test_plugin_http_h2_proxy
@@ -99,11 +119,10 @@ module Requests
         no_auth_proxy.user = nil
         no_auth_proxy.password = nil
 
-        session = HTTPX.plugin(:proxy).plugin(ProxyResponseDetector).with_proxy(uri: no_auth_proxy.to_s)
+        session = HTTPX.plugin(:proxy).with_proxy(uri: no_auth_proxy.to_s)
         uri = build_uri("/get")
         response = session.get(uri)
         verify_status(response, 407)
-        assert response.proxied?
       end
 
       def test_plugin_http_proxy_digest_auth
@@ -228,7 +247,6 @@ module Requests
 
       def test_plugin_ssh_proxy
         session = HTTPX.plugin(:"proxy/ssh")
-                       .plugin(ProxyResponseDetector)
                        .with_proxy(uri: ssh_proxy,
                                    username: "root",
                                    auth_methods: %w[publickey],
@@ -238,7 +256,6 @@ module Requests
         response = session.get(uri)
         verify_status(response, 200)
         verify_body_length(response)
-        assert response.proxied?
       end if ENV.key?("HTTPX_SSH_PROXY") && RUBY_ENGINE != "jruby"
     end
   end

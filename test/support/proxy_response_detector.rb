@@ -17,7 +17,7 @@ module ProxyResponseDetector
 
   module ConnectionMethods
     def send(request)
-      return super unless @options.respond_to?(:proxy)
+      return super unless @options.respond_to?(:proxy) && @options.proxy
 
       proxy_uri = URI(@options.proxy.uri)
 

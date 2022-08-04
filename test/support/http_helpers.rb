@@ -21,4 +21,8 @@ module HTTPHelpers
   def httpbin
     ENV.fetch("HTTPBIN_HOST", "nghttp2.org/httpbin")
   end
+
+  def httpbin_no_proxy
+    URI(ENV.fetch("HTTPBIN_NO_PROXY_HOST", "httpbin.org"))
+  end
 end
