@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "forwardable"
-require "json"
 
 module HTTPX::Transcoder
   module JSON
@@ -19,7 +18,7 @@ module HTTPX::Transcoder
       def_delegator :@raw, :bytesize
 
       def initialize(json)
-        @raw = ::JSON.dump(json)
+        @raw = json_dump(json)
         @charset = @raw.encoding.name.downcase
       end
 
@@ -37,8 +36,25 @@ module HTTPX::Transcoder
 
       raise HTTPX::Error, "invalid json mime type (#{content_type})" unless JSON_REGEX.match?(content_type)
 
-      ::JSON.method(:parse)
+      method(:json_load)
     end
+
+    # rubocop:disable Style/SingleLineMethods
+    if defined?(MultiJson)
+      def json_load(*args); MultiJson.load(*args); end
+      def json_dump(*args); MultiJson.dump(*args); end
+    elsif defined?(Oj)
+      def json_load(*args); Oj.load(*args); end
+      def json_dump(*args); Oj.dump(*args); end
+    elsif defined?(Yajl)
+      def json_load(*args); Yajl.load(*args); end
+      def json_dump(*args); Yajl.dump(*args); end
+    else
+      require "json"
+      def json_load(*args); ::JSON.parse(*args); end
+      def json_dump(*args); ::JSON.dump(*args); end
+    end
+    # rubocop:enable Style/SingleLineMethods
   end
   register "json", JSON
 end
