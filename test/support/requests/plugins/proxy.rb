@@ -19,30 +19,33 @@ module Requests
       def test_plugin_http_http1_proxy
         return unless origin.start_with?("http://")
 
-        session = HTTPX.plugin(:proxy, fallback_protocol: "http/1.1").with_proxy(uri: http_proxy)
+        session = HTTPX.plugin(:proxy, fallback_protocol: "http/1.1").plugin(ProxyResponseDetector).with_proxy(uri: http_proxy)
         uri = build_uri("/get")
         response = session.get(uri)
         verify_status(response, 200)
         verify_body_length(response)
+        assert response.proxied?
       end
 
       def test_plugin_http_h2_proxy
         return unless origin.start_with?("http://")
 
-        session = HTTPX.plugin(:proxy, fallback_protocol: "h2").with_proxy(uri: http2_proxy)
+        session = HTTPX.plugin(:proxy, fallback_protocol: "h2").plugin(ProxyResponseDetector).with_proxy(uri: http2_proxy)
         uri = build_uri("/get")
         response = session.get(uri)
         verify_status(response, 200)
         verify_body_length(response)
+        assert response.proxied?
       end
 
       def test_plugin_https_connect_http1_proxy
         # return unless origin.start_with?("https://")
-        session = HTTPX.plugin(:proxy).with_proxy(uri: http_proxy)
+        session = HTTPX.plugin(:proxy).plugin(ProxyResponseDetector).with_proxy(uri: http_proxy)
         uri = build_uri("/get")
         response = session.get(uri)
         verify_status(response, 200)
         verify_body_length(response)
+        assert response.proxied?
       end if OpenSSL::SSL::SSLContext.method_defined?(:alpn_protocols=)
 
       # TODO: uncomment when supporting H2 CONNECT
@@ -59,11 +62,13 @@ module Requests
       def test_plugin_http_next_proxy
         session = HTTPX.plugin(SessionWithPool)
                        .plugin(:proxy)
+                       .plugin(ProxyResponseDetector)
                        .with_proxy(uri: ["http://unavailable-proxy", *http_proxy])
         uri = build_uri("/get")
         response = session.get(uri)
         verify_status(response, 200)
         verify_body_length(response)
+        assert response.proxied?
       end
 
       def test_plugin_http_proxy_auth_options
@@ -75,7 +80,7 @@ module Requests
         auth_proxy.user = nil
         auth_proxy.password = nil
 
-        session = HTTPX.plugin(:proxy).with_proxy(
+        session = HTTPX.plugin(:proxy).plugin(ProxyResponseDetector).with_proxy(
           uri: auth_proxy.to_s,
           username: user,
           password: pass
@@ -84,6 +89,7 @@ module Requests
         response = session.get(uri)
         verify_status(response, 200)
         verify_body_length(response)
+        assert response.proxied?
       end
 
       def test_plugin_http_proxy_auth_error
@@ -93,10 +99,11 @@ module Requests
         no_auth_proxy.user = nil
         no_auth_proxy.password = nil
 
-        session = HTTPX.plugin(:proxy).with_proxy(uri: no_auth_proxy.to_s)
+        session = HTTPX.plugin(:proxy).plugin(ProxyResponseDetector).with_proxy(uri: no_auth_proxy.to_s)
         uri = build_uri("/get")
         response = session.get(uri)
         verify_status(response, 407)
+        assert response.proxied?
       end
 
       def test_plugin_http_proxy_digest_auth
@@ -109,6 +116,7 @@ module Requests
         auth_proxy.password = nil
 
         session = HTTPX.plugin(:proxy)
+                       .plugin(ProxyResponseDetector)
                        .with_proxy_digest_auth(
                          uri: auth_proxy.to_s,
                          username: user,
@@ -118,25 +126,28 @@ module Requests
         response = session.get(uri)
         verify_status(response, 200)
         verify_body_length(response)
+        assert response.proxied?
       end
 
       def test_plugin_socks4_proxy
-        session = HTTPX.plugin(:proxy).with_proxy(uri: socks4_proxy)
+        session = HTTPX.plugin(:proxy).plugin(ProxyResponseDetector).with_proxy(uri: socks4_proxy)
         uri = build_uri("/get")
         response = session.get(uri)
         verify_status(response, 200)
         verify_body_length(response)
+        assert response.proxied?
       end
 
       def test_plugin_socks4_proxy_ip
         proxy = URI(socks4_proxy.first)
         proxy.host = Resolv.getaddress(proxy.host)
 
-        session = HTTPX.plugin(:proxy).with_proxy(uri: [proxy])
+        session = HTTPX.plugin(:proxy).plugin(ProxyResponseDetector).with_proxy(uri: [proxy])
         uri = build_uri("/get")
         response = session.get(uri)
         verify_status(response, 200)
         verify_body_length(response)
+        assert response.proxied?
       end
 
       def test_plugin_socks4_proxy_error
@@ -150,23 +161,25 @@ module Requests
       end
 
       def test_plugin_socks4a_proxy
-        session = HTTPX.plugin(:proxy).with_proxy(uri: socks4a_proxy)
+        session = HTTPX.plugin(:proxy).plugin(ProxyResponseDetector).with_proxy(uri: socks4a_proxy)
         uri = build_uri("/get")
         response = session.get(uri)
         verify_status(response, 200)
         verify_body_length(response)
+        assert response.proxied?
       end
 
       def test_plugin_socks5_proxy
-        session = HTTPX.plugin(:proxy).with_proxy(uri: socks5_proxy)
+        session = HTTPX.plugin(:proxy).plugin(ProxyResponseDetector).with_proxy(uri: socks5_proxy)
         uri = build_uri("/get")
         response = session.get(uri)
         verify_status(response, 200)
         verify_body_length(response)
+        assert response.proxied?
       end
 
       def test_plugin_socks5_ipv4_proxy
-        session = HTTPX.plugin(:proxy).with_proxy(uri: socks5_proxy)
+        session = HTTPX.plugin(:proxy).plugin(ProxyResponseDetector).with_proxy(uri: socks5_proxy)
         uri = URI(build_uri("/get"))
         hostname = uri.host
 
@@ -176,6 +189,7 @@ module Requests
         response = session.get(uri, headers: { "host" => uri.authority }, ssl: { hostname: hostname })
         verify_status(response, 200)
         verify_body_length(response)
+        assert response.proxied?
       end
 
       # TODO: enable when docker-compose supports ipv6 out of the box
@@ -213,15 +227,18 @@ module Requests
       end
 
       def test_plugin_ssh_proxy
-        session = HTTPX.plugin(:"proxy/ssh").with_proxy(uri: ssh_proxy,
-                                                        username: "root",
-                                                        auth_methods: %w[publickey],
-                                                        host_key: "ssh-rsa",
-                                                        keys: %w[test/support/ssh/ssh_host_ed25519_key])
+        session = HTTPX.plugin(:"proxy/ssh")
+                       .plugin(ProxyResponseDetector)
+                       .with_proxy(uri: ssh_proxy,
+                                   username: "root",
+                                   auth_methods: %w[publickey],
+                                   host_key: "ssh-rsa",
+                                   keys: %w[test/support/ssh/ssh_host_ed25519_key])
         uri = build_uri("/get")
         response = session.get(uri)
         verify_status(response, 200)
         verify_body_length(response)
+        assert response.proxied?
       end if ENV.key?("HTTPX_SSH_PROXY") && RUBY_ENGINE != "jruby"
     end
   end
