@@ -79,7 +79,7 @@ module ProxyHelper
       id = node.attribute("id")
       next unless id
 
-      id.value == "proxylisttable"
+      id.value == "list"
     end
     row ? row.css("tr") : []
   end
