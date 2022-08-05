@@ -36,7 +36,7 @@ module HTTPX::Transcoder
     module Decoder
       module_function
 
-      def call(response, _)
+      def call(response, *)
         URI.decode_www_form(response.to_s).each_with_object({}) do |(field, value), params|
           HTTPX::Transcoder.normalize_query(params, field, value, PARAM_DEPTH_LIMIT)
         end

@@ -18,7 +18,7 @@ module HTTPX::Transcoder
       def_delegator :@raw, :bytesize
 
       def initialize(json)
-        @raw = json_dump(json)
+        @raw = JSON.json_dump(json)
         @charset = @raw.encoding.name.downcase
       end
 
@@ -44,11 +44,11 @@ module HTTPX::Transcoder
       def json_load(*args); MultiJson.load(*args); end
       def json_dump(*args); MultiJson.dump(*args); end
     elsif defined?(Oj)
-      def json_load(*args); Oj.load(*args); end
+      def json_load(response, *args); Oj.load(response.to_s, *args); end
       def json_dump(*args); Oj.dump(*args); end
     elsif defined?(Yajl)
-      def json_load(*args); Yajl.load(*args); end
-      def json_dump(*args); Yajl.dump(*args); end
+      def json_load(response, *args); Yajl::Parser.new(*args).parse(response.to_s); end
+      def json_dump(*args); Yajl::Encoder.encode(*args); end
     else
       require "json"
       def json_load(*args); ::JSON.parse(*args); end

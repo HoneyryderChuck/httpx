@@ -76,8 +76,8 @@ module HTTPX
       raise err
     end
 
-    def json(options = nil)
-      decode("json", options)
+    def json(*args)
+      decode("json", *args)
     end
 
     def form
@@ -86,7 +86,7 @@ module HTTPX
 
     private
 
-    def decode(format, options = nil)
+    def decode(format, *args)
       # TODO: check if content-type is a valid format, i.e. "application/json" for json parsing
       transcoder = Transcoder.registry(format)
 
@@ -96,7 +96,7 @@ module HTTPX
 
       raise Error, "no decoder available for \"#{format}\"" unless decoder
 
-      decoder.call(self, options)
+      decoder.call(self, *args)
     rescue Registry::Error
       raise Error, "no decoder available for \"#{format}\""
     end

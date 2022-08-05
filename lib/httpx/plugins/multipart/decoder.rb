@@ -61,7 +61,7 @@ module HTTPX::Plugins
         @state = :idle
       end
 
-      def call(response, _)
+      def call(response, *)
         response.body.each do |chunk|
           @buffer << chunk
 
