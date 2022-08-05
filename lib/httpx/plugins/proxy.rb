@@ -105,6 +105,10 @@ module HTTPX
           end
           return if @_proxy_uris.empty?
 
+          proxy = options.proxy
+
+          return { uri: uri.host } if proxy && proxy.key?(:no_proxy) && !Array(proxy[:no_proxy]).grep(uri.host).empty?
+
           proxy_opts = { uri: @_proxy_uris.first }
           proxy_opts = options.proxy.merge(proxy_opts) if options.proxy
           proxy_opts
@@ -117,7 +121,9 @@ module HTTPX
           next_proxy = proxy_uris(uri, options)
           raise Error, "Failed to connect to proxy" unless next_proxy
 
-          proxy_options = options.merge(proxy: Parameters.new(**next_proxy))
+          proxy = Parameters.new(**next_proxy) unless next_proxy[:uri] == uri.host
+
+          proxy_options = options.merge(proxy: proxy)
           connection = pool.find_connection(uri, proxy_options) || build_connection(uri, proxy_options)
           unless connections.nil? || connections.include?(connection)
             connections << connection

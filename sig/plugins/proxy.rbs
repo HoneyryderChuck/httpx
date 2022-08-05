@@ -21,7 +21,7 @@ module HTTPX
 
         private
 
-        def initialize: (uri: generic_uri, ?scheme: String, ?username: String, ?password: String, **extra) -> untyped
+        def initialize: (uri: generic_uri, ?scheme: String, ?username: String, ?password: String, **untyped) -> untyped
       end
 
       def self.configure: (singleton(Session)) -> void

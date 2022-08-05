@@ -18,7 +18,11 @@ group :test do
   gem "ruby-ntlm"
   gem "sentry-ruby" if RUBY_VERSION >= "2.4"
   gem "spy"
-  gem "webmock"
+  if RUBY_VERSION < "2.3.0"
+    gem "webmock", "< 3.15.0"
+  else
+    gem "webmock"
+  end
   gem "websocket-driver"
 
   gem "net-ssh", "~> 4.2.0" if RUBY_VERSION < "2.2"
@@ -115,8 +119,8 @@ group :assorted do
     if RUBY_VERSION < "2.2"
       gem "pry-byebug", "~> 3.4.3"
     else
-      gem "pry-byebug"
       gem "debug" if RUBY_VERSION >= "3.1.0"
+      gem "pry-byebug"
     end
   end
 end
