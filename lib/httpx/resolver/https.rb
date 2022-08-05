@@ -102,7 +102,7 @@ module HTTPX
         @requests[request] = hostname
         resolver_connection.send(request)
         @connections << connection
-      rescue ResolveError, Resolv::DNS::EncodeError, JSON::JSONError => e
+      rescue ResolveError, Resolv::DNS::EncodeError => e
         @queries.delete(hostname)
         emit_resolve_error(connection, connection.origin.host, e)
       end
@@ -129,7 +129,7 @@ module HTTPX
     def parse(request, response)
       begin
         answers = decode_response_body(response)
-      rescue Resolv::DNS::DecodeError, JSON::JSONError => e
+      rescue Resolv::DNS::DecodeError => e
         host, connection = @queries.first
         @queries.delete(host)
         emit_resolve_error(connection, connection.origin.host, e)
@@ -203,11 +203,6 @@ module HTTPX
 
     def decode_response_body(response)
       case response.headers["content-type"]
-      when "application/dns-json",
-           "application/json",
-           %r{^application/x-javascript} # because google...
-        payload = JSON.parse(response.to_s)
-        payload["Answer"]
       when "application/dns-udpwireformat",
            "application/dns-message"
         Resolver.decode_dns_answer(response.to_s)
