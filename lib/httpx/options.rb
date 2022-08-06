@@ -10,8 +10,7 @@ module HTTPX
     OPERATION_TIMEOUT = 60
     KEEP_ALIVE_TIMEOUT = 20
     SETTINGS_TIMEOUT = 10
-    READ_TIMEOUT = Float::INFINITY
-    WRITE_TIMEOUT = Float::INFINITY
+    READ_TIMEOUT = WRITE_TIMEOUT = REQUEST_TIMEOUT = Float::INFINITY
 
     # https://github.com/ruby/resolv/blob/095f1c003f6073730500f02acbdbc55f83d70987/lib/resolv.rb#L408
     ip_address_families = begin
@@ -38,6 +37,7 @@ module HTTPX
         keep_alive_timeout: KEEP_ALIVE_TIMEOUT,
         read_timeout: READ_TIMEOUT,
         write_timeout: WRITE_TIMEOUT,
+        request_timeout: REQUEST_TIMEOUT,
       },
       :headers => {},
       :window_size => WINDOW_SIZE,

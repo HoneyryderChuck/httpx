@@ -72,6 +72,10 @@ module HTTPX
       @options.timeout[:write_timeout]
     end
 
+    def request_timeout
+      @options.timeout[:request_timeout]
+    end
+
     def trailers?
       defined?(@trailers)
     end

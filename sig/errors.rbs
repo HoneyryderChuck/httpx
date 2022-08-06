@@ -20,7 +20,20 @@ module HTTPX
   class SettingsTimeoutError < TimeoutError
   end
 
-  class ResolveTimeoutError < TimeoutError
+  class ResolveTimeoutError < RequestTimeoutError
+  end
+
+  class RequestTimeoutError < TimeoutError
+    attr_reader request: Request
+    attr_reader response: response?
+
+    def initialize: (Request request, response? response, Numeric timeout) -> void
+  end
+
+  class ReadTimeoutError < TimeoutError
+  end
+
+  class WriteTimeoutError < RequestTimeoutError
   end
 
   class ResolveError < Error

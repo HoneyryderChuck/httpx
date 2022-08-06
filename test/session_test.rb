@@ -91,6 +91,17 @@ class SessionTest < Minitest::Test
     end
   end
 
+  def test_session_timeouts_request_timeout
+    uri = build_uri("/drip?numbytes=10&duration=4&delay=2&code=200")
+    session = HTTPX.with_timeout(request_timeout: 3, operation_timeout: 10)
+    response = session.get(uri)
+    verify_error_response(response, HTTPX::RequestTimeoutError)
+
+    uri = build_uri("/drip?numbytes=10&duration=2&delay=0&code=200")
+    response1 = session.get(uri)
+    verify_status(response1, 200)
+  end
+
   # def test_http_timeouts_operation_timeout
   #   uri = build_uri("/delay/2")
   #   session = HTTPX.with_timeout(operation_timeout: 1)

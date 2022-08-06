@@ -432,27 +432,7 @@ module HTTPX
       @inflight += 1
       parser.send(request)
 
-      write_timeout = request.write_timeout
-      request.once(:headers) do
-        @timers.after(write_timeout) do
-          if request.state != :done
-            @write_buffer.clear
-            error = WriteTimeoutError.new(request, write_timeout)
-            on_error(error)
-          end
-        end
-      end unless write_timeout.nil? || write_timeout.infinite?
-
-      read_timeout = request.read_timeout
-      request.once(:done) do
-        @timers.after(read_timeout) do
-          if request.response.nil? || !request.response.finished?
-            @write_buffer.clear
-            error = ReadTimeoutError.new(request, request.response, read_timeout)
-            on_error(error)
-          end
-        end
-      end unless read_timeout.nil? || read_timeout.infinite?
+      set_request_timeouts(request)
 
       return unless @state == :inactive
 
@@ -619,6 +599,39 @@ module HTTPX
         request.response = response
         request.emit(:response, response)
       end
+    end
+
+    def set_request_timeouts(request)
+      write_timeout = request.write_timeout
+      request.once(:headers) do
+        @timers.after(write_timeout) { write_timeout_callback(request, write_timeout) }
+      end unless write_timeout.nil? || write_timeout.infinite?
+
+      read_timeout = request.read_timeout
+      request.once(:done) do
+        @timers.after(read_timeout) { read_timeout_callback(request, read_timeout) }
+      end unless read_timeout.nil? || read_timeout.infinite?
+
+      request_timeout = request.request_timeout
+      request.once(:headers) do
+        @timers.after(request_timeout) { read_timeout_callback(request, request_timeout, RequestTimeoutError) }
+      end unless request_timeout.nil? || request_timeout.infinite?
+    end
+
+    def write_timeout_callback(request, write_timeout)
+      return if request.state == :done
+
+      @write_buffer.clear
+      error = WriteTimeoutError.new(request, nil, write_timeout)
+      on_error(error)
+    end
+
+    def read_timeout_callback(request, read_timeout, error_type = WriteTimeoutError)
+      return if request.response && request.response.finished?
+
+      @write_buffer.clear
+      error = error_type.new(request, request.response, read_timeout)
+      on_error(error)
     end
   end
 end

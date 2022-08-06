@@ -103,5 +103,11 @@ module HTTPX
     def handle_error: (StandardError) -> void
 
     def purge_after_closed: () -> void
+
+    def set_request_timeouts: (Request request) -> void
+
+    def write_timeout_callback: (Request request, Numeric write_timeout)
+
+    def read_timeout_callback: (Request request, Numeric read_timeout, singleton(RequestTimeoutError) error_type)
   end
 end

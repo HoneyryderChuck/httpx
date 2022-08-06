@@ -50,6 +50,12 @@ module HTTPX
 
     def trailers?: () -> boolish
 
+    def read_timeout: () -> Numeric
+
+    def write_timeout: () -> Numeric
+
+    def request_timeout: () -> Numeric
+
     class Body
       @headers: Headers
       @body: body_encoder?
