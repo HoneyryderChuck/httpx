@@ -22,7 +22,7 @@ module HTTPX
     end
 
     interface _Decoder
-      def call: (Response response, untyped options) -> untyped
+      def call: (Response response, *untyped) -> untyped
     end
   end
 end

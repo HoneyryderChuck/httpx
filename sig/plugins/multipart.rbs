@@ -61,7 +61,7 @@ module HTTPX
         @boundary: String
         @intermediate_boundary: String
 
-        def call: (Response response, untyped) -> Hash[String, untyped]
+        def call: (Response response, *untyped) -> Hash[String, untyped]
 
         private
 
