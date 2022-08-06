@@ -109,6 +109,7 @@ class OptionsTest < Minitest::Test
         keep_alive_timeout: 20,
         read_timeout: Float::INFINITY,
         write_timeout: Float::INFINITY,
+        request_timeout: Float::INFINITY,
       },
       :ssl => { :foo => "bar" },
       :http2_settings => { :settings_enable_push => 0 },

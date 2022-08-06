@@ -65,6 +65,9 @@ module HTTPX
     # body
     attr_reader origin: URI::Generic?
 
+    # base_path
+    attr_reader base_path: String?
+
     # ssl
 
     # http2_settings

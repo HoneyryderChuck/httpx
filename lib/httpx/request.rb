@@ -120,6 +120,7 @@ module HTTPX
 
     def path
       path = uri.path.dup
+      path =  +"" if path.nil?
       path << "/" if path.empty?
       path << "?#{query}" unless query.empty?
       path

@@ -28,6 +28,7 @@ module HTTPX
     attr_reader options: Options
     attr_writer timers: Timers
 
+    @type: io_type
     @origins: Array[URI::Generic]
     @window_size: Integer
     @read_buffer: Buffer
@@ -40,7 +41,7 @@ module HTTPX
 
     def addresses=: (Array[ipaddr]) -> void
 
-    def match?: (URI::Generic, options) -> bool
+    def match?: (URI::Generic uri, Options options) -> bool
 
     def mergeable?: (Connection) -> bool
 
@@ -54,13 +55,15 @@ module HTTPX
 
     def match_altsvcs?: (URI::Generic uri) -> bool
 
+    def match_altsvc_options?: (URI::Generic uri, Options options) -> bool
+
     def connecting?: () -> bool
 
     def inflight?: () -> boolish
 
     def interests: () -> io_interests?
 
-    def to_io: () -> IO
+    def to_io: () -> ::IO
 
     def call: () -> void
 
@@ -77,7 +80,7 @@ module HTTPX
 
     private
 
-    def initialize: (String, URI::Generic, options) -> untyped
+    def initialize: (io_type, URI::Generic, options) -> untyped
 
     def connect: () -> void
 
@@ -106,8 +109,8 @@ module HTTPX
 
     def set_request_timeouts: (Request request) -> void
 
-    def write_timeout_callback: (Request request, Numeric write_timeout)
+    def write_timeout_callback: (Request request, Numeric write_timeout) -> void
 
-    def read_timeout_callback: (Request request, Numeric read_timeout, singleton(RequestTimeoutError) error_type)
+    def read_timeout_callback: (Request request, Numeric read_timeout, ?singleton(RequestTimeoutError) error_type) -> void
   end
 end

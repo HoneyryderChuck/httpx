@@ -1,5 +1,7 @@
 module HTTPX
   interface _Response
+    def finished?: () -> bool
+
     def raise_for_status: () -> self
 
     def error: () -> StandardError?

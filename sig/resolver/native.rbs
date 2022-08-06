@@ -10,7 +10,10 @@ module HTTPX
       @family: ip_family
       @options: Options
       @ns_index: Integer
-      @nameserver: String
+      @nameserver: Array[String]?
+      @ndots: Integer
+      @start_timeout: Numeric?
+      @search: Array[String]
       @_timeouts: Array[Numeric]
       @timeouts: Hash[String, Array[Numeric]]
       @connections: Array[Connection]
@@ -37,7 +40,7 @@ module HTTPX
 
       def consume: () -> void
 
-      def do_retry: (?Numeric loop_time) -> void
+      def do_retry: (?Numeric? loop_time) -> void
 
       def dread: (Integer) -> void
                | () -> void

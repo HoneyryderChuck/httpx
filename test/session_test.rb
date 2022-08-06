@@ -74,7 +74,7 @@ class SessionTest < Minitest::Test
     response = session.get(uri)
     verify_error_response(response, HTTPX::ReadTimeoutError)
 
-    uri = build_uri("/drip?numbytes=10&duration=2&delay=0&code=200")
+    uri = build_uri("/drip?numbytes=10&duration=1&delay=0&code=200")
     response1 = session.get(uri)
     verify_status(response1, 200)
   end
@@ -97,7 +97,7 @@ class SessionTest < Minitest::Test
     response = session.get(uri)
     verify_error_response(response, HTTPX::RequestTimeoutError)
 
-    uri = build_uri("/drip?numbytes=10&duration=2&delay=0&code=200")
+    uri = build_uri("/drip?numbytes=10&duration=1&delay=0&code=200")
     response1 = session.get(uri)
     verify_status(response1, 200)
   end

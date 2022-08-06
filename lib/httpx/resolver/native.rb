@@ -77,7 +77,8 @@ module HTTPX
       nil
     rescue Errno::EHOSTUNREACH => e
       @ns_index += 1
-      if @ns_index < @nameserver.size
+      nameserver = @nameserver
+      if nameserver && @ns_index < nameserver.size
         log { "resolver: failed resolving on nameserver #{@nameserver[@ns_index - 1]} (#{e.message})" }
         transition(:idle)
       else

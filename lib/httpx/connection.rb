@@ -626,8 +626,10 @@ module HTTPX
       on_error(error)
     end
 
-    def read_timeout_callback(request, read_timeout, error_type = WriteTimeoutError)
-      return if request.response && request.response.finished?
+    def read_timeout_callback(request, read_timeout, error_type = ReadTimeoutError)
+      response = request.response
+
+      return if response && response.finished?
 
       @write_buffer.clear
       error = error_type.new(request, request.response, read_timeout)
