@@ -64,6 +64,18 @@ module HTTPX
       @state = :idle
     end
 
+    def read_timeout
+      @options.timeout[:read_timeout]
+    end
+
+    def write_timeout
+      @options.timeout[:write_timeout]
+    end
+
+    def request_timeout
+      @options.timeout[:request_timeout]
+    end
+
     def trailers?
       defined?(@trailers)
     end
@@ -108,6 +120,7 @@ module HTTPX
 
     def path
       path = uri.path.dup
+      path =  +"" if path.nil?
       path << "/" if path.empty?
       path << "?#{query}" unless query.empty?
       path
