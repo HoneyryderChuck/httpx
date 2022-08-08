@@ -18,7 +18,7 @@ module HTTPX
     end
 
     interface _Encoder
-      def bytesize: () -> Numeric
+      def bytesize: () -> (Integer | Float)
     end
 
     interface _Decoder

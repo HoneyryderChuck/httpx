@@ -67,7 +67,7 @@ module HTTPX
         end
 
         def option_retry_on(value)
-          raise ":retry_on must be called with the response" unless value.respond_to?(:call)
+          raise TypeError, ":retry_on must be called with the response" unless value.respond_to?(:call)
 
           value
         end

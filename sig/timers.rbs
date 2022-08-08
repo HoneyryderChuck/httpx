@@ -1,7 +1,7 @@
 module HTTPX
   class Timers
     @intervals: Array[Interval]
-    @next_interval_at: Numeric
+    @next_interval_at: Float
 
     def after: (Numeric interval_in_secs) { () -> void } -> void
 

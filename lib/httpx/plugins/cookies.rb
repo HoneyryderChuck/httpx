@@ -42,7 +42,7 @@ module HTTPX
 
         private
 
-        def on_response(reuest, response)
+        def on_response(_request, response)
           if response && response.respond_to?(:headers) && (set_cookie = response.headers["set-cookie"])
 
             log { "cookies: set-cookie is over #{Cookie::MAX_LENGTH}" } if set_cookie.bytesize > Cookie::MAX_LENGTH

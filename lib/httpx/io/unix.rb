@@ -33,7 +33,7 @@ module HTTPX
       else
         if @options.transport_options
           # :nocov:
-          warn ":#{__method__} is deprecated, use :addresses instead"
+          warn ":transport_options is deprecated, use :addresses instead"
           @path = @options.transport_options[:path]
           # :nocov:
         else

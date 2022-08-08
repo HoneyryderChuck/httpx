@@ -22,7 +22,7 @@ module HTTPX
 
       module OptionsMethods
         def option_expect_timeout(value)
-          seconds = Integer(value)
+          seconds = Float(value)
           raise TypeError, ":expect_timeout must be positive" unless seconds.positive?
 
           seconds

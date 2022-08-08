@@ -32,6 +32,7 @@ class HTTPSTest < Minitest::Test
   include Plugins::Upgrade
   include Plugins::GRPC if RUBY_ENGINE == "ruby" && RUBY_VERSION >= "2.3.0"
   include Plugins::ResponseCache
+  include Plugins::CircuitBreaker
 
   def test_connection_coalescing
     coalesced_origin = "https://#{ENV["HTTPBIN_COALESCING_HOST"]}"

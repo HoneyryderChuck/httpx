@@ -29,7 +29,6 @@ module HTTPX
     attr_writer timers: Timers
 
     @type: io_type
-    @origins: Array[URI::Generic]
     @window_size: Integer
     @read_buffer: Buffer
     @write_buffer: Buffer
