@@ -1,12 +1,13 @@
-module HTTPX::Registry[T, V]
+module HTTPX::Registry[unchecked out T, unchecked out V]
   class Error < HTTPX::Error
   end
 
   # type registrable = Symbol | String | Class
 
-  def self.registry: (T tag) -> Class
-                   | () -> Hash[T, V]
-  def self.register: (T tag,  V handler) -> void
+  def self.registry: [T, V] (T) -> Class
+                   | [T, V] () -> Hash[T, V]
+
+  def self.register: [T, V] (T tag,  V handler) -> void
 
   def registry: (?T tag) -> V
 end

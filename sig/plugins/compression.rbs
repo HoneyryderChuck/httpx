@@ -13,7 +13,7 @@ module HTTPX
       interface _Inflater
         def inflate: (string) -> String
 
-        def initialize: (Numeric bytesize) -> untyped
+        def initialize: (Integer | Float bytesize) -> untyped
       end
 
       def self.configure: (singleton(Session)) -> void

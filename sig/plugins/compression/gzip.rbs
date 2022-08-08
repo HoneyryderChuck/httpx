@@ -6,15 +6,15 @@ module HTTPX
         def self.configure: (singleton(Session)) -> void
 
         def self?.deflater: () -> _Deflater
-        def self?.inflater: (Numeric bytesize) -> Inflater
+        def self?.inflater: (Integer | Float bytesize) -> Inflater
 
         class Deflater
           include _Deflater
 
           @compressed_chunk: String
-          
+
           private
-          
+
           def initialize: () -> untyped
           def write: (string) -> void
           def compressed_chunk: () -> String

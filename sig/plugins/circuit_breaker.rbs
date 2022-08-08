@@ -7,15 +7,13 @@ module HTTPX
 
         def try_open: (generic_uri uri, response response) -> void
 
-        def try_close: (generic_uri uri) -> void
-
         def try_respond: (Request request) -> response?
 
         private
 
         def get_circuit_for_uri: (generic_uri uri) -> Circuit
 
-        def initialize: (Options options) -> void
+        def initialize: (Options & _CircuitOptions options) -> void
       end
 
       class Circuit
@@ -49,10 +47,11 @@ module HTTPX
         def circuit_breaker_break_on: () -> (^(Response) -> boolish | nil)
       end
 
+      def self.load_dependencies: (singleton(Session)) -> void
       def self.extra_options: (Options) -> (Options & _CircuitOptions)
 
       module InstanceMethods
-        @store: CircuitStore
+        @circuit_store: CircuitStore
       end
 
     end

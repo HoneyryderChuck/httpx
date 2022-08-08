@@ -67,7 +67,7 @@ module HTTPX
 
       def rewind: () -> void
       def empty?: () -> bool
-      def bytesize: () -> Numeric
+      def bytesize: () -> (Integer | Float)
       def stream: (Transcoder::_Encoder) -> bodyIO
       def unbounded_body?: () -> bool
       def chunked?: () -> bool

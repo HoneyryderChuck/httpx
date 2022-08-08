@@ -4,9 +4,9 @@ module HTTPX
 
     def self?.parse_retry_after: (String) -> Numeric
 
-    def self?.now: () -> Numeric
+    def self?.now: () -> Float
 
-    def self?.elapsed_time: (Numeric monotonic_time) -> Numeric
+    def self?.elapsed_time: (Integer | Float monotonic_time) -> Float
 
     def self?.to_uri: (generic_uri uri) -> URI::Generic
   end

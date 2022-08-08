@@ -6,7 +6,7 @@ module HTTPX
         def self.configure: (singleton(Session)) -> void
 
         def self?.deflater: () -> _Deflater
-        def self?.inflater: (Numeric bytesize) -> GZIP::Inflater
+        def self?.inflater: (Integer | Float bytesize) -> GZIP::Inflater
 
         module Deflater
           extend _Deflater
