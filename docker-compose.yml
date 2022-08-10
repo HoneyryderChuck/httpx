@@ -24,6 +24,7 @@ services:
       - AWS_ACCESS_KEY_ID=test
       - AWS_SECRET_ACCESS_KEY=test
       - AMZ_HOST=aws:4566
+      - WEBDAV_HOST=webdav
     image: ruby:alpine
     privileged: true
     depends_on:
@@ -34,6 +35,7 @@ services:
       - nghttp2
       - aws
       - ws-echo-server
+      - webdav
     volumes:
       - ./:/home
     links:
@@ -137,3 +139,10 @@ services:
     ports:
       - 8083:80
     image: jmalloc/echo-server
+
+  webdav:
+    image: bytemark/webdav
+    environment:
+      - AUTH_TYPE=Basic
+      - USERNAME=user
+      - PASSWORD=pass

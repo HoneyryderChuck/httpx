@@ -32,6 +32,7 @@ class HTTPTest < Minitest::Test
   include Plugins::GRPC if RUBY_ENGINE == "ruby" && RUBY_VERSION >= "2.3.0"
   include Plugins::ResponseCache
   include Plugins::CircuitBreaker
+  include Plugins::WebDav
 
   def test_verbose_log
     log = StringIO.new
