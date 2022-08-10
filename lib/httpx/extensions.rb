@@ -114,7 +114,7 @@ module HTTPX
           else
             smaller, arr = arr, self
           end
-          (array & smaller).size > 0
+          (arr & smaller).size > 0
         end
       end unless Array.method_defined?(:intersect?)
     end
