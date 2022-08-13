@@ -1,0 +1,21 @@
+module HTTPX::Transcoder
+  module XML
+
+    def self?.encode: (untyped xml) -> Encoder
+    def self?.decode: (HTTPX::Response response) -> _Decoder
+
+    class Encoder
+      @raw: untyped # can be nokogiri object
+
+      def content_type: () -> String
+
+      def bytesize: () -> (Integer | Float)
+
+      def to_s: () -> String
+
+      private
+
+      def initialize: (String xml) -> void
+    end
+  end
+end

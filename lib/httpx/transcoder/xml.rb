@@ -12,14 +12,22 @@ module HTTPX::Transcoder
 
     MIME_TYPES = %r{\b(application|text)/(.+\+)?xml\b}.freeze
 
-    class Encoder < SimpleDelegator
+    class Encoder
+      def initialize(xml)
+        @raw = xml
+      end
+
       def content_type
-        charset = respond_to?(:encoding) ? encoding.to_s.downcase : "utf-8"
+        charset = @raw.respond_to?(:encoding) ? @raw.encoding.to_s.downcase : "utf-8"
         "application/xml; charset=#{charset}"
       end
 
       def bytesize
-        to_s.bytesize
+        @raw.to_s.bytesize
+      end
+
+      def to_s
+        @raw.to_s
       end
     end
 

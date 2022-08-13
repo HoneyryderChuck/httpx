@@ -20,7 +20,7 @@ module HTTPX::Transcoder
 
       private
 
-      def initialize: (_ToJson json) -> untyped
+      def initialize: (_ToJson json) -> void
     end
   end
 end
