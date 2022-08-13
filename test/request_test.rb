@@ -77,6 +77,13 @@ class RequestTest < Minitest::Test
     assert req.headers["content-length"] == "13", "content length is wrong"
   end
 
+  def test_request_body_xml
+    req = Request.new(:post, "http://example.com/", xml: "<xml></xml>")
+    assert !req.body.empty?, "body should exist"
+    assert req.headers["content-type"] == "application/xml; charset=utf-8", "content type is wrong"
+    assert req.headers["content-length"] == "11", "content length is wrong"
+  end
+
   private
 
   def resource

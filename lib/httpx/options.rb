@@ -201,7 +201,7 @@ module HTTPX
     end
 
     %i[
-      params form json body ssl http2_settings
+      params form json xml body ssl http2_settings
       request_class response_class headers_class request_body_class
       response_body_class connection_class options_class
       io fallback_protocol debug debug_level transport_options resolver_class resolver_options
@@ -210,7 +210,7 @@ module HTTPX
       def_option(method_name)
     end
 
-    REQUEST_IVARS = %i[@params @form @json @body].freeze
+    REQUEST_IVARS = %i[@params @form @xml @json @body].freeze
     private_constant :REQUEST_IVARS
 
     def ==(other)

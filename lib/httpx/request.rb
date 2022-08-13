@@ -162,6 +162,8 @@ module HTTPX
           Transcoder.registry("form").encode(options.form)
         elsif options.json
           Transcoder.registry("json").encode(options.json)
+        elsif options.xml
+          Transcoder.registry("xml").encode(options.xml)
         end
         return if @body.nil?
 

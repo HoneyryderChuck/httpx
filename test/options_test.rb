@@ -45,7 +45,7 @@ class OptionsTest < Minitest::Test
     assert opt2.body == "fat", "body was not set"
   end
 
-  %i[form json].each do |meth|
+  %i[form json xml].each do |meth|
     define_method :"test_options_#{meth}" do
       opt1 = Options.new
       assert opt1.public_send(meth).nil?, "#{meth} shouldn't be set by default"
@@ -98,6 +98,7 @@ class OptionsTest < Minitest::Test
       :debug_level => 1,
       :params => nil,
       :json => nil,
+      :xml => nil,
       :body => nil,
       :window_size => 16_384,
       :body_threshold_size => 114_688,
