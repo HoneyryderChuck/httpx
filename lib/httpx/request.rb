@@ -9,29 +9,6 @@ module HTTPX
     include Callbacks
     using URIExtensions
 
-    METHODS = [
-      # RFC 2616: Hypertext Transfer Protocol -- HTTP/1.1
-      :options, :get, :head, :post, :put, :delete, :trace, :connect,
-
-      # RFC 2518: HTTP Extensions for Distributed Authoring -- WEBDAV
-      :propfind, :proppatch, :mkcol, :copy, :move, :lock, :unlock,
-
-      # RFC 3648: WebDAV Ordered Collections Protocol
-      :orderpatch,
-
-      # RFC 3744: WebDAV Access Control Protocol
-      :acl,
-
-      # RFC 6352: vCard Extensions to WebDAV -- CardDAV
-      :report,
-
-      # RFC 5789: PATCH Method for HTTP
-      :patch,
-
-      # draft-reschke-webdav-search: WebDAV Search
-      :search
-    ].freeze
-
     USER_AGENT = "httpx.rb/#{VERSION}"
 
     attr_reader :verb, :uri, :headers, :body, :state, :options, :response
@@ -53,8 +30,6 @@ module HTTPX
 
         @uri = origin.merge("#{base_path}#{@uri}")
       end
-
-      raise(Error, "unknown method: #{verb}") unless METHODS.include?(@verb)
 
       @headers = @options.headers_class.new(@options.headers)
       @headers["user-agent"] ||= USER_AGENT
@@ -187,6 +162,8 @@ module HTTPX
           Transcoder.registry("form").encode(options.form)
         elsif options.json
           Transcoder.registry("json").encode(options.json)
+        elsif options.xml
+          Transcoder.registry("xml").encode(options.xml)
         end
         return if @body.nil?
 

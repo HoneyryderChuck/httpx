@@ -23,6 +23,7 @@ group :test do
   else
     gem "webmock"
   end
+  gem "nokogiri"
   gem "websocket-driver"
 
   gem "net-ssh", "~> 4.2.0" if RUBY_VERSION < "2.2.0"

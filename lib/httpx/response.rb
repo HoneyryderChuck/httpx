@@ -94,6 +94,10 @@ module HTTPX
       decode("form")
     end
 
+    def xml
+      decode("xml")
+    end
+
     private
 
     def decode(format, *args)
