@@ -73,11 +73,11 @@
 -
   name: Response Cache
   path: Response-Cache.html
-  description: HTTP caching to minimize bandwidth usage, leveraging etag and last_modified headers.
+  description: HTTP caching to minimize bandwidth usage, leveraging etag and last-modified headers.
 -
   name: Circuit Breaker
   path: Circuit-Breaker.html
-  description: "fail fast and recover after a while" when peer error rate increases.
+  description: fail fast and recover after a while" when peer error rate increases.
 -
   name: WebDAV
   path: WebDav.html
