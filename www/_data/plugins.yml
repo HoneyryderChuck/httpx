@@ -55,6 +55,30 @@
   path: Persistent.html
   description: "Persist connections over the lifetime of a process."
 -
+  name: Stream
+  path: Stream.html
+  description: handles streaming responses (i.e. the Twitter Streaming API, or the `text/event-stream` mime type).
+-
+  name: Expect
+  path: Expect.html
+  description: Supports "100-continue" header in requests with a body.
+-
+  name: Rate Limiter
+  path: Rate-Limiter.html
+  description: handle rate limiting responses from throttling server automatically.
+-
   name: GRPC
   path: GRPC.html
   description: API for building rich GRPC clients.
+-
+  name: Response Cache
+  path: Response-Cache.html
+  description: HTTP caching to minimize bandwidth usage, leveraging etag and last_modified headers.
+-
+  name: Circuit Breaker
+  path: Circuit-Breaker.html
+  description: "fail fast and recover after a while" when peer error rate increases.
+-
+  name: WebDAV
+  path: WebDav.html
+  description: convenience methods to handle common webdav operations.

@@ -19,13 +19,17 @@ And also:
 
 * Compression (gzip, deflate, brotli)
 * Streaming Requests
-* Authentication (Basic Auth, Digest Auth)
+* Authentication (Basic Auth, Digest Auth, NTLM)
 * Expect 100-continue
 * Multipart Requests
-* Cookies
+* Advanced Cookie handling
 * HTTP/2 Server Push
-* H2C Upgrade
+* HTTP/1.1 Upgrade (support for "h2c", "h2")
 * Automatic follow redirects
+* GRPC
+* WebDAV
+* Circuit Breaker
+* HTTP-based response cache
 * International Domain Names
 
 ## How
@@ -36,7 +40,14 @@ Here are some simple examples:
 HTTPX.get("https://nghttp2.org").to_s #=> "<!DOCT...."
 ```
 
-And that's the simplest one there is.
+And that's the simplest one there is. But you can also do:
+
+```ruby
+HTTPX.post("http://example.com", form: { user: "john", password: "pass" })
+
+http = HTTPX.with(headers: { "x-my-name" => "joe" })
+http.patch(("http://example.com/file", body: File.open("path/to/file")) # request body is streamed
+```
 
 If you want to do some more things with the response, you can get an `HTTPX::Response`:
 
@@ -50,7 +61,7 @@ puts body #=> #<HTTPX::Response ...
 You can also send as many requests as you want simultaneously:
 
 ```ruby
-page1, page2, page3 = HTTPX.get("https://news.ycombinator.com/news", "https://news.ycombinator.com/news?p=2", "https://news.ycombinator.com/news?p=3")
+page1, page2, page3 =`HTTPX.get("https://news.ycombinator.com/news", "https://news.ycombinator.com/news?p=2", "https://news.ycombinator.com/news?p=3")
 ```
 
 ## Installation
@@ -73,43 +84,53 @@ and then just require it in your program:
 require "httpx"
 ```
 
-## Why Should I care?
+## What makes it the best ruby HTTP client
 
-In Ruby, HTTP client implementations are a known cheap commodity. Why this one?
 
-### Concurrency
+### Concurrency, HTTP/2 support
 
-This library supports HTTP/2 seamlessly (which means, if the request is secure, and the server support ALPN negotiation AND HTTP/2, the request will be made through HTTP/2). If you pass multiple URIs, and they can utilize the same connection, they will run concurrently in it.
+`httpx` supports HTTP/2 (for "https" requests, it'll automatically do ALPN negotiation). However if the server supports HTTP/1.1, it will use HTTP pipelining, falling back to 1 request at a time if the server doesn't support it either (and it'll use Keep-Alive connections, unless the server does not support).
 
-However if the server supports HTTP/1.1, it will try to use HTTP pipelining, falling back to 1 request at a time if the server doesn't support it (if the server support Keep-Alive connections, it will reuse the same connection).
+If you passed multiple URIs, it'll perform all of the requests concurrently, by mulitplexing on the necessary sockets (and it'll batch requests to the same socket when the origin is the same):
+
+```ruby
+HTTPX.get(
+  "https://news.ycombinator.com/news",
+  "https://news.ycombinator.com/news?p=2",
+  "https://google.com/q=me"
+) # first two requests will be multiplexed on the same socket.
+```
 
 ### Clean API
 
 `httpx` builds all functions around the `HTTPX` module, so that all calls can compose of each other. Here are a few examples:
 
 ```ruby
-response = HTTPX.get("https://www.google.com")
-response = HTTPX.post("https://www.nghttp2.org/httpbin/post", params: {name: "John", age: "22"})
+response = HTTPX.get("https://www.google.com", params: { q: "me" })
+response = HTTPX.post("https://www.nghttp2.org/httpbin/post", form: {name: "John", age: "22"})
 response = HTTPX.plugin(:basic_authentication)
                 .basic_authentication("user", "pass")
                 .get("https://www.google.com")
+
+# more complex client objects can be cached, and are thread-safe
+http = HTTPX.plugin(:compression).plugin(:expect).with(headers: { "x-pvt-token" => "TOKEN"})
+http.get("https://example.com") # the above options will apply
+http.post("https://example2.com",  form: {name: "John", age: "22"}) # same, plus the form POST body
 ```
 
 ### Lightweight
 
-It ships with a plugin system similar to the ones used by [sequel](https://github.com/jeremyevans/sequel), [roda](https://github.com/jeremyevans/roda) or [shrine](https://github.com/janko-m/shrine).
+It ships with most features published as a plugin, making vanilla `httpx` lightweight and dependency-free, while allowing you to "pay for what you use"
 
-It means that it loads the bare minimum to perform requests, and the user has to explicitly load the plugins, in order to get the features he/she needs.
+The plugin system is similar to the ones used by [sequel](https://github.com/jeremyevans/sequel), [roda](https://github.com/jeremyevans/roda) or [shrine](https://github.com/janko-m/shrine).
 
-It also means that it ships with the minimum amount of dependencies.
+### Advanced DNS features
 
-### DNS-over-HTTPS
+`HTTPX` ships with custom DNS resolver implementations, including a native Happy Eyeballs resolver immplementation, and a DNS-over-HTTPS resolver.
 
-`HTTPX` ships with custom DNS resolver implementations, including a DNS-over-HTTPS resolver.
+## User-driven test suite
 
-## Easy to test
-
-The test suite runs against [httpbin proxied over nghttp2](https://nghttp2.org/httpbin/), so there are no mocking/stubbing false positives. The test suite uses [minitest](https://github.com/seattlerb/minitest), but its matchers usage is (almost) limited to `#assert` (`assert` is all you need).
+The test suite runs against [httpbin proxied over nghttp2](https://nghttp2.org/httpbin/), so actual requests are performed during tests.
 
 ## Supported Rubies
 
@@ -122,18 +143,15 @@ All Rubies greater or equal to 2.1, and always latest JRuby and Truffleruby.
 | ------------- | --------------------------------------------------- |
 | Website       | https://honeyryderchuck.gitlab.io/httpx/            |
 | Documentation | https://honeyryderchuck.gitlab.io/httpx/rdoc/       |
-| Wiki          | https://gitlab.com/honeyryderchuck/httpx/wikis/home |
+| Wiki          | https://honeyryderchuck.gitlab.io/httpx/wiki/home.html |
 | CI            | https://gitlab.com/honeyryderchuck/httpx/pipelines  |
+| Rubygems      | https://rubygems.org/gems/httpx                     |
 
 ## Caveats
 
 ### ALPN support
 
-`HTTPS` TLS backend is ruby's own `openssl` gem.
-
-If your requirement is to run requests over HTTP/2 and TLS, make sure you run a version of the gem which compiles OpenSSL 1.0.2 (Ruby 2.3 and higher are guaranteed to).
-
-In order to use HTTP/2 under JRuby, [check this link](https://gitlab.com/honeyryderchuck/httpx/-/wikis/JRuby-Truffleruby-Other-Rubies) to know what to do.
+ALPN negotiation is required for "auto" HTTP/2 "https" requests. This is available in ruby since version 2.3 .
 
 ### Known bugs
 
