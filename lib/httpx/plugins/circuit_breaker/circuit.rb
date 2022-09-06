@@ -28,7 +28,7 @@ module HTTPX
           nil
         when :half_open
           # return nothing or smth based on ratio
-          return if Random::DEFAULT.rand >= @circuit_breaker_half_open_drip_rate
+          return if Random.rand >= @circuit_breaker_half_open_drip_rate
 
           @response
         when :open
