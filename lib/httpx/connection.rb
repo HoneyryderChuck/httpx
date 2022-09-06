@@ -512,9 +512,14 @@ module HTTPX
 
     def transition(nextstate)
       handle_transition(nextstate)
-    rescue Errno::ECONNREFUSED,
+    rescue Errno::ECONNABORTED,
+           Errno::ECONNREFUSED,
+           Errno::ECONNRESET,
            Errno::EADDRNOTAVAIL,
            Errno::EHOSTUNREACH,
+           Errno::EINVAL,
+           Errno::ENETUNREACH,
+           Errno::EPIPE,
            TLSError => e
       # connect errors, exit gracefully
       handle_error(e)
