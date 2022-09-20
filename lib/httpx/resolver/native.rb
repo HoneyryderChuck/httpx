@@ -13,14 +13,14 @@ module HTTPX
         **Resolv::DNS::Config.default_config_hash,
         packet_size: 512,
         timeouts: Resolver::RESOLVE_TIMEOUT,
-      }.freeze
+      }
     else
       {
         nameserver: nil,
         **Resolv::DNS::Config.default_config_hash,
         packet_size: 512,
         timeouts: Resolver::RESOLVE_TIMEOUT,
-      }.freeze
+      }
     end
 
     # nameservers for ipv6 are misconfigured in certain systems;
@@ -34,6 +34,8 @@ module HTTPX
         false
       end
     end if DEFAULTS[:nameserver]
+
+    DEFAULTS.freeze
 
     DNS_PORT = 53
 
