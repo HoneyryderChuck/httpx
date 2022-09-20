@@ -8,7 +8,7 @@ class Bug_0_15_3_Test < Minitest::Test
 
   def test_selectables_usage_in_selector_on_multiple_hosts
     feeds_urls = %w[
-      https://www.mikeperham.com/index.xml
+      https://mikeperham.com/index.xml
       https://www.opennet.ru/opennews/opennews_mini_noadv.rss
       http://blog.cleancoder.com/atom.xml
     ]

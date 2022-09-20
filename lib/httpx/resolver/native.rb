@@ -154,10 +154,21 @@ module HTTPX
       host = connection.origin.host
       timeout = (@timeouts[host][0] -= loop_time)
 
-      return unless timeout.negative?
+      return unless timeout <= 0
 
       @timeouts[host].shift
-      if @timeouts[host].empty?
+
+      if !@timeouts[host].empty?
+        log { "resolver: timeout after #{timeout}s, retry(#{@timeouts[host].first}) #{host}..." }
+        resolve(connection)
+      elsif @ns_index + 1 < @nameserver.size
+        # try on the next nameserver
+        @ns_index += 1
+        log { "resolver: failed resolving #{host} on nameserver #{@nameserver[@ns_index - 1]} (timeout error)" }
+        transition(:idle)
+        resolve(connection)
+      else
+
         @timeouts.delete(host)
         @queries.delete(h)
 
@@ -167,9 +178,6 @@ module HTTPX
         # This loop_time passed to the exception is bogus. Ideally we would pass the total
         # resolve timeout, including from the previous retries.
         raise ResolveTimeoutError.new(loop_time, "Timed out while resolving #{connection.origin.host}")
-      else
-        log { "resolver: timeout after #{timeout}s, retry(#{@timeouts[host].first}) #{host}..." }
-        resolve(connection)
       end
     end
 

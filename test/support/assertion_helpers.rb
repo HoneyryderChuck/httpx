@@ -99,17 +99,21 @@ module ResponseHelpers
     File.join("test", "support", "fixtures", fixture_file_name)
   end
 
-  def start_test_servlet(servlet_class)
-    server = servlet_class.new
+  def start_test_servlet(servlet_class, *args)
+    server = servlet_class.new(*args)
     th = Thread.new { server.start }
     begin
       yield server
     ensure
-      server.shutdown
+      if server.respond_to?(:shutdown)
+        server.shutdown
 
-      begin
-        Timeout.timeout(3) { th.join }
-      rescue Timeout::Error
+        begin
+          Timeout.timeout(3) { th.join }
+        rescue Timeout::Error
+          th.kill
+        end
+      else
         th.kill
       end
     end
