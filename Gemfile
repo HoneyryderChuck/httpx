@@ -37,7 +37,11 @@ group :test do
   platform :mri do
     if RUBY_VERSION >= "2.3.0"
       gem "google-protobuf", "< 3.19.2" if RUBY_VERSION < "2.5.0"
-      gem "grpc"
+      if RUBY_VERSION <= "2.6.0"
+        gem "grpc", "< 1.49.0"
+      else
+        gem "grpc"
+      end
       gem "logging"
       gem "marcel", require: false
       gem "mimemagic", require: false
