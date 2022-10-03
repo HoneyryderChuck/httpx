@@ -2,7 +2,7 @@
 
 module SessionWithPool
   ConnectionPool = Class.new(HTTPX::Pool) do
-    attr_reader :connections, :selector
+    attr_reader :resolver, :connections, :selector
     attr_reader :connection_count
     attr_reader :ping_count
 
@@ -20,6 +20,11 @@ module SessionWithPool
 
     def selectable_count
       @selector.instance_variable_get(:@selectables).size
+    end
+
+    def find_resolver_for(*args, &blk)
+      @resolver = super(*args, &blk)
+      @resolver
     end
   end
 

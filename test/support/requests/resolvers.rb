@@ -6,54 +6,54 @@ module Requests
       native: { cache: false },
       system: { cache: false },
       https: { uri: ENV["HTTPX_RESOLVER_URI"], cache: false },
-    }.each do |resolver, options|
-      define_method :"test_resolver_#{resolver}_multiple_errors" do
+    }.each do |resolver_type, options|
+      define_method :"test_resolver_#{resolver_type}_multiple_errors" do
         2.times do |i|
           session = HTTPX.plugin(SessionWithPool)
           unknown_uri = "http://www.sfjewjfwigiewpgwwg-native-#{i}.com"
-          response = session.get(unknown_uri, resolver_class: resolver, resolver_options: options)
+          response = session.get(unknown_uri, resolver_class: resolver_type, resolver_options: options)
           verify_error_response(response, HTTPX::ResolveError)
         end
       end
 
-      define_method :"test_resolver_#{resolver}_request" do
+      define_method :"test_resolver_#{resolver_type}_request" do
         session = HTTPX.plugin(SessionWithPool)
         uri = build_uri("/get")
-        response = session.head(uri, resolver_class: resolver, resolver_options: options)
+        response = session.head(uri, resolver_class: resolver_type, resolver_options: options)
         verify_status(response, 200)
         response.close
       end
 
-      define_method :"test_resolver_#{resolver}_alias_request" do
+      define_method :"test_resolver_#{resolver_type}_alias_request" do
         session = HTTPX.plugin(SessionWithPool)
         uri = URI(build_uri("/get"))
         # this google host will resolve to a CNAME
         uri.host = "lh3.googleusercontent.com"
-        response = session.head(uri, resolver_class: resolver, resolver_options: options)
+        response = session.head(uri, resolver_class: resolver_type, resolver_options: options)
         assert !response.is_a?(HTTPX::ErrorResponse), "response was an error (#{response})"
         assert response.status < 500, "unexpected HTTP error (#{response})"
         response.close
       end
 
-      case resolver
+      case resolver_type
       when :https
 
-        define_method :"test_resolver_#{resolver}_get_request" do
+        define_method :"test_resolver_#{resolver_type}_get_request" do
           session = HTTPX.plugin(SessionWithPool)
           uri = build_uri("/get")
-          response = session.head(uri, resolver_class: resolver, resolver_options: options.merge(use_get: true))
+          response = session.head(uri, resolver_class: resolver_type, resolver_options: options.merge(use_get: true))
           verify_status(response, 200)
           response.close
         end
 
-        define_method :"test_resolver_#{resolver}_unresolvable_servername" do
+        define_method :"test_resolver_#{resolver_type}_unresolvable_servername" do
           session = HTTPX.plugin(SessionWithPool)
           uri = build_uri("/get")
-          response = session.head(uri, resolver_class: resolver, resolver_options: options.merge(uri: "https://unexisting-doh/dns-query"))
+          response = session.head(uri, resolver_class: resolver_type, resolver_options: options.merge(uri: "https://unexisting-doh/dns-query"))
           verify_error_response(response, HTTPX::ResolveError)
         end
 
-        define_method :"test_resolver_#{resolver}_server_error" do
+        define_method :"test_resolver_#{resolver_type}_server_error" do
           session = HTTPX.plugin(SessionWithPool)
           uri = URI(build_uri("/get"))
           resolver_class = Class.new(HTTPX::Resolver::HTTPS) do
@@ -65,7 +65,7 @@ module Requests
           verify_error_response(response, HTTPX::ResolveError)
         end
 
-        define_method :"test_resolver_#{resolver}_decoding_error" do
+        define_method :"test_resolver_#{resolver_type}_decoding_error" do
           session = HTTPX.plugin(SessionWithPool)
           uri = URI(build_uri("/get"))
           resolver_class = Class.new(HTTPX::Resolver::HTTPS) do
@@ -79,7 +79,7 @@ module Requests
       when :native
 
         # this test mocks an unresponsive DNS server which doesn't return a DNS asnwer back.
-        define_method :"test_resolver_#{resolver}_timeout" do
+        define_method :"test_resolver_#{resolver_type}_timeout" do
           session = HTTPX.plugin(SessionWithPool)
           uri = URI(build_uri("/get"))
           # absolute URL, just to shorten the impact of resolv.conf search.
@@ -104,16 +104,36 @@ module Requests
         end
 
         # this test mocks the case where there's no nameserver set to send the DNS queries to.
-        define_method :"test_resolver_#{resolver}_no_nameserver" do
+        define_method :"test_resolver_#{resolver_type}_no_nameserver" do
           session = HTTPX.plugin(SessionWithPool)
           uri = build_uri("/get")
 
-          response = session.head(uri, resolver_class: resolver, resolver_options: options.merge(nameserver: nil))
+          response = session.head(uri, resolver_class: resolver_type, resolver_options: options.merge(nameserver: nil))
           verify_error_response(response, HTTPX::ResolveError)
         end
 
+        define_method :"test_resolver_#{resolver_type}_slow_nameserver" do
+          start_test_servlet(SlowDNSServer, 6) do |slow_dns_server|
+            start_test_servlet(SlowDNSServer, 1) do |not_so_slow_dns_server|
+              nameservers = [slow_dns_server.nameserver, not_so_slow_dns_server.nameserver]
+
+              resolver_opts = options.merge(nameserver: nameservers, timeouts: [3])
+
+              HTTPX.plugin(SessionWithPool).wrap do |session|
+                uri = build_uri("/get")
+
+                response = session.get(uri, resolver_class: resolver_type, resolver_options: resolver_opts)
+                verify_status(response, 200)
+
+                resolver = session.pool.resolver.resolvers[0]
+                assert resolver.instance_variable_get(:@ns_index) == 1
+              end
+            end
+          end
+        end
+
         # this test mocks a DNS server invalid messages back
-        define_method :"test_resolver_#{resolver}_decoding_error" do
+        define_method :"test_resolver_#{resolver_type}_decoding_error" do
           session = HTTPX.plugin(SessionWithPool)
           uri = URI(build_uri("/get"))
           resolver_class = Class.new(HTTPX::Resolver::Native) do
@@ -126,7 +146,7 @@ module Requests
         end
 
         # this test mocks a DNS server breaking the socket with Errno::EHOSTUNREACH
-        define_method :"test_resolver_#{resolver}_unreachable" do
+        define_method :"test_resolver_#{resolver_type}_unreachable" do
           session = HTTPX.plugin(SessionWithPool)
           uri = URI(build_uri("/get"))
           resolver_class = Class.new(HTTPX::Resolver::Native) do
