@@ -60,7 +60,7 @@ module ResponseHelpers
     case expectation
     when Regexp
       assert response.error.message =~ expectation,
-             "expected to match \/#{expectation}\/ in \"#{response.error.message}\""
+             "expected to match /#{expectation}/ in \"#{response.error.message}\""
     when String
       assert response.error.message.include?(expectation),
              "expected \"#{response.error.message}\" to include \"#{expectation}\""

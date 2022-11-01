@@ -115,7 +115,7 @@ module HTTPX
           elsif value.respond_to?(:each)
             digest = OpenSSL::Digest.new(@algorithm)
 
-            mb_buffer = value.each.each_with_object("".b) do |chunk, buffer|
+            mb_buffer = value.each.with_object("".b) do |chunk, buffer|
               buffer << chunk
               break if buffer.bytesize >= 1024 * 1024
             end

@@ -108,7 +108,7 @@ module Requests
 
         # Test special cases
         special_jar = HTTPX::Plugins::Cookies::Jar.new
-        special_jar.parse(%(a="b"; Path=/, c=d; Path=/, e="f\\\"; \\\"g"))
+        special_jar.parse(%(a="b"; Path=/, c=d; Path=/, e="f\\"; \\"g"))
         cookies = special_jar[jar_cookies_uri]
         assert(cookies.one? { |cookie| cookie.name == "a" && cookie.value == "b" })
         assert(cookies.one? { |cookie| cookie.name == "c" && cookie.value == "d" })
@@ -187,7 +187,7 @@ module Requests
 
         # quoting funny characters
         sch_cookie = HTTPX::Plugins::Cookies::Cookie.new("Bar", "value\"4")
-        assert sch_cookie.cookie_value == %(Bar="value\\\"4")
+        assert sch_cookie.cookie_value == %(Bar="value\\"4")
 
         # sorting
         c1 = HTTPX::Plugins::Cookies::Cookie.new("a", "b")

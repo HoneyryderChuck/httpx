@@ -30,7 +30,7 @@ module Requests
         session = HTTPX.plugin(:stream)
 
         response = session.get(build_uri("/stream/3"), stream: true)
-        lines = response.each_line.each_with_index.map do |line, idx|
+        lines = response.each_line.with_index.map do |line, idx|
           assert !line.end_with?("\n")
           data = JSON.parse(line)
           assert data["id"] == idx
