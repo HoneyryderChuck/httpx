@@ -5,7 +5,7 @@ module HTTPX
     #
     # This plugin adds support for retrying requests when certain errors happen.
     #
-    # https://gitlab.com/honeyryderchuck/httpx/wikis/Response-Cache
+    # https://gitlab.com/os85/httpx/wikis/Response-Cache
     #
     module ResponseCache
       CACHEABLE_VERBS = %i[get head].freeze

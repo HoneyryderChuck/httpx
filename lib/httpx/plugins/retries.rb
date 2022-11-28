@@ -5,7 +5,7 @@ module HTTPX
     #
     # This plugin adds support for retrying requests when certain errors happen.
     #
-    # https://gitlab.com/honeyryderchuck/httpx/wikis/Retries
+    # https://gitlab.com/os85/httpx/wikis/Retries
     #
     module Retries
       MAX_RETRIES = 3

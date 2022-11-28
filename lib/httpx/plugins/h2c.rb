@@ -6,7 +6,7 @@ module HTTPX
     # This plugin adds support for upgrading a plaintext HTTP/1.1 connection to HTTP/2
     # (https://tools.ietf.org/html/rfc7540#section-3.2)
     #
-    # https://gitlab.com/honeyryderchuck/httpx/wikis/Upgrade#h2c
+    # https://gitlab.com/os85/httpx/wikis/Upgrade#h2c
     #
     module H2C
       VALID_H2C_VERBS = %i[get options head].freeze

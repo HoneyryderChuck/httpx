@@ -5,7 +5,7 @@ module HTTPX
     #
     # This plugin makes all HTTP/1.1 requests with a body send the "Expect: 100-continue".
     #
-    # https://gitlab.com/honeyryderchuck/httpx/wikis/Expect#expect
+    # https://gitlab.com/os85/httpx/wikis/Expect#expect
     #
     module Expect
       EXPECT_TIMEOUT = 2

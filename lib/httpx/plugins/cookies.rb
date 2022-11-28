@@ -9,7 +9,7 @@ module HTTPX
     #
     # It also adds a *#cookies* helper, so that you can pre-fill the cookies of a session.
     #
-    # https://gitlab.com/honeyryderchuck/httpx/wikis/Cookies
+    # https://gitlab.com/os85/httpx/wikis/Cookies
     #
     module Cookies
       def self.load_dependencies(*)

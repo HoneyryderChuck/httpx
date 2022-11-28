@@ -14,7 +14,7 @@ if [[ "$RUBY_ENGINE" = "truffleruby" ]]; then
 elif [[ "$RUBY_PLATFORM" = "java" ]]; then
   apt-get update && apt-get install -y build-essential iptables iproute2 file idn2 git
 elif [[ ${RUBY_VERSION:0:3} = "2.1" ]]; then
-  apt-get update && apt-get install -y libsodium-dev iptables iproute2 libmagic-dev shared-mime-info
+  apt-get update && apt-get install -y --force-yes libsodium-dev iptables iproute2 libmagic-dev shared-mime-info
   IPTABLES=iptables
 elif [[ ${RUBY_VERSION:0:3} = "2.2" ]]; then
   apt-get update && apt-get install -y iptables iproute2 libmagic-dev shared-mime-info

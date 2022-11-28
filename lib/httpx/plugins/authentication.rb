@@ -6,7 +6,7 @@ module HTTPX
     # This plugin adds a shim +authentication+ method to the session, which will fill
     # the HTTP Authorization header.
     #
-    # https://gitlab.com/honeyryderchuck/httpx/wikis/Authentication#authentication
+    # https://gitlab.com/os85/httpx/wikis/Authentication#authentication
     #
     module Authentication
       module InstanceMethods

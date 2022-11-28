@@ -16,7 +16,7 @@ module HTTPX
     #
     # This plugin adds DSL to build GRPC interfaces.
     #
-    # https://gitlab.com/honeyryderchuck/httpx/wikis/GRPC
+    # https://gitlab.com/os85/httpx/wikis/GRPC
     #
     module GRPC
       unless String.method_defined?(:underscore)

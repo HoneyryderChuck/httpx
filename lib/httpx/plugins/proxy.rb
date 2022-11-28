@@ -12,7 +12,7 @@ module HTTPX
     # * Socks4/4a proxies
     # * Socks5 proxies
     #
-    # https://gitlab.com/honeyryderchuck/httpx/wikis/Proxy
+    # https://gitlab.com/os85/httpx/wikis/Proxy
     #
     module Proxy
       Error = HTTPProxyError

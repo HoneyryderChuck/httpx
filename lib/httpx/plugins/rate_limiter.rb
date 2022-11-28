@@ -9,7 +9,7 @@ module HTTPX
     # * when the server is unavailable (503);
     # * when a 3xx request comes with a "retry-after" value
     #
-    # https://gitlab.com/honeyryderchuck/httpx/wikis/RateLimiter
+    # https://gitlab.com/os85/httpx/wikis/RateLimiter
     #
     module RateLimiter
       class << self

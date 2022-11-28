@@ -10,7 +10,7 @@ module HTTPX
     #
     # It supports both *gzip* and *deflate*.
     #
-    # https://gitlab.com/honeyryderchuck/httpx/wikis/Compression
+    # https://gitlab.com/os85/httpx/wikis/Compression
     #
     module Compression
       class << self

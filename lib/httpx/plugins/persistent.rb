@@ -15,7 +15,7 @@ module HTTPX
     # This plugin is also not recommendable when connecting to >9000 (like, a lot) different origins.
     # So when you use this, make sure that you don't fall into this trap.
     #
-    # https://gitlab.com/honeyryderchuck/httpx/wikis/Persistent
+    # https://gitlab.com/os85/httpx/wikis/Persistent
     #
     module Persistent
       def self.load_dependencies(klass)
