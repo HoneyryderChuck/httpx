@@ -8,7 +8,7 @@ module HTTPX
     # In order to benefit from this, requests are sent one at a time, so that
     # no push responses are received after corresponding request has been sent.
     #
-    # https://gitlab.com/honeyryderchuck/httpx/wikis/Server-Push
+    # https://gitlab.com/os85/httpx/wikis/Server-Push
     #
     module PushPromise
       def self.extra_options(options)

@@ -15,15 +15,15 @@ Gem::Specification.new do |gem|
 
   gem.summary       = "HTTPX, to the future, and beyond"
 
-  gem.homepage      = "https://gitlab.com/honeyryderchuck/httpx"
+  gem.homepage      = "https://gitlab.com/os85/httpx"
   gem.license = "Apache 2.0"
 
   gem.metadata = {
-    "bug_tracker_uri" => "https://gitlab.com/honeyryderchuck/httpx/issues",
-    "changelog_uri" => "https://honeyryderchuck.gitlab.io/httpx/#release-notes",
-    "documentation_uri" => "https://honeyryderchuck.gitlab.io/httpx/rdoc/",
-    "source_code_uri" => "https://gitlab.com/honeyryderchuck/httpx",
-    "homepage_uri" => "https://honeyryderchuck.gitlab.io/httpx/",
+    "bug_tracker_uri" => "https://gitlab.com/os85/httpx/issues",
+    "changelog_uri" => "https://os85.gitlab.io/httpx/#release-notes",
+    "documentation_uri" => "https://os85.gitlab.io/httpx/rdoc/",
+    "source_code_uri" => "https://gitlab.com/os85/httpx",
+    "homepage_uri" => "https://os85.gitlab.io/httpx/",
     "rubygems_mfa_required" => "true",
   }
 

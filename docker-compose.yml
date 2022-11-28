@@ -77,7 +77,7 @@ services:
       -d 3
 
   http2proxy:
-    image: registry.gitlab.com/honeyryderchuck/httpx/nghttp2:3
+    image: registry.gitlab.com/os85/httpx/nghttp2:1
     ports:
       - 3300:80
     depends_on:
@@ -88,7 +88,7 @@ services:
       --no-ocsp --frontend '*,80;no-tls' --backend 'httpproxy,3128' --http2-proxy
 
   nghttp2:
-    image: registry.gitlab.com/honeyryderchuck/httpx/nghttp2:3
+    image: registry.gitlab.com/os85/httpx/nghttp2:1
     ports:
       - 80:80
       - 443:443
@@ -102,7 +102,7 @@ services:
       --conf /home/nghttp.conf --no-ocsp --frontend '*,80;no-tls' --frontend '*,443'
 
   altsvc-nghttp2:
-    image: registry.gitlab.com/honeyryderchuck/httpx/nghttp2:3
+    image: registry.gitlab.com/os85/httpx/nghttp2:1
     ports:
       - 81:80
       - 444:443

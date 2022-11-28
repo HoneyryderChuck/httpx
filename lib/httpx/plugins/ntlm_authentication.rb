@@ -3,7 +3,7 @@
 module HTTPX
   module Plugins
     #
-    # https://gitlab.com/honeyryderchuck/httpx/wikis/Authentication#ntlm-authentication
+    # https://gitlab.com/os85/httpx/wikis/Authentication#ntlm-authentication
     #
     module NTLMAuth
       class << self

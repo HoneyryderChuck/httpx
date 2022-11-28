@@ -5,7 +5,7 @@ module HTTPX
     #
     # This plugin implements a circuit breaker around connection errors.
     #
-    # https://gitlab.com/honeyryderchuck/httpx/wikis/Circuit-Breaker
+    # https://gitlab.com/os85/httpx/wikis/Circuit-Breaker
     #
     module CircuitBreaker
       using URIExtensions

@@ -67,7 +67,7 @@ desc "Builds Homepage"
 task :prepare_website => ["rdoc"] do
   require "fileutils"
   FileUtils.rm_rf("wiki")
-  system("git clone https://gitlab.com/honeyryderchuck/httpx.wiki.git wiki")
+  system("git clone https://gitlab.com/os85/httpx.wiki.git wiki")
   Dir.glob("wiki/*.md") do |path|
     data = File.read(path)
     name = File.basename(path, ".md")

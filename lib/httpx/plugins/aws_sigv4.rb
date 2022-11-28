@@ -7,7 +7,7 @@ module HTTPX
     #
     # https://docs.aws.amazon.com/general/latest/gr/signature-version-4.html
     #
-    # https://gitlab.com/honeyryderchuck/httpx/wikis/AWS-SigV4
+    # https://gitlab.com/os85/httpx/wikis/AWS-SigV4
     #
     module AWSSigV4
       Credentials = Struct.new(:username, :password, :security_token)

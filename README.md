@@ -1,8 +1,8 @@
 # HTTPX: A Ruby HTTP library for tomorrow... and beyond!
 
 [![Gem Version](https://badge.fury.io/rb/httpx.svg)](http://rubygems.org/gems/httpx)
-[![pipeline status](https://gitlab.com/honeyryderchuck/httpx/badges/master/pipeline.svg)](https://gitlab.com/honeyryderchuck/httpx/pipelines?page=1&scope=all&ref=master)
-[![coverage report](https://gitlab.com/honeyryderchuck/httpx/badges/master/coverage.svg?job=coverage)](https://honeyryderchuck.gitlab.io/httpx/coverage/#_AllFiles)
+[![pipeline status](https://gitlab.com/os85/httpx/badges/master/pipeline.svg)](https://gitlab.com/os85/httpx/pipelines?page=1&scope=all&ref=master)
+[![coverage report](https://gitlab.com/os85/httpx/badges/master/coverage.svg?job=coverage)](https://os85.gitlab.io/httpx/coverage/#_AllFiles)
 
 HTTPX is an HTTP client library for the Ruby programming language.
 
@@ -141,10 +141,10 @@ All Rubies greater or equal to 2.1, and always latest JRuby and Truffleruby.
 ## Resources
 |               |                                                     |
 | ------------- | --------------------------------------------------- |
-| Website       | https://honeyryderchuck.gitlab.io/httpx/            |
-| Documentation | https://honeyryderchuck.gitlab.io/httpx/rdoc/       |
-| Wiki          | https://honeyryderchuck.gitlab.io/httpx/wiki/home.html |
-| CI            | https://gitlab.com/honeyryderchuck/httpx/pipelines  |
+| Website       | https://os85.gitlab.io/httpx/            |
+| Documentation | https://os85.gitlab.io/httpx/rdoc/       |
+| Wiki          | https://os85.gitlab.io/httpx/wiki/home.html |
+| CI            | https://gitlab.com/os85/httpx/pipelines  |
 | Rubygems      | https://rubygems.org/gems/httpx                     |
 
 ## Caveats
@@ -155,8 +155,8 @@ ALPN negotiation is required for "auto" HTTP/2 "https" requests. This is availab
 
 ### Known bugs
 
-* Doesn't work with ruby 2.4.0 for Windows (see [#36](https://gitlab.com/honeyryderchuck/httpx/issues/36)).
-* Using `total_timeout` along with the `:persistent` plugin [does not work as you might expect](https://gitlab.com/honeyryderchuck/httpx/-/wikis/Timeouts#total_timeout).
+* Doesn't work with ruby 2.4.0 for Windows (see [#36](https://gitlab.com/os85/httpx/issues/36)).
+* Using `total_timeout` along with the `:persistent` plugin [does not work as you might expect](https://gitlab.com/os85/httpx/-/wikis/Timeouts#total_timeout).
 
 ## Versioning Policy
 

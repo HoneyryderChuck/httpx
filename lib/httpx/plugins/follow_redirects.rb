@@ -11,7 +11,7 @@ module HTTPX
     #
     # It also doesn't follow insecure redirects (https -> http) by default (see *follow_insecure_redirects*).
     #
-    # https://gitlab.com/honeyryderchuck/httpx/wikis/Follow-Redirects
+    # https://gitlab.com/os85/httpx/wikis/Follow-Redirects
     #
     module FollowRedirects
       MAX_REDIRECTS = 3
