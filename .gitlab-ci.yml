@@ -102,26 +102,6 @@ test truffleruby:
     ./spec.sh truffleruby latest
   allow_failure: true
 
-jekyll:
-  stage: test
-  image: "ruby:3.1"
-  variables:
-    JEKYLL_ENV: production
-    BUNDLE_WITHOUT: test:coverage:assorted
-  script:
-    - bundle install --quiet
-    - bundle exec rake prepare_website
-    - mv rdoc/ www
-    - mv wiki/ www
-    - bundle exec opal -c www/scripts/curl_to_ruby.js.rb > www/scripts/curl_to_ruby.js
-    - bundle exec jekyll build -s www -d public
-  artifacts:
-    paths:
-      - public/
-  only:
-    - master
-    - blog
-
 coverage:
   coverage: '/\(\d+.\d+\%\) covered/'
   stage: prepare
@@ -146,21 +126,20 @@ coverage:
     paths:
       - "coverage/"
 
-pages:
+docs:
   stage: deploy
   needs:
     - coverage
-    - jekyll
+  image: "ruby:3.1"
   script:
-    - "if [ -d coverage ] ; then mv coverage public ; fi"
+    - rake prepare_website
   artifacts:
     paths:
-      - public
-    expire_in: 30 days
+      - rdoc/
+      - wiki/
+      - coverage/
   only:
     - master
-    - blog
-
 
 prepare_release:
   stage: prepare
