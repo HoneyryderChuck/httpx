@@ -17,7 +17,7 @@ variables:
 
 .test_settings: &test_settings
   variables:
-    BUNDLE_WITHOUT: website:assorted
+    BUNDLE_WITHOUT: assorted
   stage: test
   services:
     - docker:dind
@@ -106,7 +106,7 @@ coverage:
   coverage: '/\(\d+.\d+\%\) covered/'
   stage: prepare
   variables:
-    BUNDLE_WITHOUT: test:website:assorted
+    BUNDLE_WITHOUT: test:assorted
 
   image: "ruby:3.1"
   script:
@@ -131,6 +131,8 @@ docs:
   needs:
     - coverage
   image: "ruby:3.1"
+  before_script:
+    - gem install hanna-nouveau
   script:
     - rake prepare_website
   artifacts:
