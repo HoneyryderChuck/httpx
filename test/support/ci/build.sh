@@ -53,7 +53,6 @@ if [[ "$RUBY_ENGINE" = "truffleruby" ]]; then
   gem install bundler -v="2.1.4" --no-doc --conservative
 fi
 
-export BUNDLE_WITHOUT=website
 bundle install --quiet
 
 echo "Waiting for S3 at address ${AMZ_HOST}/health, attempting every 5s"
