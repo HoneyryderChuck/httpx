@@ -38,7 +38,6 @@ module HTTPX::Transcoder
     begin
       require "nokogiri"
 
-      # rubocop:disable Lint/DuplicateMethods
       def decode(response)
         content_type = response.content_type.mime_type
 
@@ -51,7 +50,6 @@ module HTTPX::Transcoder
         raise HTTPX::Error, "\"nokogiri\" is required in order to decode XML"
       end
     end
-    # rubocop:enable Lint/DuplicateMethods
   end
   register "xml", Xml
 end
