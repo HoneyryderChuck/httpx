@@ -129,6 +129,7 @@ module HTTPX
     end
 
     def on_resolver_connection(connection)
+      @connections << connection unless @connections.include?(connection)
       found_connection = @connections.find do |ch|
         ch != connection && ch.mergeable?(connection)
       end

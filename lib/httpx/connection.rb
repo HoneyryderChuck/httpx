@@ -76,6 +76,13 @@ module HTTPX
       self.addresses = @options.addresses if @options.addresses
     end
 
+    def clone_new_connection
+      new_conn = self.class.new(@type, @origin, @options)
+      once(:open, &new_conn.method(:reset))
+      new_conn.once(:open, &method(:close))
+      new_conn
+    end
+
     # this is a semi-private method, to be used by the resolver
     # to initiate the io object.
     def addresses=(addrs)
