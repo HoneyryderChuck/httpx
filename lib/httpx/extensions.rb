@@ -55,6 +55,7 @@ module HTTPX
   end
 
   module NumericExtensions
+    # Ruby 2.4 backport
     refine Numeric do
       def infinite?
         self == Float::INFINITY
@@ -64,6 +65,7 @@ module HTTPX
 
   module StringExtensions
     refine String do
+      # Ruby 2.5 backport
       def delete_suffix!(suffix)
         suffix = Backports.coerce_to_str(suffix)
         chomp! if frozen?
@@ -80,6 +82,7 @@ module HTTPX
 
   module HashExtensions
     refine Hash do
+      # Ruby 2.4 backport
       def compact
         h = {}
         each do |key, value|
@@ -93,7 +96,7 @@ module HTTPX
   module ArrayExtensions
     module FilterMap
       refine Array do
-
+        # Ruby 2.7 backport
         def filter_map
           return to_enum(:filter_map) unless block_given?
 
@@ -107,6 +110,7 @@ module HTTPX
 
     module Sum
       refine Array do
+        # Ruby 2.6 backport
         def sum(accumulator = 0, &block)
           values = block_given? ? map(&block) : self
           values.inject(accumulator, :+)
@@ -116,6 +120,7 @@ module HTTPX
 
     module Intersect
       refine Array do
+        # Ruby 3.1 backport
         def intersect?(arr)
           if size < arr.size
             smaller = self
@@ -130,6 +135,7 @@ module HTTPX
 
   module IOExtensions
     refine IO do
+      # Ruby 2.3 backport
       # provides a fallback for rubies where IO#wait isn't implemented,
       # but IO#wait_readable and IO#wait_writable are.
       def wait(timeout = nil, _mode = :read_write)
@@ -144,6 +150,7 @@ module HTTPX
 
   module RegexpExtensions
     refine(Regexp) do
+      # Ruby 2.4 backport
       def match?(*args)
         !match(*args).nil?
       end
@@ -151,6 +158,7 @@ module HTTPX
   end
 
   module URIExtensions
+    # uri 0.11 backport, ships with ruby 3.1
     refine URI::Generic do
       def non_ascii_hostname
         @non_ascii_hostname
