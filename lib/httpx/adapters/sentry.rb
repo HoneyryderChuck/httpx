@@ -95,7 +95,7 @@ module HTTPX::Plugins
 end
 
 Sentry.register_patch do
-  sentry_session = ::HTTPX.plugin(HTTPX::Plugins::Sentry)
+  sentry_session = HTTPX.plugin(HTTPX::Plugins::Sentry)
 
   HTTPX.send(:remove_const, :Session)
   HTTPX.send(:const_set, :Session, sentry_session.class)

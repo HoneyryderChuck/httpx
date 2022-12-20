@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-if defined?(::DDTrace) && ::DDTrace::VERSION::STRING >= "1.0.0"
+if defined?(DDTrace) && DDTrace::VERSION::STRING >= "1.0.0"
   require "datadog/tracing/contrib/integration"
   require "datadog/tracing/contrib/configuration/settings"
   require "datadog/tracing/contrib/patcher"

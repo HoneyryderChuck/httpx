@@ -50,11 +50,11 @@ rdoc_opts = ["--line-numbers", "--title", "HTTPX: An HTTP client library for rub
 
 begin
   gem "hanna-nouveau"
-  rdoc_opts.concat(["-f", "hanna"])
+  rdoc_opts.push("-f", "hanna")
 rescue Gem::LoadError
 end
 
-rdoc_opts.concat(["--main", "README.md"])
+rdoc_opts.push("--main", "README.md")
 RDOC_FILES = %w[README.md lib/**/*.rb] + Dir["doc/*.rdoc"] + Dir["doc/release_notes/*.md"]
 
 RDoc::Task.new do |rdoc|
