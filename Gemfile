@@ -17,7 +17,7 @@ group :test do
   gem "minitest-proveit"
   gem "ruby-ntlm"
   gem "sentry-ruby" if RUBY_VERSION >= "2.4.0"
-  gem "spy"
+  gem "spy", "< 1.0.4" #  TODO: remove this once upstream fixes bug
   if RUBY_VERSION < "2.3.0"
     gem "webmock", "< 3.15.0"
   else

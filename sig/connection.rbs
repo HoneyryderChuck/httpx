@@ -36,6 +36,8 @@ module HTTPX
     @keep_alive_timeout: Numeric?
     @total_timeout: Numeric?
 
+    def clone_new_connection: () -> instance
+
     def addresses: () -> Array[ipaddr]?
 
     def addresses=: (Array[ipaddr]) -> void

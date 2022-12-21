@@ -63,19 +63,25 @@ module HTTPX
         log { "resolver: A response, applying resolution delay..." }
         @pool.after(0.05) do
           # double emission check
-          unless connection.addresses && addresses.intersect?(connection.addresses)
-
-            connection.addresses = addresses
-            emit(:resolve, connection)
-          end
+          emit_resolved_connection(connection, addresses) unless connection.addresses && addresses.intersect?(connection.addresses)
         end
       else
-        connection.addresses = addresses
-        emit(:resolve, connection)
+        emit_resolved_connection(connection, addresses)
       end
     end
 
     private
+
+    def emit_resolved_connection(connection, addresses)
+      if connection.io && connection.connecting? && @pool
+        new_connection = connection.clone_new_connection
+        @pool.init_connection(new_connection, connection.options)
+        connection = new_connection
+      end
+      connection.addresses = addresses
+
+      emit(:resolve, connection)
+    end
 
     def early_resolve(connection, hostname: connection.origin.host)
       addresses = @resolver_options[:cache] && (connection.addresses || HTTPX::Resolver.nolookup_resolve(hostname))
