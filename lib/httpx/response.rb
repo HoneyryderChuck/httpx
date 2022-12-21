@@ -128,6 +128,8 @@ module HTTPX
     end
 
     class Body
+      attr_reader :encoding
+
       def initialize(response, options)
         @response = response
         @headers = response.headers

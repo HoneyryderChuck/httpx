@@ -48,13 +48,14 @@ module HTTPX
       include _ToS
       include _ToStr
 
+      attr_reader encoding: String
+
       @response: Response
       @headers: Headers
       @options: Options
       @state: :idle | :memory | :buffer | :closed
       @threshold_size: Integer
       @window_size: Integer
-      @encoding: String
       @length: Integer
       @buffer: StringIO | Tempfile | nil
 
