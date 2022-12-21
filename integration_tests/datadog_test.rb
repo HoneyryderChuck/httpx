@@ -199,12 +199,12 @@ class DatadogTest < Minitest::Test
     assert span.get_tag("http.url") == uri.path
     if error
       assert span.get_tag("error.type") == error
-      assert !span.get_tag("error.msg").nil?
+      assert !span.get_tag("error.message").nil?
       assert span.status == 1
     elsif response.status >= 400
       assert span.get_tag("http.status_code") == response.status.to_s
       assert span.get_tag("error.type") == "HTTPX::HTTPError"
-      assert !span.get_tag("error.msg").nil?
+      assert !span.get_tag("error.message").nil?
       assert span.status == 1
     else
       assert span.status.zero?
