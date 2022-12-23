@@ -35,7 +35,9 @@ module HTTPX
           response = super
 
           if response
-            return response unless response.respond_to?(:headers) && response.headers.key?("upgrade")
+            return response unless response.is_a?(Response)
+
+            return response unless response.headers.key?("upgrade")
 
             upgrade_protocol = response.headers["upgrade"].split(/ *, */).first
 

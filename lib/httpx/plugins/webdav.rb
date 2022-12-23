@@ -32,6 +32,8 @@ module HTTPX
                 "</D:lockinfo>"
           response = request(:lock, path, headers: headers, xml: xml)
 
+          return response unless response.is_a?(Response)
+
           return response unless blk && response.status == 200
 
           lock_token = response.headers["lock-token"]

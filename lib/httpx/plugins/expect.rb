@@ -50,7 +50,8 @@ module HTTPX
         end
 
         def response=(response)
-          if response && response.status == 100 &&
+          if response.is_a?(Response) &&
+             response.status == 100 &&
              !@headers.key?("expect") &&
              (@state == :body || @state == :done)
 
@@ -92,7 +93,7 @@ module HTTPX
           response = @responses.delete(request)
           return unless response
 
-          if response.status == 417 && request.headers.key?("expect")
+          if response.is_a?(Response) && response.status == 417 && request.headers.key?("expect")
             response.close
             request.headers.delete("expect")
             request.transition(:idle)

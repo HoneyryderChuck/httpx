@@ -63,7 +63,11 @@ module HTTPX::Plugins
 
         request_info = extract_request_info(req)
         sentry_span.set_description("#{request_info[:method]} #{request_info[:url]}")
-        sentry_span.set_data(:status, res.status)
+        if res.is_a?(HTTPX::ErrorResponse)
+          sentry_span.set_data(:error, res.message)
+        else
+          sentry_span.set_data(:status, res.status)
+        end
         sentry_span.set_timestamp(::Sentry.utc_now.to_f)
       end
 
