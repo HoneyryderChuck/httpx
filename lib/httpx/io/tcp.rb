@@ -74,8 +74,13 @@ module HTTPX
       try_connect
     rescue Errno::ECONNREFUSED,
            Errno::EADDRNOTAVAIL,
-           Errno::EHOSTUNREACH => e
-      raise e if @ip_index <= 0
+           Errno::EHOSTUNREACH,
+           SocketError => e
+      if @ip_index <= 0
+        error = ConnectionError.new(e.message)
+        error.set_backtrace(e.backtrace)
+        raise error
+      end
 
       log { "failed connecting to #{@ip} (#{e.message}), trying next..." }
       @ip_index -= 1

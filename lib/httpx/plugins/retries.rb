@@ -23,6 +23,7 @@ module HTTPX
         Parser::Error,
         TLSError,
         TimeoutError,
+        ConnectionError,
         Connection::HTTP2::GoawayError,
       ].freeze
       DEFAULT_JITTER = ->(interval) { interval * (0.5 * (1 + rand)) }

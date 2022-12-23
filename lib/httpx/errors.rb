@@ -5,6 +5,8 @@ module HTTPX
 
   class UnsupportedSchemeError < Error; end
 
+  class ConnectionError < Error; end
+
   class TimeoutError < Error
     attr_reader :timeout
 

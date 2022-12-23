@@ -242,7 +242,8 @@ module Faraday
              Errno::EHOSTUNREACH,
              Errno::EINVAL,
              Errno::ENETUNREACH,
-             Errno::EPIPE => e
+             Errno::EPIPE,
+             ::HTTPX::ConnectionError => e
         raise CONNECTION_FAILED_ERROR, e
       end
 

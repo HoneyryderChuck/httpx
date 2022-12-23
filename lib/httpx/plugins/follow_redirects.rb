@@ -121,6 +121,12 @@ module HTTPX
           @redirect_request || self
         end
 
+        def response
+          return super unless @redirect_request
+
+          @redirect_request.response
+        end
+
         def max_redirects
           @options.max_redirects || MAX_REDIRECTS
         end
