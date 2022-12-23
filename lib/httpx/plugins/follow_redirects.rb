@@ -44,7 +44,8 @@ module HTTPX
 
           max_redirects = redirect_request.max_redirects
 
-          return response unless response.is_a?(Response) && REDIRECT_STATUS.include?(response.status) && response.headers.key?("location")
+          return response unless response.is_a?(Response)
+          return response unless REDIRECT_STATUS.include?(response.status) && response.headers.key?("location")
           return response unless max_redirects.positive?
 
           retry_request = build_redirect_request(redirect_request, response, options)

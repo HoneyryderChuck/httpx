@@ -23,6 +23,7 @@ module HTTPX
             response = super
 
             if response &&
+               response.is_a?(Response) &&
                response.status == 407 &&
                !request.headers.key?("proxy-authorization") &&
                response.headers.key?("proxy-authenticate")
@@ -113,13 +114,14 @@ module HTTPX
 
           def __http_on_connect(request, response)
             @inflight -= 1
-            if response.status == 200
+            if response.is_a?(Response) && response.status == 200
               req = @pending.first
               request_uri = req.uri
               @io = ProxySSL.new(@io, request_uri, @options)
               transition(:connected)
               throw(:called)
-            elsif response.status == 407 &&
+            elsif response.is_a?(Response) &&
+                  response.status == 407 &&
                   !request.headers.key?("proxy-authorization") &&
                   @options.proxy.can_authenticate?(response.headers["proxy-authenticate"])
 

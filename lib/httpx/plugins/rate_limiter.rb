@@ -23,6 +23,8 @@ module HTTPX
         end
 
         def retry_on_rate_limited_response(response)
+          return false unless response.is_a?(Response)
+
           status = response.status
 
           RATE_LIMIT_CODES.include?(status)
