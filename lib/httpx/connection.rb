@@ -526,8 +526,14 @@ module HTTPX
            Errno::EHOSTUNREACH,
            Errno::EINVAL,
            Errno::ENETUNREACH,
-           Errno::EPIPE,
-           TLSError => e
+           Errno::EPIPE => e
+      # connect errors, exit gracefully
+      error = ConnectionError.new(e.message)
+      error.set_backtrace(e.backtrace)
+      handle_error(error)
+      @state = :closed
+      emit(:close)
+    rescue TLSError => e
       # connect errors, exit gracefully
       handle_error(e)
       @state = :closed
