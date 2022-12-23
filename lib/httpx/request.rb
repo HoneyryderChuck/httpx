@@ -86,7 +86,7 @@ module HTTPX
     def response=(response)
       return unless response
 
-      if response.is_a?(Response) && response.status == 100
+      if response.is_a?(Response) && response.status == 100 && @headers.key?("expect")
         @informational_status = response.status
         return
       end
