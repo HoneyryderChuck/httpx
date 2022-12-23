@@ -95,8 +95,6 @@ module HTTPX
     #
     module Stream
       module InstanceMethods
-        private
-
         def request(*args, stream: false, **options)
           return super(*args, **options) unless stream
 
