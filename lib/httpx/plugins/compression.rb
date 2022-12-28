@@ -30,7 +30,7 @@ module HTTPX
       module OptionsMethods
         def option_compression_threshold_size(value)
           bytes = Integer(value)
-          raise TypeError, ":expect_threshold_size must be positive" unless bytes.positive?
+          raise TypeError, ":compression_threshold_size must be positive" unless bytes.positive?
 
           bytes
         end
