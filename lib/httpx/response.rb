@@ -181,6 +181,12 @@ module HTTPX
         end
       end
 
+      def filename
+        return unless @headers.key?("content-disposition")
+
+        Utils.get_filename(@headers["content-disposition"])
+      end
+
       def to_s
         case @buffer
         when StringIO

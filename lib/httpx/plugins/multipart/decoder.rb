@@ -5,10 +5,6 @@ require "delegate"
 
 module HTTPX::Plugins
   module Multipart
-    using HTTPX::RegexpExtensions unless Regexp.method_defined?(:match?)
-
-    CRLF = "\r\n"
-
     class FilePart < SimpleDelegator
       attr_reader :original_filename, :content_type
 
@@ -20,32 +16,14 @@ module HTTPX::Plugins
       end
     end
 
-    TOKEN = %r{[^\s()<>,;:\\"/\[\]?=]+}.freeze
-    VALUE = /"(?:\\"|[^"])*"|#{TOKEN}/.freeze
-    CONDISP = /Content-Disposition:\s*#{TOKEN}\s*/i.freeze
-    BROKEN_QUOTED = /^#{CONDISP}.*;\s*filename="(.*?)"(?:\s*$|\s*;\s*#{TOKEN}=)/i.freeze
-    BROKEN_UNQUOTED = /^#{CONDISP}.*;\s*filename=(#{TOKEN})/i.freeze
-    MULTIPART_CONTENT_TYPE = /Content-Type: (.*)#{CRLF}/ni.freeze
-    MULTIPART_CONTENT_DISPOSITION = /Content-Disposition:.*;\s*name=(#{VALUE})/ni.freeze
-    MULTIPART_CONTENT_ID = /Content-ID:\s*([^#{CRLF}]*)/ni.freeze
-    # Updated definitions from RFC 2231
-    ATTRIBUTE_CHAR = %r{[^ \t\v\n\r)(><@,;:\\"/\[\]?='*%]}.freeze
-    ATTRIBUTE = /#{ATTRIBUTE_CHAR}+/.freeze
-    SECTION = /\*[0-9]+/.freeze
-    REGULAR_PARAMETER_NAME = /#{ATTRIBUTE}#{SECTION}?/.freeze
-    REGULAR_PARAMETER = /(#{REGULAR_PARAMETER_NAME})=(#{VALUE})/.freeze
-    EXTENDED_OTHER_NAME = /#{ATTRIBUTE}\*[1-9][0-9]*\*/.freeze
-    EXTENDED_OTHER_VALUE = /%[0-9a-fA-F]{2}|#{ATTRIBUTE_CHAR}/.freeze
-    EXTENDED_OTHER_PARAMETER = /(#{EXTENDED_OTHER_NAME})=(#{EXTENDED_OTHER_VALUE}*)/.freeze
-    EXTENDED_INITIAL_NAME = /#{ATTRIBUTE}(?:\*0)?\*/.freeze
-    EXTENDED_INITIAL_VALUE = /[a-zA-Z0-9-]*'[a-zA-Z0-9-]*'#{EXTENDED_OTHER_VALUE}*/.freeze
-    EXTENDED_INITIAL_PARAMETER = /(#{EXTENDED_INITIAL_NAME})=(#{EXTENDED_INITIAL_VALUE})/.freeze
-    EXTENDED_PARAMETER = /#{EXTENDED_INITIAL_PARAMETER}|#{EXTENDED_OTHER_PARAMETER}/.freeze
-    DISPPARM = /;\s*(?:#{REGULAR_PARAMETER}|#{EXTENDED_PARAMETER})\s*/.freeze
-    RFC2183 = /^#{CONDISP}(#{DISPPARM})+$/i.freeze
-
     class Decoder
+      include HTTPX::Utils
+
+      CRLF = "\r\n"
       BOUNDARY_RE = /;\s*boundary=([^;]+)/i.freeze
+      MULTIPART_CONTENT_TYPE = /Content-Type: (.*)#{CRLF}/ni.freeze
+      MULTIPART_CONTENT_DISPOSITION = /Content-Disposition:.*;\s*name=(#{VALUE})/ni.freeze
+      MULTIPART_CONTENT_ID = /Content-ID:\s*([^#{CRLF}]*)/ni.freeze
       WINDOW_SIZE = 2 << 14
 
       def initialize(response)
@@ -102,7 +80,7 @@ module HTTPX::Plugins
             name = head[MULTIPART_CONTENT_ID, 1]
           end
 
-          filename = get_filename(head)
+          filename = HTTPX::Utils.get_filename(head)
 
           name = filename || +"#{content_type || "text/plain"}[]" if name.nil? || name.empty?
 
@@ -153,34 +131,6 @@ module HTTPX::Plugins
         when :done
           raise Error, "parsing should have been over by now"
         end until @buffer.empty?
-      end
-
-      def get_filename(head)
-        filename = nil
-        case head
-        when RFC2183
-          params = Hash[*head.scan(DISPPARM).flat_map(&:compact)]
-
-          if (filename = params["filename"])
-            filename = Regexp.last_match(1) if filename =~ /^"(.*)"$/
-          elsif (filename = params["filename*"])
-            encoding, _, filename = filename.split("'", 3)
-          end
-        when BROKEN_QUOTED, BROKEN_UNQUOTED
-          filename = Regexp.last_match(1)
-        end
-
-        return unless filename
-
-        filename = URI::DEFAULT_PARSER.unescape(filename) if filename.scan(/%.?.?/).all? { |s| /%[0-9a-fA-F]{2}/.match?(s) }
-
-        filename.scrub!
-
-        filename = filename.gsub(/\\(.)/, '\1') unless /\\[^\\"]/.match?(filename)
-
-        filename.force_encoding ::Encoding.find(encoding) if encoding
-
-        filename
       end
     end
   end

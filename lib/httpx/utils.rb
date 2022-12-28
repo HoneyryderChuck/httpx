@@ -3,6 +3,12 @@
 module HTTPX
   module Utils
     using URIExtensions
+    using HTTPX::RegexpExtensions unless Regexp.method_defined?(:match?)
+
+    TOKEN = %r{[^\s()<>,;:\\"/\[\]?=]+}.freeze
+    VALUE = /"(?:\\"|[^"])*"|#{TOKEN}/.freeze
+    FILENAME_REGEX = /\s*filename=(#{VALUE})/.freeze
+    FILENAME_EXTENSION_REGEX = /\s*filename\*=(#{VALUE})/.freeze
 
     module_function
 
@@ -23,6 +29,30 @@ module HTTPX
       # Then it's a datetime
       time = Time.httpdate(retry_after)
       time - Time.now
+    end
+
+    def get_filename(header, _prefix_regex = nil)
+      filename = nil
+      case header
+      when FILENAME_REGEX
+        filename = Regexp.last_match(1)
+        filename = Regexp.last_match(1) if filename =~ /^"(.*)"$/
+      when FILENAME_EXTENSION_REGEX
+        filename = Regexp.last_match(1)
+        encoding, _, filename = filename.split("'", 3)
+      end
+
+      return unless filename
+
+      filename = URI::DEFAULT_PARSER.unescape(filename) if filename.scan(/%.?.?/).all? { |s| /%[0-9a-fA-F]{2}/.match?(s) }
+
+      filename.scrub!
+
+      filename = filename.gsub(/\\(.)/, '\1') unless /\\[^\\"]/.match?(filename)
+
+      filename.force_encoding ::Encoding.find(encoding) if encoding
+
+      filename
     end
 
     if RUBY_VERSION < "2.3"
