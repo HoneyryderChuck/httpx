@@ -296,6 +296,14 @@ module HTTPX
       log(level: 1, color: :green) { "#{stream.id}: <- DATA: #{data.bytesize} bytes..." }
       log(level: 2, color: :green) { "#{stream.id}: <- #{data.inspect}" }
       request.response << data
+    rescue StandardError => e
+      # when an error happens upstream parsing the chunk, the HTTP/2 connection
+      # should be kept intact, but this stream should be cancelled.
+      stream.cancel rescue nil # rubocop:disable Style/RescueModifier
+
+      error_response = ErrorResponse.new(request, e, request.options)
+      request.response = error_response
+      request.emit(:response, error_response)
     end
 
     def on_stream_refuse(stream, request, error)
@@ -314,6 +322,7 @@ module HTTPX
         ex = Error.new(stream.id, error)
         ex.set_backtrace(caller)
         response = ErrorResponse.new(request, ex, request.options)
+        request.response = response
         emit(:response, request, response)
       else
         response = request.response

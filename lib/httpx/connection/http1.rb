@@ -133,33 +133,42 @@ module HTTPX
     end
 
     def on_data(chunk)
-      return unless @request
+      request = @request
+
+      return unless request
 
       log(color: :green) { "-> DATA: #{chunk.bytesize} bytes..." }
       log(level: 2, color: :green) { "-> #{chunk.inspect}" }
-      response = @request.response
+      response = request.response
 
       response << chunk
+    rescue StandardError => e
+      error_response = ErrorResponse.new(request, e, request.options)
+      request.response = error_response
+      dispatch
     end
 
     def on_complete
-      return unless @request
+      request = @request
+
+      return unless request
 
       log(level: 2) { "parsing complete" }
       dispatch
     end
 
     def dispatch
-      if @request.expects?
+      request = @request
+
+      if request.expects?
         @parser.reset!
-        return handle(@request)
+        return handle(request)
       end
 
-      request = @request
       @request = nil
       @requests.shift
       response = request.response
-      response.finish!
+      response.finish! unless response.is_a?(ErrorResponse)
       emit(:response, request, response)
 
       if @parser.upgrade?
@@ -169,7 +178,11 @@ module HTTPX
 
       @parser.reset!
       @max_requests -= 1
-      manage_connection(response)
+      if response.is_a?(ErrorResponse)
+        disable
+      else
+        manage_connection(response)
+      end
 
       send(@pending.shift) unless @pending.empty?
     end
