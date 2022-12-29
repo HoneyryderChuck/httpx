@@ -526,7 +526,8 @@ module HTTPX
            Errno::EHOSTUNREACH,
            Errno::EINVAL,
            Errno::ENETUNREACH,
-           Errno::EPIPE => e
+           Errno::EPIPE,
+           Errno::ENOENT => e
       # connect errors, exit gracefully
       error = ConnectionError.new(e.message)
       error.set_backtrace(e.backtrace)
