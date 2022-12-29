@@ -20,6 +20,11 @@ class UnixTest < Minitest::Test
       end
     end
 
+    def test_unix_session_no_path
+      response = HTTPX.get("http://does-not-matter", transport: "unix", addresses: "blabla.sock")
+      verify_error_response(response, /No such file or directory/)
+    end
+
     def test_unix_session_io
       on_unix_server(__method__) do |path|
         io = UNIXSocket.new(path)
