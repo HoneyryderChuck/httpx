@@ -118,6 +118,9 @@ Style/HashSyntax:
 Style/AndOr:
   Enabled: False
 
+Style/ArgumentsForwarding:
+  Enabled: False
+
 Naming/MethodParameterName:
   Enabled: false
 

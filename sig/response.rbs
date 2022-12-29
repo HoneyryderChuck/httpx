@@ -9,6 +9,7 @@ module HTTPX
 
   class Response
     extend Forwardable
+    include Callbacks
 
     include _Response
     include _ToS

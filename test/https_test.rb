@@ -11,6 +11,7 @@ class HTTPSTest < Minitest::Test
   include Headers
   include ResponseBody
   include IO
+  include Callbacks
   include Errors if RUBY_ENGINE == "ruby"
   include Resolvers if ENV.key?("HTTPX_RESOLVER_URI")
   # TODO: uncomment as soon as nghttpx supports altsvc for HTTP/2

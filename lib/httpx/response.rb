@@ -9,6 +9,7 @@ require "forwardable"
 module HTTPX
   class Response
     extend Forwardable
+    include Callbacks
 
     attr_reader :status, :headers, :body, :version
 
@@ -144,9 +145,13 @@ module HTTPX
       def write(chunk)
         return if @state == :closed
 
-        @length += chunk.bytesize
+        size = chunk.bytesize
+        @length += size
         transition
         @buffer.write(chunk)
+
+        @response.emit(:chunk_received, chunk)
+        size
       end
 
       def read(*args)

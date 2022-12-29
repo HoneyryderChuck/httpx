@@ -38,7 +38,10 @@ module HTTPX
         add_addresses(addresses)
       end
       @ip_index = @addresses.size - 1
-      # @io ||= build_socket
+    end
+
+    def socket
+      @io.to_io
     end
 
     def add_addresses(addrs)

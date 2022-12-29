@@ -67,14 +67,5 @@ module Requests
         end
       end
     end
-
-    private
-
-    def next_available_port
-      server = TCPServer.new("localhost", 0)
-      server.addr[1]
-    ensure
-      server.close
-    end
   end
 end

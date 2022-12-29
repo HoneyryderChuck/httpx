@@ -27,9 +27,9 @@ module HTTPX
     def on_promise: (untyped, untyped) -> void
     def fetch_response: (Request request, Array[Connection] connections, untyped options) -> response?
 
-    def find_connection: (Request, Array[Connection] connections, Options options) -> Connection
+    def find_connection: (Request request, Array[Connection] connections, Options options) -> Connection
 
-    def set_connection_callbacks: (Connection, Array[Connection], Options) -> void
+    def set_connection_callbacks: (Connection connection, Array[Connection] connections, Options options) -> void
 
     def build_altsvc_connection: (Connection existing_connection, Array[Connection] connections, URI::Generic alt_origin, String origin, Hash[String, String] alt_params, Options options) -> Connection?
 
@@ -39,13 +39,15 @@ module HTTPX
                       | (verb, _Each[[uri, options]], Options) -> Array[Request]
                       | (verb, _Each[uri], options) -> Array[Request]
 
-    def build_connection: (URI::HTTP | URI::HTTPS uri, Options options) -> Connection
+    def build_connection: (URI::HTTP | URI::HTTP uri, Options options) -> Connection
+
+    def init_connection: (String type, URI::HTTP | URI::HTTP uri, Options options) -> Connection
 
     def send_requests: (*Request) -> Array[response]
 
-    def _send_requests: (Array[Request]) -> Array[Connection]
+    def _send_requests: (Array[Request] requests) -> Array[Connection]
 
-    def receive_requests: (Array[Request], Array[Connection]) -> Array[response]
+    def receive_requests: (Array[Request] requests, Array[Connection] connections) -> Array[response]
 
     attr_reader self.default_options: Options
   end
