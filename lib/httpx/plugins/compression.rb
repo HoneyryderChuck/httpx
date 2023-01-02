@@ -152,7 +152,7 @@ module HTTPX
         private
 
         def deflate(&blk)
-          return unless @buffer.empty?
+          return unless @buffer.size.zero?
 
           @body.rewind
           @deflater.deflate(@body, @buffer, chunk_size: 16_384, &blk)
