@@ -57,7 +57,7 @@ module HTTPX
 
             yield data
 
-            message = message.byteslice((5 + size)..-1)
+            message = message.byteslice((size + 5)..-1)
           end
         end
 

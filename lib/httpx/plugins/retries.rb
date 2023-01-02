@@ -26,7 +26,7 @@ module HTTPX
         ConnectionError,
         Connection::HTTP2::GoawayError,
       ].freeze
-      DEFAULT_JITTER = ->(interval) { interval * (0.5 * (1 + rand)) }
+      DEFAULT_JITTER = ->(interval) { interval * ((rand + 1) * 0.5) }
 
       if ENV.key?("HTTPX_NO_JITTER")
         def self.extra_options(options)

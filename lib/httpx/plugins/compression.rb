@@ -138,7 +138,7 @@ module HTTPX
         def each(&blk)
           return enum_for(__method__) unless blk
 
-          return deflate(&blk) if @buffer.size.zero?
+          return deflate(&blk) if @buffer.empty?
 
           @buffer.rewind
           @buffer.each(&blk)
@@ -152,7 +152,7 @@ module HTTPX
         private
 
         def deflate(&blk)
-          return unless @buffer.size.zero?
+          return unless @buffer.empty?
 
           @body.rewind
           @deflater.deflate(@body, @buffer, chunk_size: 16_384, &blk)

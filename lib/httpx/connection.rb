@@ -316,7 +316,7 @@ module HTTPX
           # * the number of inflight requests
           # * the number of pending requests
           # * whether the write buffer has bytes (i.e. for close handshake)
-          if @pending.size.zero? && @inflight.zero? && @write_buffer.empty?
+          if @pending.empty? && @inflight.zero? && @write_buffer.empty?
             log(level: 3) { "NO MORE REQUESTS..." }
             return
           end
@@ -360,7 +360,7 @@ module HTTPX
             break if @state == :closing || @state == :closed
 
             # exit #consume altogether if all outstanding requests have been dealt with
-            return if @pending.size.zero? && @inflight.zero?
+            return if @pending.empty? && @inflight.zero?
           end unless ((ints = interests).nil? || ints == :w || @state == :closing) && !epiped
 
           #

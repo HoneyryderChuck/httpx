@@ -100,7 +100,7 @@ module HTTPX
       end
 
       def def_option(optname, *args, &block)
-        if args.size.zero? && !block
+        if args.empty? && !block
           class_eval(<<-OUT, __FILE__, __LINE__ + 1)
             def option_#{optname}(v); v; end # def option_smth(v); v; end
           OUT

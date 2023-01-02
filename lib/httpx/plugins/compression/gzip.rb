@@ -56,7 +56,7 @@ module HTTPX
 
         class Inflater
           def initialize(bytesize)
-            @inflater = Zlib::Inflate.new(32 + Zlib::MAX_WBITS)
+            @inflater = Zlib::Inflate.new(Zlib::MAX_WBITS + 32)
             @bytesize = bytesize
             @buffer = nil
           end

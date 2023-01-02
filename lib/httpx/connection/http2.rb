@@ -365,7 +365,7 @@ module HTTPX
         ex.set_backtrace(caller)
         handle_error(ex)
       end
-      return unless is_connection_closed && @streams.size.zero?
+      return unless is_connection_closed && @streams.empty?
 
       emit(:close, is_connection_closed)
     end
