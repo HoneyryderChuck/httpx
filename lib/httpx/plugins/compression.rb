@@ -138,7 +138,7 @@ module HTTPX
         def each(&blk)
           return enum_for(__method__) unless blk
 
-          return deflate(&blk) if @buffer.empty?
+          return deflate(&blk) if @buffer.size.zero? # rubocop:disable Style/ZeroLengthPredicate
 
           @buffer.rewind
           @buffer.each(&blk)
