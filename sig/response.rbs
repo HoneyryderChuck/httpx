@@ -64,6 +64,8 @@ module HTTPX
       def each: () { (String) -> void } -> void
               | () -> Enumerable[String]
 
+      def filename: () -> String?
+
       def bytesize: () -> (Integer | Float)
       def empty?: () -> bool
       def copy_to: (String | File | _Writer destination) -> void

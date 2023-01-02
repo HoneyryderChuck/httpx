@@ -68,8 +68,6 @@ module HTTPX
         def initialize: (Response response) -> void
 
         def parse: () -> void
-
-        def get_filename: (String head) -> String?
       end
 
       class FilePart #  < SimpleDelegator
