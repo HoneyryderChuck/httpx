@@ -138,6 +138,33 @@ class ResponseTest < Minitest::Test
     assert body.buffer.is_a?(Tempfile), "body should buffer to file after going over threshold"
   end
 
+  def test_response_body_filename
+    body = Response::Body.new(Response.new(request, 200, "2.0", {}), Options.new)
+    assert body.filename.nil?
+    body = Response::Body.new(Response.new(request, 200, "2.0", { "content-disposition" => "attachment;filename=test.csv" }), Options.new)
+    assert body.filename == "test.csv"
+    body = Response::Body.new(Response.new(request, 200, "2.0", { "content-disposition" => "attachment;filename=\"test.csv\"" }),
+                              Options.new)
+    assert body.filename == "test.csv"
+    body = Response::Body.new(Response.new(request, 200, "2.0", {
+                                             "content-disposition" => "inline; filename=ER886357.pdf; " \
+                                                                      "creation-date=9/17/2012 1:51:37 PM; " \
+                                                                      "modification-date=9/17/2012 1:51:37 PM; size=3718678",
+                                           }),
+                              Options.new)
+    assert body.filename == "ER886357.pdf"
+
+    body = Response::Body.new(Response.new(request, 200, "2.0", { "content-disposition" => "attachment; filename*=UTF-8''bar" }),
+                              Options.new)
+    assert body.filename == "bar"
+    body = Response::Body.new(Response.new(request, 200, "2.0", {
+                                             "content-disposition" => "inline; filename*=UTF-8''%c2%a3%20and%20%e2%82%ac%20rates.pdf",
+                                           }),
+                              Options.new)
+
+    assert body.filename == "£ and € rates.pdf"
+  end
+
   def test_response_decoders
     json_response = Response.new(request, 200, "2.0", { "content-type" => "application/json" })
     json_response << %({"a": "b"})

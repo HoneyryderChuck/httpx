@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
+require "ddtrace"
 require "test_helper"
 require "support/http_helpers"
-require "ddtrace"
 require "httpx/adapters/datadog"
 
 class DatadogTest < Minitest::Test

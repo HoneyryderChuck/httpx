@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-require "test_helper"
-require "support/http_helpers"
 require "webmock/minitest"
 require "httpx/adapters/webmock"
+require "test_helper"
+require "support/http_helpers"
 
 class WebmockTest < Minitest::Test
   include HTTPHelpers
