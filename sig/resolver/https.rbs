@@ -6,7 +6,8 @@ module HTTPX
       DEFAULTS: Hash[Symbol, untyped]
       FAMILY_TYPES: Hash[singleton(Resolv::DNS::Resource), String]
 
-      @family: ip_family
+      attr_reader family: ip_family
+
       @options: Options
       @requests: Hash[Request, String]
       @connections: Array[Connection]

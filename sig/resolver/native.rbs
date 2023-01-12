@@ -7,7 +7,8 @@ module HTTPX
       DEFAULTS: Hash[Symbol, untyped]
       DNS_PORT: Integer
 
-      @family: ip_family
+      attr_reader family: ip_family
+
       @options: Options
       @ns_index: Integer
       @nameserver: Array[String]?

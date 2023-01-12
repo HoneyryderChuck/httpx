@@ -45,9 +45,11 @@ module HTTPX
 
     def_delegator :@write_buffer, :empty?
 
-    attr_reader :io, :origin, :origins, :state, :pending, :options
+    attr_reader :type, :io, :origin, :origins, :state, :pending, :options
 
     attr_writer :timers
+
+    attr_accessor :family
 
     def initialize(type, uri, options)
       @type = type
@@ -74,13 +76,6 @@ module HTTPX
       @total_timeout = @options.timeout[:total_timeout]
 
       self.addresses = @options.addresses if @options.addresses
-    end
-
-    def clone_new_connection
-      new_conn = self.class.new(@type, @origin, @options)
-      once(:open, &new_conn.method(:reset))
-      new_conn.once(:open, &method(:close))
-      new_conn
     end
 
     # this is a semi-private method, to be used by the resolver
@@ -121,7 +116,10 @@ module HTTPX
 
       return false unless connection.addresses
 
-      !(@io.addresses & connection.addresses).empty? && @options == connection.options
+      (
+        (open? && @origin == connection.origin) ||
+        !(@io.addresses & connection.addresses).empty?
+      ) && @options == connection.options
     end
 
     # coalescable connections need to be mergeable!
@@ -224,6 +222,14 @@ module HTTPX
       transition(:active) if @state == :inactive
 
       @parser.close if @parser
+    end
+
+    # bypasses the state machine to force closing of connections still connecting.
+    # **only** used for Happy Eyeballs v2.
+    def force_reset
+      @state = :closing
+      transition(:closed)
+      emit(:close)
     end
 
     def reset
@@ -531,7 +537,7 @@ module HTTPX
       # connect errors, exit gracefully
       error = ConnectionError.new(e.message)
       error.set_backtrace(e.backtrace)
-      handle_error(error)
+      connecting? ? emit(:connect_error, error) : handle_error(error)
       @state = :closed
       emit(:close)
     rescue TLSError => e
@@ -550,6 +556,8 @@ module HTTPX
         return if @state == :closed
 
         @io.connect
+        emit(:tcp_open) if @io.state == :connected
+
         return unless @io.connected?
 
         @connected_at = Utils.now
