@@ -533,11 +533,12 @@ module HTTPX
            Errno::EINVAL,
            Errno::ENETUNREACH,
            Errno::EPIPE,
-           Errno::ENOENT => e
+           Errno::ENOENT,
+           SocketError => e
       # connect errors, exit gracefully
       error = ConnectionError.new(e.message)
       error.set_backtrace(e.backtrace)
-      connecting? ? emit(:connect_error, error) : handle_error(error)
+      connecting? && callbacks(:connect_error).any? ? emit(:connect_error, error) : handle_error(error)
       @state = :closed
       emit(:close)
     rescue TLSError => e

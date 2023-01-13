@@ -23,7 +23,7 @@ module Requests
       return unless uri.start_with?("http://")
 
       response = HTTPX.get(uri, addresses: [EHOSTUNREACH_HOST] * 2)
-      verify_error_response(response, Errno::EHOSTUNREACH)
+      verify_error_response(response, /No route to host/)
     end
 
     # TODO: reset this test once it's possible to test ETIMEDOUT again
