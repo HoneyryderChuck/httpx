@@ -139,13 +139,13 @@ All Rubies greater or equal to 2.1, and always latest JRuby and Truffleruby.
 **Note**: This gem is tested against all latest patch versions, i.e. if you're using 2.2.0 and you experience some issue, please test it against 2.2.10 (latest patch version of 2.2) before creating an issue.
 
 ## Resources
-|               |                                                     |
-| ------------- | --------------------------------------------------- |
-| Website       | https://os85.gitlab.io/httpx/            |
-| Documentation | https://os85.gitlab.io/httpx/rdoc/       |
-| Wiki          | https://os85.gitlab.io/httpx/wiki/home.html |
-| CI            | https://gitlab.com/os85/httpx/pipelines  |
-| Rubygems      | https://rubygems.org/gems/httpx                     |
+|               |                                                        |
+| ------------- | ------------------------------------------------------ |
+| Website       | https://honeyryderchuck.gitlab.io/httpx/               |
+| Documentation | https://honeyryderchuck.gitlab.io/httpx/rdoc/          |
+| Wiki          | https://honeyryderchuck.gitlab.io/httpx/wiki/home.html |
+| CI            | https://gitlab.com/os85/httpx/pipelines                |
+| Rubygems      | https://rubygems.org/gems/httpx                        |
 
 ## Caveats
 
