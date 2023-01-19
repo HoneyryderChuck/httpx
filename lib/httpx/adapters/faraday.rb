@@ -210,7 +210,6 @@ module Faraday
         if parallel?(env)
           handler = env[:parallel_manager].enqueue(env)
           handler.on_response do |response|
-            response.raise_for_status
             save_response(env, response.status, response.body.to_s, response.headers, response.reason) do |response_headers|
               response_headers.merge!(response.headers)
             end
@@ -229,7 +228,6 @@ module Faraday
         request.response_on_data = env.request.on_data if env.request.stream_response?
 
         response = session.request(request)
-        response.raise_for_status unless response.is_a?(::HTTPX::Response)
         save_response(env, response.status, response.body.to_s, response.headers, response.reason) do |response_headers|
           response_headers.merge!(response.headers)
         end
