@@ -183,6 +183,7 @@ class FaradayTest < Minitest::Test
 
     Faraday::Connection.new(server.to_s, options, &builder_block).tap do |conn|
       conn.headers["X-Faraday-Adapter"] = "httpx"
+      conn.response :raise_error
       adapter_handler = conn.builder.handlers.last
       conn.builder.insert_before adapter_handler, Faraday::Response::RaiseError
     end
