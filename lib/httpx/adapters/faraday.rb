@@ -210,8 +210,12 @@ module Faraday
         if parallel?(env)
           handler = env[:parallel_manager].enqueue(env)
           handler.on_response do |response|
-            save_response(env, response.status, response.body.to_s, response.headers, response.reason) do |response_headers|
-              response_headers.merge!(response.headers)
+            if response.is_a?(::HTTPX::Response)
+              save_response(env, response.status, response.body.to_s, response.headers, response.reason) do |response_headers|
+                response_headers.merge!(response.headers)
+              end
+            else
+              save_response(env, 0, "", {}, nil)
             end
           end
           return handler
@@ -228,6 +232,8 @@ module Faraday
         request.response_on_data = env.request.on_data if env.request.stream_response?
 
         response = session.request(request)
+        # do not call #raise_for_status for HTTP 4xx or 5xx, as faraday has a middleware for that.
+        response.raise_for_status unless response.is_a?(::HTTPX::Response)
         save_response(env, response.status, response.body.to_s, response.headers, response.reason) do |response_headers|
           response_headers.merge!(response.headers)
         end
