@@ -215,6 +215,7 @@ module Faraday
                 response_headers.merge!(response.headers)
               end
             else
+              env[:error] = response.error
               save_response(env, 0, "", {}, nil)
             end
           end

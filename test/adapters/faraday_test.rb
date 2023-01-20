@@ -42,6 +42,7 @@ class FaradayTest < Minitest::Test
     assert_equal 0, resp1.status
     assert_nil resp1.reason_phrase
     assert_equal "", resp1.body
+    refute_nil resp1.env[:error]
   end
 
   def test_adapter_get_handles_compression
