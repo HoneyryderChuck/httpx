@@ -29,6 +29,21 @@ class FaradayTest < Minitest::Test
     assert_equal "OK", resp2.reason_phrase
   end
 
+  def test_adapter_in_parallel_errors
+    resp1 = nil
+
+    connection = create_connection
+    connection.in_parallel do
+      resp1 = connection.get("http://wfijojsfsoijf")
+      assert connection.in_parallel?
+      assert_nil resp1.reason_phrase
+    end
+    assert !connection.in_parallel?
+    assert_equal 0, resp1.status
+    assert_nil resp1.reason_phrase
+    assert_equal "", resp1.body
+  end
+
   def test_adapter_get_handles_compression
     res = get(build_path("/gzip"))
     assert JSON.parse(res.body.to_s)["gzipped"]
