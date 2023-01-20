@@ -82,7 +82,7 @@ if [[ ${RUBY_VERSION:0:1} = "3" ]] && [[ ! $RUBYOPT =~ "jit" ]]; then
 fi
 
 # Lint first
-if [[ ${RUBY_VERSION:0:3} = "3.1" ]] && [[ "$RUBY_ENGINE" = "ruby" ]]; then
+if [[ ${RUBY_VERSION:0:3} = "3.2" ]] && [[ "$RUBY_ENGINE" = "ruby" ]]; then
   bundle exec rake rubocop
 fi
 

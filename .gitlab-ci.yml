@@ -27,11 +27,6 @@ variables:
     paths:
       - coverage/
 
-.jit_matrix: &jit_matrix
-  parallel:
-    matrix:
-      - RUBYOPT: ["", "--jit --jit-warnings --jit-wait"]
-
 .yjit_matrix: &yjit_matrix
   parallel:
     matrix:
@@ -76,19 +71,16 @@ test ruby 2/5:
     ./spec.sh ruby 2.5
 test ruby 2/6:
   <<: *test_settings
-  <<: *jit_matrix
   only:
     - master
   script:
     ./spec.sh ruby 2.6
 test ruby 2/7:
   <<: *test_settings
-  <<: *jit_matrix
   script:
     ./spec.sh ruby 2.7
 test ruby 3/0:
   <<: *test_settings
-  <<: *jit_matrix
   script:
     ./spec.sh ruby 3.0
 test ruby 3/1:
@@ -96,6 +88,11 @@ test ruby 3/1:
   <<: *yjit_matrix
   script:
     ./spec.sh ruby 3.1
+test ruby 3/2:
+  <<: *test_settings
+  <<: *yjit_matrix
+  script:
+    ./spec.sh ruby 3.2
 test truffleruby:
   <<: *test_settings
   script:
@@ -108,7 +105,7 @@ coverage:
   variables:
     BUNDLE_WITHOUT: test:assorted
 
-  image: "ruby:3.1"
+  image: "ruby:3.2"
   script:
     - gem install simplecov --no-doc
     # this is a workaround, because simplecov doesn't support relative paths.
@@ -130,7 +127,7 @@ docs:
   stage: deploy
   needs:
     - coverage
-  image: "ruby:3.1"
+  image: "ruby:3.2"
   before_script:
     - gem install hanna-nouveau
   script:
