@@ -76,11 +76,7 @@ module HTTPX
            Errno::EADDRNOTAVAIL,
            Errno::EHOSTUNREACH,
            SocketError => e
-      if @ip_index <= 0
-        error = ConnectionError.new(e.message)
-        error.set_backtrace(e.backtrace)
-        raise error
-      end
+      raise e if @ip_index <= 0
 
       log { "failed connecting to #{@ip} (#{e.message}), trying next..." }
       @ip_index -= 1

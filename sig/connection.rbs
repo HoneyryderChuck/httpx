@@ -21,6 +21,7 @@ module HTTPX
 
     BUFFER_SIZE: Integer
 
+    attr_reader type: io_type
     attr_reader origin: URI::Generic
     attr_reader origins: Array[String]
     attr_reader state: Symbol
@@ -28,15 +29,14 @@ module HTTPX
     attr_reader options: Options
     attr_writer timers: Timers
 
-    @type: io_type
+    attr_accessor family: Integer?
+
     @window_size: Integer
     @read_buffer: Buffer
     @write_buffer: Buffer
     @inflight: Integer
     @keep_alive_timeout: Numeric?
     @total_timeout: Numeric?
-
-    def clone_new_connection: () -> instance
 
     def addresses: () -> Array[ipaddr]?
 

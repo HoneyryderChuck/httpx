@@ -6,7 +6,7 @@ module HTTPX
 
       RECORD_TYPES: Hash[Integer, singleton(Resolv::DNS::Resource)]
 
-      attr_reader family: ip_family
+      attr_reader family: ip_family?
 
       @record_type: singleton(Resolv::DNS::Resource)
       @options: Options
@@ -23,6 +23,8 @@ module HTTPX
       def emit_addresses: (Connection connection, ip_family family, Array[IPAddr]) -> void
 
       private
+
+      def emit_resolved_connection: (Connection connection, Array[IPAddr] addresses) -> void
 
       def initialize: (ip_family? family, options options) -> void
 

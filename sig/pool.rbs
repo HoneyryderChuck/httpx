@@ -22,7 +22,9 @@ module HTTPX
 
     private
 
-    def initialize: () -> untyped
+    def initialize: () -> void
+
+    def try_clone_connection: (Connection connection, Integer? family) -> Connection
 
     def resolve_connection: (Connection) -> void
 

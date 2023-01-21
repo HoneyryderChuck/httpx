@@ -72,7 +72,7 @@ module HTTPX
     end
 
     def init_connection(connection, _options)
-      resolve_connection(connection)
+      resolve_connection(connection) unless connection.family
       connection.timers = @timers
       connection.on(:open) do
         @connected_connections += 1
@@ -116,16 +116,53 @@ module HTTPX
         #    resolve a name (not the same as name being an IP, yet)
         # 2. when the connection is initialized with an external already open IO.
         #
+        connection.once(:connect_error, &connection.method(:handle_error))
         on_resolver_connection(connection)
         return
       end
 
       find_resolver_for(connection) do |resolver|
-        resolver << connection
+        resolver << try_clone_connection(connection, resolver.family)
         next if resolver.empty?
 
         select_connection(resolver)
       end
+    end
+
+    def try_clone_connection(connection, family)
+      connection.family ||= family
+
+      if connection.family == family
+        return connection
+      end
+
+      new_connection = connection.class.new(connection.type, connection.origin, connection.options)
+      new_connection.family = family
+
+      connection.once(:tcp_open, &new_connection.method(:force_reset))
+      connection.once(:connect_error) do |err|
+        if new_connection.connecting?
+          new_connection.merge(connection)
+        else
+          connection.handle_error(err)
+        end
+      end
+
+      new_connection.once(:tcp_open) do
+        new_connection.merge(connection)
+        connection.force_reset
+      end
+      new_connection.once(:connect_error) do |err|
+        if connection.connecting?
+          # main connection has the requests
+          connection.merge(new_connection)
+        else
+          new_connection.handle_error(err)
+        end
+      end
+
+      init_connection(new_connection, connection.options)
+      new_connection
     end
 
     def on_resolver_connection(connection)

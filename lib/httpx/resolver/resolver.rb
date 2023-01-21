@@ -73,11 +73,6 @@ module HTTPX
     private
 
     def emit_resolved_connection(connection, addresses)
-      if connection.io && connection.connecting? && @pool
-        new_connection = connection.clone_new_connection
-        @pool.init_connection(new_connection, connection.options)
-        connection = new_connection
-      end
       connection.addresses = addresses
 
       emit(:resolve, connection)
