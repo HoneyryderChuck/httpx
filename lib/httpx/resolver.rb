@@ -108,7 +108,15 @@ module HTTPX
 
     def decode_dns_answer(payload)
       message = Resolv::DNS::Message.decode(payload)
+
+      # no domain was found
+      return if message.rcode == Resolv::DNS::RCode::NXDomain
+
       addresses = []
+
+      # TODO: raise an "other dns OtherResolvError" type of error
+      return addresses if message.rcode != Resolv::DNS::RCode::NoError
+
       message.each_answer do |question, _, value|
         case value
         when Resolv::DNS::Resource::IN::CNAME

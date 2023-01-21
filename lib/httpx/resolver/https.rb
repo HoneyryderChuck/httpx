@@ -136,9 +136,22 @@ module HTTPX
         emit_resolve_error(connection, connection.origin.host, e)
         return
       end
-      if answers.nil? || answers.empty?
+
+      if answers.nil?
+        # Indicates no such domain was found.
+
         host = @requests.delete(request)
         connection = @queries.delete(host)
+
+        emit_resolve_error(connection) unless @queries.value?(connection)
+      elsif answers.empty?
+        # no address found, eliminate candidates
+        host = @requests.delete(request)
+        connection = @queries.delete(host)
+
+        # eliminate other candidates
+        @queries.delete_if { |_, conn| connection == conn }
+
         emit_resolve_error(connection)
         return
 
