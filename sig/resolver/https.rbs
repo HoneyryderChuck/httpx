@@ -34,7 +34,7 @@ module HTTPX
 
       def build_request: (String hostname) -> Request
 
-      def decode_response_body: (Response) -> Array[dns_result]
+      def decode_response_body: (Response) -> Array[dns_result]?
     end
   end
 end

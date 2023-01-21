@@ -30,6 +30,6 @@ module HTTPX
 
     def self?.encode_dns_query: (String hostname, ?type: dns_resource) -> String
 
-    def self?.decode_dns_answer: (String) -> Array[dns_result]
+    def self?.decode_dns_answer: (String) -> Array[dns_result]?
   end
 end

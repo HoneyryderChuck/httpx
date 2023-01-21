@@ -215,7 +215,8 @@ module HTTPX
         raise ex
       end
 
-      if addresses.nil? || addresses.empty?
+      if addresses.nil?
+        # Indicates no such domain was found.
         hostname, connection = @queries.first
         @queries.delete(hostname)
         @timeouts.delete(hostname)
@@ -224,6 +225,14 @@ module HTTPX
           @connections.delete(connection)
           raise NativeResolveError.new(connection, connection.origin.host)
         end
+      elsif addresses.empty?
+        # no address found, eliminate candidates
+        _, connection = @queries.first
+        candidates = @queries.select { |_, conn| connection == conn }.keys
+        @queries.delete_if { |hs, _| candidates.include?(hs) }
+        @timeouts.delete_if { |hs, _| candidates.include?(hs) }
+        @connections.delete(connection)
+        raise NativeResolveError.new(connection, connection.origin.host)
       else
         address = addresses.first
         name = address["name"]
