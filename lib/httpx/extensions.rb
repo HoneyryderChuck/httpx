@@ -160,6 +160,8 @@ module HTTPX
   module URIExtensions
     # uri 0.11 backport, ships with ruby 3.1
     refine URI::Generic do
+      public :set_host
+
       def non_ascii_hostname
         @non_ascii_hostname
       end
