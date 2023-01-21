@@ -310,7 +310,9 @@ module HTTPX
       ip, port = @nameserver[@ns_index]
       port ||= DNS_PORT
       uri = URI::Generic.build(scheme: "udp", port: port)
-      uri.hostname = ip
+      # uri.hostname = ip
+      # link-local IPv6 address may have a zone identifier, but URI does not support that yet.
+      uri.set_host(ip)
       type = IO.registry(uri.scheme)
       log { "resolver: server: #{uri}..." }
       @io = type.new(uri, [IPAddr.new(ip)], @options)
