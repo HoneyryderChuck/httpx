@@ -94,7 +94,7 @@ if [[ "$RUBY_ENGINE" = "ruby" ]]; then
   COVERAGE_KEY="$RUBY_ENGINE-$RUBY_VERSION-integration-tests" bundle exec rake integration_tests
 fi
 
-if [[ ${RUBY_VERSION:0:1} = "3" ]] && [[ "$RUBY_ENGINE" = "ruby" ]]; then
+if [[ ${RUBY_VERSION:0:3} = "3.2" ]] && [[ "$RUBY_ENGINE" = "ruby" ]]; then
   # regression tests
   # Testing them only with main ruby
   COVERAGE_KEY="$RUBY_ENGINE-$RUBY_VERSION-regression-tests" bundle exec rake regression_tests

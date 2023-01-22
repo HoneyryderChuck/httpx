@@ -6,11 +6,10 @@ module HTTPX
   class UDP
     include Loggable
 
-    def initialize(uri, _, options)
-      ip = IPAddr.new(uri.host)
-      @host = ip.to_s
-      @port = uri.port
-      @io = UDPSocket.new(ip.family)
+    def initialize(ip, port, options)
+      @host = ip
+      @port = port
+      @io = UDPSocket.new(IPAddr.new(ip).family)
       @options = options
     end
 
