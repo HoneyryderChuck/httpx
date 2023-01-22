@@ -132,9 +132,7 @@ module HTTPX
     def try_clone_connection(connection, family)
       connection.family ||= family
 
-      if connection.family == family
-        return connection
-      end
+      return connection if connection.family == family
 
       new_connection = connection.class.new(connection.type, connection.origin, connection.options)
       new_connection.family = family

@@ -21,21 +21,7 @@ module HTTPX
         packet_size: 512,
         timeouts: Resolver::RESOLVE_TIMEOUT,
       }
-    end
-
-    # nameservers for ipv6 are misconfigured in certain systems;
-    # this can use an unexpected endless loop
-    # https://gitlab.com/honeyryderchuck/httpx/issues/56
-    DEFAULTS[:nameserver].select! do |nameserver|
-      begin
-        IPAddr.new(nameserver)
-        true
-      rescue IPAddr::InvalidAddressError
-        false
-      end
-    end if DEFAULTS[:nameserver]
-
-    DEFAULTS.freeze
+    end.freeze
 
     DNS_PORT = 53
 
@@ -318,13 +304,8 @@ module HTTPX
 
       ip, port = @nameserver[@ns_index]
       port ||= DNS_PORT
-      uri = URI::Generic.build(scheme: "udp", port: port)
-      # uri.hostname = ip
-      # link-local IPv6 address may have a zone identifier, but URI does not support that yet.
-      uri.set_host(ip)
-      type = IO.registry(uri.scheme)
-      log { "resolver: server: #{uri}..." }
-      @io = type.new(uri, [IPAddr.new(ip)], @options)
+      log { "resolver: server: #{ip}:#{port}..." }
+      @io = UDP.new(ip, port, @options)
     end
 
     def transition(nextstate)
