@@ -101,6 +101,21 @@ test truffleruby:
   script:
     ./spec.sh truffleruby latest
   allow_failure: true
+regression tests:
+  image: "ruby:3.1"
+  variables:
+    BUNDLE_WITHOUT: assorted
+    CI: 1
+    COVERAGE_KEY: "$RUBY_ENGINE-$RUBY_VERSION-regression-tests"
+  artifacts:
+    paths:
+      - coverage/
+  stage: test
+  before_script:
+    - apt-get update && apt-get install -y libmagic-dev shared-mime-info
+    - bundle install
+  script:
+    - bundle exec rake regression_tests
 
 coverage:
   coverage: '/\(\d+.\d+\%\) covered/'
