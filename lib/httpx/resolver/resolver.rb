@@ -54,7 +54,7 @@ module HTTPX
       # double emission check
       return if connection.addresses && !addresses.intersect?(connection.addresses)
 
-      log { "resolver: answer #{connection.origin.host}: #{addresses.inspect}" }
+      log { "resolver: answer #{FAMILY_TYPES[RECORD_TYPES[family]]} #{connection.origin.host}: #{addresses.inspect}" }
       if @pool && # if triggered by early resolve, pool may not be here yet
          !connection.io &&
          connection.options.ip_families.size > 1 &&
