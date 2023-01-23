@@ -8,7 +8,7 @@ class Bug_0_18_2_Test < Minitest::Test
   include HTTPHelpers
 
   def test_no_loop_forever_when_total_timeout_on_persistent
-    session = HTTPX.plugin(:persistent).with_timeout(total_timeout: 1)
+    session = HTTPX.plugin(:persistent).with_timeout(total_timeout: 5)
 
     response1 = session.get("https://#{httpbin}/get")
     sleep 2

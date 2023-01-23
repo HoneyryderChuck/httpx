@@ -102,7 +102,7 @@ test truffleruby:
     ./spec.sh truffleruby latest
   allow_failure: true
 regression tests:
-  image: "ruby:3.1"
+  image: "ruby:3.2"
   variables:
     BUNDLE_WITHOUT: assorted
     CI: 1
