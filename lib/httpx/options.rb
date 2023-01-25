@@ -15,7 +15,7 @@ module HTTPX
     # https://github.com/ruby/resolv/blob/095f1c003f6073730500f02acbdbc55f83d70987/lib/resolv.rb#L408
     ip_address_families = begin
       list = Socket.ip_address_list
-      if list.any? { |a| a.ipv6? && !a.ipv6_loopback? && !a.ipv6_linklocal? }
+      if list.any? { |a| a.ipv6? && !a.ipv6_loopback? && !a.ipv6_linklocal? && !a.ipv6_unique_local? }
         [Socket::AF_INET6, Socket::AF_INET]
       else
         [Socket::AF_INET]

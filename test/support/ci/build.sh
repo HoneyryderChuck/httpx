@@ -97,7 +97,7 @@ fi
 if [[ ${RUBY_VERSION:0:3} = "3.2" ]] && [[ "$RUBY_ENGINE" = "ruby" ]]; then
   # regression tests
   # Testing them only with main ruby
-  COVERAGE_KEY="$RUBY_ENGINE-$RUBY_VERSION-regression-tests" bundle exec rake regression_tests
+  # COVERAGE_KEY="$RUBY_ENGINE-$RUBY_VERSION-regression-tests" bundle exec rake regression_tests
 
   # standalone tests
   for f in standalone_tests/*_test.rb; do

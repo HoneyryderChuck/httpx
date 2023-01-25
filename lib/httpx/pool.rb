@@ -137,7 +137,7 @@ module HTTPX
       new_connection = connection.class.new(connection.type, connection.origin, connection.options)
       new_connection.family = family
 
-      connection.once(:tcp_open, &new_connection.method(:force_reset))
+      connection.once(:tcp_open) { new_connection.force_reset }
       connection.once(:connect_error) do |err|
         if new_connection.connecting?
           new_connection.merge(connection)
@@ -146,8 +146,8 @@ module HTTPX
         end
       end
 
-      new_connection.once(:tcp_open) do
-        new_connection.merge(connection)
+      new_connection.once(:tcp_open) do |new_conn|
+        new_conn.merge(connection)
         connection.force_reset
       end
       new_connection.once(:connect_error) do |err|
@@ -222,6 +222,7 @@ module HTTPX
     def coalesce_connections(conn1, conn2)
       return register_connection(conn2) unless conn1.coalescable?(conn2)
 
+      conn2.emit(:tcp_open, conn1)
       conn1.merge(conn2)
       @connections.delete(conn2)
     end

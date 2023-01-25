@@ -557,7 +557,7 @@ module HTTPX
         return if @state == :closed
 
         @io.connect
-        emit(:tcp_open) if @io.state == :connected
+        emit(:tcp_open, self) if @io.state == :connected
 
         return unless @io.connected?
 
