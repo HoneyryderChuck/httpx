@@ -45,6 +45,11 @@ class FaradayTest < Minitest::Test
     refute_nil resp1.env[:error]
   end
 
+  def test_adapter_in_parallel_no_requests
+    connection = create_connection
+    assert_nil(connection.in_parallel {})
+  end
+
   def test_adapter_get_handles_compression
     res = get(build_path("/gzip"))
     assert JSON.parse(res.body.to_s)["gzipped"]
