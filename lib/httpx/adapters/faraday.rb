@@ -169,6 +169,8 @@ module Faraday
         end
 
         def run
+          return unless @handlers.last
+
           env = @handlers.last.env
 
           session = HTTPX.session.with(options_from_env(env))
