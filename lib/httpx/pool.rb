@@ -147,8 +147,10 @@ module HTTPX
       end
 
       new_connection.once(:tcp_open) do |new_conn|
-        new_conn.merge(connection)
-        connection.force_reset
+        if new_conn != connection
+          new_conn.merge(connection)
+          connection.force_reset
+        end
       end
       new_connection.once(:connect_error) do |err|
         if connection.connecting?
