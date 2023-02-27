@@ -144,7 +144,7 @@ module Requests
 
         # regression test
         rfc2616_expires_jar = HTTPX::Plugins::Cookies::Jar.new
-        rfc2616_expires_jar.parse(%(a=b; Path=/; Expires=Fri, 17-Feb-2023 12:43:41 GMT))
+        rfc2616_expires_jar.parse(%(a=b; Path=/; Expires=Fri, 17-Feb-2033 12:43:41 GMT))
         assert !rfc2616_expires_jar[jar_cookies_uri].empty?
 
         # Test domain
