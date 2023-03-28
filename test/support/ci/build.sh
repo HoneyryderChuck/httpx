@@ -5,6 +5,8 @@ set -e
 export LANG=C.UTF-8
 export LANGUAGE=C.UTF-8
 
+ruby --version
+
 RUBY_PLATFORM=`ruby -e 'puts RUBY_PLATFORM'`
 RUBY_ENGINE=`ruby -e 'puts RUBY_ENGINE'`
 IPTABLES=iptables-translate
