@@ -544,6 +544,7 @@ module HTTPX
     rescue TLSError => e
       # connect errors, exit gracefully
       handle_error(e)
+      connecting? && callbacks_for?(:connect_error) ? emit(:connect_error, e) : handle_error(e)
       @state = :closed
       emit(:close)
     end
