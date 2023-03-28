@@ -64,12 +64,7 @@ module HTTPX
     end
 
     def on_resolver_error(connection, error)
-      @errors[connection] << error
-
-      return unless @errors[connection].size >= @resolvers.size
-
-      errors = @errors.delete(connection)
-      emit(:error, connection, errors.first)
+      emit(:error, connection, error)
     end
 
     def on_resolver_close(resolver)
