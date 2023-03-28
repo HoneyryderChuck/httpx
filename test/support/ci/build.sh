@@ -13,12 +13,6 @@ if [[ "$RUBY_ENGINE" = "truffleruby" ]]; then
   dnf install -y iptables iproute which file idn2 git xz
 elif [[ "$RUBY_PLATFORM" = "java" ]]; then
   apt-get update && apt-get install -y build-essential iptables iproute2 file idn2 git
-elif [[ ${RUBY_VERSION:0:3} = "2.1" ]]; then
-  apt-get update && apt-get install -y --force-yes libsodium-dev iptables iproute2 libmagic-dev shared-mime-info
-  IPTABLES=iptables
-elif [[ ${RUBY_VERSION:0:3} = "2.2" ]]; then
-  apt-get update && apt-get install -y --force-yes iptables iproute2 libmagic-dev shared-mime-info
-  IPTABLES=iptables
 elif [[ ${RUBY_VERSION:0:3} = "2.3" ]]; then
   # installing custom openssl
   apt-get update && apt-get install -y iptables iproute2 iptables-nftables-compat libmagic-dev shared-mime-info # openssl=1.0.2l openssl-dev=1.0.2l
