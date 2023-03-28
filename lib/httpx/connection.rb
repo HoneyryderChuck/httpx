@@ -538,7 +538,7 @@ module HTTPX
       # connect errors, exit gracefully
       error = ConnectionError.new(e.message)
       error.set_backtrace(e.backtrace)
-      connecting? && callbacks(:connect_error).any? ? emit(:connect_error, error) : handle_error(error)
+      connecting? && callbacks_for?(:connect_error) ? emit(:connect_error, error) : handle_error(error)
       @state = :closed
       emit(:close)
     rescue TLSError => e

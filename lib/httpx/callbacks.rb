@@ -22,11 +22,11 @@ module HTTPX
       callbacks(type).delete_if { |pr| :delete == pr.call(*args) } # rubocop:disable Style/YodaCondition
     end
 
-    protected
-
     def callbacks_for?(type)
-      @callbacks.key?(type) && !@callbacks[type].empty?
+      @callbacks.key?(type) && @callbacks[type].any?
     end
+
+    protected
 
     def callbacks(type = nil)
       return @callbacks unless type
