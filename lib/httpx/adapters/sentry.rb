@@ -89,9 +89,19 @@ module HTTPX::Plugins
       end
     end
 
+    module RequestMethods
+      def __sentry_enable_trace!
+        return super if @__sentry_enable_trace
+
+        Tracer.call(self)
+        @__sentry_enable_trace = true
+      end
+    end
+
     module ConnectionMethods
       def send(request)
-        Tracer.call(request)
+        request.__sentry_enable_trace!
+
         super
       end
     end

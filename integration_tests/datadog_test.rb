@@ -198,14 +198,14 @@ class DatadogTest < Minitest::Test
     assert span.get_tag("http.method") == verb
     assert span.get_tag("http.url") == uri.path
 
-    error_tag = if defined?(::DDTrace) && ::DDTrace::VERSION::STRING >= "1.8.0"
+    error_tag = if defined?(::DDTrace) && Gem::Version.new(::DDTrace::VERSION::STRING) >= Gem::Version.new("1.8.0")
       "error.message"
     else
       "error.msg"
     end
 
     if error
-      assert span.get_tag("error.type") == error
+      assert span.get_tag("error.type") == "HTTPX::NativeResolveError"
       assert !span.get_tag(error_tag).nil?
       assert span.status == 1
     elsif response.status >= 400
@@ -241,7 +241,7 @@ class DatadogTest < Minitest::Test
     assert span.get_metric("_dd1.sr.eausr") == sample_rate
   end
 
-  if defined?(::DDTrace) && ::DDTrace::VERSION::STRING >= "1.0.0"
+  if defined?(::DDTrace) && Gem::Version.new(::DDTrace::VERSION::STRING) >= Gem::Version.new("1.0.0")
 
     def set_datadog(options = {}, &blk)
       Datadog.configure do |c|
@@ -305,7 +305,7 @@ class DatadogTest < Minitest::Test
   # Retrieves and sorts all spans in the current tracer instance.
   # This method does not cache its results.
   def fetch_spans
-    spans = if defined?(::DDTrace) && ::DDTrace::VERSION::STRING >= "1.0.0"
+    spans = if defined?(::DDTrace) && Gem::Version.new(::DDTrace::VERSION::STRING) >= Gem::Version.new("1.0.0")
       (tracer.instance_variable_get(:@traces) || []).map(&:spans)
     else
       tracer.instance_variable_get(:@spans) || []

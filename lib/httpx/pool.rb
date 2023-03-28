@@ -141,8 +141,9 @@ module HTTPX
       connection.once(:connect_error) do |err|
         if new_connection.connecting?
           new_connection.merge(connection)
+          connection.force_reset
         else
-          connection.handle_error(err)
+          connection.__send__(:handle_error, err)
         end
       end
 
@@ -156,8 +157,9 @@ module HTTPX
         if connection.connecting?
           # main connection has the requests
           connection.merge(new_connection)
+          new_connection.force_reset
         else
-          new_connection.handle_error(err)
+          new_connection.__send__(:handle_error, err)
         end
       end
 
@@ -183,6 +185,8 @@ module HTTPX
     end
 
     def on_resolver_error(connection, error)
+      return connection.emit(:connect_error, error) if connection.connecting? && connection.callbacks_for?(:connect_error)
+
       connection.emit(:error, error)
     end
 
