@@ -93,7 +93,7 @@ module HTTPX::Plugins
       def __sentry_enable_trace!
         return super if @__sentry_enable_trace
 
-        Tracer.new(self).call
+        Tracer.call(self)
         @__sentry_enable_trace = true
       end
     end
