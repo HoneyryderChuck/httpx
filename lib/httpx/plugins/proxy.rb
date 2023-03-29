@@ -94,34 +94,39 @@ module HTTPX
       module InstanceMethods
         private
 
-        def proxy_uris(uri, options)
-          @_proxy_uris ||= begin
-            uris = options.proxy ? Array(options.proxy[:uri]) : []
-            if uris.empty?
-              uri = URI(uri).find_proxy
-              uris << uri if uri
-            end
-            uris
-          end
-          return if @_proxy_uris.empty?
-
-          proxy = options.proxy
-
-          return { uri: uri.host } if proxy && proxy.key?(:no_proxy) && !Array(proxy[:no_proxy]).grep(uri.host).empty?
-
-          proxy_opts = { uri: @_proxy_uris.first }
-          proxy_opts = options.proxy.merge(proxy_opts) if options.proxy
-          proxy_opts
-        end
-
         def find_connection(request, connections, options)
           return super unless options.respond_to?(:proxy)
 
           uri = URI(request.uri)
-          next_proxy = proxy_uris(uri, options)
-          raise Error, "Failed to connect to proxy" unless next_proxy
 
-          proxy = Parameters.new(**next_proxy) unless next_proxy[:uri] == uri.host
+          proxy_opts = if (next_proxy = uri.find_proxy)
+            { uri: next_proxy }
+          else
+            proxy = options.proxy
+
+            return super unless proxy
+
+            return super(request, connections, options.merge(proxy: nil)) unless proxy.key?(:uri)
+
+            @_proxy_uris ||= Array(proxy[:uri])
+
+            next_proxy = @_proxy_uris.first
+            raise Error, "Failed to connect to proxy" unless next_proxy
+
+            if proxy.key?(:no_proxy)
+              next_proxy = URI(next_proxy)
+
+              no_proxy = proxy[:no_proxy]
+              no_proxy = no_proxy.join(",") if no_proxy.is_a?(Array)
+
+              return super(request, connections, options.merge(proxy: nil)) unless URI::Generic.use_proxy?(uri.host, next_proxy.host,
+                                                                                                           next_proxy.port, no_proxy)
+            end
+
+            proxy.merge(uri: next_proxy)
+          end
+
+          proxy = Parameters.new(**proxy_opts)
 
           proxy_options = options.merge(proxy: proxy)
           connection = pool.find_connection(uri, proxy_options) || build_connection(uri, proxy_options)
