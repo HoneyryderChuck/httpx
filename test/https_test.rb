@@ -180,7 +180,7 @@ class HTTPSTest < Minitest::Test
 
   private
 
-  def origin(orig = httpbin)
-    "https://#{orig}"
+  def scheme
+    "https://"
   end
 end
