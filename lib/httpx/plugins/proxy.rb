@@ -18,6 +18,43 @@ module HTTPX
       Error = HTTPProxyError
       PROXY_ERRORS = [TimeoutError, IOError, SystemCallError, Error].freeze
 
+      class << self
+        def configure(klass)
+          klass.plugin(:"proxy/http")
+          klass.plugin(:"proxy/socks4")
+          klass.plugin(:"proxy/socks5")
+        end
+
+        if URI::Generic.methods.include?(:use_proxy?)
+          def use_proxy?(*args)
+            URI::Generic.use_proxy?(*args)
+          end
+        else
+          # https://github.com/ruby/uri/blob/ae07f956a4bea00b4f54a75bd40b8fa918103eed/lib/uri/generic.rb
+          def use_proxy?(hostname, addr, port, no_proxy)
+            hostname = hostname.downcase
+            dothostname = ".#{hostname}"
+            no_proxy.scan(/([^:,\s]+)(?::(\d+))?/) do |p_host, p_port|
+              if !p_port || port == p_port.to_i
+                if p_host.start_with?(".")
+                  return false if hostname.end_with?(p_host.downcase)
+                else
+                  return false if dothostname.end_with?(".#{p_host.downcase}")
+                end
+                if addr
+                  begin
+                    return false if IPAddr.new(p_host).include?(addr)
+                  rescue IPAddr::InvalidAddressError
+                    next
+                  end
+                end
+              end
+            end
+            true
+          end
+        end
+      end
+
       class Parameters
         attr_reader :uri, :username, :password, :scheme
 
@@ -77,14 +114,6 @@ module HTTPX
         end
       end
 
-      class << self
-        def configure(klass)
-          klass.plugin(:"proxy/http")
-          klass.plugin(:"proxy/socks4")
-          klass.plugin(:"proxy/socks5")
-        end
-      end
-
       module OptionsMethods
         def option_proxy(value)
           value.is_a?(Parameters) ? value : Hash[value]
@@ -119,8 +148,8 @@ module HTTPX
               no_proxy = proxy[:no_proxy]
               no_proxy = no_proxy.join(",") if no_proxy.is_a?(Array)
 
-              return super(request, connections, options.merge(proxy: nil)) unless URI::Generic.use_proxy?(uri.host, next_proxy.host,
-                                                                                                           next_proxy.port, no_proxy)
+              return super(request, connections, options.merge(proxy: nil)) unless Proxy.use_proxy?(uri.host, next_proxy.host,
+                                                                                                    next_proxy.port, no_proxy)
             end
 
             proxy.merge(uri: next_proxy)
