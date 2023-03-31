@@ -68,12 +68,21 @@ task :prepare_jekyll_data do
   require "yaml"
 
   FileUtils.mkdir_p("data")
+
+  version_tmpl = <<-VERSION
+  -
+    name: "%<name>s"
+    path: "%<path>s"
+  VERSION
+
   `git tag -l`.lines(chomp: true)
               .map { |v| v[1..-1] }
               .sort_by(&Gem::Version.method(:new))
               .reverse
-              .map { |v| { "name" => v, "path" => "#{v.tr(".", "_")}_md.html" } }
-              .then { |v| YAML.dump(v) }
+              .map { |v| { name: v, path: "#{v.tr(".", "_")}_md.html" } }
+              .map { |v| format(version_tmpl, v) }
+              .join
+              .then { |v| "-\n#{v}" }
               .then { |output| File.write("data/versions.yml", output) }
 end
 
