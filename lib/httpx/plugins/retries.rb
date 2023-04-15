@@ -96,7 +96,7 @@ module HTTPX
                )
                # rubocop:enable Style/MultilineTernaryOperator
              )
-            response.close if response.respond_to?(:close)
+            prepare_retry(request, response)
             log { "failed to get response, #{request.retries} tries to go..." }
             request.retries -= 1
             request.transition(:idle)
@@ -134,14 +134,56 @@ module HTTPX
         def __retryable_error?(ex)
           RETRYABLE_ERRORS.any? { |klass| ex.is_a?(klass) }
         end
+
+        def prepare_retry(request, response)
+          response = response.response if response.is_a?(ErrorResponse)
+
+          return unless response
+
+          unless response.headers.key?("accept-ranges") &&
+                 response.headers["accept-ranges"] == "bytes" && # there's nothing else supported though...
+                 (original_body = response.body)
+            response.close if response.respond_to?(:close)
+            return
+          end
+
+          request.partial_response = response
+
+          size = original_body.bytesize
+
+          request.headers["range"] = "bytes=#{size}-"
+        end
       end
 
       module RequestMethods
         attr_accessor :retries
 
+        attr_writer :partial_response
+
         def initialize(*args)
           super
           @retries = @options.max_retries
+        end
+
+        def response=(response)
+          if @partial_response
+            if response.is_a?(Response) && response.status == 206
+              response.from_partial_response(@partial_response)
+            else
+              @partial_response.close
+            end
+            @partial_response = nil
+          end
+
+          super
+        end
+      end
+
+      module ResponseMethods
+        def from_partial_response(response)
+          @status = response.status
+          @headers = response.headers
+          @body = response.body
         end
       end
     end

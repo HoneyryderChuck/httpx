@@ -96,6 +96,44 @@ module Requests
         verify_error_response(retries_response)
         verify_execution_delta(3 + 2 + 3 + 4 + 3, total_time, 1)
       end
+
+      def test_plugin_retries_resumable
+        resumable_uri = build_uri("/range/200")
+        full_payload = HTTPX.get(resumable_uri).raise_for_status.to_s
+
+        retries_session = HTTPX
+                          .plugin(RequestInspector)
+                          .plugin(RequestFailAfter100Bytes)
+                          .plugin(:retries)
+                          .max_retries(2)
+                          .with(retry_on: ->(res) { res.error.is_a?(RequestFailAfter100Bytes::BiggerThan100Bytes) }, window_size: 100)
+        retries_response = retries_session.get(resumable_uri)
+        verify_status(retries_response, 200)
+        assert retries_response.to_s == full_payload
+
+        total_responses = retries_session.total_responses
+        assert total_responses.size == 2
+        total_requests = total_responses.map { |res| res.instance_variable_get(:@request) }
+
+        assert total_requests.uniq.size == 1
+        request = total_requests.first
+        assert request.headers.key?("range")
+        assert request.headers["range"].match(/bytes=\d+-/)
+      end
+
+      module RequestFailAfter100Bytes
+        class BiggerThan100Bytes < StandardError; end
+
+        module ResponseBodyMethods
+          def write(chunk)
+            val = super
+
+            raise(BiggerThan100Bytes, "ouch") if (100..199).cover?(@length)
+
+            val
+          end
+        end
+      end
     end
   end
 end
