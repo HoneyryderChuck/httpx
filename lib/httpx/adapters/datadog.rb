@@ -68,7 +68,7 @@ module TRACING_MODULE # rubocop:disable Naming/ClassAndModuleCamelCase
 
             @request.on(:response, &method(:finish))
 
-            verb = @request.verb.to_s.upcase
+            verb = @request.verb
             uri = @request.uri
 
             @span = build_span

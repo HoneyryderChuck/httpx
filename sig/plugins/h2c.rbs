@@ -1,7 +1,7 @@
 module HTTPX
   module Plugins
     module H2C
-      VALID_H2C_VERBS: Array[Symbol]
+      VALID_H2C_VERBS: Array[verb]
 
       def self.load_dependencies: (*untyped) -> void
       def self.configure: (singleton(Session)) -> void

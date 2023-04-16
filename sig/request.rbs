@@ -6,7 +6,7 @@ module HTTPX
     METHODS: Array[Symbol]
     USER_AGENT: String
 
-    attr_reader verb: Symbol
+    attr_reader verb: verb
     attr_reader uri: URI::Generic
     attr_reader headers: Headers
     attr_reader body: Body

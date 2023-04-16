@@ -119,7 +119,7 @@ class HTTPSTest < Minitest::Test
       HTTPX.wrap do |http|
         total_time = start_time = nil
         trailered = false
-        request = http.build_request(:post, uri, body: %w[this is chunked])
+        request = http.build_request("POST", uri, body: %w[this is chunked])
         request.on(:headers) do |_written_request|
           start_time = HTTPX::Utils.now
         end

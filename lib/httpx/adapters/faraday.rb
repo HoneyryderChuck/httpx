@@ -44,7 +44,7 @@ module Faraday
             headers: env.request_headers,
             body: env.body,
           }
-          [meth, env.url, request_options]
+          [meth.to_s.upcase, env.url, request_options]
         end
 
         def options_from_env(env)

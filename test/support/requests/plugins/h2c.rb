@@ -7,8 +7,8 @@ module Requests
         HTTPX.plugin(SessionWithPool).plugin(:h2c).wrap do |session|
           uri = build_uri("/get")
 
-          request = session.build_request(:get, uri)
-          request2 = session.build_request(:get, uri)
+          request = session.build_request("GET", uri)
+          request2 = session.build_request("GET", uri)
           response = session.request(request)
           verify_status(response, 200)
           assert response.version == "2.0", "http h2c requests should be in HTTP/2"

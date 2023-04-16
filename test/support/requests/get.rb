@@ -30,7 +30,7 @@ module Requests
 
     def test_http_request
       uri = build_uri("/get")
-      response = HTTPX.request(:get, uri)
+      response = HTTPX.request("GET", uri)
       verify_status(response, 200)
       verify_body_length(response)
     end
@@ -38,7 +38,7 @@ module Requests
     def test_http_get_build_request
       uri = build_uri("/get")
       HTTPX.wrap do |http|
-        request = http.build_request(:get, uri)
+        request = http.build_request("GET", uri)
         response = http.request(request)
         verify_status(response, 200)
         verify_body_length(response)

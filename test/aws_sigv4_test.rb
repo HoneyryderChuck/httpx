@@ -6,18 +6,18 @@ class HTTPXAwsSigv4Test < Minitest::Test
   include ResponseHelpers
 
   def test_plugin_aws_sigv4_canonical_query
-    r1 = sigv4_session.build_request(:get, "http://domain.com?b=c&a=b")
+    r1 = sigv4_session.build_request("GET", "http://domain.com?b=c&a=b")
     assert r1.canonical_query == "a=b&b=c"
-    r2 = sigv4_session.build_request(:get, "http://domain.com?a=c&a=b")
+    r2 = sigv4_session.build_request("GET", "http://domain.com?a=c&a=b")
     assert r2.canonical_query == "a=b&a=c"
-    r3 = sigv4_session.build_request(:get, "http://domain.com?a=b&a=b")
+    r3 = sigv4_session.build_request("GET", "http://domain.com?a=b&a=b")
     assert r3.canonical_query == "a=b&a=b"
-    r4 = sigv4_session.build_request(:get, "http://domain.com?b&a=b")
+    r4 = sigv4_session.build_request("GET", "http://domain.com?b&a=b")
     assert r4.canonical_query == "a=b&b"
   end
 
   def test_plugin_aws_sigv4_x_amz_date
-    request = sigv4_session.build_request(:get, "http://domain.com")
+    request = sigv4_session.build_request("GET", "http://domain.com")
     # x-amz-date
     assert request.headers.key?("x-amz-date")
     amz_date = Time.parse(request.headers["x-amz-date"])
@@ -26,35 +26,35 @@ class HTTPXAwsSigv4Test < Minitest::Test
     # date already set
     date = Time.now.utc - (60 * 60 * 24)
     date_amz = date.strftime("%Y%m%dT%H%M%SZ")
-    x_date_request = sigv4_session.build_request(:get, "http://domain.com", headers: { "x-amz-date" => date_amz })
+    x_date_request = sigv4_session.build_request("GET", "http://domain.com", headers: { "x-amz-date" => date_amz })
     verify_header(x_date_request.headers, "x-amz-date", date_amz)
   end
 
   def test_plugin_aws_sigv4_x_amz_security_token
-    request = sigv4_session.build_request(:get, "http://domain.com")
+    request = sigv4_session.build_request("GET", "http://domain.com")
     assert !request.headers.key?("x-amz-security-token")
 
-    tk_request = sigv4_session(security_token: "token").build_request(:get, "http://domain.com")
+    tk_request = sigv4_session(security_token: "token").build_request("GET", "http://domain.com")
     assert tk_request.headers.key?("x-amz-security-token")
     verify_header(tk_request.headers, "x-amz-security-token", "token")
 
     # already set
-    token_request = sigv4_session(security_token: "token").build_request(:get, "http://domain.com",
+    token_request = sigv4_session(security_token: "token").build_request("GET", "http://domain.com",
                                                                          headers: { "x-amz-security-token" => "TOKEN" })
     verify_header(token_request.headers, "x-amz-security-token", "TOKEN")
   end
 
   def test_plugin_aws_sigv4_x_amz_content_sha256
-    request = sigv4_session.build_request(:get, "http://domain.com", body: "abcd")
+    request = sigv4_session.build_request("GET", "http://domain.com", body: "abcd")
     assert request.headers["x-amz-content-sha256"] == Digest::SHA256.hexdigest("abcd")
 
     # already set
-    hashed_request = sigv4_session.build_request(:get, "http://domain.com", headers: { "x-amz-content-sha256" => "HASH" })
+    hashed_request = sigv4_session.build_request("GET", "http://domain.com", headers: { "x-amz-content-sha256" => "HASH" })
     verify_header(hashed_request.headers, "x-amz-content-sha256", "HASH")
   end
 
   def test_plugin_aws_sigv4_x_amz_content_sha256_stringio
-    request = sigv4_session.build_request(:get, "http://domain.com", body: StringIO.new("abcd"))
+    request = sigv4_session.build_request("GET", "http://domain.com", body: StringIO.new("abcd"))
     assert request.headers["x-amz-content-sha256"] == Digest::SHA256.hexdigest("abcd")
   end
 
@@ -63,7 +63,7 @@ class HTTPXAwsSigv4Test < Minitest::Test
     body.write("abcd")
     body.flush
 
-    request = sigv4_session.build_request(:get, "http://domain.com", body: body)
+    request = sigv4_session.build_request("GET", "http://domain.com", body: body)
     assert request.headers["x-amz-content-sha256"] == Digest::SHA256.hexdigest("abcd")
   ensure
     if body
@@ -78,7 +78,7 @@ class HTTPXAwsSigv4Test < Minitest::Test
       region: "REGION",
       unsigned_headers: %w[accept-encoding accept user-agent content-type content-length]
     ).build_request(
-      :put,
+      "PUT",
       "http://domain.com",
       headers: {
         "Host" => "domain.com",

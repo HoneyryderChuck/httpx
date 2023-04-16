@@ -19,7 +19,11 @@ module HTTPX
     def_delegator :@body, :empty?
 
     def initialize(verb, uri, options = {})
-      @verb    = verb.to_s.downcase.to_sym
+      if verb.is_a?(Symbol)
+        warn "DEPRECATION WARNING: Using symbols for `verb` is deprecated, and will not be supported in httpx 1.0. " \
+             "Use \"#{verb.to_s.upcase}\" instead."
+      end
+      @verb    = verb.to_s.upcase
       @options = Options.new(options)
       @uri     = Utils.to_uri(uri)
       if @uri.relative?
@@ -138,7 +142,7 @@ module HTTPX
     # :nocov:
     def inspect
       "#<HTTPX::Request:#{object_id} " \
-        "#{@verb.to_s.upcase} " \
+        "#{@verb} " \
         "#{uri} " \
         "@headers=#{@headers} " \
         "@body=#{@body}>"

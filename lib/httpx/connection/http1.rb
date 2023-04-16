@@ -312,7 +312,7 @@ module HTTPX
     end
 
     def join_headline(request)
-      "#{request.verb.to_s.upcase} #{request.path} HTTP/#{@version.join(".")}"
+      "#{request.verb} #{request.path} HTTP/#{@version.join(".")}"
     end
 
     def join_headers(request)

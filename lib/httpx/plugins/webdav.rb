@@ -10,11 +10,11 @@ module HTTPX
     module WebDav
       module InstanceMethods
         def copy(src, dest)
-          request(:copy, src, headers: { "destination" => @options.origin.merge(dest) })
+          request("COPY", src, headers: { "destination" => @options.origin.merge(dest) })
         end
 
         def move(src, dest)
-          request(:move, src, headers: { "destination" => @options.origin.merge(dest) })
+          request("MOVE", src, headers: { "destination" => @options.origin.merge(dest) })
         end
 
         def lock(path, timeout: nil, &blk)
@@ -30,7 +30,7 @@ module HTTPX
                 "<D:locktype><D:write/></D:locktype>" \
                 "<D:owner>null</D:owner>" \
                 "</D:lockinfo>"
-          response = request(:lock, path, headers: headers, xml: xml)
+          response = request("LOCK", path, headers: headers, xml: xml)
 
           return response unless response.is_a?(Response)
 
@@ -46,11 +46,11 @@ module HTTPX
         end
 
         def unlock(path, lock_token)
-          request(:unlock, path, headers: { "lock-token" => lock_token })
+          request("UNLOCK", path, headers: { "lock-token" => lock_token })
         end
 
         def mkcol(dir)
-          request(:mkcol, dir)
+          request("MKCOL", dir)
         end
 
         def propfind(path, xml = nil)
@@ -64,13 +64,13 @@ module HTTPX
                    xml
           end
 
-          request(:propfind, path, headers: { "depth" => "1" }, xml: body)
+          request("PROPFIND", path, headers: { "depth" => "1" }, xml: body)
         end
 
         def proppatch(path, xml)
           body = "<?xml version=\"1.0\"?>" \
                  "<D:propertyupdate xmlns:D=\"DAV:\" xmlns:Z=\"http://ns.example.com/standards/z39.50/\">#{xml}</D:propertyupdate>"
-          request(:proppatch, path, xml: body)
+          request("PROPPATCH", path, xml: body)
         end
         # %i[ orderpatch acl report search]
       end

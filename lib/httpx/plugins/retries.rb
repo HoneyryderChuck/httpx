@@ -11,7 +11,7 @@ module HTTPX
       MAX_RETRIES = 3
       # TODO: pass max_retries in a configure/load block
 
-      IDEMPOTENT_METHODS = %i[get options head put delete].freeze
+      IDEMPOTENT_METHODS = %w[GET OPTIONS HEAD PUT DELETE].freeze
       RETRYABLE_ERRORS = [
         IOError,
         EOFError,

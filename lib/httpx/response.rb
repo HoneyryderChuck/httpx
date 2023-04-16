@@ -56,12 +56,12 @@ module HTTPX
     end
 
     def bodyless?
-      @request.verb == :head ||
+      @request.verb == "HEAD" ||
         no_data?
     end
 
     def complete?
-      bodyless? || (@request.verb == :connect && @status == 200)
+      bodyless? || (@request.verb == "CONNECT" && @status == 200)
     end
 
     # :nocov:

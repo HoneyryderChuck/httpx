@@ -208,7 +208,7 @@ module HTTPX
     def set_protocol_headers(request)
       {
         ":scheme" => request.scheme,
-        ":method" => request.verb.to_s.upcase,
+        ":method" => request.verb,
         ":path" => request.path,
         ":authority" => request.authority,
       }

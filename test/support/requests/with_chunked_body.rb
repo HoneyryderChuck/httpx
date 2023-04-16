@@ -22,7 +22,7 @@ module Requests
 
         total_time = start_time = nil
         trailered = false
-        request = http.build_request(meth, uri, headers: { "trailer" => "X-Time-Spent" }, body: %w[this is a chunked response])
+        request = http.build_request(meth.upcase, uri, headers: { "trailer" => "X-Time-Spent" }, body: %w[this is a chunked response])
         request.on(:headers) do |_written_request|
           start_time = HTTPX::Utils.now
         end
