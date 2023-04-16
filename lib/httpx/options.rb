@@ -4,6 +4,7 @@ require "socket"
 
 module HTTPX
   class Options
+    BUFFER_SIZE = 1 << 14
     WINDOW_SIZE = 1 << 14 # 16K
     MAX_BODY_THRESHOLD_SIZE = (1 << 10) * 112 # 112K
     CONNECT_TIMEOUT = 60
@@ -41,6 +42,7 @@ module HTTPX
       },
       :headers => {},
       :window_size => WINDOW_SIZE,
+      :buffer_size => BUFFER_SIZE,
       :body_threshold_size => MAX_BODY_THRESHOLD_SIZE,
       :request_class => Class.new(Request),
       :response_class => Class.new(Response),
@@ -178,7 +180,19 @@ module HTTPX
     end
 
     def option_window_size(value)
-      Integer(value)
+      value = Integer(value)
+
+      raise TypeError, ":window_size must be positive" unless value.positive?
+
+      value
+    end
+
+    def option_buffer_size(value)
+      value = Integer(value)
+
+      raise TypeError, ":buffer_size must be positive" unless value.positive?
+
+      value
     end
 
     def option_body_threshold_size(value)

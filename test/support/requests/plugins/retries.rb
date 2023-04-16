@@ -98,7 +98,7 @@ module Requests
       end
 
       def test_plugin_retries_resumable
-        resumable_uri = build_uri("/range/200")
+        resumable_uri = build_uri("/range/200?chunk_size=100")
         full_payload = HTTPX.get(resumable_uri).raise_for_status.to_s
 
         retries_session = HTTPX
@@ -106,7 +106,9 @@ module Requests
                           .plugin(RequestFailAfter100Bytes)
                           .plugin(:retries)
                           .max_retries(2)
-                          .with(retry_on: ->(res) { res.error.is_a?(RequestFailAfter100Bytes::BiggerThan100Bytes) }, window_size: 100)
+                          .with(retry_on: ->(res) {
+                            res.error && res.error.message == "over 100 bytes"
+                          }, window_size: 50, buffer_size: 50, http2_settings: { settings_initial_window_size: 100 })
         retries_response = retries_session.get(resumable_uri)
         verify_status(retries_response, 200)
         assert retries_response.to_s == full_payload
@@ -128,7 +130,7 @@ module Requests
           def write(chunk)
             val = super
 
-            raise(BiggerThan100Bytes, "ouch") if (100..199).cover?(@length)
+            raise(BiggerThan100Bytes, "over 100 bytes") if (100..199).cover?(@length)
 
             val
           end

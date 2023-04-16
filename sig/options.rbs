@@ -2,6 +2,7 @@ module HTTPX
   class Options
     # include _ToHash
 
+    BUFFER_SIZE: Integer
     WINDOW_SIZE: Integer
     MAX_BODY_THRESHOLD_SIZE: Integer
     CONNECT_TIMEOUT: Integer
@@ -37,6 +38,9 @@ module HTTPX
 
     # window_size
     attr_reader window_size: Integer
+
+    # buffer_size
+    attr_reader buffer_size: Integer
 
     # body_threshold_size
     attr_reader body_threshold_size: Integer
