@@ -128,23 +128,32 @@ module HTTPX
     end
 
     def parse(request, response)
-      begin
-        answers = decode_response_body(response)
-      rescue Resolv::DNS::DecodeError => e
-        host, connection = @queries.first
-        @queries.delete(host)
-        emit_resolve_error(connection, connection.origin.host, e)
-        return
-      end
+      code, result = decode_response_body(response)
 
-      if answers.nil?
+      case code
+      when :ok
+        parse_addresses(result)
+      when :no_domain_found
         # Indicates no such domain was found.
 
         host = @requests.delete(request)
         connection = @queries.delete(host)
 
         emit_resolve_error(connection) unless @queries.value?(connection)
-      elsif answers.empty?
+      when :dns_error
+        host = @requests.delete(request)
+        connection = @queries.delete(host)
+
+        emit_resolve_error(connection)
+      when :decode_error
+        host, connection = @queries.first
+        @queries.delete(host)
+        emit_resolve_error(connection, connection.origin.host, result)
+      end
+    end
+
+    def parse_addresses(answers)
+      if answers.empty?
         # no address found, eliminate candidates
         host = @requests.delete(request)
         connection = @queries.delete(host)

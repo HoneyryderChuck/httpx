@@ -70,7 +70,7 @@ module Requests
           uri = URI(build_uri("/get"))
           resolver_class = Class.new(HTTPX::Resolver::HTTPS) do
             def decode_response_body(_response)
-              raise Resolv::DNS::DecodeError
+              [:decode_error, Resolv::DNS::DecodeError.new("smth")]
             end
           end
           response = session.head(uri, resolver_class: resolver_class, resolver_options: options.merge(record_types: %w[]))
@@ -170,30 +170,23 @@ module Requests
           session = HTTPX.plugin(SessionWithPool)
 
           resolver_class = Class.new(HTTPX::Resolver::Native) do
-            attr_reader :io
-
-            @instances = []
+            @ios = []
 
             class << self
-              attr_reader :instances
+              attr_reader :ios
+            end
 
-              def new(*)
-                resolver = super
-
-                @instances << resolver
-
-                resolver
-              end
+            def build_socket
+              io = super
+              self.class.ios << io
+              io
             end
           end
 
-          response = session.head(uri, resolver_class: resolver_class, resolver_options: options.merge(nameserver: %w[8.8.8.8]))
+          response = session.head(uri, resolver_class: resolver_class, resolver_options: options)
           verify_status(response, 200)
 
-          resolver = resolver_class.instances.find { |res| res.family == Socket::AF_INET }
-
-          assert !resolver.nil?, "resolver instance not collected"
-          assert resolver.io.is_a?(HTTPX::TCP), "resolver did not fallback to tcp (#{resolver.io} instead)"
+          assert resolver_class.ios.any?(HTTPX::TCP), "resolver did not upgrade to tcp"
         end
       end
     end

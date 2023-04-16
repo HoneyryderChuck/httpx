@@ -31,6 +31,10 @@ module HTTPX
       @buffer.bytesize >= @limit
     end
 
+    def capacity
+      @limit - @buffer.bytesize
+    end
+
     def shift!(fin)
       @buffer = @buffer.byteslice(fin..-1) || "".b
     end

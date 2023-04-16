@@ -11,6 +11,7 @@ module HTTPX
 
     def full?: () -> bool
     def shift!: (Integer) -> void
+    def capacity: () -> Integer
 
     # delegated
     def <<: (string data) -> String

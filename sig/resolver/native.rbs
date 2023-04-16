@@ -20,6 +20,7 @@ module HTTPX
       @connections: Array[Connection]
       @read_buffer: String
       @write_buffer: Buffer
+      @large_packet: Buffer?
 
       attr_reader state: Symbol
 
