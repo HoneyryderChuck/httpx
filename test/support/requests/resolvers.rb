@@ -164,6 +164,37 @@ module Requests
           verify_error_response(response, HTTPX::ResolveError)
           assert resolver_class.attempts == 3, "should have attempted to use all 3 nameservers"
         end
+
+        define_method :"test_resolver_#{resolver_type}_max_udp_size_exceeded" do
+          uri = origin("aerserv-bc-us-east.bidswitch.net")
+          session = HTTPX.plugin(SessionWithPool)
+
+          resolver_class = Class.new(HTTPX::Resolver::Native) do
+            attr_reader :io
+
+            @instances = []
+
+            class << self
+              attr_reader :instances
+
+              def new(*)
+                resolver = super
+
+                @instances << resolver
+
+                resolver
+              end
+            end
+          end
+
+          response = session.head(uri, resolver_class: resolver_class, resolver_options: options.merge(nameserver: %w[8.8.8.8]))
+          verify_status(response, 200)
+
+          resolver = resolver_class.instances.find { |res| res.family == Socket::AF_INET }
+
+          assert !resolver.nil?, "resolver instance not collected"
+          assert resolver.io.is_a?(HTTPX::TCP), "resolver did not fallback to tcp (#{resolver.io} instead)"
+        end
       end
     end
   end
