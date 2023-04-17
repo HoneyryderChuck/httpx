@@ -39,10 +39,7 @@ module HTTPX
           requests.flat_map do |request|
             digest = request.options.digest
 
-            unless digest
-              super(request)
-              next
-            end
+            next super(request) unless digest
 
             probe_response = wrap { super(request).first }
 

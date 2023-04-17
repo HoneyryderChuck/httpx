@@ -44,6 +44,14 @@ module Requests
         end
       end
 
+      def test_plugin_digest_authentication_bypass
+        session = HTTPX.plugin(:digest_authentication).with_headers("cookie" => "fake=fake_value")
+        response = session.get(digest_auth_uri)
+        verify_status(response, 401)
+        response = session.get(build_uri("/get"))
+        verify_status(response, 200)
+      end
+
       # NTLM
 
       def test_plugin_ntlm_authentication
