@@ -43,8 +43,8 @@ module HTTPX::Plugins
 
         request_info = extract_request_info(req)
 
-        data = if response.is_a?(HTTPX::ErrorResponse)
-          { error: res.message, **request_info }
+        data = if res.is_a?(HTTPX::ErrorResponse)
+          { error: res.error.message, **request_info }
         else
           { status: res.status, **request_info }
         end
@@ -64,7 +64,7 @@ module HTTPX::Plugins
         request_info = extract_request_info(req)
         sentry_span.set_description("#{request_info[:method]} #{request_info[:url]}")
         if res.is_a?(HTTPX::ErrorResponse)
-          sentry_span.set_data(:error, res.message)
+          sentry_span.set_data(:error, res.error.message)
         else
           sentry_span.set_data(:status, res.status)
         end

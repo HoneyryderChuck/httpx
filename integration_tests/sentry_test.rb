@@ -27,6 +27,9 @@ if RUBY_VERSION >= "2.4.0"
 
         verify_status(response, 200)
         verify_spans(transaction, response, description: "GET #{uri}?foo=bar")
+        crumb = Sentry.get_current_scope.breadcrumbs.peek
+        assert crumb.category == "httpx"
+        assert crumb.data ==  { status: 200, method: "GET", url: "#{uri}?foo=bar" }
       ensure
         Sentry.configuration.send_default_pii = before_pii
       end
@@ -46,6 +49,9 @@ if RUBY_VERSION >= "2.4.0"
 
         verify_status(response, 200)
         verify_spans(transaction, response, description: "GET #{uri}")
+        crumb = Sentry.get_current_scope.breadcrumbs.peek
+        assert crumb.category == "httpx"
+        assert crumb.data ==  { status: 200, method: "GET", url: uri }
       ensure
         Sentry.configuration.send_default_pii = before_pii
       end
@@ -58,9 +64,14 @@ if RUBY_VERSION >= "2.4.0"
         transaction = Sentry.start_transaction
         Sentry.get_current_scope.set_span(transaction)
 
-        response = HTTPX.post(build_uri("/post"), form: { foo: "bar" })
+        uri = build_uri("/post")
+        response = HTTPX.post(uri, form: { foo: "bar" })
         verify_status(response, 200)
         verify_spans(transaction, response, verb: "POST")
+
+        crumb = Sentry.get_current_scope.breadcrumbs.peek
+        assert crumb.category == "httpx"
+        assert crumb.data ==  { status: 200, method: "POST", url: uri, body: "foo&bar" }
       ensure
         Sentry.configuration.send_default_pii = before_pii
       end
@@ -74,6 +85,22 @@ if RUBY_VERSION >= "2.4.0"
       verify_status(responses[0], 200)
       verify_status(responses[1], 404)
       verify_spans(transaction, *responses)
+    end
+
+    def test_sentry_server_error_request
+      transaction = Sentry.start_transaction
+      Sentry.get_current_scope.set_span(transaction)
+
+      uri = URI("http://unexisting/")
+
+      response = HTTPX.get(uri)
+
+      verify_error_response(response, /Can't resolve unexisting/)
+      assert response.is_a?(HTTPX::ErrorResponse), "response should contain errors"
+      verify_spans(transaction, response, verb: "GET")
+      crumb = Sentry.get_current_scope.breadcrumbs.peek
+      assert crumb.category == "httpx"
+      assert crumb.data ==  { error: "Can't resolve unexisting", method: "GET", url: uri }
     end
 
     private
@@ -91,7 +118,11 @@ if RUBY_VERSION >= "2.4.0"
         assert !request_span.timestamp.nil?
         assert request_span.start_timestamp != request_span.timestamp
         assert request_span.description == (description || "#{verb || "GET"} #{response.uri}")
-        assert request_span.data == { status: response.status }
+        if response.is_a?(HTTPX::ErrorResponse)
+          assert request_span.data == { error: response.error.message }
+        else
+          assert request_span.data == { status: response.status }
+        end
       end
     end
 
@@ -106,6 +137,7 @@ if RUBY_VERSION >= "2.4.0"
         config.logger = mock_logger
         config.dsn = DUMMY_DSN
         config.transport.transport_class = Sentry::DummyTransport
+        config.breadcrumbs_logger = [:http_logger]
         # so the events will be sent synchronously for testing
         config.background_worker_threads = 0
       end
