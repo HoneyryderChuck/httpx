@@ -141,9 +141,9 @@ module HTTPX
 
         module ProxyParser
           def join_headline(request)
-            return super if request.verb == :connect
+            return super if request.verb == "CONNECT"
 
-            "#{request.verb.to_s.upcase} #{request.uri} HTTP/#{@version.join(".")}"
+            "#{request.verb} #{request.uri} HTTP/#{@version.join(".")}"
           end
 
           def set_protocol_headers(request)
@@ -161,7 +161,7 @@ module HTTPX
 
         class ConnectRequest < Request
           def initialize(uri, _options)
-            super(:connect, uri, {})
+            super("CONNECT", uri, {})
             @headers.delete("accept")
           end
 

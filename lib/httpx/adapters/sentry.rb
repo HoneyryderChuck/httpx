@@ -75,7 +75,7 @@ module HTTPX::Plugins
         uri = req.uri
 
         result = {
-          method: req.verb.to_s.upcase,
+          method: req.verb,
         }
 
         if ::Sentry.configuration.send_default_pii

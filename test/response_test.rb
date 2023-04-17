@@ -65,7 +65,7 @@ class ResponseTest < Minitest::Test
     body2.write("bar")
     assert body2 == "foobar", "body buffers chunks"
 
-    body3 = Response::Body.new(Response.new(request("head"), 200, "2.0", {}), Options.new(body_threshold_size: 1024))
+    body3 = Response::Body.new(Response.new(request("HEAD"), 200, "2.0", {}), Options.new(body_threshold_size: 1024))
     assert body3.empty?, "body must be empty after initialization"
     assert body3 == "", "HEAD request body must be empty (#{body3})"
 
@@ -212,7 +212,7 @@ class ResponseTest < Minitest::Test
 
   private
 
-  def request(verb = :get, uri = "http://google.com")
+  def request(verb = "GET", uri = "http://google.com")
     Request.new(verb, uri)
   end
 

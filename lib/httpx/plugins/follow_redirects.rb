@@ -103,7 +103,7 @@ module HTTPX
                                           max_redirects: max_redirects - 1)
           end
 
-          build_request(:get, redirect_uri, retry_options)
+          build_request("GET", redirect_uri, retry_options)
         end
 
         def __get_location_from_response(response)

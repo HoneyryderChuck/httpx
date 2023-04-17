@@ -264,7 +264,7 @@ module HTTPX
             Message.encode(input, deflater: deflater)
           end
 
-          build_request(:post, uri, headers: headers, body: body)
+          build_request("POST", uri, headers: headers, body: body)
         end
       end
     end

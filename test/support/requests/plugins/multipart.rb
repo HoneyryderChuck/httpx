@@ -225,7 +225,7 @@ module Requests
                              .class.default_options
                              .response_class
                              .new(
-                               HTTPX::Request.new(:get, "http://example.com"),
+                               HTTPX::Request.new("GET", "http://example.com"),
                                200,
                                "2.0",
                                { "content-type" => "multipart/form-data; boundary=90" }

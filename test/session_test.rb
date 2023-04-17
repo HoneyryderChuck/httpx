@@ -26,7 +26,7 @@ class SessionTest < Minitest::Test
     assert session.options.respond_to?(:foo), "options methods weren't added"
     assert session.options.foo == "options-foo", "option method is unexpected"
 
-    request = session.options.request_class.new(:get, "http://example.com/", session.options)
+    request = session.options.request_class.new("GET", "http://example.com/", session.options)
     assert request.respond_to?(:foo), "request methods haven't been added"
     assert request.foo == "request-foo", "request method is unexpected"
     assert request.headers.respond_to?(:foo), "headers methods haven't been added"

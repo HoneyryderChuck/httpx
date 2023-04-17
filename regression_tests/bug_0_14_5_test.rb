@@ -13,7 +13,7 @@ class Bug_0_14_5_Test < Minitest::Test
       http.get("https://#{httpbin}/get")
 
       requests = 2.times.map do
-        http.build_request(:post, post_uri, body: "a" * (1 << 16)) # 65k body, must be above write buffer size
+        http.build_request("POST", post_uri, body: "a" * (1 << 16)) # 65k body, must be above write buffer size
       end
 
       responses = http.request(*requests)

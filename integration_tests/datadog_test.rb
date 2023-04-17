@@ -36,7 +36,7 @@ class DatadogTest < Minitest::Test
     set_datadog
     uri = URI(build_uri("/status/200", "http://#{httpbin}"))
 
-    get_response, post_response = HTTPX.request([[:get, uri], [:post, uri]])
+    get_response, post_response = HTTPX.request([["GET", uri], ["POST", uri]])
     verify_status(get_response, 200)
     verify_status(post_response, 200)
 

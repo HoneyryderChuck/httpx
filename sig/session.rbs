@@ -17,7 +17,7 @@ module HTTPX
 
     def close: (*untyped) -> void
 
-    def build_request: (String | verb, generic_uri, ?options) -> Request
+    def build_request: (verb, generic_uri, ?options) -> Request
 
     private
 
@@ -35,11 +35,11 @@ module HTTPX
 
     def build_altsvc_connection: (Connection existing_connection, Array[Connection] connections, URI::Generic alt_origin, String origin, Hash[String, String] alt_params, Options options) -> Connection?
 
-    def build_requests: (verb | string, uri, options) -> Array[Request]
-                      | (Array[[verb | string, uri, options]], options) -> Array[Request]
-                      | (Array[[verb | string, uri]], options) -> Array[Request]
-                      | (verb | string, _Each[[uri, options]], Options) -> Array[Request]
-                      | (verb | string, _Each[uri], options) -> Array[Request]
+    def build_requests: (verb, uri, options) -> Array[Request]
+                      | (Array[[verb, uri, options]], options) -> Array[Request]
+                      | (Array[[verb, uri]], options) -> Array[Request]
+                      | (verb, _Each[[uri, options]], Options) -> Array[Request]
+                      | (verb, _Each[uri], options) -> Array[Request]
 
     def build_connection: (URI::Generic, Options) -> Connection
 

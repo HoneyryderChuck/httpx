@@ -17,7 +17,7 @@ class ResponseOjTest < Minitest::Test
 
   private
 
-  def request(verb = :get, uri = "http://google.com")
+  def request(verb = "GET", uri = "http://google.com")
     Request.new(verb, uri)
   end
 

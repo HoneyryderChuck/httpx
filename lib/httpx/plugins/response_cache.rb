@@ -8,7 +8,7 @@ module HTTPX
     # https://gitlab.com/os85/httpx/wikis/Response-Cache
     #
     module ResponseCache
-      CACHEABLE_VERBS = %i[get head].freeze
+      CACHEABLE_VERBS = %w[GET HEAD].freeze
       CACHEABLE_STATUS_CODES = [200, 203, 206, 300, 301, 410].freeze
       private_constant :CACHEABLE_VERBS
       private_constant :CACHEABLE_STATUS_CODES
@@ -96,7 +96,7 @@ module HTTPX
 
       module RequestMethods
         def response_cache_key
-          @response_cache_key ||= Digest::SHA1.hexdigest("httpx-response-cache-#{@verb}#{@uri}")
+          @response_cache_key ||= Digest::SHA1.hexdigest("httpx-response-cache-#{@verb}-#{@uri}")
         end
       end
 

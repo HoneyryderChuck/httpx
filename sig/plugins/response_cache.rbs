@@ -1,7 +1,7 @@
 module HTTPX
   module Plugins
     module ResponseCache
-      CACHEABLE_VERBS: Array[Symbol]
+      CACHEABLE_VERBS: Array[verb]
 
       def self?.cacheable_request?: (Request request) -> bool
       def self?.cacheable_response?: (response response) -> bool

@@ -26,7 +26,7 @@ module Requests
           assert body == "echo: helloworld"
           verify_header(response.instance_variable_get(:@request).headers, "expect", "100-continue")
 
-          next_request = http.build_request(:post, build_uri("/", server.origin), body: "helloworld")
+          next_request = http.build_request("POST", build_uri("/", server.origin), body: "helloworld")
           verify_header(next_request.headers, "expect", "100-continue")
         end
       end
@@ -58,7 +58,7 @@ module Requests
           assert body == "echo: helloworld"
           verify_no_header(response.instance_variable_get(:@request).headers, "expect")
 
-          next_request = http.build_request(:post, build_uri("/", server.origin), body: "helloworld")
+          next_request = http.build_request("POST", build_uri("/", server.origin), body: "helloworld")
           verify_no_header(next_request.headers, "expect")
         end
       end

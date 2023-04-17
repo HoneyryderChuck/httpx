@@ -31,6 +31,6 @@ class ErrorResponseTest < Minitest::Test
   private
 
   def request_mock
-    Request.new(:get, "http://example.com/")
+    Request.new("GET", "http://example.com/")
   end
 end

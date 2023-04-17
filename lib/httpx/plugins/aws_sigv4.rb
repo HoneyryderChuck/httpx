@@ -71,7 +71,7 @@ module HTTPX
           end.join
 
           # canonical request
-          creq = "#{request.verb.to_s.upcase}" \
+          creq = "#{request.verb}" \
                  "\n#{request.canonical_path}" \
                  "\n#{request.canonical_query}" \
                  "\n#{canonical_headers}" \

@@ -23,7 +23,7 @@ module WebMock
           uri.path = uri.normalized_path.gsub("[^:]//", "/")
 
           WebMock::RequestSignature.new(
-            request.verb,
+            request.verb.downcase.to_sym,
             uri.to_s,
             body: request.body.each.to_a.join,
             headers: request.headers.to_h

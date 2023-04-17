@@ -9,7 +9,7 @@ module HTTPX
     # https://gitlab.com/os85/httpx/wikis/Upgrade#h2c
     #
     module H2C
-      VALID_H2C_VERBS = %i[get options head].freeze
+      VALID_H2C_VERBS = %w[GET OPTIONS HEAD].freeze
 
       class << self
         def load_dependencies(*)

@@ -15,8 +15,8 @@ module Requests
         http.plugin(:upgrade).wrap do |session|
           uri = build_uri("/", "https://stadtschreiber.ruhr")
 
-          request = session.build_request(:get, uri)
-          request2 = session.build_request(:get, uri)
+          request = session.build_request("GET", uri)
+          request2 = session.build_request("GET", uri)
 
           response = session.request(request)
           verify_status(response, 200)

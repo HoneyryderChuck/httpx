@@ -21,7 +21,7 @@ module HTTPX
         end
 
         def authenticate(request, authenticate)
-          "Digest #{generate_header(request.verb.to_s.upcase, request.path, authenticate)}"
+          "Digest #{generate_header(request.verb, request.path, authenticate)}"
         end
 
         private

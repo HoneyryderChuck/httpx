@@ -32,7 +32,7 @@ class HTTP1ParserTest < Minitest::Test
     private
 
     def mock_request
-      Request.new(:get, "http://google.com")
+      Request.new("GET", "http://google.com")
     end
   end
 
