@@ -71,7 +71,7 @@ if RUBY_VERSION >= "2.4.0"
 
         crumb = Sentry.get_current_scope.breadcrumbs.peek
         assert crumb.category == "httpx"
-        assert crumb.data ==  { status: 200, method: "POST", url: uri, body: "foo&bar" }
+        assert crumb.data == { status: 200, method: "POST", url: uri, body: "foo=bar" }
       ensure
         Sentry.configuration.send_default_pii = before_pii
       end
@@ -100,7 +100,7 @@ if RUBY_VERSION >= "2.4.0"
       verify_spans(transaction, response, verb: "GET")
       crumb = Sentry.get_current_scope.breadcrumbs.peek
       assert crumb.category == "httpx"
-      assert crumb.data ==  { error: "Can't resolve unexisting", method: "GET", url: uri }
+      assert crumb.data == { error: "Can't resolve unexisting", method: "GET", url: uri.to_s }
     end
 
     private

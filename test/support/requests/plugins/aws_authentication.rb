@@ -7,12 +7,6 @@ module Requests
     module AWSAuthentication
       AWS_URI = ENV.fetch("AMZ_HOST", "aws:4566")
 
-      def test_plugin_aws_authentication_mock_config
-        config = HTTPX::Plugins::AwsSdkAuthentication::Configuration.new("default")
-        assert config.respond_to?(:balls)
-        assert config.balls.nil?
-      end
-
       def test_plugin_aws_authentication_put_object
         amz_uri = origin(AWS_URI)
 
@@ -47,6 +41,11 @@ module Requests
                          })
                    .put("#{amz_uri}/test/testimage", body: "bucketz")
         verify_status(response, 200)
+
+        # testing here to make sure the plugin is loaded
+        config = HTTPX::Plugins::AwsSdkAuthentication::Configuration.new("default")
+        assert config.respond_to?(:balls)
+        assert config.balls.nil?
       end
 
       private
