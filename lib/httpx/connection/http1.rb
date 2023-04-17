@@ -106,6 +106,7 @@ module HTTPX
 
     def on_headers(h)
       @request = @requests.first
+
       return if @request.response
 
       log(level: 2) { "headers received" }

@@ -100,6 +100,7 @@ class OptionsTest < Minitest::Test
       :json => nil,
       :xml => nil,
       :body => nil,
+      :buffer_size => 16_384,
       :window_size => 16_384,
       :body_threshold_size => 114_688,
       :form => { foo: "foo", :bar => "bar" },

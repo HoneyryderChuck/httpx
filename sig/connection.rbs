@@ -19,7 +19,6 @@ module HTTPX
     include Callbacks
     include HTTPX::Registry[String, Class]
 
-    BUFFER_SIZE: Integer
 
     attr_reader type: io_type
     attr_reader origin: URI::Generic

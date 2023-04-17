@@ -108,9 +108,13 @@ module HTTPX
 
     attr_reader request: Request
 
+    attr_reader response: Response?
+
     def status: () -> (Integer | _ToS)
 
     def uri: () -> URI::Generic
+
+    def close: () -> void
 
     private
 

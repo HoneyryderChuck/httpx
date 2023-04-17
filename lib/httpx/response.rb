@@ -334,12 +334,13 @@ module HTTPX
     include Loggable
     extend Forwardable
 
-    attr_reader :request, :error
+    attr_reader :request, :response, :error
 
     def_delegator :@request, :uri
 
     def initialize(request, error, options)
       @request = request
+      @response = request.response if request.response.is_a?(Response)
       @error = error
       @options = Options.new(options)
       log_exception(@error)
@@ -359,6 +360,10 @@ module HTTPX
         "#{@error.message} (#{@error.class})\n" \
           "#{@error.backtrace.join("\n") if @error.backtrace}"
       end
+    end
+
+    def close
+      @response.close if @response.respond_to?(:close)
     end
 
     def finished?

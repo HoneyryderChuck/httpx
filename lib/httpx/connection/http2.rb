@@ -317,7 +317,7 @@ module HTTPX
         emit(:response, request, response)
       else
         response = request.response
-        if response && response.status == 421
+        if response && response.is_a?(Response) && response.status == 421
           ex = MisdirectedRequestError.new(response)
           ex.set_backtrace(caller)
           emit(:error, request, ex)

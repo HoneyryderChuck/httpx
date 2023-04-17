@@ -39,8 +39,6 @@ module HTTPX
     require "httpx/connection/http2"
     require "httpx/connection/http1"
 
-    BUFFER_SIZE = 1 << 14
-
     def_delegator :@io, :closed?
 
     def_delegator :@write_buffer, :empty?
@@ -57,8 +55,8 @@ module HTTPX
       @origin = Utils.to_uri(uri.origin)
       @options = Options.new(options)
       @window_size = @options.window_size
-      @read_buffer = Buffer.new(BUFFER_SIZE)
-      @write_buffer = Buffer.new(BUFFER_SIZE)
+      @read_buffer = Buffer.new(@options.buffer_size)
+      @write_buffer = Buffer.new(@options.buffer_size)
       @pending = []
       on(:error, &method(:on_error))
       if @options.io

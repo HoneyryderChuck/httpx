@@ -27,7 +27,7 @@ module HTTPX
     def pool: -> Pool
     def on_response: (Request, response) -> void
     def on_promise: (untyped, untyped) -> void
-    def fetch_response: (Request request, untyped, untyped) -> response?
+    def fetch_response: (Request request, Array[Connection] connections, untyped options) -> response?
 
     def find_connection: (Request, Array[Connection] connections, Options options) -> Connection
 

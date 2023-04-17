@@ -7,35 +7,55 @@ module HTTPX
       DEFAULT_JITTER: ^(Numeric) -> Numeric
 
       interface _RetryCallback
-        def call: (response) -> bool?
+        def call: (response response) -> bool?
       end
 
       interface _RetriesOptions
         def retry_after: () -> Numeric?
 
-        def retry_jitter: () -> ^(Numeric) -> Numeric
+        def retry_jitter: () -> ^(Numeric jitter) -> Numeric
 
-        def max_retries: () -> Integer?
+        def max_retries: () -> Integer
 
         def retry_change_requests: () -> boolish
 
         def retry_on: () -> _RetryCallback?
       end
 
-      def self.extra_options: (Options) -> (Options & _RetriesOptions)
+      def self.extra_options: (Options options) -> retriesOptions
 
       module InstanceMethods
         def max_retries: (int) -> instance
 
         private
 
-        def __repeatable_request?: (Request, Options) -> boolish
-        def __retryable_error?: (_Exception) -> bool
+        def __repeatable_request?: (retriesRequest request, retriesOptions options) -> boolish
+
+        def __retryable_error?: (_Exception error) -> bool
+
+        def __try_partial_retry: (retriesRequest request, (retriesResponse | ErrorResponse) response) -> void
+
       end
 
       module RequestMethods
-      	def retries: () -> Integer
+        @options: Options & _RetriesOptions
+
+        attr_accessor retries: Integer
+
+        attr_writer partial_response: Response?
+
+        def response=: (retriesResponse | ErrorResponse response) -> void
       end
+
+      module ResponseMethods
+        def from_partial_response: (Response response) -> void
+      end
+
+      type retriesOptions = Options & _RetriesOptions
+
+      type retriesRequest = Request & RequestMethods
+
+      type retriesResponse = Response & ResponseMethods
     end
 
     type sessionRetries = Session & Retries::InstanceMethods
