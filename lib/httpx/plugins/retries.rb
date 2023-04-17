@@ -96,7 +96,7 @@ module HTTPX
                )
                # rubocop:enable Style/MultilineTernaryOperator
              )
-            prepare_retry(request, response)
+            __try_partial_retry(request, response)
             log { "failed to get response, #{request.retries} tries to go..." }
             request.retries -= 1
             request.transition(:idle)
@@ -135,7 +135,12 @@ module HTTPX
           RETRYABLE_ERRORS.any? { |klass| ex.is_a?(klass) }
         end
 
-        def prepare_retry(request, response)
+        #
+        # Atttempt to set the request to perform a partial range request.
+        # This happens if the peer server accepts byte-range requests, and
+        # the last response contains some body payload.
+        #
+        def __try_partial_retry(request, response)
           response = response.response if response.is_a?(ErrorResponse)
 
           return unless response
