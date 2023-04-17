@@ -7,6 +7,12 @@ module Requests
     module AWSAuthentication
       AWS_URI = ENV.fetch("AMZ_HOST", "aws:4566")
 
+      def test_plugin_aws_authentication_mock_config
+        config = HTTPX::Plugins::AwsSdkAuthentication::Configuration.new("default")
+        assert config.respond_to?(:balls)
+        assert config.balls.nil?
+      end
+
       def test_plugin_aws_authentication_put_object
         amz_uri = origin(AWS_URI)
 
@@ -46,7 +52,7 @@ module Requests
       private
 
       def aws_s3_session(**options)
-        HTTPX.plugin(:aws_sdk_authentication).aws_sdk_authentication(service: "s3", **options)
+        HTTPX.plugin(:aws_sdk_authentication, aws_profile: "default").aws_sdk_authentication(service: "s3", **options)
       end
     end
   end

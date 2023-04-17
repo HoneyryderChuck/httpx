@@ -20,9 +20,7 @@ module HTTPX
           true
         end
 
-        def method_missing(*)
-          nil
-        end
+        def method_missing(*); end
       end
 
       #

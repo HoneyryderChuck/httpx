@@ -12,7 +12,7 @@ module Requests
         assert body.key?("cookies")
         assert body["cookies"].empty?
 
-        session_response = session.with(cookies: { "abc" => "def" }).get(cookies_uri)
+        session_response = session.with(cookies: [%w[abc def]]).get(cookies_uri)
         body = json_body(session_response)
         assert body.key?("cookies")
         assert body["cookies"]["abc"] == "def", "abc wasn't properly set"
