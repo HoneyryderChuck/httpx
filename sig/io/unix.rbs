@@ -1,0 +1,10 @@
+module HTTPX
+  class UNIX < TCP
+
+    attr_reader path: String
+
+    alias host path
+
+    def initialize: (URI::HTTP | URI::HTTPS origin, Array[String]? addresses, options options) -> void
+  end
+end

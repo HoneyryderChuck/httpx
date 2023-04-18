@@ -1,0 +1,20 @@
+module HTTPX
+  class UDP
+    include Loggable
+
+    def initialize: (String ip, Integer port, Options options) -> void
+
+    def to_io: () -> ::IO
+
+    def connect: () -> void
+
+    def connected?: () -> bool
+
+    # :nocov:
+    def close: () -> void
+
+    def read: (Integer size, ?(Buffer | String) buffer) -> Integer?
+
+    def write: (Buffer buffer) -> Integer?
+  end
+end

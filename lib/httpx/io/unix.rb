@@ -1,11 +1,7 @@
 # frozen_string_literal: true
 
-require "forwardable"
-
 module HTTPX
   class UNIX < TCP
-    extend Forwardable
-
     using URIExtensions
 
     attr_reader :path
@@ -13,7 +9,7 @@ module HTTPX
     alias_method :host, :path
 
     def initialize(origin, addresses, options)
-      @addresses = addresses
+      @addresses = []
       @hostname = origin.host
       @state = :idle
       @options = Options.new(options)

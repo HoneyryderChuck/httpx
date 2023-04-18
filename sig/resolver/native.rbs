@@ -21,6 +21,7 @@ module HTTPX
       @read_buffer: String
       @write_buffer: Buffer
       @large_packet: Buffer?
+      @io: UDP | TCP
 
       attr_reader state: Symbol
 
@@ -55,7 +56,7 @@ module HTTPX
 
       def generate_candidates: (String) -> Array[String]
 
-      def build_socket: () -> void
+      def build_socket: () -> (UDP | TCP)
 
       def transition: (Symbol nextstate) -> void
 
