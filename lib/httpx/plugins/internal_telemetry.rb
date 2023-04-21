@@ -32,6 +32,15 @@ module HTTPX
         end
       end
 
+      module NativeResolverMethods
+        def transition(nextstate)
+          state = @state
+          val = super
+          meter_elapsed_time("Resolver::Native: #{state} -> #{nextstate}")
+          val
+        end
+      end
+
       module InstanceMethods
         def self.included(klass)
           klass.prepend TrackTimeMethods
@@ -42,6 +51,13 @@ module HTTPX
           meter_elapsed_time("Session: initializing...")
           super
           meter_elapsed_time("Session: initialized!!!")
+          resolver_type = @options.resolver_class
+          resolver_type = Resolver.registry(resolver_type) if resolver_type.is_a?(Symbol)
+          return unless resolver_type <= Resolver::Native
+
+          resolver_type.prepend TrackTimeMethods
+          resolver_type.prepend NativeResolverMethods
+          @options = @options.merge(resolver_class: resolver_type)
         end
 
         def close(*)
