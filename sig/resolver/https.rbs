@@ -35,6 +35,8 @@ module HTTPX
       def build_request: (String hostname) -> Request
 
       def decode_response_body: (Response) -> dns_decoding_response
+
+      def reset_hostname: (String hostname, ?reset_candidates: bool) -> Connection?
     end
   end
 end

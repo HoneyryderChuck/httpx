@@ -157,7 +157,7 @@ module HTTPX
       else
 
         @timeouts.delete(host)
-        @queries.delete(h)
+        reset_hostname(h, reset_candidates: false)
 
         return unless @queries.empty?
 
@@ -194,7 +194,7 @@ module HTTPX
 
             @socket_type = @resolver_options.fetch(:socket_type, :udp)
             @large_packet = nil
-            transition(:idle)
+            transition(:closed)
             return
           else
             size = @read_buffer[0, 2].unpack1("n")
@@ -244,8 +244,7 @@ module HTTPX
       when :no_domain_found
         # Indicates no such domain was found.
         hostname, connection = @queries.first
-        @queries.delete(hostname)
-        @timeouts.delete(hostname)
+        reset_hostname(hostname, reset_candidates: false)
 
         unless @queries.value?(connection)
           @connections.delete(connection)
@@ -258,22 +257,18 @@ module HTTPX
         @socket_type = :tcp
 
         hostname, _ = @queries.first
-        @write_buffer.clear
-        @queries.delete(hostname)
-        @timeouts.delete(hostname)
+        reset_hostname(hostname)
         transition(:closed)
       when :dns_error
         hostname, connection = @queries.first
-        @queries.delete(hostname)
-        @timeouts.delete(hostname)
+        reset_hostname(hostname)
         @connections.delete(connection)
         ex = NativeResolveError.new(connection, connection.origin.host, "unknown DNS error (error code #{result})")
         ex.set_backtrace(e.backtrace)
         raise ex
       when :decode_error
         hostname, connection = @queries.first
-        @queries.delete(hostname)
-        @timeouts.delete(hostname)
+        reset_hostname(hostname)
         @connections.delete(connection)
         ex = NativeResolveError.new(connection, connection.origin.host, result.message)
         ex.set_backtrace(result.backtrace)
@@ -285,9 +280,7 @@ module HTTPX
       if addresses.empty?
         # no address found, eliminate candidates
         _, connection = @queries.first
-        candidates = @queries.select { |_, conn| connection == conn }.keys
-        @queries.delete_if { |hs, _| candidates.include?(hs) }
-        @timeouts.delete_if { |hs, _| candidates.include?(hs) }
+        reset_hostname(hostname)
         @connections.delete(connection)
         raise NativeResolveError.new(connection, connection.origin.host)
       else
@@ -299,17 +292,17 @@ module HTTPX
         unless connection
           # absolute name
           name_labels = Resolv::DNS::Name.create(name).to_a
-          name = @queries.keys.first { |hname| name_labels == Resolv::DNS::Name.create(hname).to_a }
+          name = @queries.each_key.first { |hname| name_labels == Resolv::DNS::Name.create(hname).to_a }
 
           # probably a retried query for which there's an answer
-          return unless name
+          unless name
+            @timeouts.delete(name)
+            return
+          end
 
           address["name"] = name
           connection = @queries.delete(name)
         end
-
-        # eliminate other candidates
-        @queries.delete_if { |_, conn| connection == conn }
 
         if address.key?("alias") # CNAME
           # clean up intermediate queries
@@ -336,6 +329,7 @@ module HTTPX
 
     def resolve(connection = @connections.first, hostname = nil)
       raise Error, "no URI to resolve" unless connection
+
       return unless @write_buffer.empty?
 
       hostname ||= @queries.key(connection)
@@ -429,6 +423,20 @@ module HTTPX
           emit_resolve_error(connection, host, error)
         end
       end
+    end
+
+    def reset_hostname(hostname, reset_candidates: true)
+      @timeouts.delete(hostname)
+      connection = @queries.delete(hostname)
+      @timeouts.delete(hostname)
+
+      return unless connection && reset_candidates
+
+      # eliminate other candidates
+      candidates = @queries.select { |_, conn| connection == conn }.keys
+      @queries.delete_if { |h, _| candidates.include?(h) }
+      # reset timeouts
+      @timeouts.delete_if { |h, _| candidates.include?(h) }
     end
   end
 end

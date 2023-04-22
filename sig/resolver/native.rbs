@@ -61,6 +61,8 @@ module HTTPX
       def transition: (Symbol nextstate) -> void
 
       def handle_error: (NativeResolveError | StandardError) -> void
+
+      def reset_hostname: (String hostname, ?reset_candidates: bool) -> void
     end
   end
 end
