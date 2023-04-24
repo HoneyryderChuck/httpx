@@ -1,9 +1,11 @@
 # frozen_string_literal: true
 
 HTTP_PROXY = ENV["HTTPX_HTTP_PROXY"]
-ENV["HTTP_PROXY"] = HTTP_PROXY
+ENV["http_proxy"] = HTTP_PROXY
 HTTPS_PROXY = ENV["HTTPX_HTTPS_PROXY"]
-ENV["HTTPS_PROXY"] = HTTPS_PROXY
+ENV["https_proxy"] = HTTPS_PROXY
+NO_PROXY = ENV["HTTPBIN_NO_PROXY_HOST"]
+ENV["no_proxy"] = URI(NO_PROXY).authority
 
 require "test_helper"
 require "support/http_helpers"
@@ -12,6 +14,22 @@ require "support/minitest_extensions"
 class EnvProxyTest < Minitest::Test
   include HTTPHelpers
   using HTTPX::URIExtensions
+
+  def test_plugin_http_no_proxy
+    HTTPX.plugin(SessionWithPool).plugin(ProxyResponseDetector).wrap do |session|
+      # proxy
+      response = session.get("https://#{httpbin}/get")
+      verify_status(response, 200)
+      verify_body_length(response)
+      assert response.proxied?
+
+      # no proxy
+      no_proxy_response = session.get("#{NO_PROXY}/get")
+      verify_status(no_proxy_response, 200)
+      verify_body_length(no_proxy_response)
+      assert !no_proxy_response.proxied?
+    end
+  end
 
   def test_env_proxy_coalescing
     HTTPX.plugin(SessionWithPool).wrap do |session|

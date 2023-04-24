@@ -23,6 +23,10 @@ module HTTPHelpers
   end
 
   def httpbin_no_proxy
-    URI(ENV.fetch("HTTPBIN_NO_PROXY_HOST", "httpbin.org"))
+    URI(ENV.fetch("HTTPBIN_NO_PROXY_HOST", "#{scheme}httpbin.org"))
+  end
+
+  def origin(orig = httpbin)
+    "#{scheme}#{orig}"
   end
 end
