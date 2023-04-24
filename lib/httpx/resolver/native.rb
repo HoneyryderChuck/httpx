@@ -244,12 +244,10 @@ module HTTPX
       when :no_domain_found
         # Indicates no such domain was found.
         hostname, connection = @queries.first
-        reset_hostname(hostname, reset_candidates: false)
+        reset_hostname(hostname)
 
-        unless @queries.value?(connection)
-          @connections.delete(connection)
-          raise NativeResolveError.new(connection, connection.origin.host)
-        end
+        @connections.delete(connection)
+        raise NativeResolveError.new(connection, connection.origin.host, "name or service not known (#{hostname})")
       when :message_truncated
         # TODO: what to do if it's already tcp??
         return if @socket_type == :tcp
