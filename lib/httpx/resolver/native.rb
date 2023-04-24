@@ -364,7 +364,8 @@ module HTTPX
       name_parts = name.scan(/[^.]+/)
       candidates = [name] if @ndots <= name_parts.size - 1
       candidates.concat(@search.map { |domain| [*name_parts, *domain].join(".") })
-      candidates << name unless candidates.include?(name)
+      fname = "#{name}."
+      candidates << fname unless candidates.include?(fname)
 
       candidates
     end
