@@ -16,8 +16,10 @@ if [[ "$RUBY_ENGINE" = "truffleruby" ]]; then
 elif [[ "$RUBY_PLATFORM" = "java" ]]; then
   apt-get update && apt-get install -y build-essential iptables iproute2 file idn2 git
 elif [[ ${RUBY_VERSION:0:3} = "2.3" ]]; then
-  # installing custom openssl
+  echo "deb http://archive.debian.org/debian stretch main contrib non-free" > /etc/apt/sources.list
   apt-get update && apt-get install -y iptables iproute2 iptables-nftables-compat libmagic-dev shared-mime-info # openssl=1.0.2l openssl-dev=1.0.2l
+  IPTABLES=iptables
+  # installing custom openssl
   wget http://deb.debian.org/debian/pool/main/o/openssl1.0/libssl1.0.2_1.0.2u-1~deb9u1_amd64.deb
   dpkg -i libssl1.0.2_1.0.2u-1~deb9u1_amd64.deb
   wget http://deb.debian.org/debian/pool/main/o/openssl1.0/libssl1.0-dev_1.0.2u-1~deb9u1_amd64.deb
