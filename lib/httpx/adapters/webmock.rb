@@ -122,7 +122,7 @@ module WebMock
 
       class << self
         def enable!
-          @original_session = HTTPX::Session
+          @original_session ||= HTTPX::Session
 
           webmock_session = HTTPX.plugin(Plugin)
 

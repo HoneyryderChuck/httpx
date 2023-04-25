@@ -204,6 +204,16 @@ class WebmockTest < Minitest::Test
     WebMock.disable_net_connect!
   end
 
+  def test_webmock_disable_after_enable
+    WebMock.disable!
+
+    # WebMock is disabled so this will make a real http request
+    http_request(:get, "http://#{httpbin}")
+
+    # WebMock is disabled so it should not have registered the request
+    assert_not_requested(:get, "http://#{httpbin}")
+  end
+
   private
 
   def assert_raise_with_message(e, message, &block)
