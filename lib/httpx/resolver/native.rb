@@ -288,13 +288,14 @@ module HTTPX
         connection = @queries.delete(name)
 
         unless connection
+          orig_name = name
           # absolute name
           name_labels = Resolv::DNS::Name.create(name).to_a
           name = @queries.each_key.first { |hname| name_labels == Resolv::DNS::Name.create(hname).to_a }
 
           # probably a retried query for which there's an answer
           unless name
-            @timeouts.delete(name)
+            @timeouts.delete(orig_name)
             return
           end
 

@@ -11,7 +11,8 @@ module HTTPX
 
       @options: Options
       @ns_index: Integer
-      @nameserver: Array[String]?
+      @nameserver: Array[String]
+      @socket_type: :udp | :tcp
       @ndots: Integer
       @start_timeout: Float?
       @search: Array[String]
