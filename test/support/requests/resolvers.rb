@@ -70,7 +70,7 @@ module Requests
           uri = URI(build_uri("/get"))
           resolver_class = Class.new(HTTPX::Resolver::HTTPS) do
             def decode_response_body(_response)
-              raise Resolv::DNS::DecodeError
+              [:decode_error, Resolv::DNS::DecodeError.new("smth")]
             end
           end
           response = session.head(uri, resolver_class: resolver_class, resolver_options: options.merge(record_types: %w[]))
@@ -163,6 +163,30 @@ module Requests
           response = session.head(uri, resolver_class: resolver_class, resolver_options: options.merge(nameserver: %w[127.0.0.1] * 3))
           verify_error_response(response, HTTPX::ResolveError)
           assert resolver_class.attempts == 3, "should have attempted to use all 3 nameservers"
+        end
+
+        define_method :"test_resolver_#{resolver_type}_max_udp_size_exceeded" do
+          uri = origin("aerserv-bc-us-east.bidswitch.net")
+          session = HTTPX.plugin(SessionWithPool)
+
+          resolver_class = Class.new(HTTPX::Resolver::Native) do
+            @ios = []
+
+            class << self
+              attr_reader :ios
+            end
+
+            def build_socket
+              io = super
+              self.class.ios << io
+              io
+            end
+          end
+
+          response = session.head(uri, resolver_class: resolver_class, resolver_options: options)
+          verify_status(response, 200)
+
+          assert resolver_class.ios.any?(HTTPX::TCP), "resolver did not upgrade to tcp"
         end
       end
     end

@@ -11,7 +11,8 @@ module HTTPX
 
       @options: Options
       @ns_index: Integer
-      @nameserver: Array[String]?
+      @nameserver: Array[String]
+      @socket_type: :udp | :tcp
       @ndots: Integer
       @start_timeout: Float?
       @search: Array[String]
@@ -20,6 +21,8 @@ module HTTPX
       @connections: Array[Connection]
       @read_buffer: String
       @write_buffer: Buffer
+      @large_packet: Buffer?
+      @io: UDP | TCP
 
       attr_reader state: Symbol
 
@@ -54,11 +57,13 @@ module HTTPX
 
       def generate_candidates: (String) -> Array[String]
 
-      def build_socket: () -> void
+      def build_socket: () -> (UDP | TCP)
 
       def transition: (Symbol nextstate) -> void
 
       def handle_error: (NativeResolveError | StandardError) -> void
+
+      def reset_hostname: (String hostname, ?reset_candidates: bool) -> void
     end
   end
 end

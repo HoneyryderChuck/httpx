@@ -98,24 +98,29 @@ module HTTPX
       @identifier_mutex.synchronize { @identifier = (@identifier + 1) & 0xFFFF }
     end
 
-    def encode_dns_query(hostname, type: Resolv::DNS::Resource::IN::A)
+    def encode_dns_query(hostname, type: Resolv::DNS::Resource::IN::A, message_id: generate_id)
       Resolv::DNS::Message.new.tap do |query|
-        query.id = generate_id
+        query.id = message_id
         query.rd = 1
         query.add_question(hostname, type)
       end.encode
     end
 
     def decode_dns_answer(payload)
-      message = Resolv::DNS::Message.decode(payload)
+      begin
+        message = Resolv::DNS::Message.decode(payload)
+      rescue Resolv::DNS::DecodeError => e
+        return :decode_error, e
+      end
 
       # no domain was found
-      return if message.rcode == Resolv::DNS::RCode::NXDomain
+      return :no_domain_found if message.rcode == Resolv::DNS::RCode::NXDomain
+
+      return :message_truncated if message.tc == 1
+
+      return :dns_error, message.rcode if message.rcode != Resolv::DNS::RCode::NoError
 
       addresses = []
-
-      # TODO: raise an "other dns OtherResolvError" type of error
-      return addresses if message.rcode != Resolv::DNS::RCode::NoError
 
       message.each_answer do |question, _, value|
         case value
@@ -134,7 +139,8 @@ module HTTPX
           }
         end
       end
-      addresses
+
+      [:ok, addresses]
     end
   end
 end

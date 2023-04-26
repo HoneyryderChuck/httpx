@@ -5,6 +5,8 @@ module HTTPX
 
       @resolver: Resolv::DNS
 
+      attr_reader family: nil
+
       def <<: (Connection) -> void
 
       private

@@ -33,6 +33,7 @@ module HTTPX
       super
       @ns_index = 0
       @resolver_options = DEFAULTS.merge(@options.resolver_options)
+      @socket_type = @resolver_options.fetch(:socket_type, :udp)
       @nameserver = Array(@resolver_options[:nameserver]) if @resolver_options[:nameserver]
       @ndots = @resolver_options[:ndots]
       @search = Array(@resolver_options[:search]).map { |srch| srch.scan(/[^.]+/) }
@@ -156,7 +157,7 @@ module HTTPX
       else
 
         @timeouts.delete(host)
-        @queries.delete(h)
+        reset_hostname(h, reset_candidates: false)
 
         return unless @queries.empty?
 
@@ -169,10 +170,49 @@ module HTTPX
 
     def dread(wsize = @resolver_options[:packet_size])
       loop do
-        siz = @io.read(wsize, @read_buffer)
-        return unless siz && siz.positive?
+        wsize = @large_packet.capacity if @large_packet
 
-        parse(@read_buffer)
+        siz = @io.read(wsize, @read_buffer)
+
+        unless siz
+          ex = EOFError.new("descriptor closed")
+          ex.set_backtrace(caller)
+          raise ex
+        end
+
+        return unless siz.positive?
+
+        if @socket_type == :tcp
+          # packet may be incomplete, need to keep draining from the socket
+          if @large_packet
+            # large packet buffer already exists, continue pumping
+            @large_packet << @read_buffer
+
+            next unless @large_packet.full?
+
+            parse(@large_packet.to_s)
+
+            @socket_type = @resolver_options.fetch(:socket_type, :udp)
+            @large_packet = nil
+            transition(:closed)
+            return
+          else
+            size = @read_buffer[0, 2].unpack1("n")
+
+            if size > @read_buffer.bytesize
+              # only do buffer logic if it's worth it, and the whole packet isn't here already
+              @large_packet = Buffer.new(size)
+              @large_packet << @read_buffer.byteslice(2..-1)
+
+              next
+            else
+              parse(@read_buffer)
+            end
+          end
+        else # udp
+          parse(@read_buffer)
+        end
+
         return if @state == :closed
       end
     end
@@ -182,41 +222,63 @@ module HTTPX
         return if @write_buffer.empty?
 
         siz = @io.write(@write_buffer)
-        return unless siz && siz.positive?
+
+        unless siz
+          ex = EOFError.new("descriptor closed")
+          ex.set_backtrace(caller)
+          raise ex
+        end
+
+        return unless siz.positive?
 
         return if @state == :closed
       end
     end
 
     def parse(buffer)
-      begin
-        addresses = Resolver.decode_dns_answer(buffer)
-      rescue Resolv::DNS::DecodeError => e
-        hostname, connection = @queries.first
-        @queries.delete(hostname)
-        @timeouts.delete(hostname)
-        @connections.delete(connection)
-        ex = NativeResolveError.new(connection, connection.origin.host, e.message)
-        ex.set_backtrace(e.backtrace)
-        raise ex
-      end
+      code, result = Resolver.decode_dns_answer(buffer)
 
-      if addresses.nil?
+      case code
+      when :ok
+        parse_addresses(result)
+      when :no_domain_found
         # Indicates no such domain was found.
         hostname, connection = @queries.first
-        @queries.delete(hostname)
-        @timeouts.delete(hostname)
+        reset_hostname(hostname)
 
-        unless @queries.value?(connection)
-          @connections.delete(connection)
-          raise NativeResolveError.new(connection, connection.origin.host)
-        end
-      elsif addresses.empty?
+        @connections.delete(connection)
+        raise NativeResolveError.new(connection, connection.origin.host, "name or service not known (#{hostname})")
+      when :message_truncated
+        # TODO: what to do if it's already tcp??
+        return if @socket_type == :tcp
+
+        @socket_type = :tcp
+
+        hostname, _ = @queries.first
+        reset_hostname(hostname)
+        transition(:closed)
+      when :dns_error
+        hostname, connection = @queries.first
+        reset_hostname(hostname)
+        @connections.delete(connection)
+        ex = NativeResolveError.new(connection, connection.origin.host, "unknown DNS error (error code #{result})")
+        ex.set_backtrace(e.backtrace)
+        raise ex
+      when :decode_error
+        hostname, connection = @queries.first
+        reset_hostname(hostname)
+        @connections.delete(connection)
+        ex = NativeResolveError.new(connection, connection.origin.host, result.message)
+        ex.set_backtrace(result.backtrace)
+        raise ex
+      end
+    end
+
+    def parse_addresses(addresses)
+      if addresses.empty?
         # no address found, eliminate candidates
         _, connection = @queries.first
-        candidates = @queries.select { |_, conn| connection == conn }.keys
-        @queries.delete_if { |hs, _| candidates.include?(hs) }
-        @timeouts.delete_if { |hs, _| candidates.include?(hs) }
+        reset_hostname(hostname)
         @connections.delete(connection)
         raise NativeResolveError.new(connection, connection.origin.host)
       else
@@ -226,19 +288,20 @@ module HTTPX
         connection = @queries.delete(name)
 
         unless connection
+          orig_name = name
           # absolute name
           name_labels = Resolv::DNS::Name.create(name).to_a
-          name = @queries.keys.first { |hname| name_labels == Resolv::DNS::Name.create(hname).to_a }
+          name = @queries.each_key.first { |hname| name_labels == Resolv::DNS::Name.create(hname).to_a }
 
           # probably a retried query for which there's an answer
-          return unless name
+          unless name
+            @timeouts.delete(orig_name)
+            return
+          end
 
           address["name"] = name
           connection = @queries.delete(name)
         end
-
-        # eliminate other candidates
-        @queries.delete_if { |_, conn| connection == conn }
 
         if address.key?("alias") # CNAME
           # clean up intermediate queries
@@ -265,6 +328,7 @@ module HTTPX
 
     def resolve(connection = @connections.first, hostname = nil)
       raise Error, "no URI to resolve" unless connection
+
       return unless @write_buffer.empty?
 
       hostname ||= @queries.key(connection)
@@ -281,10 +345,17 @@ module HTTPX
       end
       log { "resolver: query #{@record_type.name.split("::").last} for #{hostname}" }
       begin
-        @write_buffer << Resolver.encode_dns_query(hostname, type: @record_type)
+        @write_buffer << encode_dns_query(hostname)
       rescue Resolv::DNS::EncodeError => e
         emit_resolve_error(connection, hostname, e)
       end
+    end
+
+    def encode_dns_query(hostname)
+      message_id = Resolver.generate_id
+      msg = Resolver.encode_dns_query(hostname, type: @record_type, message_id: message_id)
+      msg[0, 2] = [msg.size, message_id].pack("nn") if @socket_type == :tcp
+      msg
     end
 
     def generate_candidates(name)
@@ -294,18 +365,25 @@ module HTTPX
       name_parts = name.scan(/[^.]+/)
       candidates = [name] if @ndots <= name_parts.size - 1
       candidates.concat(@search.map { |domain| [*name_parts, *domain].join(".") })
-      candidates << name unless candidates.include?(name)
+      fname = "#{name}."
+      candidates << fname unless candidates.include?(fname)
 
       candidates
     end
 
     def build_socket
-      return if @io
-
       ip, port = @nameserver[@ns_index]
       port ||= DNS_PORT
-      log { "resolver: server: #{ip}:#{port}..." }
-      @io = UDP.new(ip, port, @options)
+
+      case @socket_type
+      when :udp
+        log { "resolver: server: udp://#{ip}:#{port}..." }
+        UDP.new(ip, port, @options)
+      when :tcp
+        log { "resolver: server: tcp://#{ip}:#{port}..." }
+        origin = URI("tcp://#{ip}:#{port}")
+        TCP.new(origin, [ip], @options)
+      end
     end
 
     def transition(nextstate)
@@ -319,7 +397,7 @@ module HTTPX
       when :open
         return unless @state == :idle
 
-        build_socket
+        @io ||= build_socket
 
         @io.connect
         return unless @io.connected?
@@ -345,6 +423,20 @@ module HTTPX
           emit_resolve_error(connection, host, error)
         end
       end
+    end
+
+    def reset_hostname(hostname, reset_candidates: true)
+      @timeouts.delete(hostname)
+      connection = @queries.delete(hostname)
+      @timeouts.delete(hostname)
+
+      return unless connection && reset_candidates
+
+      # eliminate other candidates
+      candidates = @queries.select { |_, conn| connection == conn }.keys
+      @queries.delete_if { |h, _| candidates.include?(h) }
+      # reset timeouts
+      @timeouts.delete_if { |h, _| candidates.include?(h) }
     end
   end
 end

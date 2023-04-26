@@ -104,7 +104,7 @@ module HTTPX
         resolver_connection.send(request)
         @connections << connection
       rescue ResolveError, Resolv::DNS::EncodeError => e
-        @queries.delete(hostname)
+        reset_hostname(hostname)
         emit_resolve_error(connection, connection.origin.host, e)
       end
     end
@@ -113,7 +113,7 @@ module HTTPX
       response.raise_for_status
     rescue StandardError => e
       hostname = @requests.delete(request)
-      connection = @queries.delete(hostname)
+      connection = reset_hostname(hostname)
       emit_resolve_error(connection, connection.origin.host, e)
     else
       # @type var response: HTTPX::Response
@@ -128,30 +128,35 @@ module HTTPX
     end
 
     def parse(request, response)
-      begin
-        answers = decode_response_body(response)
-      rescue Resolv::DNS::DecodeError => e
-        host, connection = @queries.first
-        @queries.delete(host)
-        emit_resolve_error(connection, connection.origin.host, e)
-        return
-      end
+      code, result = decode_response_body(response)
 
-      if answers.nil?
+      case code
+      when :ok
+        parse_addresses(result)
+      when :no_domain_found
         # Indicates no such domain was found.
 
         host = @requests.delete(request)
-        connection = @queries.delete(host)
+        connection = reset_hostname(host)
 
-        emit_resolve_error(connection) unless @queries.value?(connection)
-      elsif answers.empty?
+        emit_resolve_error(connection)
+      when :dns_error
+        host = @requests.delete(request)
+        connection = reset_hostname(host)
+
+        emit_resolve_error(connection)
+      when :decode_error
+        host, connection = @queries.first
+        reset_hostname(host)
+        emit_resolve_error(connection, connection.origin.host, result)
+      end
+    end
+
+    def parse_addresses(answers)
+      if answers.empty?
         # no address found, eliminate candidates
         host = @requests.delete(request)
-        connection = @queries.delete(host)
-
-        # eliminate other candidates
-        @queries.delete_if { |_, conn| connection == conn }
-
+        connection = reset_hostname(host)
         emit_resolve_error(connection)
         return
 
@@ -162,7 +167,7 @@ module HTTPX
             if address.key?("alias")
               alias_address = answers[address["alias"]]
               if alias_address.nil?
-                @queries.delete(address["name"])
+                reset_hostname(address["name"])
                 if catch(:coalesced) { early_resolve(connection, hostname: address["alias"]) }
                   @connections.delete(connection)
                 else
@@ -179,7 +184,7 @@ module HTTPX
           next if addresses.empty?
 
           hostname.delete_suffix!(".") if hostname.end_with?(".")
-          connection = @queries.delete(hostname)
+          connection = reset_hostname(hostname, reset_candidates: false)
           next unless connection # probably a retried query for which there's an answer
 
           @connections.delete(connection)
@@ -223,6 +228,18 @@ module HTTPX
       else
         raise Error, "unsupported DNS mime-type (#{response.headers["content-type"]})"
       end
+    end
+
+    def reset_hostname(hostname, reset_candidates: true)
+      connection = @queries.delete(hostname)
+
+      return connection unless connection && reset_candidates
+
+      # eliminate other candidates
+      candidates = @queries.select { |_, conn| connection == conn }.keys
+      @queries.delete_if { |h, _| candidates.include?(h) }
+
+      connection
     end
   end
 end

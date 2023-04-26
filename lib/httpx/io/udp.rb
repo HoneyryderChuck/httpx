@@ -78,6 +78,8 @@ module HTTPX
         return 0 if ret == :wait_readable
         return if ret.nil?
 
+        log { "READ: #{buffer.bytesize} bytes..." }
+
         buffer.bytesize
       rescue IOError
       end

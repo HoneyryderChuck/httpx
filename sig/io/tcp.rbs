@@ -1,0 +1,57 @@
+module HTTPX
+  class TCP
+    include Loggable
+
+    attr_reader ip: IPAddr?
+
+    attr_reader port: Integer
+
+    attr_reader addresses: Array[ipaddr]
+
+    attr_reader state: Symbol
+
+    attr_reader interests: Symbol
+
+    alias host ip
+
+    def initialize: (URI::Generic origin, Array[ipaddr]? addresses, options options) -> void
+
+    def add_addresses: (Array[ipaddr] addrs) -> void
+
+    def to_io: () -> ::IO
+
+    def protocol: () -> String
+
+    def connect: () -> void
+
+    private
+
+    # :nocov:
+    def try_connect: () -> void
+
+    public
+
+    def read: (Integer size, ?(Buffer | String) buffer) -> (0 | nil | untyped)
+
+    def write: (Buffer buffer) -> Integer?
+
+    def close: () -> void
+
+    def connected?: () -> bool
+
+    def closed?: () -> bool
+
+    # :nocov:
+    def inspect: () -> ::String
+
+    private
+
+    def build_socket: () -> Socket
+
+    def transition: (Symbol nextstate) -> void
+
+    def do_transition: (Symbol nextstate) -> void
+
+    def log_transition_state: (Symbol nextstate) -> void
+  end
+end

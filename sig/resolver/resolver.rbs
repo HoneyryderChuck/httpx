@@ -6,8 +6,6 @@ module HTTPX
 
       RECORD_TYPES: Hash[Integer, singleton(Resolv::DNS::Resource)]
 
-      attr_reader family: ip_family?
-
       @record_type: singleton(Resolv::DNS::Resource)
       @options: Options
       @resolver_options: Hash[Symbol, untyped]

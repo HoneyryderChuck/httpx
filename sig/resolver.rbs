@@ -13,6 +13,7 @@ module HTTPX
     type dns_result = { "name" => String, "TTL" => Numeric, "alias" => String }
                     | { "name" => String, "TTL" => Numeric, "data" => String }
 
+    type dns_decoding_response = [:ok, Array[dns_result]] | [:decode_error, Resolv::DNS::DecodeError] | [:dns_error, Integer] | Symbol
 
     def nolookup_resolve: (String hostname) -> Array[IPAddr]
 
@@ -28,8 +29,8 @@ module HTTPX
 
     def self?.generate_id: () -> Integer
 
-    def self?.encode_dns_query: (String hostname, ?type: dns_resource) -> String
+    def self?.encode_dns_query: (String hostname, ?type: dns_resource, ?message_id: Integer) -> String
 
-    def self?.decode_dns_answer: (String) -> Array[dns_result]?
+    def self?.decode_dns_answer: (String) -> dns_decoding_response
   end
 end
