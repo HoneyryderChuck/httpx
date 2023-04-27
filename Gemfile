@@ -28,11 +28,7 @@ group :test do
 
   gem "net-ssh", "~> 4.2.0" if RUBY_VERSION < "2.2.0"
 
-  if RUBY_VERSION >= "2.3.0"
-    gem "ddtrace"
-  else
-    gem "ddtrace", "< 1.0.0"
-  end
+  gem "ddtrace"
 
   platform :mri do
     if RUBY_VERSION >= "2.3.0"
