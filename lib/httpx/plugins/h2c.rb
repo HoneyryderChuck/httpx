@@ -12,13 +12,9 @@ module HTTPX
       VALID_H2C_VERBS = %w[GET OPTIONS HEAD].freeze
 
       class << self
-        def load_dependencies(*)
+        def load_dependencies(klass)
           require "base64"
-        end
-
-        def configure(klass)
           klass.plugin(:upgrade)
-          klass.default_options.upgrade_handlers.register "h2c", self
         end
 
         def call(connection, request, response)
@@ -26,7 +22,7 @@ module HTTPX
         end
 
         def extra_options(options)
-          options.merge(max_concurrent_requests: 1)
+          options.merge(max_concurrent_requests: 1, upgrade_handlers: options.upgrade_handlers.merge("h2c" => self))
         end
       end
 
@@ -38,7 +34,7 @@ module HTTPX
 
           connection = pool.find_connection(upgrade_request.uri, upgrade_request.options)
 
-          return super if connection && connection.upgrade_protocol == :h2c
+          return super if connection && connection.upgrade_protocol == "h2c"
 
           # build upgrade request
           upgrade_request.headers.add("connection", "upgrade")
@@ -83,7 +79,7 @@ module HTTPX
           set_parser_callbacks(@parser)
           @inflight += 1
           @parser.upgrade(request, response)
-          @upgrade_protocol = :h2c
+          @upgrade_protocol = "h2c"
 
           if request.options.max_concurrent_requests != @options.max_concurrent_requests
             @options = @options.merge(max_concurrent_requests: nil)

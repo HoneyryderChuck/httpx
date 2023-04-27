@@ -244,7 +244,7 @@ module HTTPX
     def find_resolver_for(connection)
       connection_options = connection.options
       resolver_type = connection_options.resolver_class
-      resolver_type = Resolver.registry(resolver_type) if resolver_type.is_a?(Symbol)
+      resolver_type = Resolver.resolver_for(resolver_type)
 
       @resolvers[resolver_type] ||= begin
         resolver_manager = if resolver_type.multi?

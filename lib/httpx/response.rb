@@ -87,32 +87,27 @@ module HTTPX
     end
 
     def json(*args)
-      decode("json", *args)
+      decode(Transcoder::JSON, *args)
     end
 
     def form
-      decode("form")
+      decode(Transcoder::Form)
     end
 
     def xml
-      decode("xml")
+      decode(Transcoder::Xml)
     end
 
     private
 
-    def decode(format, *args)
+    def decode(transcoder, *args)
       # TODO: check if content-type is a valid format, i.e. "application/json" for json parsing
-      transcoder = Transcoder.registry(format)
-
-      raise Error, "no decoder available for \"#{format}\"" unless transcoder.respond_to?(:decode)
 
       decoder = transcoder.decode(self)
 
-      raise Error, "no decoder available for \"#{format}\"" unless decoder
+      raise Error, "no decoder available for \"#{transcoder}\"" unless decoder
 
       decoder.call(self, *args)
-    rescue Registry::Error
-      raise Error, "no decoder available for \"#{format}\""
     end
 
     def no_data?

@@ -20,10 +20,7 @@ module HTTPX
         end
 
         def extra_options(options)
-          encodings = Module.new do
-            extend Registry
-          end
-          options.merge(encodings: encodings)
+          options.merge(encodings: {})
         end
       end
 
@@ -36,7 +33,7 @@ module HTTPX
         end
 
         def option_encodings(value)
-          raise TypeError, ":encodings must be a registry" unless value.respond_to?(:registry)
+          raise TypeError, ":encodings must be an Hash" unless value.is_a?(Hash)
 
           value
         end
@@ -49,7 +46,7 @@ module HTTPX
           if @headers.key?("range")
             @headers.delete("accept-encoding")
           else
-            @headers["accept-encoding"] ||= @options.encodings.registry.keys
+            @headers["accept-encoding"] ||= @options.encodings.keys
           end
         end
       end
@@ -65,7 +62,9 @@ module HTTPX
           @headers.get("content-encoding").each do |encoding|
             next if encoding == "identity"
 
-            @body = Encoder.new(@body, options.encodings.registry(encoding).deflater)
+            next unless options.encodings.key?(encoding)
+
+            @body = Encoder.new(@body, options.encodings[encoding].deflater)
           end
           @headers["content-length"] = @body.bytesize unless unbounded_body?
         end
@@ -95,7 +94,9 @@ module HTTPX
           @_inflaters = @headers.get("content-encoding").filter_map do |encoding|
             next if encoding == "identity"
 
-            inflater = @options.encodings.registry(encoding).inflater(compressed_length)
+            next unless @options.encodings.key?(encoding)
+
+            inflater = @options.encodings[encoding].inflater(compressed_length)
             # do not uncompress if there is no decoder available. In fact, we can't reliably
             # continue decompressing beyond that, so ignore.
             break unless inflater

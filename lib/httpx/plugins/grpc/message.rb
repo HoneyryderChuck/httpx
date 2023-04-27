@@ -47,7 +47,9 @@ module HTTPX
             data = message.byteslice(5..size + 5 - 1)
             if compressed == 1
               encodings.reverse_each do |algo|
-                inflater = encoders.registry(algo).inflater(size)
+                next unless encoders.key?(algo)
+
+                inflater = encoders[algo].inflater(size)
                 data = inflater.inflate(data)
                 size = data.bytesize
               end

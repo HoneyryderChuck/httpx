@@ -1,7 +1,6 @@
 module HTTPX
   module Plugins
     module Compression
-      type encodings_registry = Registry[Symbol, Class]
 
       type deflatable = _Reader | _ToS
 
@@ -16,12 +15,17 @@ module HTTPX
         def initialize: (Integer | Float bytesize) -> untyped
       end
 
+      interface _Compressor
+        def deflater: () -> _Deflater
+        def inflater: (Integer | Float bytesize) -> _Inflater
+      end
+
       def self.configure: (singleton(Session)) -> void
 
       interface _CompressionOptions
         def compression_threshold_size: () -> Integer?
 
-        def encodings: () -> encodings_registry?
+        def encodings: () -> Hash[String, _Compressor]
       end
 
       def self.extra_options: (Options) -> (Options & _CompressionOptions)

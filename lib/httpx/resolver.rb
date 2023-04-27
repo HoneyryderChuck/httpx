@@ -5,8 +5,6 @@ require "ipaddr"
 
 module HTTPX
   module Resolver
-    extend Registry
-
     RESOLVE_TIMEOUT = 5
 
     require "httpx/resolver/resolver"
@@ -14,10 +12,6 @@ module HTTPX
     require "httpx/resolver/native"
     require "httpx/resolver/https"
     require "httpx/resolver/multi"
-
-    register :system, System
-    register :native, Native
-    register :https,  HTTPS
 
     @lookup_mutex = Mutex.new
     @lookups = Hash.new { |h, k| h[k] = [] }
@@ -27,6 +21,18 @@ module HTTPX
     @system_resolver = Resolv::Hosts.new
 
     module_function
+
+    def resolver_for(resolver_type)
+      case resolver_type
+      when :native then Native
+      when :system then System
+      when :https then HTTPS
+      else
+        return resolver_type if resolver_type.is_a?(Class) && resolver_type < Resolver
+
+        raise Error, "unsupported resolver type (#{resolver_type})"
+      end
+    end
 
     def nolookup_resolve(hostname)
       ip_resolve(hostname) || cached_lookup(hostname) || system_resolve(hostname)

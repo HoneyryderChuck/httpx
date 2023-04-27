@@ -52,7 +52,7 @@ module HTTPX
           super
           meter_elapsed_time("Session: initialized!!!")
           resolver_type = @options.resolver_class
-          resolver_type = Resolver.registry(resolver_type) if resolver_type.is_a?(Symbol)
+          resolver_type = Resolver.resolver_for(resolver_type)
           return unless resolver_type <= Resolver::Native
 
           resolver_type.prepend TrackTimeMethods

@@ -56,5 +56,4 @@ module HTTPX::Transcoder
     end
     # rubocop:enable Style/SingleLineMethods
   end
-  register "json", JSON
 end

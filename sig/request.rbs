@@ -56,6 +56,10 @@ module HTTPX
 
     def request_timeout: () -> Numeric
 
+    private
+
+    def initialize_body: (Options options) -> Transcoder::_Encoder?
+
     class Body
       @headers: Headers
       @body: body_encoder?

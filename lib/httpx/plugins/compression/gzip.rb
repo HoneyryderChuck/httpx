@@ -6,12 +6,14 @@ module HTTPX
   module Plugins
     module Compression
       module GZIP
-        def self.load_dependencies(*)
-          require "zlib"
-        end
+        class << self
+          def load_dependencies(*)
+            require "zlib"
+          end
 
-        def self.configure(klass)
-          klass.default_options.encodings.register "gzip", self
+          def extra_options(options)
+            options.merge(encodings: options.encodings.merge("gzip" => self))
+          end
         end
 
         class Deflater

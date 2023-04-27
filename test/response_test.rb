@@ -205,9 +205,6 @@ class ResponseTest < Minitest::Test
     form4_response = Response.new(request, 200, "2.0", { "content-type" => "application/x-www-form-urlencoded" })
     form4_response << "[]"
     assert form4_response.form == {}
-
-    error = assert_raises(HTTPX::Error) { form2_response.__send__(:decode, "bla") }
-    assert error.message.include?("no decoder available for"), "failed with unexpected error"
   end
 
   private

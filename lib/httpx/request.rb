@@ -120,7 +120,7 @@ module HTTPX
 
       query = []
       if (q = @options.params)
-        query << Transcoder.registry("form").encode(q)
+        query << Transcoder::Form.encode(q)
       end
       query << @uri.query if @uri.query
       @query = query.join("&")
@@ -160,15 +160,7 @@ module HTTPX
 
       def initialize(headers, options)
         @headers = headers
-        @body = if options.body
-          Transcoder.registry("body").encode(options.body)
-        elsif options.form
-          Transcoder.registry("form").encode(options.form)
-        elsif options.json
-          Transcoder.registry("json").encode(options.json)
-        elsif options.xml
-          Transcoder.registry("xml").encode(options.xml)
-        end
+        @body = initialize_body(options)
         return if @body.nil?
 
         @headers["content-type"] ||= @body.content_type
@@ -211,7 +203,7 @@ module HTTPX
 
       def stream(body)
         encoded = body
-        encoded = Transcoder.registry("chunker").encode(body.enum_for(:each)) if chunked?
+        encoded = Transcoder::Chunker.encode(body.enum_for(:each)) if chunked?
         encoded
       end
 
@@ -235,6 +227,20 @@ module HTTPX
           "#{unbounded_body? ? "stream" : "@bytesize=#{bytesize}"}>"
       end
       # :nocov:
+
+      private
+
+      def initialize_body(options)
+        if options.body
+          Transcoder::Body.encode(options.body)
+        elsif options.form
+          Transcoder::Form.encode(options.form)
+        elsif options.json
+          Transcoder::JSON.encode(options.json)
+        elsif options.xml
+          Transcoder::Xml.encode(options.xml)
+        end
+      end
     end
 
     def transition(nextstate)

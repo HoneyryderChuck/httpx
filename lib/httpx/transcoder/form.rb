@@ -55,5 +55,4 @@ module HTTPX::Transcoder
       Decoder
     end
   end
-  register "form", Form
 end

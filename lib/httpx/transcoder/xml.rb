@@ -51,5 +51,4 @@ module HTTPX::Transcoder
       end
     end
   end
-  register "xml", Xml
 end

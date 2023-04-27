@@ -112,5 +112,4 @@ module HTTPX::Transcoder
       Encoder.new(chunks)
     end
   end
-  register "chunker", Chunker
 end
