@@ -109,8 +109,11 @@ module Requests
                           .with(retry_on: ->(res) {
                             res.error && res.error.message == "over 100 bytes"
                           }, window_size: 50, buffer_size: 50, http2_settings: { settings_initial_window_size: 100 })
+                          .with(debug: $stderr, debug_level: 3)
         retries_response = retries_session.get(resumable_uri)
         verify_status(retries_response, 200)
+        puts "retried payload: #{retries_response}"
+        puts "full payload: #{full_payload}"
         assert retries_response.to_s == full_payload
 
         total_responses = retries_session.total_responses
@@ -129,6 +132,8 @@ module Requests
         module ResponseBodyMethods
           def write(chunk)
             val = super
+
+            puts "writing to body, #{val} (#{@length})"
 
             raise(BiggerThan100Bytes, "over 100 bytes") if (100..199).cover?(@length)
 
