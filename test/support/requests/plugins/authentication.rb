@@ -50,6 +50,8 @@ module Requests
         verify_status(response, 401)
         response = session.get(build_uri("/get"))
         verify_status(response, 200)
+        response = session.digest_auth(user, pass).get(build_uri("/get"))
+        verify_status(response, 200)
       end
 
       # NTLM
@@ -68,6 +70,11 @@ module Requests
             response = http.ntlm_auth("user", "password").get(uri)
             verify_status(response, 200)
 
+            # bypass
+            response = http.get(build_uri("/get"))
+            verify_status(response, 200)
+            response = http.ntlm_auth("user", "password").get(build_uri("/get"))
+            verify_status(response, 200)
             # invalid_response = http.ntlm_authentication("user", "fake").get(uri)
             # verify_status(invalid_response, 401)
           end

@@ -10,6 +10,11 @@ class ErrorResponseTest < Minitest::Test
     assert r1.status == "wow"
   end
 
+  def test_error_response_finished?
+    r1 = ErrorResponse.new(request_mock, RuntimeError.new("wow"), {})
+    assert r1.finished?
+  end
+
   def test_error_response_error
     error = RuntimeError.new("wow")
     r1 = ErrorResponse.new(request_mock, error, {})
@@ -28,9 +33,18 @@ class ErrorResponseTest < Minitest::Test
     assert str.match(/wow \(.*RuntimeError.*\)/), "expected \"wow (RuntimeError)\" in \"#{str}\""
   end
 
+  def test_error_response_close
+    response = Response.new(request_mock, 200, "1.1", {})
+    request_mock.response = response
+    r = ErrorResponse.new(request_mock, RuntimeError.new("wow"), {})
+    assert !response.body.closed?
+    r.close
+    assert response.body.closed?
+  end
+
   private
 
   def request_mock
-    Request.new("GET", "http://example.com/")
+    @request_mock ||= Request.new("GET", "http://example.com/")
   end
 end
