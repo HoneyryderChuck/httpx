@@ -29,4 +29,13 @@ class ResolverTest < Minitest::Test
     ips = Resolver.cached_lookup("test.com")
     assert ips == %w[127.0.0.2 ::2 ::3]
   end
+
+  def test_resolver_for
+    assert Resolver.resolver_for(:native) == Resolver::Native
+    assert Resolver.resolver_for(:system) == Resolver::System
+    assert Resolver.resolver_for(:https) == Resolver::HTTPS
+    assert Resolver.resolver_for(Resolver::HTTPS) == Resolver::HTTPS
+    ex = assert_raises(Error) { Resolver.resolver_for(Object) }
+    assert(ex.message.include?("unsupported resolver type"))
+  end
 end

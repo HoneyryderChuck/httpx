@@ -198,10 +198,8 @@ module HTTPX
           rescue ArgumentError # ex: unknown encoding name - utf
             content
           end
-        when nil
-          "".b
         else
-          @buffer
+          "".b
         end
       end
       alias_method :to_str, :to_s

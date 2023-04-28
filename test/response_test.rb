@@ -82,6 +82,23 @@ class ResponseTest < Minitest::Test
     body5.write(payload)
     assert body5 == "a" * 2048, "body messed up with file"
     assert body5 == StringIO.new("a" * 2048), "body messed up with file"
+
+    text = ("ã" * 2048).b
+    body6 = Response::Body.new(Response.new(request, 200, "2.0", { "content-type" => "text/html; charset=utf" }),
+                               Options.new(body_threshold_size: 1024))
+    body6.write(text)
+    req_text = body6.to_s
+    assert text == req_text, "request body must be in original encoding (#{req_text})"
+  end
+
+  def test_response_body_close
+    payload = "a" * 512
+    body = Response::Body.new(Response.new(request, 200, "2.0", {}), Options.new(body_threshold_size: 1024))
+    assert !body.closed?
+    body.write(payload)
+    assert !body.closed?
+    body.close
+    assert body.closed?
   end
 
   def test_response_body_copy_to_memory
