@@ -25,6 +25,7 @@ services:
       - AWS_SECRET_ACCESS_KEY=test
       - AMZ_HOST=aws:4566
       - WEBDAV_HOST=webdav
+      - DD_INSTRUMENTATION_TELEMETRY_ENABLED=false
     image: ruby:alpine
     privileged: true
     depends_on:

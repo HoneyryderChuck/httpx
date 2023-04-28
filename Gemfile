@@ -20,8 +20,10 @@ group :test do
   gem "spy"
   if RUBY_VERSION < "2.3.0"
     gem "webmock", "< 3.15.0"
+  elsif RUBY_VERSION < "2.4.0"
+    gem "webmock", "< 3.17.0"
   else
-    gem "webmock", "< 3.18.0"
+    gem "webmock"
   end
   gem "nokogiri"
   gem "websocket-driver"
