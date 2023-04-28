@@ -88,7 +88,7 @@ PARALLEL=1 bundle exec rake test
 
 # third party modules
 # Testing them only with main ruby, as some of them work weird with other variants.
-if [[ ${RUBY_VERSION:0:3} = "3.2" ]] && [[ "$RUBY_ENGINE" = "ruby" ]]; then
+if [[ "$RUBY_ENGINE" = "ruby" ]]; then
   COVERAGE_KEY="$RUBY_ENGINE-$RUBY_VERSION-integration-tests" bundle exec rake integration_tests
 fi
 
