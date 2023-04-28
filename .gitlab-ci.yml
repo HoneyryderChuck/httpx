@@ -131,7 +131,7 @@ coverage:
     paths:
       - "coverage/"
 
-docs:
+pages:
   stage: deploy
   needs:
     - coverage
