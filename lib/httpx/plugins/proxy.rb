@@ -318,7 +318,7 @@ module HTTPX
     register_plugin :proxy, Proxy
   end
 
-  class ProxySSL < IO.registry["ssl"]
+  class ProxySSL < SSL
     def initialize(tcp, request_uri, options)
       @io = tcp.to_io
       super(request_uri, tcp.addresses, options)

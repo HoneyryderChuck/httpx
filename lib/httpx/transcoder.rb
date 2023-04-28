@@ -2,8 +2,6 @@
 
 module HTTPX
   module Transcoder
-    extend Registry
-
     using RegexpExtensions unless Regexp.method_defined?(:match?)
 
     module_function

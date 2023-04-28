@@ -368,5 +368,4 @@ module HTTPX
       UPCASED[field] || field.split("-").map(&:capitalize).join("-")
     end
   end
-  Connection.register "http/1.1", Connection::HTTP1
 end

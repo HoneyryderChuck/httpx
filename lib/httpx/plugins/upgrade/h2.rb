@@ -10,8 +10,8 @@ module HTTPX
     #
     module H2
       class << self
-        def configure(klass)
-          klass.default_options.upgrade_handlers.register "h2", self
+        def extra_options(options)
+          options.merge(upgrade_handlers: options.upgrade_handlers.merge("h2" => self))
         end
 
         def call(connection, _request, _response)
@@ -32,7 +32,7 @@ module HTTPX
 
           @parser = Connection::HTTP2.new(@write_buffer, @options)
           set_parser_callbacks(@parser)
-          @upgrade_protocol = :h2
+          @upgrade_protocol = "h2"
 
           # what's happening here:
           # a deviation from the state machine is done to perform the actions when a

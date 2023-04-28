@@ -412,5 +412,4 @@ module HTTPX
       end
     end
   end
-  Connection.register "h2", Connection::HTTP2
 end

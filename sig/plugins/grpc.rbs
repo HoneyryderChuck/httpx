@@ -39,8 +39,8 @@ module HTTPX
 
         def self?.encode: (String bytes, ?deflater: Compression::_Deflater?) -> String
 
-        def self?.decode: (String message, encodings: Array[String], encoders: Compression::encodings_registry) -> String
-                        | (String message, encodings: Array[String], encoders: Compression::encodings_registry) { (String) -> void } -> void
+        def self?.decode: (String message, encodings: Array[String], encoders: Hash[String, Compression::_Compressor]) -> String
+                        | (String message, encodings: Array[String], encoders: Hash[String, Compression::_Compressor]) { (String) -> void } -> void
 
         def self?.cancel: (Request) -> void
 
@@ -65,7 +65,7 @@ module HTTPX
       module ResponseMethods
         def merge_headers: (headers_input trailers) -> void
 
-        def encoders: () -> Compression::encodings_registry
+        def encoders: () -> Hash[String, Compression::_Compressor]
       end
 
       module InstanceMethods

@@ -40,9 +40,21 @@ module HTTPX
           require "httpx/plugins/multipart/part"
           require "httpx/plugins/multipart/mime_type_detector"
         end
+      end
 
-        def configure(*)
-          Transcoder.register("form", FormTranscoder)
+      module RequestBodyMethods
+        private
+
+        def initialize_body(options)
+          return FormTranscoder.encode(options.form) if options.form
+
+          super
+        end
+      end
+
+      module ResponseMethods
+        def form
+          decode(FormTranscoder)
         end
       end
 

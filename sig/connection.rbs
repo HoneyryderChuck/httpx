@@ -17,7 +17,6 @@ module HTTPX
     extend Forwardable
     include Loggable
     include Callbacks
-    include HTTPX::Registry[String, Class]
 
 
     attr_reader type: io_type
@@ -101,6 +100,8 @@ module HTTPX
 
     def transition: (Symbol) -> void
 
+    def build_socket: (?Array[ipaddr]? addrs) -> (TCP | SSL | UNIX)
+
     def on_error: (HTTPX::TimeoutError | Error | StandardError) -> void
 
     def handle_error: (StandardError) -> void
@@ -112,5 +113,7 @@ module HTTPX
     def write_timeout_callback: (Request request, Numeric write_timeout) -> void
 
     def read_timeout_callback: (Request request, Numeric read_timeout, ?singleton(RequestTimeoutError) error_type) -> void
+
+    def self.parser_type: (String protocol) -> (singleton(HTTP1) | singleton(HTTP2))
   end
 end

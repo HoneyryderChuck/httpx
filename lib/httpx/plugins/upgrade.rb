@@ -15,16 +15,13 @@ module HTTPX
         end
 
         def extra_options(options)
-          upgrade_handlers = Module.new do
-            extend Registry
-          end
-          options.merge(upgrade_handlers: upgrade_handlers)
+          options.merge(upgrade_handlers: {})
         end
       end
 
       module OptionsMethods
         def option_upgrade_handlers(value)
-          raise TypeError, ":upgrade_handlers must be a registry" unless value.respond_to?(:registry)
+          raise TypeError, ":upgrade_handlers must be a Hash" unless value.is_a?(Hash)
 
           value
         end
@@ -41,9 +38,9 @@ module HTTPX
 
             upgrade_protocol = response.headers["upgrade"].split(/ *, */).first
 
-            return response unless upgrade_protocol && options.upgrade_handlers.registry.key?(upgrade_protocol)
+            return response unless upgrade_protocol && options.upgrade_handlers.key?(upgrade_protocol)
 
-            protocol_handler = options.upgrade_handlers.registry(upgrade_protocol)
+            protocol_handler = options.upgrade_handlers[upgrade_protocol]
 
             return response unless protocol_handler
 

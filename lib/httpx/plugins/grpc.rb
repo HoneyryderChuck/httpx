@@ -233,7 +233,7 @@ module HTTPX
           uri.path = rpc_method
 
           headers = HEADERS.merge(
-            "grpc-accept-encoding" => ["identity", *@options.encodings.registry.keys]
+            "grpc-accept-encoding" => ["identity", *@options.encodings.keys]
           )
           unless deadline == Float::INFINITY
             # convert to milliseconds
@@ -249,7 +249,7 @@ module HTTPX
 
           if compression
             headers["grpc-encoding"] = compression
-            deflater = @options.encodings.registry(compression).deflater
+            deflater = @options.encodings[compression].deflater if @options.encodings.key?(compression)
           end
 
           headers.merge!(@options.call_credentials.call) if @options.call_credentials

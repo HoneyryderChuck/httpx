@@ -41,7 +41,7 @@ module HTTPX
     def initialize: (Request request, String | Integer status, String version, headers?) -> untyped
     def no_data?: () -> bool
 
-    def decode:(String format, ?untyped options) -> untyped
+    def decode:(Transcoder::_Decode transcoder, ?untyped options) -> untyped
 
     class Body
       include _Reader

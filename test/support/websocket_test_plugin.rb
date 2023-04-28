@@ -112,9 +112,8 @@ end
 
 module WSTestPlugin
   class << self
-    def configure(klass)
+    def load_dependencies(klass)
       klass.plugin(:upgrade)
-      klass.default_options.upgrade_handlers.register("websocket", self)
     end
 
     def call(connection, request, response)
@@ -128,7 +127,7 @@ module WSTestPlugin
     end
 
     def extra_options(options)
-      options.merge(max_concurrent_requests: 1)
+      options.merge(max_concurrent_requests: 1, upgrade_handlers: options.upgrade_handlers.merge("websocket" => self))
     end
   end
 

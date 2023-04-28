@@ -201,7 +201,7 @@ module HTTPX
 
     def option_transport(value)
       transport = value.to_s
-      raise TypeError, "\#{transport} is an unsupported transport type" unless IO.registry.key?(transport)
+      raise TypeError, "#{transport} is an unsupported transport type" unless %w[unix].include?(transport)
 
       transport
     end

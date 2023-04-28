@@ -29,7 +29,6 @@ module HTTPX
   #
   class Connection
     extend Forwardable
-    include Registry
     include Loggable
     include Callbacks
 
@@ -63,7 +62,7 @@ module HTTPX
         # if there's an already open IO, get its
         # peer address, and force-initiate the parser
         transition(:already_open)
-        @io = IO.registry(@type).new(@origin, nil, @options)
+        @io = build_socket
         parser
       else
         transition(:idle)
@@ -82,7 +81,7 @@ module HTTPX
       if @io
         @io.add_addresses(addrs)
       else
-        @io = IO.registry(@type).new(@origin, addrs, @options)
+        @io = build_socket(addrs)
       end
     end
 
@@ -451,7 +450,7 @@ module HTTPX
     end
 
     def build_parser(protocol = @io.protocol)
-      parser = registry(protocol).new(@write_buffer, @options)
+      parser = self.class.parser_type(protocol).new(@write_buffer, @options)
       set_parser_callbacks(parser)
       parser
     end
@@ -594,6 +593,17 @@ module HTTPX
       remove_instance_variable(:@timeout) if defined?(@timeout)
     end
 
+    def build_socket(addrs = nil)
+      transport_type = case @type
+                       when "tcp" then TCP
+                       when "ssl" then SSL
+                       when "unix" then UNIX
+                       else
+                         raise Error, "unsupported transport (#{@type})"
+      end
+      transport_type.new(@origin, addrs, @options)
+    end
+
     def on_error(error)
       if error.instance_of?(TimeoutError)
 
@@ -661,6 +671,17 @@ module HTTPX
       @write_buffer.clear
       error = error_type.new(request, request.response, read_timeout)
       on_error(error)
+    end
+
+    class << self
+      def parser_type(protocol)
+        case protocol
+        when "h2" then HTTP2
+        when "http/1.1" then HTTP1
+        else
+          raise Error, "unsupported protocol (##{protocol})"
+        end
+      end
     end
   end
 end

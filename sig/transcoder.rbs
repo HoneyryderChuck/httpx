@@ -4,17 +4,16 @@ module HTTPX
   type body_encoder = Transcoder::_Encoder | _Each[String]
 
   module Transcoder
-    def self?.registry: (String tag) -> _Encode
-                   | () -> Hash[String, _Encode]
-
-    def self?.register: (String tag, _Encode handler) -> void
-
     def self?.normalize_keys: [U] (_ToS key, _ToAry[untyped] | _ToHash[_ToS, untyped] | untyped value, ?(^(untyped value) -> bool | nil) cond) { (String, ?untyped) -> U } -> U
 
     def self?.normalize_query: (Hash[String, untyped] params, String name, String v, Integer depth) -> void
 
     interface _Encode
       def encode: (untyped payload) -> body_encoder
+    end
+
+    interface _Decode
+      def decode: (HTTPX::Response response) -> _Decoder
     end
 
     interface _Encoder

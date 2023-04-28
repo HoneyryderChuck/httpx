@@ -2,8 +2,6 @@ module HTTPX
   type ipaddr = IPAddr | String
 
   module Resolver
-    extend Registry[Symbol, Class]
-
     RESOLVE_TIMEOUT: Integer | Float
 
     @lookup_mutex: Thread::Mutex
@@ -20,6 +18,11 @@ module HTTPX
     def ip_resolve: (String hostname) -> Array[IPAddr]?
 
     def system_resolve: (String hostname) -> Array[IPAddr]?
+
+    def self?.resolver_for: (:native resolver_type) -> singleton(Native) |
+                            (:system resolver_type) -> singleton(System) |
+                            (:https resolver_type) -> singleton(HTTPS) |
+                            (singleton(Resolver::Resolver) resolver_type) -> singleton(Resolver::Resolver)
 
     def self?.cached_lookup: (String hostname) -> Array[IPAddr]?
 
