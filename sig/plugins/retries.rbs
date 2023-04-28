@@ -2,7 +2,7 @@ module HTTPX
   module Plugins
     module Retries
       MAX_RETRIES: Integer
-      IDEMPOTENT_METHODS: Array[verb]
+      IDEMPOTENT_METHODS: Array[String]
       RETRYABLE_ERRORS: Array[singleton(StandardError)]
       DEFAULT_JITTER: ^(Numeric) -> Numeric
 

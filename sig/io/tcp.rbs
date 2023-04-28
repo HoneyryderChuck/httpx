@@ -10,7 +10,7 @@ module HTTPX
 
     attr_reader state: Symbol
 
-    attr_reader interests: Symbol
+    attr_reader interests: io_interests
 
     alias host ip
 

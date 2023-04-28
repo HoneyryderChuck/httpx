@@ -11,8 +11,6 @@ module HTTPX
 
     def self.plugin: (Symbol | Module plugin, ?options? options) ?{ (Class) -> void } -> singleton(Session)
 
-    def self.default_options: -> Options
-
     def wrap: () { (instance) -> void } -> void
 
     def close: (*untyped) -> void
@@ -41,12 +39,14 @@ module HTTPX
                       | (verb, _Each[[uri, options]], Options) -> Array[Request]
                       | (verb, _Each[uri], options) -> Array[Request]
 
-    def build_connection: (URI::Generic, Options) -> Connection
+    def build_connection: (URI::HTTP | URI::HTTPS uri, Options options) -> Connection
 
     def send_requests: (*Request) -> Array[response]
 
     def _send_requests: (Array[Request]) -> Array[Connection]
 
     def receive_requests: (Array[Request], Array[Connection]) -> Array[response]
+
+    attr_reader self.default_options: Options
   end
 end
