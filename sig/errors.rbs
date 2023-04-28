@@ -2,6 +2,12 @@ module HTTPX
   class Error < StandardError
   end
 
+  class UnsupportedSchemeError < Error
+  end
+
+  class ConnectionError < Error
+  end
+
   class TimeoutError < Error
     attr_reader timeout: Numeric
 
@@ -54,5 +60,8 @@ module HTTPX
     private
 
     def initialize: (Connection connection, String hostname, ?String message) -> untyped
+  end
+
+  class MisdirectedRequestError < HTTPError
   end
 end

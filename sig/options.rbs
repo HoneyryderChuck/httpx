@@ -46,7 +46,7 @@ module HTTPX
     attr_reader body_threshold_size: Integer
 
     # transport
-    attr_reader transport: String?
+    attr_reader transport: "unix" | nil
 
     # transport_options
     attr_reader transport_options: Hash[untyped, untyped]?

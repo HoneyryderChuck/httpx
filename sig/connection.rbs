@@ -34,7 +34,13 @@ module HTTPX
     @write_buffer: Buffer
     @inflight: Integer
     @keep_alive_timeout: Numeric?
+    @timeout: Numeric?
+    @current_timeout: Numeric?
     @total_timeout: Numeric?
+    @io: TCP | SSL | UNIX
+    @parser: HTTP1 | HTTP2 | _Parser
+    @connected_at: Float
+    @response_received_at: Float
 
     def addresses: () -> Array[ipaddr]?
 
@@ -75,6 +81,8 @@ module HTTPX
 
     def deactivate: () -> void
 
+    def open?: () -> bool
+
     def raise_timeout_error: (Numeric interval) -> void
 
     private
@@ -89,16 +97,17 @@ module HTTPX
 
     def send_pending: () -> void
 
-    def parser: () -> _Parser
+    def parser: () -> (HTTP1 | HTTP2 | _Parser)
 
     def send_request_to_parser: (Request request) -> void
 
-    def build_parser: () -> _Parser
-                    | (String) -> _Parser
+    def build_parser: (?String protocol) -> (HTTP1 | HTTP2)
 
-    def set_parser_callbacks: (_Parser) -> void
+    def set_parser_callbacks: (HTTP1 | HTTP2 parser) -> void
 
     def transition: (Symbol) -> void
+
+    def handle_transition: (Symbol) -> void
 
     def build_socket: (?Array[ipaddr]? addrs) -> (TCP | SSL | UNIX)
 

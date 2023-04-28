@@ -101,7 +101,7 @@ module HTTPX
           # was the result of coalescing. To prevent blind trust in the case where the
           # origin came from an ORIGIN frame, we're going to verify the hostname with the
           # SSL certificate
-          (@origins.size == 1 || @origin == uri.origin || (@io && @io.verify_hostname(uri.host)))
+          (@origins.size == 1 || @origin == uri.origin || (@io.is_a?(SSL) && @io.verify_hostname(uri.host)))
         ) && @options == options
       ) || (match_altsvcs?(uri) && match_altsvc_options?(uri, options))
     end
@@ -115,7 +115,7 @@ module HTTPX
 
       (
         (open? && @origin == connection.origin) ||
-        !(@io.addresses & connection.addresses).empty?
+        !(@io.addresses & (connection.addresses || [])).empty?
       ) && @options == connection.options
     end
 

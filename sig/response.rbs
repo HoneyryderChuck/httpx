@@ -48,7 +48,7 @@ module HTTPX
       include _ToS
       include _ToStr
 
-      attr_reader encoding: String
+      attr_reader encoding: Encoding | String
 
       @response: Response
       @headers: Headers

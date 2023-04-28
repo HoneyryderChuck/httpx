@@ -13,8 +13,8 @@ module HTTPX
 
       def []: (uri) -> Array[Cookie]
 
-      def each: (?uri) { (Cookie) -> void } -> void
-              | (?uri) -> Enumerable[Cookie]
+      def each: (?uri?) { (Cookie) -> void } -> void
+              | (?uri?) -> Enumerable[Cookie]
 
       def merge: (_Each[cookie] cookies) -> instance
 

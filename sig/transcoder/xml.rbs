@@ -1,5 +1,5 @@
 module HTTPX::Transcoder
-  module XML
+  module Xml
 
     def self?.encode: (untyped xml) -> Encoder
     def self?.decode: (HTTPX::Response response) -> _Decoder

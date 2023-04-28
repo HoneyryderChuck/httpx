@@ -203,6 +203,7 @@ module HTTPX
     end
 
     def receive_requests(requests, connections)
+      # @type var responses: Array[response]
       responses = []
 
       begin
