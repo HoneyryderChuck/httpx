@@ -100,7 +100,7 @@ if RUBY_VERSION >= "2.4.0"
       verify_spans(transaction, response, verb: "GET")
       crumb = Sentry.get_current_scope.breadcrumbs.peek
       assert crumb.category == "httpx"
-      assert crumb.data == { error: "Can't resolve unexisting", method: "GET", url: uri.to_s }
+      assert crumb.data == { error: "name or service not known", method: "GET", url: uri.to_s }
     end
 
     private

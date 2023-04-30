@@ -248,7 +248,7 @@ module HTTPX
 
         unless @queries.value?(connection)
           @connections.delete(connection)
-          raise NativeResolveError.new(connection, connection.origin.host)
+          raise NativeResolveError.new(connection, connection.origin.host, "name or service not known")
         end
 
         resolve
