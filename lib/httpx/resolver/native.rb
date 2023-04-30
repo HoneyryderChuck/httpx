@@ -250,6 +250,8 @@ module HTTPX
           @connections.delete(connection)
           raise NativeResolveError.new(connection, connection.origin.host)
         end
+
+        resolve
       when :message_truncated
         # TODO: what to do if it's already tcp??
         return if @socket_type == :tcp
