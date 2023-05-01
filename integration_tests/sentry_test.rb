@@ -95,7 +95,7 @@ if RUBY_VERSION >= "2.4.0"
 
       response = HTTPX.get(uri)
 
-      verify_error_response(response, /Can't resolve unexisting/)
+      verify_error_response(response, /name or service not known/)
       assert response.is_a?(HTTPX::ErrorResponse), "response should contain errors"
       verify_spans(transaction, response, verb: "GET")
       crumb = Sentry.get_current_scope.breadcrumbs.peek
