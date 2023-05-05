@@ -281,7 +281,7 @@ module HTTPX
     def parse_addresses(addresses)
       if addresses.empty?
         # no address found, eliminate candidates
-        _, connection = @queries.first
+        hostname, connection = @queries.first
         reset_hostname(hostname)
         @connections.delete(connection)
         raise NativeResolveError.new(connection, connection.origin.host)
