@@ -22,7 +22,7 @@ module HTTPX
 
       module OptionsMethods
         def option_digest(value)
-          raise TypeError, ":digest must be a Digest" unless value.is_a?(Authentication::Digest)
+          raise TypeError, ":digest must be a #{Authentication::Digest}" unless value.is_a?(Authentication::Digest)
 
           value
         end

@@ -1,0 +1,54 @@
+module HTTPX
+  module Plugins
+    #
+    # https://gitlab.com/os85/httpx/wikis/OAuth
+    #
+    module OAuth
+      def self.load_dependencies: (singleton(Session) klass) -> void
+
+      type grant_type = "client_credentials" | "refresh_token"
+
+      type token_auth_method = "client_secret_basic" | "client_secret_post"
+
+      SUPPORTED_GRANT_TYPES: ::Array[grant_type]
+
+      SUPPORTED_AUTH_METHODS: ::Array[token_auth_method]
+
+      class OAuthSession
+        attr_reader token_endpoint_auth_method: token_auth_method
+
+        attr_reader grant_type: grant_type
+
+        attr_reader client_id: String
+
+        attr_reader client_secret: String
+
+        attr_reader access_token: String?
+
+        attr_reader refresh_token: String?
+
+        attr_reader scope: Array[String]?
+
+        def initialize: (issuer: uri, client_id: String, client_secret: String, ?access_token: String?, ?refresh_token: String?, ?scope: (Array[String] | String)?, ?token_endpoint: String?, ?response_type: String?, ?grant_type: String?, ?token_endpoint_auth_method: ::String) -> void
+
+        def token_endpoint: () -> String
+
+        def load: (Session http) -> void
+
+        def merge: (instance | Hash[untyped, untyped] other) -> instance
+      end
+
+      interface _AwsSdkOptions
+        def oauth_session: () -> OAuthSession?
+      end
+
+      module InstanceMethods
+        def oauth_authentication: (**untyped args) -> instance
+
+        def with_access_token: () -> instance
+      end
+    end
+
+    type sessionOAuth = Session & OAuth::InstanceMethods
+  end
+end

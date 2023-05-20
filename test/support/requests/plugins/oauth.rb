@@ -14,7 +14,7 @@ module Requests
           assert opts.oauth_session.grant_type == "client_credentials"
           assert opts.oauth_session.token_endpoint.to_s == "#{server.origin}/token"
           assert opts.oauth_session.token_endpoint_auth_method == "client_secret_basic"
-          assert opts.oauth_session.scope == "all"
+          assert opts.oauth_session.scope == %w[all]
 
           opts = HTTPX.plugin(:oauth).oauth_authentication(
             issuer: "https://smthelse",
