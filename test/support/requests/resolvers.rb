@@ -132,6 +132,23 @@ module Requests
           end
         end
 
+        define_method :"test_resolver_#{resolver_type}_dns_error" do
+          start_test_servlet(DNSErrorServer, 0.2) do |slow_dns_server|
+            start_test_servlet(DNSErrorServer, 0.2) do |not_so_slow_dns_server|
+              nameservers = [slow_dns_server.nameserver, not_so_slow_dns_server.nameserver]
+
+              resolver_opts = options.merge(nameserver: nameservers, timeouts: [3])
+
+              HTTPX.plugin(SessionWithPool).wrap do |session|
+                uri = build_uri("/get")
+
+                response = session.get(uri, resolver_class: resolver_type, resolver_options: resolver_opts)
+                verify_error_response(response, /unknown DNS error/)
+              end
+            end
+          end
+        end
+
         # this test mocks a DNS server invalid messages back
         define_method :"test_resolver_#{resolver_type}_decoding_error" do
           session = HTTPX.plugin(SessionWithPool)

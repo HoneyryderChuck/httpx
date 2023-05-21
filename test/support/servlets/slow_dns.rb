@@ -1,55 +1,12 @@
 # frozen_string_literal: true
 
 require "resolv"
-require "socket"
+require_relative "test"
 
 # from https://gist.github.com/peterc/1425383
 
-class SlowDNSServer
-  attr_reader :queries, :answers
-
-  def initialize(timeout)
-    @port = next_available_port
-    @can_log = ENV.key?("HTTPX_DEBUG")
-    @timeout = timeout
-    @queries = 0
-    @answers = 0
-  end
-
-  def nameserver
-    ["127.0.0.1", @port]
-  end
-
-  def start
-    Socket.udp_server_loop(@port) do |query, src|
-      @queries += 1
-      sleep(@timeout)
-      src.reply(dns_response(query))
-      @answers += 1
-    end
-  end
-
+class SlowDNSServer < TestDNSResolver
   private
-
-  def extract_domain(data)
-    domain = +""
-
-    # Check "Opcode" of question header for valid question
-    if (data[2].ord & 120).zero?
-      # Read QNAME section of question section
-      # DNS header section is 12 bytes long, so data starts at offset 12
-
-      idx = 12
-      len = data[idx].ord
-      # Strings are rendered as a byte containing length, then text.. repeat until length of 0
-      until len.zero?
-        domain << "#{data[idx + 1, len]}."
-        idx += len + 1
-        len = data[idx].ord
-      end
-    end
-    domain
-  end
 
   def dns_response(query)
     domain = extract_domain(query)
@@ -86,13 +43,5 @@ class SlowDNSServer
     response << [rdata.length].pack("n").b
     response << rdata.b
     response
-  end
-
-  def next_available_port
-    udp = UDPSocket.new
-    udp.bind("127.0.0.1", 0)
-    udp.addr[1]
-  ensure
-    udp.close
   end
 end
