@@ -5,27 +5,17 @@ ruby RUBY_VERSION
 source "https://rubygems.org"
 gemspec
 
-if RUBY_VERSION < "2.2.0"
-  gem "rake", "~> 12.3"
-else
-  gem "rake", "~> 13.0"
-end
+gem "rake", "~> 13.0"
 
 group :test do
   gem "http-form_data", ">= 2.0.0"
   gem "minitest"
   gem "minitest-proveit"
+  gem "nokogiri"
   gem "ruby-ntlm"
   gem "sentry-ruby" if RUBY_VERSION >= "2.4.0"
   gem "spy"
-  if RUBY_VERSION < "2.3.0"
-    gem "webmock", "< 3.15.0"
-  elsif RUBY_VERSION < "2.4.0"
-    gem "webmock", "< 3.17.0"
-  else
-    gem "webmock"
-  end
-  gem "nokogiri"
+  gem "webmock"
   gem "websocket-driver"
 
   gem "net-ssh", "~> 4.2.0" if RUBY_VERSION < "2.2.0"
@@ -33,22 +23,20 @@ group :test do
   gem "ddtrace"
 
   platform :mri do
-    if RUBY_VERSION >= "2.3.0"
-      if RUBY_VERSION < "2.5.0"
-        gem "google-protobuf", "< 3.19.2"
-      elsif RUBY_VERSION < "2.7.0"
-        gem "google-protobuf", "< 3.22.0"
-      end
-      if RUBY_VERSION <= "2.6.0"
-        gem "grpc", "< 1.49.0"
-      else
-        gem "grpc"
-      end
-      gem "logging"
-      gem "marcel", require: false
-      gem "mimemagic", require: false
-      gem "ruby-filemagic", require: false
+    if RUBY_VERSION < "2.5.0"
+      gem "google-protobuf", "< 3.19.2"
+    elsif RUBY_VERSION < "2.7.0"
+      gem "google-protobuf", "< 3.22.0"
     end
+    if RUBY_VERSION <= "2.6.0"
+      gem "grpc", "< 1.49.0"
+    else
+      gem "grpc"
+    end
+    gem "logging"
+    gem "marcel", require: false
+    gem "mimemagic", require: false
+    gem "ruby-filemagic", require: false
 
     if RUBY_VERSION >= "3.0.0"
       gem "multi_json", require: false
@@ -65,17 +53,6 @@ group :test do
     gem "net-ssh-gateway"
   end
 
-  platform :mri_21 do
-    gem "rbnacl"
-  end
-
-  platform :mri_23 do
-    if RUBY_VERSION >= "2.3.0"
-      gem "openssl", "< 2.0.6" # force usage of openssl version we patch against
-    end
-    gem "msgpack", "<= 1.3.3"
-  end
-
   platform :jruby do
     gem "jruby-openssl" # , git: "https://github.com/jruby/jruby-openssl.git", branch: "master"
     gem "ruby-debug"
@@ -84,7 +61,6 @@ group :test do
   gem "aws-sdk-s3"
   gem "faraday"
   gem "idnx" if RUBY_VERSION >= "2.4.0"
-  gem "multipart-post", "< 2.2.0" if RUBY_VERSION < "2.3.0"
   gem "oga"
 
   if RUBY_VERSION >= "3.0.0"
@@ -96,13 +72,7 @@ group :test do
 end
 
 group :coverage do
-  if RUBY_VERSION < "2.2.0"
-    gem "simplecov", "< 0.11.0"
-  elsif RUBY_VERSION < "2.3"
-    gem "simplecov", "< 0.11.0"
-  elsif RUBY_VERSION < "2.4"
-    gem "simplecov", "< 0.19.0"
-  elsif RUBY_VERSION < "2.5"
+  if RUBY_VERSION < "2.5"
     gem "simplecov", "< 0.21.0"
   else
     gem "simplecov"
@@ -110,18 +80,10 @@ group :coverage do
 end
 
 group :assorted do
-  if RUBY_VERSION < "2.2.0"
-    gem "pry", "~> 0.12.2"
-  else
-    gem "pry"
-  end
+  gem "pry"
 
   platform :mri do
-    if RUBY_VERSION < "2.2.0"
-      gem "pry-byebug", "~> 3.4.3"
-    else
-      gem "debug" if RUBY_VERSION >= "3.1.0"
-      gem "pry-byebug"
-    end
+    gem "debug" if RUBY_VERSION >= "3.1.0"
+    gem "pry-byebug"
   end
 end
