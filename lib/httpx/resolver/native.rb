@@ -266,7 +266,6 @@ module HTTPX
         reset_hostname(hostname)
         @connections.delete(connection)
         ex = NativeResolveError.new(connection, connection.origin.host, "unknown DNS error (error code #{result})")
-        ex.set_backtrace(e.backtrace)
         raise ex
       when :decode_error
         hostname, connection = @queries.first
