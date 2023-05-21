@@ -198,15 +198,16 @@ module HTTPX
             return
           else
             size = @read_buffer[0, 2].unpack1("n")
+            buffer = @read_buffer.byteslice(2..-1)
 
             if size > @read_buffer.bytesize
               # only do buffer logic if it's worth it, and the whole packet isn't here already
               @large_packet = Buffer.new(size)
-              @large_packet << @read_buffer.byteslice(2..-1)
+              @large_packet << buffer
 
               next
             else
-              parse(@read_buffer)
+              parse(buffer)
             end
           end
         else # udp
