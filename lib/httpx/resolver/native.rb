@@ -198,15 +198,16 @@ module HTTPX
             return
           else
             size = @read_buffer[0, 2].unpack1("n")
+            buffer = @read_buffer.byteslice(2..-1)
 
             if size > @read_buffer.bytesize
               # only do buffer logic if it's worth it, and the whole packet isn't here already
               @large_packet = Buffer.new(size)
-              @large_packet << @read_buffer.byteslice(2..-1)
+              @large_packet << buffer
 
               next
             else
-              parse(@read_buffer)
+              parse(buffer)
             end
           end
         else # udp
@@ -266,7 +267,6 @@ module HTTPX
         reset_hostname(hostname)
         @connections.delete(connection)
         ex = NativeResolveError.new(connection, connection.origin.host, "unknown DNS error (error code #{result})")
-        ex.set_backtrace(e.backtrace)
         raise ex
       when :decode_error
         hostname, connection = @queries.first

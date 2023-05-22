@@ -77,6 +77,51 @@ module Requests
           verify_error_response(response, HTTPX::ResolveError)
         end
       when :native
+        define_method :"test_resolver_#{resolver_type}_tcp_request" do
+          tcp_socket = nil
+          resolver_class = Class.new(HTTPX::Resolver::Native) do
+            define_method :build_socket do
+              tcp_socket = super()
+            end
+          end
+
+          session = HTTPX.plugin(SessionWithPool)
+          uri = build_uri("/get")
+          response = session.head(uri, resolver_class: resolver_class, resolver_options: options.merge(socket_type: :tcp))
+          verify_status(response, 200)
+          response.close
+
+          assert !tcp_socket.nil?
+          assert tcp_socket.is_a?(HTTPX::TCP)
+        end
+
+        define_method :"test_resolver_#{resolver_type}_same_relative_name" do
+          addresses = nil
+          resolver_class = Class.new(HTTPX::Resolver::Native) do
+            define_method :parse_addresses do |addrs|
+              addresses = addrs
+              super(addrs)
+            end
+          end
+
+          start_test_servlet(DNSSameRelativeName) do |slow_dns_server|
+            start_test_servlet(DNSSameRelativeName) do |not_so_slow_dns_server|
+              nameservers = [slow_dns_server.nameserver, not_so_slow_dns_server.nameserver]
+
+              resolver_opts = options.merge(nameserver: nameservers)
+
+              session = HTTPX.plugin(SessionWithPool)
+              uri = URI(build_uri("/get"))
+              response = session.head(uri, resolver_class: resolver_class, resolver_options: resolver_opts)
+              verify_status(response, 200)
+              response.close
+
+              assert !addresses.nil?
+              addr = addresses.first
+              assert addr["name"] != uri.host
+            end
+          end
+        end
 
         # this test mocks an unresponsive DNS server which doesn't return a DNS asnwer back.
         define_method :"test_resolver_#{resolver_type}_timeout" do
@@ -127,6 +172,23 @@ module Requests
 
                 resolver = session.pool.resolver.resolvers[0]
                 assert resolver.instance_variable_get(:@ns_index) == 1
+              end
+            end
+          end
+        end
+
+        define_method :"test_resolver_#{resolver_type}_dns_error" do
+          start_test_servlet(DNSErrorServer) do |slow_dns_server|
+            start_test_servlet(DNSErrorServer) do |not_so_slow_dns_server|
+              nameservers = [slow_dns_server.nameserver, not_so_slow_dns_server.nameserver]
+
+              resolver_opts = options.merge(nameserver: nameservers)
+
+              HTTPX.plugin(SessionWithPool).wrap do |session|
+                uri = build_uri("/get")
+
+                response = session.get(uri, resolver_class: resolver_type, resolver_options: resolver_opts)
+                verify_error_response(response, /unknown DNS error/)
               end
             end
           end
@@ -187,6 +249,23 @@ module Requests
           verify_status(response, 200)
 
           assert resolver_class.ios.any?(HTTPX::TCP), "resolver did not upgrade to tcp"
+        end
+
+        define_method :"test_resolver_#{resolver_type}_no_addresses" do
+          start_test_servlet(DNSNoAddress) do |slow_dns_server|
+            start_test_servlet(DNSNoAddress) do |not_so_slow_dns_server|
+              nameservers = [slow_dns_server.nameserver, not_so_slow_dns_server.nameserver]
+
+              resolver_opts = options.merge(nameserver: nameservers)
+
+              HTTPX.plugin(SessionWithPool).wrap do |session|
+                uri = build_uri("/get")
+
+                response = session.get(uri, resolver_class: resolver_type, resolver_options: resolver_opts)
+                verify_error_response(response, /Can't resolve/)
+              end
+            end
+          end
         end
       end
     end

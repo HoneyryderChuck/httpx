@@ -111,3 +111,106 @@ class TestHTTP2Server
     end
   end
 end
+
+class TestDNSResolver
+  attr_reader :queries, :answers
+
+  def initialize
+    @port = next_available_port
+    @can_log = ENV.key?("HTTPX_DEBUG")
+    @queries = 0
+    @answers = 0
+  end
+
+  def nameserver
+    ["127.0.0.1", @port]
+  end
+
+  def start
+    Socket.udp_server_loop(@port) do |query, src|
+      @queries += 1
+      src.reply(dns_response(query))
+      @answers += 1
+    end
+  end
+
+  private
+
+  def dns_response(query)
+    domain = extract_domain(query)
+    ip = Resolv.getaddress(domain)
+
+    response = response_header(query)
+    response << question_section(query)
+    response << answer_section(ip)
+    response
+  end
+
+  def response_header(query)
+    "#{query[0, 2]}\x81\x00#{query[4, 2] * 2}\x00\x00\x00\x00".b
+  end
+
+  def question_section(query)
+    # Append original question section
+    section = query[12..-1].b
+
+    # Use pointer to refer to domain name in question section
+    section << "\xc0\x0c".b
+
+    section
+  end
+
+  def answer_section(ip)
+    cname = ip =~ /[a-z]/
+
+    # Set response type accordingly
+    section = (cname ? "\x00\x05".b : "\x00\x01".b)
+
+    # Set response class (IN)
+    section << "\x00\x01".b
+
+    # TTL in seconds
+    section << [120].pack("N").b
+
+    # Calculate RDATA - we need its length in advance
+    rdata = if cname
+      ip.split(".").map { |a| a.length.chr + a }.join << "\x00"
+    else
+      # Append IP address as four 8 bit unsigned bytes
+      ip.split(".").map(&:to_i).pack("C*")
+    end
+
+    # RDATA is 4 bytes
+    section << [rdata.length].pack("n").b
+    section << rdata.b
+    section
+  end
+
+  def extract_domain(data)
+    domain = +""
+
+    # Check "Opcode" of question header for valid question
+    if (data[2].ord & 120).zero?
+      # Read QNAME section of question section
+      # DNS header section is 12 bytes long, so data starts at offset 12
+
+      idx = 12
+      len = data[idx].ord
+      # Strings are rendered as a byte containing length, then text.. repeat until length of 0
+      until len.zero?
+        domain << "#{data[idx + 1, len]}."
+        idx += len + 1
+        len = data[idx].ord
+      end
+    end
+    domain
+  end
+
+  def next_available_port
+    udp = UDPSocket.new
+    udp.bind("127.0.0.1", 0)
+    udp.addr[1]
+  ensure
+    udp.close
+  end
+end
