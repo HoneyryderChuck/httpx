@@ -18,6 +18,7 @@ class HTTPTest < Minitest::Test
 
   include Plugins::Proxy unless ENV.key?("HTTPX_NO_PROXY")
   include Plugins::Authentication
+  include Plugins::OAuth
   include Plugins::FollowRedirects
   include Plugins::Cookies
   include Plugins::Compression
