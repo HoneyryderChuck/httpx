@@ -4,6 +4,7 @@ module HTTPX
   class Session
     include Loggable
     include Chainable
+    include Callbacks
 
     EMPTY_HASH = {}.freeze
 
@@ -45,6 +46,31 @@ module HTTPX
       request = rklass.new(verb, uri, options.merge(persistent: @persistent))
       request.on(:response, &method(:on_response).curry(2)[request])
       request.on(:promise, &method(:on_promise))
+
+      request.on(:headers) do
+        emit(:request_started, request)
+      end
+      request.on(:body_chunk) do |chunk|
+        emit(:request_body_chunk, request, chunk)
+      end
+      request.on(:done) do
+        emit(:request_completed, request)
+      end
+
+      request.on(:response_started) do |res|
+        if res.is_a?(Response)
+          emit(:response_started, request, res)
+          res.on(:chunk_received) do |chunk|
+            emit(:response_body_chunk, request, res, chunk)
+          end
+        else
+          emit(:request_error, request, res.error)
+        end
+      end
+      request.on(:response) do |res|
+        emit(:response_completed, request, res)
+      end
+
       request
     end
 
@@ -174,7 +200,16 @@ module HTTPX
           raise UnsupportedSchemeError, "#{uri}: #{uri.scheme}: unsupported URI scheme"
         end
       end
+      init_connection(type, uri, options)
+    end
+
+    def init_connection(type, uri, options)
       connection = options.connection_class.new(type, uri, options)
+      connection.on(:open) do
+        emit(:connection_opened, connection.origin, connection.io.socket)
+        # only run close callback if it opened
+        connection.on(:close) { emit(:connection_closed, connection.origin, connection.io.socket) }
+      end
       catch(:coalesced) do
         pool.init_connection(connection, options)
         connection
@@ -252,6 +287,7 @@ module HTTPX
         super
         klass.instance_variable_set(:@default_options, @default_options)
         klass.instance_variable_set(:@plugins, @plugins.dup)
+        klass.instance_variable_set(:@callbacks, @callbacks.dup)
       end
 
       def plugin(pl, options = nil, &block)

@@ -29,4 +29,11 @@ module HTTPHelpers
   def origin(orig = httpbin)
     "#{scheme}#{orig}"
   end
+
+  def next_available_port
+    server = TCPServer.new("localhost", 0)
+    server.addr[1]
+  ensure
+    server.close
+  end
 end

@@ -13,6 +13,7 @@ class HTTPTest < Minitest::Test
   include Headers
   include ResponseBody
   include IO
+  include Callbacks
   include Errors if RUBY_ENGINE == "ruby"
   include AltSvc if ENV.key?("HTTPBIN_ALTSVC_HOST")
 

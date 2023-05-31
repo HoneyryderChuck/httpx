@@ -314,6 +314,7 @@ module HTTPX
         ex = Error.new(stream.id, error)
         ex.set_backtrace(caller)
         response = ErrorResponse.new(request, ex, request.options)
+        request.response = response
         emit(:response, request, response)
       else
         response = request.response

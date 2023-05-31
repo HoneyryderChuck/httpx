@@ -4,9 +4,9 @@ module HTTPX
   end
 
   module Callbacks
-    def on: (Symbol) { (*untyped) -> void } -> void
-    def once: (Symbol) { (*untyped) -> void } -> void
-    def only: (Symbol) { (*untyped) -> void } -> void
+    def on: (Symbol) { (*untyped) -> void } -> self
+    def once: (Symbol) { (*untyped) -> void } -> self
+    def only: (Symbol) { (*untyped) -> void } -> self
     def emit: (Symbol, *untyped) -> void
 
     def callbacks_for?: (Symbol) -> bool

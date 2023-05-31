@@ -4,6 +4,7 @@ module HTTPX
   module Callbacks
     def on(type, &action)
       callbacks(type) << action
+      self
     end
 
     def once(type, &block)
@@ -11,6 +12,7 @@ module HTTPX
         block.call(*args, &callback)
         :delete
       end
+      self
     end
 
     def only(type, &block)

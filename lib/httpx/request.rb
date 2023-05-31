@@ -95,6 +95,8 @@ module HTTPX
         return
       end
       @response = response
+
+      emit(:response_started, response)
     end
 
     def path
@@ -130,8 +132,10 @@ module HTTPX
       return nil if @body.nil?
 
       @drainer ||= @body.each
-      chunk = @drainer.next
-      chunk.dup
+      chunk = @drainer.next.dup
+
+      emit(:body_chunk, chunk)
+      chunk
     rescue StopIteration
       nil
     rescue StandardError => e

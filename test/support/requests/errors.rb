@@ -41,13 +41,21 @@ module Requests
     #   end
     # end
 
-    private
+    ResponseErrorEmitter = Module.new do
+      self::ResponseMethods = Module.new do
+        def <<(_)
+          raise "done with it"
+        end
+      end
+    end
 
-    def next_available_port
-      server = TCPServer.new("localhost", 0)
-      server.addr[1]
-    ensure
-      server.close
+    def test_errors_mid_response_buffering
+      uri = URI(build_uri("/get"))
+      HTTPX.plugin(SessionWithPool).plugin(ResponseErrorEmitter).wrap do |http|
+        response = http.get(uri)
+        verify_error_response(response, "done with it")
+        assert http.pool.connections.empty?
+      end
     end
   end
 end

@@ -170,11 +170,7 @@ module HTTPX
           proxy = options.proxy
           return super unless proxy
 
-          connection = options.connection_class.new("tcp", uri, options)
-          catch(:coalesced) do
-            pool.init_connection(connection, options)
-            connection
-          end
+          init_connection("tcp", uri, options)
         end
 
         def fetch_response(request, connections, options)
