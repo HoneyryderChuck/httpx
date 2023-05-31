@@ -54,17 +54,7 @@ module Requests
       HTTPX.plugin(SessionWithPool).plugin(ResponseErrorEmitter).wrap do |http|
         response = http.get(uri)
         verify_error_response(response, "done with it")
-        if uri.scheme == "https"
-          # in http/2, such an error will result in the stream getting cancelled.
-          # connection remains active for subsequent requests.
-          connections = http.pool.connections
-          assert connections.size == 1
-          connection = connections.first
-          assert connection.state == :inactive
-        else
-          # in http/1.1, a new connection would need to be established.
-          assert http.pool.connections.empty?
-        end
+        assert http.pool.connections.empty?
       end
     end
   end
