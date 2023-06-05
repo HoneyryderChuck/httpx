@@ -31,6 +31,16 @@ module HTTPX
           @circuit_store = orig.instance_variable_get(:@circuit_store).dup
         end
 
+        %i[circuit_open].each do |meth|
+          class_eval(<<-MOD, __FILE__, __LINE__ + 1)
+        def on_#{meth}(&blk)   # def on_circuit_open(&blk)
+          on(:#{meth}, &blk)   #   on(:circuit_open, &blk)
+        end                    # end
+          MOD
+        end
+
+        private
+
         def send_requests(*requests)
           # @type var short_circuit_responses: Array[response]
           short_circuit_responses = []
@@ -59,6 +69,12 @@ module HTTPX
         end
 
         def on_response(request, response)
+          emit(:circuit_open, request) if try_circuit_open(request, response)
+
+          super
+        end
+
+        def try_circuit_open(request, response)
           if response.is_a?(ErrorResponse)
             case response.error
             when RequestTimeoutError
@@ -69,8 +85,6 @@ module HTTPX
           elsif (break_on = request.options.circuit_breaker_break_on) && break_on.call(response)
             @circuit_store.try_open(request.uri, response)
           end
-
-          super
         end
       end
 

@@ -70,6 +70,30 @@ module Requests
         assert response1 == response2
       end
 
+      def test_plugin_circuit_breaker_on_circuit_open
+        return unless origin.start_with?("http://")
+
+        unknown_uri = "http://www.qwwqjqwdjqiwdj.com"
+
+        circuit_opened = false
+        session = HTTPX.plugin(:circuit_breaker,
+                               circuit_breaker_max_attempts: 1,
+                               circuit_breaker_break_in: 2,
+                               circuit_breaker_half_open_drip_rate: 1.0)
+                       .on_circuit_open { circuit_opened = true }
+
+        # circuit closed
+        response1 = session.get(unknown_uri)
+        verify_error_response(response1)
+
+        # circuit open
+        response2 = session.get(unknown_uri)
+        verify_error_response(response2)
+        assert response2 == response1
+
+        assert circuit_opened
+      end
+
       # def test_plugin_circuit_breaker_half_open_drip_rate
       #   unknown_uri = "http://www.qwwqjqwdjqiwdj.com"
 

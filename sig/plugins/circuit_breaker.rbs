@@ -5,7 +5,7 @@ module HTTPX
       class CircuitStore
         @circuits: Hash[String, Circuit]
 
-        def try_open: (generic_uri uri, response response) -> void
+        def try_open: (generic_uri uri, response response) -> response?
 
         def try_respond: (Request request) -> response?
 
@@ -30,7 +30,7 @@ module HTTPX
 
         def respond: () -> response?
 
-        def try_open: (response) -> void
+        def try_open: (response) -> response?
 
         def try_close: () -> void
 
@@ -52,6 +52,10 @@ module HTTPX
 
       module InstanceMethods
         @circuit_store: CircuitStore
+
+        private
+
+        def try_circuit_open: (Request request, response response) -> response?
       end
 
     end
