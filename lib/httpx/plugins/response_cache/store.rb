@@ -1,20 +1,21 @@
 # frozen_string_literal: true
 
-require "forwardable"
+require "mutex_m"
 
 module HTTPX::Plugins
   module ResponseCache
     class Store
-      extend Forwardable
-
-      def_delegator :@store, :clear
-
       def initialize
         @store = {}
+        @store.extend(Mutex_m)
+      end
+
+      def clear
+        @store.synchronize { @store.clear }
       end
 
       def lookup(request)
-        responses = @store[request.response_cache_key]
+        responses = _get(request.response_cache_key)
 
         return unless responses
 
@@ -32,11 +33,7 @@ module HTTPX::Plugins
       def cache(request, response)
         return unless ResponseCache.cacheable_request?(request) && ResponseCache.cacheable_response?(response)
 
-        responses = (@store[request.response_cache_key] ||= [])
-
-        responses.reject!(&method(:match_by_vary?).curry(2)[request])
-
-        responses << response
+        _set(request, response)
       end
 
       def prepare(request)
@@ -69,6 +66,23 @@ module HTTPX::Plugins
         vary.all? do |cache_field|
           cache_field.downcase!
           !original_request.headers.key?(cache_field) || request.headers[cache_field] == original_request.headers[cache_field]
+        end
+      end
+
+      def _get(request)
+        # TODO: remove stale responses
+        @store.synchronize { @store[request.response_cache_key] }
+      end
+
+      def _set(request, response)
+        @store.synchronize do
+          responses = (@store[request.response_cache_key] ||= [])
+
+          # remove state responses
+
+          responses.reject!(&method(:match_by_vary?).curry(2)[request])
+
+          responses << response
         end
       end
     end
