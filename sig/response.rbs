@@ -59,6 +59,7 @@ module HTTPX
       @window_size: Integer
       @length: Integer
       @buffer: StringIO | Tempfile | nil
+      @reader: StringIO | Tempfile | nil
 
       def write:(String chunk) -> Integer?
 
@@ -73,10 +74,11 @@ module HTTPX
       def close: () -> void
       def closed?: () -> bool
 
+      def rewind: () -> void
+
       private
 
-      def initialize: (Response, Options) -> untyped
-      def rewind: () -> void
+      def initialize: (Response, Options) -> void
       def transition: () -> void
       def _with_same_buffer_pos: [A] () { () -> A } -> A
     end

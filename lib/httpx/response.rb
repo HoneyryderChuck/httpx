@@ -108,6 +108,8 @@ module HTTPX
 
       raise Error, "no decoder available for \"#{transcoder}\"" unless decoder
 
+      @body.rewind
+
       decoder.call(self, *args)
     end
 
@@ -157,9 +159,12 @@ module HTTPX
       def read(*args)
         return unless @buffer
 
-        rewind
+        unless @reader
+          rewind
+          @reader = @buffer
+        end
 
-        @buffer.read(*args)
+        @reader.read(*args)
       end
 
       def bytesize
@@ -254,13 +259,16 @@ module HTTPX
       end
       # :nocov:
 
-      private
-
       def rewind
         return unless @buffer
 
+        # in case there's some reading going on
+        @reader = nil
+
         @buffer.rewind
       end
+
+      private
 
       def transition
         case @state
