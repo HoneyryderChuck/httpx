@@ -127,10 +127,12 @@ class ResponseTest < Minitest::Test
   def test_response_body_read
     body1 = Response::Body.new(Response.new(request, 200, "2.0", {}), Options.new(body_threshold_size: 1024))
     body1.write("foo")
+    assert body1.read == "foo"
+    body1.__send__(:rewind)
     assert body1.bytesize == 3
-    assert body1.read(1), "f"
-    assert body1.read(1), "o"
-    assert body1.read(1), "o"
+    assert body1.read(1) == "f"
+    assert body1.read(1) == "o"
+    assert body1.read(1) == "o"
   end
 
   def test_response_body_each
