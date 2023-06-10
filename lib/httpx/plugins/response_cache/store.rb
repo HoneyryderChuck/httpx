@@ -71,7 +71,9 @@ module HTTPX::Plugins
 
           return unless responses
 
-          responses.select!(&:fresh?)
+          responses.select! do |res|
+            !res.body.closed? && res.fresh?
+          end
 
           responses
         end
@@ -81,9 +83,9 @@ module HTTPX::Plugins
         @store.synchronize do
           responses = (@store[request.response_cache_key] ||= [])
 
-          responses.select!(&:fresh?)
-
-          responses.reject!(&method(:match_by_vary?).curry(2)[request])
+          responses.reject! do |res|
+            res.body.closed? || !res.fresh? || match_by_vary?(request, res)
+          end
 
           responses << response
         end

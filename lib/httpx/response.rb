@@ -140,6 +140,12 @@ module HTTPX
         @state = :idle
       end
 
+      def initialize_dup(other)
+        super
+
+        @buffer = other.instance_variable_get(:@buffer).dup
+      end
+
       def closed?
         @state == :closed
       end

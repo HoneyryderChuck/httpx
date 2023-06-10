@@ -102,7 +102,7 @@ module HTTPX
 
       module ResponseMethods
         def copy_from_cached(other)
-          @body = other.body
+          @body = other.body.dup
 
           @body.rewind
         end
