@@ -104,7 +104,7 @@ module HTTPX
         def copy_from_cached(other)
           @body = other.body
 
-          @body.__send__(:rewind)
+          @body.rewind
         end
 
         # A response is fresh if its age has not yet exceeded its freshness lifetime.

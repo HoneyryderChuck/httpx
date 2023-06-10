@@ -15,15 +15,11 @@ module HTTPX::Plugins
       end
 
       def lookup(request)
-        responses = _get(request.response_cache_key)
+        responses = _get(request)
 
         return unless responses
 
-        response = responses.find(&method(:match_by_vary?).curry(2)[request])
-
-        return unless response && response.fresh?
-
-        response
+        responses.find(&method(:match_by_vary?).curry(2)[request])
       end
 
       def cached?(request)
@@ -70,15 +66,22 @@ module HTTPX::Plugins
       end
 
       def _get(request)
-        # TODO: remove stale responses
-        @store.synchronize { @store[request.response_cache_key] }
+        @store.synchronize do
+          responses = @store[request.response_cache_key]
+
+          return unless responses
+
+          responses.select!(&:fresh?)
+
+          responses
+        end
       end
 
       def _set(request, response)
         @store.synchronize do
           responses = (@store[request.response_cache_key] ||= [])
 
-          # remove state responses
+          responses.select!(&:fresh?)
 
           responses.reject!(&method(:match_by_vary?).curry(2)[request])
 
