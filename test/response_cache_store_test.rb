@@ -55,8 +55,18 @@ class ResponseCacheStoreTest < Minitest::Test
     assert store.lookup(request).nil?
 
     request2 = request_class.new("GET", "http://example2.com/")
-    _response2 = cached_response(request2, extra_headers: { "cache-control" => "no-cache", "expires" => (Time.now + 2).httpdate })
+    cached_response(request2, extra_headers: { "cache-control" => "no-cache", "expires" => (Time.now + 2).httpdate })
     assert store.lookup(request2).nil?
+
+    request_invalid_expires = request_class.new("GET", "http://example3.com/")
+    invalid_expires_response = cached_response(request_invalid_expires, extra_headers: { "expires" => "smthsmth" })
+    assert store.lookup(request_invalid_expires) == invalid_expires_response
+  end
+
+  def test_store_invalid_date
+    request_invalid_age = request_class.new("GET", "http://example4.com/")
+    response_invalid_age = cached_response(request_invalid_age, extra_headers: { "cache-control" => "max-age=2", "date" => "smthsmth" })
+    assert store.lookup(request_invalid_age) == response_invalid_age
   end
 
   def test_prepare_vary

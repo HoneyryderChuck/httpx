@@ -169,7 +169,7 @@ module HTTPX
         def date
           @date ||= Time.httpdate(@headers["date"])
         rescue NoMethodError, ArgumentError
-          Time.now.httpdate
+          Time.now
         end
       end
     end
