@@ -8,7 +8,7 @@ module HTTPX
       def self?.cached_response?: (response response) -> bool
 
       class Store
-        @store: Hash[String, Array[Response]]
+        @store: Hash[String, Array[Response]] & Mutex_m
 
         def lookup: (Request request) -> Response?
 
@@ -21,6 +21,10 @@ module HTTPX
         private
 
         def match_by_vary?: (Request request, Response response) -> bool
+
+        def _get: (Request request) -> Array[Response]?
+
+        def _set: (Request request, Response response) -> void
       end
 
       module InstanceMethods
