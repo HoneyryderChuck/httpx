@@ -46,13 +46,13 @@ module HTTPX
       true
     end
 
-    def emit_addresses(connection, family, addresses)
+    def emit_addresses(connection, family, addresses, early_resolve = false)
       addresses.map! do |address|
         address.is_a?(IPAddr) ? address : IPAddr.new(address.to_s)
       end
 
-      # double emission check
-      return if connection.addresses && !addresses.intersect?(connection.addresses)
+      # double emission check, but allow early resolution to work
+      return if !early_resolve && connection.addresses && !addresses.intersect?(connection.addresses)
 
       log { "resolver: answer #{FAMILY_TYPES[RECORD_TYPES[family]]} #{connection.origin.host}: #{addresses.inspect}" }
       if @pool && # if triggered by early resolve, pool may not be here yet
@@ -87,7 +87,7 @@ module HTTPX
 
       return if addresses.empty?
 
-      emit_addresses(connection, @family, addresses)
+      emit_addresses(connection, @family, addresses, true)
     end
 
     def emit_resolve_error(connection, hostname = connection.origin.host, ex = nil)
