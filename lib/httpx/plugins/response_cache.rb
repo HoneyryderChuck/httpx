@@ -102,9 +102,9 @@ module HTTPX
 
       module ResponseMethods
         def copy_from_cached(other)
-          @body = other.body
+          @body = other.body.dup
 
-          @body.__send__(:rewind)
+          @body.rewind
         end
 
         # A response is fresh if its age has not yet exceeded its freshness lifetime.
@@ -169,7 +169,7 @@ module HTTPX
         def date
           @date ||= Time.httpdate(@headers["date"])
         rescue NoMethodError, ArgumentError
-          Time.now.httpdate
+          Time.now
         end
       end
     end
