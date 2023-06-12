@@ -53,7 +53,7 @@ module HTTPX
 
         next if !addrs || addrs.empty?
 
-        resolver.emit_addresses(connection, resolver.family, addrs)
+        resolver.emit_addresses(connection, resolver.family, addrs, true)
       end
     end
 

@@ -18,7 +18,7 @@ module HTTPX
 
       def empty?: () -> bool
 
-      def emit_addresses: (Connection connection, ip_family family, Array[IPAddr]) -> void
+      def emit_addresses: (Connection connection, ip_family family, Array[IPAddr], ?bool early_resolve) -> void
 
       private
 
