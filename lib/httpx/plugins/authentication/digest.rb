@@ -45,7 +45,6 @@ module HTTPX
             raise DigestError, "unknown algorithm \"#{alg}\"" unless algorithm
 
             sess = Regexp.last_match(2)
-            params.delete("algorithm")
           else
             algorithm = ::Digest::MD5
           end
@@ -77,11 +76,11 @@ module HTTPX
             %(response="#{algorithm.hexdigest(request_digest)}"),
           ]
           header << %(realm="#{params["realm"]}") if params.key?("realm")
-          header << %(algorithm=#{params["algorithm"]}") if params.key?("algorithm")
-          header << %(opaque="#{params["opaque"]}") if params.key?("opaque")
+          header << %(algorithm=#{params["algorithm"]}) if params.key?("algorithm")
           header << %(cnonce="#{cnonce}") if cnonce
           header << %(nc=#{nc})
           header << %(qop=#{qop}) if qop
+          header << %(opaque="#{params["opaque"]}") if params.key?("opaque")
           header.join ", "
         end
 
