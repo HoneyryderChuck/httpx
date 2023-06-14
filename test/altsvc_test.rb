@@ -16,6 +16,12 @@ class AltSvcTest < Minitest::Test
     assert AltSvc.cached_altsvc("http://www.example-altsvc-cache.com").empty?
   end
 
+  def test_altsvc_scheme
+    assert "https", AltSvc.parse_altsvc_scheme("h2")
+    assert "http", AltSvc.parse_altsvc_scheme("h2c")
+    assert AltSvc.parse_altsvc_scheme("wat").nil?
+  end
+
   def test_altsvc_parse_svc
     assert [["h2=alt.example.com", {}]], AltSvc.parse("h2=alt.example.com").to_a
   end

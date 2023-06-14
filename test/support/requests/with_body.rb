@@ -77,6 +77,28 @@ module Requests
         verify_uploaded(body, "data", "data")
       end
 
+      define_method :"test_#{meth}_body_length_params" do
+        uri = build_uri("/#{meth}")
+        body = Class.new do
+          def initialize(body)
+            @body = body
+          end
+
+          def length
+            @body.size
+          end
+
+          def each(&b)
+            @body.each(&b)
+          end
+        end.new(%w[d a t a])
+        response = HTTPX.send(meth, uri, body: body)
+        verify_status(response, 200)
+        body = json_body(response)
+        verify_header(body["headers"], "Content-Type", "application/octet-stream")
+        verify_uploaded(body, "data", "data")
+      end
+
       define_method :"test_#{meth}_body_each_params" do
         uri = build_uri("/#{meth}")
         body = Class.new do

@@ -99,6 +99,21 @@ class ResponseCacheStoreTest < Minitest::Test
     assert !request4.headers.key?("if-none-match")
   end
 
+  def test_internal_store_set
+    internal_store = store.instance_variable_get(:@store)
+
+    request = request_class.new("GET", "http://example.com/")
+    response = cached_response(request)
+    assert internal_store[request.response_cache_key].size == 1
+    assert internal_store[request.response_cache_key].include?(response)
+    response1 = cached_response(request)
+    assert internal_store[request.response_cache_key].size == 1
+    assert internal_store[request.response_cache_key].include?(response1)
+    response2 = cached_response(request, extra_headers: { "content-encoding" => "gzip" })
+    assert internal_store[request.response_cache_key].size == 1
+    assert internal_store[request.response_cache_key].include?(response2)
+  end
+
   private
 
   def request_class
