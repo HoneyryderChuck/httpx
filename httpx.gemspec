@@ -33,4 +33,6 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib"]
 
   gem.add_runtime_dependency "http-2-next", ">= 0.4.1"
+
+  gem.required_ruby_version = ">= 2.7.0"
 end
