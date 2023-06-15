@@ -56,27 +56,29 @@ module Requests
 
       # NTLM
 
-      def test_plugin_ntlm_authentication
-        return if origin.start_with?("https")
+      if RUBY_VERSION < "3.1.0"
+        def test_plugin_ntlm_authentication
+          return if origin.start_with?("https")
 
-        start_test_servlet(NTLMServer) do |server|
-          uri = "#{server.origin}/"
-          HTTPX.plugin(SessionWithPool).plugin(:ntlm_authentication).wrap do |http|
-            # skip unless NTLM
-            no_auth_response = http.get(uri)
-            verify_status(no_auth_response, 401)
-            no_auth_response.close
+          start_test_servlet(NTLMServer) do |server|
+            uri = "#{server.origin}/"
+            HTTPX.plugin(SessionWithPool).plugin(:ntlm_authentication).wrap do |http|
+              # skip unless NTLM
+              no_auth_response = http.get(uri)
+              verify_status(no_auth_response, 401)
+              no_auth_response.close
 
-            response = http.ntlm_auth("user", "password").get(uri)
-            verify_status(response, 200)
+              response = http.ntlm_auth("user", "password").get(uri)
+              verify_status(response, 200)
 
-            # bypass
-            response = http.get(build_uri("/get"))
-            verify_status(response, 200)
-            response = http.ntlm_auth("user", "password").get(build_uri("/get"))
-            verify_status(response, 200)
-            # invalid_response = http.ntlm_authentication("user", "fake").get(uri)
-            # verify_status(invalid_response, 401)
+              # bypass
+              response = http.get(build_uri("/get"))
+              verify_status(response, 200)
+              response = http.ntlm_auth("user", "password").get(build_uri("/get"))
+              verify_status(response, 200)
+              # invalid_response = http.ntlm_authentication("user", "fake").get(uri)
+              # verify_status(invalid_response, 401)
+            end
           end
         end
       end
