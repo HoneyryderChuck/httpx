@@ -35,7 +35,6 @@ export EHOSTUNREACH_HOST=$EHOSTUNREACH_HOST
 
 export PATH=$GEM_HOME/bin:$BUNDLE_PATH/gems/bin:$PATH
 mkdir -p "$GEM_HOME" && chmod 777 "$GEM_HOME"
-gem install bundler -v="1.17.3" --no-doc --conservative
 cd /home
 
 if [[ "$RUBY_ENGINE" = "truffleruby" ]]; then
