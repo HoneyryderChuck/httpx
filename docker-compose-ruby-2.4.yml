@@ -1,8 +1,0 @@
-version: '3'
-services:
-  httpx:
-    image: ruby:2.4
-    environment:
-      - HTTPBIN_COALESCING_HOST=another
-    links:
-      - "nghttp2:another"
