@@ -43,24 +43,6 @@ test jruby:
   script:
     ./spec.sh jruby 9.0.0.0
   allow_failure: true
-test ruby 2/4:
-  <<: *test_settings
-  only:
-    - master
-  script:
-    ./spec.sh ruby 2.4
-test ruby 2/5:
-  <<: *test_settings
-  only:
-    - master
-  script:
-    ./spec.sh ruby 2.5
-test ruby 2/6:
-  <<: *test_settings
-  only:
-    - master
-  script:
-    ./spec.sh ruby 2.6
 test ruby 2/7:
   <<: *test_settings
   script:
