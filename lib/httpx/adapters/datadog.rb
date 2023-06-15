@@ -203,6 +203,27 @@ module TRACING_MODULE # rubocop:disable Naming/ClassAndModuleCamelCase
             o.lazy
           end
 
+          if defined?(TRACING_MODULE::Contrib::SpanAttributeSchema)
+            option :service_name do |o|
+              o.default do
+                TRACING_MODULE::Contrib::SpanAttributeSchema.fetch_service_name(
+                  "DD_TRACE_HTTPX_SERVICE_NAME",
+                  "httpx"
+                )
+              end
+              o.lazy
+            end
+          else
+            option :service_name do |o|
+              o.default do
+                ENV.fetch("DD_TRACE_HTTPX_SERVICE_NAME", "httpx")
+              end
+              o.lazy
+            end
+          end
+
+          option :distributed_tracing, default: true
+
           option :error_handler, default: DEFAULT_ERROR_HANDLER
         end
       end
