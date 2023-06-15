@@ -13,26 +13,14 @@ group :test do
   gem "minitest-proveit"
   gem "nokogiri"
   gem "ruby-ntlm"
-  gem "sentry-ruby" if RUBY_VERSION >= "2.4.0"
+  gem "sentry-ruby"
   gem "spy"
   gem "webmock"
   gem "websocket-driver"
-
-  gem "net-ssh", "~> 4.2.0" if RUBY_VERSION < "2.2.0"
-
   gem "ddtrace"
 
   platform :mri do
-    if RUBY_VERSION < "2.5.0"
-      gem "google-protobuf", "< 3.19.2"
-    elsif RUBY_VERSION < "2.7.0"
-      gem "google-protobuf", "< 3.22.0"
-    end
-    if RUBY_VERSION <= "2.6.0"
-      gem "grpc", "< 1.49.0"
-    else
-      gem "grpc"
-    end
+    gem "grpc"
     gem "logging"
     gem "marcel", require: false
     gem "mimemagic", require: false
@@ -54,13 +42,12 @@ group :test do
   end
 
   platform :jruby do
-    gem "jruby-openssl" # , git: "https://github.com/jruby/jruby-openssl.git", branch: "master"
     gem "ruby-debug"
   end
 
   gem "aws-sdk-s3"
   gem "faraday"
-  gem "idnx" if RUBY_VERSION >= "2.4.0"
+  gem "idnx"
   gem "oga"
 
   if RUBY_VERSION >= "3.0.0"
@@ -72,11 +59,7 @@ group :test do
 end
 
 group :coverage do
-  if RUBY_VERSION < "2.5"
-    gem "simplecov", "< 0.21.0"
-  else
-    gem "simplecov"
-  end
+  gem "simplecov"
 end
 
 group :assorted do
