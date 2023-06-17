@@ -7,8 +7,6 @@ module HTTPX
   module Plugins
     module Authentication
       class Ntlm
-        using RegexpExtensions unless Regexp.method_defined?(:match?)
-
         def initialize(user, password, domain: nil)
           @user = user
           @password = password
