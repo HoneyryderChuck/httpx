@@ -69,16 +69,6 @@ module HTTPX
       :w
     end
 
-    if RUBY_VERSION < "2.2"
-      URIParser = URI::DEFAULT_PARSER
-
-      def initialize_with_escape(verb, uri, options = {})
-        initialize_without_escape(verb, URIParser.escape(uri.to_s), options)
-      end
-      alias_method :initialize_without_escape, :initialize
-      alias_method :initialize, :initialize_with_escape
-    end
-
     def merge_headers(h)
       @headers = @headers.merge(h)
     end

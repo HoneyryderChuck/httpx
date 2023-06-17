@@ -89,4 +89,4 @@ class EnvProxyTest < Minitest::Test
   #     end
   #   end
   # end
-end if RUBY_VERSION >= "2.3.0"
+end

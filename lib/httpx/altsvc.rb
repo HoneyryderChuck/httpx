@@ -98,29 +98,11 @@ module HTTPX
       end
     end
 
-    # :nocov:
-    if RUBY_VERSION < "2.2"
-      def parse_altsvc_origin(alt_proto, alt_origin)
-        alt_scheme = parse_altsvc_scheme(alt_proto) or return
+    def parse_altsvc_origin(alt_proto, alt_origin)
+      alt_scheme = parse_altsvc_scheme(alt_proto) or return
+      alt_origin = alt_origin[1..-2] if alt_origin.start_with?("\"") && alt_origin.end_with?("\"")
 
-        alt_origin = alt_origin[1..-2] if alt_origin.start_with?("\"") && alt_origin.end_with?("\"")
-        if alt_origin.start_with?(":")
-          alt_origin = "#{alt_scheme}://dummy#{alt_origin}"
-          uri = URI.parse(alt_origin)
-          uri.host = nil
-          uri
-        else
-          URI.parse("#{alt_scheme}://#{alt_origin}")
-        end
-      end
-    else
-      def parse_altsvc_origin(alt_proto, alt_origin)
-        alt_scheme = parse_altsvc_scheme(alt_proto) or return
-        alt_origin = alt_origin[1..-2] if alt_origin.start_with?("\"") && alt_origin.end_with?("\"")
-
-        URI.parse("#{alt_scheme}://#{alt_origin}")
-      end
+      URI.parse("#{alt_scheme}://#{alt_origin}")
     end
-    # :nocov:
   end
 end

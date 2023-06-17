@@ -124,9 +124,9 @@ module HTTPX
 
     REQUEST_IVARS: Array[Symbol]
 
-    def initialize: (?options options) -> untyped
+    def initialize: (?options options) -> void
 
-    def __initialize__: (?options options) -> untyped
+    def do_initialize: (?options options) -> void
   end
 
   type options = Options | Hash[Symbol, untyped]
