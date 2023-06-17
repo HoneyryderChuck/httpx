@@ -23,45 +23,19 @@ module HTTPX
       true
     end
 
-    if RUBY_VERSION < "2.3"
-      # :nocov:
-      def close
-        @io.close
-      rescue StandardError
-        nil
-      end
-      # :nocov:
-    else
-      def close
-        @io.close
-      end
+    def close
+      @io.close
     end
 
-    # :nocov:
-    if (RUBY_ENGINE == "truffleruby" && RUBY_ENGINE_VERSION < "21.1.0") ||
-       RUBY_VERSION < "2.3"
+    if RUBY_ENGINE == "jruby"
+      # In JRuby, sendmsg_nonblock is not implemented
       def write(buffer)
-        siz = @io.sendmsg_nonblock(buffer.to_s, 0, Socket.sockaddr_in(@port, @host.to_s))
+        siz = @io.send(buffer.to_s, 0, @host, @port)
         log { "WRITE: #{siz} bytes..." }
         buffer.shift!(siz)
         siz
-      rescue ::IO::WaitWritable
-        0
-      rescue EOFError
-        nil
-      end
-
-      def read(size, buffer)
-        data, _ = @io.recvfrom_nonblock(size)
-        buffer.replace(data)
-        log { "READ: #{buffer.bytesize} bytes..." }
-        buffer.bytesize
-      rescue ::IO::WaitReadable
-        0
-      rescue IOError
       end
     else
-
       def write(buffer)
         siz = @io.sendmsg_nonblock(buffer.to_s, 0, Socket.sockaddr_in(@port, @host.to_s), exception: false)
         return 0 if siz == :wait_writable
@@ -72,26 +46,18 @@ module HTTPX
         buffer.shift!(siz)
         siz
       end
-
-      def read(size, buffer)
-        ret = @io.recvfrom_nonblock(size, 0, buffer, exception: false)
-        return 0 if ret == :wait_readable
-        return if ret.nil?
-
-        log { "READ: #{buffer.bytesize} bytes..." }
-
-        buffer.bytesize
-      rescue IOError
-      end
     end
 
-    # In JRuby, sendmsg_nonblock is not implemented
-    def write(buffer)
-      siz = @io.send(buffer.to_s, 0, @host, @port)
-      log { "WRITE: #{siz} bytes..." }
-      buffer.shift!(siz)
-      siz
-    end if RUBY_ENGINE == "jruby"
-    # :nocov:
+    def read(size, buffer)
+      ret = @io.recvfrom_nonblock(size, 0, buffer, exception: false)
+      return 0 if ret == :wait_readable
+      return if ret.nil?
+
+      log { "READ: #{buffer.bytesize} bytes..." }
+
+      buffer.bytesize
+    rescue IOError
+    end
+
   end
 end

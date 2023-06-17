@@ -2,13 +2,8 @@
 
 module WebMock
   module HttpLibAdapters
-    if RUBY_VERSION < "2.5"
-      require "webrick/httpstatus"
-      HTTP_REASONS = WEBrick::HTTPStatus::StatusMessage
-    else
-      require "net/http/status"
-      HTTP_REASONS = Net::HTTP::STATUS_CODES
-    end
+    require "net/http/status"
+    HTTP_REASONS = Net::HTTP::STATUS_CODES
 
     #
     # HTTPX plugin for webmock.
