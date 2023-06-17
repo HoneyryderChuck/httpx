@@ -36,7 +36,7 @@ module Requests
       TCPSocket.new(uri.host, uri.port)
     when "https"
       ctx = OpenSSL::SSL::SSLContext.new
-      ctx.alpn_protocols = %w[h2 http/1.1] if ctx.respond_to?(:alpn_protocols)
+      ctx.alpn_protocols = %w[h2 http/1.1]
       sock = OpenSSL::SSL::SSLSocket.new(TCPSocket.new(uri.host, uri.port), ctx)
       sock.hostname = uri.host
       sock.sync_close = true

@@ -7,13 +7,7 @@ module HTTPX
   IPRegex = Regexp.union(Resolv::IPv4::Regex, Resolv::IPv6::Regex)
 
   class SSL < TCP
-    using RegexpExtensions unless Regexp.method_defined?(:match?)
-
-    TLS_OPTIONS = if OpenSSL::SSL::SSLContext.instance_methods.include?(:alpn_protocols)
-      { alpn_protocols: %w[h2 http/1.1].freeze }.freeze
-    else
-      {}.freeze
-    end
+    TLS_OPTIONS = { alpn_protocols: %w[h2 http/1.1].freeze }.freeze
 
     def initialize(_, _, options)
       super

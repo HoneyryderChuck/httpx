@@ -363,15 +363,8 @@ module HTTPX
       @error.message
     end
 
-    if Exception.method_defined?(:full_message)
-      def to_s
-        @error.full_message(highlight: false)
-      end
-    else
-      def to_s
-        "#{@error.message} (#{@error.class})\n" \
-          "#{@error.backtrace.join("\n") if @error.backtrace}"
-      end
+    def to_s
+      @error.full_message(highlight: false)
     end
 
     def close

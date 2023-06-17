@@ -2,22 +2,6 @@
 
 require "objspace"
 
-unless ObjectSpace.method_defined?(:memsize_of_all)
-  module ObjectSpace
-    module_function
-
-    def memsize_of_all(klass = false)
-      total = 0
-      total_mem = 0
-      ObjectSpace.each_object(klass) do |e|
-        total += 1
-        total_mem += ObjectSpace.memsize_of(e)
-      end
-      [total, total_mem]
-    end
-  end
-end
-
 module ProfilerHelpers
   module_function
 
