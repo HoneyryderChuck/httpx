@@ -58,6 +58,5 @@ module HTTPX
       buffer.bytesize
     rescue IOError
     end
-
   end
 end

@@ -6,8 +6,6 @@ require "time"
 module HTTPX
   module Plugins::Cookies
     module SetCookieParser
-      using(RegexpExtensions) unless Regexp.method_defined?(:match?)
-
       # Whitespace.
       RE_WSP = /[ \t]+/.freeze
 

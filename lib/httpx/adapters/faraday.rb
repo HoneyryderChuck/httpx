@@ -33,8 +33,6 @@ module Faraday
       end
 
       module RequestMixin
-        using ::HTTPX::HashExtensions
-
         private
 
         def build_request(env)

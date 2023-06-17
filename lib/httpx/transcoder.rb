@@ -2,8 +2,6 @@
 
 module HTTPX
   module Transcoder
-    using RegexpExtensions unless Regexp.method_defined?(:match?)
-
     module_function
 
     def normalize_keys(key, value, cond = nil, &block)
