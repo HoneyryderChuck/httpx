@@ -133,7 +133,7 @@ class SessionTest < Minitest::Test
       ping_count = http.pool.ping_count
       assert ping_count == 1, "session should have pinged after timeout (#{ping_count})"
     end
-  end unless RUBY_VERSION < "2.3"
+  end
 
   TestPlugin = Module.new do
     self::ClassMethods = Module.new do

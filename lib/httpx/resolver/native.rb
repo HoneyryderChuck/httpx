@@ -8,20 +8,12 @@ module HTTPX
     extend Forwardable
     using URIExtensions
 
-    DEFAULTS = if RUBY_VERSION < "2.2"
-      {
-        **Resolv::DNS::Config.default_config_hash,
-        packet_size: 512,
-        timeouts: Resolver::RESOLVE_TIMEOUT,
-      }
-    else
-      {
-        nameserver: nil,
-        **Resolv::DNS::Config.default_config_hash,
-        packet_size: 512,
-        timeouts: Resolver::RESOLVE_TIMEOUT,
-      }
-    end.freeze
+    DEFAULTS = {
+      nameserver: nil,
+      **Resolv::DNS::Config.default_config_hash,
+      packet_size: 512,
+      timeouts: Resolver::RESOLVE_TIMEOUT,
+    }.freeze
 
     DNS_PORT = 53
 

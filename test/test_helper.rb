@@ -28,9 +28,6 @@ Dir[File.join(".", "lib", "httpx", "plugins", "**", "*.rb")].sort.each { |f| req
 Dir[File.join(".", "test", "support", "*.rb")].sort.each { |f| require f }
 Dir[File.join(".", "test", "support", "**", "*.rb")].sort.each { |f| require f }
 
-# Ruby 2.3 openssl configuration somehow ignores SSL_CERT_FILE env var.
-# This adds it manually.
-OpenSSL::SSL::SSLContext::DEFAULT_CERT_STORE.add_file(ENV["SSL_CERT_FILE"]) if RUBY_VERSION.start_with?("2.3") && ENV.key?("SSL_CERT_FILE")
 if RUBY_ENGINE == "truffleruby" && ENV.key?("SSL_CERT_FILE")
   OpenSSL::SSL::SSLContext::DEFAULT_CERT_STORE.add_file("/etc/pki/ca-trust/extracted/openssl/ca-bundle.trust.crt")
 end

@@ -103,61 +103,18 @@ module HTTPX
       try_ssl_connect
     end
 
-    if RUBY_VERSION < "2.3"
-      # :nocov:
-      def try_ssl_connect
-        @io.connect_nonblock
-        @io.post_connection_check(@sni_hostname) if @ctx.verify_mode != OpenSSL::SSL::VERIFY_NONE && @verify_hostname
-        transition(:negotiated)
-        @interests = :w
-      rescue ::IO::WaitReadable
+    def try_ssl_connect
+      case @io.connect_nonblock(exception: false)
+      when :wait_readable
         @interests = :r
-      rescue ::IO::WaitWritable
+        return
+      when :wait_writable
         @interests = :w
+        return
       end
-
-      def read(_, buffer)
-        super
-      rescue ::IO::WaitWritable
-        buffer.clear
-        0
-      end
-
-      def write(*)
-        super
-      rescue ::IO::WaitReadable
-        0
-      end
-      # :nocov:
-    else
-      def try_ssl_connect
-        case @io.connect_nonblock(exception: false)
-        when :wait_readable
-          @interests = :r
-          return
-        when :wait_writable
-          @interests = :w
-          return
-        end
-        @io.post_connection_check(@sni_hostname) if @ctx.verify_mode != OpenSSL::SSL::VERIFY_NONE && @verify_hostname
-        transition(:negotiated)
-        @interests = :w
-      end
-
-      # :nocov:
-      if OpenSSL::VERSION < "2.0.6"
-        def read(size, buffer)
-          @io.read_nonblock(size, buffer)
-          buffer.bytesize
-        rescue ::IO::WaitReadable,
-               ::IO::WaitWritable
-          buffer.clear
-          0
-        rescue EOFError
-          nil
-        end
-      end
-      # :nocov:
+      @io.post_connection_check(@sni_hostname) if @ctx.verify_mode != OpenSSL::SSL::VERIFY_NONE && @verify_hostname
+      transition(:negotiated)
+      @interests = :w
     end
 
     private
