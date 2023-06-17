@@ -6,8 +6,6 @@ require "uri"
 
 module HTTPX::Transcoder
   module Xml
-    using HTTPX::RegexpExtensions
-
     module_function
 
     MIME_TYPES = %r{\b(application|text)/(.+\+)?xml\b}.freeze

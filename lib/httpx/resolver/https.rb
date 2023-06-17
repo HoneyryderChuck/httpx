@@ -9,7 +9,6 @@ module HTTPX
   class Resolver::HTTPS < Resolver::Resolver
     extend Forwardable
     using URIExtensions
-    using StringExtensions
 
     module DNSExtensions
       refine Resolv::DNS do

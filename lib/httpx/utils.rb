@@ -3,7 +3,6 @@
 module HTTPX
   module Utils
     using URIExtensions
-    using HTTPX::RegexpExtensions unless Regexp.method_defined?(:match?)
 
     TOKEN = %r{[^\s()<>,;:\\"/\[\]?=]+}.freeze
     VALUE = /"(?:\\"|[^"])*"|#{TOKEN}/.freeze

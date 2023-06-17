@@ -6,15 +6,11 @@ module HTTPX
   TLSError = OpenSSL::SSL::SSLError
 
   class SSL < TCP
-    using RegexpExtensions unless Regexp.method_defined?(:match?)
-
-    TLS_OPTIONS = if OpenSSL::SSL::SSLContext.instance_methods.include?(:alpn_protocols)
-      { alpn_protocols: %w[h2 http/1.1].freeze }
-    else
-      {}
-    end
+    # rubocop:disable Style/MutableConstant
+    TLS_OPTIONS = { alpn_protocols: %w[h2 http/1.1].freeze }
     # https://github.com/jruby/jruby-openssl/issues/284
     TLS_OPTIONS[:verify_hostname] = true if RUBY_ENGINE == "jruby"
+    # rubocop:enable Style/MutableConstant
     TLS_OPTIONS.freeze
 
     attr_writer :ssl_session

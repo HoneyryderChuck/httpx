@@ -60,28 +60,6 @@ module HTTPX
       :ip_families => ip_address_families,
     }.freeze
 
-    begin
-      module HashExtensions
-        refine Hash do
-          def >=(other)
-            Hash[other] <= self
-          end
-
-          def <=(other)
-            other = Hash[other]
-            return false unless size <= other.size
-
-            each do |k, v|
-              v2 = other.fetch(k) { return false }
-              return false unless v2 == v
-            end
-            true
-          end
-        end
-      end
-      using HashExtensions
-    end unless Hash.method_defined?(:>=)
-
     class << self
       def new(options = {})
         # let enhanced options go through

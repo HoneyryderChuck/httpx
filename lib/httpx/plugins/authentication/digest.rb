@@ -8,8 +8,6 @@ module HTTPX
   module Plugins
     module Authentication
       class Digest
-        using RegexpExtensions unless Regexp.method_defined?(:match?)
-
         def initialize(user, password, hashed: false, **)
           @user = user
           @password = password

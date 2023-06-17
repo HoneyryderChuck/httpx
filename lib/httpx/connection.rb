@@ -33,7 +33,6 @@ module HTTPX
     include Callbacks
 
     using URIExtensions
-    using NumericExtensions
 
     require "httpx/connection/http2"
     require "httpx/connection/http1"
