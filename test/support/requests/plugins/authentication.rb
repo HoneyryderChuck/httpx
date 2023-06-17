@@ -57,6 +57,7 @@ module Requests
       # NTLM
 
       if RUBY_VERSION < "3.1.0"
+        # TODO: enable again once ruby-openssl 3 supports legacy ciphers
         def test_plugin_ntlm_authentication
           return if origin.start_with?("https")
 

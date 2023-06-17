@@ -100,24 +100,13 @@ module Faraday
       end
 
       module ReasonPlugin
-        if RUBY_VERSION < "2.5"
-          def self.load_dependencies(*)
-            require "webrick"
-          end
-        else
-          def self.load_dependencies(*)
-            require "net/http/status"
-          end
+        def self.load_dependencies(*)
+          require "net/http/status"
         end
+
         module ResponseMethods
-          if RUBY_VERSION < "2.5"
-            def reason
-              WEBrick::HTTPStatus::StatusMessage.fetch(@status)
-            end
-          else
-            def reason
-              Net::HTTP::STATUS_CODES.fetch(@status)
-            end
+          def reason
+            Net::HTTP::STATUS_CODES.fetch(@status)
           end
         end
       end
