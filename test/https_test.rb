@@ -28,11 +28,11 @@ class HTTPSTest < Minitest::Test
   include Plugins::Multipart
   include Plugins::Expect
   include Plugins::RateLimiter
-  include Plugins::Persistent unless RUBY_VERSION < "2.3"
+  include Plugins::Persistent
   include Plugins::Stream
   include Plugins::AWSAuthentication
   include Plugins::Upgrade
-  include Plugins::GRPC if RUBY_ENGINE == "ruby" && RUBY_VERSION >= "2.3.0"
+  include Plugins::GRPC if RUBY_ENGINE == "ruby"
   include Plugins::ResponseCache
   include Plugins::CircuitBreaker
   include Plugins::WebDav
@@ -61,15 +61,13 @@ class HTTPSTest < Minitest::Test
     log_output = log.string
     # assert tls output
     assert log_output.include?("SSL connection using TLSv")
-    assert log_output.include?("ALPN, server accepted to use h2") unless RUBY_VERSION < "2.3"
+    assert log_output.include?("ALPN, server accepted to use h2")
     assert log_output.include?("Server certificate:")
     assert log_output.include?(" subject: ")
     assert log_output.include?(" start date: ")
     assert log_output.include?(" expire date: ")
     assert log_output.include?(" issuer: ")
     assert log_output.include?(" SSL certificate verify ok")
-
-    return if RUBY_VERSION < "2.3"
 
     # assert request headers
     assert log_output.include?("HEADER: :scheme: https")
@@ -83,84 +81,82 @@ class HTTPSTest < Minitest::Test
     assert log_output.include?("HEADER: content-length: ")
   end
 
-  unless RUBY_VERSION < "2.3"
-    # HTTP/2-specific tests
+  # HTTP/2-specific tests
 
-    def test_http2_max_streams
-      uri = build_uri("/get")
-      HTTPX.plugin(SessionWithSingleStream).plugin(SessionWithPool).wrap do |http|
-        http.get(uri, uri)
-        connection_count = http.pool.connection_count
-        assert connection_count == 2, "expected to have 2 connections, instead have #{connection_count}"
-        assert http.connection_exausted, "expected 1 connnection to have exhausted"
-      end
+  def test_http2_max_streams
+    uri = build_uri("/get")
+    HTTPX.plugin(SessionWithSingleStream).plugin(SessionWithPool).wrap do |http|
+      http.get(uri, uri)
+      connection_count = http.pool.connection_count
+      assert connection_count == 2, "expected to have 2 connections, instead have #{connection_count}"
+      assert http.connection_exausted, "expected 1 connnection to have exhausted"
     end
+  end
 
-    def test_http2_uncoalesce_on_misdirected
-      uri = build_uri("/status/421")
-      HTTPX.plugin(SessionWithPool).wrap do |http|
-        response = http.get(uri)
-        verify_status(response, 421)
-        connection_count = http.pool.connection_count
-        assert connection_count == 2, "expected to have 2 connections, instead have #{connection_count}"
-        assert response.version == "1.1", "request should have been retried with HTTP/1.1"
-      end
+  def test_http2_uncoalesce_on_misdirected
+    uri = build_uri("/status/421")
+    HTTPX.plugin(SessionWithPool).wrap do |http|
+      response = http.get(uri)
+      verify_status(response, 421)
+      connection_count = http.pool.connection_count
+      assert connection_count == 2, "expected to have 2 connections, instead have #{connection_count}"
+      assert response.version == "1.1", "request should have been retried with HTTP/1.1"
     end
+  end
 
-    def test_http2_settings_timeout
-      uri = build_uri("/get")
-      HTTPX.plugin(SessionWithPool).plugin(SessionWithFrameDelay).wrap do |http|
-        response = http.get(uri)
-        verify_error_response(response, /settings_timeout/)
+  def test_http2_settings_timeout
+    uri = build_uri("/get")
+    HTTPX.plugin(SessionWithPool).plugin(SessionWithFrameDelay).wrap do |http|
+      response = http.get(uri)
+      verify_error_response(response, /settings_timeout/)
+    end
+  end unless RUBY_ENGINE == "jruby"
+
+  def test_http2_request_trailers
+    uri = build_uri("/post")
+
+    HTTPX.wrap do |http|
+      total_time = start_time = nil
+      trailered = false
+      request = http.build_request("POST", uri, body: %w[this is chunked])
+      request.on(:headers) do |_written_request|
+        start_time = HTTPX::Utils.now
       end
-    end unless RUBY_ENGINE == "jruby"
+      request.on(:trailers) do |written_request|
+        total_time = HTTPX::Utils.elapsed_time(start_time)
+        written_request.trailers["x-time-spent"] = total_time
+        trailered = true
+      end
+      response = http.request(request)
+      verify_status(response, 200)
+      body = json_body(response)
+      # verify_header(body["headers"], "x-time-spent", total_time.to_s)
+      assert body.key?("data")
+      assert trailered, "trailer callback wasn't called"
+    end
+  end
 
-    def test_http2_request_trailers
-      uri = build_uri("/post")
+  def test_http2_client_sends_settings_timeout
+    test_server = nil
+    start_test_servlet(SettingsTimeoutServer) do |server|
+      test_server = server
+      uri = "#{server.origin}/"
+      http = HTTPX.plugin(SessionWithPool).with(timeout: { settings_timeout: 3 }, ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE })
+      response = http.get(uri)
+      verify_error_response(response, HTTPX::SettingsTimeoutError)
+    end
+    last_frame = test_server.frames.last
+    assert last_frame[:error] == :settings_timeout
+  end
 
-      HTTPX.wrap do |http|
-        total_time = start_time = nil
-        trailered = false
-        request = http.build_request("POST", uri, body: %w[this is chunked])
-        request.on(:headers) do |_written_request|
-          start_time = HTTPX::Utils.now
-        end
-        request.on(:trailers) do |written_request|
-          total_time = HTTPX::Utils.elapsed_time(start_time)
-          written_request.trailers["x-time-spent"] = total_time
-          trailered = true
-        end
-        response = http.request(request)
+  def test_http2_client_goaway_with_no_response
+    start_test_servlet(KeepAlivePongServer) do |server|
+      uri = "#{server.origin}/"
+      HTTPX.plugin(SessionWithPool).with(ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE }) do |http|
+        response = http.get(uri)
         verify_status(response, 200)
-        body = json_body(response)
-        # verify_header(body["headers"], "x-time-spent", total_time.to_s)
-        assert body.key?("data")
-        assert trailered, "trailer callback wasn't called"
-      end
-    end
-
-    def test_http2_client_sends_settings_timeout
-      test_server = nil
-      start_test_servlet(SettingsTimeoutServer) do |server|
-        test_server = server
-        uri = "#{server.origin}/"
-        http = HTTPX.plugin(SessionWithPool).with(timeout: { settings_timeout: 3 }, ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE })
         response = http.get(uri)
-        verify_error_response(response, HTTPX::SettingsTimeoutError)
-      end
-      last_frame = test_server.frames.last
-      assert last_frame[:error] == :settings_timeout
-    end
-
-    def test_http2_client_goaway_with_no_response
-      start_test_servlet(KeepAlivePongServer) do |server|
-        uri = "#{server.origin}/"
-        HTTPX.plugin(SessionWithPool).with(ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE }) do |http|
-          response = http.get(uri)
-          verify_status(response, 200)
-          response = http.get(uri)
-          verify_error_response(response, HTTPX::Connection::HTTP2::GoawayError)
-        end
+        verify_error_response(response, HTTPX::Connection::HTTP2::GoawayError)
       end
     end
   end

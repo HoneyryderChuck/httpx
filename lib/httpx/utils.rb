@@ -55,31 +55,22 @@ module HTTPX
       filename
     end
 
-    if RUBY_VERSION < "2.3"
+    URIParser = URI::RFC2396_Parser.new
 
-      def to_uri(uri)
-        URI(uri)
-      end
+    def to_uri(uri)
+      return URI(uri) unless uri.is_a?(String) && !uri.ascii_only?
 
-    else
+      uri = URI(URIParser.escape(uri))
 
-      URIParser = URI::RFC2396_Parser.new
+      non_ascii_hostname = URIParser.unescape(uri.host)
 
-      def to_uri(uri)
-        return URI(uri) unless uri.is_a?(String) && !uri.ascii_only?
+      non_ascii_hostname.force_encoding(Encoding::UTF_8)
 
-        uri = URI(URIParser.escape(uri))
+      idna_hostname = Punycode.encode_hostname(non_ascii_hostname)
 
-        non_ascii_hostname = URIParser.unescape(uri.host)
-
-        non_ascii_hostname.force_encoding(Encoding::UTF_8)
-
-        idna_hostname = Punycode.encode_hostname(non_ascii_hostname)
-
-        uri.host = idna_hostname
-        uri.non_ascii_hostname = non_ascii_hostname
-        uri
-      end
+      uri.host = idna_hostname
+      uri.non_ascii_hostname = non_ascii_hostname
+      uri
     end
   end
 end

@@ -131,7 +131,7 @@ module HTTPX
     end
 
     def initialize(options = {})
-      __initialize__(options)
+      do_initialize(options)
       freeze
     end
 
@@ -270,30 +270,15 @@ module HTTPX
       end
     end
 
-    if RUBY_VERSION > "2.4.0"
-      def initialize_dup(other)
-        instance_variables.each do |ivar|
-          instance_variable_set(ivar, other.instance_variable_get(ivar).dup)
-        end
-      end
-    else
-      def initialize_dup(other)
-        instance_variables.each do |ivar|
-          value = other.instance_variable_get(ivar)
-          value = case value
-                  when Symbol, Numeric, TrueClass, FalseClass
-                    value
-                  else
-                    value.dup
-          end
-          instance_variable_set(ivar, value)
-        end
+    def initialize_dup(other)
+      instance_variables.each do |ivar|
+        instance_variable_set(ivar, other.instance_variable_get(ivar).dup)
       end
     end
 
     private
 
-    def __initialize__(options = {})
+    def do_initialize(options = {})
       defaults = DEFAULT_OPTIONS.merge(options)
       defaults.each do |k, v|
         next if v.nil?
