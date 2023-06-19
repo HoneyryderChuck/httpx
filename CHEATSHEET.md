@@ -24,7 +24,7 @@ require "httpx"
 
 uri = "https://google.com"
 
-responses = HTTPX.new(uri, uri)
+responses = HTTPX.get(uri, uri)
 
 # OR
 HTTPX.wrap do |client|
@@ -37,7 +37,7 @@ end
 ## Headers
 
 ```ruby
-HTTPX.headers("user-agent" => "My Ruby Script").get("https://google.com")
+HTTPX.with(headers: {"user-agent" => "My Ruby Script"}).get("https://google.com")
 ```
 
 ## HTTP Methods
@@ -61,7 +61,7 @@ response = HTTPX.plugin(:basic_authentication).basic_authentication("username", 
 # Digest Auth
 response = HTTPX.plugin(:digest_authentication).digest_authentication("username", "password").get("https://google.com")
 
-# Token Auth
+# Bearer Token Auth
 response = HTTPX.plugin(:authentication).authentication("eyrandomtoken").get("https://google.com")
 ```
 
@@ -74,11 +74,11 @@ require "httpx"
 response = HTTPX.get("https://google.com/")
 response.status # => 301
 response.headers["location"] #=> "https://www.google.com/"
-response.body             # =>  "<HTML><HEAD><meta http-equiv=\"content-type\" ....
-response["cache-control"] # => public, max-age=2592000
+response.headers["cache-control"] #=> public, max-age=2592000
+response.body.to_s           #=>  "<HTML><HEAD><meta http-equiv=\"content-type\" ....
 ```
 
-## POST form request
+## POST `application/x-www-form-urlencoded` request
 
 ```ruby
 require "httpx"
@@ -88,16 +88,13 @@ uri = URI.parse("http://example.com/search")
 response = HTTPX.post(uri, form: {"q" => "My query", "per_page" => "50"})
 ```
 
-## File upload - input type="file" style
+## File `multipart/form-data` upload - input type="file" style
 
 ```ruby
 require "httpx"
 
-# uses http_form_data API: https://github.com/httprb/form_data
-
-path = "/path/to/your/testfile.txt"
 HTTPX.plugin(:multipart).post("http://something.com/uploads", form: {
-  name: HTTP::FormData::File.new(path)
+  name: Pathname.new("/path/to/your/testfile.txt")
 })
 ```
 
@@ -132,8 +129,7 @@ require "httpx"
 
 HTTPX.plugin(:cookies).wrap do |client|
   session_response = client.get("https://translate.google.com/")
-  response_cookies = session_response.cookie_jar
-  response = client.cookies(response_cookies).get("https://translate.google.com/#auto|en|Pardon")
+  response = client.get("https://translate.google.com/#auto|en|Pardon")
   puts response
 end
 ```
@@ -144,7 +140,7 @@ end
 require "httpx"
 
 response = HTTPX.plugin(:compression).get("https://www.google.com")
-puts response.headers["content-encoding"] #=> "gzip" 
+puts response.headers["content-encoding"] #=> "gzip"
 
 ```
 
@@ -183,7 +179,9 @@ HTTPX.with(resolver_class: :https, resolver_options: {uri: "https://9.9.9.9/dns-
 ```ruby
 require "httpx"
 
-HTTPX.plugin(:follow_redirects).with(follow_insecure_redirects: false, max_redirects: 4).get("https://www.google.com")
+HTTPX.plugin(:follow_redirects)
+     .with(follow_insecure_redirects: false, max_redirects: 4)
+     .get("https://www.google.com")
 ```
 
 ## Timeouts
@@ -191,11 +189,11 @@ HTTPX.plugin(:follow_redirects).with(follow_insecure_redirects: false, max_redir
 ```ruby
 require "httpx"
 
-HTTPX.with(timeout: {connect_timeout: 10, operation_timeout: 3}).get("https://google.com")
+# full E2E request/response timeout, 10 sec to connect to peer
+HTTPX.with(timeout: {connect_timeout: 10, request_timeout: 3}).get("https://google.com")
 ```
 
 ## Retries
-
 
 ```ruby
 require "httpx"
@@ -214,4 +212,3 @@ HTTPX.get("https://google.com") #=>  udp://10.0.1.2:53...
 
 HTTPX.with(debug_level: 1, debug: $stderr).get("https://google.com")
 ```
-
