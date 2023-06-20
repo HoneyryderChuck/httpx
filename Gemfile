@@ -8,6 +8,7 @@ gemspec
 gem "rake", "~> 13.0"
 
 group :test do
+  gem "ddtrace"
   gem "http-form_data", ">= 2.0.0"
   gem "minitest"
   gem "minitest-proveit"
@@ -17,7 +18,6 @@ group :test do
   gem "spy"
   gem "webmock"
   gem "websocket-driver"
-  gem "ddtrace"
 
   platform :mri do
     gem "grpc"
