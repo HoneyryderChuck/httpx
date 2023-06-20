@@ -8,6 +8,7 @@ gemspec
 gem "rake", "~> 13.0"
 
 group :test do
+  gem "ddtrace"
   gem "http-form_data", ">= 2.0.0"
   gem "minitest"
   gem "minitest-proveit"
@@ -17,7 +18,6 @@ group :test do
   gem "spy"
   gem "webmock"
   gem "websocket-driver"
-  gem "ddtrace"
 
   platform :mri do
     gem "grpc"
@@ -29,6 +29,7 @@ group :test do
     if RUBY_VERSION >= "3.0.0"
       gem "multi_json", require: false
       gem "oj", require: false
+      gem "rbs"
       gem "yajl-ruby", require: false
     end
   end
@@ -51,7 +52,6 @@ group :test do
   gem "oga"
 
   if RUBY_VERSION >= "3.0.0"
-    gem "rbs"
     gem "rubocop"
     gem "rubocop-performance"
     gem "webrick"
