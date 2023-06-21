@@ -51,8 +51,6 @@ module HTTPX
     # non-canonical domain.
     attr_reader :domain
 
-    DOT = "." # :nodoc:
-
     class << self
       def new(domain)
         return domain if domain.is_a?(self)
@@ -63,7 +61,7 @@ module HTTPX
       # Normalizes a _domain_ using the Punycode algorithm as necessary.
       # The result will be a downcased, ASCII-only string.
       def normalize(domain)
-        domain = domain.ascii_only? ? domain : domain.chomp(DOT).unicode_normalize(:nfc)
+        domain = domain.ascii_only? ? domain : domain.chomp(".").unicode_normalize(:nfc)
         Punycode.encode_hostname(domain).downcase
       end
     end
@@ -73,7 +71,7 @@ module HTTPX
     def initialize(hostname)
       hostname = String(hostname)
 
-      raise ArgumentError, "domain name must not start with a dot: #{hostname}" if hostname.start_with?(DOT)
+      raise ArgumentError, "domain name must not start with a dot: #{hostname}" if hostname.start_with?(".")
 
       begin
         @ipaddr = IPAddr.new(hostname)
@@ -84,7 +82,7 @@ module HTTPX
       end
 
       @hostname = DomainName.normalize(hostname)
-      tld = if (last_dot = @hostname.rindex(DOT))
+      tld = if (last_dot = @hostname.rindex("."))
         @hostname[(last_dot + 1)..-1]
       else
         @hostname
@@ -94,7 +92,7 @@ module HTTPX
       @domain = if last_dot
         # fallback - accept cookies down to second level
         # cf. http://www.dkim-reputation.org/regdom-libs/
-        if (penultimate_dot = @hostname.rindex(DOT, last_dot - 1))
+        if (penultimate_dot = @hostname.rindex(".", last_dot - 1))
           @hostname[(penultimate_dot + 1)..-1]
         else
           @hostname
@@ -126,17 +124,12 @@ module HTTPX
       @domain && self <= domain && domain <= @domain
     end
 
-    # def ==(other)
-    #   other = DomainName.new(other)
-    #   other.hostname == @hostname
-    # end
-
     def <=>(other)
       other = DomainName.new(other)
       othername = other.hostname
       if othername == @hostname
         0
-      elsif @hostname.end_with?(othername) && @hostname[-othername.size - 1, 1] == DOT
+      elsif @hostname.end_with?(othername) && @hostname[-othername.size - 1, 1] == "."
         # The other is higher
         -1
       else
