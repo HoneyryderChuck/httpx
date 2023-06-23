@@ -358,11 +358,6 @@ module HTTPX
       log_exception(@error)
     end
 
-    def status
-      warn ":#{__method__} is deprecated, use :error.message instead"
-      @error.message
-    end
-
     def to_s
       @error.full_message(highlight: false)
     end

@@ -27,14 +27,7 @@ module HTTPX
         @keep_open = true
         @state = :connected
       else
-        if @options.transport_options
-          # :nocov:
-          warn ":transport_options is deprecated, use :addresses instead"
-          @path = @options.transport_options[:path]
-          # :nocov:
-        else
-          @path = addresses.first
-        end
+        @path = addresses.first
       end
       @io ||= build_socket
     end

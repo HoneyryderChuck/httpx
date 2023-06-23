@@ -19,7 +19,7 @@ module Requests
       def test_plugin_follow_redirects_no_location_no_follow
         session = HTTPX.plugin(:follow_redirects)
 
-        response = session.headers("if-none-match" => "justforcingcachedresponse").get(redirect_no_follow_uri)
+        response = session.with(headers: { "if-none-match" => "justforcingcachedresponse" }).get(redirect_no_follow_uri)
         verify_status(response, 304)
       end
 

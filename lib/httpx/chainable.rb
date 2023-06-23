@@ -27,18 +27,6 @@ module HTTPX
       branch(default_options).request(*args, **options)
     end
 
-    # :nocov:
-    def timeout(**args)
-      warn ":#{__method__} is deprecated, use :with_timeout instead"
-      with(timeout: args)
-    end
-
-    def headers(headers)
-      warn ":#{__method__} is deprecated, use :with_headers instead"
-      with(headers: headers)
-    end
-    # :nocov:
-
     def accept(type)
       with(headers: { "accept" => String(type) })
     end
@@ -53,17 +41,6 @@ module HTTPX
       klass.instance_variable_set(:@default_options, klass.default_options.merge(default_options))
       klass.plugin(pl, options, &blk).new
     end
-
-    # deprecated
-    # :nocov:
-    def plugins(pls)
-      warn ":#{__method__} is deprecated, use :plugin instead"
-      klass = is_a?(Session) ? self.class : Session
-      klass = Class.new(klass)
-      klass.instance_variable_set(:@default_options, klass.default_options.merge(default_options))
-      klass.plugins(pls).new
-    end
-    # :nocov:
 
     def with(options, &blk)
       branch(default_options.merge(options), &blk)
