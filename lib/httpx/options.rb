@@ -52,7 +52,6 @@ module HTTPX
       :connection_class => Class.new(Connection),
       :options_class => Class.new(self),
       :transport => nil,
-      :transport_options => nil,
       :addresses => nil,
       :persistent => false,
       :resolver_class => (ENV["HTTPX_RESOLVER"] || :native).to_sym,
@@ -77,34 +76,6 @@ module HTTPX
         optname = Regexp.last_match(1).to_sym
 
         attr_reader(optname)
-      end
-
-      def def_option(optname, *args, &block)
-        if args.empty? && !block
-          class_eval(<<-OUT, __FILE__, __LINE__ + 1)
-            def option_#{optname}(v); v; end # def option_smth(v); v; end
-          OUT
-          return
-        end
-
-        deprecated_def_option(optname, *args, &block)
-      end
-
-      def deprecated_def_option(optname, layout = nil, &interpreter)
-        warn "DEPRECATION WARNING: using `def_option(#{optname})` for setting options is deprecated. " \
-             "Define module OptionsMethods and `def option_#{optname}(val)` instead."
-
-        if layout
-          class_eval(<<-OUT, __FILE__, __LINE__ + 1)
-            def option_#{optname}(value)  # def option_origin(v)
-              #{layout}                   #   URI(v)
-            end                           # end
-          OUT
-        elsif interpreter
-          define_method(:"option_#{optname}") do |value|
-            instance_exec(value, &interpreter)
-          end
-        end
       end
     end
 
@@ -135,14 +106,7 @@ module HTTPX
     end
 
     def option_timeout(value)
-      timeouts = Hash[value]
-
-      if timeouts.key?(:loop_timeout)
-        warn ":loop_timeout is deprecated, use :operation_timeout instead"
-        timeouts[:operation_timeout] = timeouts.delete(:loop_timeout)
-      end
-
-      timeouts
+      Hash[value]
     end
 
     def option_max_concurrent_requests(value)
@@ -196,10 +160,12 @@ module HTTPX
       params form json xml body ssl http2_settings
       request_class response_class headers_class request_body_class
       response_body_class connection_class options_class
-      io fallback_protocol debug debug_level transport_options resolver_class resolver_options
+      io fallback_protocol debug debug_level resolver_class resolver_options
       persistent
     ].each do |method_name|
-      def_option(method_name)
+      class_eval(<<-OUT, __FILE__, __LINE__ + 1)
+        def option_#{method_name}(v); v; end # def option_smth(v); v; end
+      OUT
     end
 
     REQUEST_IVARS = %i[@params @form @xml @json @body].freeze

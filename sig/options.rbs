@@ -16,8 +16,6 @@ module HTTPX
 
     def self.new: (?options) -> instance
 
-    def self.def_option: (Symbol, ?String) -> void
-                       | (Symbol) { (*nil) -> untyped } -> void
     # headers
     attr_reader uri: URI?
 
@@ -47,9 +45,6 @@ module HTTPX
 
     # transport
     attr_reader transport: "unix" | nil
-
-    # transport_options
-    attr_reader transport_options: Hash[untyped, untyped]?
 
     # addresses
     attr_reader addresses: Array[ipaddr]?
