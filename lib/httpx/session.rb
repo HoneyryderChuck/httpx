@@ -339,16 +339,6 @@ module HTTPX
         end
         self
       end
-
-      # :nocov:
-      def plugins(pls)
-        warn ":#{__method__} is deprecated, use :plugin instead"
-        pls.each do |pl|
-          plugin(pl)
-        end
-        self
-      end
-      # :nocov:
     end
   end
 end

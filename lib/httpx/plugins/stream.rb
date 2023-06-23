@@ -139,12 +139,6 @@ module HTTPX
           super
         end
       end
-
-      def self.const_missing(const_name)
-        super unless const_name == :StreamResponse
-        warn "DEPRECATION WARNING: the class #{self}::StreamResponse is deprecated. Use HTTPX::StreamResponse instead."
-        HTTPX::StreamResponse
-      end
     end
     register_plugin :stream, Stream
   end

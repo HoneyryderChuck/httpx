@@ -53,14 +53,6 @@ module HTTPX
     end
   end
 
-  # :nocov:
-  def self.const_missing(const_name)
-    super unless const_name == :Client
-    warn "DEPRECATION WARNING: the class #{self}::Client is deprecated. Use #{self}::Session instead."
-    Session
-  end
-  # :nocov:
-
   extend Chainable
 end
 
