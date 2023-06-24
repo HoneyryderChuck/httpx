@@ -160,7 +160,7 @@ module TRACING_MODULE # rubocop:disable Naming/ClassAndModuleCamelCase
 
         module RequestMethods
           def __datadog_enable_trace!
-            return super if @__datadog_enable_trace
+            return if @__datadog_enable_trace
 
             RequestTracer.new(self).call
             @__datadog_enable_trace = true
