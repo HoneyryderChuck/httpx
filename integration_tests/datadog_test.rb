@@ -241,59 +241,29 @@ class DatadogTest < Minitest::Test
     assert span.get_metric("_dd1.sr.eausr") == sample_rate
   end
 
-  if defined?(::DDTrace) && Gem::Version.new(::DDTrace::VERSION::STRING) >= Gem::Version.new("1.0.0")
-
-    def set_datadog(options = {}, &blk)
-      Datadog.configure do |c|
-        c.tracing.instrument(:httpx, options, &blk)
-      end
-
-      tracer # initialize tracer patches
+  def set_datadog(options = {}, &blk)
+    Datadog.configure do |c|
+      c.tracing.instrument(:httpx, options, &blk)
     end
 
-    def tracer
-      @tracer ||= begin
-        tr =  Datadog::Tracing.send(:tracer)
-        def tr.write(trace)
-          @traces ||= []
-          @traces << trace
-        end
-        tr
+    tracer # initialize tracer patches
+  end
+
+  def tracer
+    @tracer ||= begin
+      tr =  Datadog::Tracing.send(:tracer)
+      def tr.write(trace)
+        @traces ||= []
+        @traces << trace
       end
+      tr
     end
+  end
 
-    def trace_with_sampling_priority(priority)
-      tracer.trace("foo.bar") do
-        tracer.active_trace.sampling_priority = priority
-        yield
-      end
-    end
-  else
-
-    def set_datadog(options = {}, &blk)
-      Datadog.configure do |c|
-        c.use(:httpx, options, &blk)
-      end
-
-      tracer # initialize tracer patches
-    end
-
-    def tracer
-      @tracer ||= begin
-        tr = Datadog.tracer
-        def tr.write(trace)
-          @spans ||= []
-          @spans << trace
-        end
-        tr
-      end
-    end
-
-    def trace_with_sampling_priority(priority)
-      tracer.trace("foo.bar") do |span|
-        span.context.sampling_priority = priority
-        yield
-      end
+  def trace_with_sampling_priority(priority)
+    tracer.trace("foo.bar") do
+      tracer.active_trace.sampling_priority = priority
+      yield
     end
   end
 
@@ -305,11 +275,7 @@ class DatadogTest < Minitest::Test
   # Retrieves and sorts all spans in the current tracer instance.
   # This method does not cache its results.
   def fetch_spans
-    spans = if defined?(::DDTrace) && Gem::Version.new(::DDTrace::VERSION::STRING) >= Gem::Version.new("1.0.0")
-      (tracer.instance_variable_get(:@traces) || []).map(&:spans)
-    else
-      tracer.instance_variable_get(:@spans) || []
-    end
+    spans = (tracer.instance_variable_get(:@traces) || []).map(&:spans)
     spans.flatten.sort! do |a, b|
       if a.name == b.name
         if a.resource == b.resource
