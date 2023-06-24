@@ -56,7 +56,7 @@ class FaradayTest < Minitest::Test
   end
 
   def test_adapter_get_ssl_fails_with_bad_cert
-    err = assert_raises Faraday::Adapter::HTTPX::SSL_ERROR do
+    err = assert_raises Faraday::SSLError do
       get("https://wrong.host.badssl.com/")
     end
     assert_includes err.message, "certificate"
@@ -138,7 +138,7 @@ class FaradayTest < Minitest::Test
     end
     assert !streamed.empty?
     assert streamed.join.lines.size == 3
-  end if Faraday::VERSION >= "1.0.0"
+  end
 
   # def test_adapter_timeout
   #   conn = create_connection(request: { timeout: 1, open_timeout: 1 })
@@ -148,7 +148,7 @@ class FaradayTest < Minitest::Test
   # end
 
   def test_adapter_connection_error
-    assert_raises Faraday::Adapter::HTTPX::CONNECTION_FAILED_ERROR do
+    assert_raises Faraday::ConnectionFailed do
       get "http://localhost:4"
     end
   end
