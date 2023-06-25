@@ -267,10 +267,11 @@ module HTTPX
         end
 
         def send(request)
-          return super unless @options.proxy
-          return super unless connecting?
+          return super unless (
+            @options.proxy && @state != :idle && connecting?
+          )
 
-          @pending << request
+          (@proxy_pending ||= []) << request
         end
 
         def connecting?
@@ -308,6 +309,12 @@ module HTTPX
           when :idle
             transition(:connecting)
           when :connected
+            if @proxy_pending
+              while (req = @proxy_pendind.shift)
+                send(req)
+              end
+            end
+
             transition(:open)
           end
         end
