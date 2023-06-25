@@ -6,6 +6,12 @@ module HTTPX
   module Plugins
     module Proxy
       module HTTP
+        class << self
+          def extra_options(options)
+            options.merge(supported_proxy_protocols: options.supported_proxy_protocols + %w[http])
+          end
+        end
+
         module InstanceMethods
           def with_proxy_basic_auth(opts)
             with(proxy: opts.merge(scheme: "basic"))

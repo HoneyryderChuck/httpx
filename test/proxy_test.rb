@@ -28,6 +28,13 @@ class ProxyTest < Minitest::Test
     end
   end
 
+  def test_proxy_unsupported_scheme
+    ex = assert_raises(HTTPX::HTTPProxyError) do
+      HTTPX.plugin(:proxy).with_proxy(uri: "https://proxy:123").get("http://smth.com")
+    end
+    assert ex.message == "https: unsupported proxy protocol"
+  end
+
   private
 
   def parameters(uri: "http://proxy", **args)
