@@ -23,7 +23,7 @@ Gem::Specification.new do |gem|
     "changelog_uri" => "https://os85.gitlab.io/httpx/#release-notes",
     "documentation_uri" => "https://os85.gitlab.io/httpx/rdoc/",
     "source_code_uri" => "https://gitlab.com/os85/httpx",
-    "homepage_uri" => "https://os85.gitlab.io/httpx/",
+    "homepage_uri" => "https://honeyryderchuck.gitlab.io/httpx/",
     "rubygems_mfa_required" => "true",
   }
 
