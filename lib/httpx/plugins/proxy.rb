@@ -25,6 +25,10 @@ module HTTPX
           klass.plugin(:"proxy/socks5")
         end
 
+        def extra_options(options)
+          options.merge(supported_proxy_protocols: [])
+        end
+
         if URI::Generic.methods.include?(:use_proxy?)
           def use_proxy?(*args)
             URI::Generic.use_proxy?(*args)
@@ -118,6 +122,12 @@ module HTTPX
         def option_proxy(value)
           value.is_a?(Parameters) ? value : Hash[value]
         end
+
+        def option_supported_proxy_protocols(value)
+          raise TypeError, ":supported_proxy_protocols must be an Array" unless value.is_a?(Array)
+
+          value.map(&:to_s)
+        end
       end
 
       module InstanceMethods
@@ -142,8 +152,12 @@ module HTTPX
             next_proxy = @_proxy_uris.first
             raise Error, "Failed to connect to proxy" unless next_proxy
 
+            next_proxy = URI(next_proxy)
+
+            raise Error,
+                  "#{next_proxy.scheme}: unsupported proxy protocol" unless options.supported_proxy_protocols.include?(next_proxy.scheme)
+
             if proxy.key?(:no_proxy)
-              next_proxy = URI(next_proxy)
 
               no_proxy = proxy[:no_proxy]
               no_proxy = no_proxy.join(",") if no_proxy.is_a?(Array)
@@ -253,10 +267,11 @@ module HTTPX
         end
 
         def send(request)
-          return super unless @options.proxy
-          return super unless connecting?
+          return super unless (
+            @options.proxy && @state != :idle && connecting?
+          )
 
-          @pending << request
+          (@proxy_pending ||= []) << request
         end
 
         def connecting?
@@ -294,6 +309,12 @@ module HTTPX
           when :idle
             transition(:connecting)
           when :connected
+            if @proxy_pending
+              while (req = @proxy_pendind.shift)
+                send(req)
+              end
+            end
+
             transition(:open)
           end
         end

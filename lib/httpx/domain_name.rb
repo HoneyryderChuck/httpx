@@ -63,7 +63,7 @@ module HTTPX
       # Normalizes a _domain_ using the Punycode algorithm as necessary.
       # The result will be a downcased, ASCII-only string.
       def normalize(domain)
-        domain = domain.ascii_only? ? domain : domain.chomp(DOT).unicode_normalize(:nfc)
+        domain = domain.chomp(DOT).unicode_normalize(:nfc) unless domain.ascii_only?
         Punycode.encode_hostname(domain).downcase
       end
     end

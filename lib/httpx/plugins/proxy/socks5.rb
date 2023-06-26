@@ -18,8 +18,14 @@ module HTTPX
 
         Error = Socks5Error
 
-        def self.load_dependencies(*)
-          require_relative "../authentication/socks5"
+        class << self
+          def load_dependencies(*)
+            require_relative "../authentication/socks5"
+          end
+
+          def extra_options(options)
+            options.merge(supported_proxy_protocols: options.supported_proxy_protocols + %w[socks5])
+          end
         end
 
         module ConnectionMethods

@@ -16,6 +16,12 @@ module HTTPX
 
         Error = Socks4Error
 
+        class << self
+          def extra_options(options)
+            options.merge(supported_proxy_protocols: options.supported_proxy_protocols + PROTOCOLS)
+          end
+        end
+
         module ConnectionMethods
           def interests
             if @state == :connecting
