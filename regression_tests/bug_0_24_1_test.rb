@@ -25,7 +25,8 @@ class Bug_0_24_1_Test < Minitest::Test
   end
 
   def test_proxy_plugin_silencing_conn_send_based_plugin
-    http = HTTPX.plugin(Plugin).plugin(:proxy).plugin(ProxyResponseDetector).with_proxy(uri: http_proxy)
+    puts http_proxy
+    http = HTTPX.plugin(Plugin).plugin(:proxy).plugin(ProxyResponseDetector).with_proxy(uri: http_proxy).with(debug_level: 2, debug: $stderr)
     uri = build_uri("/get")
     response = http.get(uri)
     verify_status(response, 200)

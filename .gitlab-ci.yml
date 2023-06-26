@@ -38,55 +38,55 @@ cache:
   paths:
     - vendor
 
-test jruby:
-  <<: *test_settings
-  script:
-    ./spec.sh jruby 9.0.0.0
-  allow_failure: true
-test ruby 2/4:
-  <<: *test_settings
-  only:
-    - master
-  script:
-    ./spec.sh ruby 2.4
-test ruby 2/5:
-  <<: *test_settings
-  only:
-    - master
-  script:
-    ./spec.sh ruby 2.5
-test ruby 2/6:
-  <<: *test_settings
-  only:
-    - master
-  script:
-    ./spec.sh ruby 2.6
-test ruby 2/7:
-  <<: *test_settings
-  script:
-    ./spec.sh ruby 2.7
-test ruby 3/0:
-  <<: *test_settings
-  only:
-    - master
-  script:
-    ./spec.sh ruby 3.0
-test ruby 3/1:
-  <<: *test_settings
-  only:
-    - master
-  script:
-    ./spec.sh ruby 3.1
-test ruby 3/2:
-  <<: *test_settings
-  <<: *yjit_matrix
-  script:
-    ./spec.sh ruby 3.2
-test truffleruby:
-  <<: *test_settings
-  script:
-    ./spec.sh truffleruby latest
-  allow_failure: true
+# test jruby:
+#   <<: *test_settings
+#   script:
+#     ./spec.sh jruby 9.0.0.0
+#   allow_failure: true
+# test ruby 2/4:
+#   <<: *test_settings
+#   only:
+#     - master
+#   script:
+#     ./spec.sh ruby 2.4
+# test ruby 2/5:
+#   <<: *test_settings
+#   only:
+#     - master
+#   script:
+#     ./spec.sh ruby 2.5
+# test ruby 2/6:
+#   <<: *test_settings
+#   only:
+#     - master
+#   script:
+#     ./spec.sh ruby 2.6
+# test ruby 2/7:
+#   <<: *test_settings
+#   script:
+#     ./spec.sh ruby 2.7
+# test ruby 3/0:
+#   <<: *test_settings
+#   only:
+#     - master
+#   script:
+#     ./spec.sh ruby 3.0
+# test ruby 3/1:
+#   <<: *test_settings
+#   only:
+#     - master
+#   script:
+#     ./spec.sh ruby 3.1
+# test ruby 3/2:
+#   <<: *test_settings
+#   <<: *yjit_matrix
+#   script:
+#     ./spec.sh ruby 3.2
+# test truffleruby:
+#   <<: *test_settings
+#   script:
+#     ./spec.sh truffleruby latest
+#   allow_failure: true
 regression tests:
   image: "ruby:3.2"
   variables:
@@ -103,76 +103,76 @@ regression tests:
   script:
     - bundle exec rake regression_tests
 
-coverage:
-  coverage: '/\(\d+.\d+\%\) covered/'
-  stage: prepare
-  variables:
-    BUNDLE_WITHOUT: test:assorted
+# coverage:
+#   coverage: '/\(\d+.\d+\%\) covered/'
+#   stage: prepare
+#   variables:
+#     BUNDLE_WITHOUT: test:assorted
 
-  image: "ruby:3.2"
-  script:
-    - gem install simplecov --no-doc
-    # this is a workaround, because simplecov doesn't support relative paths.
-    #
-    # https://github.com/simplecov-ruby/simplecov/issues/887
-    #
-    # this is necessary in our case, because coverage files are generated inside
-    # the custom docker container, which runs in /home, and the absolute paths aren't
-    # gonna match the paths where the files are, once we merge them. Therefore,
-    # all of those have to be rewritten before the merge happens.
-    #
-    - find coverage -name "*resultset.json" -exec sed -i 's?/home?'`pwd`'?' {} \;
-    - rake coverage:report
-  artifacts:
-    paths:
-      - "coverage/"
+#   image: "ruby:3.2"
+#   script:
+#     - gem install simplecov --no-doc
+#     # this is a workaround, because simplecov doesn't support relative paths.
+#     #
+#     # https://github.com/simplecov-ruby/simplecov/issues/887
+#     #
+#     # this is necessary in our case, because coverage files are generated inside
+#     # the custom docker container, which runs in /home, and the absolute paths aren't
+#     # gonna match the paths where the files are, once we merge them. Therefore,
+#     # all of those have to be rewritten before the merge happens.
+#     #
+#     - find coverage -name "*resultset.json" -exec sed -i 's?/home?'`pwd`'?' {} \;
+#     - rake coverage:report
+#   artifacts:
+#     paths:
+#       - "coverage/"
 
-pages:
-  stage: deploy
-  needs:
-    - coverage
-  image: "ruby:3.2"
-  before_script:
-    - gem install hanna-nouveau
-  script:
-    - rake prepare_website
-    - mkdir -p public/
-    - cp -r coverage/ public/
-  artifacts:
-    paths:
-      - rdoc/
-      - wiki/
-      - data/
-      - coverage/
-      - public/
-  only:
-    - master
+# pages:
+#   stage: deploy
+#   needs:
+#     - coverage
+#   image: "ruby:3.2"
+#   before_script:
+#     - gem install hanna-nouveau
+#   script:
+#     - rake prepare_website
+#     - mkdir -p public/
+#     - cp -r coverage/ public/
+#   artifacts:
+#     paths:
+#       - rdoc/
+#       - wiki/
+#       - data/
+#       - coverage/
+#       - public/
+#   only:
+#     - master
 
-prepare_release:
-  stage: prepare
-  rules:
-    - if: $CI_COMMIT_TAG
-      when: never
-  script:
-    - echo "EXTRA_DESCRIPTION=$(cat doc/release_notes/${${CI_COMMIT_TAG:1}//./_}.md)" >> variables.env
-    - echo "TAG=v$(cat CI_COMMIT_TAG)" >> variables.env
-  artifacts:
-    reports:
-      dotenv: variables.env
+# prepare_release:
+#   stage: prepare
+#   rules:
+#     - if: $CI_COMMIT_TAG
+#       when: never
+#   script:
+#     - echo "EXTRA_DESCRIPTION=$(cat doc/release_notes/${${CI_COMMIT_TAG:1}//./_}.md)" >> variables.env
+#     - echo "TAG=v$(cat CI_COMMIT_TAG)" >> variables.env
+#   artifacts:
+#     reports:
+#       dotenv: variables.env
 
-release:
-  stage: deploy
-  image: registry.gitlab.com/gitlab-org/release-cli:latest
-  needs:
-    - job: prepare_release
-      artifacts: true
-  rules:
-    - if: $CI_COMMIT_TAG
-      when: never
-  script:
-    - echo "running release_job for $TAG"
-  release:
-    name: 'Release $TAG'
-    description: '$EXTRA_DESCRIPTION'
-    tag_name: '$TAG'
-    ref: '$CI_COMMIT_SHA'
+# release:
+#   stage: deploy
+#   image: registry.gitlab.com/gitlab-org/release-cli:latest
+#   needs:
+#     - job: prepare_release
+#       artifacts: true
+#   rules:
+#     - if: $CI_COMMIT_TAG
+#       when: never
+#   script:
+#     - echo "running release_job for $TAG"
+#   release:
+#     name: 'Release $TAG'
+#     description: '$EXTRA_DESCRIPTION'
+#     tag_name: '$TAG'
+#     ref: '$CI_COMMIT_SHA'
