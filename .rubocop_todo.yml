@@ -39,7 +39,3 @@ Naming/AccessorMethodName:
 
 Performance/MethodObjectAsBlock:
   Enabled: false
-
-# TODO: remove after https://github.com/rubocop/rubocop/issues/11980 is fixed
-Style/RedundantCurrentDirectoryInPath:
-  Enabled: false
