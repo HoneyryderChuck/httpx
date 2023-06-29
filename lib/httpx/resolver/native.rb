@@ -318,7 +318,7 @@ module HTTPX
             return
           end
         else
-          @timeouts.delete(name)
+          reset_hostname(name, connection: connection)
           @timeouts.delete(connection.origin.host)
           @connections.delete(connection)
           Resolver.cached_lookup_set(connection.origin.host, @family, addresses) if @resolver_options[:cache]
@@ -429,9 +429,8 @@ module HTTPX
       end
     end
 
-    def reset_hostname(hostname, reset_candidates: true)
+    def reset_hostname(hostname, connection: @queries.delete(hostname), reset_candidates: true)
       @timeouts.delete(hostname)
-      connection = @queries.delete(hostname)
       @timeouts.delete(hostname)
 
       return unless connection && reset_candidates
