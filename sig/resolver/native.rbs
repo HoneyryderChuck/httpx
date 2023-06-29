@@ -63,7 +63,7 @@ module HTTPX
 
       def handle_error: (NativeResolveError | StandardError) -> void
 
-      def reset_hostname: (String hostname, ?reset_candidates: bool) -> void
+      def reset_hostname: (String hostname, ?connection: Connection, ?reset_candidates: bool) -> void
     end
   end
 end
