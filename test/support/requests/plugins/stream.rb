@@ -60,7 +60,7 @@ module Requests
       end
 
       def test_plugin_stream_connection_error
-        session = HTTPX.with_timeout(total_timeout: 1).plugin(:stream)
+        session = HTTPX.with_timeout(request_timeout: 1).plugin(:stream)
 
         assert_raises(HTTPX::TimeoutError) do
           response = session.get(build_uri("/delay/10"), stream: true)
