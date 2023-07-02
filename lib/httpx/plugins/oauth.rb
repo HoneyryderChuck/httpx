@@ -8,7 +8,7 @@ module HTTPX
     module OAuth
       class << self
         def load_dependencies(_klass)
-          require_relative "authentication/basic"
+          require_relative "auth/basic"
         end
       end
 
@@ -106,7 +106,7 @@ module HTTPX
       end
 
       module InstanceMethods
-        def oauth_authentication(**args)
+        def oauth_auth(**args)
           with(oauth_session: OAuthSession.new(**args))
         end
 

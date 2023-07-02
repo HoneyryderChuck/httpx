@@ -20,7 +20,7 @@ module HTTPX
 
         class << self
           def load_dependencies(*)
-            require_relative "../authentication/socks5"
+            require_relative "../auth/socks5"
           end
 
           def extra_options(options)

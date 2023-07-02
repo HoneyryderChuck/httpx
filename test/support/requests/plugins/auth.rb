@@ -7,7 +7,7 @@ module Requests
 
       def test_plugin_bearer_auth
         get_uri = build_uri("/get")
-        session = HTTPX.plugin(:authentication)
+        session = HTTPX.plugin(:auth)
         response = session.bearer_auth("TOKEN").get(get_uri)
         verify_status(response, 200)
         body = json_body(response)
@@ -16,13 +16,13 @@ module Requests
 
       # Basic Auth
 
-      def test_plugin_basic_authentication
+      def test_plugin_basic_auth
         no_auth_response = HTTPX.get(basic_auth_uri)
         verify_status(no_auth_response, 401)
         verify_header(no_auth_response.headers, "www-authenticate", "Basic realm=\"Fake Realm\"")
         no_auth_response.close
 
-        session = HTTPX.plugin(:basic_authentication)
+        session = HTTPX.plugin(:basic_auth)
         response = session.basic_auth(user, pass).get(basic_auth_uri)
         verify_status(response, 200)
         body = json_body(response)
@@ -35,8 +35,8 @@ module Requests
 
       # Digest
 
-      def test_plugin_digest_authentication
-        session = HTTPX.plugin(:digest_authentication).with_headers("cookie" => "fake=fake_value")
+      def test_plugin_digest_auth
+        session = HTTPX.plugin(:digest_auth).with_headers("cookie" => "fake=fake_value")
         response = session.digest_auth(user, pass).get(digest_auth_uri)
         verify_status(response, 200)
         body = json_body(response)
@@ -45,8 +45,8 @@ module Requests
       end
 
       %w[SHA1 SHA2 SHA256 SHA384 SHA512 RMD160].each do |alg|
-        define_method "test_plugin_digest_authentication_#{alg}" do
-          session = HTTPX.plugin(:digest_authentication).with_headers("cookie" => "fake=fake_value")
+        define_method "test_plugin_digest_auth_#{alg}" do
+          session = HTTPX.plugin(:digest_auth).with_headers("cookie" => "fake=fake_value")
           response = session.digest_auth(user, pass).get("#{digest_auth_uri}/#{alg}")
           verify_status(response, 200)
           body = json_body(response)
@@ -55,8 +55,8 @@ module Requests
         end
       end
 
-      def test_plugin_digest_authentication_bypass
-        session = HTTPX.plugin(:digest_authentication).with_headers("cookie" => "fake=fake_value")
+      def test_plugin_digest_auth_bypass
+        session = HTTPX.plugin(:digest_auth).with_headers("cookie" => "fake=fake_value")
         response = session.get(digest_auth_uri)
         verify_status(response, 401)
         response = session.get(build_uri("/get"))
@@ -69,12 +69,12 @@ module Requests
 
       if RUBY_VERSION < "3.1.0"
         # TODO: enable again once ruby-openssl 3 supports legacy ciphers
-        def test_plugin_ntlm_authentication
+        def test_plugin_ntlm_auth
           return if origin.start_with?("https")
 
           start_test_servlet(NTLMServer) do |server|
             uri = "#{server.origin}/"
-            HTTPX.plugin(SessionWithPool).plugin(:ntlm_authentication).wrap do |http|
+            HTTPX.plugin(SessionWithPool).plugin(:ntlm_auth).wrap do |http|
               # skip unless NTLM
               no_auth_response = http.get(uri)
               verify_status(no_auth_response, 401)
@@ -88,7 +88,7 @@ module Requests
               verify_status(response, 200)
               response = http.ntlm_auth("user", "password").get(build_uri("/get"))
               verify_status(response, 200)
-              # invalid_response = http.ntlm_authentication("user", "fake").get(uri)
+              # invalid_response = http.ntlm_auth("user", "fake").get(uri)
               # verify_status(invalid_response, 401)
             end
           end

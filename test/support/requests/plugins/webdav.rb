@@ -94,7 +94,7 @@ module Requests
       private
 
       def webdav_client
-        @webdav_client ||= HTTPX.plugin(:basic_authentication).plugin(:webdav, origin: start_webdav_server).basic_auth("user", "pass")
+        @webdav_client ||= HTTPX.plugin(:basic_auth).plugin(:webdav, origin: start_webdav_server).basic_auth("user", "pass")
       end
 
       def start_webdav_server

@@ -12,10 +12,10 @@ module HTTPX
       def self.load_dependencies: (*untyped) -> void
 
       module InstanceMethods
-        def digest_authentication: (string user, string password) -> instance
+        def digest_auth: (string user, string password) -> instance
       end
     end
 
-    type sessionDigestAuth = sessionAuthentication & DigestAuth::InstanceMethods
+    type sessionDigestAuth = sessionAuthorization & DigestAuth::InstanceMethods
   end
 end

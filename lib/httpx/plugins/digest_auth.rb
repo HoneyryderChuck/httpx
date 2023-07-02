@@ -5,7 +5,7 @@ module HTTPX
     #
     # This plugin adds helper methods to implement HTTP Digest Auth (https://tools.ietf.org/html/rfc7616)
     #
-    # https://gitlab.com/os85/httpx/wikis/Authentication#authentication
+    # https://gitlab.com/os85/httpx/wikis/Authorization#digest-auth
     #
     module DigestAuth
       DigestError = Class.new(Error)
@@ -16,7 +16,7 @@ module HTTPX
         end
 
         def load_dependencies(*)
-          require_relative "authentication/digest"
+          require_relative "auth/digest"
         end
       end
 
@@ -29,11 +29,11 @@ module HTTPX
       end
 
       module InstanceMethods
-        def digest_authentication(user, password)
+        def digest_auth(user, password)
           with(digest: Authentication::Digest.new(user, password))
         end
 
-        alias_method :digest_auth, :digest_authentication
+        private
 
         def send_requests(*requests)
           requests.flat_map do |request|
@@ -57,6 +57,6 @@ module HTTPX
       end
     end
 
-    register_plugin :digest_authentication, DigestAuth
+    register_plugin :digest_auth, DigestAuth
   end
 end
