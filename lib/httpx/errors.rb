@@ -22,8 +22,6 @@ module HTTPX
     end
   end
 
-  class TotalTimeoutError < TimeoutError; end
-
   class ConnectTimeoutError < TimeoutError; end
 
   class RequestTimeoutError < TimeoutError

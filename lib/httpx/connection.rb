@@ -69,7 +69,6 @@ module HTTPX
 
       @inflight = 0
       @keep_alive_timeout = @options.timeout[:keep_alive_timeout]
-      @total_timeout = @options.timeout[:total_timeout]
 
       self.addresses = @options.addresses if @options.addresses
     end
@@ -257,21 +256,6 @@ module HTTPX
     end
 
     def timeout
-      if @total_timeout
-        return @total_timeout unless @connected_at
-
-        elapsed_time = @total_timeout - Utils.elapsed_time(@connected_at)
-
-        if elapsed_time.negative?
-          ex = TotalTimeoutError.new(@total_timeout, "Timed out after #{@total_timeout} seconds")
-          ex.set_backtrace(caller)
-          on_error(ex)
-          return
-        end
-
-        return elapsed_time
-      end
-
       return @timeout if defined?(@timeout)
 
       return @options.timeout[:connect_timeout] if @state == :idle
@@ -606,23 +590,16 @@ module HTTPX
     def on_error(error)
       if error.instance_of?(TimeoutError)
 
-        if @total_timeout && @connected_at &&
-           Utils.elapsed_time(@connected_at) > @total_timeout
-          ex = TotalTimeoutError.new(@total_timeout, "Timed out after #{@total_timeout} seconds")
-          ex.set_backtrace(error.backtrace)
-          error = ex
-        else
-          # inactive connections do not contribute to the select loop, therefore
-          # they should not fail due to such errors.
-          return if @state == :inactive
+        # inactive connections do not contribute to the select loop, therefore
+        # they should not fail due to such errors.
+        return if @state == :inactive
 
-          if @timeout
-            @timeout -= error.timeout
-            return unless @timeout <= 0
-          end
-
-          error = error.to_connection_error if connecting?
+        if @timeout
+          @timeout -= error.timeout
+          return unless @timeout <= 0
         end
+
+        error = error.to_connection_error if connecting?
       end
       handle_error(error)
       reset
