@@ -1,0 +1,13 @@
+module HTTPX
+  module Plugins
+    module Authorization
+      module InstanceMethods
+        def authorization: (string token) -> instance
+
+        def bearer_auth: (string token) -> instance
+      end
+    end
+
+    type sessionAuthorization = Session & Authorization::InstanceMethods
+  end
+end

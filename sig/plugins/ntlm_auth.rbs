@@ -11,11 +11,11 @@ module HTTPX
       def self.load_dependencies: (*untyped) -> void
 
       module InstanceMethods
-        def ntlm_authentication: (string user, string password, ?string? domain) -> instance
+        def ntlm_auth: (string user, string password, ?string? domain) -> instance
       end
 
     end
 
-    type sessionNTLMAuth = sessionAuthentication & NTLMAuth::InstanceMethods
+    type sessionNTLMAuth = sessionAuthorization & NTLMAuth::InstanceMethods
   end
 end

@@ -43,7 +43,7 @@ module HTTPX
       end
 
       module InstanceMethods
-        def oauth_authentication: (**untyped args) -> instance
+        def oauth_auth: (**untyped args) -> instance
 
         def with_access_token: () -> instance
       end
