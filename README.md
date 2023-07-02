@@ -149,10 +149,6 @@ All Rubies greater or equal to 2.7, and always latest JRuby and Truffleruby.
 
 ## Caveats
 
-### Known bugs
-
-* Using `total_timeout` along with the `:persistent` plugin [does not work as you might expect](https://gitlab.com/os85/httpx/-/wikis/Timeouts#total_timeout).
-
 ## Versioning Policy
 
 Although 0.x software, `httpx` is considered API-stable and production-ready, i.e. current API or options may be subject to deprecation and emit log warnings, but can only effectively be removed in a major version change.

@@ -36,7 +36,6 @@ module HTTPX
     @keep_alive_timeout: Numeric?
     @timeout: Numeric?
     @current_timeout: Numeric?
-    @total_timeout: Numeric?
     @io: TCP | SSL | UNIX
     @parser: HTTP1 | HTTP2 | _Parser
     @connected_at: Float
