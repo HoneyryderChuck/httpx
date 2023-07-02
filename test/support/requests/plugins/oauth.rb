@@ -5,7 +5,7 @@ module Requests
     module OAuth
       def test_plugin_oauth_options
         with_oauth_metadata do |server|
-          opts = HTTPX.plugin(:oauth).oauth_authentication(
+          opts = HTTPX.plugin(:oauth).oauth_auth(
             issuer: server.origin,
             client_id: "CLIENT_ID", client_secret: "SECRET",
             scope: "all"
@@ -16,7 +16,7 @@ module Requests
           assert opts.oauth_session.token_endpoint_auth_method == "client_secret_basic"
           assert opts.oauth_session.scope == %w[all]
 
-          opts = HTTPX.plugin(:oauth).oauth_authentication(
+          opts = HTTPX.plugin(:oauth).oauth_auth(
             issuer: "https://smthelse",
             token_endpoint_auth_method: "client_secret_post",
             client_id: "CLIENT_ID", client_secret: "SECRET",
@@ -29,7 +29,7 @@ module Requests
           assert opts.oauth_session.scope == %w[foo bar]
 
           assert_raises(HTTPX::Error) do
-            HTTPX.plugin(:oauth).oauth_authentication(
+            HTTPX.plugin(:oauth).oauth_auth(
               issuer: server.origin,
               client_id: "CLIENT_ID", client_secret: "SECRET",
               token_endpoint_auth_method: "unsupported"
@@ -40,7 +40,7 @@ module Requests
 
       def test_plugin_oauth_client_credentials
         with_oauth_metadata do |server|
-          session = HTTPX.plugin(:oauth).oauth_authentication(
+          session = HTTPX.plugin(:oauth).oauth_auth(
             issuer: server.origin,
             client_id: "CLIENT_ID", client_secret: "SECRET", scope: "all"
           )
@@ -57,7 +57,7 @@ module Requests
 
       def test_plugin_oauth_refresh_token
         with_oauth_metadata do |server|
-          session = HTTPX.plugin(:oauth).oauth_authentication(
+          session = HTTPX.plugin(:oauth).oauth_auth(
             issuer: server.origin,
             token_endpoint_auth_method: "client_secret_post",
             client_id: "CLIENT_ID", client_secret: "SECRET",

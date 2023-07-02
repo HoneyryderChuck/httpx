@@ -56,13 +56,13 @@ HTTPX.delete("https://myapi.com/users/1")
 require "httpx"
 
 # Basic Auth
-response = HTTPX.plugin(:basic_authentication).basic_authentication("username", "password").get("https://google.com")
+response = HTTPX.plugin(:basic_auth).basic_auth("username", "password").get("https://google.com")
 
 # Digest Auth
-response = HTTPX.plugin(:digest_authentication).digest_authentication("username", "password").get("https://google.com")
+response = HTTPX.plugin(:digest_auth).digest_auth("username", "password").get("https://google.com")
 
 # Bearer Token Auth
-response = HTTPX.plugin(:authentication).authentication("eyrandomtoken").get("https://google.com")
+response = HTTPX.plugin(:auth).authorization("eyrandomtoken").get("https://google.com")
 ```
 
 

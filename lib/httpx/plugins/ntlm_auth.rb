@@ -3,12 +3,12 @@
 module HTTPX
   module Plugins
     #
-    # https://gitlab.com/os85/httpx/wikis/Authentication#ntlm-authentication
+    # https://gitlab.com/os85/httpx/wikis/Authorization#ntlm-auth
     #
     module NTLMAuth
       class << self
         def load_dependencies(_klass)
-          require_relative "authentication/ntlm"
+          require_relative "auth/ntlm"
         end
 
         def extra_options(options)
@@ -25,11 +25,11 @@ module HTTPX
       end
 
       module InstanceMethods
-        def ntlm_authentication(user, password, domain = nil)
+        def ntlm_auth(user, password, domain = nil)
           with(ntlm: Authentication::Ntlm.new(user, password, domain: domain))
         end
 
-        alias_method :ntlm_auth, :ntlm_authentication
+        private
 
         def send_requests(*requests)
           requests.flat_map do |request|
@@ -55,6 +55,6 @@ module HTTPX
         end
       end
     end
-    register_plugin :ntlm_authentication, NTLMAuth
+    register_plugin :ntlm_auth, NTLMAuth
   end
 end

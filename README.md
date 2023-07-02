@@ -19,7 +19,7 @@ And also:
 
 * Compression (gzip, deflate, brotli)
 * Streaming Requests
-* Authentication (Basic Auth, Digest Auth, NTLM)
+* Auth (Basic Auth, Digest Auth, NTLM)
 * Expect 100-continue
 * Multipart Requests
 * Advanced Cookie handling
