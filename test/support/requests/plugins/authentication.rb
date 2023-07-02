@@ -3,6 +3,17 @@
 module Requests
   module Plugins
     module Authentication
+      # Bearer Auth
+
+      def test_plugin_bearer_auth
+        get_uri = build_uri("/get")
+        session = HTTPX.plugin(:authentication)
+        response = session.bearer_auth("TOKEN").get(get_uri)
+        verify_status(response, 200)
+        body = json_body(response)
+        verify_header(body["headers"], "Authorization", "Bearer TOKEN")
+      end
+
       # Basic Auth
 
       def test_plugin_basic_authentication

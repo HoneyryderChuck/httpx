@@ -13,6 +13,10 @@ module HTTPX
         def authentication(token)
           with(headers: { "authorization" => token })
         end
+
+        def bearer_auth(token)
+          authentication("Bearer #{token}")
+        end
       end
     end
     register_plugin :authentication, Authentication
