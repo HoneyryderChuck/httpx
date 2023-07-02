@@ -29,9 +29,8 @@ module HTTPX
           # discard first token, it's Digest
           auth_info = authenticate[/^(\w+) (.*)/, 2]
 
-          params = Hash[auth_info.split(/ *, */)
-                                 .map { |val| val.split("=") }
-                                 .map { |k, v| [k, v.delete("\"")] }]
+          params = auth_info.split(/ *, */)
+                            .to_h { |val| val.split("=") }.transform_values { |v| v.delete("\"") }
           nonce = params["nonce"]
           nc = next_nonce
 
