@@ -16,7 +16,6 @@ module HTTPX
         class SocksParser
           include Callbacks
 
-          def timeout: () -> Integer
           def close: () -> void
           def consume: (*untyped) -> void
           def empty: () -> bool

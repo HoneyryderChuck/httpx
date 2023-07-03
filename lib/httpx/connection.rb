@@ -587,6 +587,9 @@ module HTTPX
         purge_after_closed
       when :already_open
         nextstate = :open
+        # the first check for given io readiness must still use a timeout.
+        # connect is the reasonable choice in such a case.
+        @timeout = @options.timeout[:connect_timeout]
         send_pending
       when :active
         return unless @state == :inactive
