@@ -29,12 +29,15 @@ module HTTPX
 
     attr_reader :state
 
-    def initialize(_, options)
+    def initialize(family, options)
       super
       @ns_index = 0
       @resolver_options = DEFAULTS.merge(@options.resolver_options)
       @socket_type = @resolver_options.fetch(:socket_type, :udp)
-      @nameserver = Array(@resolver_options[:nameserver]) if @resolver_options[:nameserver]
+      @nameserver = if (nameserver = @resolver_options[:nameserver])
+        nameserver = nameserver[family] if nameserver.is_a?(Hash)
+        Array(nameserver)
+      end
       @ndots = @resolver_options[:ndots]
       @search = Array(@resolver_options[:search]).map { |srch| srch.scan(/[^.]+/) }
       @_timeouts = Array(@resolver_options[:timeouts])
