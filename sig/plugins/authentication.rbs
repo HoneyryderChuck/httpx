@@ -3,6 +3,8 @@ module HTTPX
     module Authentication
       module InstanceMethods
         def authentication: (string token) -> instance
+
+        def bearer_auth: (string token) -> instance
       end
     end
 
