@@ -8,6 +8,7 @@ class HTTPSTest < Minitest::Test
   include Get
   include Head
   include WithBody
+  include Multipart
   include Headers
   include ResponseBody
   include IO
@@ -25,7 +26,6 @@ class HTTPSTest < Minitest::Test
   include Plugins::Compression
   include Plugins::PushPromise if OpenSSL::SSL::SSLContext.instance_methods.include?(:alpn_protocols)
   include Plugins::Retries
-  include Plugins::Multipart
   include Plugins::Expect
   include Plugins::RateLimiter
   include Plugins::Persistent

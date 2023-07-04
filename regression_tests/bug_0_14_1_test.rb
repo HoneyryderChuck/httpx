@@ -9,8 +9,7 @@ class Bug_0_14_1_Test < Minitest::Test
   def test_multipart_can_have_arbitrary_content_type
     uri = "https://#{httpbin}/post"
 
-    response = HTTPX.plugin(:multipart)
-                    .post(uri, form: {
+    response = HTTPX.post(uri, form: {
                             image: {
                               content_type: "image/png",
                               body: File.new(fixture_file_path),
