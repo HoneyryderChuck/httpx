@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module HTTPX
-  module Plugins::Multipart
+  module Transcoder::Multipart
     module Part
       module_function
 

@@ -14,8 +14,7 @@ class MultipartMimemagicTest < Minitest::Test
 
     mimemagic_spy = Spy.on(MimeMagic, :by_magic).and_call_through
 
-    response = HTTPX.plugin(:multipart)
-                    .post("https://#{httpbin}/post", form: { image: File.new(fixture_file_path) })
+    response = HTTPX.post("https://#{httpbin}/post", form: { image: File.new(fixture_file_path) })
     verify_status(response, 200)
     body = json_body(response)
     verify_header(body["headers"], "Content-Type", "multipart/form-data")

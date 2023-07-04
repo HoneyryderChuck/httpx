@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-module HTTPX::Plugins
-  module Multipart
+module HTTPX
+  module Transcoder::Multipart
     class Encoder
       attr_reader :bytesize
 
@@ -43,7 +43,7 @@ module HTTPX::Plugins
       def to_parts(form)
         @bytesize = 0
         params = form.each_with_object([]) do |(key, val), aux|
-          Multipart.normalize_keys(key, val) do |k, v|
+          Transcoder.normalize_keys(key, val, MULTIPART_VALUE_COND) do |k, v|
             next if v.nil?
 
             value, content_type, filename = Part.call(v)

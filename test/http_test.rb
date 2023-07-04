@@ -10,6 +10,7 @@ class HTTPTest < Minitest::Test
   include ChunkedGet
   include WithBody
   include WithChunkedBody
+  include Multipart
   include Headers
   include ResponseBody
   include IO
@@ -25,7 +26,6 @@ class HTTPTest < Minitest::Test
   include Plugins::Compression
   include Plugins::H2C
   include Plugins::Retries
-  include Plugins::Multipart
   include Plugins::Expect
   include Plugins::RateLimiter
   include Plugins::Stream
