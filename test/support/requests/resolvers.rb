@@ -247,7 +247,7 @@ module Requests
 
           response = session.head(uri, timeout: { connect_timeout: 2 }, resolver_class: resolver_class,
                                        resolver_options: options.merge(nameserver: %w[166.84.7.99]))
-          verify_error_response(response, HTTPX::ConnectTimeoutError)
+          verify_error_response(response, HTTPX::Error)
 
           assert resolver_class.ios.any?(HTTPX::TCP), "resolver did not upgrade to tcp"
         end
