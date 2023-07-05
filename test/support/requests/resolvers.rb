@@ -228,7 +228,7 @@ module Requests
         end
 
         define_method :"test_resolver_#{resolver_type}_max_udp_size_exceeded" do
-          uri = origin("aerserv-bc-us-east.bidswitch.net")
+          uri = origin("1024.size.dns.netmeister.org")
           session = HTTPX.plugin(SessionWithPool)
 
           resolver_class = Class.new(HTTPX::Resolver::Native) do
@@ -245,8 +245,9 @@ module Requests
             end
           end
 
-          response = session.head(uri, resolver_class: resolver_class, resolver_options: options)
-          verify_status(response, 200)
+          response = session.head(uri, timeout: { connect_timeout: 2 }, resolver_class: resolver_class,
+                                       resolver_options: options.merge(nameserver: %w[166.84.7.99]))
+          verify_error_response(response, HTTPX::ConnectTimeoutError)
 
           assert resolver_class.ios.any?(HTTPX::TCP), "resolver did not upgrade to tcp"
         end
