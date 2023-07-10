@@ -79,10 +79,10 @@ class OptionsTest < Minitest::Test
       :timeout => {
         connect_timeout: 60,
         settings_timeout: 10,
-        operation_timeout: 60,
+        operation_timeout: Float::INFINITY,
         keep_alive_timeout: 20,
-        read_timeout: Float::INFINITY,
-        write_timeout: Float::INFINITY,
+        read_timeout: 60,
+        write_timeout: 60,
         request_timeout: Float::INFINITY,
       },
       :ssl => { :foo => "bar" },

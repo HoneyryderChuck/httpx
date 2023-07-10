@@ -94,6 +94,10 @@ module HTTPX
     # https://gitlab.com/honeyryderchuck/httpx/wikis/Stream
     #
     module Stream
+      def self.extra_options(options)
+        options.merge(timeout: { read_timeout: Float::INFINITY, operation_timeout: 60 })
+      end
+
       module InstanceMethods
         def request(*args, stream: false, **options)
           return super(*args, **options) unless stream

@@ -213,7 +213,7 @@ module Requests
         uri = build_uri("/delay/4")
         retries_session = HTTPX.plugin(RequestInspector)
                                .plugin(:retries, max_retries: 1, retry_on: check_error) # because CI...
-                               .with_timeout(total_timeout: 2)
+                               .with_timeout(request_timeout: 2)
                                .plugin(:multipart)
         retries_response = retries_session.post(uri, retry_change_requests: true, form: { image: File.new(fixture_file_path) })
         assert check_error[retries_response], "expected #{retries_response} to be an error response"

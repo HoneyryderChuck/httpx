@@ -17,9 +17,6 @@ module HTTPX
     def initialize: (Numeric timeout, String message) -> untyped
   end
 
-  class TotalTimeoutError < TimeoutError
-  end
-
   class ConnectTimeoutError < TimeoutError
   end
 
