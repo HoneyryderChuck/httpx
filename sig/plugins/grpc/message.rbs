@@ -1,0 +1,17 @@
+
+module HTTPX
+  module Plugins
+    module GRPC
+      module Message
+        def self?.unary: (response) -> grpc_message
+
+        def self?.stream: (StreamResponse) { (String) -> void } -> void
+                        | (StreamResponse) -> Enumerable[String]
+
+        def self?.cancel: (Request) -> void
+
+        def self?.verify_status: (StreamResponse | response) -> void
+      end
+    end
+  end
+end

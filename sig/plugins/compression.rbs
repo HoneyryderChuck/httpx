@@ -23,8 +23,6 @@ module HTTPX
       def self.configure: (singleton(Session)) -> void
 
       interface _CompressionOptions
-        def compression_threshold_size: () -> Integer?
-
         def encodings: () -> Hash[String, _Compressor]
       end
 

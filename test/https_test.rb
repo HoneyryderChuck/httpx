@@ -6,6 +6,7 @@ class HTTPSTest < Minitest::Test
   include HTTPHelpers
   include Requests
   include Get
+  include Compression
   include Head
   include WithBody
   include Multipart
@@ -23,7 +24,6 @@ class HTTPSTest < Minitest::Test
   include Plugins::OAuth
   include Plugins::FollowRedirects
   include Plugins::Cookies
-  include Plugins::Compression
   include Plugins::PushPromise if OpenSSL::SSL::SSLContext.instance_methods.include?(:alpn_protocols)
   include Plugins::Retries
   include Plugins::Expect
@@ -36,6 +36,7 @@ class HTTPSTest < Minitest::Test
   include Plugins::ResponseCache
   include Plugins::CircuitBreaker
   include Plugins::WebDav
+  include Plugins::Brotli if RUBY_ENGINE == "ruby"
 
   def test_ssl_session_resumption
     uri = build_uri("/get")

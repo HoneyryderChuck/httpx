@@ -30,6 +30,9 @@ module HTTPX
       :ssl => {},
       :http2_settings => { settings_enable_push: 0 },
       :fallback_protocol => "http/1.1",
+      :supported_compression_formats => %w[gzip deflate],
+      :decompress_response_body => true,
+      :compress_request_body => true,
       :timeout => {
         connect_timeout: CONNECT_TIMEOUT,
         settings_timeout: SETTINGS_TIMEOUT,
@@ -90,6 +93,7 @@ module HTTPX
       @timeout.freeze
       @headers.freeze
       @addresses.freeze
+      @supported_compression_formats.freeze
     end
 
     def option_origin(value)
@@ -106,6 +110,10 @@ module HTTPX
 
     def option_timeout(value)
       Hash[value]
+    end
+
+    def option_supported_compression_formats(value)
+      Array(value).map(&:to_s)
     end
 
     def option_max_concurrent_requests(value)
@@ -137,7 +145,10 @@ module HTTPX
     end
 
     def option_body_threshold_size(value)
-      Integer(value)
+      bytes = Integer(value)
+      raise TypeError, ":body_threshold_size must be positive" unless bytes.positive?
+
+      bytes
     end
 
     def option_transport(value)
@@ -160,6 +171,7 @@ module HTTPX
       request_class response_class headers_class request_body_class
       response_body_class connection_class options_class
       io fallback_protocol debug debug_level resolver_class resolver_options
+      compress_request_body decompress_response_body
       persistent
     ].each do |method_name|
       class_eval(<<-OUT, __FILE__, __LINE__ + 1)

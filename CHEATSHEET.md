@@ -139,9 +139,14 @@ end
 ```ruby
 require "httpx"
 
-response = HTTPX.plugin(:compression).get("https://www.google.com")
+response = HTTPX.get("https://www.google.com")
 puts response.headers["content-encoding"] #=> "gzip"
+puts response.to_s #=> uncompressed payload
 
+# uncompressed request payload
+HTTPX.post("https://myapi.com/users", body: super_large_text_payload)
+# gzip-compressed request payload
+HTTPX.post("https://myapi.com/users", headers: { "content-encoding" => %w[gzip] } body: super_large_text_payload)
 ```
 
 ## Proxy

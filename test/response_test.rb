@@ -152,9 +152,9 @@ class ResponseTest < Minitest::Test
     end)
     assert body.buffer.nil?, "body should not buffer anything"
     body.write("hello")
-    assert body.buffer.is_a?(StringIO), "body should buffer to memory"
+    assert body.buffer.__getobj__.is_a?(StringIO), "body should buffer to memory"
     body.write(" world")
-    assert body.buffer.is_a?(Tempfile), "body should buffer to file after going over threshold"
+    assert body.buffer.__getobj__.is_a?(Tempfile), "body should buffer to file after going over threshold"
   end
 
   def test_response_body_filename

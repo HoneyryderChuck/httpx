@@ -60,31 +60,5 @@ module HTTPX
 
     def initialize_body: (Options options) -> Transcoder::_Encoder?
 
-    class Body
-      @headers: Headers
-      @body: body_encoder?
-      @unbounded_body: bool
-
-      def initialize: (Headers, Options) -> untyped
-      def each: () { (String) -> void } -> void
-              | () -> Enumerable[String]
-
-      def rewind: () -> void
-      def empty?: () -> bool
-      def bytesize: () -> (Integer | Float)
-      def stream: (Transcoder::_Encoder) -> bodyIO
-      def unbounded_body?: () -> bool
-      def chunked?: () -> bool
-      def chunk!: () -> void
-      def inspect: () -> String
-    end
-
-    class ProcIO
-      @block: ^(String) -> void
-
-      def initialize: (^(String) -> void) -> untyped
-
-      def write: (String data) -> Integer
-    end
   end
 end
