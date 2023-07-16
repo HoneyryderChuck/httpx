@@ -1,0 +1,22 @@
+module HTTPX
+  module Plugins
+    module Brotli
+      def self?.load_dependencies: (singleton(Session)) -> void
+
+      def self?.encode: (body_encoder body) -> Deflater
+
+      def self?.decode: (HTTPX::Response response, ?bytesize: Integer) -> Transcoder::_Decoder
+
+      class Deflater < Transcoder::Deflater
+      end
+
+      module RequestBodyClassMethods
+        def initialize_deflater_body: (body_encoder body, Encoding | String encoding) -> body_encoder
+      end
+
+      module ResponseBodyClassMethods
+        def initialize_inflater_by_encoding: (Encoding | String encoding, Response response, ?bytesize: Integer) -> (Transcoder::_Decoder | Transcoder::GZIP::Inflater)
+      end
+    end
+  end
+end

@@ -17,14 +17,14 @@ module HTTPX
       type multipart_nested_value = multipart_value | _ToAry[multipart_value] | _ToHash[string, multipart_value]
 
       class Encoder
-        include Transcoder::_Encoder
-
         @boundary: String
         @part_index: Integer
         @buffer: String
 
         @form: Enumerable[[Symbol | string, multipart_nested_value]]
         @parts: Array[_Reader]
+
+        def bytesize: () -> Integer
 
         def content_type: () -> String
 

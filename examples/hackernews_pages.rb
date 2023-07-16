@@ -1,7 +1,7 @@
 require "httpx"
 require "oga"
 
-http = HTTPX.plugin(:compression).plugin(:persistent).with(timeout: { operation_timeut: 5, connect_timeout: 5})
+http = HTTPX.plugin(:persistent).with(timeout: { operation_timeut: 5, connect_timeout: 5})
 
 PAGES = (ARGV.first || 10).to_i
 pages = PAGES.times.map do |page|

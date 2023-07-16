@@ -1,7 +1,7 @@
 module HTTPX
-  type bodyIO = _Reader | _Each[[String, untyped]] | _ToS
+  type bodyIO = _Reader | _Each[String] | _ToS
 
-  type body_encoder = Transcoder::_Encoder | _Each[String]
+  type body_encoder = (Transcoder::_Encoder & _ToS) | (Transcoder::_Encoder & _Reader) | (Transcoder::_Encoder & _Each[String])
 
   module Transcoder
     def self?.normalize_keys: [U] (_ToS key, _ToAry[untyped] | _ToHash[_ToS, untyped] | untyped value, ?(^(untyped value) -> bool | nil) cond) { (String, ?untyped) -> U } -> U
@@ -18,10 +18,26 @@ module HTTPX
 
     interface _Encoder
       def bytesize: () -> (Integer | Float)
+
+      def content_type: () -> String
     end
 
     interface _Decoder
       def call: (Response response, *untyped) -> untyped
+    end
+
+    interface _Inflater
+      def initialize: (Integer | Float bytesize) -> void
+
+      def call: (String chunk) -> String
+    end
+
+    interface _Deflater
+      def initialize: (Response body) -> void
+
+      def deflate: () -> void
+
+      def call: (StringIO | File buffer, ?chunk_size: Integer) ?{ (String chunk) -> void } -> void
     end
   end
 end

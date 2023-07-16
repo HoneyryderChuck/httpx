@@ -1,0 +1,23 @@
+module HTTPX
+  class Response::Buffer
+    @threshold_size: Integer
+    @bytesize: Integer
+    @encoding: Encoding
+
+    def initialize: (threshold_size: Integer, ?bytesize: Integer, ?encoding: Encoding | String) -> void
+
+    def size: () -> Integer
+
+    def write: (String) -> void
+
+    def to_s: () -> String
+
+    def close: () -> void
+
+    private
+
+    def try_upgrade_buffer: () -> void
+
+    def _with_same_buffer_pos: () { () -> void } -> void
+  end
+end

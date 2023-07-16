@@ -146,7 +146,6 @@ module HTTPX
 
         def configure(klass)
           klass.plugin(:expect)
-          klass.plugin(:compression)
         end
       end
 

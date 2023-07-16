@@ -12,8 +12,9 @@ module HTTPX::Transcoder
 
     class Encoder
       extend Forwardable
-      include _Encoder
       include _ToS
+
+      def bytesize: () -> Integer
 
       def content_type: () -> String
 

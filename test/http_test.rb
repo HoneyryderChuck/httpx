@@ -7,6 +7,7 @@ class HTTPTest < Minitest::Test
   include Requests
   include Head
   include Get
+  include Compression
   include ChunkedGet
   include WithBody
   include WithChunkedBody
@@ -23,7 +24,6 @@ class HTTPTest < Minitest::Test
   include Plugins::OAuth
   include Plugins::FollowRedirects
   include Plugins::Cookies
-  include Plugins::Compression
   include Plugins::H2C
   include Plugins::Retries
   include Plugins::Expect
@@ -35,6 +35,7 @@ class HTTPTest < Minitest::Test
   include Plugins::ResponseCache
   include Plugins::CircuitBreaker
   include Plugins::WebDav
+  include Plugins::Brotli if RUBY_ENGINE == "ruby"
 
   def test_verbose_log
     log = StringIO.new

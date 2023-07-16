@@ -1,0 +1,33 @@
+module HTTPX
+  module Transcoder
+    module GRPCEncoding
+
+      def self?.encode: (body_encoder body, compressed: bool) -> Deflater
+
+      def self?.decode: (Response | StreamResponse response) -> Inflater
+
+      class Deflater
+        attr_reader content_type: String
+
+        @body: BodyReader
+        @compressed: bool
+
+        def initialize: (body_encoder body, compressed: bool) -> void
+
+        def bytesize: () -> (Integer | Float)
+
+        def read: (?int? length, ?string outbuf) -> String?
+      end
+
+      class Inflater
+        @response: Response
+        @encodings: Array[String]
+
+        def initialize: (Response | StreamResponse response) -> void
+
+        def call: (String message) ?{ (String) -> void } -> String
+      end
+
+    end
+  end
+end

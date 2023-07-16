@@ -49,13 +49,13 @@ module HTTPX
       class << self
         def load_dependencies(*)
           require "stringio"
+          require "httpx/plugins/grpc/grpc_encoding"
           require "httpx/plugins/grpc/message"
           require "httpx/plugins/grpc/call"
         end
 
         def configure(klass)
           klass.plugin(:persistent)
-          klass.plugin(:compression)
           klass.plugin(:stream)
         end
 
@@ -110,7 +110,20 @@ module HTTPX
         end
 
         def encoders
-          @options.encodings
+          @body.encodings
+        end
+      end
+
+      module RequestBodyMethods
+        def initialize(headers, _)
+          super
+
+          if (compression = headers["grpc-encoding"])
+            deflater_body = self.class.initialize_deflater_body(@body, compression)
+            @body = Transcoder::GRPCEncoding.encode(deflater_body || @body, compressed: !deflater_body.nil?)
+          else
+            @body = Transcoder::GRPCEncoding.encode(@body, compressed: false)
+          end
         end
       end
 
@@ -233,7 +246,7 @@ module HTTPX
           uri.path = rpc_method
 
           headers = HEADERS.merge(
-            "grpc-accept-encoding" => ["identity", *@options.encodings.keys]
+            "grpc-accept-encoding" => ["identity", *@options.supported_compression_formats]
           )
           unless deadline == Float::INFINITY
             # convert to milliseconds
@@ -244,27 +257,13 @@ module HTTPX
           headers = headers.merge(metadata) if metadata
 
           # prepare compressor
-          deflater = nil
           compression = @options.grpc_compression == true ? "gzip" : @options.grpc_compression
 
-          if compression
-            headers["grpc-encoding"] = compression
-            deflater = @options.encodings[compression].deflater if @options.encodings.key?(compression)
-          end
+          headers["grpc-encoding"] = compression if compression
 
           headers.merge!(@options.call_credentials.call) if @options.call_credentials
 
-          body = if input.respond_to?(:each)
-            Enumerator.new do |y|
-              input.each do |message|
-                y << Message.encode(message, deflater: deflater)
-              end
-            end
-          else
-            Message.encode(input, deflater: deflater)
-          end
-
-          build_request("POST", uri, headers: headers, body: body)
+          build_request("POST", uri, headers: headers, body: input)
         end
       end
     end

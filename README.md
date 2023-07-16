@@ -113,7 +113,7 @@ response = HTTPX.plugin(:basic_authentication)
                 .get("https://www.google.com")
 
 # more complex client objects can be cached, and are thread-safe
-http = HTTPX.plugin(:compression).plugin(:expect).with(headers: { "x-pvt-token" => "TOKEN"})
+http = HTTPX.plugin(:expect).with(headers: { "x-pvt-token" => "TOKEN"})
 http.get("https://example.com") # the above options will apply
 http.post("https://example2.com",  form: {name: "John", age: "22"}) # same, plus the form POST body
 ```
