@@ -43,11 +43,11 @@ HTTPX.with(headers: {"user-agent" => "My Ruby Script"}).get("https://google.com"
 ## HTTP Methods
 
 ```ruby
-HTTP.get("https://myapi.com/users/1")
-HTTP.post("https://myapi.com/users")
-HTTP.patch("https://myapi.com/users/1")
-HTTP.put("https://myapi.com/users/1")
-HTTP.delete("https://myapi.com/users/1")
+HTTPX.get("https://myapi.com/users/1")
+HTTPX.post("https://myapi.com/users")
+HTTPX.patch("https://myapi.com/users/1")
+HTTPX.put("https://myapi.com/users/1")
+HTTPX.delete("https://myapi.com/users/1")
 ```
 
 ## HTTP Authentication
