@@ -87,7 +87,7 @@ class WebmockTest < Minitest::Test
     expected_message = "The request GET #{MOCK_URL_HTTP}/ was expected to execute 1 time but it executed 0 times" \
                        "\n\nThe following requests were made:\n\nNo requests were made.\n" \
                        "============================================================"
-    assert_raise_with_message(MiniTest::Assertion, expected_message) do
+    assert_raise_with_message(Minitest::Assertion, expected_message) do
       assert_requested(:get, MOCK_URL_HTTP)
     end
   end
@@ -96,7 +96,7 @@ class WebmockTest < Minitest::Test
     expected_message = "The request ANY #{MOCK_URL_HTTP}/ was expected to execute 1 time but it executed 0 times" \
                        "\n\nThe following requests were made:\n\nNo requests were made.\n" \
                        "============================================================"
-    assert_raise_with_message(MiniTest::Assertion, expected_message) do
+    assert_raise_with_message(Minitest::Assertion, expected_message) do
       assert_requested(@stub_http)
     end
   end
@@ -152,7 +152,7 @@ class WebmockTest < Minitest::Test
       "The following requests were made:\n\nGET #{MOCK_URL_HTTP}/ with headers .+ was made 1 time\n\n" \
       "============================================================"
     )
-    assert_raise_with_message(MiniTest::Assertion, expected_message) do
+    assert_raise_with_message(Minitest::Assertion, expected_message) do
       http_request(:get, "http://www.example.com/")
       assert_not_requested(:get, "http://www.example.com")
     end
@@ -164,7 +164,7 @@ class WebmockTest < Minitest::Test
       "The following requests were made:\n\nGET #{MOCK_URL_HTTP}/ with headers .+ was made 1 time\n\n" \
       "============================================================"
     )
-    assert_raise_with_message(MiniTest::Assertion, expected_message) do
+    assert_raise_with_message(Minitest::Assertion, expected_message) do
       http_request(:get, "#{MOCK_URL_HTTP}/")
       refute_requested(:get, MOCK_URL_HTTP)
     end
@@ -176,7 +176,7 @@ class WebmockTest < Minitest::Test
       "The following requests were made:\n\nGET #{MOCK_URL_HTTP}/ with headers .+ was made 1 time\n\n" \
       "============================================================"
     )
-    assert_raise_with_message(MiniTest::Assertion, expected_message) do
+    assert_raise_with_message(Minitest::Assertion, expected_message) do
       http_request(:get, "#{MOCK_URL_HTTP}/")
       assert_not_requested(@stub_http)
     end
