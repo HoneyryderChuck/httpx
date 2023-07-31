@@ -11,12 +11,14 @@ class FaradayTest < Minitest::Test
   include HTTPHelpers
   include ProxyHelper
 
-  def_delegators :create_connection, :get, :head, :put, :post, :patch, :delete, :run_request
+  using HTTPX::URIExtensions
+
+  def_delegators :faraday_connection, :get, :head, :put, :post, :patch, :delete, :run_request
 
   def test_adapter_in_parallel
     resp1, resp2 = nil, nil
 
-    connection = create_connection
+    connection = faraday_connection
     connection.in_parallel do
       resp1 = connection.get(build_path("/get?a=1"))
       resp2 = connection.get(build_path("/get?b=2"))
@@ -32,7 +34,7 @@ class FaradayTest < Minitest::Test
   def test_adapter_in_parallel_errors
     resp1 = nil
 
-    connection = create_connection
+    connection = faraday_connection
     connection.in_parallel do
       resp1 = connection.get("http://wfijojsfsoijf")
       assert connection.in_parallel?
@@ -46,7 +48,7 @@ class FaradayTest < Minitest::Test
   end
 
   def test_adapter_in_parallel_no_requests
-    connection = create_connection
+    connection = faraday_connection
     assert_nil(connection.in_parallel {})
   end
 
@@ -57,9 +59,14 @@ class FaradayTest < Minitest::Test
 
   def test_adapter_get_ssl_fails_with_bad_cert
     err = assert_raises Faraday::Adapter::HTTPX::SSL_ERROR do
-      get("https://wrong.host.badssl.com/")
+      faraday_connection(server_uri: "https://expired.badssl.com/", ssl: { verify: true }).get("/")
     end
     assert_includes err.message, "certificate"
+  end
+
+  def test_adapter_ssl_verify_none
+    res = faraday_connection(server_uri: "https://expired.badssl.com/", ssl: { verify: false }).get("/")
+    assert res.status == 200
   end
 
   def test_adapter_get_send_url_encoded_params
@@ -132,20 +139,59 @@ class FaradayTest < Minitest::Test
   def test_adapter_get_data
     streamed = []
     get(build_path("/stream/3")) do |req|
+      assert !req.options.stream_response?
       req.options.on_data = proc do |chunk, _overall_received_bytes|
         streamed << chunk
       end
+      assert req.options.stream_response?
     end
+
     assert !streamed.empty?
     assert streamed.join.lines.size == 3
   end if Faraday::VERSION >= "1.0.0"
 
-  # def test_adapter_timeout
-  #   conn = create_connection(request: { timeout: 1, open_timeout: 1 })
-  #   assert_raises Faraday::Error::TimeoutError do
-  #     conn.get(build_path("/delay/5"))
-  #   end
-  # end
+  def test_adapter_timeout_open_timeout
+    server = TCPServer.new("127.0.0.1", CONNECT_TIMEOUT_PORT)
+    begin
+      uri = URI(build_uri("/", origin("127.0.0.1:#{CONNECT_TIMEOUT_PORT}")))
+      conn = faraday_connection(server_uri: uri.origin, request: { open_timeout: 0.5 })
+      assert_raises Faraday::TimeoutError do
+        conn.get("/")
+      end
+    ensure
+      server.close
+    end
+  end
+
+  def test_adapter_timeout_read_timeout
+    conn = faraday_connection(request: { read_timeout: 0.5 })
+    assert_raises Faraday::TimeoutError do
+      conn.get(build_path("/delay/4"))
+    end
+  end
+
+  def test_adapter_timeouts_write_timeout
+    start_test_servlet(SlowReader) do |server|
+      uri = URI("#{server.origin}/")
+      conn = faraday_connection(request: { write_timeout: 0.5 })
+      assert_raises Faraday::TimeoutError do
+        conn.post(uri, StringIO.new("a" * 65_536 * 3 * 5))
+      end
+    end
+  end
+
+  def test_adapter_bind
+    start_test_servlet(KeepAliveServer) do |server|
+      origin = URI(server.origin)
+      ip = origin.host
+      port = origin.port
+      conn = faraday_connection(request: { bind: { host: ip, port: port } })
+      response = conn.get("/")
+      verify_status(response, 200)
+      body = response.body.to_s
+      assert body == "{\"counter\": infinity}"
+    end
+  end
 
   def test_adapter_connection_error
     assert_raises Faraday::Adapter::HTTPX::CONNECTION_FAILED_ERROR do
@@ -153,28 +199,15 @@ class FaradayTest < Minitest::Test
     end
   end
 
-  # def test_proxy
-  #   proxy_uri = http_proxy.first
-  #   conn = create_connection(proxy: proxy_uri)
+  def test_adapter_proxy
+    proxy_uri = http_proxy.first
+    conn = faraday_connection(proxy: proxy_uri)
 
-  #   res = conn.get(build_path("/get"))
-  #   assert res.status == 200
+    res = conn.get(build_path("/get"))
+    assert res.status == 200
 
-  #   unless self.class.ssl_mode?
-  #     # proxy can't append "Via" header for HTTPS responses
-  #     assert_match(/:#{proxy_uri.port}$/, res["via"])
-  #   end
-  # end
-
-  # def test_proxy_auth_fail
-  #   proxy_uri = URI(ENV["LIVE_PROXY"])
-  #   proxy_uri.password = "WRONG"
-  #   conn = create_connection(proxy: proxy_uri)
-
-  #   err = assert_raises Faraday::Error::ConnectionFailed do
-  #     conn.get "/echo"
-  #   end
-  # end
+    # TODO: test that request has been proxied
+  end
 
   private
 
@@ -191,7 +224,9 @@ class FaradayTest < Minitest::Test
     []
   end
 
-  def create_connection(options = {}, &optional_connection_config_blk)
+  def faraday_connection(options = {}, &optional_connection_config_blk)
+    return @faraday_connection if defined?(@faraday_connection)
+
     builder_block = proc do |b|
       b.request :url_encoded
       b.adapter :httpx, *adapter_options, &optional_connection_config_blk
@@ -200,12 +235,16 @@ class FaradayTest < Minitest::Test
     options[:ssl] ||= {}
     options[:ssl][:ca_file] ||= ENV["SSL_FILE"]
 
-    server = URI("https://#{httpbin}")
+    server = options.delete(:server_uri) || URI("https://#{httpbin}")
 
-    Faraday::Connection.new(server.to_s, options, &builder_block).tap do |conn|
+    @faraday_connection = Faraday::Connection.new(server.to_s, options, &builder_block).tap do |conn|
       conn.headers["X-Faraday-Adapter"] = "httpx"
       adapter_handler = conn.builder.handlers.last
       conn.builder.insert_before adapter_handler, Faraday::Response::RaiseError
     end
+  end
+
+  def teardown
+    @faraday_connection.close if defined?(@faraday_connection)
   end
 end
