@@ -73,6 +73,8 @@ module Faraday
                Errno::EPIPE,
                ::HTTPX::ConnectionError => e
           raise CONNECTION_FAILED_ERROR, e
+        rescue ::HTTPX::TimeoutError => e
+          raise Faraday::TimeoutError, e
         end
 
         def build_request(env)
@@ -232,6 +234,8 @@ module Faraday
               handler.on_complete.call(handler.env)
             end
           end
+        rescue ::HTTPX::TimeoutError => e
+          raise Faraday::TimeoutError, e
         end
 
         # from Faraday::Adapter#connection
@@ -299,6 +303,8 @@ module Faraday
           response.raise_for_status unless response.is_a?(::HTTPX::Response)
           response
         end
+      rescue ::HTTPX::TimeoutError => e
+        raise Faraday::TimeoutError, e
       end
 
       def parallel?(env)
