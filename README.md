@@ -126,7 +126,7 @@ The plugin system is similar to the ones used by [sequel](https://github.com/jer
 
 ### Advanced DNS features
 
-`HTTPX` ships with custom DNS resolver implementations, including a native Happy Eyeballs resolver immplementation, and a DNS-over-HTTPS resolver.
+`HTTPX` ships with custom DNS resolver implementations, including a native Happy Eyeballs resolver implementation, and a DNS-over-HTTPS resolver.
 
 ## User-driven test suite
 
