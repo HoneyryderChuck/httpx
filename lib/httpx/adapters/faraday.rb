@@ -104,7 +104,10 @@ module Faraday
 
           ssl_options = {}
 
-          ssl_options[:verify_mode] = OpenSSL::SSL::VERIFY_PEER if env.ssl.verify
+          unless env.ssl.verify.nil?
+            ssl_options[:verify_mode] = env.ssl.verify ? OpenSSL::SSL::VERIFY_PEER : OpenSSL::SSL::VERIFY_NONE
+          end
+
           ssl_options[:ca_file] = env.ssl.ca_file if env.ssl.ca_file
           ssl_options[:ca_path] = env.ssl.ca_path if env.ssl.ca_path
           ssl_options[:cert_store] = env.ssl.cert_store if env.ssl.cert_store
