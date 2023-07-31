@@ -89,15 +89,16 @@ module Faraday
 
         def options_from_env(env)
           timeout_options = {}
-          if (sec = request_timeout(:read, env))
+          req_opts = env.request
+          if (sec = request_timeout(:read, req_opts))
             timeout_options[:operation_timeout] = sec
           end
 
-          if (sec = request_timeout(:write, env))
+          if (sec = request_timeout(:write, req_opts))
             timeout_options[:operation_timeout] = sec
           end
 
-          if (sec = request_timeout(:open, env))
+          if (sec = request_timeout(:open, req_opts))
             timeout_options[:connect_timeout] = sec
           end
 
