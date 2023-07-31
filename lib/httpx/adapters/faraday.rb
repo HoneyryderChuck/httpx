@@ -40,7 +40,13 @@ module Faraday
 
           @connection = ::HTTPX.plugin(:compression).plugin(:persistent).plugin(ReasonPlugin)
           @connection = @connection.with(@connection_options) unless @connection_options.empty?
-          @connection = @connection.with(options_from_env(env))
+          connection_opts = options_from_env(env)
+
+          if (bind = env.request.bind)
+            @bind = TCPSocket.new(bind[:host], bind[:port])
+            connection_opts[:io] = @bind
+          end
+          @connection = @connection.with(connection_opts)
 
           if (proxy = env.request.proxy)
             proxy_options = { uri: proxy.uri }
@@ -56,6 +62,7 @@ module Faraday
 
         def close
           @connection.close if @connection
+          @bind.close if @bind
         end
 
         private
