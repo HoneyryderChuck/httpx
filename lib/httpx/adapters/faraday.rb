@@ -55,7 +55,7 @@ module Faraday
         end
 
         def close
-          @session.close
+          @connection.close if @connection
         end
 
         private
