@@ -40,7 +40,13 @@ module Faraday
 
           @connection = ::HTTPX.plugin(:compression).plugin(:persistent).plugin(ReasonPlugin)
           @connection = @connection.with(@connection_options) unless @connection_options.empty?
-          @connection = @connection.with(options_from_env(env))
+          connection_opts = options_from_env(env)
+
+          if (bind = env.request.bind)
+            @bind = TCPSocket.new(bind[:host], bind[:port])
+            connection_opts[:io] = @bind
+          end
+          @connection = @connection.with(connection_opts)
 
           if (proxy = env.request.proxy)
             proxy_options = { uri: proxy.uri }
@@ -55,7 +61,8 @@ module Faraday
         end
 
         def close
-          @session.close
+          @connection.close if @connection
+          @bind.close if @bind
         end
 
         private
@@ -73,6 +80,8 @@ module Faraday
                Errno::EPIPE,
                ::HTTPX::ConnectionError => e
           raise CONNECTION_FAILED_ERROR, e
+        rescue ::HTTPX::TimeoutError => e
+          raise Faraday::TimeoutError, e
         end
 
         def build_request(env)
@@ -87,21 +96,25 @@ module Faraday
 
         def options_from_env(env)
           timeout_options = {}
-          if (sec = request_timeout(:read, env))
+          req_opts = env.request
+          if (sec = request_timeout(:read, req_opts))
             timeout_options[:operation_timeout] = sec
           end
 
-          if (sec = request_timeout(:write, env))
+          if (sec = request_timeout(:write, req_opts))
             timeout_options[:operation_timeout] = sec
           end
 
-          if (sec = request_timeout(:open, env))
+          if (sec = request_timeout(:open, req_opts))
             timeout_options[:connect_timeout] = sec
           end
 
           ssl_options = {}
 
-          ssl_options[:verify_mode] = OpenSSL::SSL::VERIFY_PEER if env.ssl.verify
+          unless env.ssl.verify.nil?
+            ssl_options[:verify_mode] = env.ssl.verify ? OpenSSL::SSL::VERIFY_PEER : OpenSSL::SSL::VERIFY_NONE
+          end
+
           ssl_options[:ca_file] = env.ssl.ca_file if env.ssl.ca_file
           ssl_options[:ca_path] = env.ssl.ca_path if env.ssl.ca_path
           ssl_options[:cert_store] = env.ssl.cert_store if env.ssl.cert_store
@@ -232,6 +245,8 @@ module Faraday
               handler.on_complete.call(handler.env)
             end
           end
+        rescue ::HTTPX::TimeoutError => e
+          raise Faraday::TimeoutError, e
         end
 
         # from Faraday::Adapter#connection
@@ -299,6 +314,8 @@ module Faraday
           response.raise_for_status unless response.is_a?(::HTTPX::Response)
           response
         end
+      rescue ::HTTPX::TimeoutError => e
+        raise Faraday::TimeoutError, e
       end
 
       def parallel?(env)
