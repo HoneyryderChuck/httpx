@@ -11,7 +11,7 @@ module Faraday
         def build_connection(env)
           return @connection if defined?(@connection)
 
-          @connection = ::HTTPX.plugin(:compression).plugin(:persistent).plugin(ReasonPlugin)
+          @connection = ::HTTPX.plugin(:persistent).plugin(ReasonPlugin)
           @connection = @connection.with(@connection_options) unless @connection_options.empty?
           connection_opts = options_from_env(env)
 

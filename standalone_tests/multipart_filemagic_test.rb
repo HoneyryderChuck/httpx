@@ -14,8 +14,7 @@ class MultipartFilemagicTest < Minitest::Test
 
     filemagic_spy = Spy.on(FileMagic, :open).and_call_through
 
-    response = HTTPX.plugin(:multipart)
-                    .post("https://#{httpbin}/post", form: { image: File.new(fixture_file_path) })
+    response = HTTPX.post("https://#{httpbin}/post", form: { image: File.new(fixture_file_path) })
     verify_status(response, 200)
     body = json_body(response)
     verify_header(body["headers"], "Content-Type", "multipart/form-data")

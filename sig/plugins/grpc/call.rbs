@@ -1,0 +1,19 @@
+module HTTPX
+  module Plugins
+    module GRPC
+      class Call
+        attr_writer decoder: _Callable
+
+        def metadata: () -> headers
+
+        def trailing_metadata: () -> headers?
+
+        private
+
+        def initialize: (Response | StreamResponse response) -> untyped
+
+        def grpc_response: () -> grpc_response
+      end
+    end
+  end
+end

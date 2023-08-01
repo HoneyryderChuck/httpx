@@ -1,0 +1,15 @@
+module HTTPX
+  module Transcoder
+    class BodyReader
+      @body: _Reader | _Each[String]
+
+      def initialize: (bodyIO body) -> void
+
+      def bytesize: () -> (Integer | Float)
+
+      def read: (?int? length, ?string outbuf) -> String?
+
+      def close: () -> void
+    end
+  end
+end

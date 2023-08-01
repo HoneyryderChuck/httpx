@@ -17,36 +17,6 @@ module HTTPX
 
       type credentials = Proc
 
-      class Call
-        attr_writer decoder: _Callable
-
-        def metadata: () -> headers
-
-        def trailing_metadata: () -> headers?
-
-        private
-
-        def initialize: (Response | StreamResponse response) -> untyped
-
-        def grpc_response: () -> grpc_response
-      end
-
-      module Message
-        def self?.unary: (response) -> grpc_message
-
-        def self?.stream: (StreamResponse) { (String) -> void } -> void
-                        | (StreamResponse) -> Enumerable[String]
-
-        def self?.encode: (String bytes, ?deflater: Compression::_Deflater?) -> String
-
-        def self?.decode: (String message, encodings: Array[String], encoders: Hash[String, Compression::_Compressor]) -> String
-                        | (String message, encodings: Array[String], encoders: Hash[String, Compression::_Compressor]) { (String) -> void } -> void
-
-        def self?.cancel: (Request) -> void
-
-        def self?.verify_status: (StreamResponse | response) -> void
-      end
-
       interface _GRPCOptions
         def grpc_service: () -> String?
 
@@ -63,9 +33,9 @@ module HTTPX
       def self.load_dependencies: (singleton(Session)) -> void
 
       module ResponseMethods
-        def merge_headers: (headers_input trailers) -> void
+        attr_reader trailing_metadata: Hash[String, untyped]
 
-        def encoders: () -> Hash[String, Compression::_Compressor]
+        def encoders: () -> Array[String | Encoding]
       end
 
       module InstanceMethods

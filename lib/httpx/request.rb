@@ -139,100 +139,6 @@ module HTTPX
     end
     # :nocov:
 
-    class Body < SimpleDelegator
-      class << self
-        def new(_, options)
-          return options.body if options.body.is_a?(self)
-
-          super
-        end
-      end
-
-      def initialize(headers, options)
-        @headers = headers
-        @body = initialize_body(options)
-        return if @body.nil?
-
-        @headers["content-type"] ||= @body.content_type
-        @headers["content-length"] = @body.bytesize unless unbounded_body?
-        super(@body)
-      end
-
-      def each(&block)
-        return enum_for(__method__) unless block
-        return if @body.nil?
-
-        body = stream(@body)
-        if body.respond_to?(:read)
-          ::IO.copy_stream(body, ProcIO.new(block))
-        elsif body.respond_to?(:each)
-          body.each(&block)
-        else
-          block[body.to_s]
-        end
-      end
-
-      def rewind
-        return if empty?
-
-        @body.rewind if @body.respond_to?(:rewind)
-      end
-
-      def empty?
-        return true if @body.nil?
-        return false if chunked?
-
-        @body.bytesize.zero?
-      end
-
-      def bytesize
-        return 0 if @body.nil?
-
-        @body.bytesize
-      end
-
-      def stream(body)
-        encoded = body
-        encoded = Transcoder::Chunker.encode(body.enum_for(:each)) if chunked?
-        encoded
-      end
-
-      def unbounded_body?
-        return @unbounded_body if defined?(@unbounded_body)
-
-        @unbounded_body = !@body.nil? && (chunked? || @body.bytesize == Float::INFINITY)
-      end
-
-      def chunked?
-        @headers["transfer-encoding"] == "chunked"
-      end
-
-      def chunk!
-        @headers.add("transfer-encoding", "chunked")
-      end
-
-      # :nocov:
-      def inspect
-        "#<HTTPX::Request::Body:#{object_id} " \
-          "#{unbounded_body? ? "stream" : "@bytesize=#{bytesize}"}>"
-      end
-      # :nocov:
-
-      private
-
-      def initialize_body(options)
-        if options.body
-          Transcoder::Body.encode(options.body)
-        elsif options.form
-          Transcoder::Form.encode(options.form)
-        elsif options.json
-          Transcoder::JSON.encode(options.json)
-        elsif options.xml
-          Transcoder::Xml.encode(options.xml)
-        end
-      end
-    end
-
     def transition(nextstate)
       case nextstate
       when :idle
@@ -270,16 +176,7 @@ module HTTPX
     def expects?
       @headers["expect"] == "100-continue" && @informational_status == 100 && !@response
     end
-
-    class ProcIO
-      def initialize(block)
-        @block = block
-      end
-
-      def write(data)
-        @block.call(data.dup)
-        data.bytesize
-      end
-    end
   end
 end
+
+require_relative "request/body"

@@ -1,5 +1,5 @@
 module HTTPX
-  module Plugins
+  module Transcoder
     module Multipart
       interface _MultipartInput
         def filename: () -> String
@@ -9,13 +9,6 @@ module HTTPX
 
       MULTIPART_VALUE_COND: ^(_Reader | record_multipart_value value) -> bool
 
-      def self.load_dependencies: (singleton(Session)) -> void
-      def self.configure: (*untyped) -> void
-      def self?.encode: (untyped) -> (Encoder | Transcoder::Form::Encoder)
-      def self?.decode: (HTTPX::Response response) -> Transcoder::_Decoder
-
-      def self?.normalize_keys: [U] (_ToS key, _ToAry[untyped] | _ToHash[_ToS, untyped] | untyped value) { (String, ?untyped) -> U } -> U
-
       type multipart_value = string | Pathname | File | _Reader
 
       type record_multipart_value = { content_type: String, filename: String, body: multipart_value } |
@@ -24,14 +17,14 @@ module HTTPX
       type multipart_nested_value = multipart_value | _ToAry[multipart_value] | _ToHash[string, multipart_value]
 
       class Encoder
-        include Transcoder::_Encoder
-
         @boundary: String
         @part_index: Integer
         @buffer: String
 
         @form: Enumerable[[Symbol | string, multipart_nested_value]]
         @parts: Array[_Reader]
+
+        def bytesize: () -> Integer
 
         def content_type: () -> String
 
