@@ -62,7 +62,6 @@ module HTTPX
         def extra_options(options)
           options.merge(
             fallback_protocol: "h2",
-            http2_settings: { wait_for_handshake: false },
             grpc_rpcs: {}.freeze,
             grpc_compression: false,
             grpc_deadline: DEADLINE
