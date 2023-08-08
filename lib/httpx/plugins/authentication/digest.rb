@@ -10,10 +10,11 @@ module HTTPX
       class Digest
         using RegexpExtensions unless Regexp.method_defined?(:match?)
 
-        def initialize(user, password, **)
+        def initialize(user, password, hashed: false, **)
           @user = user
           @password = password
           @nonce = 0
+          @hashed = hashed
         end
 
         def can_authenticate?(authenticate)
@@ -55,11 +56,13 @@ module HTTPX
           end
 
           a1 = if sess
-            [algorithm.hexdigest("#{@user}:#{params["realm"]}:#{@password}"),
-             nonce,
-             cnonce].join ":"
+            [
+              (@hashed ? @password : algorithm.hexdigest("#{@user}:#{params["realm"]}:#{@password}")),
+              nonce,
+              cnonce,
+            ].join ":"
           else
-            "#{@user}:#{params["realm"]}:#{@password}"
+            @hashed ? @password : "#{@user}:#{params["realm"]}:#{@password}"
           end
 
           ha1 = algorithm.hexdigest(a1)

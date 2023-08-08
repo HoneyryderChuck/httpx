@@ -60,7 +60,7 @@ module Requests
           start_test_servlet(DigestServer, algorithm: "#{alg}-sess") do |server|
             uri = "#{server.origin}/"
             session = HTTPX.plugin(:digest_authentication).with_headers("cookie" => "fake=fake_value")
-            response = session.digest_auth(user, server.get_passwd(user)).get(uri)
+            response = session.digest_auth(user, server.get_passwd(user), hashed: true).get(uri)
             verify_status(response, 200)
             assert response.read == "yay"
           end
