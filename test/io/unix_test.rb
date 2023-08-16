@@ -55,7 +55,7 @@ class UnixTest < Minitest::Test
 
   private
 
-  RESPONSE_HEADER = <<-HTTP.lines.map(&:strip).map(&:chomp).join("\r\n") << ("\r\n" * 2)
+  RESPONSE_HEADER = <<-HTTP.lines.map { |x| x.strip.chomp }.join("\r\n") << ("\r\n" * 2)
     HTTP/1.1 200 OK
     Date: Mon, 27 Jul 2009 12:28:53 GMT
     Content-Length: 4

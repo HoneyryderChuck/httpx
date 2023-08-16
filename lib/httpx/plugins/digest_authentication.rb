@@ -29,8 +29,8 @@ module HTTPX
       end
 
       module InstanceMethods
-        def digest_authentication(user, password)
-          with(digest: Authentication::Digest.new(user, password))
+        def digest_authentication(user, password, hashed: false)
+          with(digest: Authentication::Digest.new(user, password, hashed: hashed))
         end
 
         alias_method :digest_auth, :digest_authentication

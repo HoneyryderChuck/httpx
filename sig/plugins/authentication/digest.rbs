@@ -4,6 +4,7 @@ module HTTPX
       class Digest
         @user: String
         @password: String
+        @hashed: bool
 
         def can_authenticate?: (String? authenticate) -> boolish
 
@@ -13,7 +14,7 @@ module HTTPX
 
         def generate_header: (String meth, String uri, String authenticate) -> String
 
-        def initialize: (string user, string password) -> void
+        def initialize: (string user, string password, ?hashed: bool, **untyped) -> void
 
         def make_cnonce: () -> String
 
