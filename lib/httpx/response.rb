@@ -301,7 +301,7 @@ module HTTPX
           end
         end
 
-        return unless %i[memory buffer].include?(@state)
+        nil unless %i[memory buffer].include?(@state)
       end
 
       def _with_same_buffer_pos
