@@ -17,13 +17,26 @@ module HTTPX
 
     def initialize(_, _, options)
       super
-      @ctx = OpenSSL::SSL::SSLContext.new
+
       ctx_options = TLS_OPTIONS.merge(options.ssl)
       @sni_hostname = ctx_options.delete(:hostname) || @hostname
-      @ctx.set_params(ctx_options) unless ctx_options.empty?
+
+      if @io.is_a?(OpenSSL::SSL::SSLSocket)
+        # externally initiated ssl socket
+        @ctx = @io.context
+      else
+        @ctx = OpenSSL::SSL::SSLContext.new
+        @ctx.set_params(ctx_options) unless ctx_options.empty?
+        unless @ctx.session_cache_mode.nil? # a dummy method on JRuby
+          @ctx.session_cache_mode =
+            OpenSSL::SSL::SSLContext::SESSION_CACHE_CLIENT | OpenSSL::SSL::SSLContext::SESSION_CACHE_NO_INTERNAL_STORE
+        end
+      end
+
       @state = :negotiated if @keep_open
 
       @hostname_is_ip = IPRegex.match?(@sni_hostname)
+      @verify_hostname = @ctx.verify_hostname
     end
 
     def protocol
@@ -61,7 +74,13 @@ module HTTPX
 
       unless @io.is_a?(OpenSSL::SSL::SSLSocket)
         @io = OpenSSL::SSL::SSLSocket.new(@io, @ctx)
-        @io.hostname = @sni_hostname unless @hostname_is_ip
+
+        if @hostname_is_ip
+          # IP addresses in SNI is not valid per RFC 6066, section 3.
+          @ctx.verify_hostname = false
+        else
+          @io.hostname = @sni_hostname
+        end
         @io.sync_close = true
       end
       try_ssl_connect
@@ -71,7 +90,7 @@ module HTTPX
       # :nocov:
       def try_ssl_connect
         @io.connect_nonblock
-        @io.post_connection_check(@sni_hostname) if @ctx.verify_mode != OpenSSL::SSL::VERIFY_NONE && !@hostname_is_ip
+        @io.post_connection_check(@sni_hostname) if @ctx.verify_mode != OpenSSL::SSL::VERIFY_NONE && @verify_hostname
         transition(:negotiated)
         @interests = :w
       rescue ::IO::WaitReadable
@@ -103,7 +122,7 @@ module HTTPX
           @interests = :w
           return
         end
-        @io.post_connection_check(@sni_hostname) if @ctx.verify_mode != OpenSSL::SSL::VERIFY_NONE && !@hostname_is_ip
+        @io.post_connection_check(@sni_hostname) if @ctx.verify_mode != OpenSSL::SSL::VERIFY_NONE && @verify_hostname
         transition(:negotiated)
         @interests = :w
       end
@@ -130,6 +149,7 @@ module HTTPX
       case nextstate
       when :negotiated
         return unless @state == :connected
+
       when :closed
         return unless @state == :negotiated ||
                       @state == :connected

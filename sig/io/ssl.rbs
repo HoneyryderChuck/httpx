@@ -1,6 +1,9 @@
 module HTTPX
   IPRegex: Regexp
 
+  @ctx: OpenSSL::SSL::SSLContext
+  @verify_hostname: bool
+
   class TLSError < OpenSSL::SSL::SSLError
   end
 
