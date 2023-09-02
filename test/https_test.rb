@@ -93,6 +93,10 @@ class HTTPSTest < Minitest::Test
         connection_count = http.pool.connection_count
         assert connection_count == 2, "expected to have 2 connections, instead have #{connection_count}"
         assert http.connection_exausted, "expected 1 connnection to have exhausted"
+
+        # ssl session ought to be reused
+        conn = http.pool.connections.first
+        assert conn.io.instance_variable_get(:@io).session_reused? unless RUBY_ENGINE == "jruby"
       end
     end
 

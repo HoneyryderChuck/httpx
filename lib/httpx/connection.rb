@@ -42,7 +42,7 @@ module HTTPX
 
     def_delegator :@write_buffer, :empty?
 
-    attr_reader :type, :io, :origin, :origins, :state, :pending, :options
+    attr_reader :type, :io, :origin, :origins, :state, :pending, :options, :ssl_session
 
     attr_writer :timers
 
@@ -138,6 +138,12 @@ module HTTPX
 
     def merge(connection)
       @origins |= connection.instance_variable_get(:@origins)
+      if connection.ssl_session
+        @ssl_session = connection.ssl_session
+        @io.session_new_cb do |sess|
+          @ssl_session = sess
+        end if @io
+      end
       connection.purge_pending do |req|
         send(req)
       end
@@ -594,14 +600,21 @@ module HTTPX
     end
 
     def build_socket(addrs = nil)
-      transport_type = case @type
-                       when "tcp" then TCP
-                       when "ssl" then SSL
-                       when "unix" then UNIX
-                       else
-                         raise Error, "unsupported transport (#{@type})"
+      case @type
+      when "tcp"
+        TCP.new(@origin, addrs, @options)
+      when "ssl"
+        sock = SSL.new(@origin, addrs, @options)
+        sock.ssl_session = @ssl_session
+        sock.session_new_cb do |sess|
+          @ssl_session = sess
+        end
+        sock
+      when "unix"
+        UNIX.new(@origin, addrs, @options)
+      else
+        raise Error, "unsupported transport (#{@type})"
       end
-      transport_type.new(@origin, addrs, @options)
     end
 
     def on_error(error)

@@ -15,6 +15,8 @@ module HTTPX
       {}.freeze
     end
 
+    attr_writer :ssl_session
+
     def initialize(_, _, options)
       super
 
@@ -37,6 +39,15 @@ module HTTPX
 
       @hostname_is_ip = IPRegex.match?(@sni_hostname)
       @verify_hostname = @ctx.verify_hostname
+    end
+
+    if OpenSSL::SSL::SSLContext.method_defined?(:session_new_cb=)
+      def session_new_cb(&pr)
+        @ctx.session_new_cb = proc { |_, sess| pr.call(sess) }
+      end
+    else
+      # session_new_cb not implemented under JRuby
+      def session_new_cb; end
     end
 
     def protocol
@@ -80,6 +91,11 @@ module HTTPX
           @ctx.verify_hostname = false
         else
           @io.hostname = @sni_hostname
+        end
+        if @ssl_session &&
+           Process.clock_gettime(Process::CLOCK_REALTIME) < (@ssl_session.time.to_f + @ssl_session.timeout)
+          puts "reusing session y'all: #{@ssl_session}"
+          @io.session = @ssl_session
         end
         @io.sync_close = true
       end
