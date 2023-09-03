@@ -6,16 +6,21 @@ module SessionWithPool
     attr_reader :connection_count
     attr_reader :ping_count
 
+    attr_reader :conn_store
+
     def initialize(*)
       super
       @connection_count = 0
       @ping_count = 0
+      @conn_store = []
     end
 
     def init_connection(connection, _)
       super
       connection.on(:open) { @connection_count += 1 }
       connection.on(:pong) { @ping_count += 1 }
+
+      @conn_store << connection
     end
 
     def selectable_count

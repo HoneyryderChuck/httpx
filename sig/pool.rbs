@@ -6,6 +6,7 @@ module HTTPX
     @timers: Timers
     @selector: Selector
     @connections: Array[Connection]
+    @eden_connections: Array[Connection]
     @connected_connections: Integer
 
     def empty?: () -> void

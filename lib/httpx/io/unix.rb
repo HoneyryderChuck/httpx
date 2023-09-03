@@ -56,6 +56,10 @@ module HTTPX
            ::IO::WaitReadable
     end
 
+    def expired?
+      false
+    end
+
     # :nocov:
     def inspect
       "#<#{self.class}(path: #{@path}): (state: #{@state})>"

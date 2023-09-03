@@ -48,6 +48,8 @@ module HTTPX
 
     def match?: (URI::Generic uri, Options options) -> bool
 
+    def expired?: () -> boolish
+
     def mergeable?: (Connection) -> bool
 
     def coalescable?: (Connection) -> bool
@@ -73,11 +75,16 @@ module HTTPX
     def call: () -> void
 
     def close: () -> void
+
     def reset: () -> void
 
     def send: (Request) -> void
 
     def timeout: () -> Numeric?
+
+    def idling: () -> void
+
+    def used?: () -> boolish
 
     def deactivate: () -> void
 

@@ -14,7 +14,8 @@ module HTTPX
 
     alias host ip
 
-    def initialize: (URI::Generic origin, Array[ipaddr]? addresses, options options) -> void
+    # TODO: lift when https://github.com/ruby/rbs/issues/1497 fixed
+    def initialize: (URI::Generic origin, Array[ipaddr]? addresses, options options) ?{ (self) -> void } -> void
 
     def add_addresses: (Array[ipaddr] addrs) -> void
 
@@ -38,6 +39,8 @@ module HTTPX
     def close: () -> void
 
     def connected?: () -> bool
+
+    def expired?: () -> boolish
 
     def closed?: () -> bool
 

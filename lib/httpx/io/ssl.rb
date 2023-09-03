@@ -23,9 +23,10 @@ module HTTPX
       ctx_options = TLS_OPTIONS.merge(options.ssl)
       @sni_hostname = ctx_options.delete(:hostname) || @hostname
 
-      if @io.is_a?(OpenSSL::SSL::SSLSocket)
+      if @keep_open && @io.is_a?(OpenSSL::SSL::SSLSocket)
         # externally initiated ssl socket
         @ctx = @io.context
+        @state = :negotiated
       else
         @ctx = OpenSSL::SSL::SSLContext.new
         @ctx.set_params(ctx_options) unless ctx_options.empty?
@@ -33,9 +34,9 @@ module HTTPX
           @ctx.session_cache_mode =
             OpenSSL::SSL::SSLContext::SESSION_CACHE_CLIENT | OpenSSL::SSL::SSLContext::SESSION_CACHE_NO_INTERNAL_STORE
         end
-      end
 
-      @state = :negotiated if @keep_open
+        yield(self) if block_given?
+      end
 
       @hostname_is_ip = IPRegex.match?(@sni_hostname)
       @verify_hostname = @ctx.verify_hostname
@@ -67,15 +68,16 @@ module HTTPX
       OpenSSL::SSL.verify_certificate_identity(@io.peer_cert, host)
     end
 
-    def close
-      super
-      # allow reconnections
-      # connect only works if initial @io is a socket
-      @io = @io.io if @io.respond_to?(:io)
-    end
-
     def connected?
       @state == :negotiated
+    end
+
+    def expired?
+      super || ssl_session_expired?
+    end
+
+    def ssl_session_expired?
+      @ssl_session.nil? || Process.clock_gettime(Process::CLOCK_REALTIME) >= (@ssl_session.time.to_f + @ssl_session.timeout)
     end
 
     def connect
@@ -84,19 +86,15 @@ module HTTPX
                 @state != :connected
 
       unless @io.is_a?(OpenSSL::SSL::SSLSocket)
-        @io = OpenSSL::SSL::SSLSocket.new(@io, @ctx)
-
         if @hostname_is_ip
           # IP addresses in SNI is not valid per RFC 6066, section 3.
           @ctx.verify_hostname = false
-        else
-          @io.hostname = @sni_hostname
         end
-        if @ssl_session &&
-           Process.clock_gettime(Process::CLOCK_REALTIME) < (@ssl_session.time.to_f + @ssl_session.timeout)
-          puts "reusing session y'all: #{@ssl_session}"
-          @io.session = @ssl_session
-        end
+
+        @io = OpenSSL::SSL::SSLSocket.new(@io, @ctx)
+
+        @io.hostname = @sni_hostname unless @hostname_is_ip
+        @io.session = @ssl_session unless ssl_session_expired?
         @io.sync_close = true
       end
       try_ssl_connect

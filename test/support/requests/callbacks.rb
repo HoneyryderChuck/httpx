@@ -9,7 +9,7 @@ module Requests
       uri = URI(build_uri("/get"))
       origin = ip = nil
 
-      response = HTTPX.on_connection_opened do |o, sock|
+      response = HTTPX.plugin(SessionWithPool).on_connection_opened do |o, sock|
         origin = o
         ip = sock.remote_address.ip_address
       end.get(uri)
@@ -26,7 +26,7 @@ module Requests
       uri = URI(build_uri("/get"))
       origin = nil
 
-      response = HTTPX.on_connection_closed do |o|
+      response = HTTPX.plugin(SessionWithPool).on_connection_closed do |o|
         origin = o
       end.get(uri)
       verify_status(response, 200)
