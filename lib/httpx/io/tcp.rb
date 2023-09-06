@@ -200,7 +200,7 @@ module HTTPX
 
       resolver_addresses = Resolver.nolookup_resolve(@hostname)
 
-      (resolver_addresses & @addresses).empty?
+      (Array(resolver_addresses) & @addresses).empty?
     end
 
     # :nocov:
