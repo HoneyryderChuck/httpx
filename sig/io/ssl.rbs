@@ -1,15 +1,23 @@
 module HTTPX
   IPRegex: Regexp
 
+  @ctx: OpenSSL::SSL::SSLContext
+  @verify_hostname: bool
+
   class TLSError < OpenSSL::SSL::SSLError
   end
 
   class SSL < TCP
     TLS_OPTIONS: Hash[Symbol, untyped]
 
+    # TODO: lift when https://github.com/ruby/rbs/issues/1497 fixed
+    # def initialize: (URI::Generic origin, Array[ipaddr]? addresses, options options) ?{ (self) -> void } -> void
+
     def can_verify_peer?: () -> bool
 
     def verify_hostname: (String host) -> bool
+
+    def ssl_session_expired?: () -> boolish
 
     # :nocov:
     def try_ssl_connect: () -> void

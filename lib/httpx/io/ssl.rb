@@ -10,20 +10,48 @@ module HTTPX
     using RegexpExtensions unless Regexp.method_defined?(:match?)
 
     TLS_OPTIONS = if OpenSSL::SSL::SSLContext.instance_methods.include?(:alpn_protocols)
-      { alpn_protocols: %w[h2 http/1.1].freeze }.freeze
+      { alpn_protocols: %w[h2 http/1.1].freeze }
     else
-      {}.freeze
+      {}
     end
+    # https://github.com/jruby/jruby-openssl/issues/284
+    TLS_OPTIONS[:verify_hostname] = true if RUBY_ENGINE == "jruby"
+    TLS_OPTIONS.freeze
+
+    attr_writer :ssl_session
 
     def initialize(_, _, options)
       super
-      @ctx = OpenSSL::SSL::SSLContext.new
+
       ctx_options = TLS_OPTIONS.merge(options.ssl)
       @sni_hostname = ctx_options.delete(:hostname) || @hostname
-      @ctx.set_params(ctx_options) unless ctx_options.empty?
-      @state = :negotiated if @keep_open
+
+      if @keep_open && @io.is_a?(OpenSSL::SSL::SSLSocket)
+        # externally initiated ssl socket
+        @ctx = @io.context
+        @state = :negotiated
+      else
+        @ctx = OpenSSL::SSL::SSLContext.new
+        @ctx.set_params(ctx_options) unless ctx_options.empty?
+        unless @ctx.session_cache_mode.nil? # a dummy method on JRuby
+          @ctx.session_cache_mode =
+            OpenSSL::SSL::SSLContext::SESSION_CACHE_CLIENT | OpenSSL::SSL::SSLContext::SESSION_CACHE_NO_INTERNAL_STORE
+        end
+
+        yield(self) if block_given?
+      end
 
       @hostname_is_ip = IPRegex.match?(@sni_hostname)
+      @verify_hostname = @ctx.verify_hostname
+    end
+
+    if OpenSSL::SSL::SSLContext.method_defined?(:session_new_cb=)
+      def session_new_cb(&pr)
+        @ctx.session_new_cb = proc { |_, sess| pr.call(sess) }
+      end
+    else
+      # session_new_cb not implemented under JRuby
+      def session_new_cb; end
     end
 
     def protocol
@@ -43,15 +71,16 @@ module HTTPX
       OpenSSL::SSL.verify_certificate_identity(@io.peer_cert, host)
     end
 
-    def close
-      super
-      # allow reconnections
-      # connect only works if initial @io is a socket
-      @io = @io.io if @io.respond_to?(:io)
-    end
-
     def connected?
       @state == :negotiated
+    end
+
+    def expired?
+      super || ssl_session_expired?
+    end
+
+    def ssl_session_expired?
+      @ssl_session.nil? || Process.clock_gettime(Process::CLOCK_REALTIME) >= (@ssl_session.time.to_f + @ssl_session.timeout)
     end
 
     def connect
@@ -60,8 +89,15 @@ module HTTPX
                 @state != :connected
 
       unless @io.is_a?(OpenSSL::SSL::SSLSocket)
+        if @hostname_is_ip
+          # IP addresses in SNI is not valid per RFC 6066, section 3.
+          @ctx.verify_hostname = false
+        end
+
         @io = OpenSSL::SSL::SSLSocket.new(@io, @ctx)
+
         @io.hostname = @sni_hostname unless @hostname_is_ip
+        @io.session = @ssl_session unless ssl_session_expired?
         @io.sync_close = true
       end
       try_ssl_connect
@@ -71,7 +107,7 @@ module HTTPX
       # :nocov:
       def try_ssl_connect
         @io.connect_nonblock
-        @io.post_connection_check(@sni_hostname) if @ctx.verify_mode != OpenSSL::SSL::VERIFY_NONE && !@hostname_is_ip
+        @io.post_connection_check(@sni_hostname) if @ctx.verify_mode != OpenSSL::SSL::VERIFY_NONE && @verify_hostname
         transition(:negotiated)
         @interests = :w
       rescue ::IO::WaitReadable
@@ -103,7 +139,7 @@ module HTTPX
           @interests = :w
           return
         end
-        @io.post_connection_check(@sni_hostname) if @ctx.verify_mode != OpenSSL::SSL::VERIFY_NONE && !@hostname_is_ip
+        @io.post_connection_check(@sni_hostname) if @ctx.verify_mode != OpenSSL::SSL::VERIFY_NONE && @verify_hostname
         transition(:negotiated)
         @interests = :w
       end
@@ -130,6 +166,7 @@ module HTTPX
       case nextstate
       when :negotiated
         return unless @state == :connected
+
       when :closed
         return unless @state == :negotiated ||
                       @state == :connected

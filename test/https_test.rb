@@ -37,6 +37,22 @@ class HTTPSTest < Minitest::Test
   include Plugins::CircuitBreaker
   include Plugins::WebDav
 
+  def test_ssl_session_resumption
+    uri = build_uri("/get")
+    HTTPX.with(ssl: { ssl_version: :TLSv1_2, alpn_protocols: %w[http1.1] }).plugin(SessionWithPool).wrap do |http|
+      http.get(uri)
+      conn1 = http.pool.conn_store.last
+
+      http.get(uri)
+      conn2 = http.pool.conn_store.last
+
+      # because there's reconnection
+      assert conn1 == conn2
+
+      assert conn2.io.instance_variable_get(:@io).session_reused?
+    end
+  end unless RUBY_ENGINE == "jruby"
+
   def test_connection_coalescing
     coalesced_origin = "https://#{ENV["HTTPBIN_COALESCING_HOST"]}"
     HTTPX.plugin(SessionWithPool).wrap do |http|
@@ -93,6 +109,10 @@ class HTTPSTest < Minitest::Test
         connection_count = http.pool.connection_count
         assert connection_count == 2, "expected to have 2 connections, instead have #{connection_count}"
         assert http.connection_exausted, "expected 1 connnection to have exhausted"
+
+        # ssl session ought to be reused
+        conn = http.pool.connections.first
+        assert conn.io.instance_variable_get(:@io).session_reused? unless RUBY_ENGINE == "jruby"
       end
     end
 
@@ -174,7 +194,8 @@ class HTTPSTest < Minitest::Test
   def test_https_request_with_ip_not_set_sni
     uri = URI(build_uri("/get"))
     uri.host = Resolv.getaddress(uri.host)
-    response = HTTPX.get(uri)
+    # TODO: remove verify_hostname once the ip is reliably in the certificate
+    response = HTTPX.with(ssl: { verify_hostname: false }).get(uri)
 
     # this means it did not fail because of sni, just post certificate identity verification.
     verify_status(response, 200)

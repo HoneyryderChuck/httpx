@@ -42,7 +42,7 @@ module HTTPX
 
     def_delegator :@write_buffer, :empty?
 
-    attr_reader :type, :io, :origin, :origins, :state, :pending, :options
+    attr_reader :type, :io, :origin, :origins, :state, :pending, :options, :ssl_session
 
     attr_writer :timers
 
@@ -106,6 +106,12 @@ module HTTPX
       ) || (match_altsvcs?(uri) && match_altsvc_options?(uri, options))
     end
 
+    def expired?
+      return false unless @io
+
+      @io.expired?
+    end
+
     def mergeable?(connection)
       return false if @state == :closing || @state == :closed || !@io
 
@@ -138,6 +144,12 @@ module HTTPX
 
     def merge(connection)
       @origins |= connection.instance_variable_get(:@origins)
+      if connection.ssl_session
+        @ssl_session = connection.ssl_session
+        @io.session_new_cb do |sess|
+          @ssl_session = sess
+        end if @io
+      end
       connection.purge_pending do |req|
         send(req)
       end
@@ -280,6 +292,17 @@ module HTTPX
       @options.timeout[:operation_timeout]
     end
 
+    def idling
+      purge_after_closed
+      @write_buffer.clear
+      transition(:idle)
+      @parser = nil if @parser
+    end
+
+    def used?
+      @connected_at
+    end
+
     def deactivate
       transition(:inactive)
     end
@@ -310,6 +333,9 @@ module HTTPX
       catch(:called) do
         epiped = false
         loop do
+          # connection may have
+          return if @state == :idle
+
           parser.consume
 
           # we exit if there's no more requests to process
@@ -551,6 +577,7 @@ module HTTPX
       when :idle
         @timeout = @current_timeout = @options.timeout[:connect_timeout]
 
+        @connected_at = nil
       when :open
         return if @state == :closed
 
@@ -594,14 +621,23 @@ module HTTPX
     end
 
     def build_socket(addrs = nil)
-      transport_type = case @type
-                       when "tcp" then TCP
-                       when "ssl" then SSL
-                       when "unix" then UNIX
-                       else
-                         raise Error, "unsupported transport (#{@type})"
+      case @type
+      when "tcp"
+        TCP.new(@origin, addrs, @options)
+      when "ssl"
+        SSL.new(@origin, addrs, @options) do |sock|
+          sock.ssl_session = @ssl_session
+          sock.session_new_cb do |sess|
+            @ssl_session = sess
+
+            sock.ssl_session = sess
+          end
+        end
+      when "unix"
+        UNIX.new(@origin, addrs, @options)
+      else
+        raise Error, "unsupported transport (#{@type})"
       end
-      transport_type.new(@origin, addrs, @options)
     end
 
     def on_error(error)

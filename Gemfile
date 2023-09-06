@@ -41,6 +41,7 @@ group :test do
     if RUBY_VERSION >= "3.0.0"
       gem "multi_json", require: false
       gem "oj", require: false
+      gem "rbs"
       gem "yajl-ruby", require: false
     end
   end
@@ -64,7 +65,6 @@ group :test do
   gem "oga"
 
   if RUBY_VERSION >= "3.0.0"
-    gem "rbs"
     gem "rubocop"
     gem "rubocop-performance"
     gem "webrick"

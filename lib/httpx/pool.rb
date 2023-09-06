@@ -17,6 +17,7 @@ module HTTPX
       @timers = Timers.new
       @selector = Selector.new
       @connections = []
+      @eden_connections = []
       @connected_connections = 0
     end
 
@@ -52,6 +53,7 @@ module HTTPX
       return if connections.empty?
 
       @timers.cancel
+      @eden_connections.clear
       connections = connections.reject(&:inflight?)
       connections.each(&:close)
       next_tick until connections.none? { |c| c.state != :idle && @connections.include?(c) }
@@ -97,9 +99,24 @@ module HTTPX
     # maximize pipelining by opening as few connections as possible.
     #
     def find_connection(uri, options)
-      @connections.find do |connection|
+      conn = @connections.find do |connection|
         connection.match?(uri, options)
       end
+
+      unless conn
+        @eden_connections.delete_if do |connection|
+          is_expired = connection.expired?
+          conn = connection if conn.nil? && !is_expired && connection.match?(uri, options)
+          is_expired
+        end
+
+        if conn
+          @connections << conn
+          select_connection(conn)
+        end
+      end
+
+      conn
     end
 
     private
@@ -214,6 +231,10 @@ module HTTPX
 
     def unregister_connection(connection)
       @connections.delete(connection)
+      if connection.used? && !@eden_connections.include?(connection)
+        @eden_connections << connection
+        connection.idling
+      end
       @connected_connections -= 1 if deselect_connection(connection)
     end
 
