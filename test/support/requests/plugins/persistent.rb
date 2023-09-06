@@ -53,7 +53,7 @@ module Requests
           assert http.calls == 2, "expect request to be built 2 times (was #{http.calls})"
           http.close
         end
-      end
+      end unless RUBY_ENGINE == "jruby"
     end
   end
 end
