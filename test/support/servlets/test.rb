@@ -14,8 +14,9 @@ class TestServer < WEBrick::HTTPServer
 
   def origin
     sock = listeners.first
-    _, sock, ip, _ = sock.addr
-    "http://#{ip}:#{sock}"
+    _, port, ip, _ = sock.addr
+    scheme = @config[:SSLEnable] ? URI::HTTPS : URI::HTTP
+    scheme.build(host: ip, port: port)
   end
 end
 

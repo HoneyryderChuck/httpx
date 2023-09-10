@@ -192,13 +192,18 @@ class HTTPSTest < Minitest::Test
   end
 
   def test_https_request_with_ip_not_set_sni
-    uri = URI(build_uri("/get"))
-    uri.host = Resolv.getaddress(uri.host)
-    # TODO: remove verify_hostname once the ip is reliably in the certificate
-    response = HTTPX.with(ssl: { verify_hostname: false }).get(uri)
+    # # server conf
+    ca_store = OpenSSL::X509::Store.new
+    ca_store.set_default_paths
+    ca_store.add_file(File.join(ByIpCertServer::CERTS_DIR, "ca-bundle.crt"))
 
-    # this means it did not fail because of sni, just post certificate identity verification.
-    verify_status(response, 200)
+    start_test_servlet(ByIpCertServer) do |server|
+      uri = "#{server.origin}/"
+      HTTPX.plugin(SessionWithPool).with(ssl: { cert_store: ca_store }) do |http|
+        response = http.get(uri)
+        verify_status(response, 200)
+      end
+    end
   end
 
   private

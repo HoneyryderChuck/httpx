@@ -20,6 +20,7 @@ if ENV.key?("PARALLEL")
 end
 
 require "webrick"
+require "webrick/https"
 require "httpx"
 
 Dir[File.join(".", "lib", "httpx", "plugins", "**", "*.rb")].sort.each { |f| require f } if defined?(RBS)

@@ -4,7 +4,6 @@ require "openssl"
 
 module HTTPX
   TLSError = OpenSSL::SSL::SSLError
-  IPRegex = Regexp.union(Resolv::IPv4::Regex, Resolv::IPv6::Regex)
 
   class SSL < TCP
     using RegexpExtensions unless Regexp.method_defined?(:match?)
@@ -41,7 +40,6 @@ module HTTPX
         yield(self) if block_given?
       end
 
-      @hostname_is_ip = IPRegex.match?(@sni_hostname)
       @verify_hostname = @ctx.verify_hostname
     end
 
@@ -89,14 +87,16 @@ module HTTPX
                 @state != :connected
 
       unless @io.is_a?(OpenSSL::SSL::SSLSocket)
-        if @hostname_is_ip
+        if (hostname_is_ip = (@ip == @sni_hostname))
+          # IPv6 address would be "[::1]", must turn to "0000:0000:0000:0000:0000:0000:0000:0001" for cert SAN check
+          @sni_hostname = @ip.to_string
           # IP addresses in SNI is not valid per RFC 6066, section 3.
           @ctx.verify_hostname = false
         end
 
         @io = OpenSSL::SSL::SSLSocket.new(@io, @ctx)
 
-        @io.hostname = @sni_hostname unless @hostname_is_ip
+        @io.hostname = @sni_hostname unless hostname_is_ip
         @io.session = @ssl_session unless ssl_session_expired?
         @io.sync_close = true
       end
