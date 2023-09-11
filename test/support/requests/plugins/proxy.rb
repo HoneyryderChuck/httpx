@@ -148,6 +148,36 @@ module Requests
         assert response.proxied?
       end
 
+      def test_plugin_http_proxy_connection_coalescing
+        return unless origin.start_with?("https://")
+
+        coalesced_origin = "https://#{ENV["HTTPBIN_COALESCING_HOST"]}"
+        HTTPX.plugin(:proxy).with_proxy(uri: http_proxy).plugin(SessionWithPool).wrap do |http|
+          response1 = http.get(origin)
+          verify_status(response1, 200)
+          response2 = http.get(coalesced_origin)
+          verify_status(response2, 200)
+          # introspection time
+          pool = http.pool
+          connections = pool.connections
+          origins = connections.map(&:origins)
+          assert origins.any? { |orgs| orgs.sort == [origin, coalesced_origin].sort },
+                 "connections for #{[origin, coalesced_origin]} didn't coalesce (expected connection with both origins (#{origins}))"
+
+          unsafe_origin = URI(origin)
+          unsafe_origin.scheme = "http"
+          response3 = http.get(unsafe_origin)
+          verify_status(response3, 200)
+
+          # introspection time
+          pool = http.pool
+          connections = pool.connections
+          origins = connections.map(&:origins)
+          refute origins.any?([origin]),
+                 "connection coalesced inexpectedly (expected connection with both origins (#{origins}))"
+        end
+      end if ENV.key?("HTTPBIN_COALESCING_HOST")
+
       def test_plugin_socks4_proxy
         session = HTTPX.plugin(:proxy).plugin(ProxyResponseDetector).with_proxy(uri: socks4_proxy)
         uri = build_uri("/get")

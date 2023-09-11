@@ -67,6 +67,18 @@ class HTTPSTest < Minitest::Test
       origins = connections.map(&:origins)
       assert origins.any? { |orgs| orgs.sort == [origin, coalesced_origin].sort },
              "connections for #{[origin, coalesced_origin]} didn't coalesce (expected connection with both origins (#{origins}))"
+
+      unsafe_origin = URI(origin)
+      unsafe_origin.scheme = "http"
+      response3 = http.get(unsafe_origin)
+      verify_status(response3, 200)
+
+      # introspection time
+      pool = http.pool
+      connections = pool.connections
+      origins = connections.map(&:origins)
+      refute origins.any?([origin]),
+             "connection coalesced inexpectedly (expected connection with both origins (#{origins}))"
     end
   end if ENV.key?("HTTPBIN_COALESCING_HOST")
 
