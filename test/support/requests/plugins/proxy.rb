@@ -272,7 +272,17 @@ module Requests
         session = HTTPX.plugin(:proxy).with_proxy(uri: [proxy])
         uri = build_uri("/get")
         response = session.get(uri)
-        verify_error_response(response, /authentication error/)
+        verify_error_response(response, /authentication error:/)
+      end
+
+      def test_plugin_socks5_proxy_none_error
+        start_test_servlet(Sock5WithNoneServer) do |server|
+          proxy = server.origin
+          session = HTTPX.plugin(:proxy).with_proxy(uri: [proxy])
+          uri = build_uri("/get")
+          response = session.get(uri)
+          verify_error_response(response, /no supported authorization methods/)
+        end
       end
 
       def test_plugin_ssh_proxy
