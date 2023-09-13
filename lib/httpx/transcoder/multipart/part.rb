@@ -21,7 +21,8 @@ module HTTPX
 
         value = value.open(File::RDONLY) if Object.const_defined?(:Pathname) && value.is_a?(Pathname)
 
-        if value.is_a?(File)
+        if value.respond_to?(:path) && value.respond_to?(:read)
+          # either a File, a Tempfile, or something else which has to quack like a file
           filename ||= File.basename(value.path)
           content_type ||= MimeTypeDetector.call(value, filename) || "application/octet-stream"
           [value, content_type, filename]
