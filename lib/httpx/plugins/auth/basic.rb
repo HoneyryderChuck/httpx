@@ -11,10 +11,6 @@ module HTTPX
           @password = password
         end
 
-        def can_authenticate?(authenticate)
-          authenticate && /Basic .*/.match?(authenticate)
-        end
-
         def authenticate(*)
           "Basic #{Base64.strict_encode64("#{@user}:#{@password}")}"
         end

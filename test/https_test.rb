@@ -147,11 +147,12 @@ class HTTPSTest < Minitest::Test
 
   def test_http2_request_trailers
     uri = build_uri("/post")
+    log = StringIO.new
 
     HTTPX.wrap do |http|
       total_time = start_time = nil
       trailered = false
-      request = http.build_request("POST", uri, body: %w[this is chunked])
+      request = http.build_request("POST", uri, body: %w[this is chunked], debug: log, debug_level: 3)
       request.on(:headers) do |_written_request|
         start_time = HTTPX::Utils.now
       end
@@ -166,6 +167,10 @@ class HTTPSTest < Minitest::Test
       # verify_header(body["headers"], "x-time-spent", total_time.to_s)
       assert body.key?("data")
       assert trailered, "trailer callback wasn't called"
+
+      # assert response headers
+      log_output = log.string
+      assert log_output.include?("HEADER: x-time-spent: #{total_time}")
     end
   end
 

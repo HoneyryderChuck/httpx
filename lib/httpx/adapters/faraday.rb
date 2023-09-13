@@ -53,8 +53,6 @@ module Faraday
                Errno::EPIPE,
                ::HTTPX::ConnectionError => e
           raise Faraday::ConnectionFailed, e
-        rescue ::HTTPX::TimeoutError => e
-          raise Faraday::TimeoutError, e
         end
 
         def build_request(env)
@@ -223,10 +221,7 @@ module Faraday
 
         # from Faraday::Adapter#request_timeout
         def request_timeout(type, options)
-          key = Faraday::Adapter::TIMEOUT_KEYS.fetch(type) do
-            msg = "Expected :read, :write, :open. Got #{type.inspect} :("
-            raise ArgumentError, msg
-          end
+          key = Faraday::Adapter::TIMEOUT_KEYS[type]
           options[key] || options[:timeout]
         end
       end

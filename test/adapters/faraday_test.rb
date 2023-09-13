@@ -52,6 +52,28 @@ class FaradayTest < Minitest::Test
     assert_nil(connection.in_parallel {})
   end
 
+  def test_adapter_in_parallel_get_data
+    resp1 = nil
+    streamed = []
+
+    connection = faraday_connection
+    connection.in_parallel do
+      resp1 = connection.get(build_path("/stream/3")) do |req|
+        assert !req.options.stream_response?
+        req.options.on_data = proc do |chunk, _overall_received_bytes|
+          streamed << chunk
+        end
+        assert req.options.stream_response?
+      end
+      assert connection.in_parallel?
+      assert_nil resp1.reason_phrase
+    end
+    assert !connection.in_parallel?
+    assert_equal "OK", resp1.reason_phrase
+    assert !streamed.empty?
+    assert streamed.join.lines.size == 3
+  end
+
   def test_adapter_get_handles_compression
     res = get(build_path("/gzip"))
     assert JSON.parse(res.body.to_s)["gzipped"]

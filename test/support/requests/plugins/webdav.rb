@@ -56,6 +56,17 @@ module Requests
 
         response = webdav_client.delete("/lockfile.html")
         verify_status(response, 204)
+
+        webdav_client.put("/lockfile.html", body: "bang")
+        response = webdav_client.lock("/lockfile.html", timeout: 1)
+        verify_status(response, 200)
+
+        response = webdav_client.delete("/lockfile.html")
+        verify_status(response, 423)
+
+        sleep 2
+        response = webdav_client.delete("/lockfile.html")
+        verify_status(response, 204)
       end
 
       def test_plugin_webdav_lock_blk
@@ -87,6 +98,16 @@ module Requests
         verify_status(response, 207)
 
         response = webdav_client.propfind("/propfind.html")
+        verify_status(response, 207)
+        assert response.to_s.include?("Jim Bean")
+
+        response = webdav_client.propfind("/propfind.html", :acl)
+        verify_status(response, 207)
+
+        response = webdav_client.propfind(
+          "/propfind.html",
+          '<?xml version="1.0" encoding="utf-8"?><DAV:propfind xmlns:DAV="DAV:"><DAV:allprop/></DAV:propfind>'
+        )
         verify_status(response, 207)
         assert response.to_s.include?("Jim Bean")
       end
