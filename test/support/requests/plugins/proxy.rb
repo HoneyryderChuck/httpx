@@ -178,6 +178,24 @@ module Requests
         end
       end if ENV.key?("HTTPBIN_COALESCING_HOST")
 
+      def test_plugin_http_proxy_redirect_305
+        return unless origin.start_with?("http://")
+
+        start_test_servlet(ProxyServer) do |proxy|
+          start_test_servlet(ProxyRedirectorServer, proxy.origin) do |server|
+            session = HTTPX.plugin(:follow_redirects)
+                           .plugin(:proxy)
+                           .plugin(ProxyResponseDetector)
+
+            uri = "#{server.origin}/"
+            response = session.get(uri)
+            verify_status(response, 200)
+            verify_body_length(response)
+            assert response.body.to_s == proxy.origin.to_s
+          end
+        end
+      end
+
       def test_plugin_socks4_proxy
         session = HTTPX.plugin(:proxy).plugin(ProxyResponseDetector).with_proxy(uri: socks4_proxy)
         uri = build_uri("/get")
