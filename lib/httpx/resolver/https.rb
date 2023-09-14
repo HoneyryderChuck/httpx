@@ -132,7 +132,7 @@ module HTTPX
 
       case code
       when :ok
-        parse_addresses(result)
+        parse_addresses(result, request)
       when :no_domain_found
         # Indicates no such domain was found.
 
@@ -146,13 +146,13 @@ module HTTPX
 
         emit_resolve_error(connection)
       when :decode_error
-        host, connection = @queries.first
-        reset_hostname(host)
+        host = @requests.delete(request)
+        connection = reset_hostname(host)
         emit_resolve_error(connection, connection.origin.host, result)
       end
     end
 
-    def parse_addresses(answers)
+    def parse_addresses(answers, request)
       if answers.empty?
         # no address found, eliminate candidates
         host = @requests.delete(request)
