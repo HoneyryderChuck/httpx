@@ -32,6 +32,8 @@ module HTTPX
 
       def parse: (Request request, Response response) -> void
 
+      def parse_addresses: (Array[dns_result] answers, Request request) -> void
+
       def build_request: (String hostname) -> Request
 
       def decode_response_body: (Response) -> dns_decoding_response
