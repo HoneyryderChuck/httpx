@@ -351,4 +351,7 @@ module HTTPX
       # :nocov:
     end
   end
+
+  # session may be overridden by certain adapters.
+  S = Session
 end
