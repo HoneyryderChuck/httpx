@@ -48,7 +48,7 @@ module HTTPX
     end
 
     def plugin(pl, options = nil, &blk)
-      klass = is_a?(Session) ? self.class : Session
+      klass = is_a?(S) ? self.class : Session
       klass = Class.new(klass)
       klass.instance_variable_set(:@default_options, klass.default_options.merge(default_options))
       klass.plugin(pl, options, &blk).new
@@ -58,7 +58,7 @@ module HTTPX
     # :nocov:
     def plugins(pls)
       warn ":#{__method__} is deprecated, use :plugin instead"
-      klass = is_a?(Session) ? self.class : Session
+      klass = is_a?(S) ? self.class : Session
       klass = Class.new(klass)
       klass.instance_variable_set(:@default_options, klass.default_options.merge(default_options))
       klass.plugins(pls).new
@@ -82,7 +82,7 @@ module HTTPX
     end
 
     def branch(options, &blk)
-      return self.class.new(options, &blk) if is_a?(Session)
+      return self.class.new(options, &blk) if is_a?(S)
 
       Session.new(options, &blk)
     end
