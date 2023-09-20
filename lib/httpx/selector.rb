@@ -9,8 +9,6 @@ class HTTPX::Selector
   private_constant :READABLE
   private_constant :WRITABLE
 
-  using HTTPX::IOExtensions
-
   def initialize
     @selectables = []
   end

@@ -94,84 +94,43 @@ module HTTPX
       retry
     end
 
-    if RUBY_VERSION < "2.3"
-      # :nocov:
-      def try_connect
-        @io.connect_nonblock(Socket.sockaddr_in(@port, @ip.to_s))
-      rescue ::IO::WaitWritable, Errno::EALREADY
-        @interests = :w
-      rescue ::IO::WaitReadable
+    def try_connect
+      case @io.connect_nonblock(Socket.sockaddr_in(@port, @ip.to_s), exception: false)
+      when :wait_readable
         @interests = :r
-      rescue Errno::EISCONN
-        transition(:connected)
+        return
+      when :wait_writable
         @interests = :w
-      else
-        transition(:connected)
-        @interests = :w
+        return
       end
-      private :try_connect
+      transition(:connected)
+      @interests = :w
+    rescue Errno::EALREADY
+      @interests = :w
+    end
+    private :try_connect
 
-      def read(size, buffer)
-        @io.read_nonblock(size, buffer)
-        log { "READ: #{buffer.bytesize} bytes..." }
-        buffer.bytesize
-      rescue ::IO::WaitReadable
+    def read(size, buffer)
+      ret = @io.read_nonblock(size, buffer, exception: false)
+      if ret == :wait_readable
         buffer.clear
-        0
-      rescue EOFError
-        nil
+        return 0
       end
+      return if ret.nil?
 
-      def write(buffer)
-        siz = @io.write_nonblock(buffer)
-        log { "WRITE: #{siz} bytes..." }
-        buffer.shift!(siz)
-        siz
-      rescue ::IO::WaitWritable
-        0
-      rescue EOFError
-        nil
-      end
-      # :nocov:
-    else
-      def try_connect
-        case @io.connect_nonblock(Socket.sockaddr_in(@port, @ip.to_s), exception: false)
-        when :wait_readable
-          @interests = :r
-          return
-        when :wait_writable
-          @interests = :w
-          return
-        end
-        transition(:connected)
-        @interests = :w
-      rescue Errno::EALREADY
-        @interests = :w
-      end
-      private :try_connect
+      log { "READ: #{buffer.bytesize} bytes..." }
+      buffer.bytesize
+    end
 
-      def read(size, buffer)
-        ret = @io.read_nonblock(size, buffer, exception: false)
-        if ret == :wait_readable
-          buffer.clear
-          return 0
-        end
-        return if ret.nil?
+    def write(buffer)
+      siz = @io.write_nonblock(buffer, exception: false)
+      return 0 if siz == :wait_writable
+      return if siz.nil?
 
-        log { "READ: #{buffer.bytesize} bytes..." }
-        buffer.bytesize
-      end
+      log { "WRITE: #{siz} bytes..." }
 
-      def write(buffer)
-        siz = @io.write_nonblock(buffer, exception: false)
-        return 0 if siz == :wait_writable
-        return if siz.nil?
-
-        log { "WRITE: #{siz} bytes..." }
-
-        buffer.shift!(siz)
-        siz
-      end
+      buffer.shift!(siz)
+      siz
     end
 
     def close

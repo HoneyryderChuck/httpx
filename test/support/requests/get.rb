@@ -110,12 +110,12 @@ module Requests
       response.close
 
       assert response.instance_variable_get(:@request).authority == "xn--bcher-kva.ch"
-    end unless RUBY_VERSION < "2.3"
+    end
 
     def test_get_non_ascii
       response = HTTPX.get(build_uri("/get?q=ã"))
       verify_status(response, 200)
       response.close
-    end unless RUBY_VERSION < "2.3"
+    end
   end
 end

@@ -9,8 +9,7 @@ class Bug_0_14_2_Test < Minitest::Test
   def test_multipart_can_have_arbitrary_filename
     uri = "https://#{httpbin}/post"
 
-    response = HTTPX.plugin(:multipart)
-                    .post(uri, form: {
+    response = HTTPX.post(uri, form: {
                             image: {
                               filename: "weird-al-jankovic",
                               body: File.new(fixture_file_path),

@@ -94,6 +94,10 @@ module HTTPX
     # https://gitlab.com/honeyryderchuck/httpx/wikis/Stream
     #
     module Stream
+      def self.extra_options(options)
+        options.merge(timeout: { read_timeout: Float::INFINITY, operation_timeout: 60 })
+      end
+
       module InstanceMethods
         def request(*args, stream: false, **options)
           return super(*args, **options) unless stream
@@ -138,12 +142,6 @@ module HTTPX
 
           super
         end
-      end
-
-      def self.const_missing(const_name)
-        super unless const_name == :StreamResponse
-        warn "DEPRECATION WARNING: the class #{self}::StreamResponse is deprecated. Use HTTPX::StreamResponse instead."
-        HTTPX::StreamResponse
       end
     end
     register_plugin :stream, Stream

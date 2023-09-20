@@ -92,6 +92,12 @@ module HTTPX
       resolve
     end
 
+    def raise_timeout_error(interval)
+      error = HTTPX::ResolveTimeoutError.new(interval, "timed out while waiting on select")
+      error.set_backtrace(caller)
+      on_error(error)
+    end
+
     private
 
     def transition(nextstate)
@@ -164,6 +170,7 @@ module HTTPX
         Thread.current.report_on_exception = false
         begin
           addrs = if resolve_timeout
+
             Timeout.timeout(resolve_timeout) do
               __addrinfo_resolve(hostname, scheme)
             end
@@ -182,16 +189,11 @@ module HTTPX
               @pipe_write.putc(DONE) unless @pipe_write.closed?
             end
           end
-        rescue Timeout::Error => e
-          ex = ResolveTimeoutError.new(resolve_timeout, e.message)
-          ex.set_backtrace(ex.backtrace)
-          @pipe_mutex.synchronize do
-            families.each do |family|
-              @ips.unshift([family, connection, ex])
-              @pipe_write.putc(ERROR) unless @pipe_write.closed?
-            end
-          end
         rescue StandardError => e
+          if e.is_a?(Timeout::Error)
+            e = ResolveTimeoutError.new(resolve_timeout, e.message)
+            e.set_backtrace(e.backtrace)
+          end
           @pipe_mutex.synchronize do
             families.each do |family|
               @ips.unshift([family, connection, e])

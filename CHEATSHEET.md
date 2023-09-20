@@ -56,13 +56,13 @@ HTTPX.delete("https://myapi.com/users/1")
 require "httpx"
 
 # Basic Auth
-response = HTTPX.plugin(:basic_authentication).basic_authentication("username", "password").get("https://google.com")
+response = HTTPX.plugin(:basic_auth).basic_auth("username", "password").get("https://google.com")
 
 # Digest Auth
-response = HTTPX.plugin(:digest_authentication).digest_authentication("username", "password").get("https://google.com")
+response = HTTPX.plugin(:digest_auth).digest_auth("username", "password").get("https://google.com")
 
 # Bearer Token Auth
-response = HTTPX.plugin(:authentication).authentication("eyrandomtoken").get("https://google.com")
+response = HTTPX.plugin(:auth).authorization("eyrandomtoken").get("https://google.com")
 ```
 
 
@@ -139,9 +139,14 @@ end
 ```ruby
 require "httpx"
 
-response = HTTPX.plugin(:compression).get("https://www.google.com")
+response = HTTPX.get("https://www.google.com")
 puts response.headers["content-encoding"] #=> "gzip"
+puts response.to_s #=> uncompressed payload
 
+# uncompressed request payload
+HTTPX.post("https://myapi.com/users", body: super_large_text_payload)
+# gzip-compressed request payload
+HTTPX.post("https://myapi.com/users", headers: { "content-encoding" => %w[gzip] } body: super_large_text_payload)
 ```
 
 ## Proxy

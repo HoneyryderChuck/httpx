@@ -88,13 +88,12 @@ module HTTPX
              request.retries.positive? &&
              __repeatable_request?(request, options) &&
              (
-               # rubocop:disable Style/MultilineTernaryOperator
-               options.retry_on ?
-               options.retry_on.call(response) :
                (
                  response.is_a?(ErrorResponse) && __retryable_error?(response.error)
+               ) ||
+               (
+                 options.retry_on && options.retry_on.call(response)
                )
-               # rubocop:enable Style/MultilineTernaryOperator
              )
             __try_partial_retry(request, response)
             log { "failed to get response, #{request.retries} tries to go..." }

@@ -17,7 +17,6 @@ module HTTPX
       module InstanceMethods
         def max_redirects: (_ToI) -> instance
 
-        def build_redirect_request: (Request, Response, Options) -> Request
         def __get_location_from_response: (Response) -> (URI::HTTP | URI::HTTPS)
       end
 

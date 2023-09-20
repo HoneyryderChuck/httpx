@@ -43,45 +43,6 @@ module HTTPX
     def no_data?: () -> bool
 
     def decode:(Transcoder::_Decode transcoder, ?untyped options) -> untyped
-
-    class Body
-      include _Reader
-      include _ToS
-      include _ToStr
-
-      attr_reader encoding: Encoding | String
-
-      @response: Response
-      @headers: Headers
-      @options: Options
-      @state: :idle | :memory | :buffer | :closed
-      @threshold_size: Integer
-      @window_size: Integer
-      @length: Integer
-      @buffer: StringIO | Tempfile | nil
-      @reader: StringIO | Tempfile | nil
-
-      def write:(String chunk) -> Integer?
-
-      def each: () { (String) -> void } -> void
-              | () -> Enumerable[String]
-
-      def filename: () -> String?
-
-      def bytesize: () -> (Integer | Float)
-      def empty?: () -> bool
-      def copy_to: (String | File | _Writer destination) -> void
-      def close: () -> void
-      def closed?: () -> bool
-
-      def rewind: () -> void
-
-      private
-
-      def initialize: (Response, Options) -> void
-      def transition: () -> void
-      def _with_same_buffer_pos: [A] () { () -> A } -> A
-    end
   end
 
   class ContentType

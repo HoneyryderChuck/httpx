@@ -4,11 +4,9 @@ require "forwardable"
 
 module HTTPX::Transcoder
   module JSON
-    JSON_REGEX = %r{\bapplication/(?:vnd\.api\+)?json\b}i.freeze
-
-    using HTTPX::RegexpExtensions unless Regexp.method_defined?(:match?)
-
     module_function
+
+    JSON_REGEX = %r{\bapplication/(?:vnd\.api\+)?json\b}i.freeze
 
     class Encoder
       extend Forwardable

@@ -19,7 +19,7 @@ And also:
 
 * Compression (gzip, deflate, brotli)
 * Streaming Requests
-* Authentication (Basic Auth, Digest Auth, NTLM)
+* Auth (Basic Auth, Digest Auth, NTLM)
 * Expect 100-continue
 * Multipart Requests
 * Advanced Cookie handling
@@ -113,7 +113,7 @@ response = HTTPX.plugin(:basic_authentication)
                 .get("https://www.google.com")
 
 # more complex client objects can be cached, and are thread-safe
-http = HTTPX.plugin(:compression).plugin(:expect).with(headers: { "x-pvt-token" => "TOKEN"})
+http = HTTPX.plugin(:expect).with(headers: { "x-pvt-token" => "TOKEN"})
 http.get("https://example.com") # the above options will apply
 http.post("https://example2.com",  form: {name: "John", age: "22"}) # same, plus the form POST body
 ```
@@ -134,9 +134,9 @@ The test suite runs against [httpbin proxied over nghttp2](https://nghttp2.org/h
 
 ## Supported Rubies
 
-All Rubies greater or equal to 2.1, and always latest JRuby and Truffleruby.
+All Rubies greater or equal to 2.7, and always latest JRuby and Truffleruby.
 
-**Note**: This gem is tested against all latest patch versions, i.e. if you're using 2.2.0 and you experience some issue, please test it against 2.2.10 (latest patch version of 2.2) before creating an issue.
+**Note**: This gem is tested against all latest patch versions, i.e. if you're using 3.2.0 and you experience some issue, please test it against 3.2.$latest before creating an issue.
 
 ## Resources
 |               |                                                        |
@@ -148,15 +148,6 @@ All Rubies greater or equal to 2.1, and always latest JRuby and Truffleruby.
 | Rubygems      | https://rubygems.org/gems/httpx                        |
 
 ## Caveats
-
-### ALPN support
-
-ALPN negotiation is required for "auto" HTTP/2 "https" requests. This is available in ruby since version 2.3 .
-
-### Known bugs
-
-* Doesn't work with ruby 2.4.0 for Windows (see [#36](https://gitlab.com/os85/httpx/issues/36)).
-* Using `total_timeout` along with the `:persistent` plugin [does not work as you might expect](https://gitlab.com/os85/httpx/-/wikis/Timeouts#total_timeout).
 
 ## Versioning Policy
 

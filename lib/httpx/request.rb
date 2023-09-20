@@ -19,10 +19,6 @@ module HTTPX
     def_delegator :@body, :empty?
 
     def initialize(verb, uri, options = {})
-      if verb.is_a?(Symbol)
-        warn "DEPRECATION WARNING: Using symbols for `verb` is deprecated, and will not be supported in httpx 1.0. " \
-             "Use \"#{verb.to_s.upcase}\" instead."
-      end
       @verb    = verb.to_s.upcase
       @options = Options.new(options)
       @uri     = Utils.to_uri(uri)
@@ -67,16 +63,6 @@ module HTTPX
       return :r if @state == :done || @state == :expect
 
       :w
-    end
-
-    if RUBY_VERSION < "2.2"
-      URIParser = URI::DEFAULT_PARSER
-
-      def initialize_with_escape(verb, uri, options = {})
-        initialize_without_escape(verb, URIParser.escape(uri.to_s), options)
-      end
-      alias_method :initialize_without_escape, :initialize
-      alias_method :initialize, :initialize_with_escape
     end
 
     def merge_headers(h)
@@ -153,100 +139,6 @@ module HTTPX
     end
     # :nocov:
 
-    class Body < SimpleDelegator
-      class << self
-        def new(_, options)
-          return options.body if options.body.is_a?(self)
-
-          super
-        end
-      end
-
-      def initialize(headers, options)
-        @headers = headers
-        @body = initialize_body(options)
-        return if @body.nil?
-
-        @headers["content-type"] ||= @body.content_type
-        @headers["content-length"] = @body.bytesize unless unbounded_body?
-        super(@body)
-      end
-
-      def each(&block)
-        return enum_for(__method__) unless block
-        return if @body.nil?
-
-        body = stream(@body)
-        if body.respond_to?(:read)
-          ::IO.copy_stream(body, ProcIO.new(block))
-        elsif body.respond_to?(:each)
-          body.each(&block)
-        else
-          block[body.to_s]
-        end
-      end
-
-      def rewind
-        return if empty?
-
-        @body.rewind if @body.respond_to?(:rewind)
-      end
-
-      def empty?
-        return true if @body.nil?
-        return false if chunked?
-
-        @body.bytesize.zero?
-      end
-
-      def bytesize
-        return 0 if @body.nil?
-
-        @body.bytesize
-      end
-
-      def stream(body)
-        encoded = body
-        encoded = Transcoder::Chunker.encode(body.enum_for(:each)) if chunked?
-        encoded
-      end
-
-      def unbounded_body?
-        return @unbounded_body if defined?(@unbounded_body)
-
-        @unbounded_body = !@body.nil? && (chunked? || @body.bytesize == Float::INFINITY)
-      end
-
-      def chunked?
-        @headers["transfer-encoding"] == "chunked"
-      end
-
-      def chunk!
-        @headers.add("transfer-encoding", "chunked")
-      end
-
-      # :nocov:
-      def inspect
-        "#<HTTPX::Request::Body:#{object_id} " \
-          "#{unbounded_body? ? "stream" : "@bytesize=#{bytesize}"}>"
-      end
-      # :nocov:
-
-      private
-
-      def initialize_body(options)
-        if options.body
-          Transcoder::Body.encode(options.body)
-        elsif options.form
-          Transcoder::Form.encode(options.form)
-        elsif options.json
-          Transcoder::JSON.encode(options.json)
-        elsif options.xml
-          Transcoder::Xml.encode(options.xml)
-        end
-      end
-    end
-
     def transition(nextstate)
       case nextstate
       when :idle
@@ -284,16 +176,7 @@ module HTTPX
     def expects?
       @headers["expect"] == "100-continue" && @informational_status == 100 && !@response
     end
-
-    class ProcIO
-      def initialize(block)
-        @block = block
-      end
-
-      def write(data)
-        @block.call(data.dup)
-        data.bytesize
-      end
-    end
   end
 end
+
+require_relative "request/body"

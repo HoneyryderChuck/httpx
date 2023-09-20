@@ -12,18 +12,17 @@ module HTTPX
     def with: (options) -> Session
             | (options) { (Session) -> void } -> void
 
-    def plugin: (:authentication, ?options) -> Plugins::sessionAuthentication
-              | (:basic_authentication, ?options) -> Plugins::sessionBasicAuth
-              | (:digest_authentication, ?options) -> Plugins::sessionDigestAuth
-              | (:ntlm_authentication, ?options) -> Plugins::sessionNTLMAuth
+    def plugin: (:auth, ?options) -> Plugins::sessionAuthorization
+              | (:basic_auth, ?options) -> Plugins::sessionBasicAuth
+              | (:digest_auth, ?options) -> Plugins::sessionDigestAuth
+              | (:ntlm_auth, ?options) -> Plugins::sessionNTLMAuth
               | (:aws_sdk_authentication, ?options) -> Plugins::sessionAwsSdkAuthentication
-              | (:compression, ?options) -> Session
+              | (:brotli, ?options) -> Session
               | (:cookies, ?options) -> Plugins::sessionCookies
               | (:expect, ?options) -> Session
               | (:follow_redirects, ?options) -> Plugins::sessionFollowRedirects
               | (:upgrade, ?options) -> Session
               | (:h2c, ?options) -> Session
-              | (:multipart, ?options) -> Session
               | (:persistent, ?options) -> Plugins::sessionPersistent
               | (:proxy, ?options) -> (Plugins::sessionProxy & Plugins::httpProxy)
               | (:push_promise, ?options) -> Plugins::sessionPushPromise

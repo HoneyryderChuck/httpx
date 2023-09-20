@@ -15,6 +15,17 @@ module Requests
 
         assert no_stream_response.to_s == stream_response.to_s, "content should be the same"
 
+        assert stream_response.respond_to?(:headers) # test respond_to_missing?
+
+        no_stream_headers = no_stream_response.headers.to_h
+        no_stream_headers.delete("date")
+        stream_headers = no_stream_response.headers.to_h
+        stream_headers.delete("date")
+
+        assert no_stream_headers == stream_headers, "headers should be the same " \
+                                                    "(h1: #{no_stream_response.headers}, " \
+                                                    "(h2: #{stream_response.headers}) "
+
         assert session.total_responses.size == 2, "there should be 2 available responses"
       end
 
@@ -60,7 +71,7 @@ module Requests
       end
 
       def test_plugin_stream_connection_error
-        session = HTTPX.with_timeout(total_timeout: 1).plugin(:stream)
+        session = HTTPX.with_timeout(request_timeout: 1).plugin(:stream)
 
         assert_raises(HTTPX::TimeoutError) do
           response = session.get(build_uri("/delay/10"), stream: true)

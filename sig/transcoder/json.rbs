@@ -10,13 +10,15 @@ module HTTPX::Transcoder
 
     class Encoder
       extend Forwardable
-      include _Encoder
-      include _ToS
 
       @raw: String
       @charset: String
 
+      def bytesize: () -> Integer
+
       def content_type: () -> String
+
+      def to_s: () -> String
 
       private
 

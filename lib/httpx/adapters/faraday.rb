@@ -7,38 +7,11 @@ require "faraday"
 module Faraday
   class Adapter
     class HTTPX < Faraday::Adapter
-      # :nocov:
-      SSL_ERROR = if defined?(Faraday::SSLError)
-        Faraday::SSLError
-      else
-        Faraday::Error::SSLError
-      end
-
-      CONNECTION_FAILED_ERROR = if defined?(Faraday::ConnectionFailed)
-        Faraday::ConnectionFailed
-      else
-        Faraday::Error::ConnectionFailed
-      end
-      # :nocov:
-
-      unless Faraday::RequestOptions.method_defined?(:stream_response?)
-        module RequestOptionsExtensions
-          refine Faraday::RequestOptions do
-            def stream_response?
-              false
-            end
-          end
-        end
-        using RequestOptionsExtensions
-      end
-
       module RequestMixin
-        using ::HTTPX::HashExtensions
-
         def build_connection(env)
           return @connection if defined?(@connection)
 
-          @connection = ::HTTPX.plugin(:compression).plugin(:persistent).plugin(ReasonPlugin)
+          @connection = ::HTTPX.plugin(:persistent).plugin(ReasonPlugin)
           @connection = @connection.with(@connection_options) unless @connection_options.empty?
           connection_opts = options_from_env(env)
 
@@ -70,7 +43,7 @@ module Faraday
         def connect(env, &blk)
           connection(env, &blk)
         rescue ::HTTPX::TLSError => e
-          raise SSL_ERROR, e
+          raise Faraday::SSLError, e
         rescue Errno::ECONNABORTED,
                Errno::ECONNREFUSED,
                Errno::ECONNRESET,
@@ -79,9 +52,7 @@ module Faraday
                Errno::ENETUNREACH,
                Errno::EPIPE,
                ::HTTPX::ConnectionError => e
-          raise CONNECTION_FAILED_ERROR, e
-        rescue ::HTTPX::TimeoutError => e
-          raise Faraday::TimeoutError, e
+          raise Faraday::ConnectionFailed, e
         end
 
         def build_request(env)
@@ -159,24 +130,13 @@ module Faraday
       end
 
       module ReasonPlugin
-        if RUBY_VERSION < "2.5"
-          def self.load_dependencies(*)
-            require "webrick"
-          end
-        else
-          def self.load_dependencies(*)
-            require "net/http/status"
-          end
+        def self.load_dependencies(*)
+          require "net/http/status"
         end
+
         module ResponseMethods
-          if RUBY_VERSION < "2.5"
-            def reason
-              WEBrick::HTTPStatus::StatusMessage.fetch(@status)
-            end
-          else
-            def reason
-              Net::HTTP::STATUS_CODES.fetch(@status)
-            end
+          def reason
+            Net::HTTP::STATUS_CODES.fetch(@status)
           end
         end
       end
@@ -261,10 +221,7 @@ module Faraday
 
         # from Faraday::Adapter#request_timeout
         def request_timeout(type, options)
-          key = Faraday::Adapter::TIMEOUT_KEYS.fetch(type) do
-            msg = "Expected :read, :write, :open. Got #{type.inspect} :("
-            raise ArgumentError, msg
-          end
+          key = Faraday::Adapter::TIMEOUT_KEYS[type]
           options[key] || options[:timeout]
         end
       end

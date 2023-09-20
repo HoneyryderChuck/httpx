@@ -52,13 +52,35 @@ class FaradayTest < Minitest::Test
     assert_nil(connection.in_parallel {})
   end
 
+  def test_adapter_in_parallel_get_data
+    resp1 = nil
+    streamed = []
+
+    connection = faraday_connection
+    connection.in_parallel do
+      resp1 = connection.get(build_path("/stream/3")) do |req|
+        assert !req.options.stream_response?
+        req.options.on_data = proc do |chunk, _overall_received_bytes|
+          streamed << chunk
+        end
+        assert req.options.stream_response?
+      end
+      assert connection.in_parallel?
+      assert_nil resp1.reason_phrase
+    end
+    assert !connection.in_parallel?
+    assert_equal "OK", resp1.reason_phrase
+    assert !streamed.empty?
+    assert streamed.join.lines.size == 3
+  end
+
   def test_adapter_get_handles_compression
     res = get(build_path("/gzip"))
     assert JSON.parse(res.body.to_s)["gzipped"]
   end
 
   def test_adapter_get_ssl_fails_with_bad_cert
-    err = assert_raises Faraday::Adapter::HTTPX::SSL_ERROR do
+    err = assert_raises Faraday::SSLError do
       faraday_connection(server_uri: "https://expired.badssl.com/", ssl: { verify: true }).get("/")
     end
     assert_includes err.message, "certificate"
@@ -148,7 +170,7 @@ class FaradayTest < Minitest::Test
 
     assert !streamed.empty?
     assert streamed.join.lines.size == 3
-  end if Faraday::VERSION >= "1.0.0"
+  end
 
   def test_adapter_timeout_open_timeout
     server = TCPServer.new("127.0.0.1", CONNECT_TIMEOUT_PORT)
@@ -194,7 +216,7 @@ class FaradayTest < Minitest::Test
   end
 
   def test_adapter_connection_error
-    assert_raises Faraday::Adapter::HTTPX::CONNECTION_FAILED_ERROR do
+    assert_raises Faraday::ConnectionFailed do
       get "http://localhost:4"
     end
   end

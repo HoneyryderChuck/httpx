@@ -84,6 +84,11 @@ class RequestTest < Minitest::Test
     assert req.headers["content-length"] == "11", "content length is wrong"
   end
 
+  def test_request_body_deflater_for_anything
+    body = Request::Body.new(Headers.new({ "content-encoding" => "unknown" }), Options.new(body: "foo"))
+    assert body.to_s == "foo"
+  end
+
   private
 
   def resource

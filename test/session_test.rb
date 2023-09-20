@@ -48,18 +48,11 @@ class SessionTest < Minitest::Test
     assert body.foo == "response-body-foo", "response body method is unexpected"
   end
 
-  def test_session_timeouts_total_timeout
-    uri = build_uri("/delay/3")
-    session = HTTPX.with_timeout(total_timeout: 2)
-    response = session.get(uri)
-    verify_error_response(response, HTTPX::TotalTimeoutError)
-  end
-
   def test_session_timeout_connect_timeout
     server = TCPServer.new("127.0.0.1", CONNECT_TIMEOUT_PORT)
     begin
       uri = build_uri("/", origin("127.0.0.1:#{CONNECT_TIMEOUT_PORT}"))
-      session = HTTPX.with_timeout(connect_timeout: 0.5, operation_timeout: 30, total_timeout: 2)
+      session = HTTPX.with_timeout(connect_timeout: 0.5, operation_timeout: 30)
       response = session.get(uri)
       verify_error_response(response)
       verify_error_response(response, HTTPX::ConnectTimeoutError)
@@ -133,7 +126,7 @@ class SessionTest < Minitest::Test
       ping_count = http.pool.ping_count
       assert ping_count == 1, "session should have pinged after timeout (#{ping_count})"
     end
-  end unless RUBY_VERSION < "2.3"
+  end
 
   TestPlugin = Module.new do
     self::ClassMethods = Module.new do

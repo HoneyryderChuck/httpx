@@ -5,11 +5,6 @@ require_relative "test_helper"
 class ErrorResponseTest < Minitest::Test
   include HTTPX
 
-  def test_error_response_status
-    r1 = ErrorResponse.new(request_mock, RuntimeError.new("wow"), {})
-    assert r1.status == "wow"
-  end
-
   def test_error_response_finished?
     r1 = ErrorResponse.new(request_mock, RuntimeError.new("wow"), {})
     assert r1.finished?

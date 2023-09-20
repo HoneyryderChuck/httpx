@@ -48,7 +48,27 @@ module HTTPX
           return response unless REDIRECT_STATUS.include?(response.status) && response.headers.key?("location")
           return response unless max_redirects.positive?
 
-          retry_request = build_redirect_request(redirect_request, response, options)
+          # build redirect request
+          redirect_uri = __get_location_from_response(response)
+
+          if response.status == 305 && options.respond_to?(:proxy)
+            # The requested resource MUST be accessed through the proxy given by
+            # the Location field. The Location field gives the URI of the proxy.
+            retry_options = options.merge(headers: redirect_request.headers,
+                                          proxy: { uri: redirect_uri },
+                                          body: redirect_request.body,
+                                          max_redirects: max_redirects - 1)
+            redirect_uri = redirect_request.uri
+            options = retry_options
+          else
+
+            # redirects are **ALWAYS** GET
+            retry_options = options.merge(headers: redirect_request.headers,
+                                          body: redirect_request.body,
+                                          max_redirects: max_redirects - 1)
+          end
+
+          retry_request = build_request("GET", redirect_uri, retry_options)
 
           request.redirect_request = retry_request
 
@@ -81,29 +101,6 @@ module HTTPX
             connection.send(retry_request)
           end
           nil
-        end
-
-        def build_redirect_request(request, response, options)
-          redirect_uri = __get_location_from_response(response)
-          max_redirects = request.max_redirects
-
-          if response.status == 305 && options.respond_to?(:proxy)
-            # The requested resource MUST be accessed through the proxy given by
-            # the Location field. The Location field gives the URI of the proxy.
-            retry_options = options.merge(headers: request.headers,
-                                          proxy: { uri: redirect_uri },
-                                          body: request.body,
-                                          max_redirects: max_redirects - 1)
-            redirect_uri = request.url
-          else
-
-            # redirects are **ALWAYS** GET
-            retry_options = options.merge(headers: request.headers,
-                                          body: request.body,
-                                          max_redirects: max_redirects - 1)
-          end
-
-          build_request("GET", redirect_uri, retry_options)
         end
 
         def __get_location_from_response(response)

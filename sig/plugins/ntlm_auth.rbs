@@ -1,0 +1,21 @@
+module HTTPX
+  module Plugins
+    module NTLMAuth
+
+      interface _NTLMOptions
+        def ntlm: () -> Authentication::Ntlm?
+      end
+
+      def self.extra_options: (Options) -> (Options & _NTLMOptions)
+
+      def self.load_dependencies: (*untyped) -> void
+
+      module InstanceMethods
+        def ntlm_auth: (string user, string password, ?string? domain) -> instance
+      end
+
+    end
+
+    type sessionNTLMAuth = sessionAuthorization & NTLMAuth::InstanceMethods
+  end
+end

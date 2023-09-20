@@ -4,14 +4,14 @@ module Requests
   module Plugins
     module Retries
       def test_plugin_retries
-        no_retries_session = HTTPX.plugin(RequestInspector).with_timeout(total_timeout: 3)
+        no_retries_session = HTTPX.plugin(RequestInspector).with(timeout: { request_timeout: 3 })
         no_retries_response = no_retries_session.get(build_uri("/delay/10"))
         verify_error_response(no_retries_response)
         assert no_retries_session.calls.zero?, "expect request to be built 1 times (was #{no_retries_session.calls})"
         retries_session = HTTPX
                           .plugin(RequestInspector)
                           .plugin(:retries)
-                          .with_timeout(total_timeout: 3)
+                          .with(timeout: { request_timeout: 3 })
         retries_response = retries_session.get(build_uri("/delay/10"))
         verify_error_response(retries_response)
         assert retries_session.calls == 3, "expect request to be built 3 times (was #{retries_session.calls})"
@@ -22,7 +22,7 @@ module Requests
         retries_session = HTTPX
                           .plugin(RequestInspector)
                           .plugin(:retries, retry_on: check_error) # because CI
-                          .with_timeout(total_timeout: 3)
+                          .with(timeout: { request_timeout: 3 })
 
         retries_response = retries_session.post(build_uri("/delay/10"), body: ["a" * 1024])
         assert check_error[retries_response]
@@ -39,7 +39,7 @@ module Requests
         retries_session = HTTPX
                           .plugin(RequestInspector)
                           .plugin(:retries)
-                          .with_timeout(total_timeout: 3)
+                          .with(timeout: { request_timeout: 3 })
                           .max_retries(2)
         retries_response = retries_session.get(build_uri("/delay/10"))
 
@@ -51,18 +51,21 @@ module Requests
 
       def test_plugin_retries_retry_on
         retry_callback = lambda do |response|
-          response.is_a?(HTTPX::ErrorResponse) && !response.error.is_a?(HTTPX::TimeoutError)
+          response.is_a?(HTTPX::Response) && response.status == 400
         end
 
         retries_session = HTTPX
                           .plugin(RequestInspector)
                           .plugin(:retries, retry_on: retry_callback)
-                          .with_timeout(total_timeout: 3)
                           .max_retries(2)
 
-        retries_response = retries_session.get(build_uri("/delay/10"))
-        verify_error_response(retries_response)
-        assert retries_session.calls.zero?, "expect request not to be retried (it was, #{retries_session.calls} times)"
+        retries_response = retries_session.get(build_uri("/status/400"))
+        verify_status(retries_response, 400)
+        assert retries_session.calls == 2, "expect request to be retried (it was, #{retries_session.calls} times)"
+
+        retries_response = retries_session.get(build_uri("/status/401"))
+        verify_status(retries_response, 401)
+        assert retries_session.calls == 3, "expect request not to be retried (it was, #{retries_session.calls - 2} times)"
       end
 
       def test_plugin_retries_retry_after
@@ -70,7 +73,7 @@ module Requests
         retries_session = HTTPX
                           .plugin(RequestInspector)
                           .plugin(:retries, retry_after: 2)
-                          .with(timeout: { total_timeout: 3 })
+                          .with(timeout: { request_timeout: 3 })
                           .max_retries(1)
         retries_response = retries_session.get(build_uri("/delay/10"))
         after_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)
@@ -85,7 +88,7 @@ module Requests
         retries_session = HTTPX
                           .plugin(RequestInspector)
                           .plugin(:retries, retry_after: 2, retry_jitter: ->(_) { 1 })
-                          .with(timeout: { total_timeout: 3 })
+                          .with(timeout: { request_timeout: 3 })
                           .max_retries(1)
         retries_response = retries_session.get(build_uri("/delay/10"))
         after_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)
@@ -102,7 +105,7 @@ module Requests
         retries_session = HTTPX
                           .plugin(RequestInspector)
                           .plugin(:retries, retry_after: exponential)
-                          .with_timeout(total_timeout: 3)
+                          .with(timeout: { request_timeout: 3 })
                           .max_retries(2)
         retries_response = retries_session.get(build_uri("/delay/10"))
         after_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)

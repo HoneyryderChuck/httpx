@@ -4,17 +4,16 @@ module HTTPX
   module Plugins
     module Proxy
       module Socks4
-      
+
         module ConnectionMethods
           def __socks4_proxy_connect: () ->  void
           def __socks4_on_packet: (String packet) ->  void
           def on_socks4_error: (string) -> void
         end
-        
+
         class SocksParser
           include Callbacks
 
-          def timeout: () -> Integer
           def close: () -> void
           def consume: (*untyped) -> void
           def empty: () -> bool

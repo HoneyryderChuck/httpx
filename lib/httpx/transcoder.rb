@@ -2,8 +2,6 @@
 
 module HTTPX
   module Transcoder
-    using RegexpExtensions unless Regexp.method_defined?(:match?)
-
     module_function
 
     def normalize_keys(key, value, cond = nil, &block)
@@ -90,3 +88,5 @@ require "httpx/transcoder/form"
 require "httpx/transcoder/json"
 require "httpx/transcoder/xml"
 require "httpx/transcoder/chunker"
+require "httpx/transcoder/deflate"
+require "httpx/transcoder/gzip"

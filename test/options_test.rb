@@ -4,39 +4,11 @@ require_relative "test_helper"
 
 class OptionsTest < Minitest::Test
   include HTTPX
-  using HashExtensions
 
   def test_options_unknown
     ex = assert_raises(Error) { Options.new(foo: "bar") }
     assert ex.message == "unknown option: foo", ex.message
   end
-
-  def test_options_def_option_plain
-    opts = Class.new(Options) do
-      def_option(:foo)
-    end.new(foo: "1")
-    assert opts.foo == "1", "foo wasn't set"
-  end
-
-  def test_options_def_option_str_eval
-    opts = Class.new(Options) do
-      def_option(:foo, <<-OUT)
-        Integer(value)
-      OUT
-    end.new(foo: "1")
-    assert opts.foo == 1, "foo wasn't set or converted"
-  end
-
-  def test_options_def_option_block
-    bar = nil
-    _opts = Class.new(Options) do
-      def_option(:foo) do |value|
-        bar = 2
-        value
-      end
-    end.new(foo: "1")
-    assert bar == 2, "bar hasn't been set"
-  end unless RUBY_VERSION >= "3.0.0"
 
   def test_options_body
     opt1 = Options.new
@@ -107,15 +79,18 @@ class OptionsTest < Minitest::Test
       :timeout => {
         connect_timeout: 60,
         settings_timeout: 10,
-        operation_timeout: 60,
+        operation_timeout: Float::INFINITY,
         keep_alive_timeout: 20,
-        read_timeout: Float::INFINITY,
-        write_timeout: Float::INFINITY,
+        read_timeout: 60,
+        write_timeout: 60,
         request_timeout: Float::INFINITY,
       },
       :ssl => { :foo => "bar" },
       :http2_settings => { :settings_enable_push => 0 },
       :fallback_protocol => "http/1.1",
+      :supported_compression_formats => %w[gzip deflate],
+      :compress_request_body => true,
+      :decompress_response_body => true,
       :headers => { "accept" => "xml", "foo" => "foo", "bar" => "bar" },
       :max_concurrent_requests => nil,
       :max_requests => nil,

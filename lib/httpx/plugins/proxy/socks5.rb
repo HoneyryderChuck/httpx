@@ -20,7 +20,7 @@ module HTTPX
 
         class << self
           def load_dependencies(*)
-            require_relative "../authentication/socks5"
+            require_relative "../auth/socks5"
           end
 
           def extra_options(options)
@@ -142,10 +142,6 @@ module HTTPX
           def initialize(buffer, options)
             @buffer = buffer
             @options = Options.new(options)
-          end
-
-          def timeout
-            @options.timeout[:operation_timeout]
           end
 
           def close; end

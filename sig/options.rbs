@@ -11,13 +11,11 @@ module HTTPX
     SETTINGS_TIMEOUT: Integer
     DEFAULT_OPTIONS: Hash[Symbol, untyped]
 
-    type timeout_type = :connect_timeout | :settings_timeout | :operation_timeout | :keep_alive_timeout | :total_timeout | :read_timeout | :write_timeout | :request_timeout
+    type timeout_type = :connect_timeout | :settings_timeout | :operation_timeout | :keep_alive_timeout | :read_timeout | :write_timeout | :request_timeout
     type timeout = Hash[timeout_type, Numeric]
 
     def self.new: (?options) -> instance
 
-    def self.def_option: (Symbol, ?String) -> void
-                       | (Symbol) { (*nil) -> untyped } -> void
     # headers
     attr_reader uri: URI?
 
@@ -48,11 +46,17 @@ module HTTPX
     # transport
     attr_reader transport: "unix" | nil
 
-    # transport_options
-    attr_reader transport_options: Hash[untyped, untyped]?
-
     # addresses
     attr_reader addresses: Array[ipaddr]?
+
+    # supported_compression_formats
+    attr_reader supported_compression_formats: Array[String]
+
+    # compress_request_body
+    attr_reader compress_request_body: bool
+
+    # decompress_response_body
+    attr_reader decompress_response_body: bool
 
     # params
     attr_reader params: Transcoder::urlencoded_input?
@@ -124,9 +128,9 @@ module HTTPX
 
     REQUEST_IVARS: Array[Symbol]
 
-    def initialize: (?options options) -> untyped
+    def initialize: (?options options) -> void
 
-    def __initialize__: (?options options) -> untyped
+    def do_initialize: (?options options) -> void
   end
 
   type options = Options | Hash[Symbol, untyped]

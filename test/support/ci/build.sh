@@ -35,7 +35,6 @@ export EHOSTUNREACH_HOST=$EHOSTUNREACH_HOST
 
 export PATH=$GEM_HOME/bin:$BUNDLE_PATH/gems/bin:$PATH
 mkdir -p "$GEM_HOME" && chmod 777 "$GEM_HOME"
-gem install bundler -v="1.17.3" --no-doc --conservative
 cd /home
 
 if [[ "$RUBY_ENGINE" = "truffleruby" ]]; then
@@ -61,7 +60,7 @@ else
   export SSL_CERT_FILE=$CABUNDLEDIR/ca-bundle.crt
 fi
 
-if [[ ${RUBY_VERSION:0:1} = "3" ]] && [[ ! $RUBYOPT =~ "jit" ]]; then
+if [[ "$RUBY_ENGINE" = "ruby" ]] && [[ ${RUBY_VERSION:0:1} = "3" ]] && [[ ! $RUBYOPT =~ "jit" ]]; then
   echo "running runtime type checking..."
   export RUBYOPT="$RUBYOPT -rbundler/setup -rrbs/test/setup"
   export RBS_TEST_RAISE=true

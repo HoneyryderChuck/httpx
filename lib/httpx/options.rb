@@ -7,11 +7,10 @@ module HTTPX
     BUFFER_SIZE = 1 << 14
     WINDOW_SIZE = 1 << 14 # 16K
     MAX_BODY_THRESHOLD_SIZE = (1 << 10) * 112 # 112K
-    CONNECT_TIMEOUT = 60
-    OPERATION_TIMEOUT = 60
     KEEP_ALIVE_TIMEOUT = 20
     SETTINGS_TIMEOUT = 10
-    READ_TIMEOUT = WRITE_TIMEOUT = REQUEST_TIMEOUT = Float::INFINITY
+    CONNECT_TIMEOUT = READ_TIMEOUT = WRITE_TIMEOUT = 60
+    REQUEST_TIMEOUT = OPERATION_TIMEOUT = Float::INFINITY
 
     # https://github.com/ruby/resolv/blob/095f1c003f6073730500f02acbdbc55f83d70987/lib/resolv.rb#L408
     ip_address_families = begin
@@ -31,6 +30,9 @@ module HTTPX
       :ssl => {},
       :http2_settings => { settings_enable_push: 0 },
       :fallback_protocol => "http/1.1",
+      :supported_compression_formats => %w[gzip deflate],
+      :decompress_response_body => true,
+      :compress_request_body => true,
       :timeout => {
         connect_timeout: CONNECT_TIMEOUT,
         settings_timeout: SETTINGS_TIMEOUT,
@@ -52,35 +54,12 @@ module HTTPX
       :connection_class => Class.new(Connection),
       :options_class => Class.new(self),
       :transport => nil,
-      :transport_options => nil,
       :addresses => nil,
       :persistent => false,
       :resolver_class => (ENV["HTTPX_RESOLVER"] || :native).to_sym,
       :resolver_options => { cache: true },
       :ip_families => ip_address_families,
     }.freeze
-
-    begin
-      module HashExtensions
-        refine Hash do
-          def >=(other)
-            Hash[other] <= self
-          end
-
-          def <=(other)
-            other = Hash[other]
-            return false unless size <= other.size
-
-            each do |k, v|
-              v2 = other.fetch(k) { return false }
-              return false unless v2 == v
-            end
-            true
-          end
-        end
-      end
-      using HashExtensions
-    end unless Hash.method_defined?(:>=)
 
     class << self
       def new(options = {})
@@ -100,38 +79,10 @@ module HTTPX
 
         attr_reader(optname)
       end
-
-      def def_option(optname, *args, &block)
-        if args.empty? && !block
-          class_eval(<<-OUT, __FILE__, __LINE__ + 1)
-            def option_#{optname}(v); v; end # def option_smth(v); v; end
-          OUT
-          return
-        end
-
-        deprecated_def_option(optname, *args, &block)
-      end
-
-      def deprecated_def_option(optname, layout = nil, &interpreter)
-        warn "DEPRECATION WARNING: using `def_option(#{optname})` for setting options is deprecated. " \
-             "Define module OptionsMethods and `def option_#{optname}(val)` instead."
-
-        if layout
-          class_eval(<<-OUT, __FILE__, __LINE__ + 1)
-            def option_#{optname}(value)  # def option_origin(v)
-              #{layout}                   #   URI(v)
-            end                           # end
-          OUT
-        elsif interpreter
-          define_method(:"option_#{optname}") do |value|
-            instance_exec(value, &interpreter)
-          end
-        end
-      end
     end
 
     def initialize(options = {})
-      __initialize__(options)
+      do_initialize(options)
       freeze
     end
 
@@ -142,6 +93,7 @@ module HTTPX
       @timeout.freeze
       @headers.freeze
       @addresses.freeze
+      @supported_compression_formats.freeze
     end
 
     def option_origin(value)
@@ -157,14 +109,11 @@ module HTTPX
     end
 
     def option_timeout(value)
-      timeouts = Hash[value]
+      Hash[value]
+    end
 
-      if timeouts.key?(:loop_timeout)
-        warn ":loop_timeout is deprecated, use :operation_timeout instead"
-        timeouts[:operation_timeout] = timeouts.delete(:loop_timeout)
-      end
-
-      timeouts
+    def option_supported_compression_formats(value)
+      Array(value).map(&:to_s)
     end
 
     def option_max_concurrent_requests(value)
@@ -196,7 +145,10 @@ module HTTPX
     end
 
     def option_body_threshold_size(value)
-      Integer(value)
+      bytes = Integer(value)
+      raise TypeError, ":body_threshold_size must be positive" unless bytes.positive?
+
+      bytes
     end
 
     def option_transport(value)
@@ -218,10 +170,13 @@ module HTTPX
       params form json xml body ssl http2_settings
       request_class response_class headers_class request_body_class
       response_body_class connection_class options_class
-      io fallback_protocol debug debug_level transport_options resolver_class resolver_options
+      io fallback_protocol debug debug_level resolver_class resolver_options
+      compress_request_body decompress_response_body
       persistent
     ].each do |method_name|
-      def_option(method_name)
+      class_eval(<<-OUT, __FILE__, __LINE__ + 1)
+        def option_#{method_name}(v); v; end # def option_smth(v); v; end
+      OUT
     end
 
     REQUEST_IVARS = %i[@params @form @xml @json @body].freeze
@@ -270,30 +225,15 @@ module HTTPX
       end
     end
 
-    if RUBY_VERSION > "2.4.0"
-      def initialize_dup(other)
-        instance_variables.each do |ivar|
-          instance_variable_set(ivar, other.instance_variable_get(ivar).dup)
-        end
-      end
-    else
-      def initialize_dup(other)
-        instance_variables.each do |ivar|
-          value = other.instance_variable_get(ivar)
-          value = case value
-                  when Symbol, Numeric, TrueClass, FalseClass
-                    value
-                  else
-                    value.dup
-          end
-          instance_variable_set(ivar, value)
-        end
+    def initialize_dup(other)
+      instance_variables.each do |ivar|
+        instance_variable_set(ivar, other.instance_variable_get(ivar).dup)
       end
     end
 
     private
 
-    def __initialize__(options = {})
+    def do_initialize(options = {})
       defaults = DEFAULT_OPTIONS.merge(options)
       defaults.each do |k, v|
         next if v.nil?

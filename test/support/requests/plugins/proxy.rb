@@ -66,7 +66,7 @@ module Requests
         verify_status(response, 200)
         verify_body_length(response)
         assert response.proxied?
-      end if OpenSSL::SSL::SSLContext.method_defined?(:alpn_protocols=)
+      end
 
       # TODO: uncomment when supporting H2 CONNECT
       # def test_plugin_https_connect_h2_proxy
@@ -77,7 +77,7 @@ module Requests
       #   response = session.get(uri)
       #   verify_status(response, 200)
       #   verify_body_length(response)
-      # end if OpenSSL::SSL::SSLContext.method_defined?(:alpn_protocols=)
+      # end
 
       def test_plugin_http_next_proxy
         session = HTTPX.plugin(SessionWithPool)
@@ -146,6 +146,54 @@ module Requests
         verify_status(response, 200)
         verify_body_length(response)
         assert response.proxied?
+      end
+
+      def test_plugin_http_proxy_connection_coalescing
+        return unless origin.start_with?("https://")
+
+        coalesced_origin = "https://#{ENV["HTTPBIN_COALESCING_HOST"]}"
+        HTTPX.plugin(:proxy).with_proxy(uri: http_proxy).plugin(SessionWithPool).wrap do |http|
+          response1 = http.get(origin)
+          verify_status(response1, 200)
+          response2 = http.get(coalesced_origin)
+          verify_status(response2, 200)
+          # introspection time
+          pool = http.pool
+          connections = pool.connections
+          origins = connections.map(&:origins)
+          assert origins.any? { |orgs| orgs.sort == [origin, coalesced_origin].sort },
+                 "connections for #{[origin, coalesced_origin]} didn't coalesce (expected connection with both origins (#{origins}))"
+
+          unsafe_origin = URI(origin)
+          unsafe_origin.scheme = "http"
+          response3 = http.get(unsafe_origin)
+          verify_status(response3, 200)
+
+          # introspection time
+          pool = http.pool
+          connections = pool.connections
+          origins = connections.map(&:origins)
+          refute origins.any?([origin]),
+                 "connection coalesced inexpectedly (expected connection with both origins (#{origins}))"
+        end
+      end if ENV.key?("HTTPBIN_COALESCING_HOST")
+
+      def test_plugin_http_proxy_redirect_305
+        return unless origin.start_with?("http://")
+
+        start_test_servlet(ProxyServer) do |proxy|
+          start_test_servlet(ProxyRedirectorServer, proxy.origin) do |server|
+            session = HTTPX.plugin(:follow_redirects)
+                           .plugin(:proxy)
+                           .plugin(ProxyResponseDetector)
+
+            uri = "#{server.origin}/"
+            response = session.get(uri)
+            verify_status(response, 200)
+            verify_body_length(response)
+            assert response.body.to_s == proxy.origin.to_s
+          end
+        end
       end
 
       def test_plugin_socks4_proxy
@@ -242,7 +290,17 @@ module Requests
         session = HTTPX.plugin(:proxy).with_proxy(uri: [proxy])
         uri = build_uri("/get")
         response = session.get(uri)
-        verify_error_response(response, /authentication error/)
+        verify_error_response(response, /authentication error:/)
+      end
+
+      def test_plugin_socks5_proxy_none_error
+        start_test_servlet(Sock5WithNoneServer) do |server|
+          proxy = server.origin
+          session = HTTPX.plugin(:proxy).with_proxy(uri: [proxy])
+          uri = build_uri("/get")
+          response = session.get(uri)
+          verify_error_response(response, /no supported authorization methods/)
+        end
       end
 
       def test_plugin_ssh_proxy

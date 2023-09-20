@@ -71,7 +71,7 @@ module HTTPX
       end
 
       module OptionsMethods
-        def __initialize__(*)
+        def do_initialize(*)
           super
 
           return unless @headers.key?("cookie")
