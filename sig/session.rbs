@@ -51,4 +51,6 @@ module HTTPX
 
     attr_reader self.default_options: Options
   end
+
+  OriginalSession: singleton(Session)
 end
