@@ -9,6 +9,8 @@ module HTTPX
 
         def try_respond: (Request request) -> response?
 
+        def try_close: (generic_uri uri) -> void
+
         private
 
         def get_circuit_for_uri: (generic_uri uri) -> Circuit
@@ -23,6 +25,8 @@ module HTTPX
         @break_in: Float
         @circuit_breaker_half_open_drip_rate: Float
         @attempts: Integer
+        @real_attempts: Integer
+        @drip_factor: Integer
 
         @response: response?
         @opened_at: Float?
