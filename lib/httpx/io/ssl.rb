@@ -54,6 +54,20 @@ module HTTPX
       super
     end
 
+    if RUBY_ENGINE == "jruby"
+      # in jruby, alpn_protocol may return ""
+      # https://github.com/jruby/jruby-openssl/issues/287
+      def protocol
+        proto = @io.alpn_protocol
+
+        return super if proto.nil? || proto.empty?
+
+        proto
+      rescue StandardError
+        super
+      end
+    end
+
     def can_verify_peer?
       @ctx.verify_mode == OpenSSL::SSL::VERIFY_PEER
     end
