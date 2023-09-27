@@ -13,7 +13,6 @@ module HTTPX
 
       class << self
         def load_dependencies(klass)
-          require "base64"
           klass.plugin(:upgrade)
         end
 

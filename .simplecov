@@ -6,4 +6,5 @@ SimpleCov.start do
   add_filter "/integration_tests/"
   add_filter "/regression_tests/"
   add_filter "/lib/httpx/plugins/internal_telemetry.rb"
+  add_filter "/lib/httpx/base64.rb"
 end
