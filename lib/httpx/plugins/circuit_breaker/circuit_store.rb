@@ -45,9 +45,7 @@ module HTTPX::Plugins::CircuitBreaker
     private
 
     def get_circuit_for_uri(uri)
-      uri = URI(uri)
-
-      if @circuits.key?(uri.origin)
+      if uri.respond_to?(:origin) && @circuits.key?(uri.origin)
         @circuits[uri.origin]
       else
         @circuits[uri.to_s]

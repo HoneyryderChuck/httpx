@@ -7,7 +7,7 @@ module HTTPX
         module InstanceMethods
           private
 
-          def build_gateway_socket: (int, URI::HTTP | URI::HTTPS, Options) ->  _ToIO
+          def build_gateway_socket: (int, http_uri, Options) ->  _ToIO
         end
       end
     end
