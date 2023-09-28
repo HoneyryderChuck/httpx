@@ -21,6 +21,14 @@ module HTTPX::Plugins::CircuitBreaker
       circuit.try_open(response)
     end
 
+    def try_close(uri)
+      return unless @circuits.key?(uri.origin) || @circuits.key?(uri.to_s)
+
+      circuit = get_circuit_for_uri(uri)
+
+      circuit.try_close
+    end
+
     # if circuit is open, it'll respond with the stored response.
     # if not, nil.
     def try_respond(request)

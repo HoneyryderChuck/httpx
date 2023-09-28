@@ -4,6 +4,7 @@ require "resolv"
 require "uri"
 require "cgi"
 require "forwardable"
+require "httpx/base64"
 
 module HTTPX
   class Resolver::HTTPS < Resolver::Resolver

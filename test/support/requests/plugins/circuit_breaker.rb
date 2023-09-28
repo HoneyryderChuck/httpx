@@ -94,22 +94,64 @@ module Requests
         assert circuit_opened
       end
 
-      # def test_plugin_circuit_breaker_half_open_drip_rate
-      #   unknown_uri = "http://www.qwwqjqwdjqiwdj.com"
+      def test_plugin_circuit_breaker_half_open_drip_rate
+        delay_url = URI(build_uri("/delay/2"))
 
-      #   session = HTTPX.plugin(:circuit_breaker, circuit_breaker_max_attempts: 1, circuit_breaker_half_open_drip_rate: 0.5)
+        session = HTTPX.plugin(:circuit_breaker, circuit_breaker_max_attempts: 2, circuit_breaker_half_open_drip_rate: 0.5,
+                                                 circuit_breaker_break_in: 1)
 
-      #   response1 = session.get(unknown_uri)
-      #   verify_status(response1, 404)
-      #   verify_error_response(response1)
+        store = session.instance_variable_get(:@circuit_store)
+        circuit = store.instance_variable_get(:@circuits)[delay_url.origin]
 
-      #   # circuit open
+        response1 = session.get(delay_url, timeout: { request_timeout: 0.5 })
+        response2 = session.get(delay_url, timeout: { request_timeout: 0.5 })
+        verify_error_response(response1, HTTPX::RequestTimeoutError)
+        verify_error_response(response2, HTTPX::RequestTimeoutError)
 
-      #   responses = session.get(*([unknown_uri] * 10))
+        # circuit open
+        assert circuit.instance_variable_get(:@attempts) == 2
+        assert circuit.instance_variable_get(:@state) == :open
 
-      #   assert responses.size == 10
-      #   assert responses.select { |res| res == response1 }.size == 5
-      # end
+        sleep 1.5
+
+        # circuit half-open
+        response3 = session.get(delay_url)
+        verify_status(response3, 200)
+
+        assert circuit.instance_variable_get(:@attempts) == 1
+        assert circuit.instance_variable_get(:@state) == :half_open
+
+        response4 = session.get(delay_url)
+        verify_error_response(response4, HTTPX::RequestTimeoutError)
+
+        assert circuit.instance_variable_get(:@attempts) == 2
+        assert circuit.instance_variable_get(:@state) == :half_open
+
+        # circuit closed again
+        response5 = session.get(delay_url)
+        verify_status(response5, 200)
+
+        assert circuit.instance_variable_get(:@state) == :closed
+
+        response1 = session.get(delay_url, timeout: { request_timeout: 0.5 })
+        response2 = session.get(delay_url, timeout: { request_timeout: 0.5 })
+        verify_error_response(response1, HTTPX::RequestTimeoutError)
+        verify_error_response(response2, HTTPX::RequestTimeoutError)
+
+        # circuit open
+        assert circuit.instance_variable_get(:@attempts) == 2
+        assert circuit.instance_variable_get(:@state) == :open
+
+        sleep 1.5
+
+        # circuit half-open
+        response3 = session.get(delay_url, timeout: { request_timeout: 0.5 })
+        verify_error_response(response3, HTTPX::RequestTimeoutError)
+
+        # attempts reset, haf-open -> open transition
+        assert circuit.instance_variable_get(:@attempts) == 1
+        assert circuit.instance_variable_get(:@state) == :open
+      end
     end
   end
 end

@@ -16,8 +16,12 @@ module HTTPX
       end
 
       def self.extra_options(options)
-        options.merge(circuit_breaker_max_attempts: 3, circuit_breaker_reset_attempts_in: 60, circuit_breaker_break_in: 60,
-                      circuit_breaker_half_open_drip_rate: 1)
+        options.merge(
+          circuit_breaker_max_attempts: 3,
+          circuit_breaker_reset_attempts_in: 60,
+          circuit_breaker_break_in: 60,
+          circuit_breaker_half_open_drip_rate: 1
+        )
       end
 
       module InstanceMethods
@@ -84,6 +88,8 @@ module HTTPX
             end
           elsif (break_on = request.options.circuit_breaker_break_on) && break_on.call(response)
             @circuit_store.try_open(request.uri, response)
+          else
+            @circuit_store.try_close(request.uri)
           end
         end
       end
