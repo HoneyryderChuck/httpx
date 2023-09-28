@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "mutex_m"
+
 module HTTPX::Plugins::CircuitBreaker
   using HTTPX::URIExtensions
 
@@ -13,18 +15,21 @@ module HTTPX::Plugins::CircuitBreaker
           options.circuit_breaker_half_open_drip_rate
         )
       end
+      @circuits.extend(Mutex_m)
     end
 
     def try_open(uri, response)
-      circuit = get_circuit_for_uri(uri)
+      circuit = @circuits.synchronize { get_circuit_for_uri(uri) }
 
       circuit.try_open(response)
     end
 
     def try_close(uri)
-      return unless @circuits.key?(uri.origin) || @circuits.key?(uri.to_s)
+      circuit = @circuits.synchronize do
+        return unless @circuits.key?(uri.origin) || @circuits.key?(uri.to_s)
 
-      circuit = get_circuit_for_uri(uri)
+        get_circuit_for_uri(uri)
+      end
 
       circuit.try_close
     end
@@ -32,7 +37,7 @@ module HTTPX::Plugins::CircuitBreaker
     # if circuit is open, it'll respond with the stored response.
     # if not, nil.
     def try_respond(request)
-      circuit = get_circuit_for_uri(request.uri)
+      circuit = @circuits.synchronize { get_circuit_for_uri(request.uri) }
 
       circuit.respond
     end
