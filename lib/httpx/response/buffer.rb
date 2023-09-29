@@ -66,6 +66,9 @@ module HTTPX
           aux.rewind
           ::IO.copy_stream(aux, @buffer)
           aux.close
+          # ensures pointer is at the end file.
+          # TODO: remove this once trufleruby fixes support.
+          @buffer.seek(0, IO::SEEK_END)
         end
 
       else
