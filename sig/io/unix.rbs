@@ -5,6 +5,6 @@ module HTTPX
 
     alias host path
 
-    def initialize: (URI::HTTP | URI::HTTPS origin, Array[String]? addresses, options options) -> void
+    def initialize: (http_uri origin, Array[String]? addresses, options options) -> void
   end
 end

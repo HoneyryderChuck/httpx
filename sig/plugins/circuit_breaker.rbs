@@ -3,17 +3,17 @@ module HTTPX
     module CircuitBreaker
 
       class CircuitStore
-        @circuits: Hash[String, Circuit]
+        @circuits: Hash[String, Circuit] & Mutex_m
 
-        def try_open: (generic_uri uri, response response) -> response?
+        def try_open: (uri uri, response response) -> response?
 
         def try_respond: (Request request) -> response?
 
-        def try_close: (generic_uri uri) -> void
+        def try_close: (http_uri uri) -> void
 
         private
 
-        def get_circuit_for_uri: (generic_uri uri) -> Circuit
+        def get_circuit_for_uri: (uri uri) -> Circuit
 
         def initialize: (Options & _CircuitOptions options) -> void
       end

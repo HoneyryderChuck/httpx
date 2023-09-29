@@ -5,7 +5,8 @@ module HTTPX
 
   VERSION: String
 
-  type uri = URI::HTTP | URI::HTTPS | string
+  type http_uri = URI::HTTP | URI::HTTPS
+  type uri = http_uri | string
   type generic_uri = String | URI::Generic
 
   type verb = "OPTIONS" | "GET" | "HEAD" | "POST" | "PUT" | "DELETE" | "TRACE" | "CONNECT" |

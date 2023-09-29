@@ -7,7 +7,7 @@ module HTTPX
     USER_AGENT: String
 
     attr_reader verb: verb
-    attr_reader uri: URI::HTTP | URI::HTTPS
+    attr_reader uri: http_uri
     attr_reader headers: Headers
     attr_reader body: Body
     attr_reader state: Symbol

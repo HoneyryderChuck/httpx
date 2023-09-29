@@ -51,13 +51,13 @@ module HTTPX
 
           # run all requests through the circuit breaker, see if the circuit is
           # open for any of them.
-          real_requests = requests.each_with_object([]) do |req, real_reqs|
+          real_requests = requests.each_with_index.with_object([]) do |(req, idx), real_reqs|
             short_circuit_response = @circuit_store.try_respond(req)
             if short_circuit_response.nil?
               real_reqs << req
               next
             end
-            short_circuit_responses[requests.index(req)] = short_circuit_response
+            short_circuit_responses[idx] = short_circuit_response
           end
 
           # run requests for the remainder
@@ -90,6 +90,7 @@ module HTTPX
             @circuit_store.try_open(request.uri, response)
           else
             @circuit_store.try_close(request.uri)
+            nil
           end
         end
       end
