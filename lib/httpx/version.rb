@@ -1,5 +1,5 @@
 # frozen_string_literal: true
 
 module HTTPX
-  VERSION = "0.24.6"
+  VERSION = "1.0.0"
 end
