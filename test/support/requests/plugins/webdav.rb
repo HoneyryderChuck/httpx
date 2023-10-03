@@ -58,13 +58,13 @@ module Requests
         verify_status(response, 204)
 
         webdav_client.put("/lockfile.html", body: "bang")
-        response = webdav_client.lock("/lockfile.html", timeout: 1)
+        response = webdav_client.lock("/lockfile.html", timeout: 2)
         verify_status(response, 200)
 
         response = webdav_client.delete("/lockfile.html")
         verify_status(response, 423)
 
-        sleep 2
+        sleep 3
         response = webdav_client.delete("/lockfile.html")
         verify_status(response, 204)
       end
