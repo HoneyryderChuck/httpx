@@ -33,7 +33,7 @@ module HTTPX
 
       @inflaters.reverse_each do |inflater|
         chunk = inflater.call(chunk)
-      end if @inflaters
+      end if @inflaters && !chunk.empty?
 
       size = chunk.bytesize
       @length += size
