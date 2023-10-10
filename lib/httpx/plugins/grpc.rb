@@ -141,17 +141,29 @@ module HTTPX
             deadline: @options.grpc_deadline,
           }.merge(opts)
 
+          local_rpc_name = rpc_name.underscore
+
           session_class = Class.new(self.class) do
+            # define rpc method with ruby style name
             class_eval(<<-OUT, __FILE__, __LINE__ + 1)
-              def #{rpc_name}(input, **opts)              # def grpc_action(input, **opts)
-                rpc_execute("#{rpc_name}", input, **opts) #   rpc_execute("grpc_action", input, **opts)
-              end                                         # end
+              def #{local_rpc_name}(input, **opts)              # def grpc_action(input, **opts)
+                rpc_execute("#{local_rpc_name}", input, **opts) #   rpc_execute("grpc_action", input, **opts)
+              end                                               # end
             OUT
+
+            # define rpc method with original name
+            unless local_rpc_name == rpc_name
+              class_eval(<<-OUT, __FILE__, __LINE__ + 1)
+                def #{rpc_name}(input, **opts)                    # def grpcAction(input, **opts)
+                  rpc_execute("#{local_rpc_name}", input, **opts) #   rpc_execute("grpc_action", input, **opts)
+                end                                               # end
+              OUT
+            end
           end
 
           session_class.new(@options.merge(
                               grpc_rpcs: @options.grpc_rpcs.merge(
-                                rpc_name.underscore => [rpc_name, input, output, rpc_opts]
+                                local_rpc_name => [rpc_name, input, output, rpc_opts]
                               ).freeze
                             ))
         end
