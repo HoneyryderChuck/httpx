@@ -5,6 +5,18 @@ module Requests
     module GRPC
       include GRPCHelpers
 
+      def test_plugin_grpc_stub_rpc_defines_snake_case_methods
+        server_port = run_rpc(TestService)
+        grpc = grpc_plugin
+
+        # build service
+        stub = grpc.build_stub("localhost:#{server_port}")
+
+        sv = stub.rpc(:aCamelCaseRpc, EchoMsg, EchoMsg, marshal_method: :marshal, unmarshal_method: :unmarshal)
+        assert sv.respond_to? :a_camel_case_rpc
+        assert sv.respond_to? :aCamelCaseRpc
+      end
+
       def test_plugin_grpc_unary_plain_bytestreams
         no_marshal = proc { |x| x }
 
