@@ -7,7 +7,7 @@ module HTTPX
     include Callbacks
     include Loggable
 
-    MAX_REQUESTS = 100
+    MAX_REQUESTS = 200
     CRLF = "\r\n"
 
     attr_reader :pending, :requests

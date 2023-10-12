@@ -114,7 +114,7 @@ class HTTPSTest < Minitest::Test
 
   def test_http2_max_streams
     uri = build_uri("/get")
-    HTTPX.plugin(SessionWithSingleStream).plugin(SessionWithPool).wrap do |http|
+    HTTPX.plugin(SessionWithPool).with(max_requests: 1).wrap do |http|
       http.get(uri, uri)
       connection_count = http.pool.connection_count
       assert connection_count == 2, "expected to have 2 connections, instead have #{connection_count}"
