@@ -189,18 +189,21 @@ module TRACING_MODULE # rubocop:disable Naming/ClassAndModuleCamelCase
           option :split_by_domain, default: false
 
           option :enabled do |o|
-            o.default { env_to_bool("DD_TRACE_HTTPX_ENABLED", true) }
-            o.lazy
+            o.type :bool
+            o.env "DD_TRACE_HTTPX_ENABLED"
+            o.default true
           end
 
           option :analytics_enabled do |o|
-            o.default { env_to_bool(%w[DD_TRACE_HTTPX_ANALYTICS_ENABLED DD_HTTPX_ANALYTICS_ENABLED], false) }
-            o.lazy
+            o.type :bool
+            o.env "DD_TRACE_HTTPX_ANALYTICS_ENABLED"
+            o.default false
           end
 
           option :analytics_sample_rate do |o|
-            o.default { env_to_float(%w[DD_TRACE_HTTPX_ANALYTICS_SAMPLE_RATE DD_HTTPX_ANALYTICS_SAMPLE_RATE], 1.0) }
-            o.lazy
+            o.type :float
+            o.env "DD_TRACE_HTTPX_ANALYTICS_SAMPLE_RATE"
+            o.default 1.0
           end
 
           if defined?(TRACING_MODULE::Contrib::SpanAttributeSchema)
@@ -224,7 +227,17 @@ module TRACING_MODULE # rubocop:disable Naming/ClassAndModuleCamelCase
 
           option :distributed_tracing, default: true
 
-          option :error_handler, default: DEFAULT_ERROR_HANDLER
+          if DDTrace::VERSION::STRING >= "1.15.0"
+            option :error_handler do |o|
+              o.type :proc
+              o.default_proc(&DEFAULT_ERROR_HANDLER)
+            end
+          else
+            option :error_handler do |o|
+              o.type :proc
+              o.experimental_default_proc(&DEFAULT_ERROR_HANDLER)
+            end
+          end
         end
       end
 
