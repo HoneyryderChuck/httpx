@@ -102,7 +102,7 @@ class HTTPXAwsSigv4Test < Minitest::Test
   private
 
   def sigv4_session(**options)
-    HTTPX.plugin(:aws_sigv4).aws_sigv4_authentication(**{ service: "s3", region: "us-east-1", username: "akid",
-                                                          password: "secret" }.merge(options))
+    HTTPX.plugin(:aws_sigv4).aws_sigv4_authentication(service: "s3", region: "us-east-1", username: "akid",
+                                                      password: "secret", **options)
   end
 end
