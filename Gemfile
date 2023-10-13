@@ -7,7 +7,6 @@ gemspec
 
 gem "rake", "~> 13.0"
 
-gem "http-2-next", git: "https://gitlab.com/os85/http-2-next"
 group :test do
   gem "ddtrace"
   gem "http-form_data", ">= 2.0.0"
