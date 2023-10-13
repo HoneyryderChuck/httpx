@@ -224,7 +224,7 @@ module Datadog::Tracing
       class Integration
         include Contrib::Integration
 
-        MINIMUM_VERSION = Gem::Version.new("1.0.1")
+        MINIMUM_VERSION = Gem::Version.new("0.10.2")
 
         register_as :httpx
 
