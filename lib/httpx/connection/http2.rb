@@ -35,7 +35,7 @@ module HTTPX
       @handshake_completed = false
       @wait_for_handshake = @settings.key?(:wait_for_handshake) ? @settings.delete(:wait_for_handshake) : true
       @max_concurrent_requests = @options.max_concurrent_requests || MAX_CONCURRENT_REQUESTS
-      @max_requests = @options.max_requests || 0
+      @max_requests = @options.max_requests || Float::INFINITY
       init_connection
     end
 
@@ -82,9 +82,7 @@ module HTTPX
     end
 
     def exhausted?
-      return false if @max_requests.zero? && @connection.active_stream_count.zero?
-
-      @connection.active_stream_count >= @max_requests
+      !@max_requests.positive?
     end
 
     def <<(data)
@@ -92,13 +90,9 @@ module HTTPX
     end
 
     def can_buffer_more_requests?
-      if @handshake_completed
+      (@handshake_completed || !@wait_for_handshake) &&
         @streams.size < @max_concurrent_requests &&
-          @streams.size < @max_requests
-      else
-        !@wait_for_handshake &&
-          @streams.size < @max_concurrent_requests
-      end
+        @streams.size < @max_requests
     end
 
     def send(request)
@@ -116,7 +110,6 @@ module HTTPX
       true
     rescue HTTP2Next::Error::StreamLimitExceeded
       @pending.unshift(request)
-      emit(:exhausted)
     end
 
     def consume
@@ -172,7 +165,6 @@ module HTTPX
 
     def init_connection
       @connection = HTTP2Next::Client.new(@settings)
-      @connection.max_streams = @max_requests if @connection.respond_to?(:max_streams=) && @max_requests.positive?
       @connection.on(:frame, &method(:on_frame))
       @connection.on(:frame_sent, &method(:on_frame_sent))
       @connection.on(:frame_received, &method(:on_frame_received))
@@ -340,14 +332,7 @@ module HTTPX
     def on_settings(*)
       @handshake_completed = true
       emit(:current_timeout)
-
-      if @max_requests.zero?
-        @max_requests = @connection.remote_settings[:settings_max_concurrent_streams]
-
-        @connection.max_streams = @max_requests if @connection.respond_to?(:max_streams=) && @max_requests.positive?
-      end
-
-      @max_concurrent_requests = [@max_concurrent_requests, @max_requests].min
+      @max_concurrent_requests = [@max_concurrent_requests, @connection.remote_settings[:settings_max_concurrent_streams]].min
       send_pending
     end
 
