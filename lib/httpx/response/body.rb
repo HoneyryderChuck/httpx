@@ -1,9 +1,17 @@
 # frozen_string_literal: true
 
 module HTTPX
+  # Implementation of the HTTP Response body as a buffer which implements the IO writer protocol
+  # (for buffering the response payload), the IO reader protocol (for consuming the response payload),
+  # and can be iterated over (via #each, which yields the payload in chunks).
   class Response::Body
-    attr_reader :encoding, :encodings
+    # the payload encoding (i.e. "utf-8", "ASCII-8BIT")
+    attr_reader :encoding
 
+    # Array of encodings contained in the response "content-encoding" header.
+    attr_reader :encodings
+
+    # initialized with the corresponding HTTPX::Response +response+ and HTTPX::Options +options+.
     def initialize(response, options)
       @response = response
       @headers = response.headers
@@ -28,6 +36,8 @@ module HTTPX
       @state == :closed
     end
 
+    # write the response payload +chunk+ into the buffer. Inflates the chunk when required
+    # and supported.
     def write(chunk)
       return if @state == :closed
 
@@ -44,6 +54,7 @@ module HTTPX
       size
     end
 
+    # reads a chunk from the payload (implementation of the IO reader protocol).
     def read(*args)
       return unless @buffer
 
@@ -55,10 +66,13 @@ module HTTPX
       @reader.read(*args)
     end
 
+    # size of the decoded response payload. May differ from "content-length" header if
+    # response was encoded over-the-wire.
     def bytesize
       @length
     end
 
+    # yields the payload in chunks.
     def each
       return enum_for(__method__) unless block_given?
 
@@ -74,12 +88,14 @@ module HTTPX
       end
     end
 
+    # returns the declared filename in the "contennt-disposition" header, when present.
     def filename
       return unless @headers.key?("content-disposition")
 
       Utils.get_filename(@headers["content-disposition"])
     end
 
+    # returns the full response payload as a string.
     def to_s
       return "".b unless @buffer
 
@@ -88,10 +104,16 @@ module HTTPX
 
     alias_method :to_str, :to_s
 
+    # whether the payload is empty.
     def empty?
       @length.zero?
     end
 
+    # copies the payload to +dest+.
+    #
+    #   body.copy_to("path/to/file")
+    #   body.copy_to(Pathname.new("path/to/file"))
+    #   body.copy_to(File.new("path/to/file"))
     def copy_to(dest)
       return unless @buffer
 
@@ -132,6 +154,7 @@ module HTTPX
     end
     # :nocov:
 
+    # rewinds the response payload buffer.
     def rewind
       return unless @buffer
 
@@ -179,7 +202,7 @@ module HTTPX
       @state = nextstate
     end
 
-    def _with_same_buffer_pos
+    def _with_same_buffer_pos # :nodoc:
       return yield unless @buffer && @buffer.respond_to?(:pos)
 
       # @type ivar @buffer: StringIO | Tempfile
@@ -193,7 +216,7 @@ module HTTPX
     end
 
     class << self
-      def initialize_inflater_by_encoding(encoding, response, **kwargs)
+      def initialize_inflater_by_encoding(encoding, response, **kwargs) # :nodoc:
         case encoding
         when "gzip"
           Transcoder::GZIP.decode(response, **kwargs)
