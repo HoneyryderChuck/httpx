@@ -108,8 +108,8 @@ HTTPX.get(
 ```ruby
 response = HTTPX.get("https://www.google.com", params: { q: "me" })
 response = HTTPX.post("https://www.nghttp2.org/httpbin/post", form: {name: "John", age: "22"})
-response = HTTPX.plugin(:basic_authentication)
-                .basic_authentication("user", "pass")
+response = HTTPX.plugin(:basic_auth)
+                .basic_auth("user", "pass")
                 .get("https://www.google.com")
 
 # more complex client objects can be cached, and are thread-safe
