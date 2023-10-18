@@ -655,19 +655,32 @@ module HTTPX
 
     def set_request_timeouts(request)
       write_timeout = request.write_timeout
-      request.once(:headers) do
-        @timers.after(write_timeout) { write_timeout_callback(request, write_timeout) }
-      end unless write_timeout.nil? || write_timeout.infinite?
-
       read_timeout = request.read_timeout
-      request.once(:done) do
-        @timers.after(read_timeout) { read_timeout_callback(request, read_timeout) }
-      end unless read_timeout.nil? || read_timeout.infinite?
-
       request_timeout = request.request_timeout
+
+      unless write_timeout.nil? || write_timeout.infinite?
+        request.once(:headers) do
+          write_callback = -> { write_timeout_callback(request, write_timeout) }
+          interval = @timers.after(write_timeout, &write_callback)
+          request.once(:done) { interval.delete(write_callback) }
+        end
+      end
+
+      unless read_timeout.nil? || read_timeout.infinite?
+        request.once(:done) do
+          read_callback = -> { read_timeout_callback(request, read_timeout) }
+          interval = @timers.after(write_timeout, &read_callback)
+          request.once(:response) { interval.delete(read_callback) }
+        end
+      end
+
+      return if request_timeout.nil? || request_timeout.infinite?
+
       request.once(:headers) do
-        @timers.after(request_timeout) { read_timeout_callback(request, request_timeout, RequestTimeoutError) }
-      end unless request_timeout.nil? || request_timeout.infinite?
+        request_callback = -> { read_timeout_callback(request, request_timeout, RequestTimeoutError) }
+        interval = @timers.after(request_timeout, &request_callback)
+        request.once(:response) { interval.delete(request_callback) }
+      end
     end
 
     def write_timeout_callback(request, write_timeout)

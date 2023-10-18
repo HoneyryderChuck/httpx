@@ -3,7 +3,7 @@ module HTTPX
     @intervals: Array[Interval]
     @next_interval_at: Float
 
-    def after: (Numeric interval_in_secs) { () -> void } -> void
+    def after: (Numeric interval_in_secs) { () -> void } -> Interval
 
     def wait_interval: () -> Numeric?
 
@@ -11,22 +11,29 @@ module HTTPX
 
     def cancel: () -> void
 
-    private
-
     def initialize: () -> void
 
     class Interval
       include Comparable
 
+      type callback = ^() -> void
+
       attr_reader interval: Numeric
 
-      @callbacks: Array[^() -> void]
+      @callbacks: Array[callback]
+      @on_empty: callback?
+
+
+      def on_empty: () { () -> void } -> void
 
       def to_f: () -> Float
 
-      def <<: (^() -> void) -> void
+      def <<: (callback) -> void
+
+      def delete: (callback) -> void
 
       def elapse: (Numeric elapsed) -> Numeric
+
       private
 
       def initialize: (Numeric interval) -> void

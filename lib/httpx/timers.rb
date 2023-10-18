@@ -13,13 +13,16 @@ module HTTPX
       # request timeout, as in most cases they share common set of
       # options. A user setting different request timeouts for 100s of
       # requests will already have a hard time dealing with that.
-      unless (interval = @intervals.find { |t| t == interval_in_secs })
+      unless (interval = @intervals.find { |t| t.interval == interval_in_secs })
         interval = Interval.new(interval_in_secs)
+        interval.on_empty { @intervals.delete(interval) }
         @intervals << interval
         @intervals.sort!
       end
 
       interval << blk
+
+      interval
     end
 
     def wait_interval
@@ -54,6 +57,11 @@ module HTTPX
       def initialize(interval)
         @interval = interval
         @callbacks = []
+        @on_empty = nil
+      end
+
+      def on_empty(&blk)
+        @on_empty = blk
       end
 
       def <=>(other)
@@ -72,6 +80,11 @@ module HTTPX
 
       def <<(callback)
         @callbacks << callback
+      end
+
+      def delete(callback)
+        @callbacks.delete(callback)
+        @on_empty.call if @callbacks.empty?
       end
 
       def elapse(elapsed)
