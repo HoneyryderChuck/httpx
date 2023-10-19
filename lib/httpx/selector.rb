@@ -73,7 +73,7 @@ class HTTPX::Selector
       readers, writers = IO.select(r, w, nil, interval)
 
       if readers.nil? && writers.nil? && interval
-        [*r, *w].each { |io| io.raise_timeout_error(interval) }
+        [*r, *w].each { |io| io.handle_socket_timeout(interval) }
         return
       end
     rescue IOError, SystemCallError
@@ -110,7 +110,7 @@ class HTTPX::Selector
     end
 
     unless result || interval.nil?
-      io.raise_timeout_error(interval)
+      io.handle_socket_timeout(interval)
       return
     end
     # raise HTTPX::TimeoutError.new(interval, "timed out while waiting on select")

@@ -92,7 +92,7 @@ module HTTPX
       resolve
     end
 
-    def raise_timeout_error(interval)
+    def handle_socket_timeout(interval)
       error = HTTPX::ResolveTimeoutError.new(interval, "timed out while waiting on select")
       error.set_backtrace(caller)
       on_error(error)

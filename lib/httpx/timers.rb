@@ -6,8 +6,10 @@ module HTTPX
       @intervals = []
     end
 
-    def after(interval_in_secs, &blk)
+    def after(interval_in_secs, cb = nil, &blk)
       return unless interval_in_secs
+
+      callback = cb || blk
 
       # I'm assuming here that most requests will have the same
       # request timeout, as in most cases they share common set of
@@ -20,7 +22,7 @@ module HTTPX
         @intervals.sort!
       end
 
-      interval << blk
+      interval << callback
 
       interval
     end
@@ -42,11 +44,6 @@ module HTTPX
       @intervals.delete_if { |interval| interval.elapse(elapsed_time) <= 0 }
 
       @next_interval_at = nil if @intervals.empty?
-    end
-
-    def cancel
-      @next_interval_at = nil
-      @intervals.clear
     end
 
     class Interval
@@ -85,6 +82,18 @@ module HTTPX
       def delete(callback)
         @callbacks.delete(callback)
         @on_empty.call if @callbacks.empty?
+      end
+
+      def clear
+        @on_empty.call
+      end
+
+      def no_callbacks?
+        @callbacks.empty?
+      end
+
+      def elapsed?
+        @interval <= 0
       end
 
       def elapse(elapsed)

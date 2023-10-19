@@ -84,8 +84,12 @@ module HTTPX
                 consume
               end
             end
-            interval = @timers.after(request.options.expect_timeout, &expect_callback)
-            request.once(:body) { interval.delete(expect_callback) }
+            interval = @timers.after(request.options.expect_timeout, expect_callback)
+            request.once(:body) do
+              interval.delete(expect_callback)
+              @intervals.delete(interval) if interval.no_callbacks?
+            end
+            @intervals << interval
           end
         end
       end

@@ -40,6 +40,7 @@ module HTTPX
     @parser: HTTP1 | HTTP2 | _Parser
     @connected_at: Float
     @response_received_at: Float
+    @intervals: Array[Timers::Interval]
 
     def addresses: () -> Array[ipaddr]?
 
@@ -89,7 +90,7 @@ module HTTPX
 
     def open?: () -> bool
 
-    def raise_timeout_error: (Numeric interval) -> void
+    def handle_socket_timeout: (Numeric interval) -> void
 
     private
 

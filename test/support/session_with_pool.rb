@@ -5,7 +5,7 @@ module SessionWithPool
     attr_reader :resolver, :connections, :selector
     attr_reader :connection_count
     attr_reader :ping_count
-
+    attr_reader :timers
     attr_reader :conn_store
 
     def initialize(*)
@@ -13,6 +13,9 @@ module SessionWithPool
       @connection_count = 0
       @ping_count = 0
       @conn_store = []
+      def @timers.intervals
+        @intervals
+      end
     end
 
     def init_connection(connection, _)

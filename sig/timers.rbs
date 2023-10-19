@@ -3,13 +3,12 @@ module HTTPX
     @intervals: Array[Interval]
     @next_interval_at: Float
 
-    def after: (Numeric interval_in_secs) { () -> void } -> Interval
+    def after: (Numeric interval_in_secs, ^() -> void) -> Interval
+             | (Numeric interval_in_secs) { () -> void } -> Interval
 
     def wait_interval: () -> Numeric?
 
     def fire: (?TimeoutError error) -> void
-
-    def cancel: () -> void
 
     def initialize: () -> void
 
@@ -33,6 +32,10 @@ module HTTPX
       def delete: (callback) -> void
 
       def elapse: (Numeric elapsed) -> Numeric
+
+      def elapsed?: () -> bool
+
+      def no_callbacks?: () -> bool
 
       private
 

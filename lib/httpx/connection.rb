@@ -70,6 +70,8 @@ module HTTPX
       @inflight = 0
       @keep_alive_timeout = @options.timeout[:keep_alive_timeout]
 
+      @intervals = []
+
       self.addresses = @options.addresses if @options.addresses
     end
 
@@ -294,7 +296,15 @@ module HTTPX
       @state == :open || @state == :inactive
     end
 
-    def raise_timeout_error(interval)
+    def handle_socket_timeout(interval)
+      @intervals.delete_if(&:elapsed?)
+
+      unless @intervals.empty?
+        # remove the intervals which will elapse
+
+        return
+      end
+
       error = HTTPX::TimeoutError.new(interval, "timed out while waiting on select")
       error.set_backtrace(caller)
       on_error(error)
@@ -661,16 +671,24 @@ module HTTPX
       unless write_timeout.nil? || write_timeout.infinite?
         request.once(:headers) do
           write_callback = -> { write_timeout_callback(request, write_timeout) }
-          interval = @timers.after(write_timeout, &write_callback)
-          request.once(:done) { interval.delete(write_callback) }
+          interval = @timers.after(write_timeout, write_callback)
+          request.once(:done) do
+            interval.delete(write_callback)
+            @intervals.delete(interval) if interval.no_callbacks?
+          end
+          @intervals << interval
         end
       end
 
       unless read_timeout.nil? || read_timeout.infinite?
         request.once(:done) do
           read_callback = -> { read_timeout_callback(request, read_timeout) }
-          interval = @timers.after(write_timeout, &read_callback)
-          request.once(:response) { interval.delete(read_callback) }
+          interval = @timers.after(read_timeout, read_callback)
+          request.once(:response) do
+            interval.delete(read_callback)
+            @intervals.delete(interval) if interval.no_callbacks?
+          end
+          @intervals << interval
         end
       end
 
@@ -678,8 +696,12 @@ module HTTPX
 
       request.once(:headers) do
         request_callback = -> { read_timeout_callback(request, request_timeout, RequestTimeoutError) }
-        interval = @timers.after(request_timeout, &request_callback)
-        request.once(:response) { interval.delete(request_callback) }
+        interval = @timers.after(request_timeout, request_callback)
+        request.once(:response) do
+          interval.delete(request_callback)
+          @intervals.delete(interval) if interval.no_callbacks?
+        end
+        @intervals << interval
       end
     end
 
