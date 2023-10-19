@@ -215,6 +215,9 @@ module HTTPX
 
     def call
       case @state
+      when :idle
+        connect
+        consume
       when :closed
         return
       when :closing
