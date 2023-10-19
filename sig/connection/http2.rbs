@@ -38,7 +38,7 @@ module HTTPX
 
     alias reset init_connection
 
-    def timeout: () -> Numeric
+    def timeout: () -> Numeric?
 
     private
 

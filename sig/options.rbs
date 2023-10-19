@@ -12,7 +12,7 @@ module HTTPX
     DEFAULT_OPTIONS: Hash[Symbol, untyped]
 
     type timeout_type = :connect_timeout | :settings_timeout | :operation_timeout | :keep_alive_timeout | :read_timeout | :write_timeout | :request_timeout
-    type timeout = Hash[timeout_type, Numeric]
+    type timeout = Hash[timeout_type, Numeric?]
 
     def self.new: (?options) -> instance
 
