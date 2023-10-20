@@ -32,7 +32,7 @@ module HTTPX
     attr_reader max_concurrent_requests: Integer?
 
     # max_requests
-    attr_reader max_requests: Integer?
+    attr_reader max_requests: Numeric?
 
     # window_size
     attr_reader window_size: Integer

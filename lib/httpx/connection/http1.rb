@@ -15,7 +15,7 @@ module HTTPX
     def initialize(buffer, options)
       @options = Options.new(options)
       @max_concurrent_requests = @options.max_concurrent_requests || MAX_REQUESTS
-      @max_requests = @options.max_requests || MAX_REQUESTS
+      @max_requests = @options.max_requests
       @parser = Parser::HTTP1.new(self)
       @buffer = buffer
       @version = [1, 1]

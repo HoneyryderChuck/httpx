@@ -66,6 +66,7 @@ class OptionsTest < Minitest::Test
 
     expected = {
       :io => ENV.key?("HTTPX_DEBUG") ? $stderr : nil,
+      :max_requests => Float::INFINITY,
       :debug => nil,
       :debug_level => 1,
       :params => nil,
@@ -93,7 +94,6 @@ class OptionsTest < Minitest::Test
       :decompress_response_body => true,
       :headers => { "accept" => "xml", "foo" => "foo", "bar" => "bar" },
       :max_concurrent_requests => nil,
-      :max_requests => nil,
       :request_class => bar.request_class,
       :response_class => bar.response_class,
       :headers_class => bar.headers_class,

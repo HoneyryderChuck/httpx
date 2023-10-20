@@ -27,6 +27,7 @@ module HTTPX
     end
 
     DEFAULT_OPTIONS = {
+      :max_requests => Float::INFINITY,
       :debug => ENV.key?("HTTPX_DEBUG") ? $stderr : nil,
       :debug_level => (ENV["HTTPX_DEBUG"] || 1).to_i,
       :ssl => {},

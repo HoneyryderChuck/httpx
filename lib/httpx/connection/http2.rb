@@ -35,7 +35,7 @@ module HTTPX
       @handshake_completed = false
       @wait_for_handshake = @settings.key?(:wait_for_handshake) ? @settings.delete(:wait_for_handshake) : true
       @max_concurrent_requests = @options.max_concurrent_requests || MAX_CONCURRENT_REQUESTS
-      @max_requests = @options.max_requests || Float::INFINITY
+      @max_requests = @options.max_requests
       init_connection
     end
 
