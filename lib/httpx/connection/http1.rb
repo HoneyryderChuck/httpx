@@ -184,7 +184,14 @@ module HTTPX
         manage_connection(response)
       end
 
-      send(@pending.shift) unless @pending.empty?
+      if exhausted?
+        @pending.concat(@requests)
+        @requests.clear
+
+        emit(:exhausted)
+      else
+        send(@pending.shift) unless @pending.empty?
+      end
     end
 
     def handle_error(ex)

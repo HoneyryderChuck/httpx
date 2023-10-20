@@ -112,17 +112,31 @@ class HTTPSTest < Minitest::Test
 
   # HTTP/2-specific tests
 
-  def test_http2_max_streams
-    uri = build_uri("/get")
-    HTTPX.plugin(SessionWithPool).with(max_requests: 1).wrap do |http|
-      http.get(uri, uri)
-      connection_count = http.pool.connection_count
-      assert connection_count == 2, "expected to have 2 connections, instead have #{connection_count}"
-      assert http.connection_exausted, "expected 1 connnection to have exhausted"
+  {
+    # TODO: turn this on when CI does keep-alive on HTTP/1.1
+    # http1: { uri: "https://httpbin.org/get", ssl: { alpn_protocols: %w[http/1.1] }, max_concurrent_requests: 1 },
+    http2: {},
+  }.each do |proto, proto_options|
+    define_method :"test_multiple_get_max_requests_#{proto}" do
+      uri = proto_options.delete(:uri) || URI(build_uri("/get"))
+      options = { max_requests: 2, **proto_options }
 
-      # ssl session ought to be reused
-      conn = http.pool.connections.first
-      assert conn.io.instance_variable_get(:@io).session_reused? unless RUBY_ENGINE == "jruby"
+      HTTPX.plugin(SessionWithPool).with(options).wrap do |http|
+        response1, response2, response3 = http.get(uri, uri, uri)
+        verify_status(response1, 200)
+        verify_body_length(response1)
+        verify_status(response2, 200)
+        verify_body_length(response2)
+        verify_status(response3, 200)
+        verify_body_length(response3)
+        connection_count = http.pool.connection_count
+        assert connection_count == 2, "expected to have 2 connections, instead have #{connection_count}"
+        assert http.connection_exausted, "expected 1 connnection to have exhausted"
+
+        # ssl session ought to be reused
+        conn = http.pool.connections.first
+        assert conn.io.instance_variable_get(:@io).session_reused? unless RUBY_ENGINE == "jruby"
+      end
     end
   end
 
