@@ -114,7 +114,9 @@ module HTTPX
     end
 
     def try_ssl_connect
-      case @io.connect_nonblock(exception: false)
+      ret = @io.connect_nonblock(exception: false)
+      log(level: 3, color: :cyan) { "TLS CONNECT: #{ret}..." }
+      case ret
       when :wait_readable
         @interests = :r
         return

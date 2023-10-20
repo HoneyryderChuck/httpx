@@ -95,7 +95,9 @@ module HTTPX
     end
 
     def try_connect
-      case @io.connect_nonblock(Socket.sockaddr_in(@port, @ip.to_s), exception: false)
+      ret = @io.connect_nonblock(Socket.sockaddr_in(@port, @ip.to_s), exception: false)
+      log(level: 3, color: :cyan) { "TCP CONNECT: #{ret}..." }
+      case ret
       when :wait_readable
         @interests = :r
         return
