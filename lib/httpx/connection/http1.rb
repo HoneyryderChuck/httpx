@@ -294,7 +294,7 @@ module HTTPX
 
       connection = request.headers["connection"]
 
-      connection ||= if request.options.persistent
+      connection ||= if request.persistent?
         # when in a persistent connection, the request can't be at
         # the edge of a renegotiation
         if @requests.index(request) + 1 < @max_requests
