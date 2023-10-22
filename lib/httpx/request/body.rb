@@ -11,12 +11,9 @@ module HTTPX
       end
     end
 
-    attr_reader :threshold_size
-
     # inits the instance with the request +headers+ and +options+, which contain the payload definition.
     def initialize(headers, options)
       @headers = headers
-      @threshold_size = options.body_threshold_size
 
       # forego compression in the Range request case
       if @headers.key?("range")
@@ -122,11 +119,7 @@ module HTTPX
         Transcoder::Xml.encode(options.xml)
       end
 
-      return unless @body
-
-      return unless options.compress_request_body
-
-      return unless @headers.key?("content-encoding")
+      return unless @body && options.compress_request_body && @headers.key?("content-encoding")
 
       @headers.get("content-encoding").each do |encoding|
         @body = self.class.initialize_deflater_body(@body, encoding)
