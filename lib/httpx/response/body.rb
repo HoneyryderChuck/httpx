@@ -16,12 +16,12 @@ module HTTPX
       @response = response
       @headers = response.headers
       @options = options
-      @threshold_size = options.body_threshold_size
       @window_size = options.window_size
       @encoding = response.content_type.charset || Encoding::BINARY
       @encodings = []
       @length = 0
       @buffer = nil
+      @reader = nil
       @state = :idle
       initialize_inflaters
     end
@@ -167,6 +167,8 @@ module HTTPX
     private
 
     def initialize_inflaters
+      @inflaters = nil
+
       return unless @headers.key?("content-encoding")
 
       return unless @options.decompress_response_body
@@ -191,7 +193,7 @@ module HTTPX
         return unless @state == :idle
 
         @buffer = Response::Buffer.new(
-          threshold_size: @threshold_size,
+          threshold_size: @options.body_threshold_size,
           bytesize: @length,
           encoding: @encoding
         )
