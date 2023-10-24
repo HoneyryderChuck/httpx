@@ -3,6 +3,8 @@
 require "socket"
 
 module HTTPX
+  # Contains a set of options which are passed and shared across from session to its requests or
+  # responses.
   class Options
     BUFFER_SIZE = 1 << 14
     WINDOW_SIZE = 1 << 14 # 16K
@@ -81,6 +83,50 @@ module HTTPX
       end
     end
 
+    # creates a new options instance from a given hash, which optionally define the following:
+    #
+    # :debug :: an object which log messages are written to (must respond to <tt><<</tt>)
+    # :debug_level :: the log level of messages (can be 1, 2, or 3).
+    # :ssl :: a hash of options which can be set as params of OpenSSL::SSL::SSLContext (see HTTPX::IO::SSL)
+    # :http2_settings :: a hash of options to be passed to a HTTP2Next::Connection (ex: <tt>{ max_concurrent_streams: 2 }</tt>)
+    # :fallback_protocol :: version of HTTP protocol to use by default in the absence of protocol negotiation
+    #                       like ALPN (defaults to <tt>"http/1.1"</tt>)
+    # :supported_compression_formats :: list of compressions supported by the transcoder layer (defaults to <tt>%w[gzip deflate]</tt>).
+    # :decompress_response_body :: whether to auto-decompress response body (defaults to <tt>true</tt>).
+    # :compress_request_body :: whether to auto-decompress response body (defaults to <tt>true</tt>)
+    # :timeout :: hash of timeout configurations (supports <tt>:connect_timeout</tt>, <tt>:settings_timeout</tt>,
+    #             <tt>:operation_timeout</tt>, <tt>:keep_alive_timeout</tt>,  <tt>:read_timeout</tt>,  <tt>:write_timeout</tt>
+    #            and <tt>:request_timeout</tt>
+    # :headers :: hash of HTTP headers (ex: <tt>{ "x-custom-foo" => "bar" }</tt>)
+    # :window_size :: number of bytes to read from a socket
+    # :buffer_size :: internal read and write buffer size in bytes
+    # :body_threshold_size :: maximum size in bytes of response payload that is buffered in memory.
+    # :request_class :: class used to instantiate a request
+    # :response_class :: class used to instantiate a response
+    # :headers_class :: class used to instantiate headers
+    # :request_body_class :: class used to instantiate a request body
+    # :response_body_class :: class used to instantiate a response body
+    # :connection_class :: class used to instantiate connections
+    # :options_class :: class used to instantiate options
+    # :transport :: type of transport to use (set to "unix" for UNIX sockets)
+    # :addresses :: bucket of peer addresses (can be a list of IP addresses, a hash of domain to list of adddresses;
+    #               paths should be used for UNIX sockets instead)
+    # :io :: open socket, or domain/ip-to-socket hash, which requests should be sent to
+    # :persistent :: whether to persist connections in between requests (defaults to <tt>true</tt>)
+    # :resolver_class :: which resolver to use (defaults to <tt>:native</tt>, can also be <tt>:system<tt> for
+    #                    using getaddrinfo or <tt>:https</tt> for DoH resolver, or a custom class)
+    # :resolver_options :: hash of options passed to the resolver
+    # :ip_families :: which socket families are supported (system-dependent)
+    # :origin :: HTTP origin to set on requests with relative path (ex: "https://api.serv.com")
+    # :base_path :: path to prefix given relative paths with (ex: "/v2")
+    # :max_concurrent_requests :: max number of requests which can be set concurrently
+    # :max_requests :: max number of requests which can be made on socket before it reconnects.
+    # :params :: hash or array of key-values which will be encoded and set in the query string of request uris.
+    # :form :: hash of array of key-values which will be form-or-multipart-encoded in requests body payload.
+    # :json :: hash of array of key-values which will be JSON-encoded in requests body payload.
+    # :xml :: Nokogiri XML nodes which will be encoded in requests body payload.
+    #
+    # This list of options are enhanced with each loaded plugin, see the plugin docs for details.
     def initialize(options = {})
       do_initialize(options)
       freeze

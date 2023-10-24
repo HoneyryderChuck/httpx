@@ -37,10 +37,9 @@ module HTTPX
 
     def form: () -> Hash[String, untyped]
 
-    private
+    def initialize: (Request request, String | Integer status, String version, headers?) -> void
 
-    def initialize: (Request request, String | Integer status, String version, headers?) -> untyped
-    def no_data?: () -> bool
+    private
 
     def decode:(Transcoder::_Decode transcoder, ?untyped options) -> untyped
   end

@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
 module HTTPX
+  # Class implementing the APIs being used publicly.
+  #
+  #   HTTPX.get(..) #=> delegating to an internal HTTPX::Session object.
+  #   HTTPX.plugin(..).get(..) #=> creating an intermediate HTTPX::Session with plugin, then sending the GET request
   class Session
     include Loggable
     include Chainable
@@ -8,6 +12,10 @@ module HTTPX
 
     EMPTY_HASH = {}.freeze
 
+    # initializes the session with a set of +options+, which will be shared by all
+    # requests sent from it.
+    #
+    # When pass a block, it'll yield itself to it, then closes after the block is evaluated.
     def initialize(options = EMPTY_HASH, &blk)
       @options = self.class.default_options.merge(options)
       @responses = {}
@@ -15,6 +23,11 @@ module HTTPX
       wrap(&blk) if blk
     end
 
+    # Yields itself the block, then closes it after the block is evaluated.
+    #
+    #   session.wrap do |http|
+    #     http.get("https://wikipedia.com")
+    #   end # wikipedia connection closes here
     def wrap
       begin
         prev_persistent = @persistent
@@ -26,10 +39,31 @@ module HTTPX
       end
     end
 
+    # closes all the active connections from the session
     def close(*args)
       pool.close(*args)
     end
 
+    # performs one, or multple requests; it accepts:
+    #
+    # 1. one or multiple HTTPX::Request objects;
+    # 2. an HTTP verb, then a sequence of URIs or URI/options tuples;
+    # 3. one or multiple HTTP verb / uri / (optional) options tuples;
+    #
+    # when present, the set of +options+ kwargs is applied to all of the
+    # sent requests.
+    #
+    # respectively returns a single HTTPX::Response response, or all of them in an Array, in the same order.
+    #
+    #  resp1 = session.request(req1)
+    #  resp1, resp2 = session.request(req1, req2)
+    #  resp1 = session.request("GET", "https://server.org/a")
+    #  resp1, resp2 = session.request("GET", ["https://server.org/a", "https://server.org/b"])
+    #  resp1, resp2 = session.request(["GET", "https://server.org/a"], ["GET", "https://server.org/b"])
+    #  resp1 = session.request("POST", "https://server.org/a", form: { "foo" => "bar" })
+    #  resp1, resp2 = session.request(["POST", "https://server.org/a", form: { "foo" => "bar" }], ["GET", "https://server.org/b"])
+    #  resp1, resp2 = session.request("GET", ["https://server.org/a", "https://server.org/b"], headers: { "x-api-token" => "TOKEN" })
+    #
     def request(*args, **options)
       raise ArgumentError, "must perform at least one request" if args.empty?
 
@@ -40,6 +74,12 @@ module HTTPX
       responses
     end
 
+    # returns a HTTP::Request instance built from the HTTP +verb+, the request +uri+, and
+    # the optional set of request-specific +options+. This request **must** be sent through
+    # the same session it was built from.
+    #
+    #   req = session.build_request("GET", "https://server.com")
+    #   resp = session.request(req)
     def build_request(verb, uri, options = EMPTY_HASH)
       rklass = @options.request_class
       options = @options.merge(options) unless options.is_a?(Options)
@@ -76,23 +116,29 @@ module HTTPX
 
     private
 
+    # returns the HTTPX::Pool object which manages the networking required to
+    # perform requests.
     def pool
       Thread.current[:httpx_connection_pool] ||= Pool.new
     end
 
+    # callback executed when a response for a given request has been received.
     def on_response(request, response)
       @responses[request] = response
     end
 
+    # callback executed when an HTTP/2 promise frame has been received.
     def on_promise(_, stream)
       log(level: 2) { "#{stream.id}: refusing stream!" }
       stream.refuse
     end
 
+    # returns the corresponding HTTP::Response to the given +request+ if it has been received.
     def fetch_response(request, _, _)
       @responses.delete(request)
     end
 
+    # returns the HTTPX::Connection through which the +request+ should be sent through.
     def find_connection(request, connections, options)
       uri = request.uri
 
@@ -104,6 +150,8 @@ module HTTPX
       connection
     end
 
+    # sets the callbacks on the +connection+ required to process certain specific
+    # connection lifecycle events which deal with request rerouting.
     def set_connection_callbacks(connection, connections, options)
       connection.only(:misdirected) do |misdirected_request|
         other_connection = connection.create_idle(ssl: { alpn_protocols: %w[http/1.1] })
@@ -131,6 +179,7 @@ module HTTPX
       end
     end
 
+    # returns an HTTPX::Connection for the negotiated Alternative Service (or none).
     def build_altsvc_connection(existing_connection, connections, alt_origin, origin, alt_params, options)
       # do not allow security downgrades on altsvc negotiation
       return if existing_connection.origin.scheme == "https" && alt_origin.scheme != "https"
@@ -166,6 +215,7 @@ module HTTPX
       nil
     end
 
+    # returns a set of HTTPX::Request objects built from the given +args+ and +options+.
     def build_requests(*args, options)
       request_options = @options.merge(options)
 
@@ -189,6 +239,7 @@ module HTTPX
       requests
     end
 
+    # returns a new HTTPX::Connection object for the given +uri+ and set of +options+.
     def build_connection(uri, options)
       type = options.transport || begin
         case uri.scheme
@@ -216,11 +267,13 @@ module HTTPX
       end
     end
 
+    # sends an array of HTTPX::Request +requests+, returns the respective array of HTTPX::Response objects.
     def send_requests(*requests)
       connections = _send_requests(requests)
       receive_requests(requests, connections)
     end
 
+    # sends an array of HTTPX::Request objects
     def _send_requests(requests)
       connections = []
 
@@ -237,6 +290,7 @@ module HTTPX
       connections
     end
 
+    # returns the array of HTTPX::Response objects corresponding to the array of HTTPX::Request +requests+.
     def receive_requests(requests, connections)
       # @type var responses: Array[response]
       responses = []
@@ -290,6 +344,11 @@ module HTTPX
         klass.instance_variable_set(:@callbacks, @callbacks.dup)
       end
 
+      # returns a new HTTPX::Session instance, with the plugin pointed by +pl+ loaded.
+      #
+      #   session_with_retries = session.plugin(:retries)
+      #   session_with_custom = session.plugin(CustomPlugin)
+      #
       def plugin(pl, options = nil, &block)
         # raise Error, "Cannot add a plugin to a frozen config" if frozen?
         pl = Plugins.load_plugin(pl) if pl.is_a?(Symbol)

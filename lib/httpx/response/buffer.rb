@@ -5,7 +5,10 @@ require "stringio"
 require "tempfile"
 
 module HTTPX
+  # wraps and delegates to an internal buffer, which can be a StringIO or a Tempfile.
   class Response::Buffer < SimpleDelegator
+    # initializes buffer with the +threshold_size+ over which the payload gets buffer to a tempfile,
+    # the initial +bytesize+, and the +encoding+.
     def initialize(threshold_size:, bytesize: 0, encoding: Encoding::BINARY)
       @threshold_size = threshold_size
       @bytesize = bytesize
@@ -20,16 +23,19 @@ module HTTPX
       @buffer = other.instance_variable_get(:@buffer).dup
     end
 
+    # size in bytes of the buffered content.
     def size
       @bytesize
     end
 
+    # writes the +chunk+ into the buffer.
     def write(chunk)
       @bytesize += chunk.bytesize
       try_upgrade_buffer
       @buffer.write(chunk)
     end
 
+    # returns the buffered content as a string.
     def to_s
       case @buffer
       when StringIO
@@ -49,6 +55,7 @@ module HTTPX
       end
     end
 
+    # closes the buffer.
     def close
       @buffer.close
       @buffer.unlink if @buffer.respond_to?(:unlink)
@@ -56,6 +63,8 @@ module HTTPX
 
     private
 
+    # initializes the buffer into a StringIO, or turns it into a Tempfile when the threshold
+    # has been reached.
     def try_upgrade_buffer
       if !@buffer.is_a?(Tempfile) && @bytesize > @threshold_size
         aux = @buffer
@@ -77,7 +86,7 @@ module HTTPX
       __setobj__(@buffer)
     end
 
-    def _with_same_buffer_pos
+    def _with_same_buffer_pos # :nodoc:
       current_pos = @buffer.pos
       @buffer.rewind
       begin
