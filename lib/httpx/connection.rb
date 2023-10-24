@@ -672,39 +672,21 @@ module HTTPX
       request_timeout = request.request_timeout
 
       unless write_timeout.nil? || write_timeout.infinite?
-        request.once(:headers) do
-          write_callback = -> { write_timeout_callback(request, write_timeout) }
-          interval = @timers.after(write_timeout, write_callback)
-          request.once(:done) do
-            interval.delete(write_callback)
-            @intervals.delete(interval) if interval.no_callbacks?
-          end
-          @intervals << interval
+        set_request_timeout(request, write_timeout, :headers, %i[done response]) do
+          write_timeout_callback(request, write_timeout)
         end
       end
 
       unless read_timeout.nil? || read_timeout.infinite?
-        request.once(:done) do
-          read_callback = -> { read_timeout_callback(request, read_timeout) }
-          interval = @timers.after(read_timeout, read_callback)
-          request.once(:response) do
-            interval.delete(read_callback)
-            @intervals.delete(interval) if interval.no_callbacks?
-          end
-          @intervals << interval
+        set_request_timeout(request, read_timeout, :done, :response) do
+          read_timeout_callback(request, read_timeout)
         end
       end
 
       return if request_timeout.nil? || request_timeout.infinite?
 
-      request.once(:headers) do
-        request_callback = -> { read_timeout_callback(request, request_timeout, RequestTimeoutError) }
-        interval = @timers.after(request_timeout, request_callback)
-        request.once(:response) do
-          interval.delete(request_callback)
-          @intervals.delete(interval) if interval.no_callbacks?
-        end
-        @intervals << interval
+      set_request_timeout(request, request_timeout, :headers, :response) do
+        read_timeout_callback(request, request_timeout, RequestTimeoutError)
       end
     end
 
@@ -724,6 +706,24 @@ module HTTPX
       @write_buffer.clear
       error = error_type.new(request, request.response, read_timeout)
       on_error(error)
+    end
+
+    def set_request_timeout(request, timeout, start_event, finish_events, &callback)
+      request.once(start_event) do
+        interval = @timers.after(timeout, callback)
+
+        Array(finish_events).each do |event|
+          # clean up reques timeouts if the connection errors out
+          request.once(event) do
+            if @intervals.include?(interval)
+              interval.delete(callback)
+              @intervals.delete(interval) if interval.no_callbacks?
+            end
+          end
+        end
+
+        @intervals << interval
+      end
     end
 
     class << self

@@ -84,10 +84,6 @@ module HTTPX
         @on_empty.call if @callbacks.empty?
       end
 
-      def clear
-        @on_empty.call
-      end
-
       def no_callbacks?
         @callbacks.empty?
       end
