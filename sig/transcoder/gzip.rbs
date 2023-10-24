@@ -6,6 +6,7 @@ module HTTPX
 
       class Deflater < Transcoder::Deflater
         @compressed_chunk: String
+        @deflater: Zlib::GzipWriter
 
         private
 
@@ -14,10 +15,7 @@ module HTTPX
         def compressed_chunk: () -> String
       end
 
-      class Inflater
-        def initialize: (Integer | Float bytesize) -> void
-
-        def call: (String chunk) -> String
+      class Inflater < Transcoder::Inflater
       end
     end
   end

@@ -15,7 +15,7 @@ module HTTPX
       end
 
       module ResponseBodyClassMethods
-        def initialize_inflater_by_encoding: (Encoding | String encoding, Response response, ?bytesize: Integer) -> (Transcoder::_Decoder | Transcoder::GZIP::Inflater)
+        def initialize_inflater_by_encoding: (Encoding | String encoding, Response response, ?bytesize: Integer) -> (Transcoder::_Decoder | Transcoder::Inflater)
       end
     end
   end

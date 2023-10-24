@@ -83,6 +83,8 @@ module HTTPX
   end
 end
 
+require "httpx/transcoder/utils/deflater"
+require "httpx/transcoder/utils/inflater"
 require "httpx/transcoder/body"
 require "httpx/transcoder/form"
 require "httpx/transcoder/json"

@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "zlib"
-require_relative "utils/deflater"
 
 module HTTPX
   module Transcoder
@@ -22,6 +21,13 @@ module HTTPX
         end
       end
 
+      class Inflater < Transcoder::Inflater
+        def initialize(bytesize) # rubocop:disable Lint/MissingSuper
+          @inflater = Zlib::Inflate.new(Zlib::MAX_WBITS * -1)
+          super
+        end
+      end
+
       module_function
 
       def encode(body)
@@ -30,7 +36,7 @@ module HTTPX
 
       def decode(response, bytesize: nil)
         bytesize ||= response.headers.key?("content-length") ? response.headers["content-length"].to_i : Float::INFINITY
-        GZIP::Inflater.new(bytesize)
+        Inflater.new(bytesize)
       end
     end
   end

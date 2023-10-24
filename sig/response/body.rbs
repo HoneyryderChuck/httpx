@@ -43,7 +43,7 @@ module HTTPX
 
     def initialize_inflaters: () -> void
 
-    def self.initialize_inflater_by_encoding: (Encoding | String encoding, Response response, ?bytesize: Integer) -> Transcoder::GZIP::Inflater
+    def self.initialize_inflater_by_encoding: (Encoding | String encoding, Response response, ?bytesize: Integer) -> Transcoder::Inflater
 
     def transition: (Symbol nextstate) -> void
 

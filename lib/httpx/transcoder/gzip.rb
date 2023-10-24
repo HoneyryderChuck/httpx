@@ -42,20 +42,10 @@ module HTTPX
         end
       end
 
-      class Inflater
+      class Inflater < Transcoder::Inflater
         def initialize(bytesize)
           @inflater = Zlib::Inflate.new(Zlib::MAX_WBITS + 32)
-          @bytesize = bytesize
-        end
-
-        def call(chunk)
-          buffer = @inflater.inflate(chunk)
-          @bytesize -= chunk.bytesize
-          if @bytesize <= 0
-            buffer << @inflater.finish
-            @inflater.close
-          end
-          buffer
+          super
         end
       end
 
