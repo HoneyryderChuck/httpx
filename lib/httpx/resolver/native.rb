@@ -30,7 +30,7 @@ module HTTPX
         nameserver = nameserver[family] if nameserver.is_a?(Hash)
         Array(nameserver)
       end
-      @ndots = @resolver_options[:ndots]
+      @ndots = @resolver_options.fetch(:ndots, 1)
       @search = Array(@resolver_options[:search]).map { |srch| srch.scan(/[^.]+/) }
       @_timeouts = Array(@resolver_options[:timeouts])
       @timeouts = Hash.new { |timeouts, host| timeouts[host] = @_timeouts.dup }
