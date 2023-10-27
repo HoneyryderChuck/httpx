@@ -14,7 +14,7 @@ class PoolTest < Minitest::Test
       timers = http.pool.timers
       assert timers.intervals.empty?, "there should be no timers left"
     end
-  end
+  end unless RUBY_ENGINE == "jruby" && JRUBY_VERSION < "9.4.5.0"
 
   private
 
