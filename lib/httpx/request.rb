@@ -38,6 +38,9 @@ module HTTPX
     # Exception raised during enumerable body writes.
     attr_reader :drain_error
 
+    # The IP address from the peer server.
+    attr_accessor :peer_address
+
     attr_writer :persistent
 
     # will be +true+ when request body has been completely flushed.
@@ -65,6 +68,7 @@ module HTTPX
       @body = @options.request_body_class.new(@headers, @options)
       @state = :idle
       @response = nil
+      @peer_address = nil
       @persistent = @options.persistent
     end
 

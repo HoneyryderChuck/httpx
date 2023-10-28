@@ -25,12 +25,19 @@ module HTTPX
     @content_type: ContentType
 
     def copy_to: (_ToPath | _Writer destination) -> void
+
     def close: () -> void
+
     def uri: () -> URI::Generic
 
+    def peer_address: () -> ipaddr?
+
     def merge_headers: (_Each[[String, headers_value]]) -> void
+
     def bodyless?: () -> bool
+
     def content_type: () -> ContentType
+
     def complete?: () -> bool
 
     def json: (?json_options opts) -> untyped
@@ -76,6 +83,8 @@ module HTTPX
     def status: () -> (Integer | _ToS)
 
     def uri: () -> URI::Generic
+
+    def peer_address: () -> ipaddr?
 
     def close: () -> void
 

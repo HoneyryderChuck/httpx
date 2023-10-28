@@ -462,6 +462,7 @@ module HTTPX
 
     def send_request_to_parser(request)
       @inflight += 1
+      request.peer_address = @io.ip
       parser.send(request)
 
       set_request_timeouts(request)

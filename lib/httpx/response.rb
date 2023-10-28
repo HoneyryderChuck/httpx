@@ -44,6 +44,9 @@ module HTTPX
     # the corresponding request uri.
     def_delegator :@request, :uri
 
+    # the IP address of the peer server.
+    def_delegator :@request, :peer_address
+
     # inits the instance with the corresponding +request+ to this response, an the
     # response HTTP +status+, +version+ and HTTPX::Headers instance of +headers+.
     def initialize(request, status, version, headers)
@@ -225,6 +228,9 @@ module HTTPX
 
     # the request uri
     def_delegator :@request, :uri
+
+    # the IP address of the peer server.
+    def_delegator :@request, :peer_address
 
     def initialize(request, error, options)
       @request = request
