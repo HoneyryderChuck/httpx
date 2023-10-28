@@ -11,7 +11,7 @@ module Requests
 
       response = HTTPX.plugin(SessionWithPool).on_connection_opened do |o, sock|
         origin = o
-        ip = sock.remote_address.ip_address
+        ip = sock.to_io.remote_address.ip_address
       end.get(uri)
       verify_status(response, 200)
 
