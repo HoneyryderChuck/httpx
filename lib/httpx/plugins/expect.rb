@@ -75,14 +75,16 @@ module HTTPX
 
           return unless request.headers["expect"] == "100-continue"
 
-          request.once(:expect) do
-            @timers.after(request.options.expect_timeout) do
-              # expect timeout expired
-              if request.state == :expect && !request.expects?
-                Expect.no_expect_store << request.origin
-                request.headers.delete("expect")
-                consume
-              end
+          expect_timeout = request.options.expect_timeout
+
+          return if expect_timeout.nil? || expect_timeout.infinite?
+
+          set_request_timeout(request, expect_timeout, :expect, %i[body response]) do
+            # expect timeout expired
+            if request.state == :expect && !request.expects?
+              Expect.no_expect_store << request.origin
+              request.headers.delete("expect")
+              consume
             end
           end
         end

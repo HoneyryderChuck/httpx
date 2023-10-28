@@ -45,7 +45,7 @@ module HTTPX
 
     def coalesce_connections: (Connection coalescable, Connection coalescing) -> void
 
-    def next_timeout: () -> (Integer | Float | nil)
+    def next_timeout: () -> Numeric?
 
     def find_resolver_for: (Connection) { (Resolver::Resolver resolver) -> void } -> resolver_manager
   end

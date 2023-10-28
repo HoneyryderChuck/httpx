@@ -15,6 +15,8 @@ module HTTPX
     attr_reader response: response?
     attr_reader drain_error: StandardError?
 
+    attr_writer persistent: bool
+
     @trailers: Headers?
     @informational_status: Integer?
     @query: String?
@@ -50,11 +52,13 @@ module HTTPX
 
     def trailers?: () -> boolish
 
-    def read_timeout: () -> Numeric
+    def persistent?: () -> bool
 
-    def write_timeout: () -> Numeric
+    def read_timeout: () -> Numeric?
 
-    def request_timeout: () -> Numeric
+    def write_timeout: () -> Numeric?
+
+    def request_timeout: () -> Numeric?
 
     private
 

@@ -77,22 +77,6 @@ module Requests
       assert time_it_took >= 2, "time between requests took < 2 secs (actual: #{time_it_took} secs)"
     end
 
-    def test_multiple_get_max_requests
-      uri = build_uri("/get")
-
-      session = HTTPX.plugin(SessionWithPool).with(max_requests: 1)
-
-      session.wrap do |http|
-        response1, response2 = http.get(uri, uri)
-        verify_status(response1, 200)
-        verify_body_length(response1)
-        verify_status(response2, 200)
-        verify_body_length(response2)
-        connection_count = http.pool.connection_count
-        assert connection_count == 2, "expected to have 2 connections, instead have #{connection_count}"
-      end
-    end
-
     def test_http_accept
       uri = build_uri("/get")
       response = HTTPX.accept("text/html").get(uri)

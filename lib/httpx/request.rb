@@ -38,6 +38,8 @@ module HTTPX
     # Exception raised during enumerable body writes.
     attr_reader :drain_error
 
+    attr_writer :persistent
+
     # will be +true+ when request body has been completely flushed.
     def_delegator :@body, :empty?
 
@@ -63,6 +65,7 @@ module HTTPX
       @body = @options.request_body_class.new(@headers, @options)
       @state = :idle
       @response = nil
+      @persistent = @options.persistent
     end
 
     # the read timeout defied for this requet.
@@ -78,6 +81,10 @@ module HTTPX
     # the request timeout defied for this requet.
     def request_timeout
       @options.timeout[:request_timeout]
+    end
+
+    def persistent?
+      @persistent
     end
 
     def trailers?

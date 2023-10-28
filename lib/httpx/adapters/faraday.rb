@@ -69,11 +69,11 @@ module Faraday
           timeout_options = {}
           req_opts = env.request
           if (sec = request_timeout(:read, req_opts))
-            timeout_options[:operation_timeout] = sec
+            timeout_options[:read_timeout] = sec
           end
 
           if (sec = request_timeout(:write, req_opts))
-            timeout_options[:operation_timeout] = sec
+            timeout_options[:write_timeout] = sec
           end
 
           if (sec = request_timeout(:open, req_opts))

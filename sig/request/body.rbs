@@ -1,7 +1,5 @@
 module HTTPX
   class Request::Body
-    attr_reader threshold_size: Integer?
-
     @headers: Headers
     @body: body_encoder?
     @unbounded_body: bool

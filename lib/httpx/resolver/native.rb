@@ -103,7 +103,7 @@ module HTTPX
       @timeouts.values_at(*hosts).reject(&:empty?).map(&:first).min
     end
 
-    def raise_timeout_error(interval)
+    def handle_socket_timeout(interval)
       do_retry(interval)
     end
 

@@ -6,20 +6,25 @@ module HTTPX
       @intervals = []
     end
 
-    def after(interval_in_secs, &blk)
+    def after(interval_in_secs, cb = nil, &blk)
       return unless interval_in_secs
+
+      callback = cb || blk
 
       # I'm assuming here that most requests will have the same
       # request timeout, as in most cases they share common set of
       # options. A user setting different request timeouts for 100s of
       # requests will already have a hard time dealing with that.
-      unless (interval = @intervals.find { |t| t == interval_in_secs })
+      unless (interval = @intervals.find { |t| t.interval == interval_in_secs })
         interval = Interval.new(interval_in_secs)
+        interval.on_empty { @intervals.delete(interval) }
         @intervals << interval
         @intervals.sort!
       end
 
-      interval << blk
+      interval << callback
+
+      interval
     end
 
     def wait_interval
@@ -41,11 +46,6 @@ module HTTPX
       @next_interval_at = nil if @intervals.empty?
     end
 
-    def cancel
-      @next_interval_at = nil
-      @intervals.clear
-    end
-
     class Interval
       include Comparable
 
@@ -54,6 +54,11 @@ module HTTPX
       def initialize(interval)
         @interval = interval
         @callbacks = []
+        @on_empty = nil
+      end
+
+      def on_empty(&blk)
+        @on_empty = blk
       end
 
       def <=>(other)
@@ -72,6 +77,26 @@ module HTTPX
 
       def <<(callback)
         @callbacks << callback
+      end
+
+      if RUBY_ENGINE == "jruby" && JRUBY_VERSION < "9.4.5.0"
+        # https://github.com/jruby/jruby/issues/7976
+        def delete(callback)
+          @callbacks.delete(callback)
+        end
+      else
+        def delete(callback)
+          @callbacks.delete(callback)
+          @on_empty.call if @callbacks.empty?
+        end
+      end
+
+      def no_callbacks?
+        @callbacks.empty?
+      end
+
+      def elapsed?
+        @interval <= 0
       end
 
       def elapse(elapsed)

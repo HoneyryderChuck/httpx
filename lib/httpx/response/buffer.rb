@@ -13,7 +13,7 @@ module HTTPX
       @threshold_size = threshold_size
       @bytesize = bytesize
       @encoding = encoding
-      try_upgrade_buffer
+      @buffer = StringIO.new("".b)
       super(@buffer)
     end
 
@@ -66,23 +66,20 @@ module HTTPX
     # initializes the buffer into a StringIO, or turns it into a Tempfile when the threshold
     # has been reached.
     def try_upgrade_buffer
-      if !@buffer.is_a?(Tempfile) && @bytesize > @threshold_size
-        aux = @buffer
+      return unless @bytesize > @threshold_size
 
-        @buffer = Tempfile.new("httpx", encoding: Encoding::BINARY, mode: File::RDWR)
+      return if @buffer.is_a?(Tempfile)
 
-        if aux
-          aux.rewind
-          ::IO.copy_stream(aux, @buffer)
-          aux.close
-        end
+      aux = @buffer
 
-      else
-        return if @buffer
+      @buffer = Tempfile.new("httpx", encoding: Encoding::BINARY, mode: File::RDWR)
 
-        @buffer = StringIO.new("".b)
-
+      if aux
+        aux.rewind
+        ::IO.copy_stream(aux, @buffer)
+        aux.close
       end
+
       __setobj__(@buffer)
     end
 

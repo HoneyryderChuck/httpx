@@ -53,7 +53,7 @@ module HTTPX
 
     def ping: () -> void
 
-    def timeout: () -> Numeric
+    def timeout: () -> Numeric?
 
     private
 

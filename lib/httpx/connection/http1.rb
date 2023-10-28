@@ -15,7 +15,7 @@ module HTTPX
     def initialize(buffer, options)
       @options = Options.new(options)
       @max_concurrent_requests = @options.max_concurrent_requests || MAX_REQUESTS
-      @max_requests = @options.max_requests || MAX_REQUESTS
+      @max_requests = @options.max_requests
       @parser = Parser::HTTP1.new(self)
       @buffer = buffer
       @version = [1, 1]
@@ -184,7 +184,14 @@ module HTTPX
         manage_connection(response)
       end
 
-      send(@pending.shift) unless @pending.empty?
+      if exhausted?
+        @pending.concat(@requests)
+        @requests.clear
+
+        emit(:exhausted)
+      else
+        send(@pending.shift) unless @pending.empty?
+      end
     end
 
     def handle_error(ex)
@@ -287,7 +294,7 @@ module HTTPX
 
       connection = request.headers["connection"]
 
-      connection ||= if request.options.persistent
+      connection ||= if request.persistent?
         # when in a persistent connection, the request can't be at
         # the edge of a renegotiation
         if @requests.index(request) + 1 < @max_requests
