@@ -80,26 +80,35 @@ module Faraday
             timeout_options[:connect_timeout] = sec
           end
 
-          ssl_options = {}
-
-          unless env.ssl.verify.nil?
-            ssl_options[:verify_mode] = env.ssl.verify ? OpenSSL::SSL::VERIFY_PEER : OpenSSL::SSL::VERIFY_NONE
-          end
-
-          ssl_options[:ca_file] = env.ssl.ca_file if env.ssl.ca_file
-          ssl_options[:ca_path] = env.ssl.ca_path if env.ssl.ca_path
-          ssl_options[:cert_store] = env.ssl.cert_store if env.ssl.cert_store
-          ssl_options[:cert] = env.ssl.client_cert if env.ssl.client_cert
-          ssl_options[:key] = env.ssl.client_key if env.ssl.client_key
-          ssl_options[:ssl_version] = env.ssl.version if env.ssl.version
-          ssl_options[:verify_depth] = env.ssl.verify_depth if env.ssl.verify_depth
-          ssl_options[:min_version] = env.ssl.min_version if env.ssl.min_version
-          ssl_options[:max_version] = env.ssl.max_version if env.ssl.max_version
-
           {
-            ssl: ssl_options,
+            ssl: ssl_options_from_env(env),
             timeout: timeout_options,
           }
+        end
+
+        if defined?(::OpenSSL)
+          def ssl_options_from_env(env)
+            ssl_options = {}
+
+            unless env.ssl.verify.nil?
+              ssl_options[:verify_mode] = env.ssl.verify ? OpenSSL::SSL::VERIFY_PEER : OpenSSL::SSL::VERIFY_NONE
+            end
+
+            ssl_options[:ca_file] = env.ssl.ca_file if env.ssl.ca_file
+            ssl_options[:ca_path] = env.ssl.ca_path if env.ssl.ca_path
+            ssl_options[:cert_store] = env.ssl.cert_store if env.ssl.cert_store
+            ssl_options[:cert] = env.ssl.client_cert if env.ssl.client_cert
+            ssl_options[:key] = env.ssl.client_key if env.ssl.client_key
+            ssl_options[:ssl_version] = env.ssl.version if env.ssl.version
+            ssl_options[:verify_depth] = env.ssl.verify_depth if env.ssl.verify_depth
+            ssl_options[:min_version] = env.ssl.min_version if env.ssl.min_version
+            ssl_options[:max_version] = env.ssl.max_version if env.ssl.max_version
+            ssl_options
+          end
+        else
+          def ssl_options_from_env(*)
+            {}
+          end
         end
       end
 

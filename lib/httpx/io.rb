@@ -4,4 +4,8 @@ require "socket"
 require "httpx/io/udp"
 require "httpx/io/tcp"
 require "httpx/io/unix"
-require "httpx/io/ssl"
+
+begin
+  require "httpx/io/ssl"
+rescue LoadError
+end
