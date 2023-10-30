@@ -15,6 +15,8 @@ module HTTPX
     attr_reader response: response?
     attr_reader drain_error: StandardError?
 
+    attr_accessor peer_address: ipaddr?
+
     attr_writer persistent: bool
 
     @trailers: Headers?

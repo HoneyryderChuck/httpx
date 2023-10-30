@@ -41,7 +41,7 @@ module HTTPX
     end
 
     def socket
-      @io.to_io
+      @io
     end
 
     def add_addresses(addrs)

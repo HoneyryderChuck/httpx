@@ -2,7 +2,7 @@ module HTTPX
   class TCP
     include Loggable
 
-    attr_reader ip: IPAddr?
+    attr_reader ip: ipaddr?
 
     attr_reader port: Integer
 

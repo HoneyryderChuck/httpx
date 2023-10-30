@@ -128,6 +128,15 @@ class SessionTest < Minitest::Test
     end
   end
 
+  def test_session_response_peer_address
+    uri = URI(build_uri("/get"))
+    response = HTTPX.get(uri)
+    verify_status(response, 200)
+    peer_address = response.peer_address
+    assert peer_address.is_a?(IPAddr)
+    assert Resolv.getaddresses(uri.host).include?(peer_address.to_s)
+  end
+
   TestPlugin = Module.new do
     self::ClassMethods = Module.new do
       def foo
