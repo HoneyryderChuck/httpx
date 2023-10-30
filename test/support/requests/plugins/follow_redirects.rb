@@ -23,6 +23,16 @@ module Requests
         verify_status(response, 304)
       end
 
+      def test_plugin_follow_redirects_relative_path
+        session = HTTPX.plugin(:follow_redirects)
+        uri = redirect_uri("../get")
+
+        redirect_response = session.get(uri)
+        body = json_body(redirect_response)
+        assert body.key?("url"), "url should be set"
+        assert body["url"] == redirect_location, "url should have been the given redirection url"
+      end
+
       def test_plugin_follow_redirects_default_max_redirects
         session = HTTPX.plugin(:follow_redirects)
 
