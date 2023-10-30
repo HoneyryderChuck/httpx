@@ -6,7 +6,7 @@ module HTTPX::Transcoder
   module JSON
     module_function
 
-    JSON_REGEX = %r{\bapplication/(?:vnd\.api\+)?json\b}i.freeze
+    JSON_REGEX = %r{\bapplication/(?:vnd\.api\+|hal\+)?json\b}i.freeze
 
     class Encoder
       extend Forwardable
