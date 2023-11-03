@@ -24,6 +24,8 @@ module HTTPX
 
       interval << callback
 
+      @next_interval_at = nil
+
       interval
     end
 
