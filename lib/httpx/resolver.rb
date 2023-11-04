@@ -87,16 +87,18 @@ module HTTPX
     def lookup(hostname, ttl)
       return unless @lookups.key?(hostname)
 
-      @lookups[hostname] = @lookups[hostname].select do |address|
+      entries = @lookups[hostname] = @lookups[hostname].select do |address|
         address["TTL"] > ttl
       end
-      ips = @lookups[hostname].flat_map do |address|
+
+      ips = entries.flat_map do |address|
         if address.key?("alias")
           lookup(address["alias"], ttl)
         else
           IPAddr.new(address["data"])
         end
-      end
+      end.compact
+
       ips unless ips.empty?
     end
 
