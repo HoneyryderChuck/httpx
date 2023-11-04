@@ -273,7 +273,7 @@ module HTTPX
     end
 
     def timeout
-      return @timeout if defined?(@timeout)
+      return @timeout if @timeout
 
       return @options.timeout[:connect_timeout] if @state == :idle
 
@@ -616,7 +616,7 @@ module HTTPX
     def purge_after_closed
       @io.close if @io
       @read_buffer.clear
-      remove_instance_variable(:@timeout) if defined?(@timeout)
+      @timeout = nil
     end
 
     def build_socket(addrs = nil)
