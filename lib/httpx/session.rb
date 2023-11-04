@@ -260,7 +260,9 @@ module HTTPX
       connection.on(:open) do
         emit(:connection_opened, connection.origin, connection.io.socket)
         # only run close callback if it opened
-        connection.on(:close) { emit(:connection_closed, connection.origin, connection.io.socket) }
+      end
+      connection.on(:close) do
+        emit(:connection_closed, connection.origin, connection.io.socket) if connection.used?
       end
       catch(:coalesced) do
         pool.init_connection(connection, options)

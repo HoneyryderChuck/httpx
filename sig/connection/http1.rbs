@@ -59,13 +59,13 @@ module HTTPX
 
     def initialize: (Buffer, options) -> untyped
 
-    def manage_connection: (Response) -> void
+    def manage_connection: (Request request, Response response) -> void
 
     def disable: () -> void
 
     def disable_pipelining: () -> void
 
-    def set_protocol_headers: (Request) -> _Each[[String, String]]
+    def set_protocol_headers: (Request request) -> _Each[[String, String]]
 
     def handle: (Request request) -> void
 

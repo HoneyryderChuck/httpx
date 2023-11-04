@@ -76,7 +76,6 @@ module HTTPX
                   else
                     transition(:closing)
                     transition(:closed)
-                    emit(:reset)
 
                     parser.reset if @parser
                     transition(:idle)

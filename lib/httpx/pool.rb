@@ -223,9 +223,6 @@ module HTTPX
         @connected_connections += 1
       end
       select_connection(connection)
-      connection.on(:close) do
-        unregister_connection(connection)
-      end
     end
 
     def unregister_connection(connection)

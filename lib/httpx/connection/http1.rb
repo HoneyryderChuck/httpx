@@ -181,7 +181,7 @@ module HTTPX
       if response.is_a?(ErrorResponse)
         disable
       else
-        manage_connection(response)
+        manage_connection(request, response)
       end
 
       if exhausted?
@@ -224,7 +224,7 @@ module HTTPX
 
     private
 
-    def manage_connection(response)
+    def manage_connection(request, response)
       connection = response.headers["connection"]
       case connection
       when /keep-alive/i
@@ -254,7 +254,7 @@ module HTTPX
         disable
       when nil
         # In HTTP/1.1, it's keep alive by default
-        return if response.version == "1.1"
+        return if response.version == "1.1" && request.headers["connection"] != "close"
 
         disable
       end
