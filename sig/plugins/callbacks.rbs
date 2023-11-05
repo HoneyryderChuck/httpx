@@ -8,7 +8,7 @@ module HTTPX
 
         def on_connection_opened: () { (http_uri origin, socket sock) -> void } -> self
 
-        def on_connection_opened: () { (http_uri origin) -> void } -> self
+        def on_connection_closed: () { (http_uri origin) -> void } -> self
 
         def on_request_error: () { (Request request, StandardError error) -> void } -> self
 
