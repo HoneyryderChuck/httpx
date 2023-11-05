@@ -5,7 +5,7 @@ require "ipaddr"
 
 module HTTPX
   module Resolver
-    RESOLVE_TIMEOUT = 5
+    RESOLVE_TIMEOUT = [2, 3].freeze
 
     require "httpx/resolver/resolver"
     require "httpx/resolver/system"
