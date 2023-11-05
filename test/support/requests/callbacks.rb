@@ -8,16 +8,19 @@ module Requests
     def test_callbacks_connection_opened
       uri = URI(build_uri("/get"))
       origin = ip = nil
+      opened = 0
 
       response = HTTPX.plugin(SessionWithPool).on_connection_opened do |o, sock|
         origin = o
         ip = sock.to_io.remote_address.ip_address
+        opened += 1
       end.get(uri)
       verify_status(response, 200)
 
       assert !origin.nil?
       assert origin.to_s == uri.origin
       assert !ip.nil?
+      assert opened == 1
 
       assert Resolv.getaddresses(uri.host).include?(ip)
     end
@@ -25,14 +28,17 @@ module Requests
     def test_callbacks_connection_closed
       uri = URI(build_uri("/get"))
       origin = nil
+      closed = 0
 
       response = HTTPX.plugin(SessionWithPool).on_connection_closed do |o|
         origin = o
+        closed += 1
       end.get(uri)
       verify_status(response, 200)
 
       assert !origin.nil?
       assert origin.to_s == uri.origin
+      assert closed == 1
     end
 
     def test_callbacks_request_error

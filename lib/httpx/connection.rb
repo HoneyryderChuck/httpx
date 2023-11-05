@@ -503,10 +503,12 @@ module HTTPX
         @origins |= [origin]
       end
       parser.on(:close) do |force|
-        transition(:closing)
-        if force || @state == :idle
-          transition(:closed)
-          emit(:close)
+        if @state != :closed
+          transition(:closing)
+          if force || @state == :idle
+            transition(:closed)
+            emit(:close)
+          end
         end
       end
       parser.on(:close_handshake) do
