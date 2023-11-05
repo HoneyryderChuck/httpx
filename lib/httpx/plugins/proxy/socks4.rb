@@ -85,7 +85,7 @@ module HTTPX
         end
 
         class SocksParser
-          include Callbacks
+          include HTTPX::Callbacks
 
           def initialize(buffer, options)
             @buffer = buffer

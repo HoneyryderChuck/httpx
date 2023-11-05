@@ -10,19 +10,6 @@ module HTTPX
       MOD
     end
 
-    %i[
-      connection_opened connection_closed
-      request_error
-      request_started request_body_chunk request_completed
-      response_started response_body_chunk response_completed
-    ].each do |meth|
-      class_eval(<<-MOD, __FILE__, __LINE__ + 1)
-        def on_#{meth}(&blk)   # def on_connection_opened(&blk)
-          on(:#{meth}, &blk)   #   on(:connection_opened, &blk)
-        end                    # end
-      MOD
-    end
-
     def request(*args, **options)
       branch(default_options).request(*args, **options)
     end
@@ -44,12 +31,6 @@ module HTTPX
 
     def with(options, &blk)
       branch(default_options.merge(options), &blk)
-    end
-
-    protected
-
-    def on(*args, &blk)
-      branch(default_options).on(*args, &blk)
     end
 
     private

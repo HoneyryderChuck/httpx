@@ -34,6 +34,7 @@ module HTTPX
               | (:response_cache, ?options) -> Plugins::sessionResponseCache
               | (:circuit_breaker, ?options) -> Plugins::sessionCircuitBreaker
               | (:oauth, ?options) -> Plugins::sessionOAuth
+              | (:callbacks, ?options) -> Plugins::sessionCallbacks
               | (Symbol | Module, ?options) { (Class) -> void } -> Session
               | (Symbol | Module, ?options) -> Session
 
