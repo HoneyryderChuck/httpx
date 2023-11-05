@@ -90,7 +90,7 @@ module HTTPX
     end
 
     def match?(uri, options)
-      return false if @state == :closing || @state == :closed
+      return false if !used? && (@state == :closing || @state == :closed)
 
       return false if exhausted?
 

@@ -110,6 +110,7 @@ module HTTPX
         end
 
         if conn
+          conn.idling
           @connections << conn
           select_connection(conn)
         end
@@ -227,10 +228,7 @@ module HTTPX
 
     def unregister_connection(connection)
       @connections.delete(connection)
-      if connection.used? && !@eden_connections.include?(connection)
-        @eden_connections << connection
-        connection.idling
-      end
+      @eden_connections << connection if connection.used? && !@eden_connections.include?(connection)
       @connected_connections -= 1 if deselect_connection(connection)
     end
 
