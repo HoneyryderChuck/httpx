@@ -62,8 +62,11 @@ module HTTPX
          addresses.first.to_s != connection.origin.host.to_s
         log { "resolver: A response, applying resolution delay..." }
         @pool.after(0.05) do
-          # double emission check
-          emit_resolved_connection(connection, addresses) unless connection.addresses && addresses.intersect?(connection.addresses)
+          unless connection.state == :closed ||
+                 # double emission check
+                 (connection.addresses && addresses.intersect?(connection.addresses))
+            emit_resolved_connection(connection, addresses)
+          end
         end
       else
         emit_resolved_connection(connection, addresses)
