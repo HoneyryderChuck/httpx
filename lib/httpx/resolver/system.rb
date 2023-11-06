@@ -164,7 +164,8 @@ module HTTPX
     def async_resolve(connection, hostname, scheme)
       families = connection.options.ip_families
       log { "resolver: query for #{hostname}" }
-      resolve_timeout = @timeouts[connection.origin.host].first
+      timeouts = @timeouts[connection.origin.host]
+      resolve_timeout = timeouts.first
 
       Thread.start do
         Thread.current.report_on_exception = false
@@ -191,6 +192,8 @@ module HTTPX
           end
         rescue StandardError => e
           if e.is_a?(Timeout::Error)
+            timeouts.shift
+            retry unless timeouts.empty?
             e = ResolveTimeoutError.new(resolve_timeout, e.message)
             e.set_backtrace(e.backtrace)
           end

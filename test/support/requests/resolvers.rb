@@ -123,29 +123,22 @@ module Requests
           end
         end
 
-        # this test mocks an unresponsive DNS server which doesn't return a DNS asnwer back.
         define_method :"test_resolver_#{resolver_type}_timeout" do
-          session = HTTPX.plugin(SessionWithPool)
-          uri = URI(build_uri("/get"))
-          # absolute URL, just to shorten the impact of resolv.conf search.
-          uri.host = "#{uri.host}."
+          start_test_servlet(SlowDNSServer, 12) do |slow_dns_server|
+            resolver_opts = options.merge(nameserver: [slow_dns_server.nameserver], timeouts: [1, 2])
 
-          resolver_class = Class.new(HTTPX::Resolver::Native) do
-            def interests
-              super
-              :w
+            HTTPX.plugin(SessionWithPool).wrap do |session|
+              uri = build_uri("/get")
+
+              before_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)
+              response = session.get(uri, resolver_class: resolver_type, resolver_options: resolver_opts)
+              after_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)
+              total_time = after_time - before_time
+
+              verify_error_response(response, HTTPX::ResolveTimeoutError)
+              assert_in_delta 2 + 1, total_time, 12, "request didn't take as expected to retry dns queries (#{total_time} secs)"
             end
-
-            def dwrite; end
           end
-
-          before_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)
-          response = session.head(uri, resolver_class: resolver_class, resolver_options: options.merge(timeouts: [1, 2]))
-          after_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)
-          total_time = after_time - before_time
-
-          verify_error_response(response, HTTPX::ResolveTimeoutError)
-          assert_in_delta 2 + 1, total_time, 6, "request didn't take as expected to retry dns queries (#{total_time} secs)"
         end
 
         # this test mocks the case where there's no nameserver set to send the DNS queries to.
