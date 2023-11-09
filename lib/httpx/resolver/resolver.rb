@@ -38,6 +38,8 @@ module HTTPX
 
     def close; end
 
+    alias_method :terminate, :close
+
     def closed?
       true
     end

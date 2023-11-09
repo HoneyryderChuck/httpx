@@ -231,6 +231,12 @@ module HTTPX
       @parser.close if @parser
     end
 
+    def terminate
+      @connected_at = nil if @state == :closed
+
+      close
+    end
+
     # bypasses the state machine to force closing of connections still connecting.
     # **only** used for Happy Eyeballs v2.
     def force_reset
@@ -580,14 +586,14 @@ module HTTPX
       when :inactive
         return unless @state == :open
       when :closing
-        return unless @state == :open
+        return unless @state == :idle || @state == :open
 
       when :closed
         return unless @state == :closing
         return unless @write_buffer.empty?
 
         purge_after_closed
-        emit(:close)
+        emit(:close) if @pending.empty?
       when :already_open
         nextstate = :open
         # the first check for given io readiness must still use a timeout.

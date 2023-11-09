@@ -74,6 +74,8 @@ module HTTPX
 
     def call: () -> void
 
+    def terminate: () -> void
+
     def close: () -> void
 
     def reset: () -> void

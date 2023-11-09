@@ -73,11 +73,11 @@ module HTTPX
     end
 
     def close
-      emit(:close)
       unless @connection.state == :closed
         @connection.goaway
         emit(:timeout, @options.timeout[:close_handshake_timeout])
       end
+      emit(:close, true)
     end
 
     def empty?

@@ -27,7 +27,7 @@ module HTTPX
       use_get: false,
     }.freeze
 
-    def_delegators :@resolver_connection, :state, :connecting?, :to_io, :call, :close
+    def_delegators :@resolver_connection, :state, :connecting?, :to_io, :call, :close, :terminate
 
     def initialize(_, options)
       super

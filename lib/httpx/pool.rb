@@ -17,8 +17,6 @@ module HTTPX
       @timers = Timers.new
       @selector = Selector.new
       @connections = []
-      @eden_connections = []
-      @connected_connections = 0
     end
 
     def empty?
@@ -52,9 +50,8 @@ module HTTPX
     def close(connections = @connections)
       return if connections.empty?
 
-      @eden_connections.clear
       connections = connections.reject(&:inflight?)
-      connections.each(&:close)
+      connections.each(&:terminate)
       next_tick until connections.none? { |c| c.state != :idle && @connections.include?(c) }
 
       # close resolvers
@@ -68,16 +65,13 @@ module HTTPX
         resolver.close unless resolver.closed?
       end
       # for https resolver
-      resolver_connections.each(&:close)
+      resolver_connections.each(&:terminate)
       next_tick until resolver_connections.none? { |c| c.state != :idle && @connections.include?(c) }
     end
 
     def init_connection(connection, _options)
       resolve_connection(connection) unless connection.family
       connection.timers = @timers
-      connection.on(:open) do
-        @connected_connections += 1
-      end
       connection.on(:activate) do
         select_connection(connection)
       end
@@ -98,6 +92,9 @@ module HTTPX
       connection.on(:close) do
         unregister_connection(connection)
       end
+      connection.on(:terminate) do
+        unregister_connection(connection, true)
+      end
     end
 
     def deactivate(connections)
@@ -116,16 +113,15 @@ module HTTPX
         connection.match?(uri, options)
       end
 
-      unless conn
-        @eden_connections.delete_if do |connection|
-          is_expired = connection.expired?
-          conn = connection if conn.nil? && !is_expired && connection.match?(uri, options)
-          is_expired
-        end
+      return unless conn
 
-        if conn
+      case conn.state
+      when :closed
+        conn.idling
+        select_connection(conn)
+      when :closing
+        conn.once(:close) do
           conn.idling
-          @connections << conn
           select_connection(conn)
         end
       end
@@ -232,18 +228,12 @@ module HTTPX
     end
 
     def register_connection(connection)
-      if connection.state == :open
-        # if open, an IO was passed upstream, therefore
-        # consider it connected already.
-        @connected_connections += 1
-      end
       select_connection(connection)
     end
 
-    def unregister_connection(connection)
-      @connections.delete(connection)
-      @eden_connections << connection if connection.used? && !@eden_connections.include?(connection)
-      @connected_connections -= 1 if deselect_connection(connection)
+    def unregister_connection(connection, cleanup = !connection.used?)
+      @connections.delete(connection) if cleanup
+      deselect_connection(connection)
     end
 
     def select_connection(connection)

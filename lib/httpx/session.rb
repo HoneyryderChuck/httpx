@@ -201,6 +201,7 @@ module HTTPX
       end
 
       connection.merge(existing_connection)
+      existing_connection.terminate
       connection
     rescue UnsupportedSchemeError
       altsvc["noop"] = true
