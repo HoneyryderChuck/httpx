@@ -219,7 +219,6 @@ module HTTPX
       when :closing
         consume
         transition(:closed)
-        emit(:close)
       when :open
         consume
       end
@@ -237,13 +236,11 @@ module HTTPX
     def force_reset
       @state = :closing
       transition(:closed)
-      emit(:close)
     end
 
     def reset
       transition(:closing)
       transition(:closed)
-      emit(:close)
     end
 
     def send(request)
@@ -500,7 +497,6 @@ module HTTPX
           transition(:closing)
           if force || @state == :idle
             transition(:closed)
-            emit(:close)
           end
         end
       end
@@ -586,6 +582,7 @@ module HTTPX
         return unless @write_buffer.empty?
 
         purge_after_closed
+        emit(:close)
       when :already_open
         nextstate = :open
         # the first check for given io readiness must still use a timeout.
