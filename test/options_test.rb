@@ -80,6 +80,7 @@ class OptionsTest < Minitest::Test
       :timeout => {
         connect_timeout: 60,
         settings_timeout: 10,
+        close_handshake_timeout: 10,
         operation_timeout: nil,
         keep_alive_timeout: 20,
         read_timeout: 60,
