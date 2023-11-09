@@ -81,6 +81,20 @@ module HTTPX
       connection.on(:activate) do
         select_connection(connection)
       end
+      connection.on(:exhausted) do
+        case connection.state
+        when :closed
+          connection.idling
+          @connections << connection
+          select_connection(connection)
+        when :closing
+          connection.once(:close) do
+            connection.idling
+            @connections << connection
+            select_connection(connection)
+          end
+        end
+      end
       connection.on(:close) do
         unregister_connection(connection)
       end

@@ -92,8 +92,6 @@ module HTTPX
     def match?(uri, options)
       return false if !used? && (@state == :closing || @state == :closed)
 
-      return false if exhausted?
-
       (
         (
           @origins.include?(uri.origin) &&
@@ -114,8 +112,6 @@ module HTTPX
 
     def mergeable?(connection)
       return false if @state == :closing || @state == :closed || !@io
-
-      return false if exhausted?
 
       return false unless connection.addresses
 
@@ -319,10 +315,6 @@ module HTTPX
       transition(:open)
     end
 
-    def exhausted?
-      @parser && parser.exhausted?
-    end
-
     def consume
       return unless @io
 
@@ -497,6 +489,7 @@ module HTTPX
         request.emit(:promise, parser, stream)
       end
       parser.on(:exhausted) do
+        @pending.concat(parser.pending)
         emit(:exhausted)
       end
       parser.on(:origin) do |origin|
