@@ -47,6 +47,7 @@ module HTTPX
       @max_requests = @options.max_requests || MAX_REQUESTS
       @parser.reset!
       @handshake_completed = false
+      @pending.concat(@requests) unless @requests.empty?
     end
 
     def close
@@ -218,6 +219,7 @@ module HTTPX
     end
 
     def ping
+      reset
       emit(:reset)
       emit(:exhausted)
     end
@@ -262,6 +264,7 @@ module HTTPX
 
     def disable
       disable_pipelining
+      reset
       emit(:reset)
       throw(:called)
     end

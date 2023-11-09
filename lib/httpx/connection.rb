@@ -515,16 +515,9 @@ module HTTPX
         consume
       end
       parser.on(:reset) do
-        if parser.empty?
-          reset
-        else
-          transition(:closing)
-          transition(:closed)
-
-          @parser.reset if @parser
-          transition(:idle)
-          transition(:open)
-        end
+        @pending.concat(parser.pending) unless parser.empty?
+        reset
+        idling unless @pending.empty?
       end
       parser.on(:current_timeout) do
         @current_timeout = @timeout = parser.timeout
