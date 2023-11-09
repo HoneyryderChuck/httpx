@@ -239,7 +239,14 @@ module HTTPX
     end
 
     def reset
+      return if @state == :closing || @state == :closed
+
       transition(:closing)
+      unless @write_buffer.empty?
+        # handshakes, try sending
+        consume
+        @write_buffer.clear
+      end
       transition(:closed)
     end
 
@@ -493,11 +500,9 @@ module HTTPX
         @origins |= [origin]
       end
       parser.on(:close) do |force|
-        if @state != :closed
-          transition(:closing)
-          if force || @state == :idle
-            transition(:closed)
-          end
+        if force
+          reset
+          emit(:terminate)
         end
       end
       parser.on(:close_handshake) do
