@@ -91,7 +91,7 @@ module HTTPX::Plugins
 
     module RequestMethods
       def __sentry_enable_trace!
-        return super if @__sentry_enable_trace
+        return if @__sentry_enable_trace
 
         Tracer.call(self)
         @__sentry_enable_trace = true
