@@ -150,4 +150,11 @@ class OptionsTest < Minitest::Test
     opts = Options.new
     assert opts.to_hash.is_a?(Hash)
   end
+
+  def test_options_equals
+    opts = Options.new(origin: "http://example.com")
+    assert opts == Options.new(origin: "http://example.com")
+    assert Options.new(origin: "http://example.com", headers: { "foo" => "bar" }) == Options.new(origin: "http://example.com")
+    assert Options.new(json: { "foo" => "bar" }) == Options.new
+  end
 end

@@ -226,20 +226,19 @@ module HTTPX
       OUT
     end
 
-    REQUEST_IVARS = %i[@params @form @xml @json @body].freeze
-    private_constant :REQUEST_IVARS
+    REQUEST_BODY_IVARS = %i[@headers @params @form @xml @json @body].freeze
+    private_constant :REQUEST_BODY_IVARS
 
     def ==(other)
-      ivars = instance_variables | other.instance_variables
-      ivars.all? do |ivar|
-        case ivar
-        when :@headers
-          # currently, this is used to pick up an available matching connection.
-          # the headers do not play a role, as they are relevant only for the request.
-          true
-        when *REQUEST_IVARS
-          true
-        else
+      super || begin
+        # headers and other request options do not play a role, as they are
+        # relevant only for the request.
+        ivars = instance_variables - REQUEST_BODY_IVARS
+        other_ivars = other.instance_variables - REQUEST_BODY_IVARS
+
+        return false if ivars != other_ivars
+
+        ivars.all? do |ivar|
           instance_variable_get(ivar) == other.instance_variable_get(ivar)
         end
       end
@@ -273,6 +272,7 @@ module HTTPX
     end
 
     def initialize_dup(other)
+      super
       instance_variables.each do |ivar|
         instance_variable_set(ivar, other.instance_variable_get(ivar).dup)
       end
