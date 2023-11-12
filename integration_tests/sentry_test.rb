@@ -136,9 +136,10 @@ class SentryTest < Minitest::Test
       config.logger = mock_logger
       config.dsn = DUMMY_DSN
       config.transport.transport_class = Sentry::DummyTransport
-      config.breadcrumbs_logger = [:http_logger]
-      # so the events will be sent synchronously for testing
       config.background_worker_threads = 0
+      config.breadcrumbs_logger = [:http_logger]
+      config.enabled_patches << :httpx
+      # so the events will be sent synchronously for testing
     end
   end
 
