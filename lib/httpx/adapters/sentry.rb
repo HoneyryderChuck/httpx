@@ -27,6 +27,11 @@ module HTTPX::Plugins
       def set_sentry_trace_header(request, sentry_span)
         return unless sentry_span
 
+        config = ::Sentry.configuration
+        url = request.uri.to_s
+
+        return unless config.propagate_traces && config.trace_propagation_targets.any? { |target| url.match?(target) }
+
         trace = ::Sentry.get_current_client.generate_sentry_trace(sentry_span)
         request.headers[::Sentry::SENTRY_TRACE_HEADER_NAME] = trace if trace
       end
