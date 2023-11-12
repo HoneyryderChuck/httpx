@@ -27,6 +27,11 @@ module HTTPX::Plugins
       def set_sentry_trace_header(request, sentry_span)
         return unless sentry_span
 
+        config = ::Sentry.configuration
+        url = request.uri.to_s
+
+        return unless config.propagate_traces && config.trace_propagation_targets.any? { |target| url.match?(target) }
+
         trace = ::Sentry.get_current_client.generate_sentry_trace(sentry_span)
         request.headers[::Sentry::SENTRY_TRACE_HEADER_NAME] = trace if trace
       end
@@ -91,7 +96,7 @@ module HTTPX::Plugins
 
     module RequestMethods
       def __sentry_enable_trace!
-        return super if @__sentry_enable_trace
+        return if @__sentry_enable_trace
 
         Tracer.call(self)
         @__sentry_enable_trace = true
@@ -108,7 +113,7 @@ module HTTPX::Plugins
   end
 end
 
-Sentry.register_patch do
+Sentry.register_patch(:httpx) do
   sentry_session = HTTPX.plugin(HTTPX::Plugins::Sentry)
 
   HTTPX.send(:remove_const, :Session)
