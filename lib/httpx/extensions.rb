@@ -54,21 +54,6 @@ module HTTPX
       def origin
         "#{scheme}://#{authority}"
       end unless URI::HTTP.method_defined?(:origin)
-
-      def altsvc_match?(uri)
-        uri = URI.parse(uri)
-
-        origin == uri.origin || begin
-          case scheme
-          when "h2"
-            (uri.scheme == "https" || uri.scheme == "h2") &&
-            host == uri.host &&
-            (port || default_port) == (uri.port || uri.default_port)
-          else
-            false
-          end
-        end
-      end
     end
   end
 end

@@ -203,8 +203,11 @@ module HTTPX
       alt_options = options.merge(ssl: options.ssl.merge(hostname: URI(origin).host))
 
       connection = pool.find_connection(alt_origin, alt_options) || build_connection(alt_origin, alt_options)
+
       # advertised altsvc is the same origin being used, ignore
       return if connection == existing_connection
+
+      connection.extend(AltSvc::ConnectionMixin) unless connection.is_a?(AltSvc::ConnectionMixin)
 
       set_connection_callbacks(connection, connections, alt_options)
 
