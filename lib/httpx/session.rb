@@ -213,15 +213,6 @@ module HTTPX
 
       log(level: 1) { "#{origin} alt-svc: #{alt_origin}" }
 
-      # get uninitialized requests
-      # incidentally, all requests will be re-routed to the first
-      # advertised alt-svc, which incidentally follows the spec.
-      existing_connection.purge_pending do |request|
-        request.origin == origin &&
-          request.state == :idle &&
-          !request.headers.key?("alt-used")
-      end
-
       connection.merge(existing_connection)
       connection
     rescue UnsupportedSchemeError

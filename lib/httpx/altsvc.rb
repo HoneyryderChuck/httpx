@@ -6,6 +6,8 @@ module HTTPX
   module AltSvc
     # makes connections able to accept requests destined to primary service.
     module ConnectionMixin
+      using URIExtensions
+
       def send(request)
         request.headers["alt-used"] = @origin.authority if @parser && !@write_buffer.full? && match_altsvcs?(request.uri)
 
