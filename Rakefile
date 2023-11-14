@@ -100,6 +100,7 @@ task :prepare_website => %w[rdoc prepare_jekyll_data] do
     header = "---\n" \
              "layout: #{layout}\n" \
              "title: #{title}\n" \
+             "project: httpx\n" \
              "---\n\n"
     File.write(path, header + data)
   end
