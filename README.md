@@ -151,7 +151,7 @@ All Rubies greater or equal to 2.7, and always latest JRuby and Truffleruby.
 
 ## Versioning Policy
 
-Although 0.x software, `httpx` is considered API-stable and production-ready, i.e. current API or options may be subject to deprecation and emit log warnings, but can only effectively be removed in a major version change.
+`httpx` follows Semantic Versioning.
 
 ## Contributing
 
