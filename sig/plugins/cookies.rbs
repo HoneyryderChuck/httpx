@@ -5,6 +5,8 @@ module HTTPX
 
       interface _CookieOptions
         def cookies: () -> Jar?
+
+        def merge_cookie_in_jar: (Array[String] cookies, Jar jar) -> void
       end
 
       def self.extra_options: (Options) -> (Options & _CookieOptions)
