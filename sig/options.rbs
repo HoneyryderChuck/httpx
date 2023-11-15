@@ -129,6 +129,8 @@ module HTTPX
 
     def to_hash: () -> Hash[Symbol, untyped]
 
+    def extend_with_plugin_classes: (Module pl) -> void
+
     private
 
     REQUEST_IVARS: Array[Symbol]

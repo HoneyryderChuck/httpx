@@ -369,19 +369,8 @@ module HTTPX
           extend(pl::ClassMethods) if defined?(pl::ClassMethods)
 
           opts = @default_options
-          opts.request_class.__send__(:include, pl::RequestMethods) if defined?(pl::RequestMethods)
-          opts.request_class.extend(pl::RequestClassMethods) if defined?(pl::RequestClassMethods)
-          opts.response_class.__send__(:include, pl::ResponseMethods) if defined?(pl::ResponseMethods)
-          opts.response_class.extend(pl::ResponseClassMethods) if defined?(pl::ResponseClassMethods)
-          opts.headers_class.__send__(:include, pl::HeadersMethods) if defined?(pl::HeadersMethods)
-          opts.headers_class.extend(pl::HeadersClassMethods) if defined?(pl::HeadersClassMethods)
-          opts.request_body_class.__send__(:include, pl::RequestBodyMethods) if defined?(pl::RequestBodyMethods)
-          opts.request_body_class.extend(pl::RequestBodyClassMethods) if defined?(pl::RequestBodyClassMethods)
-          opts.response_body_class.__send__(:include, pl::ResponseBodyMethods) if defined?(pl::ResponseBodyMethods)
-          opts.response_body_class.extend(pl::ResponseBodyClassMethods) if defined?(pl::ResponseBodyClassMethods)
-          opts.connection_class.__send__(:include, pl::ConnectionMethods) if defined?(pl::ConnectionMethods)
+          opts.extend_with_plugin_classes(pl)
           if defined?(pl::OptionsMethods)
-            opts.options_class.__send__(:include, pl::OptionsMethods)
 
             (pl::OptionsMethods.instance_methods - Object.instance_methods).each do |meth|
               opts.options_class.method_added(meth)

@@ -247,7 +247,51 @@ module HTTPX
       end
     end
 
+    OTHER_LOOKUP = ->(obj, k, ivar_map) {
+      case obj
+      when Hash
+        obj[ivar_map[k]]
+      else
+        obj.instance_variable_get(k)
+      end
+    }
     def merge(other)
+      ivar_map = nil
+      other_ivars = case other
+                    when Hash
+                      ivar_map = other.keys.to_h { |k| [:"@#{k}", k] }
+                      ivar_map.keys
+                    else
+                      other.instance_variables
+      end
+
+      return self if other_ivars.empty?
+
+      return self if other_ivars.all? { |ivar| instance_variable_get(ivar) == OTHER_LOOKUP[other, ivar, ivar_map] }
+
+      opts = dup
+
+      other_ivars.each do |ivar|
+        v = OTHER_LOOKUP[other, ivar, ivar_map]
+
+        unless v
+          opts.instance_variable_set(ivar, v)
+          next
+        end
+
+        v = opts.__send__(:"option_#{ivar[1..-1]}", v)
+
+        orig_v = instance_variable_get(ivar)
+
+        v = orig_v.merge(v) if orig_v.respond_to?(:merge) && v.respond_to?(:merge)
+
+        opts.instance_variable_set(ivar, v)
+      end
+
+      opts
+    end
+
+    def merge2(other)
       raise ArgumentError, "#{other} is not a valid set of options" unless other.respond_to?(:to_hash)
 
       h2 = other.to_hash
@@ -274,11 +318,40 @@ module HTTPX
       end
     end
 
-    def initialize_dup(other)
-      super
-      instance_variables.each do |ivar|
-        instance_variable_set(ivar, other.instance_variable_get(ivar).dup)
+    def extend_with_plugin_classes(pl)
+      if defined?(pl::RequestMethods) || defined?(pl::RequestClassMethods)
+        @request_class = @request_class.dup
+        @request_class.__send__(:include, pl::RequestMethods) if defined?(pl::RequestMethods)
+        @request_class.extend(pl::RequestClassMethods) if defined?(pl::RequestClassMethods)
       end
+      if defined?(pl::ResponseMethods) || defined?(pl::ResponseClassMethods)
+        @response_class = @response_class.dup
+        @response_class.__send__(:include, pl::ResponseMethods) if defined?(pl::ResponseMethods)
+        @response_class.extend(pl::ResponseClassMethods) if defined?(pl::ResponseClassMethods)
+      end
+      if defined?(pl::HeadersMethods) || defined?(pl::HeadersClassMethods)
+        @headers_class = @headers_class.dup
+        @headers_class.__send__(:include, pl::HeadersMethods) if defined?(pl::HeadersMethods)
+        @headers_class.extend(pl::HeadersClassMethods) if defined?(pl::HeadersClassMethods)
+      end
+      if defined?(pl::RequestBodyMethods) || defined?(pl::RequestBodyClassMethods)
+        @request_body_class = @request_body_class.dup
+        @request_body_class.__send__(:include, pl::RequestBodyMethods) if defined?(pl::RequestBodyMethods)
+        @request_body_class.extend(pl::RequestBodyClassMethods) if defined?(pl::RequestBodyClassMethods)
+      end
+      if defined?(pl::ResponseBodyMethods) || defined?(pl::ResponseBodyClassMethods)
+        @response_body_class = @response_body_class.dup
+        @response_body_class.__send__(:include, pl::ResponseBodyMethods) if defined?(pl::ResponseBodyMethods)
+        @response_body_class.extend(pl::ResponseBodyClassMethods) if defined?(pl::ResponseBodyClassMethods)
+      end
+      if defined?(pl::ConnectionMethods)
+        @connection_class = @connection_class.dup
+        @connection_class.__send__(:include, pl::ConnectionMethods)
+      end
+      return unless defined?(pl::OptionsMethods)
+
+      @options_class = @options_class.dup
+      @options_class.__send__(:include, pl::OptionsMethods)
     end
 
     private
