@@ -227,20 +227,23 @@ module HTTPX
     end
 
     REQUEST_BODY_IVARS = %i[@headers @params @form @xml @json @body].freeze
-    private_constant :REQUEST_BODY_IVARS
 
     def ==(other)
-      super || begin
-        # headers and other request options do not play a role, as they are
-        # relevant only for the request.
-        ivars = instance_variables - REQUEST_BODY_IVARS
-        other_ivars = other.instance_variables - REQUEST_BODY_IVARS
+      super || options_equals?(other)
+    end
 
-        return false if ivars != other_ivars
+    def options_equals?(other, ignore_ivars = REQUEST_BODY_IVARS)
+      # headers and other request options do not play a role, as they are
+      # relevant only for the request.
+      ivars = instance_variables - ignore_ivars
+      other_ivars = other.instance_variables - ignore_ivars
 
-        ivars.all? do |ivar|
-          instance_variable_get(ivar) == other.instance_variable_get(ivar)
-        end
+      return false if ivars.size != other_ivars.size
+
+      return false if ivars.sort != other_ivars.sort
+
+      ivars.all? do |ivar|
+        instance_variable_get(ivar) == other.instance_variable_get(ivar)
       end
     end
 
