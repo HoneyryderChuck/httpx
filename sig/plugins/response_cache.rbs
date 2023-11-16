@@ -9,7 +9,9 @@ module HTTPX
       def self?.cached_response?: (response response) -> bool
 
       class Store
-        @store: Hash[String, Array[Response]] & Mutex_m
+        @store: Hash[String, Array[Response]]
+
+        @store_mutex: Thread::Mutex
 
         def lookup: (Request request) -> Response?
 

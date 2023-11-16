@@ -4,7 +4,7 @@ require "strscan"
 
 module HTTPX
   module AltSvc
-    @altsvc_mutex = Mutex.new
+    @altsvc_mutex = Thread::Mutex.new
     @altsvcs = Hash.new { |h, k| h[k] = [] }
 
     module_function

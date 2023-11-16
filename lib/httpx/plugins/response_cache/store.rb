@@ -1,17 +1,15 @@
 # frozen_string_literal: true
 
-require "mutex_m"
-
 module HTTPX::Plugins
   module ResponseCache
     class Store
       def initialize
         @store = {}
-        @store.extend(Mutex_m)
+        @store_mutex = Thread::Mutex.new
       end
 
       def clear
-        @store.synchronize { @store.clear }
+        @store_mutex.synchronize { @store.clear }
       end
 
       def lookup(request)
@@ -66,7 +64,7 @@ module HTTPX::Plugins
       end
 
       def _get(request)
-        @store.synchronize do
+        @store_mutex.synchronize do
           responses = @store[request.response_cache_key]
 
           return unless responses
@@ -80,7 +78,7 @@ module HTTPX::Plugins
       end
 
       def _set(request, response)
-        @store.synchronize do
+        @store_mutex.synchronize do
           responses = (@store[request.response_cache_key] ||= [])
 
           responses.reject! do |res|

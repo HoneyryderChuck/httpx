@@ -20,7 +20,6 @@ require "httpx/response"
 require "httpx/options"
 require "httpx/chainable"
 
-require "mutex_m"
 # Top-Level Namespace
 #
 module HTTPX
@@ -31,16 +30,17 @@ module HTTPX
   #
   module Plugins
     @plugins = {}
-    @plugins.extend(Mutex_m)
+    @plugins_mutex = Thread::Mutex.new
 
     # Loads a plugin based on a name. If the plugin hasn't been loaded, tries to load
     # it from the load path under "httpx/plugins/" directory.
     #
     def self.load_plugin(name)
       h = @plugins
-      unless (plugin = h.synchronize { h[name] })
+      m = @plugins_mutex
+      unless (plugin = m.synchronize { h[name] })
         require "httpx/plugins/#{name}"
-        raise "Plugin #{name} hasn't been registered" unless (plugin = h.synchronize { h[name] })
+        raise "Plugin #{name} hasn't been registered" unless (plugin = m.synchronize { h[name] })
       end
       plugin
     end
@@ -49,7 +49,8 @@ module HTTPX
     #
     def self.register_plugin(name, mod)
       h = @plugins
-      h.synchronize { h[name] = mod }
+      m = @plugins_mutex
+      m.synchronize { h[name] = mod }
     end
   end
 

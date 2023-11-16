@@ -3,7 +3,9 @@ module HTTPX
     module CircuitBreaker
 
       class CircuitStore
-        @circuits: Hash[String, Circuit] & Mutex_m
+        @circuits: Hash[String, Circuit]
+
+        @circuits_mutex: Thread::Mutex
 
         def try_open: (uri uri, response response) -> response?
 
