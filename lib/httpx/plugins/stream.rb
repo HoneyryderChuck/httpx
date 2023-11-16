@@ -119,7 +119,10 @@ module HTTPX
 
       module ResponseMethods
         def stream
-          @request.stream
+          request = @request.root_request if @request.respond_to?(:root_request)
+          request ||= @request
+
+          request.stream
         end
       end
 

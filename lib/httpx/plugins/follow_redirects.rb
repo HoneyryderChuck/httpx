@@ -68,17 +68,19 @@ module HTTPX
                                           max_redirects: max_redirects - 1)
           end
 
-          retry_request = build_request("GET", redirect_uri, retry_options)
-
-          request.redirect_request = retry_request
+          redirect_uri = Utils.to_uri(redirect_uri)
 
           if !options.follow_insecure_redirects &&
              response.uri.scheme == "https" &&
-             retry_request.uri.scheme == "http"
-            error = InsecureRedirectError.new(retry_request.uri.to_s)
+             redirect_uri.scheme == "http"
+            error = InsecureRedirectError.new(redirect_uri.to_s)
             error.set_backtrace(caller)
             return ErrorResponse.new(request, error, options)
           end
+
+          retry_request = build_request("GET", redirect_uri, retry_options)
+
+          request.redirect_request = retry_request
 
           retry_after = response.headers["retry-after"]
 
@@ -111,12 +113,16 @@ module HTTPX
       end
 
       module RequestMethods
-        def self.included(klass)
-          klass.__send__(:attr_writer, :redirect_request)
-        end
+        attr_accessor :root_request
 
         def redirect_request
           @redirect_request || self
+        end
+
+        def redirect_request=(req)
+          @redirect_request = req
+          req.root_request = @root_request || self
+          @response = nil
         end
 
         def response

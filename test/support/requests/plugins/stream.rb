@@ -79,6 +79,17 @@ module Requests
           response.each_line.to_a
         end
       end
+
+      def test_plugin_stream_follow_redirects
+        session = HTTPX.plugin(:follow_redirects).plugin(:stream)
+
+        stream_uri = build_uri("/stream/3")
+        redirect_to_stream_uri = redirect_uri(stream_uri)
+
+        response = session.get(redirect_to_stream_uri, stream: true)
+        payload = response.each.to_a.join
+        assert payload.lines.size == 3, "all the lines should have been yielded"
+      end
     end
   end
 end
