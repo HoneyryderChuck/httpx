@@ -11,8 +11,6 @@ module HTTPX
     def each(&block)
       return enum_for(__method__) unless block
 
-      raise Error, "response already streamed" if @response
-
       @request.stream = self
 
       begin
