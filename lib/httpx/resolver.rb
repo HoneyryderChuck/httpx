@@ -13,10 +13,10 @@ module HTTPX
     require "httpx/resolver/https"
     require "httpx/resolver/multi"
 
-    @lookup_mutex = Mutex.new
+    @lookup_mutex = Thread::Mutex.new
     @lookups = Hash.new { |h, k| h[k] = [] }
 
-    @identifier_mutex = Mutex.new
+    @identifier_mutex = Thread::Mutex.new
     @identifier = 1
     @system_resolver = Resolv::Hosts.new
 
