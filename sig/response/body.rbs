@@ -44,6 +44,8 @@ module HTTPX
 
     def self.initialize_inflater_by_encoding: (Encoding | String encoding, Response response, ?bytesize: Integer) -> Transcoder::GZIP::Inflater
 
+    def decode_chunk: (String chunk) -> String
+
     def transition: (Symbol nextstate) -> void
 
     def _with_same_buffer_pos: [A] () { () -> A } -> A

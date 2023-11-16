@@ -133,7 +133,13 @@ module HTTPX
         def write(chunk)
           return super unless @stream
 
-          @stream.on_chunk(chunk.to_s.dup)
+          return 0 if chunk.empty?
+
+          chunk = decode_chunk(chunk)
+
+          @stream.on_chunk(chunk.dup)
+
+          chunk.size
         end
 
         private
