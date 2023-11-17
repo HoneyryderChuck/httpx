@@ -1,6 +1,9 @@
 module HTTPX
   module Plugins
     module Callbacks
+      class CallbackError < Exception
+      end
+
       module InstanceMethods
         include HTTPX::Callbacks
 
@@ -23,6 +26,10 @@ module HTTPX
         def on_response_body_chunk: () { (Request request, Response response, String chunk) -> void } -> self
 
         def on_response_completed: () { (Request request, response response) -> void } -> self
+
+        private
+
+        def emit_or_callback_error: (*untyped) -> void
       end
     end
 

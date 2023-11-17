@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "resolv"
+require "httpx/plugins/callbacks"
 
 module Requests
   using HTTPX::URIExtensions
@@ -95,6 +96,18 @@ module Requests
       assert started
       assert completed
       assert chunks.positive?
+    end
+
+    def test_callbacks_bug_inside_callback
+      %i[
+        connection_opened connection_closed
+        request_started request_completed
+        response_started response_body_chunk response_completed
+      ].each do |callback|
+        assert_raises(NameError) do
+          HTTPX.plugin(SessionWithPool).plugin(:callbacks).send(:"on_#{callback}") { i_dont_exist }.get(build_uri("/get"))
+        end
+      end
     end
   end
 end
