@@ -10,6 +10,8 @@ module HTTPX
         def max_redirects: () -> Integer?
 
         def follow_insecure_redirects: () -> bool?
+
+        def allow_auth_to_other_origins: () -> bool?
       end
 
       def self.extra_options: (Options) -> (Options & _FollowRedirectsOptions)
@@ -17,13 +19,15 @@ module HTTPX
       module InstanceMethods
         def max_redirects: (_ToI) -> instance
 
+        def redirect_request_headers: (http_uri original_uri, http_uri redirect_uri, Headers headers, Options & _FollowRedirectsOptions options) -> Headers
+
         def __get_location_from_response: (Response) -> (URI::HTTP | URI::HTTPS)
       end
 
       module RequestMethods
-        attr_accessor root_request: Request?
+        attr_accessor root_request: instance?
 
-        def redirect_request: () -> Request
+        def redirect_request: () -> instance
 
         def redirect_request=: (Request) -> void
 

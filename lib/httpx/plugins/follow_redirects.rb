@@ -17,6 +17,8 @@ module HTTPX
       MAX_REDIRECTS = 3
       REDIRECT_STATUS = (300..399).freeze
 
+      using URIExtensions
+
       module OptionsMethods
         def option_max_redirects(value)
           num = Integer(value)
@@ -26,6 +28,10 @@ module HTTPX
         end
 
         def option_follow_insecure_redirects(value)
+          value
+        end
+
+        def option_allow_auth_to_other_origins(value)
           value
         end
       end
@@ -61,11 +67,15 @@ module HTTPX
             redirect_uri = redirect_request.uri
             options = retry_options
           else
+            redirect_headers = redirect_request_headers(redirect_request.uri, redirect_uri, request.headers, options)
 
             # redirects are **ALWAYS** GET
-            retry_options = options.merge(headers: redirect_request.headers,
-                                          body: redirect_request.body,
-                                          max_redirects: max_redirects - 1)
+            retry_opts = Hash[options].merge(
+              headers: redirect_headers.to_h,
+              body: redirect_request.body,
+              max_redirects: max_redirects - 1
+            )
+            retry_options = options.class.new(retry_opts)
           end
 
           redirect_uri = Utils.to_uri(redirect_uri)
@@ -103,6 +113,19 @@ module HTTPX
             connection.send(retry_request)
           end
           nil
+        end
+
+        def redirect_request_headers(original_uri, redirect_uri, headers, options)
+          return headers if options.allow_auth_to_other_origins
+
+          return headers unless headers.key?("authorization")
+
+          unless original_uri.origin == redirect_uri.origin
+            headers = headers.dup
+            headers.delete("authorization")
+          end
+
+          headers
         end
 
         def __get_location_from_response(response)
