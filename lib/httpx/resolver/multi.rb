@@ -46,14 +46,15 @@ module HTTPX
       addresses = @resolver_options[:cache] && (connection.addresses || HTTPX::Resolver.nolookup_resolve(hostname))
       return unless addresses
 
-      addresses = addresses.group_by(&:family)
+      addresses.group_by(&:family).sort { |(f1, _), (f2, _)| f2 <=> f1 }.each do |family, addrs|
+        # try to match the resolver by family. However, there are cases where that's not possible, as when
+        # the system does not have IPv6 connectivity, but it does support IPv6 via loopback/link-local.
+        resolver = @resolvers.find { |r| r.family == family } || @resolvers.first
 
-      @resolvers.each do |resolver|
-        addrs = addresses[resolver.family]
+        next unless resolver # this should ever happen
 
-        next if !addrs || addrs.empty?
-
-        resolver.emit_addresses(connection, resolver.family, addrs, true)
+        # it does not matter which resolver it is, as early-resolve code is shared.
+        resolver.emit_addresses(connection, family, addrs, true)
       end
     end
 
