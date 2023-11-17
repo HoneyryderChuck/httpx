@@ -50,6 +50,14 @@ module Requests
         assert lines.size == 3, "all the lines should have been yielded"
       end
 
+      def test_plugin_stream_compressed
+        session = HTTPX.plugin(:stream)
+
+        response = session.get(build_uri("/gzip"), stream: true)
+        payload = response.each.to_a.join
+        assert response.headers["content-length"].to_i != payload.lines.sum(&:bytesize), "all the lines should have been yielded"
+      end
+
       def test_plugin_stream_multiple_responses_error
         session = HTTPX.plugin(:stream)
 
@@ -78,6 +86,17 @@ module Requests
           # force request
           response.each_line.to_a
         end
+      end
+
+      def test_plugin_stream_follow_redirects
+        session = HTTPX.plugin(:follow_redirects).plugin(:stream)
+
+        stream_uri = build_uri("/stream/3")
+        redirect_to_stream_uri = redirect_uri(stream_uri)
+
+        response = session.get(redirect_to_stream_uri, stream: true)
+        payload = response.each.to_a.join
+        assert payload.lines.size == 3, "all the lines should have been yielded"
       end
     end
   end

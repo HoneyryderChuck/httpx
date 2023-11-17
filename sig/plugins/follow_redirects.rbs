@@ -21,8 +21,12 @@ module HTTPX
       end
 
       module RequestMethods
+        attr_accessor root_request: Request?
+
         def redirect_request: () -> Request
+
         def redirect_request=: (Request) -> void
+
         def max_redirects: () -> Integer
       end
     end

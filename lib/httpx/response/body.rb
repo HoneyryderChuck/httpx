@@ -41,9 +41,9 @@ module HTTPX
     def write(chunk)
       return if @state == :closed
 
-      @inflaters.reverse_each do |inflater|
-        chunk = inflater.call(chunk)
-      end if @inflaters && !chunk.empty?
+      return 0 if chunk.empty?
+
+      chunk = decode_chunk(chunk)
 
       size = chunk.bytesize
       @length += size
@@ -185,6 +185,14 @@ module HTTPX
         @encodings << encoding
         inflater
       end
+    end
+
+    def decode_chunk(chunk)
+      @inflaters.reverse_each do |inflater|
+        chunk = inflater.call(chunk)
+      end if @inflaters
+
+      chunk
     end
 
     def transition(nextstate)

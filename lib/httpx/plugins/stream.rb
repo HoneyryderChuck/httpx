@@ -11,8 +11,6 @@ module HTTPX
     def each(&block)
       return enum_for(__method__) unless block
 
-      raise Error, "response already streamed" if @response
-
       @request.stream = self
 
       begin
@@ -119,7 +117,10 @@ module HTTPX
 
       module ResponseMethods
         def stream
-          @request.stream
+          request = @request.root_request if @request.respond_to?(:root_request)
+          request ||= @request
+
+          request.stream
         end
       end
 
@@ -132,7 +133,13 @@ module HTTPX
         def write(chunk)
           return super unless @stream
 
-          @stream.on_chunk(chunk.to_s.dup)
+          return 0 if chunk.empty?
+
+          chunk = decode_chunk(chunk)
+
+          @stream.on_chunk(chunk.dup)
+
+          chunk.size
         end
 
         private
