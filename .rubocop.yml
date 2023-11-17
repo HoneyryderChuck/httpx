@@ -1,6 +1,8 @@
 inherit_from: .rubocop_todo.yml
 
-require: rubocop-performance
+require:
+  - rubocop-performance
+  - rubocop-md
 
 AllCops:
   NewCops: enable
@@ -25,6 +27,8 @@ AllCops:
     - 'lib/httpx/extensions.rb'
     # Do not lint ffi block, for openssl parity
     - 'test/extensions/response_pattern_match.rb'
+    # Old release notes
+    - !ruby/regexp /doc/release_notes/0_.*.md/
 
 Metrics/ClassLength:
   Enabled: false

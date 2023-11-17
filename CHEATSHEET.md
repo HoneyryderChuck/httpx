@@ -14,7 +14,7 @@ require "httpx"
 
 response = HTTPX.get("https://google.com/")
 # Will print response.body
-puts response.to_s
+puts response
 ```
 
 ## Multiple HTTP Requests
@@ -37,7 +37,7 @@ end
 ## Headers
 
 ```ruby
-HTTPX.with(headers: {"user-agent" => "My Ruby Script"}).get("https://google.com")
+HTTPX.with(headers: { "user-agent" => "My Ruby Script" }).get("https://google.com")
 ```
 
 ## HTTP Methods
@@ -75,7 +75,7 @@ response = HTTPX.get("https://google.com/")
 response.status # => 301
 response.headers["location"] #=> "https://www.google.com/"
 response.headers["cache-control"] #=> public, max-age=2592000
-response.body.to_s           #=>  "<HTML><HEAD><meta http-equiv=\"content-type\" ....
+response.body.to_s #=>  "<HTML><HEAD><meta http-equiv=\"content-type\" ....
 ```
 
 ## POST `application/x-www-form-urlencoded` request
@@ -85,7 +85,7 @@ require "httpx"
 uri = URI.parse("http://example.com/search")
 
 # Shortcut
-response = HTTPX.post(uri, form: {"q" => "My query", "per_page" => "50"})
+response = HTTPX.post(uri, form: { "q" => "My query", "per_page" => "50" })
 ```
 
 ## File `multipart/form-data` upload - input type="file" style
@@ -93,9 +93,8 @@ response = HTTPX.post(uri, form: {"q" => "My query", "per_page" => "50"})
 ```ruby
 require "httpx"
 
-HTTPX.plugin(:multipart).post("http://something.com/uploads", form: {
-  name: Pathname.new("/path/to/your/testfile.txt")
-})
+file_to_upload = Pathname.new("/path/to/your/testfile.txt")
+HTTPX.plugin(:multipart).post("http://something.com/uploads", form: { name: file_to_upload })
 ```
 
 ## SSL/HTTPS request
@@ -105,8 +104,7 @@ Update: There are some good reasons why this code example is bad. It introduces 
 ```ruby
 require "httpx"
 
-
-response = HTTPX.with(ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE }).get("https://secure.com/")
+response = HTTPX.with(ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE }).get("https://secure.com/")
 ```
 
 ## SSL/HTTPS request with PEM certificate
@@ -115,11 +113,11 @@ response = HTTPX.with(ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE }).get("htt
 require "httpx"
 
 pem = File.read("/path/to/my.pem")
-HTTPX.with(ssl: {
+HTTPX.with_ssl(
   cert: OpenSSL::X509::Certificate.new(pem),
   key: OpenSSL::PKey::RSA.new(pem),
-  verify_mode: OpenSSL::SSL::VERIFY_PEER
-}).get("https://secure.com/")
+  verify_mode: OpenSSL::SSL::VERIFY_PEER,
+).get("https://secure.com/")
 ```
 
 ## Cookies
@@ -141,12 +139,12 @@ require "httpx"
 
 response = HTTPX.get("https://www.google.com")
 puts response.headers["content-encoding"] #=> "gzip"
-puts response.to_s #=> uncompressed payload
+puts response #=> uncompressed payload
 
 # uncompressed request payload
 HTTPX.post("https://myapi.com/users", body: super_large_text_payload)
 # gzip-compressed request payload
-HTTPX.post("https://myapi.com/users", headers: { "content-encoding" => %w[gzip] } body: super_large_text_payload)
+HTTPX.post("https://myapi.com/users", headers: { "content-encoding" => %w[gzip] }, body: super_large_text_payload)
 ```
 
 ## Proxy
@@ -172,11 +170,10 @@ HTTPX.get("https://google.com")
 require "httpx"
 HTTPX.with(resolver_class: :https).get("https://google.com")
 
-
 # by default it uses cloudflare DoH server.
 # This example switches the resolver to Quad9's DoH server
 
-HTTPX.with(resolver_class: :https, resolver_options: {uri: "https://9.9.9.9/dns-query"}).get("https://google.com")
+HTTPX.with(resolver_class: :https, resolver_options: { uri: "https://9.9.9.9/dns-query" }).get("https://google.com")
 ```
 
 ## Follow Redirects
@@ -195,7 +192,7 @@ HTTPX.plugin(:follow_redirects)
 require "httpx"
 
 # full E2E request/response timeout, 10 sec to connect to peer
-HTTPX.with(timeout: {connect_timeout: 10, request_timeout: 3}).get("https://google.com")
+HTTPX.with(timeout: { connect_timeout: 10, request_timeout: 3 }).get("https://google.com")
 ```
 
 ## Retries
