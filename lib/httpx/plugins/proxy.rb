@@ -166,9 +166,7 @@ module HTTPX
             @_proxy_uris.shift
             log { "failed connecting to proxy, trying next..." }
             request.transition(:idle)
-            connection = find_connection(request, connections, options)
-            connections << connection unless connections.include?(connection)
-            connection.send(request)
+            send_request(request, connections, options)
             return
           end
           response

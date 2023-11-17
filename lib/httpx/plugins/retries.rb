@@ -113,12 +113,10 @@ module HTTPX
               log { "retrying after #{retry_after} secs..." }
               pool.after(retry_after) do
                 log { "retrying (elapsed time: #{Utils.elapsed_time(retry_start)})!!" }
-                connection = find_connection(request, connections, options)
-                connection.send(request)
+                send_request(request, connections, options)
               end
             else
-              connection = find_connection(request, connections, options)
-              connection.send(request)
+              send_request(request, connections, options)
             end
 
             return

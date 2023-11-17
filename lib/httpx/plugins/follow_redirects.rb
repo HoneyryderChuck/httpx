@@ -105,12 +105,10 @@ module HTTPX
 
             log { "redirecting after #{retry_after} secs..." }
             pool.after(retry_after) do
-              connection = find_connection(retry_request, connections, options)
-              connection.send(retry_request)
+              send_request(retry_request, connections, options)
             end
           else
-            connection = find_connection(retry_request, connections, options)
-            connection.send(retry_request)
+            send_request(retry_request, connections, options)
           end
           nil
         end

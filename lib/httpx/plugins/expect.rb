@@ -99,8 +99,7 @@ module HTTPX
             response.close
             request.headers.delete("expect")
             request.transition(:idle)
-            connection = find_connection(request, connections, options)
-            connection.send(request)
+            send_request(request, connections, options)
             return
           end
 

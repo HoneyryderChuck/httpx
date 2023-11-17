@@ -46,7 +46,6 @@ module HTTPX
 
             log { "upgrading to #{upgrade_protocol}..." }
             connection = find_connection(request, connections, options)
-            connections << connection unless connections.include?(connection)
 
             # do not upgrade already upgraded connections
             return if connection.upgrade_protocol == upgrade_protocol

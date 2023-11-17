@@ -151,6 +151,16 @@ module HTTPX
       connection
     end
 
+    def send_request(request, connections, options = request.options)
+      error = catch(:resolve_error) do
+        connection = find_connection(request, connections, options)
+        connection.send(request)
+      end
+      return unless error.is_a?(Error)
+
+      request.emit(:response, ErrorResponse.new(request, error, options))
+    end
+
     # sets the callbacks on the +connection+ required to process certain specific
     # connection lifecycle events which deal with request rerouting.
     def set_connection_callbacks(connection, connections, options)
@@ -281,13 +291,7 @@ module HTTPX
       connections = []
 
       requests.each do |request|
-        error = catch(:resolve_error) do
-          connection = find_connection(request, connections, request.options)
-          connection.send(request)
-        end
-        next unless error.is_a?(ResolveError)
-
-        request.emit(:response, ErrorResponse.new(request, error, request.options))
+        send_request(request, connections)
       end
 
       connections

@@ -38,7 +38,7 @@ module HTTPX
                 request.transition(:idle)
                 request.headers["proxy-authorization"] =
                   connection.options.proxy.authenticate(request, response.headers["proxy-authenticate"])
-                connection.send(request)
+                send_request(request, connections)
                 return
               end
             end
