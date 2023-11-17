@@ -54,6 +54,7 @@ group :test do
   if RUBY_VERSION >= "3.0.0"
     gem "rubocop"
     gem "rubocop-performance"
+    gem "rubocop-md"
     gem "webrick"
   end
 end

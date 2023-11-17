@@ -46,7 +46,7 @@ And that's the simplest one there is. But you can also do:
 HTTPX.post("http://example.com", form: { user: "john", password: "pass" })
 
 http = HTTPX.with(headers: { "x-my-name" => "joe" })
-http.patch(("http://example.com/file", body: File.open("path/to/file")) # request body is streamed
+http.patch("http://example.com/file", body: File.open("path/to/file")) # request body is streamed
 ```
 
 If you want to do some more things with the response, you can get an `HTTPX::Response`:
