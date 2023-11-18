@@ -12,6 +12,8 @@ module HTTPX
         def follow_insecure_redirects: () -> bool?
 
         def allow_auth_to_other_origins: () -> bool?
+
+        def redirect_on: (http_uri) -> bool?
       end
 
       def self.extra_options: (Options) -> (Options & _FollowRedirectsOptions)

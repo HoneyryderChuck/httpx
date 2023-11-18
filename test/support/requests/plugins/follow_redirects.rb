@@ -104,6 +104,14 @@ module Requests
         assert body["headers"].key?("Authorization")
       end
 
+      def test_plugin_follow_redirects_redirect_on
+        session = HTTPX.plugin(:follow_redirects).with(redirect_on: ->(location_uri) { !location_uri.path.end_with?("1") })
+        redirect_response = session.get(max_redirect_uri(3))
+
+        verify_status(redirect_response, 302)
+        verify_header(redirect_response.headers, "location", "/relative-redirect/1")
+      end
+
       private
 
       def redirect_uri(redirect_uri = redirect_location)

@@ -34,6 +34,12 @@ module HTTPX
         def option_allow_auth_to_other_origins(value)
           value
         end
+
+        def option_redirect_on(value)
+          raise TypeError, ":redirect_on must be callable" unless value.respond_to?(:call)
+
+          value
+        end
       end
 
       module InstanceMethods
@@ -56,6 +62,11 @@ module HTTPX
 
           # build redirect request
           redirect_uri = __get_location_from_response(response)
+
+          if options.redirect_on
+            redirect_allowed = options.redirect_on.call(redirect_uri)
+            return response unless redirect_allowed
+          end
 
           if response.status == 305 && options.respond_to?(:proxy)
             # The requested resource MUST be accessed through the proxy given by
