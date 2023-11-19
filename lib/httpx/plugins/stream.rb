@@ -2,10 +2,9 @@
 
 module HTTPX
   class StreamResponse
-    def initialize(request, session, connections)
+    def initialize(request, session)
       @request = request
       @session = session
-      @connections = connections
     end
 
     def each(&block)
@@ -16,19 +15,9 @@ module HTTPX
       begin
         @on_chunk = block
 
-        if @request.response
-          # if we've already started collecting the payload, yield it first
-          # before proceeding
-          body = @request.response.body
-
-          body.each do |chunk|
-            on_chunk(chunk)
-          end
-        end
-
         response.raise_for_status
-        response.close
       ensure
+        response.close if @response
         @on_chunk = nil
       end
     end
@@ -69,9 +58,9 @@ module HTTPX
     private
 
     def response
-      @session.__send__(:receive_requests, [@request], @connections) until @request.response
-
-      @request.response
+      @response ||= begin
+        @request.response || @session.request(@request)
+      end
     end
 
     def respond_to_missing?(meth, *args)
@@ -105,9 +94,7 @@ module HTTPX
 
           request = requests.first
 
-          connections = _send_requests(requests)
-
-          StreamResponse.new(request, self, connections)
+          StreamResponse.new(request, self)
         end
       end
 
