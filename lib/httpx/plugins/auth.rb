@@ -7,7 +7,7 @@ module HTTPX
     # the HTTP Authorization header, and another, +bearer_auth+, which fill the "Bearer " prefix
     # in its value.
     #
-    # https://gitlab.com/os85/httpx/wikis/Auth#authorization
+    # https://gitlab.com/os85/httpx/wikis/Auth#auth
     #
     module Auth
       module InstanceMethods

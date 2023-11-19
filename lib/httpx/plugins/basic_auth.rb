@@ -5,7 +5,7 @@ module HTTPX
     #
     # This plugin adds helper methods to implement HTTP Basic Auth (https://tools.ietf.org/html/rfc7617)
     #
-    # https://gitlab.com/os85/httpx/wikis/Authorization#basic-auth
+    # https://gitlab.com/os85/httpx/wikis/Auth#basic-auth
     #
     module BasicAuth
       class << self
