@@ -215,7 +215,7 @@ module HTTPX
                     **opts)
           grpc_request = build_grpc_request(rpc_method, input, deadline: deadline, metadata: metadata, **opts)
           response = request(grpc_request, **opts)
-          response.raise_for_status
+          response.raise_for_status unless opts[:stream]
           GRPC::Call.new(response)
         end
 

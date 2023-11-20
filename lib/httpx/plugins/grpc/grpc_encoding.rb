@@ -36,7 +36,6 @@ module HTTPX
 
       class Inflater
         def initialize(response)
-          @encodings = response.headers.get("grpc-encoding")
           @response = response
         end
 
@@ -49,7 +48,7 @@ module HTTPX
             encoded_data = message.byteslice(5..size + 5 - 1)
 
             if compressed == 1
-              @encodings.reverse_each do |encoding|
+              grpc_encodings.reverse_each do |encoding|
                 decoder = @response.body.class.initialize_inflater_by_encoding(encoding, @response, bytesize: encoded_data.bytesize)
                 encoded_data = decoder.call(encoded_data)
 
@@ -67,6 +66,12 @@ module HTTPX
           end
 
           data
+        end
+
+        private
+
+        def grpc_encodings
+          @grpc_encodings ||= @response.headers.get("grpc-encoding")
         end
       end
 
