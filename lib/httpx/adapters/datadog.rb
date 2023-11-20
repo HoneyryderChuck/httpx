@@ -126,7 +126,7 @@ module Datadog::Tracing
           option :distributed_tracing, default: true
           option :split_by_domain, default: false
 
-          if DDTrace::VERSION::STRING >= "1.13.0"
+          if Gem::Version.new(DDTrace::VERSION::STRING) >= Gem::Version.new("1.13.0")
             option :enabled do |o|
               o.type :bool
               o.env "DD_TRACE_HTTPX_ENABLED"
@@ -182,12 +182,12 @@ module Datadog::Tracing
 
           option :distributed_tracing, default: true
 
-          if DDTrace::VERSION::STRING >= "1.15.0"
+          if Gem::Version.new(DDTrace::VERSION::STRING) >= Gem::Version.new("1.15.0")
             option :error_handler do |o|
               o.type :proc
               o.default_proc(&DEFAULT_ERROR_HANDLER)
             end
-          elsif DDTrace::VERSION::STRING >= "1.13.0"
+          elsif Gem::Version.new(DDTrace::VERSION::STRING) >= Gem::Version.new("1.13.0")
             option :error_handler do |o|
               o.type :proc
               o.experimental_default_proc(&DEFAULT_ERROR_HANDLER)
