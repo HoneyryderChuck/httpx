@@ -2,6 +2,10 @@ module HTTPX
   class StreamResponse
     include _ToS
 
+    @request: Request & RequestMethods
+    @session: sessionStream
+    @on_chunk: ^(String) -> void | nil
+
     def each: () { (String) -> void } -> void
             | () -> Enumerable[String]
 
@@ -10,10 +14,11 @@ module HTTPX
 
     def on_chunk: (string) -> void
 
+    def initialize: (Request, Session) -> void
+
     private
 
     def response: () -> response
-    def initialize: (Request, Session, Array[Connection]) -> untyped
   end
 
   module Plugins

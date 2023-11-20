@@ -21,11 +21,15 @@ module HTTPX
 
       class Inflater
         @response: Response
-        @encodings: Array[String]
+        @grpc_encodings: Array[String]
 
         def initialize: (Response | StreamResponse response) -> void
 
         def call: (String message) ?{ (String) -> void } -> String
+
+        private
+
+        def grpc_encodings: () -> Array[String]
       end
 
     end
