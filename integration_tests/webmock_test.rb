@@ -214,7 +214,7 @@ class WebmockTest < Minitest::Test
     assert_not_requested(:get, "http://#{httpbin}")
   end
 
-  def test_webmock_follow_redirects_with_stream_plugin
+  def test_webmock_follow_redirects_with_stream_plugin_each
     session = HTTPX.plugin(:follow_redirects).plugin(:stream)
     redirect_url = "#{MOCK_URL_HTTP}/redirect"
     initial_request = stub_request(:get, MOCK_URL_HTTP).to_return(status: 302, headers: { location: redirect_url })
@@ -223,6 +223,15 @@ class WebmockTest < Minitest::Test
     session.get(MOCK_URL_HTTP, stream: true).each.to_a.join
     assert_requested(initial_request)
     assert_requested(redirect_request)
+  end
+
+  def test_webmock_with_stream_plugin_each_line
+    session = HTTPX.plugin(:stream)
+    request = stub_request(:get, MOCK_URL_HTTP).to_return(body: "First line\nSecond line")
+
+    response = session.get(MOCK_URL_HTTP, stream: true)
+    assert_equal(["First line", "Second line"], response.each_line.to_a)
+    assert_requested(request)
   end
 
   private

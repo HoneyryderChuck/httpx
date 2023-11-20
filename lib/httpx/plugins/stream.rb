@@ -25,7 +25,7 @@ module HTTPX
     def each_line
       return enum_for(__method__) unless block_given?
 
-      line = +""
+      line = "".b
 
       each do |chunk|
         line << chunk
@@ -36,6 +36,8 @@ module HTTPX
           line = line.byteslice(idx + 1..-1)
         end
       end
+
+      yield line unless line.empty?
     end
 
     # This is a ghost method. It's to be used ONLY internally, when processing streams
