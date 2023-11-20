@@ -38,12 +38,10 @@ module WebMock
 
           return build_error_response(request, webmock_response.exception) if webmock_response.exception
 
-          response = request.options.response_class.new(request,
-                                                        webmock_response.status[0],
-                                                        "2.0",
-                                                        webmock_response.headers)
-          response << webmock_response.body.dup
-          response
+          request.options.response_class.new(request,
+                                             webmock_response.status[0],
+                                             "2.0",
+                                             webmock_response.headers)
         end
 
         def build_error_response(request, exception)
@@ -90,6 +88,7 @@ module WebMock
             log { "mocking #{request.uri} with #{mock_response.inspect}" }
             request.response = response
             request.emit(:response, response)
+            response << mock_response.body.dup unless response.is_a?(HTTPX::ErrorResponse)
           elsif WebMock.net_connect_allowed?(request_signature.uri)
             if WebMock::CallbackRegistry.any_callbacks?
               request.on(:response) do |resp|

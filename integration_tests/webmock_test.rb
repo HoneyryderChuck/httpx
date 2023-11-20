@@ -225,6 +225,21 @@ class WebmockTest < Minitest::Test
     assert_requested(redirect_request)
   end
 
+  def test_webmock_with_stream_plugin_each
+    request = stub_request(:get, MOCK_URL_HTTP).to_return(body: "body")
+
+    body = "".b
+    response = HTTPX.plugin(:stream).get(MOCK_URL_HTTP, stream: true)
+    response.each do |chunk|
+      next if (300..399).cover?(response.status)
+
+      body << chunk
+    end
+
+    assert_equal("body", body)
+    assert_requested(request)
+  end
+
   def test_webmock_with_stream_plugin_each_line
     session = HTTPX.plugin(:stream)
     request = stub_request(:get, MOCK_URL_HTTP).to_return(body: "First line\nSecond line")
