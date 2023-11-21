@@ -37,6 +37,7 @@ module HTTPX
       class Inflater
         def initialize(response)
           @response = response
+          @grpc_encodings = nil
         end
 
         def call(message, &blk)
