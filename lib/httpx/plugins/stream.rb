@@ -5,6 +5,7 @@ module HTTPX
     def initialize(request, session)
       @request = request
       @session = session
+      @response = nil
     end
 
     def each(&block)
@@ -60,8 +61,10 @@ module HTTPX
     private
 
     def response
-      @response ||= begin
-        @request.response || @session.request(@request)
+      return @response if @response
+
+      @request.response || begin
+        @response = @session.request(@request)
       end
     end
 
