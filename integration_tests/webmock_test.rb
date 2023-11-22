@@ -26,6 +26,7 @@ class WebmockTest < Minitest::Test
   end
 
   def teardown
+    super
     WebMock.reset!
     WebMock.allow_net_connect!
     WebMock.disable!
@@ -233,10 +234,11 @@ class WebmockTest < Minitest::Test
   end
 
   def test_webmock_with_stream_plugin_each
+    session = HTTPX.plugin(:stream)
     request = stub_request(:get, MOCK_URL_HTTP).to_return(body: "body")
 
     body = "".b
-    response = HTTPX.plugin(:stream).get(MOCK_URL_HTTP, stream: true)
+    response = session.get(MOCK_URL_HTTP, stream: true)
     response.each do |chunk|
       next if (300..399).cover?(response.status)
 
