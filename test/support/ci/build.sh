@@ -76,6 +76,11 @@ fi
 
 PARALLEL=1 bundle exec rake test
 
+if [[ "$RUBY_ENGINE" = "ruby" ]] && [[ ${RUBY_VERSION:0:1} = "3" ]] && [[ ! $RUBYOPT =~ "jit" ]]; then
+  # https://github.com/ruby/rbs/issues/1636
+  unset RUBYOPT
+fi
+
 # third party modules
 # Testing them only with main ruby, as some of them work weird with other variants.
 if [[ "$RUBY_ENGINE" = "ruby" ]]; then

@@ -5,6 +5,7 @@ module HTTPX
     def initialize(request, session)
       @request = request
       @session = session
+      @response = nil
     end
 
     def each(&block)
@@ -25,7 +26,7 @@ module HTTPX
     def each_line
       return enum_for(__method__) unless block_given?
 
-      line = +""
+      line = "".b
 
       each do |chunk|
         line << chunk
@@ -36,6 +37,8 @@ module HTTPX
           line = line.byteslice(idx + 1..-1)
         end
       end
+
+      yield line unless line.empty?
     end
 
     # This is a ghost method. It's to be used ONLY internally, when processing streams
@@ -58,8 +61,10 @@ module HTTPX
     private
 
     def response
-      @response ||= begin
-        @request.response || @session.request(@request)
+      return @response if @response
+
+      @request.response || begin
+        @response = @session.request(@request)
       end
     end
 

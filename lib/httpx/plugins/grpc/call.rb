@@ -11,6 +11,7 @@ module HTTPX
           @response = response
           @decoder = ->(z) { z }
           @consumed = false
+          @grpc_response = nil
         end
 
         def inspect
@@ -34,9 +35,7 @@ module HTTPX
         private
 
         def grpc_response
-          return @grpc_response if defined?(@grpc_response)
-
-          @grpc_response = if @response.respond_to?(:each)
+          @grpc_response ||= if @response.respond_to?(:each)
             Enumerator.new do |y|
               Message.stream(@response).each do |message|
                 y << @decoder.call(message)
