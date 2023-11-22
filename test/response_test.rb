@@ -6,7 +6,7 @@ class ResponseTest < Minitest::Test
   include HTTPX
   include ResponseHelpers
 
-  if RUBY_VERSION >= "3.0.0"
+  if RUBY_VERSION >= "2.7.0"
     begin
       eval("case 1; in 1 ;then true; end") # rubocop:disable Style/EvalWithLocation
       require_relative "extensions/response_pattern_match"

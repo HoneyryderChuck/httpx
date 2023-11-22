@@ -264,4 +264,4 @@ end
 
 require_relative "response/body"
 require_relative "response/buffer"
-require_relative "pmatch_extensions" if RUBY_VERSION >= "3.0.0"
+require_relative "pmatch_extensions" if RUBY_VERSION >= "2.7.0"
