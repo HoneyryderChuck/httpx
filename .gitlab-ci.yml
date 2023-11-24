@@ -38,6 +38,13 @@ cache:
   paths:
     - vendor
 
+run rubocop:
+  image: "ruby:3.2"
+  before_script:
+    - gem install rubocop-md rubocop-performance --no-doc
+  script:
+    - rubocop
+
 test jruby:
   <<: *test_settings
   script:

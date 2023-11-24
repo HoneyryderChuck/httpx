@@ -69,11 +69,6 @@ if [[ "$RUBY_ENGINE" = "ruby" ]] && [[ ${RUBY_VERSION:0:1} = "3" ]] && [[ ! $RUB
   export RBS_TEST_TARGET="HTTP*"
 fi
 
-# Lint first
-if [[ ${RUBY_VERSION:0:3} = "3.2" ]] && [[ "$RUBY_ENGINE" = "ruby" ]]; then
-  bundle exec rake rubocop
-fi
-
 PARALLEL=1 bundle exec rake test
 
 if [[ "$RUBY_ENGINE" = "ruby" ]] && [[ ${RUBY_VERSION:0:1} = "3" ]] && [[ ! $RUBYOPT =~ "jit" ]]; then
