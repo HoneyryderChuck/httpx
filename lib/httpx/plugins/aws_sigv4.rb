@@ -5,7 +5,7 @@ module HTTPX
     #
     # This plugin adds AWS Sigv4 authentication.
     #
-    # https://docs.aws.amazon.com/general/latest/gr/signature-version-4.html
+    # https://docs.aws.amazon.com/IAM/latest/UserGuide/signing-elements.html
     #
     # https://gitlab.com/os85/httpx/wikis/AWS-SigV4
     #
@@ -185,7 +185,7 @@ module HTTPX
         def canonical_query
           params = query.split("&")
           # params = params.map { |p| p.match(/=/) ? p : p + '=' }
-          # From: https://docs.aws.amazon.com/general/latest/gr/sigv4-create-canonical-request.html
+          # From: https://docs.aws.amazon.com/IAM/latest/UserGuide/create-signed-request.html#create-canonical-request
           # Sort the parameter names by character code point in ascending order.
           # Parameters with duplicate names should be sorted by value.
           #

@@ -5,7 +5,7 @@ module HTTPX
     #
     # This plugin implements convenience methods for performing WEBDAV requests.
     #
-    # https://gitlab.com/honeyryderchuck/httpx/wikis/WEBDAV
+    # https://gitlab.com/os85/httpx/wikis/WebDav
     #
     module WebDav
       module InstanceMethods

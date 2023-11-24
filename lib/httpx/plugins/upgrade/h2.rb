@@ -6,7 +6,7 @@ module HTTPX
     # This plugin adds support for upgrading an HTTP/1.1 connection to HTTP/2
     # via an Upgrade: h2 response declaration
     #
-    # https://gitlab.com/honeyryderchuck/httpx/wikis/Upgrade#h2
+    # https://gitlab.com/os85/httpx/wikis/Connection-Upgrade#h2
     #
     module H2
       class << self

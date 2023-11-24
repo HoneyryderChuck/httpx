@@ -46,7 +46,7 @@ module HTTPX
 
       altsvc = response.headers["alt-svc"]
 
-      # https://tools.ietf.org/html/rfc7838#section-3
+      # https://datatracker.ietf.org/doc/html/rfc7838#section-3
       # A field value containing the special value "clear" indicates that the
       # origin requests all alternatives for that origin to be invalidated
       # (including those specified in the same response, in case of an

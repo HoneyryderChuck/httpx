@@ -122,7 +122,7 @@ http.post("https://example2.com",  form: {name: "John", age: "22"}) # same, plus
 
 It ships with most features published as a plugin, making vanilla `httpx` lightweight and dependency-free, while allowing you to "pay for what you use"
 
-The plugin system is similar to the ones used by [sequel](https://github.com/jeremyevans/sequel), [roda](https://github.com/jeremyevans/roda) or [shrine](https://github.com/janko-m/shrine).
+The plugin system is similar to the ones used by [sequel](https://github.com/jeremyevans/sequel), [roda](https://github.com/jeremyevans/roda) or [shrine](https://github.com/shrinerb/shrine).
 
 ### Advanced DNS features
 

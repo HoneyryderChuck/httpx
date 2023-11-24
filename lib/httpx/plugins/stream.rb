@@ -83,7 +83,7 @@ module HTTPX
     #
     # This plugin adds support for stream response (text/event-stream).
     #
-    # https://gitlab.com/honeyryderchuck/httpx/wikis/Stream
+    # https://gitlab.com/os85/httpx/wikis/Stream
     #
     module Stream
       def self.extra_options(options)
