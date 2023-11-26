@@ -6,7 +6,7 @@ module HTTPX
     # This plugin helps negotiating a new protocol from an HTTP/1.1 connection, via the
     # Upgrade header.
     #
-    # https://gitlab.com/honeyryderchuck/httpx/wikis/Upgrade
+    # https://gitlab.com/os85/httpx/wikis/Upgrade
     #
     module Upgrade
       class << self

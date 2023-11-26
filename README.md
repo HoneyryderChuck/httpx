@@ -61,7 +61,7 @@ puts body #=> #<HTTPX::Response ...
 You can also send as many requests as you want simultaneously:
 
 ```ruby
-page1, page2, page3 =`HTTPX.get("https://news.ycombinator.com/news", "https://news.ycombinator.com/news?p=2", "https://news.ycombinator.com/news?p=3")
+page1, page2, page3 = HTTPX.get("https://news.ycombinator.com/news", "https://news.ycombinator.com/news?p=2", "https://news.ycombinator.com/news?p=3")
 ```
 
 ## Installation
@@ -107,22 +107,22 @@ HTTPX.get(
 
 ```ruby
 response = HTTPX.get("https://www.google.com", params: { q: "me" })
-response = HTTPX.post("https://www.nghttp2.org/httpbin/post", form: {name: "John", age: "22"})
+response = HTTPX.post("https://www.nghttp2.org/httpbin/post", form: { name: "John", age: "22" })
 response = HTTPX.plugin(:basic_auth)
                 .basic_auth("user", "pass")
                 .get("https://www.google.com")
 
 # more complex client objects can be cached, and are thread-safe
-http = HTTPX.plugin(:expect).with(headers: { "x-pvt-token" => "TOKEN"})
+http = HTTPX.plugin(:expect).with(headers: { "x-pvt-token" => "TOKEN" })
 http.get("https://example.com") # the above options will apply
-http.post("https://example2.com",  form: {name: "John", age: "22"}) # same, plus the form POST body
+http.post("https://example2.com", form: { name: "John", age: "22" }) # same, plus the form POST body
 ```
 
 ### Lightweight
 
 It ships with most features published as a plugin, making vanilla `httpx` lightweight and dependency-free, while allowing you to "pay for what you use"
 
-The plugin system is similar to the ones used by [sequel](https://github.com/jeremyevans/sequel), [roda](https://github.com/jeremyevans/roda) or [shrine](https://github.com/janko-m/shrine).
+The plugin system is similar to the ones used by [sequel](https://github.com/jeremyevans/sequel), [roda](https://github.com/jeremyevans/roda) or [shrine](https://github.com/shrinerb/shrine).
 
 ### Advanced DNS features
 
