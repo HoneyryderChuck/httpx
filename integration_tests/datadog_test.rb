@@ -233,9 +233,21 @@ class DatadogTest < Minitest::Test
     request = response.instance_variable_get(:@request)
 
     assert request.headers["x-datadog-parent-id"] == span.span_id.to_s
-    assert request.headers["x-datadog-trace-id"] == span.trace_id.to_s
+    assert request.headers["x-datadog-trace-id"] == trace_id(span)
     assert request.headers["x-datadog-sampling-priority"] == sampling_priority.to_s
   end
+
+
+  if defined?(::DDTrace) && Gem::Version.new(::DDTrace::VERSION::STRING) >= Gem::Version.new("1.17.0")
+    def trace_id(span)
+      Datadog::Tracing::Utils::TraceId.to_low_order(span.trace_id).to_s
+    end
+  else
+    def trace_id(span)
+      span.trace_id.to_s
+    end
+  end
+
 
   def verify_analytics_headers(span, sample_rate: nil)
     assert span.get_metric("_dd1.sr.eausr") == sample_rate
