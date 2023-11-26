@@ -237,7 +237,6 @@ class DatadogTest < Minitest::Test
     assert request.headers["x-datadog-sampling-priority"] == sampling_priority.to_s
   end
 
-
   if defined?(::DDTrace) && Gem::Version.new(::DDTrace::VERSION::STRING) >= Gem::Version.new("1.17.0")
     def trace_id(span)
       Datadog::Tracing::Utils::TraceId.to_low_order(span.trace_id).to_s
@@ -247,7 +246,6 @@ class DatadogTest < Minitest::Test
       span.trace_id.to_s
     end
   end
-
 
   def verify_analytics_headers(span, sample_rate: nil)
     assert span.get_metric("_dd1.sr.eausr") == sample_rate

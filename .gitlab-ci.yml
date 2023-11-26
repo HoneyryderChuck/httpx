@@ -38,12 +38,14 @@ cache:
   paths:
     - vendor
 
-run rubocop:
+lint rubocop:
   image: "ruby:3.2"
+  variables:
+    BUNDLE_WITHOUT: test:coverage:assorted
   before_script:
-    - gem install rubocop-md rubocop-performance --no-doc
+    - bundle install
   script:
-    - rubocop
+    - bundle exec rake rubocop
 
 test jruby:
   <<: *test_settings
@@ -79,7 +81,7 @@ test truffleruby:
 regression tests:
   image: "ruby:3.2"
   variables:
-    BUNDLE_WITHOUT: assorted
+    BUNDLE_WITHOUT: lint:assorted
     CI: 1
     COVERAGE_KEY: "$RUBY_ENGINE-$RUBY_VERSION-regression-tests"
   artifacts:
@@ -96,7 +98,7 @@ coverage:
   coverage: '/\(\d+.\d+\%\) covered/'
   stage: prepare
   variables:
-    BUNDLE_WITHOUT: test:assorted
+    BUNDLE_WITHOUT: lint:test:assorted
 
   image: "ruby:3.2"
   script:

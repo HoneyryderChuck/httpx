@@ -51,12 +51,13 @@ group :test do
   gem "idnx"
   gem "oga"
 
-  if RUBY_VERSION >= "3.0.0"
-    gem "rubocop"
-    gem "rubocop-performance"
-    gem "rubocop-md"
-    gem "webrick"
-  end
+  gem "webrick" if RUBY_VERSION >= "3.0.0"
+end
+
+group :lint do
+  gem "rubocop"
+  gem "rubocop-md"
+  gem "rubocop-performance"
 end
 
 group :coverage do
