@@ -38,7 +38,7 @@ cache:
   paths:
     - vendor
 
-lint rubocop:
+lint rubocop code:
   image: "ruby:3.2"
   variables:
     BUNDLE_WITHOUT: test:coverage:assorted
@@ -46,6 +46,26 @@ lint rubocop:
     - bundle install
   script:
     - bundle exec rake rubocop
+lint rubocop wiki:
+  image: "ruby:3.2"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+  variables:
+    BUNDLE_ONLY: lint
+  before_script:
+    - git clone https://gitlab.com/os85/httpx.wiki.git
+    - bundle install
+    - |
+      cat > .rubocop-wiki.yml << FILE
+      require:
+        - rubocop-md
+
+      AllCops:
+        TargetRubyVersion: 3.2
+        DisabledByDefault: true
+      FILE
+  script:
+    - bundle exec rubocop httpx.wiki --config .rubocop-wiki.yml
 
 test jruby:
   <<: *test_settings
