@@ -194,21 +194,15 @@ module HTTPX
       alt_options = options.merge(ssl: options.ssl.merge(hostname: URI(origin).host))
 
       connection = pool.find_connection(alt_origin, alt_options) || build_connection(alt_origin, alt_options)
+
       # advertised altsvc is the same origin being used, ignore
       return if connection == existing_connection
+
+      connection.extend(AltSvc::ConnectionMixin) unless connection.is_a?(AltSvc::ConnectionMixin)
 
       set_connection_callbacks(connection, connections, alt_options)
 
       log(level: 1) { "#{origin} alt-svc: #{alt_origin}" }
-
-      # get uninitialized requests
-      # incidentally, all requests will be re-routed to the first
-      # advertised alt-svc, which incidentally follows the spec.
-      existing_connection.purge_pending do |request|
-        request.origin == origin &&
-          request.state == :idle &&
-          !request.headers.key?("alt-used")
-      end
 
       connection.merge(existing_connection)
       existing_connection.terminate
@@ -361,19 +355,8 @@ module HTTPX
           extend(pl::ClassMethods) if defined?(pl::ClassMethods)
 
           opts = @default_options
-          opts.request_class.__send__(:include, pl::RequestMethods) if defined?(pl::RequestMethods)
-          opts.request_class.extend(pl::RequestClassMethods) if defined?(pl::RequestClassMethods)
-          opts.response_class.__send__(:include, pl::ResponseMethods) if defined?(pl::ResponseMethods)
-          opts.response_class.extend(pl::ResponseClassMethods) if defined?(pl::ResponseClassMethods)
-          opts.headers_class.__send__(:include, pl::HeadersMethods) if defined?(pl::HeadersMethods)
-          opts.headers_class.extend(pl::HeadersClassMethods) if defined?(pl::HeadersClassMethods)
-          opts.request_body_class.__send__(:include, pl::RequestBodyMethods) if defined?(pl::RequestBodyMethods)
-          opts.request_body_class.extend(pl::RequestBodyClassMethods) if defined?(pl::RequestBodyClassMethods)
-          opts.response_body_class.__send__(:include, pl::ResponseBodyMethods) if defined?(pl::ResponseBodyMethods)
-          opts.response_body_class.extend(pl::ResponseBodyClassMethods) if defined?(pl::ResponseBodyClassMethods)
-          opts.connection_class.__send__(:include, pl::ConnectionMethods) if defined?(pl::ConnectionMethods)
+          opts.extend_with_plugin_classes(pl)
           if defined?(pl::OptionsMethods)
-            opts.options_class.__send__(:include, pl::OptionsMethods)
 
             (pl::OptionsMethods.instance_methods - Object.instance_methods).each do |meth|
               opts.options_class.method_added(meth)

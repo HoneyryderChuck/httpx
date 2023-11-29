@@ -261,14 +261,14 @@ module HTTPX
             headers["grpc-timeout"] = "#{deadline}m"
           end
 
-          headers = headers.merge(metadata) if metadata
+          headers = headers.merge(metadata.transform_keys(&:to_s)) if metadata
 
           # prepare compressor
           compression = @options.grpc_compression == true ? "gzip" : @options.grpc_compression
 
           headers["grpc-encoding"] = compression if compression
 
-          headers.merge!(@options.call_credentials.call) if @options.call_credentials
+          headers.merge!(@options.call_credentials.call.transform_keys(&:to_s)) if @options.call_credentials
 
           build_request("POST", uri, headers: headers, body: input)
         end

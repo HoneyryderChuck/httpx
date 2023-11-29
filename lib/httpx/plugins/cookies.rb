@@ -71,21 +71,31 @@ module HTTPX
       end
 
       module OptionsMethods
-        def do_initialize(*)
-          super
+        def option_headers(*)
+          value = super
 
-          return unless @headers.key?("cookie")
+          merge_cookie_in_jar(value.delete("cookie"), @cookies) if defined?(@cookies) && value.key?("cookie")
 
-          @headers.delete("cookie").each do |ck|
-            ck.split(/ *; */).each do |cookie|
-              name, value = cookie.split("=", 2)
-              @cookies.add(Cookie.new(name, value))
-            end
-          end
+          value
         end
 
         def option_cookies(value)
-          value.is_a?(Jar) ? value : Jar.new(value)
+          jar = value.is_a?(Jar) ? value : Jar.new(value)
+
+          merge_cookie_in_jar(@headers.delete("cookie"), jar) if defined?(@headers) && @headers.key?("cookie")
+
+          jar
+        end
+
+        private
+
+        def merge_cookie_in_jar(cookies, jar)
+          cookies.each do |ck|
+            ck.split(/ *; */).each do |cookie|
+              name, value = cookie.split("=", 2)
+              jar.add(Cookie.new(name, value))
+            end
+          end
         end
       end
     end

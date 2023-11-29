@@ -6,7 +6,7 @@ module Requests
       altsvc_host = ENV["HTTPBIN_ALTSVC_HOST"]
       altsvc_origin = origin(altsvc_host)
 
-      HTTPX.wrap do |http|
+      HTTPX.plugin(SessionWithPool).wrap do |http|
         altsvc_uri = build_uri("/get", altsvc_origin)
         response = http.get(altsvc_uri)
         verify_status(response, 200)

@@ -11,6 +11,7 @@ module HTTPX
     SETTINGS_TIMEOUT: Integer
     CLOSE_HANDSHAKE_TIMEOUT: Integer
     DEFAULT_OPTIONS: Hash[Symbol, untyped]
+    REQUEST_BODY_IVARS: Array[Symbol]
 
     type timeout_type = :connect_timeout | :settings_timeout | :close_handshake_timeout | :operation_timeout | :keep_alive_timeout | :read_timeout | :write_timeout | :request_timeout
     type timeout = Hash[timeout_type, Numeric?]
@@ -121,9 +122,15 @@ module HTTPX
     # ip_families
     attr_reader ip_families: Array[ip_family]
 
-    def ==: (untyped other) -> bool
+    def ==: (Options other) -> bool
+
+    def options_equals?: (Options other, ?Array[Symbol] ignore_ivars) -> bool
+
     def merge: (_ToHash[Symbol, untyped] other) -> instance
+
     def to_hash: () -> Hash[Symbol, untyped]
+
+    def extend_with_plugin_classes: (Module pl) -> void
 
     private
 

@@ -93,15 +93,13 @@ module HTTPX
       return false if !used? && (@state == :closing || @state == :closed)
 
       (
-        (
-          @origins.include?(uri.origin) &&
-          # if there is more than one origin to match, it means that this connection
-          # was the result of coalescing. To prevent blind trust in the case where the
-          # origin came from an ORIGIN frame, we're going to verify the hostname with the
-          # SSL certificate
-          (@origins.size == 1 || @origin == uri.origin || (@io.is_a?(SSL) && @io.verify_hostname(uri.host)))
-        ) && @options == options
-      ) || (match_altsvcs?(uri) && match_altsvc_options?(uri, options))
+        @origins.include?(uri.origin) &&
+        # if there is more than one origin to match, it means that this connection
+        # was the result of coalescing. To prevent blind trust in the case where the
+        # origin came from an ORIGIN frame, we're going to verify the hostname with the
+        # SSL certificate
+        (@origins.size == 1 || @origin == uri.origin || (@io.is_a?(SSL) && @io.verify_hostname(uri.host)))
+      ) && @options == options
     end
 
     def expired?
@@ -161,24 +159,6 @@ module HTTPX
       pendings.each do |pending|
         pending.reject!(&block)
       end
-    end
-
-    # checks if this is connection is an alternative service of
-    # +uri+
-    def match_altsvcs?(uri)
-      @origins.any? { |origin| uri.altsvc_match?(origin) } ||
-        AltSvc.cached_altsvc(@origin).any? do |altsvc|
-          origin = altsvc["origin"]
-          origin.altsvc_match?(uri.origin)
-        end
-    end
-
-    def match_altsvc_options?(uri, options)
-      return @options == options unless @options.ssl[:hostname] == uri.host
-
-      dup_options = @options.merge(ssl: { hostname: nil })
-      dup_options.ssl.delete(:hostname)
-      dup_options == options
     end
 
     def connecting?
@@ -258,8 +238,6 @@ module HTTPX
 
     def send(request)
       if @parser && !@write_buffer.full?
-        request.headers["alt-used"] = @origin.authority if match_altsvcs?(request.uri)
-
         if @response_received_at && @keep_alive_timeout &&
            Utils.elapsed_time(@response_received_at) > @keep_alive_timeout
           # when pushing a request into an existing connection, we have to check whether there

@@ -44,25 +44,23 @@ module HTTPX
 
     def addresses: () -> Array[ipaddr]?
 
-    def addresses=: (Array[ipaddr]) -> void
+    def addresses=: (Array[ipaddr] addresses) -> void
+
+    def send: (Request request) -> void
 
     def match?: (URI::Generic uri, Options options) -> bool
 
     def expired?: () -> boolish
 
-    def mergeable?: (Connection) -> bool
+    def mergeable?: (Connection connection) -> bool
 
-    def coalescable?: (Connection) -> bool
+    def coalescable?: (Connection connection) -> bool
 
     def create_idle: (?Hash[Symbol, untyped] options) -> Connection
 
-    def merge: (Connection) -> void
+    def merge: (Connection connection) -> void
 
-    def purge_pending: () { (Request) -> void } -> void
-
-    def match_altsvcs?: (URI::Generic uri) -> bool
-
-    def match_altsvc_options?: (URI::Generic uri, Options options) -> bool
+    def purge_pending: () { (Request request) -> void } -> void
 
     def connecting?: () -> bool
 
@@ -79,8 +77,6 @@ module HTTPX
     def close: () -> void
 
     def reset: () -> void
-
-    def send: (Request) -> void
 
     def timeout: () -> Numeric?
 
@@ -114,15 +110,15 @@ module HTTPX
 
     def set_parser_callbacks: (HTTP1 | HTTP2 parser) -> void
 
-    def transition: (Symbol) -> void
+    def transition: (Symbol nextstate) -> void
 
-    def handle_transition: (Symbol) -> void
+    def handle_transition: (Symbol nextstate) -> void
 
     def build_socket: (?Array[ipaddr]? addrs) -> (TCP | SSL | UNIX)
 
-    def on_error: (HTTPX::TimeoutError | Error | StandardError) -> void
+    def on_error: (HTTPX::TimeoutError | Error | StandardError error) -> void
 
-    def handle_error: (StandardError) -> void
+    def handle_error: (StandardError error) -> void
 
     def purge_after_closed: () -> void
 

@@ -4,6 +4,58 @@ require "strscan"
 
 module HTTPX
   module AltSvc
+    # makes connections able to accept requests destined to primary service.
+    module ConnectionMixin
+      using URIExtensions
+
+      def send(request)
+        request.headers["alt-used"] = @origin.authority if @parser && !@write_buffer.full? && match_altsvcs?(request.uri)
+
+        super
+      end
+
+      def match?(uri, options)
+        return false if !used? && (@state == :closing || @state == :closed)
+
+        match_altsvcs?(uri) && match_altsvc_options?(uri, options)
+      end
+
+      private
+
+      # checks if this is connection is an alternative service of
+      # +uri+
+      def match_altsvcs?(uri)
+        @origins.any? { |origin| altsvc_match?(uri, origin) } ||
+          AltSvc.cached_altsvc(@origin).any? do |altsvc|
+            origin = altsvc["origin"]
+            altsvc_match?(origin, uri.origin)
+          end
+      end
+
+      def match_altsvc_options?(uri, options)
+        return @options == options unless @options.ssl.all? do |k, v|
+          v == (k == :hostname ? uri.host : options.ssl[k])
+        end
+
+        @options.options_equals?(options, Options::REQUEST_BODY_IVARS + %i[@ssl])
+      end
+
+      def altsvc_match?(uri, other_uri)
+        other_uri = URI(other_uri)
+
+        uri.origin == other_uri.origin || begin
+          case uri.scheme
+          when "h2"
+            (other_uri.scheme == "https" || other_uri.scheme == "h2") &&
+              uri.host == other_uri.host &&
+              uri.port == other_uri.port
+          else
+            false
+          end
+        end
+      end
+    end
+
     @altsvc_mutex = Thread::Mutex.new
     @altsvcs = Hash.new { |h, k| h[k] = [] }
 
@@ -99,7 +151,10 @@ module HTTPX
     end
 
     def parse_altsvc_origin(alt_proto, alt_origin)
-      alt_scheme = parse_altsvc_scheme(alt_proto) or return
+      alt_scheme = parse_altsvc_scheme(alt_proto)
+
+      return unless alt_scheme
+
       alt_origin = alt_origin[1..-2] if alt_origin.start_with?("\"") && alt_origin.end_with?("\"")
 
       URI.parse("#{alt_scheme}://#{alt_origin}")

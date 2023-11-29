@@ -33,26 +33,48 @@ class OptionsTest < Minitest::Test
     assert opt2.headers.to_a == [%w[accept */*]], "headers are unexpected"
   end
 
-  def test_options_merge
+  def test_options_merge_hash
     opts = Options.new(body: "fat")
     merged_opts = opts.merge(body: "thin")
     assert merged_opts.body == "thin", "parameter hasn't been merged"
     assert opts.body == "fat", "original parameter has been mutated after merge"
     assert !opts.equal?(merged_opts), "merged options should be a different object"
+  end
 
+  def test_options_merge_options
+    opts = Options.new(body: "fat")
     merged_opts2 = opts.merge(Options.new(body: "short"))
+    assert opts.body == "fat", "original parameter has been mutated after merge"
     assert merged_opts2.body == "short", "options parameter hasn't been merged"
     assert !opts.equal?(merged_opts2), "merged options should be a different object"
+  end
 
+  def test_options_merge_options_empty_hash
+    opts = Options.new(body: "fat")
     merged_opts3 = opts.merge({})
     assert opts.equal?(merged_opts3), "merged options should be the same object"
+  end
+
+  def test_options_merge_same_options
+    opts = Options.new(body: "fat")
 
     merged_opts4 = opts.merge({ body: "fat" })
     assert opts.equal?(merged_opts4), "merged options should be the same object"
 
     merged_opts5 = opts.merge(Options.new(body: "fat"))
     assert opts.equal?(merged_opts5), "merged options should be the same object"
+  end
 
+  def test_options_merge_origin_uri
+    opts = Options.new(origin: "http://example.com")
+    merged_opts = opts.merge(Options.new(origin: "http://example2.com"))
+    assert merged_opts.origin == URI("http://example2.com")
+
+    merged_opts = opts.merge({ origin: "http://example2.com" })
+    assert merged_opts.origin == URI("http://example2.com")
+  end
+
+  def test_options_merge_attributes_match
     foo = Options.new(
       :form => { :foo => "foo" },
       :headers => { :accept => "json", :foo => "foo" },
@@ -128,5 +150,12 @@ class OptionsTest < Minitest::Test
   def test_options_to_hash
     opts = Options.new
     assert opts.to_hash.is_a?(Hash)
+  end
+
+  def test_options_equals
+    opts = Options.new(origin: "http://example.com")
+    assert opts == Options.new(origin: "http://example.com")
+    assert Options.new(origin: "http://example.com", headers: { "foo" => "bar" }) == Options.new(origin: "http://example.com")
+    assert Options.new(json: { "foo" => "bar" }) == Options.new
   end
 end
