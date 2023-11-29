@@ -6,8 +6,6 @@ module HTTPX
     @timers: Timers
     @selector: Selector
     @connections: Array[Connection]
-    @eden_connections: Array[Connection]
-    @connected_connections: Integer
 
     def empty?: () -> void
 
@@ -37,7 +35,7 @@ module HTTPX
 
     def register_connection: (Connection) -> void
 
-    def unregister_connection: (Connection) -> void
+    def unregister_connection: (Connection, ?bool cleanup) -> void
 
     def select_connection: (Selector::selectable) -> void
 

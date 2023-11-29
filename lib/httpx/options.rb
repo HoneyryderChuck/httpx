@@ -11,6 +11,7 @@ module HTTPX
     MAX_BODY_THRESHOLD_SIZE = (1 << 10) * 112 # 112K
     KEEP_ALIVE_TIMEOUT = 20
     SETTINGS_TIMEOUT = 10
+    CLOSE_HANDSHAKE_TIMEOUT = 10
     CONNECT_TIMEOUT = READ_TIMEOUT = WRITE_TIMEOUT = 60
     REQUEST_TIMEOUT = OPERATION_TIMEOUT = nil
 
@@ -39,6 +40,7 @@ module HTTPX
       :timeout => {
         connect_timeout: CONNECT_TIMEOUT,
         settings_timeout: SETTINGS_TIMEOUT,
+        close_handshake_timeout: CLOSE_HANDSHAKE_TIMEOUT,
         operation_timeout: OPERATION_TIMEOUT,
         keep_alive_timeout: KEEP_ALIVE_TIMEOUT,
         read_timeout: READ_TIMEOUT,

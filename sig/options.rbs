@@ -9,9 +9,10 @@ module HTTPX
     OPERATION_TIMEOUT: Integer
     KEEP_ALIVE_TIMEOUT: Integer
     SETTINGS_TIMEOUT: Integer
+    CLOSE_HANDSHAKE_TIMEOUT: Integer
     DEFAULT_OPTIONS: Hash[Symbol, untyped]
 
-    type timeout_type = :connect_timeout | :settings_timeout | :operation_timeout | :keep_alive_timeout | :read_timeout | :write_timeout | :request_timeout
+    type timeout_type = :connect_timeout | :settings_timeout | :close_handshake_timeout | :operation_timeout | :keep_alive_timeout | :read_timeout | :write_timeout | :request_timeout
     type timeout = Hash[timeout_type, Numeric?]
 
     def self.new: (?options) -> instance

@@ -92,8 +92,6 @@ module HTTPX
     def match?(uri, options)
       return false if !used? && (@state == :closing || @state == :closed)
 
-      return false if exhausted?
-
       (
         (
           @origins.include?(uri.origin) &&
@@ -114,8 +112,6 @@ module HTTPX
 
     def mergeable?(connection)
       return false if @state == :closing || @state == :closed || !@io
-
-      return false if exhausted?
 
       return false unless connection.addresses
 
@@ -223,7 +219,6 @@ module HTTPX
       when :closing
         consume
         transition(:closed)
-        emit(:close)
       when :open
         consume
       end
@@ -236,18 +231,29 @@ module HTTPX
       @parser.close if @parser
     end
 
+    def terminate
+      @connected_at = nil if @state == :closed
+
+      close
+    end
+
     # bypasses the state machine to force closing of connections still connecting.
     # **only** used for Happy Eyeballs v2.
     def force_reset
       @state = :closing
       transition(:closed)
-      emit(:close)
     end
 
     def reset
+      return if @state == :closing || @state == :closed
+
       transition(:closing)
+      unless @write_buffer.empty?
+        # handshakes, try sending
+        consume
+        @write_buffer.clear
+      end
       transition(:closed)
-      emit(:close)
     end
 
     def send(request)
@@ -317,10 +323,6 @@ module HTTPX
 
     def connect
       transition(:open)
-    end
-
-    def exhausted?
-      @parser && parser.exhausted?
     end
 
     def consume
@@ -497,34 +499,25 @@ module HTTPX
         request.emit(:promise, parser, stream)
       end
       parser.on(:exhausted) do
+        @pending.concat(parser.pending)
         emit(:exhausted)
       end
       parser.on(:origin) do |origin|
         @origins |= [origin]
       end
       parser.on(:close) do |force|
-        if @state != :closed
-          transition(:closing)
-          if force || @state == :idle
-            transition(:closed)
-            emit(:close)
-          end
+        if force
+          reset
+          emit(:terminate)
         end
       end
       parser.on(:close_handshake) do
         consume
       end
       parser.on(:reset) do
-        if parser.empty?
-          reset
-        else
-          transition(:closing)
-          transition(:closed)
-
-          @parser.reset if @parser
-          transition(:idle)
-          transition(:open)
-        end
+        @pending.concat(parser.pending) unless parser.empty?
+        reset
+        idling unless @pending.empty?
       end
       parser.on(:current_timeout) do
         @current_timeout = @timeout = parser.timeout
@@ -593,13 +586,14 @@ module HTTPX
       when :inactive
         return unless @state == :open
       when :closing
-        return unless @state == :open
+        return unless @state == :idle || @state == :open
 
       when :closed
         return unless @state == :closing
         return unless @write_buffer.empty?
 
         purge_after_closed
+        emit(:close) if @pending.empty?
       when :already_open
         nextstate = :open
         # the first check for given io readiness must still use a timeout.

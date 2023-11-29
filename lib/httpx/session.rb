@@ -179,15 +179,6 @@ module HTTPX
         other_connection = build_altsvc_connection(connection, connections, alt_origin, origin, alt_params, options)
         connections << other_connection if other_connection
       end
-      connection.only(:exhausted) do
-        other_connection = connection.create_idle
-        other_connection.merge(connection)
-        catch(:coalesced) do
-          pool.init_connection(other_connection, options)
-        end
-        set_connection_callbacks(other_connection, connections, options)
-        connections << other_connection
-      end
     end
 
     # returns an HTTPX::Connection for the negotiated Alternative Service (or none).
@@ -220,6 +211,7 @@ module HTTPX
       end
 
       connection.merge(existing_connection)
+      existing_connection.terminate
       connection
     rescue UnsupportedSchemeError
       altsvc["noop"] = true
