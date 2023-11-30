@@ -295,29 +295,31 @@ module HTTPX
         request.body.chunk!
       end
 
-      connection = request.headers["connection"]
+      extra_headers = {}
 
-      connection ||= if request.persistent?
-        # when in a persistent connection, the request can't be at
-        # the edge of a renegotiation
-        if @requests.index(request) + 1 < @max_requests
-          "keep-alive"
+      unless request.headers.key?("connection")
+        connection_value = if request.persistent?
+          # when in a persistent connection, the request can't be at
+          # the edge of a renegotiation
+          if @requests.index(request) + 1 < @max_requests
+            "keep-alive"
+          else
+            "close"
+          end
         else
-          "close"
+          # when it's not a persistent connection, it sets "Connection: close" always
+          # on the last request of the possible batch (either allowed max requests,
+          # or if smaller, the size of the batch itself)
+          requests_limit = [@max_requests, @requests.size].min
+          if request == @requests[requests_limit - 1]
+            "close"
+          else
+            "keep-alive"
+          end
         end
-      else
-        # when it's not a persistent connection, it sets "Connection: close" always
-        # on the last request of the possible batch (either allowed max requests,
-        # or if smaller, the size of the batch itself)
-        requests_limit = [@max_requests, @requests.size].min
-        if request == @requests[requests_limit - 1]
-          "close"
-        else
-          "keep-alive"
-        end
+
+        extra_headers["connection"] = connection_value
       end
-
-      extra_headers = { "connection" => connection }
       extra_headers["host"] = request.authority unless request.headers.key?("host")
       extra_headers
     end
@@ -373,12 +375,10 @@ module HTTPX
     end
 
     def join_headers2(headers)
-      buffer = "".b
       headers.each do |field, value|
-        buffer << "#{capitalized(field)}: #{value}" << CRLF
+        buffer = "#{capitalized(field)}: #{value}#{CRLF}"
         log(color: :yellow) { "<- HEADER: #{buffer.chomp}" }
         @buffer << buffer
-        buffer.clear
       end
     end
 
