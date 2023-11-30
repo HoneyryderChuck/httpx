@@ -70,9 +70,9 @@ module HTTPX
 
     # sets the body to yield using chunked trannsfer encoding format.
     def stream(body)
-      encoded = body
-      encoded = Transcoder::Chunker.encode(body.enum_for(:each)) if chunked?
-      encoded
+      return body unless chunked?
+
+      Transcoder::Chunker.encode(body.enum_for(:each))
     end
 
     # returns whether the body yields infinitely.
