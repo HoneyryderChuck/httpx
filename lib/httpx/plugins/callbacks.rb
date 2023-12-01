@@ -31,7 +31,7 @@ module HTTPX
 
         private
 
-        def init_connection(type, uri, options)
+        def init_connection(uri, options)
           connection = super
           connection.on(:open) do
             emit_or_callback_error(:connection_opened, connection.origin, connection.io.socket)

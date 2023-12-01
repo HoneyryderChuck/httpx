@@ -116,7 +116,7 @@ module HTTPX
     def find_connection(request, connections, options)
       uri = request.uri
 
-      connection = pool.find_connection(uri, options) || build_connection(uri, options)
+      connection = pool.find_connection(uri, options) || init_connection(uri, options)
       unless connections.nil? || connections.include?(connection)
         connections << connection
         set_connection_callbacks(connection, connections, options)
@@ -166,7 +166,7 @@ module HTTPX
 
       alt_options = options.merge(ssl: options.ssl.merge(hostname: URI(origin).host))
 
-      connection = pool.find_connection(alt_origin, alt_options) || build_connection(alt_origin, alt_options)
+      connection = pool.find_connection(alt_origin, alt_options) || init_connection(alt_origin, alt_options)
 
       # advertised altsvc is the same origin being used, ignore
       return if connection == existing_connection
@@ -214,23 +214,8 @@ module HTTPX
       request.on(:promise, &method(:on_promise))
     end
 
-    # returns a new HTTPX::Connection object for the given +uri+ and set of +options+.
-    def build_connection(uri, options)
-      type = options.transport || begin
-        case uri.scheme
-        when "http"
-          "tcp"
-        when "https"
-          "ssl"
-        else
-          raise UnsupportedSchemeError, "#{uri}: #{uri.scheme}: unsupported URI scheme"
-        end
-      end
-      init_connection(type, uri, options)
-    end
-
-    def init_connection(type, uri, options)
-      connection = options.connection_class.new(type, uri, options)
+    def init_connection(uri, options)
+      connection = options.connection_class.new(uri, options)
       catch(:coalesced) do
         pool.init_connection(connection, options)
         connection

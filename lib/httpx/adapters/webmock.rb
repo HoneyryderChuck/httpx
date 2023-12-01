@@ -52,7 +52,7 @@ module WebMock
       end
 
       module InstanceMethods
-        def build_connection(*)
+        def init_connection(*)
           connection = super
           connection.once(:unmock_connection) do
             unless connection.addresses
