@@ -139,12 +139,16 @@ class TestDNSResolver
 
   def dns_response(query)
     domain = extract_domain(query)
-    ip = Resolv.getaddress(domain)
+    ip = resolve(domain)
 
     response = response_header(query)
     response << question_section(query)
     response << answer_section(ip)
     response
+  end
+
+  def resolve(domain)
+    Resolv.getaddress(domain)
   end
 
   def response_header(query)

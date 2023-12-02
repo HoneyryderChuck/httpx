@@ -67,20 +67,28 @@ module HTTPX
           unless connection.state == :closed ||
                  # double emission check
                  (connection.addresses && addresses.intersect?(connection.addresses))
-            emit_resolved_connection(connection, addresses)
+            emit_resolved_connection(connection, addresses, early_resolve)
           end
         end
       else
-        emit_resolved_connection(connection, addresses)
+        emit_resolved_connection(connection, addresses, early_resolve)
       end
     end
 
     private
 
-    def emit_resolved_connection(connection, addresses)
-      connection.addresses = addresses
+    def emit_resolved_connection(connection, addresses, early_resolve)
+      begin
+        connection.addresses = addresses
 
-      emit(:resolve, connection)
+        emit(:resolve, connection)
+      rescue StandardError => e
+        if early_resolve
+          throw(:resolve_error, e)
+        else
+          emit(:error, connection, e)
+        end
+      end
     end
 
     def early_resolve(connection, hostname: connection.origin.host)
