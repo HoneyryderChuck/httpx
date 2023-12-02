@@ -35,7 +35,7 @@ module Requests
             verify_error_response(response, "wqwereasdsada.xyz has no public IP addresses")
           end
         end
-      end
+      end unless RUBY_ENGINE == "jruby"
     end
   end
 end
