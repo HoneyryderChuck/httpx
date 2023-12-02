@@ -54,7 +54,7 @@ module ProfilerHelpers
 
     next_memsize = obj_memsize_proc.call
 
-    next_memsize.each do |klass, (count, size)|
+    next_memsize.each_key do |klass|
       prev_count, prev_size = prev_memsize[klass]
       current_count = count - prev_count
       next if current_count.zero?

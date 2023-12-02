@@ -236,9 +236,8 @@ module HTTPX
         end
 
         def send(request)
-          return super unless (
+          return super unless
             @options.proxy && @state != :idle && connecting?
-          )
 
           (@proxy_pending ||= []) << request
         end

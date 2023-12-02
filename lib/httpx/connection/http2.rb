@@ -55,7 +55,7 @@ module HTTPX
         return :w
       end
 
-      unless (@connection.state == :connected && @handshake_completed)
+      unless @connection.state == :connected && @handshake_completed
         return @buffer.empty? ? :r : :rw
       end
 

@@ -71,7 +71,7 @@ module HTTPX
 
       return super unless option
 
-      with(option.to_sym => (args.first || options))
+      with(option.to_sym => args.first || options)
     end
 
     def respond_to_missing?(meth, *)

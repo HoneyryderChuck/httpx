@@ -5,7 +5,7 @@ module HTTPX
     module_function
 
     def normalize_keys(key, value, cond = nil, &block)
-      if (cond && cond.call(value))
+      if cond && cond.call(value)
         block.call(key.to_s, value)
       elsif value.respond_to?(:to_ary)
         if value.empty?
