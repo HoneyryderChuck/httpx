@@ -132,6 +132,10 @@ module HTTPX
           RETRYABLE_ERRORS.any? { |klass| ex.is_a?(klass) }
         end
 
+        def proxy_error?(request, response)
+          super && !request.retries.positive?
+        end
+
         #
         # Atttempt to set the request to perform a partial range request.
         # This happens if the peer server accepts byte-range requests, and

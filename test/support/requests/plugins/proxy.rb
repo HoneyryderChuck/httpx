@@ -315,6 +315,17 @@ module Requests
         verify_status(response, 200)
         verify_body_length(response)
       end if ENV.key?("HTTPX_SSH_PROXY") && RUBY_ENGINE != "jruby"
+
+      def test_plugin_retries_on_proxy_error
+        start_test_servlet(Sock5WithNoneServer) do |server|
+          proxy = server.origin
+          uri = build_uri("/get")
+          session = HTTPX.plugin(RequestInspector).plugin(:proxy).plugin(:retries).with_proxy(uri: [proxy])
+          res = session.get(uri)
+          verify_error_response(res, /no supported authorization methods/)
+          assert session.calls == 3, "expect request to be built 3 times (was #{session.calls})"
+        end
+      end
     end
   end
 end
