@@ -84,6 +84,7 @@ module HTTPX
         emit(:resolve, connection)
       rescue StandardError => e
         if early_resolve
+          connection.force_reset
           throw(:resolve_error, e)
         else
           emit(:error, connection, e)
