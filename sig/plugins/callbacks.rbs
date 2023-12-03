@@ -1,0 +1,38 @@
+module HTTPX
+  module Plugins
+    module Callbacks
+      class CallbackError < Exception
+      end
+
+      module InstanceMethods
+        include HTTPX::Callbacks
+
+        type socket = TCPSocket | SSLSocket | UNIXSocket
+
+        def on_connection_opened: () { (http_uri origin, socket sock) -> void } -> self
+
+        def on_connection_closed: () { (http_uri origin) -> void } -> self
+
+        def on_request_error: () { (Request request, StandardError error) -> void } -> self
+
+        def on_request_started: () { (Request request) -> void } -> self
+
+        def on_request_body_chunk: () { (Request request, String chunk) -> void } -> self
+
+        def on_request_completed: () { (Request request) -> void } -> self
+
+        def on_response_started: () { (Request request, Response response) -> void } -> self
+
+        def on_response_body_chunk: () { (Request request, Response response, String chunk) -> void } -> self
+
+        def on_response_completed: () { (Request request, response response) -> void } -> self
+
+        private
+
+        def emit_or_callback_error: (*untyped) -> void
+      end
+    end
+
+    type sessionCallbacks = Session & Callbacks::InstanceMethods
+  end
+end

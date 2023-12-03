@@ -10,19 +10,6 @@ module HTTPX
       MOD
     end
 
-    %i[
-      connection_opened connection_closed
-      request_error
-      request_started request_body_chunk request_completed
-      response_started response_body_chunk response_completed
-    ].each do |meth|
-      class_eval(<<-MOD, __FILE__, __LINE__ + 1)
-        def on_#{meth}(&blk)   # def on_connection_opened(&blk)
-          on(:#{meth}, &blk)   #   on(:connection_opened, &blk)
-        end                    # end
-      MOD
-    end
-
     def request(*args, **options)
       branch(default_options).request(*args, **options)
     end
@@ -46,12 +33,6 @@ module HTTPX
       branch(default_options.merge(options), &blk)
     end
 
-    protected
-
-    def on(*args, &blk)
-      branch(default_options).on(*args, &blk)
-    end
-
     private
 
     def default_options
@@ -64,22 +45,52 @@ module HTTPX
       Session.new(options, &blk)
     end
 
-    def method_missing(meth, *args, **options)
-      return super unless meth =~ /\Awith_(.+)/
+    def method_missing(meth, *args, **options, &blk)
+      case meth
+      when /\Awith_(.+)/
 
-      option = Regexp.last_match(1)
+        option = Regexp.last_match(1)
 
-      return super unless option
+        return super unless option
 
-      with(option.to_sym => args.first || options)
+        with(option.to_sym => args.first || options)
+      when /\Aon_(.+)/
+        callback = Regexp.last_match(1)
+
+        return super unless %w[
+          connection_opened connection_closed
+          request_error
+          request_started request_body_chunk request_completed
+          response_started response_body_chunk response_completed
+        ].include?(callback)
+
+        warn "DEPRECATION WARNING: calling `.#{meth}` on plain HTTPX sessions is deprecated. " \
+             "Use HTTPX.plugin(:callbacks).#{meth} instead."
+
+        plugin(:callbacks).__send__(meth, *args, **options, &blk)
+      else
+        super
+      end
     end
 
     def respond_to_missing?(meth, *)
-      return super unless meth =~ /\Awith_(.+)/
+      case meth
+      when /\Awith_(.+)/
+        option = Regexp.last_match(1)
 
-      option = Regexp.last_match(1)
+        default_options.respond_to?(option) || super
+      when /\Aon_(.+)/
+        callback = Regexp.last_match(1)
 
-      default_options.respond_to?(option) || super
+        %w[
+          connection_opened connection_closed
+          request_error
+          request_started request_body_chunk request_completed
+          response_started response_body_chunk response_completed
+        ].include?(callback) || super
+      else
+        super
+      end
     end
   end
 end

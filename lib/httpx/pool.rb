@@ -43,7 +43,7 @@ module HTTPX
         connection.emit(:error, e)
       end
     rescue Exception # rubocop:disable Lint/RescueException
-      @connections.each(&:reset)
+      @connections.each(&:force_reset)
       raise
     end
 
@@ -70,7 +70,6 @@ module HTTPX
     end
 
     def init_connection(connection, _options)
-      resolve_connection(connection) unless connection.family
       connection.timers = @timers
       connection.on(:activate) do
         select_connection(connection)
@@ -95,6 +94,7 @@ module HTTPX
       connection.on(:terminate) do
         unregister_connection(connection, true)
       end
+      resolve_connection(connection) unless connection.family
     end
 
     def deactivate(connections)

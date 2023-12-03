@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "resolv"
+require "httpx/plugins/callbacks"
 
 module Requests
   using HTTPX::URIExtensions
@@ -10,7 +11,7 @@ module Requests
       origin = ip = nil
       opened = 0
 
-      response = HTTPX.plugin(SessionWithPool).on_connection_opened do |o, sock|
+      response = HTTPX.plugin(SessionWithPool).plugin(:callbacks).on_connection_opened do |o, sock|
         origin = o
         ip = sock.to_io.remote_address.ip_address
         opened += 1
@@ -30,7 +31,7 @@ module Requests
       origin = nil
       closed = 0
 
-      response = HTTPX.plugin(SessionWithPool).on_connection_closed do |o|
+      response = HTTPX.plugin(SessionWithPool).plugin(:callbacks).on_connection_closed do |o|
         origin = o
         closed += 1
       end.get(uri)
@@ -45,7 +46,7 @@ module Requests
       uri = URI(build_uri("/get"))
       error = nil
 
-      http = HTTPX.on_request_error { |_, err| error = err }
+      http = HTTPX.plugin(:callbacks).on_request_error { |_, err| error = err }
 
       response = http.get(uri)
       verify_status(response, 200)
@@ -66,7 +67,8 @@ module Requests
       started = completed = false
       chunks = 0
 
-      http = HTTPX.on_request_started { |_| started = true }
+      http = HTTPX.plugin(:callbacks)
+                  .on_request_started { |_| started = true }
                   .on_request_body_chunk { |_, _chunk| chunks += 1 }
                   .on_request_completed { |_| completed = true }
 
@@ -83,7 +85,8 @@ module Requests
       started = completed = false
       chunks = 0
 
-      http = HTTPX.on_response_started { |_, _| started = true }
+      http = HTTPX.plugin(:callbacks)
+                  .on_response_started { |_, _| started = true }
                   .on_response_body_chunk { |_, _, _chunk| chunks += 1 }
                   .on_response_completed { |_, _| completed = true }
 
@@ -93,6 +96,18 @@ module Requests
       assert started
       assert completed
       assert chunks.positive?
+    end
+
+    def test_callbacks_bug_inside_callback
+      %i[
+        connection_opened connection_closed
+        request_started request_completed
+        response_started response_body_chunk response_completed
+      ].each do |callback|
+        assert_raises(NameError) do
+          HTTPX.plugin(SessionWithPool).plugin(:callbacks).send(:"on_#{callback}") { i_dont_exist }.get(build_uri("/get"))
+        end
+      end
     end
   end
 end

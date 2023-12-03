@@ -8,7 +8,6 @@ module HTTPX
   class Session
     include Loggable
     include Chainable
-    include Callbacks
 
     EMPTY_HASH = {}.freeze
 
@@ -85,33 +84,7 @@ module HTTPX
       options = @options.merge(options) unless options.is_a?(Options)
       request = rklass.new(verb, uri, options)
       request.persistent = @persistent
-      request.on(:response, &method(:on_response).curry(2)[request])
-      request.on(:promise, &method(:on_promise))
-
-      request.on(:headers) do
-        emit(:request_started, request)
-      end
-      request.on(:body_chunk) do |chunk|
-        emit(:request_body_chunk, request, chunk)
-      end
-      request.on(:done) do
-        emit(:request_completed, request)
-      end
-
-      request.on(:response_started) do |res|
-        if res.is_a?(Response)
-          emit(:response_started, request, res)
-          res.on(:chunk_received) do |chunk|
-            emit(:response_body_chunk, request, res, chunk)
-          end
-        else
-          emit(:request_error, request, res.error)
-        end
-      end
-      request.on(:response) do |res|
-        emit(:response_completed, request, res)
-      end
-
+      set_request_callbacks(request)
       request
     end
 
@@ -236,6 +209,11 @@ module HTTPX
       requests
     end
 
+    def set_request_callbacks(request)
+      request.on(:response, &method(:on_response).curry(2)[request])
+      request.on(:promise, &method(:on_promise))
+    end
+
     # returns a new HTTPX::Connection object for the given +uri+ and set of +options+.
     def build_connection(uri, options)
       type = options.transport || begin
@@ -253,13 +231,6 @@ module HTTPX
 
     def init_connection(type, uri, options)
       connection = options.connection_class.new(type, uri, options)
-      connection.on(:open) do
-        emit(:connection_opened, connection.origin, connection.io.socket)
-        # only run close callback if it opened
-      end
-      connection.on(:close) do
-        emit(:connection_closed, connection.origin, connection.io.socket) if connection.used?
-      end
       catch(:coalesced) do
         pool.init_connection(connection, options)
         connection

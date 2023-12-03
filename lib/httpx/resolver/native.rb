@@ -88,6 +88,7 @@ module HTTPX
       if @nameserver.nil?
         ex = ResolveError.new("No available nameserver")
         ex.set_backtrace(caller)
+        connection.force_reset
         throw(:resolve_error, ex)
       else
         @connections << connection

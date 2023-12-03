@@ -25,6 +25,8 @@ module HTTPX
       end
 
       module InstanceMethods
+        include HTTPX::Callbacks
+
         def initialize(*)
           super
           @circuit_store = CircuitStore.new(@options)
