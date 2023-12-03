@@ -43,7 +43,7 @@ module HTTPX
         connection.emit(:error, e)
       end
     rescue Exception # rubocop:disable Lint/RescueException
-      @connections.each(&:reset)
+      @connections.each(&:force_reset)
       raise
     end
 
