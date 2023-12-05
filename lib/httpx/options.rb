@@ -293,27 +293,6 @@ module HTTPX
       opts
     end
 
-    def merge2(other)
-      raise ArgumentError, "#{other} is not a valid set of options" unless other.respond_to?(:to_hash)
-
-      h2 = other.to_hash
-      return self if h2.empty?
-
-      h1 = to_hash
-
-      return self if h1 >= h2
-
-      merged = h1.merge(h2) do |_k, v1, v2|
-        if v1.respond_to?(:merge) && v2.respond_to?(:merge)
-          v1.merge(v2)
-        else
-          v2
-        end
-      end
-
-      self.class.new(merged)
-    end
-
     def to_hash
       instance_variables.each_with_object({}) do |ivar, hs|
         hs[ivar[1..-1].to_sym] = instance_variable_get(ivar)

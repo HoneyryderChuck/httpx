@@ -80,9 +80,7 @@ module HTTPX
           @parser.upgrade(request, response)
           @upgrade_protocol = "h2c"
 
-          if request.options.max_concurrent_requests != @options.max_concurrent_requests
-            @options = @options.merge(max_concurrent_requests: nil)
-          end
+          @options = @options.merge(max_concurrent_requests: nil)
 
           prev_parser.requests.each do |req|
             req.transition(:idle)

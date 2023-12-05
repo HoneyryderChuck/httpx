@@ -127,11 +127,9 @@ module HTTPX
           return
         end
 
-        if response.status >= 103
-          # 103 Early Hints advertises resources in document to browsers.
-          # not very relevant for an HTTP client, discard.
-          return
-        end
+        # 103 Early Hints advertises resources in document to browsers.
+        # not very relevant for an HTTP client, discard.
+        return if response.status >= 103
       end
 
       @response = response

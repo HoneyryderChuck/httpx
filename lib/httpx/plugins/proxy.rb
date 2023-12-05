@@ -168,12 +168,6 @@ module HTTPX
           response
         end
 
-        def build_altsvc_connection(_, _, _, _, _, options)
-          return if options.proxy
-
-          super
-        end
-
         def proxy_error?(_request, response)
           error = response.error
           case error
@@ -231,13 +225,6 @@ module HTTPX
           end
         end
 
-        def send(request)
-          return super unless
-            @options.proxy && @state != :idle && connecting?
-
-          (@proxy_pending ||= []) << request
-        end
-
         def connecting?
           return super unless @options.proxy
 
@@ -279,12 +266,6 @@ module HTTPX
           when :idle
             transition(:connecting)
           when :connected
-            if @proxy_pending
-              while (req = @proxy_pending.shift)
-                send(req)
-              end
-            end
-
             transition(:open)
           end
         end
