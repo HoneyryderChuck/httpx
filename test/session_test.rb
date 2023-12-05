@@ -48,6 +48,35 @@ class SessionTest < Minitest::Test
     assert body.foo == "response-body-foo", "response body method is unexpected"
   end
 
+  def test_session_make_requests
+    get_uri = build_uri("/get")
+    post_uri = build_uri("/post")
+
+    response = HTTPX.request("GET", get_uri)
+    verify_status(response, 200)
+    verify_body_length(response)
+
+    response = HTTPX.request("POST", post_uri, body: "data")
+    verify_status(response, 200)
+    body = json_body(response)
+    verify_header(body["headers"], "Content-Type", "application/octet-stream")
+    verify_uploaded(body, "data", "data")
+
+    responses = HTTPX.request(
+      [
+        ["GET", get_uri],
+        ["POST", post_uri, { body: "data" }],
+      ]
+    )
+
+    verify_status(responses[0], 200)
+
+    verify_status(responses[1], 200)
+    body = json_body(responses[1])
+    verify_header(body["headers"], "Content-Type", "application/octet-stream")
+    verify_uploaded(body, "data", "data")
+  end
+
   def test_session_timeout_connect_timeout
     server = TCPServer.new("127.0.0.1", CONNECT_TIMEOUT_PORT)
     begin
