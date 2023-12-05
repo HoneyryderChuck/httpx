@@ -41,7 +41,9 @@ module WebMock
           request.options.response_class.new(request,
                                              webmock_response.status[0],
                                              "2.0",
-                                             webmock_response.headers)
+                                             webmock_response.headers).tap do |res|
+            res.mocked = true
+          end
         end
 
         def build_error_response(request, exception)
@@ -53,10 +55,30 @@ module WebMock
         def build_connection(*)
           connection = super
           connection.once(:unmock_connection) do
+            unless connection.addresses
+              connection.__send__(:callbacks)[:connect_error].clear
+              pool.__send__(:unregister_connection, connection)
+            end
             pool.__send__(:resolve_connection, connection)
-            pool.__send__(:unregister_connection, connection) unless connection.addresses
           end
           connection
+        end
+      end
+
+      module ResponseMethods
+        attr_accessor :mocked
+
+        def initialize(*)
+          super
+          @mocked = false
+        end
+      end
+
+      module ResponseBodyMethods
+        def decode_chunk(chunk)
+          return chunk if @response.mocked
+
+          super
         end
       end
 
