@@ -50,6 +50,14 @@ class WebmockTest < Minitest::Test
     assert_equal(@exception_class.new("exception message"), response.error)
   end
 
+  def test_response_not_decoded
+    request = stub_request(:get, MOCK_URL_HTTP).to_return(body: "body", headers: { content_encoding: "gzip" })
+    response = HTTPX.get(MOCK_URL_HTTP)
+
+    assert_equal("body", response.body.to_s)
+    assert_requested(request)
+  end
+
   def test_to_timeout
     response = http_request(:get, MOCK_URL_HTTP_TIMEOUT)
     assert_requested(@stub_timeout)
