@@ -55,8 +55,11 @@ module WebMock
         def build_connection(*)
           connection = super
           connection.once(:unmock_connection) do
+            unless connection.addresses
+              connection.__send__(:callbacks)[:connect_error].clear
+              pool.__send__(:unregister_connection, connection)
+            end
             pool.__send__(:resolve_connection, connection)
-            pool.__send__(:unregister_connection, connection) unless connection.addresses
           end
           connection
         end
