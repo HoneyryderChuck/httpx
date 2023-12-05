@@ -1,5 +1,6 @@
 module HTTPX
-  Socks4Error: singleton(Error)
+  class Socks4Error < HTTPProxyError
+  end
 
   module Plugins
     module Proxy

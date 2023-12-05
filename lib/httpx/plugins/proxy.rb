@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module HTTPX
-  class HTTPProxyError < Error; end
+  class HTTPProxyError < ConnectionError; end
 
   module Plugins
     #
@@ -161,9 +161,12 @@ module HTTPX
         def fetch_response(request, connections, options)
           response = super
 
-          if response.is_a?(ErrorResponse) &&
-             __proxy_error?(response) && !@_proxy_uris.empty?
+          if response.is_a?(ErrorResponse) && proxy_error?(request, response)
             @_proxy_uris.shift
+
+            # return last error response if no more proxies to try
+            return response if @_proxy_uris.empty?
+
             log { "failed connecting to proxy, trying next..." }
             request.transition(:idle)
             send_request(request, connections, options)
@@ -178,7 +181,7 @@ module HTTPX
           super
         end
 
-        def __proxy_error?(response)
+        def proxy_error?(_request, response)
           error = response.error
           case error
           when NativeResolveError
@@ -278,7 +281,7 @@ module HTTPX
             transition(:connecting)
           when :connected
             if @proxy_pending
-              while (req = @proxy_pendind.shift)
+              while (req = @proxy_pending.shift)
                 send(req)
               end
             end

@@ -1,5 +1,6 @@
 module HTTPX
-  Socks5Error: singleton(Error)
+  class Socks5Error < HTTPProxyError
+  end
 
   module Plugins
     module Proxy

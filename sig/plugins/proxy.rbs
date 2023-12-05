@@ -1,5 +1,8 @@
 module HTTPX
-  class HTTPProxyError < Error
+  class HTTPProxyError < ConnectionError
+  end
+
+  class ProxySSL < SSL
   end
 
   module Plugins
@@ -36,6 +39,13 @@ module HTTPX
 
       module InstanceMethods
         @__proxy_uris: Array[generic_uri]
+
+        private
+
+        def proxy_error?: (Request request, response) -> bool
+      end
+
+      module ConnectionMethods
       end
     end
 
