@@ -43,9 +43,7 @@ module HTTPX
                       | (verb, _Each[[uri, options]], Options) -> Array[Request]
                       | (verb, _Each[uri], options) -> Array[Request]
 
-    def build_connection: (URI::HTTP | URI::HTTP uri, Options options) -> Connection
-
-    def init_connection: (String type, URI::HTTP | URI::HTTP uri, Options options) -> Connection
+    def init_connection: (URI::HTTP | URI::HTTP uri, Options options) -> Connection
 
     def send_requests: (*Request) -> Array[response]
 

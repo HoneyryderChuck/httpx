@@ -73,20 +73,32 @@ module HTTPX
             @inflight -= prev_parser.requests.size
           end
 
-          parser_options = @options.merge(max_concurrent_requests: request.options.max_concurrent_requests)
-          @parser = H2CParser.new(@write_buffer, parser_options)
+          @parser = H2CParser.new(@write_buffer, @options)
           set_parser_callbacks(@parser)
           @inflight += 1
           @parser.upgrade(request, response)
           @upgrade_protocol = "h2c"
 
-          if request.options.max_concurrent_requests != @options.max_concurrent_requests
-            @options = @options.merge(max_concurrent_requests: nil)
-          end
-
           prev_parser.requests.each do |req|
             req.transition(:idle)
             send(req)
+          end
+        end
+
+        private
+
+        def send_request_to_parser(request)
+          super
+
+          return unless request.headers["upgrade"] == "h2c" && parser.is_a?(Connection::HTTP1)
+
+          max_concurrent_requests = parser.max_concurrent_requests
+
+          return if max_concurrent_requests == 1
+
+          parser.max_concurrent_requests = 1
+          request.once(:response) do
+            parser.max_concurrent_requests = max_concurrent_requests
           end
         end
       end

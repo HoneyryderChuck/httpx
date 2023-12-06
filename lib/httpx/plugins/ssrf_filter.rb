@@ -81,10 +81,9 @@ module HTTPX
           range = ipaddr.to_range
           return true if range.first != range.last
 
-          return IPV4_BLACKLIST.any? { |r| r.include?(ipaddr) } if ipaddr.ipv4?
           return IPV6_BLACKLIST.any? { |r| r.include?(ipaddr) } if ipaddr.ipv6?
 
-          true
+          IPV4_BLACKLIST.any? { |r| r.include?(ipaddr) } # then it's IPv4
         end
       end
 
@@ -127,6 +126,8 @@ module HTTPX
         end
 
         def addresses=(addrs)
+          addrs = addrs.map { |addr| addr.is_a?(IPAddr) ? addr : IPAddr.new(addr) }
+
           addrs.reject!(&SsrfFilter.method(:unsafe_ip_address?))
 
           raise ServerSideRequestForgeryError, "#{@origin.host} has no public IP addresses" if addrs.empty?

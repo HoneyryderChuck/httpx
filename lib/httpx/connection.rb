@@ -47,11 +47,11 @@ module HTTPX
 
     attr_accessor :family
 
-    def initialize(type, uri, options)
-      @type = type
+    def initialize(uri, options)
       @origins = [uri.origin]
       @origin = Utils.to_uri(uri.origin)
       @options = Options.new(options)
+      @type = initialize_type(uri, @options)
       @window_size = @options.window_size
       @read_buffer = Buffer.new(@options.buffer_size)
       @write_buffer = Buffer.new(@options.buffer_size)
@@ -133,7 +133,7 @@ module HTTPX
     end
 
     def create_idle(options = {})
-      self.class.new(@type, @origin, @options.merge(options))
+      self.class.new(@origin, @options.merge(options))
     end
 
     def merge(connection)
@@ -591,6 +591,19 @@ module HTTPX
       @io.close if @io
       @read_buffer.clear
       @timeout = nil
+    end
+
+    def initialize_type(uri, options)
+      options.transport || begin
+        case uri.scheme
+        when "http"
+          "tcp"
+        when "https"
+          "ssl"
+        else
+          raise UnsupportedSchemeError, "#{uri}: #{uri.scheme}: unsupported URI scheme"
+        end
+      end
     end
 
     def build_socket(addrs = nil)

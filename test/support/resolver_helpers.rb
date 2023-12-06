@@ -85,7 +85,7 @@ module ResolverHelpers
   end
 
   def build_connection(uri)
-    connection = Connection.new("ssl", URI(uri), Options.new)
+    connection = Connection.new(URI(uri), Options.new)
     connection.extend(ConnectionExtensions)
     connection
   end

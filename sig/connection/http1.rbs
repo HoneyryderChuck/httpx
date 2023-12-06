@@ -10,8 +10,9 @@ module HTTPX
     attr_reader pending: Array[Request]
     attr_reader requests: Array[Request]
 
+    attr_accessor max_concurrent_requests: Integer
+
     @options: Options
-    @max_concurrent_requests: Integer
     @max_requests: Integer
     @parser: Parser::HTTP1
     @buffer: Buffer

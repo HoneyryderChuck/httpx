@@ -3,7 +3,15 @@
 module Requests
   module Plugins
     module SsrfFilter
-      def test_plugin_ssrf_not_allowed_scheme
+      def test_plugin_ssrf_filter_allows
+        uri = "#{scheme}httpbin.org"
+
+        session = HTTPX.plugin(:ssrf_filter)
+        response = session.get(uri)
+        verify_status(response, 200)
+      end
+
+      def test_plugin_ssrf_filter_not_allowed_scheme
         return unless origin.start_with?("http://")
 
         session = HTTPX.plugin(:ssrf_filter, allowed_schemes: %w[https])
@@ -14,6 +22,8 @@ module Requests
       def test_plugin_ssrf_filter_localhost
         session = HTTPX.plugin(:ssrf_filter)
         response = session.get("#{scheme}localhost/get")
+        verify_error_response(response, HTTPX::ServerSideRequestForgeryError)
+        response = session.get("#{scheme}google.com", addresses: %w[127.0.0.1])
         verify_error_response(response, HTTPX::ServerSideRequestForgeryError)
       end
 

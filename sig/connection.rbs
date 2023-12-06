@@ -92,7 +92,9 @@ module HTTPX
 
     private
 
-    def initialize: (io_type, URI::Generic, options) -> untyped
+    def initialize: (URI::Generic uri, options) -> void
+
+    def initialize_type: (URI::Generic uri, options) -> io_type
 
     def connect: () -> void
 

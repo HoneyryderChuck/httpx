@@ -81,16 +81,9 @@ module HTTPX
         @callbacks << callback
       end
 
-      if RUBY_ENGINE == "jruby" && JRUBY_VERSION < "9.4.5.0"
-        # https://github.com/jruby/jruby/issues/7976
-        def delete(callback)
-          @callbacks.delete(callback)
-        end
-      else
-        def delete(callback)
-          @callbacks.delete(callback)
-          @on_empty.call if @callbacks.empty?
-        end
+      def delete(callback)
+        @callbacks.delete(callback)
+        @on_empty.call if @callbacks.empty?
       end
 
       def no_callbacks?
