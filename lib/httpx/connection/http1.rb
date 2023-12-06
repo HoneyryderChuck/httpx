@@ -12,6 +12,8 @@ module HTTPX
 
     attr_reader :pending, :requests
 
+    attr_accessor :max_concurrent_requests
+
     def initialize(buffer, options)
       @options = Options.new(options)
       @max_concurrent_requests = @options.max_concurrent_requests || MAX_REQUESTS
