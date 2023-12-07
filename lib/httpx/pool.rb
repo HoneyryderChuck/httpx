@@ -161,7 +161,7 @@ module HTTPX
 
       return connection if connection.family == family
 
-      new_connection = connection.class.new(connection.type, connection.origin, connection.options)
+      new_connection = connection.class.new(connection.origin, connection.options)
       new_connection.family = family
 
       connection.once(:tcp_open) { new_connection.force_reset }

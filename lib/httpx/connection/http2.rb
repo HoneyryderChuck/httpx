@@ -150,6 +150,7 @@ module HTTPX
 
     def send_pending
       while (request = @pending.shift)
+        # TODO: this request should go back to top of stack
         break unless send(request)
       end
     end
