@@ -99,7 +99,7 @@ module HTTPX
     # :compress_request_body :: whether to auto-decompress response body (defaults to <tt>true</tt>)
     # :timeout :: hash of timeout configurations (supports <tt>:connect_timeout</tt>, <tt>:settings_timeout</tt>,
     #             <tt>:operation_timeout</tt>, <tt>:keep_alive_timeout</tt>,  <tt>:read_timeout</tt>,  <tt>:write_timeout</tt>
-    #            and <tt>:request_timeout</tt>
+    #             and <tt>:request_timeout</tt>
     # :headers :: hash of HTTP headers (ex: <tt>{ "x-custom-foo" => "bar" }</tt>)
     # :window_size :: number of bytes to read from a socket
     # :buffer_size :: internal read and write buffer size in bytes

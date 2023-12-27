@@ -700,7 +700,7 @@ module HTTPX
         interval = @timers.after(timeout, callback)
 
         Array(finish_events).each do |event|
-          # clean up reques timeouts if the connection errors out
+          # clean up request timeouts if the connection errors out
           request.once(event) do
             if @intervals.include?(interval)
               interval.delete(callback)
