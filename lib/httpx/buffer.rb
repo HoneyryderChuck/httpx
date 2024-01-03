@@ -3,6 +3,14 @@
 require "forwardable"
 
 module HTTPX
+  # Internal class to abstract a string buffer, by wrapping a string and providing the
+  # minimum possible API and functionality required.
+  #
+  #     buffer = Buffer.new(640)
+  #     buffer.full? #=> false
+  #     buffer << "aa"
+  #     buffer.capacity #=> 638
+  #
   class Buffer
     extend Forwardable
 

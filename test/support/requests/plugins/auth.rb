@@ -45,7 +45,7 @@ module Requests
       end
 
       %w[SHA1 SHA2 SHA256 SHA384 SHA512 RMD160].each do |alg|
-        define_method "test_plugin_digest_auth_#{alg}" do
+        define_method :"test_plugin_digest_auth_#{alg}" do
           session = HTTPX.plugin(:digest_auth).with_headers("cookie" => "fake=fake_value")
           response = session.digest_auth(user, pass).get("#{digest_auth_uri}/#{alg}")
           verify_status(response, 200)
@@ -56,7 +56,7 @@ module Requests
       end
 
       %w[MD5 SHA1].each do |alg|
-        define_method "test_plugin_digest_auth_#{alg}_sess" do
+        define_method :"test_plugin_digest_auth_#{alg}_sess" do
           start_test_servlet(DigestServer, algorithm: "#{alg}-sess") do |server|
             uri = "#{server.origin}/"
             session = HTTPX.plugin(:digest_auth).with_headers("cookie" => "fake=fake_value")

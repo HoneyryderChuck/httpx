@@ -166,6 +166,7 @@ module HTTPX
 
     private
 
+    # prepares inflaters for the advertised encodings in "content-encoding" header.
     def initialize_inflaters
       @inflaters = nil
 
@@ -187,6 +188,7 @@ module HTTPX
       end
     end
 
+    # passes the +chunk+ through all inflaters to decode it.
     def decode_chunk(chunk)
       @inflaters.reverse_each do |inflater|
         chunk = inflater.call(chunk)
@@ -195,6 +197,7 @@ module HTTPX
       chunk
     end
 
+    # tries transitioning the body STM to the +nextstate+.
     def transition(nextstate)
       case nextstate
       when :open

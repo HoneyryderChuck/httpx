@@ -70,9 +70,10 @@ module HTTPX
       @body.write(data)
     end
 
-    # returns the response mime type, as per what's declared in the content-type header.
+    # returns the HTTPX::ContentType for the response, as per what's declared in the content-type header.
     #
-    #   response.content_type #=> "text/plain"
+    #   response.content_type #=> #<HTTPX::ContentType:xxx @header_value="text/plain">
+    #   response.content_type.mime_type #=> "text/plain"
     def content_type
       @content_type ||= ContentType.new(@headers["content-type"])
     end
