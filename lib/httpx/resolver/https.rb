@@ -138,9 +138,14 @@ module HTTPX
         # Indicates no such domain was found.
 
         host = @requests.delete(request)
-        connection = reset_hostname(host)
+        connection = reset_hostname(host, reset_candidates: false)
 
-        emit_resolve_error(connection)
+        unless @queries.value?(connection)
+          emit_resolve_error(connection)
+          return
+        end
+
+        resolve
       when :dns_error
         host = @requests.delete(request)
         connection = reset_hostname(host)
