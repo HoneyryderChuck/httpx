@@ -39,7 +39,7 @@ class HTTP1ParserTest < Minitest::Test
   JSON.parse(File.read(File.expand_path("support/responses.json", __dir__))).each do |res_json|
     res_json["headers"] ||= {}
 
-    define_method "test_parse_response_#{res_json["name"]}" do
+    define_method :"test_parse_response_#{res_json["name"]}" do
       observer = RequestObserver.new
       parser = observer.parser
       begin
