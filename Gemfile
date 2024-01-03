@@ -55,9 +55,9 @@ group :test do
 end
 
 group :lint do
-  gem "rubocop"
+  gem "rubocop", "~> 1.59.0"
   gem "rubocop-md"
-  gem "rubocop-performance"
+  gem "rubocop-performance", "~> 1.19.0"
 end
 
 group :coverage do
