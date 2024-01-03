@@ -136,7 +136,7 @@ The test suite runs against [httpbin proxied over nghttp2](https://nghttp2.org/h
 
 All Rubies greater or equal to 2.7, and always latest JRuby and Truffleruby.
 
-**Note**: This gem is tested against all latest patch versions, i.e. if you're using 3.2.0 and you experience some issue, please test it against 3.2.$latest before creating an issue.
+**Note**: This gem is tested against all latest patch versions, i.e. if you're using 3.3.0 and you experience some issue, please test it against 3.3.$latest before creating an issue.
 
 ## Resources
 |               |                                                        |
