@@ -228,11 +228,7 @@ module HTTPX
       return if @state == :closing || @state == :closed
 
       transition(:closing)
-      unless @write_buffer.empty?
-        # handshakes, try sending
-        consume
-        @write_buffer.clear
-      end
+
       transition(:closed)
     end
 
@@ -566,6 +562,11 @@ module HTTPX
       when :closing
         return unless @state == :idle || @state == :open
 
+        unless @write_buffer.empty?
+          # handshakes, try sending
+          consume
+          @write_buffer.clear
+        end
       when :closed
         return unless @state == :closing
         return unless @write_buffer.empty?

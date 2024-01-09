@@ -246,8 +246,8 @@ module HTTPX
           return super unless @options.proxy
 
           @state = :open
-          transition(:closing)
-          transition(:closed)
+
+          super
           emit(:close)
         end
 
