@@ -563,9 +563,13 @@ module HTTPX
         return unless @state == :idle || @state == :open
 
         unless @write_buffer.empty?
+          # preset state before handshake, as error callbacks
+          # may take it back here.
+          @state = nextstate
           # handshakes, try sending
           consume
           @write_buffer.clear
+          return
         end
       when :closed
         return unless @state == :closing
