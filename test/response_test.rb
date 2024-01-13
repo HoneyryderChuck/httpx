@@ -199,6 +199,7 @@ class ResponseTest < Minitest::Test
     assert form_response.form == { "a" => "b", "c" => "d" }
     err = assert_raises(HTTPX::Error) { form_response.json }
     assert err.message == "invalid json mime type (application/x-www-form-urlencoded)"
+    form_response = Response.new(request, 200, "2.0", { "content-type" => "application/x-www-form-urlencoded" })
     form_response << "богус"
     assert_raises(ArgumentError) { form_response.form }
 
