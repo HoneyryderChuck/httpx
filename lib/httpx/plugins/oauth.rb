@@ -60,9 +60,9 @@ module HTTPX
         end
 
         def load(http)
-          return unless @token_endpoint && @token_endpoint_auth_method && @grant_type && @scope
+          return if @token_endpoint && @token_endpoint_auth_method && @grant_type && @scope
 
-          metadata = http.get("#{issuer}/.well-known/oauth-authorization-server").raise_for_status.json
+          metadata = http.get("#{@issuer}/.well-known/oauth-authorization-server").raise_for_status.json
 
           @token_endpoint = metadata["token_endpoint"]
           @scope = metadata["scopes_supported"]
