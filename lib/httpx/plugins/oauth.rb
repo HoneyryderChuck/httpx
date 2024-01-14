@@ -70,6 +70,7 @@ module HTTPX
           @token_endpoint_auth_method ||= Array(metadata["token_endpoint_auth_methods_supported"]).find do |am|
             SUPPORTED_AUTH_METHODS.include?(am)
           end
+          nil
         end
 
         def merge(other)
