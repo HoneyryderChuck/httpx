@@ -10,6 +10,18 @@ class OptionsTest < Minitest::Test
     assert ex.message == "unknown option: foo", ex.message
   end
 
+  def test_options_no_method_error_during_validation
+    custom_opt_class = Class.new(Options) do
+      def option_foo(value)
+        raise TypeError, ":foo must be a Hash" unless value.is_a(Hash)
+
+        value
+      end
+    end
+    ex = assert_raises(NoMethodError) { custom_opt_class.new(foo: "bar") }
+    assert_match("undefined method `is_a'", ex.message)
+  end
+
   def test_options_body
     opt1 = Options.new
     assert opt1.body.nil?, "body shouldn't be set by default"
