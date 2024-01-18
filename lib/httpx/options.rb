@@ -342,12 +342,11 @@ module HTTPX
       defaults.each do |k, v|
         next if v.nil?
 
-        begin
-          value = __send__(:"option_#{k}", v)
-          instance_variable_set(:"@#{k}", value)
-        rescue NoMethodError
-          raise Error, "unknown option: #{k}"
-        end
+        option_method_name = :"option_#{k}"
+        raise Error, "unknown option: #{k}" unless respond_to?(option_method_name)
+
+        value = __send__(option_method_name, v)
+        instance_variable_set(:"@#{k}", value)
       end
     end
   end
