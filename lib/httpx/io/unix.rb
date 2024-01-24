@@ -12,7 +12,7 @@ module HTTPX
       @addresses = []
       @hostname = origin.host
       @state = :idle
-      @options = Options.new(options)
+      @options = options
       @fallback_protocol = @options.fallback_protocol
       if @options.io
         @io = case @options.io

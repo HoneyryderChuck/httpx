@@ -42,7 +42,7 @@ module HTTPX
 
     private
 
-    def initialize: (Buffer, options) -> untyped
+    def initialize: (Buffer buffer, Options options) -> untyped
 
     def send_pending: () -> void
 

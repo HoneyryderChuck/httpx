@@ -25,7 +25,7 @@ module HTTPX
     attr_reader :streams, :pending
 
     def initialize(buffer, options)
-      @options = Options.new(options)
+      @options = options
       @settings = @options.http2_settings
       @pending = []
       @streams = {}

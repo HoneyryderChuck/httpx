@@ -251,7 +251,7 @@ module HTTPX
       @request = request
       @response = request.response if request.response.is_a?(Response)
       @error = error
-      @options = Options.new(options)
+      @options = options
       log_exception(@error)
     end
 

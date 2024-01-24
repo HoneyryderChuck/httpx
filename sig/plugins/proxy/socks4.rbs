@@ -22,7 +22,7 @@ module HTTPX
 
           private
 
-          def initialize: (Buffer buffer, Options) -> untyped
+          def initialize: (Buffer buffer, Options options) -> untyped
         end
 
         module Packet

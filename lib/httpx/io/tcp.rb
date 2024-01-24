@@ -17,7 +17,7 @@ module HTTPX
       @state = :idle
       @addresses = []
       @hostname = origin.host
-      @options = Options.new(options)
+      @options = options
       @fallback_protocol = @options.fallback_protocol
       @port = origin.port
       @interests = :w

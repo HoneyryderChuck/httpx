@@ -26,7 +26,7 @@ module HTTPX
 
       def emit_resolved_connection: (Connection connection, Array[IPAddr] addresses, bool early_resolve) -> void
 
-      def initialize: (ip_family? family, options options) -> void
+      def initialize: (ip_family? family, Options options) -> void
 
       def early_resolve: (Connection connection, ?hostname: String) -> void
 
