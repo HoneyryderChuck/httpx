@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 module HTTPX
+  EMPTY_HASH = {}.freeze
+
   # Class implementing the APIs being used publicly.
   #
   #   HTTPX.get(..) #=> delegating to an internal HTTPX::Session object.
@@ -8,8 +10,6 @@ module HTTPX
   class Session
     include Loggable
     include Chainable
-
-    EMPTY_HASH = {}.freeze
 
     # initializes the session with a set of +options+, which will be shared by all
     # requests sent from it.
@@ -65,10 +65,10 @@ module HTTPX
     #  resp1, resp2 = session.request(["POST", "https://server.org/a", form: { "foo" => "bar" }], ["GET", "https://server.org/b"])
     #  resp1, resp2 = session.request("GET", ["https://server.org/a", "https://server.org/b"], headers: { "x-api-token" => "TOKEN" })
     #
-    def request(*args, **options)
+    def request(*args, **params)
       raise ArgumentError, "must perform at least one request" if args.empty?
 
-      requests = args.first.is_a?(Request) ? args : build_requests(*args, options)
+      requests = args.first.is_a?(Request) ? args : build_requests(*args, params)
       responses = send_requests(*requests)
       return responses.first if responses.size == 1
 
@@ -81,10 +81,9 @@ module HTTPX
     #
     #   req = session.build_request("GET", "https://server.com")
     #   resp = session.request(req)
-    def build_request(verb, uri, options = EMPTY_HASH)
-      rklass = @options.request_class
-      options = @options.merge(options) unless options.is_a?(Options)
-      request = rklass.new(verb, uri, options)
+    def build_request(verb, uri, params = EMPTY_HASH, options = @options)
+      rklass = options.request_class
+      request = rklass.new(verb, uri, options, params)
       request.persistent = @persistent
       set_request_callbacks(request)
       request
@@ -192,22 +191,26 @@ module HTTPX
     end
 
     # returns a set of HTTPX::Request objects built from the given +args+ and +options+.
-    def build_requests(*args, options)
-      request_options = @options.merge(options)
-
+    def build_requests(*args, params)
       requests = if args.size == 1
         reqs = args.first
-        reqs.map do |verb, uri, opts = EMPTY_HASH|
-          build_request(verb, uri, request_options.merge(opts))
+        # TODO: find a way to make requests share same options object
+        reqs.map do |verb, uri, ps = EMPTY_HASH|
+          request_params = params
+          request_params = request_params.merge(ps) unless ps.empty?
+          build_request(verb, uri, request_params)
         end
       else
         verb, uris = args
         if uris.respond_to?(:each)
-          uris.enum_for(:each).map do |uri, opts = EMPTY_HASH|
-            build_request(verb, uri, request_options.merge(opts))
+          # TODO: find a way to make requests share same options object
+          uris.enum_for(:each).map do |uri, ps = EMPTY_HASH|
+            request_params = params
+            request_params = request_params.merge(ps) unless ps.empty?
+            build_request(verb, uri, request_params)
           end
         else
-          [build_request(verb, uris, request_options)]
+          [build_request(verb, uris, params)]
         end
       end
       raise ArgumentError, "wrong number of URIs (given 0, expect 1..+1)" if requests.empty?

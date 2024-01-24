@@ -63,19 +63,7 @@ module HTTPX
     # decompress_response_body
     attr_reader decompress_response_body: bool
 
-    # params
-    attr_reader params: Transcoder::urlencoded_input?
-
-    # form
-    attr_reader form: Transcoder::urlencoded_input?
-
-    # json
-    attr_reader json: _ToJson?
-
-    # body
-    attr_reader body: bodyIO?
-
-    # body
+    # origin
     attr_reader origin: URI::Generic?
 
     # base_path

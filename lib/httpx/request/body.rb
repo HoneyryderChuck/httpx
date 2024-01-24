@@ -4,30 +4,53 @@ module HTTPX
   # Implementation of the HTTP Request body as a delegator which iterates (responds to +each+) payload chunks.
   class Request::Body < SimpleDelegator
     class << self
-      def new(_, options)
-        return options.body if options.body.is_a?(self)
+      def new(_, options, body: nil, **params)
+        if body.is_a?(self)
+          # request derives its options from body
+          body.options = options.merge(params)
+          return body
+        end
 
         super
       end
     end
 
-    # inits the instance with the request +headers+ and +options+, which contain the payload definition.
-    def initialize(headers, options)
-      @headers = headers
+    attr_accessor :options
 
-      # forego compression in the Range request case
-      if @headers.key?("range")
-        @headers.delete("accept-encoding")
-      else
-        @headers["accept-encoding"] ||= options.supported_compression_formats
+    # inits the instance with the request +headers+, +options+ and +params+, which contain the payload definition.
+    # it wraps the given body with the appropriate encoder on initialization.
+    #
+    #   ..., json: { foo: "bar" }) #=> json encoder
+    #   ..., form: { foo: "bar" }) #=> form urlencoded encoder
+    #   ..., form: { foo: Pathname.open("path/to/file") }) #=> multipart urlencoded encoder
+    #   ..., form: { foo: File.open("path/to/file") }) #=> multipart urlencoded encoder
+    #   ..., form: { body: "bla") }) #=> raw data encoder
+    def initialize(headers, options, body: nil, form: nil, json: nil, xml: nil, **params)
+      @headers = headers
+      @options = options.merge(params)
+
+      @body = if body
+        Transcoder::Body.encode(body)
+      elsif form
+        Transcoder::Form.encode(form)
+      elsif json
+        Transcoder::JSON.encode(json)
+      elsif xml
+        Transcoder::Xml.encode(xml)
       end
 
-      initialize_body(options)
+      if @body
+        if @options.compress_request_body && @headers.key?("content-encoding")
 
-      return if @body.nil?
+          @headers.get("content-encoding").each do |encoding|
+            @body = self.class.initialize_deflater_body(@body, encoding)
+          end
+        end
 
-      @headers["content-type"] ||= @body.content_type
-      @headers["content-length"] = @body.bytesize unless unbounded_body?
+        @headers["content-type"] ||= @body.content_type
+        @headers["content-length"] = @body.bytesize unless unbounded_body?
+      end
+
       super(@body)
     end
 
@@ -98,33 +121,6 @@ module HTTPX
         "#{unbounded_body? ? "stream" : "@bytesize=#{bytesize}"}>"
     end
     # :nocov:
-
-    private
-
-    # wraps the given body with the appropriate encoder.
-    #
-    #   ..., json: { foo: "bar" }) #=> json encoder
-    #   ..., form: { foo: "bar" }) #=> form urlencoded encoder
-    #   ..., form: { foo: Pathname.open("path/to/file") }) #=> multipart urlencoded encoder
-    #   ..., form: { foo: File.open("path/to/file") }) #=> multipart urlencoded encoder
-    #   ..., form: { body: "bla") }) #=> raw data encoder
-    def initialize_body(options)
-      @body = if options.body
-        Transcoder::Body.encode(options.body)
-      elsif options.form
-        Transcoder::Form.encode(options.form)
-      elsif options.json
-        Transcoder::JSON.encode(options.json)
-      elsif options.xml
-        Transcoder::Xml.encode(options.xml)
-      end
-
-      return unless @body && options.compress_request_body && @headers.key?("content-encoding")
-
-      @headers.get("content-encoding").each do |encoding|
-        @body = self.class.initialize_deflater_body(@body, encoding)
-      end
-    end
 
     class << self
       # returns the +body+ wrapped with the correct deflater accordinng to the given +encodisng+.

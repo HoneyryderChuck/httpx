@@ -155,7 +155,7 @@ module HTTPX
           with(oauth_session: oauth_session.merge(access_token: access_token, refresh_token: refresh_token))
         end
 
-        def build_request(*, _)
+        def build_request(*)
           request = super
 
           return request if request.headers.key?("authorization")

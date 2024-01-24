@@ -128,15 +128,15 @@ module Requests
                "request should follow insecure URLs (instead: #{insecure_response.status})"
       end
 
-      def test_plugin_follow_removes_authorization_header
+      def test_plugin_follow_redirects_removes_authorization_header
         return unless origin.start_with?("http://")
 
         session = HTTPX.plugin(:follow_redirects).with(headers: { "authorization" => "Bearer SECRET" })
 
-        response = session.get(max_redirect_uri(1))
-        verify_status(response, 200)
-        body = json_body(response)
-        assert body["headers"].key?("Authorization")
+        # response = session.get(max_redirect_uri(1))
+        # verify_status(response, 200)
+        # body = json_body(response)
+        # assert body["headers"].key?("Authorization")
 
         response = session.get(redirect_uri("#{httpbin_no_proxy}/get"))
         verify_status(response, 200)

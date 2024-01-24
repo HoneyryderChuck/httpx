@@ -24,7 +24,7 @@ module HTTPX
       module InstanceMethods
         def max_redirects: (_ToI) -> instance
 
-        def redirect_request_headers: (http_uri original_uri, http_uri redirect_uri, Headers headers, Options & _FollowRedirectsOptions options) -> Headers
+        def handle_after_redirect_request: (http_uri original_uri, http_uri redirect_uri, Request request, Options & _FollowRedirectsOptions options) -> void
 
         def __get_location_from_response: (Response) -> http_uri
       end

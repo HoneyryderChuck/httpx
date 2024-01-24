@@ -22,22 +22,6 @@ class OptionsTest < Minitest::Test
     assert_match("undefined method `is_a'", ex.message)
   end
 
-  def test_options_body
-    opt1 = Options.new
-    assert opt1.body.nil?, "body shouldn't be set by default"
-    opt2 = Options.new(:body => "fat")
-    assert opt2.body == "fat", "body was not set"
-  end
-
-  %i[form json xml].each do |meth|
-    define_method :"test_options_#{meth}" do
-      opt1 = Options.new
-      assert opt1.public_send(meth).nil?, "#{meth} shouldn't be set by default"
-      opt2 = Options.new(meth => { "foo" => "bar" })
-      assert opt2.public_send(meth) == { "foo" => "bar" }, "#{meth} was not set"
-    end
-  end
-
   def test_options_headers
     opt1 = Options.new
     assert opt1.headers.to_a.empty?, "headers should be empty"
@@ -57,34 +41,34 @@ class OptionsTest < Minitest::Test
   end
 
   def test_options_merge_hash
-    opts = Options.new(body: "fat")
-    merged_opts = opts.merge(body: "thin")
-    assert merged_opts.body == "thin", "parameter hasn't been merged"
-    assert opts.body == "fat", "original parameter has been mutated after merge"
+    opts = Options.new(fallback_protocol: "fat")
+    merged_opts = opts.merge(fallback_protocol: "thin")
+    assert merged_opts.fallback_protocol == "thin", "parameter hasn't been merged"
+    assert opts.fallback_protocol == "fat", "original parameter has been mutated after merge"
     assert !opts.equal?(merged_opts), "merged options should be a different object"
   end
 
   def test_options_merge_options
-    opts = Options.new(body: "fat")
-    merged_opts2 = opts.merge(Options.new(body: "short"))
-    assert opts.body == "fat", "original parameter has been mutated after merge"
-    assert merged_opts2.body == "short", "options parameter hasn't been merged"
+    opts = Options.new(fallback_protocol: "fat")
+    merged_opts2 = opts.merge(Options.new(fallback_protocol: "short"))
+    assert opts.fallback_protocol == "fat", "original parameter has been mutated after merge"
+    assert merged_opts2.fallback_protocol == "short", "options parameter hasn't been merged"
     assert !opts.equal?(merged_opts2), "merged options should be a different object"
   end
 
   def test_options_merge_options_empty_hash
-    opts = Options.new(body: "fat")
+    opts = Options.new(fallback_protocol: "fat")
     merged_opts3 = opts.merge({})
     assert opts.equal?(merged_opts3), "merged options should be the same object"
   end
 
   def test_options_merge_same_options
-    opts = Options.new(body: "fat")
+    opts = Options.new(fallback_protocol: "fat")
 
-    merged_opts4 = opts.merge({ body: "fat" })
+    merged_opts4 = opts.merge({ fallback_protocol: "fat" })
     assert opts.equal?(merged_opts4), "merged options should be the same object"
 
-    merged_opts5 = opts.merge(Options.new(body: "fat"))
+    merged_opts5 = opts.merge(Options.new(fallback_protocol: "fat"))
     assert opts.equal?(merged_opts5), "merged options should be the same object"
   end
 
@@ -99,12 +83,12 @@ class OptionsTest < Minitest::Test
 
   def test_options_merge_attributes_match
     foo = Options.new(
-      :form => { :foo => "foo" },
+      :http2_settings => { :foo => "foo" },
       :headers => { :accept => "json", :foo => "foo" },
     )
 
     bar = Options.new(
-      :form => { :bar => "bar" },
+      :http2_settings => { :bar => "bar" },
       :headers => { :accept => "xml", :bar => "bar" },
       :ssl => { :foo => "bar" },
     )
@@ -114,14 +98,10 @@ class OptionsTest < Minitest::Test
       :max_requests => Float::INFINITY,
       :debug => nil,
       :debug_level => 1,
-      :params => nil,
-      :json => nil,
-      :xml => nil,
-      :body => nil,
       :buffer_size => 16_384,
       :window_size => 16_384,
       :body_threshold_size => 114_688,
-      :form => { foo: "foo", :bar => "bar" },
+      :http2_settings => { foo: "foo", :bar => "bar" },
       :timeout => {
         connect_timeout: 60,
         settings_timeout: 10,
@@ -133,7 +113,6 @@ class OptionsTest < Minitest::Test
         request_timeout: nil,
       },
       :ssl => { :foo => "bar" },
-      :http2_settings => { :settings_enable_push => 0 },
       :fallback_protocol => "http/1.1",
       :supported_compression_formats => %w[gzip deflate],
       :compress_request_body => true,
@@ -179,6 +158,5 @@ class OptionsTest < Minitest::Test
     opts = Options.new(origin: "http://example.com")
     assert opts == Options.new(origin: "http://example.com")
     assert Options.new(origin: "http://example.com", headers: { "foo" => "bar" }) == Options.new(origin: "http://example.com")
-    assert Options.new(json: { "foo" => "bar" }) == Options.new
   end
 end

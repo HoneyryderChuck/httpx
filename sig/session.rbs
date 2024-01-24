@@ -15,7 +15,7 @@ module HTTPX
 
     def close: (*untyped) -> void
 
-    def build_request: (verb, generic_uri, ?options) -> Request
+    def build_request: (verb verb, generic_uri uri, ?request_params params, ?Options options) -> Request
 
     def initialize: (?options) { (self) -> void } -> void
                   | (?options) -> void
@@ -23,8 +23,11 @@ module HTTPX
     private
 
     def pool: -> Pool
+
     def on_response: (Request, response) -> void
+
     def on_promise: (untyped, untyped) -> void
+
     def fetch_response: (Request request, Array[Connection] connections, untyped options) -> response?
 
     def find_connection: (Request request, Array[Connection] connections, Options options) -> Connection
@@ -37,11 +40,11 @@ module HTTPX
 
     def build_altsvc_connection: (Connection existing_connection, Array[Connection] connections, URI::Generic alt_origin, String origin, Hash[String, String] alt_params, Options options) -> (Connection & AltSvc::ConnectionMixin)?
 
-    def build_requests: (verb, uri, options) -> Array[Request]
-                      | (Array[[verb, uri, options]], options) -> Array[Request]
-                      | (Array[[verb, uri]], options) -> Array[Request]
-                      | (verb, _Each[[uri, options]], Options) -> Array[Request]
-                      | (verb, _Each[uri], options) -> Array[Request]
+    def build_requests: (verb, uri, request_params) -> Array[Request]
+                      | (Array[[verb, uri, request_params]], Hash[Symbol, untyped]) -> Array[Request]
+                      | (Array[[verb, uri]], request_params) -> Array[Request]
+                      | (verb, _Each[[uri, request_params]], Hash[Symbol, untyped]) -> Array[Request]
+                      | (verb, _Each[uri], request_params) -> Array[Request]
 
     def init_connection: (http_uri uri, Options options) -> Connection
 
