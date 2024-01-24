@@ -3,8 +3,8 @@ module HTTPX
     def request: (*Request, **untyped) -> Array[response]
                | (Request, **untyped) -> response
                | (verb, uri | [uri], **untyped) -> response
-               | (Array[[verb, uri] | [verb, uri, options]], **untyped) -> Array[response]
-               | (verb, _Each[uri | [uri, options]], **untyped) -> Array[response]
+               | (Array[[verb, uri] | [verb, uri, request_params]], **untyped) -> Array[response]
+               | (verb, _Each[uri | [uri, request_params]], **untyped) -> Array[response]
 
     def accept: (String) -> Session
     def wrap: () { (Session) -> void } -> void

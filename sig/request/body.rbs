@@ -4,7 +4,7 @@ module HTTPX
     @body: body_encoder?
     @unbounded_body: bool
 
-    def initialize: (Headers headers, Options options) -> void
+    def initialize: (Headers headers, Options options, ?body: bodyIO, ?form: Transcoder::urlencoded_input?, ?json: _ToJson?, **untyped) -> void
 
     def each: () { (String) -> void } -> void
             | () -> Enumerable[String]
@@ -24,8 +24,6 @@ module HTTPX
     def chunk!: () -> void
 
     private
-
-    def initialize_body: (Options options) -> void
 
     def self.initialize_deflater_body: (body_encoder body, Encoding | String encoding) -> body_encoder
   end

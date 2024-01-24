@@ -18,7 +18,7 @@ class ResponseYajlTest < Minitest::Test
   private
 
   def request(verb = "GET", uri = "http://google.com")
-    Request.new(verb, uri)
+    Request.new(verb, uri, Options.new)
   end
 
   def response(*args)

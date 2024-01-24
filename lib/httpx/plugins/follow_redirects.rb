@@ -68,25 +68,19 @@ module HTTPX
             return response unless redirect_allowed
           end
 
+          redirect_params = {}
+
           if response.status == 305 && options.respond_to?(:proxy)
             # The requested resource MUST be accessed through the proxy given by
             # the Location field. The Location field gives the URI of the proxy.
-            retry_options = options.merge(headers: redirect_request.headers,
-                                          proxy: { uri: redirect_uri },
-                                          body: redirect_request.body,
-                                          max_redirects: max_redirects - 1)
+            redirect_options = options.merge(headers: redirect_request.headers,
+                                             proxy: { uri: redirect_uri },
+                                             max_redirects: max_redirects - 1)
             redirect_uri = redirect_request.uri
-            options = retry_options
+            options = redirect_options
           else
-            redirect_headers = redirect_request_headers(redirect_request.uri, redirect_uri, request.headers, options)
-
             # redirects are **ALWAYS** GET
-            retry_opts = Hash[options].merge(
-              headers: redirect_headers.to_h,
-              body: redirect_request.body,
-              max_redirects: max_redirects - 1
-            )
-            retry_options = options.class.new(retry_opts)
+            redirect_params[:max_redirects] = max_redirects - 1
           end
 
           redirect_uri = Utils.to_uri(redirect_uri)
@@ -99,42 +93,47 @@ module HTTPX
             return ErrorResponse.new(request, error, options)
           end
 
-          retry_request = build_request("GET", redirect_uri, retry_options)
+          if (redirect_body = redirect_request.body)
+            redirect_params[:body] = redirect_body
+          end
 
-          request.redirect_request = retry_request
+          original_uri = redirect_request.uri
+          redirect_request = build_request("GET", redirect_uri, redirect_params)
+          handle_after_redirect_request(original_uri, redirect_uri, redirect_request, options)
 
-          retry_after = response.headers["retry-after"]
+          request.redirect_request = redirect_request
 
-          if retry_after
+          redirect_after = response.headers["retry-after"]
+
+          if redirect_after
             # Servers send the "Retry-After" header field to indicate how long the
             # user agent ought to wait before making a follow-up request.
             # When sent with any 3xx (Redirection) response, Retry-After indicates
             # the minimum time that the user agent is asked to wait before issuing
             # the redirected request.
             #
-            retry_after = Utils.parse_retry_after(retry_after)
+            redirect_after = Utils.parse_retry_after(redirect_after)
 
-            log { "redirecting after #{retry_after} secs..." }
-            pool.after(retry_after) do
-              send_request(retry_request, connections, options)
+            log { "redirecting after #{redirect_after} secs..." }
+            pool.after(redirect_after) do
+              send_request(redirect_request, connections, options)
             end
           else
-            send_request(retry_request, connections, options)
+            send_request(redirect_request, connections, options)
           end
           nil
         end
 
-        def redirect_request_headers(original_uri, redirect_uri, headers, options)
-          return headers if options.allow_auth_to_other_origins
+        def handle_after_redirect_request(original_uri, redirect_uri, request, options)
+          return if options.allow_auth_to_other_origins
+
+          headers = request.headers
 
           return headers unless headers.key?("authorization")
 
-          unless original_uri.origin == redirect_uri.origin
-            headers = headers.dup
-            headers.delete("authorization")
-          end
+          return if original_uri.origin == redirect_uri.origin
 
-          headers
+          headers.delete("authorization")
         end
 
         def __get_location_from_response(response)

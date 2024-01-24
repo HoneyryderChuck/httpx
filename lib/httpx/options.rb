@@ -124,10 +124,6 @@ module HTTPX
     # :base_path :: path to prefix given relative paths with (ex: "/v2")
     # :max_concurrent_requests :: max number of requests which can be set concurrently
     # :max_requests :: max number of requests which can be made on socket before it reconnects.
-    # :params :: hash or array of key-values which will be encoded and set in the query string of request uris.
-    # :form :: hash of array of key-values which will be form-or-multipart-encoded in requests body payload.
-    # :json :: hash of array of key-values which will be JSON-encoded in requests body payload.
-    # :xml :: Nokogiri XML nodes which will be encoded in requests body payload.
     #
     # This list of options are enhanced with each loaded plugin, see the plugin docs for details.
     def initialize(options = {})
@@ -216,7 +212,7 @@ module HTTPX
     end
 
     %i[
-      params form json xml body ssl http2_settings
+      ssl http2_settings
       request_class response_class headers_class request_body_class
       response_body_class connection_class options_class
       io fallback_protocol debug debug_level resolver_class resolver_options
@@ -228,7 +224,7 @@ module HTTPX
       OUT
     end
 
-    REQUEST_BODY_IVARS = %i[@headers @params @form @xml @json @body].freeze
+    REQUEST_BODY_IVARS = %i[@headers].freeze
 
     def ==(other)
       super || options_equals?(other)

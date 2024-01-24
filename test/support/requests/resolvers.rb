@@ -58,7 +58,7 @@ module Requests
           uri = URI(build_uri("/get"))
           resolver_class = Class.new(HTTPX::Resolver::HTTPS) do
             def build_request(_hostname)
-              @options.request_class.new("POST", @uri)
+              @options.request_class.new("POST", @uri, @options)
             end
           end
           response = session.head(uri, resolver_class: resolver_class, resolver_options: options)

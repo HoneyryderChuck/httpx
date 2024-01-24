@@ -46,12 +46,43 @@ module HTTPX
     # will be +true+ when request body has been completely flushed.
     def_delegator :@body, :empty?
 
-    # initializes the instance with the given +verb+, an absolute or relative +uri+, and the
-    # request options.
-    def initialize(verb, uri, options = {})
+    # initializes the instance with the given +verb+ (an upppercase String, ex. 'GEt'),
+    # an absolute or relative +uri+ (either as String or URI::HTTP object), the
+    # request +options+ (instance of HTTPX::Options) and an optional Hash of +params+.
+    #
+    # Besides any of the options documented in HTTPX::Options (which would override or merge with what
+    # +options+ sets), it accepts also the following:
+    #
+    # :params :: hash or array of key-values which will be encoded and set in the query string of request uris.
+    # :body :: to be encoded in the request body payload. can be a String, an IO object (i.e. a File), or an Enumerable.
+    # :form :: hash of array of key-values which will be form-urlencoded- or multipart-encoded in requests body payload.
+    # :json :: hash of array of key-values which will be JSON-encoded in requests body payload.
+    # :xml :: Nokogiri XML nodes which will be encoded in requests body payload.
+    #
+    # :body, :form, :json and :xml are all mutually exclusive, i.e. only one of them gets picked up.
+    def initialize(verb, uri, options, params = EMPTY_HASH)
       @verb    = verb.to_s.upcase
-      @options = Options.new(options)
       @uri     = Utils.to_uri(uri)
+
+      @headers = options.headers.dup
+      merge_headers(params.delete(:headers)) if params.key?(:headers)
+
+      @headers["user-agent"] ||= USER_AGENT
+      @headers["accept"]     ||= "*/*"
+
+      # forego compression in the Range request case
+      if @headers.key?("range")
+        @headers.delete("accept-encoding")
+      else
+        @headers["accept-encoding"] ||= options.supported_compression_formats
+      end
+
+      @query_params = params.delete(:params) if params.key?(:params)
+
+      @body = options.request_body_class.new(@headers, options, **params)
+
+      @options = @body.options
+
       if @uri.relative?
         origin = @options.origin
         raise(Error, "invalid URI: #{@uri}") unless origin
@@ -61,11 +92,6 @@ module HTTPX
         @uri = origin.merge("#{base_path}#{@uri}")
       end
 
-      @headers = @options.headers.dup
-      @headers["user-agent"] ||= USER_AGENT
-      @headers["accept"]     ||= "*/*"
-
-      @body = @options.request_body_class.new(@headers, @options)
       @state = :idle
       @response = nil
       @peer_address = nil
@@ -172,7 +198,7 @@ module HTTPX
       return @query if defined?(@query)
 
       query = []
-      if (q = @options.params)
+      if (q = @query_params)
         query << Transcoder::Form.encode(q)
       end
       query << @uri.query if @uri.query

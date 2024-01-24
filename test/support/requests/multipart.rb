@@ -202,7 +202,7 @@ module Requests
 
     def test_multipart_response_decoder
       form_response = HTTPX::Response.new(
-        HTTPX::Request.new("GET", "http://example.com"),
+        HTTPX::Request.new("GET", "http://example.com", HTTPX::Options.new),
         200,
         "2.0",
         { "content-type" => "multipart/form-data; boundary=90" }

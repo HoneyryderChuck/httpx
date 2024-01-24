@@ -62,7 +62,7 @@ class AltSvcTest < Minitest::Test
     entries = AltSvc.cached_altsvc("http://www.example-clear-cache.com")
     assert !entries.empty?
 
-    req = Request.new("GET", "http://www.example-clear-cache.com/")
+    req = Request.new("GET", "http://www.example-clear-cache.com/", Options.new)
     res = Response.new(req, 200, "2.0", { "alt-svc" => "clear" })
 
     AltSvc.emit(req, res) {}

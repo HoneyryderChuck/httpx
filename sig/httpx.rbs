@@ -9,9 +9,9 @@ module HTTPX
   type uri = http_uri | string
   type generic_uri = String | URI::Generic
 
-  type verb = "OPTIONS" | "GET" | "HEAD" | "POST" | "PUT" | "DELETE" | "TRACE" | "CONNECT" |
-              "PROPFIND" | "PROPPATCH" | "MKCOL" | "COPY" | "MOVE" | "LOCK" | "UNLOCK" | "ORDERPATCH" |
-              "ACL" | "REPORT" | "PATCH" | "SEARCH"
+  type verb = String
+
+  type request_params = Hash[Symbol, untyped]
 
   type ip_family = Integer #Socket::AF_INET6 | Socket::AF_INET
 

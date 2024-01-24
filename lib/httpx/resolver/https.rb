@@ -219,7 +219,7 @@ module HTTPX
         uri.query = URI.encode_www_form(params)
         request = rklass.new("GET", uri, @options)
       else
-        request = rklass.new("POST", uri, @options.merge(body: [payload]))
+        request = rklass.new("POST", uri, @options, body: [payload])
         request.headers["content-type"] = "application/dns-message"
       end
       request.headers["accept"] = "application/dns-message"
