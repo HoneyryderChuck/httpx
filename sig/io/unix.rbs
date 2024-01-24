@@ -15,7 +15,7 @@ module HTTPX
 
     @io: Socket
 
-    def initialize: (http_uri origin, String? path, options options) -> void
+    def initialize: (http_uri origin, String? path, Options options) -> void
 
     def connect: () -> void
 
