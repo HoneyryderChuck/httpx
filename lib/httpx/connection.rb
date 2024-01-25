@@ -529,7 +529,7 @@ module HTTPX
       connecting? && callbacks_for?(:connect_error) ? emit(:connect_error, error) : handle_error(error)
       @state = :closed
       emit(:close)
-    rescue TLSError => e
+    rescue TLSError, HTTP2Next::Error::ProtocolError, HTTP2Next::Error::HandshakeError => e
       # connect errors, exit gracefully
       handle_error(e)
       connecting? && callbacks_for?(:connect_error) ? emit(:connect_error, e) : handle_error(e)
