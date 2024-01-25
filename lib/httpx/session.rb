@@ -28,13 +28,15 @@ module HTTPX
     #     http.get("https://wikipedia.com")
     #   end # wikipedia connection closes here
     def wrap
-      begin
-        prev_persistent = @persistent
-        @persistent = true
-        yield self
-      ensure
-        @persistent = prev_persistent
-        close unless @persistent
+      prev_persistent = @persistent
+      @persistent = true
+      pool.wrap do
+        begin
+          yield self
+        ensure
+          @persistent = prev_persistent
+          close unless @persistent
+        end
       end
     end
 

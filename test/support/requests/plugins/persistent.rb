@@ -37,6 +37,41 @@ module Requests
         assert options.persistent
       end
 
+      def test_persistent_with_wrap
+        return unless origin.start_with?("https")
+
+        uri = build_uri("/get")
+        session1 = HTTPX.plugin(:persistent)
+
+        begin
+          pool = session1.send(:pool)
+
+          initial_size = pool.instance_variable_get(:@connections).size
+          response = session1.get(uri)
+          verify_status(response, 200)
+
+          connections = pool.instance_variable_get(:@connections)
+          pool_size = connections.size
+          assert pool_size == initial_size + 1
+
+          HTTPX.wrap do |s|
+            response = s.get(uri)
+            verify_status(response, 200)
+            wrapped_connections = pool.instance_variable_get(:@connections)
+            pool_size = wrapped_connections.size
+            assert pool_size == 1
+            assert (connections - wrapped_connections) == connections
+          end
+
+          final_connections = pool.instance_variable_get(:@connections)
+          pool_size = final_connections.size
+          assert pool_size == initial_size + 1
+          assert (connections - final_connections).empty?
+        ensure
+          session1.close
+        end
+      end
+
       def test_persistent_retry_http2_goaway
         return unless origin.start_with?("https")
 
