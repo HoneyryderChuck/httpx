@@ -19,6 +19,17 @@ module HTTPX
       @connections = []
     end
 
+    def wrap
+      connections = @connections
+      @connections = []
+
+      begin
+        yield self
+      ensure
+        @connections.unshift(*connections)
+      end
+    end
+
     def empty?
       @connections.empty?
     end

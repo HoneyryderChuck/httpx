@@ -7,6 +7,8 @@ module HTTPX
     @selector: Selector
     @connections: Array[Connection]
 
+    def wrap: () { (instance) -> void } -> void
+
     def empty?: () -> void
 
     def next_tick: () -> void
