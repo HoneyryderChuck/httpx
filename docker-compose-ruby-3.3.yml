@@ -5,8 +5,6 @@ services:
     environment:
       - HTTPBIN_COALESCING_HOST=another
       - HTTPX_RESOLVER_URI=https://doh/dns-query
-    links:
-      - "nghttp2:another"
     depends_on:
       - doh
 

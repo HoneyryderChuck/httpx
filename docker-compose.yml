@@ -37,11 +37,9 @@ services:
       - aws
       - ws-echo-server
       - webdav
+      - altsvc-nghttp2
     volumes:
       - ./:/home
-    links:
-      - "altsvc-nghttp2:another2"
-      - "aws:test.aws"
     entrypoint:
       /home/test/support/ci/build.sh
 
@@ -51,8 +49,6 @@ services:
       - ./test/support/ssh:/config
     depends_on:
       - nghttp2
-    links:
-      - "nghttp2:another"
 
   socksproxy:
     image: qautomatron/docker-3proxy
@@ -61,8 +57,6 @@ services:
       - "3129:3129"
     volumes:
       - ./test/support/ci:/etc/3proxy
-    links:
-      - "nghttp2:another"
 
   httpproxy:
     image: sameersbn/squid:3.5.27-2
@@ -72,8 +66,6 @@ services:
       - ./test/support/ci/squid/proxy.conf:/etc/squid/squid.conf
       - ./test/support/ci/squid/proxy-users-basic.txt:/etc/squid/proxy-users-basic.txt
       - ./test/support/ci/squid/proxy-users-digest.txt:/etc/squid/proxy-users-digest.txt
-    links:
-      - "nghttp2:another"
     command:
       -d 3
 
@@ -101,6 +93,10 @@ services:
       - ./test/support/ci:/home
     command:
       --conf /home/nghttp.conf --no-ocsp --frontend '*,80;no-tls' --frontend '*,443'
+    networks:
+      default:
+        aliases:
+          - another
 
   altsvc-nghttp2:
     image: registry.gitlab.com/os85/httpx/nghttp2:1
@@ -115,7 +111,10 @@ services:
       - ./test/support/ci:/home
     command:
       --conf /home/nghttp.conf --no-ocsp --frontend '*,80;no-tls' --frontend '*,443' --altsvc "h2,443,nghttp2"
-
+    networks:
+      default:
+        aliases:
+          - another2
   httpbin:
     environment:
       - DEBUG=True
@@ -133,6 +132,10 @@ services:
       - 4566:4566
     volumes:
       - ./test/support/ci/aws:/docker-entrypoint-initaws.d
+    networks:
+      default:
+        aliases:
+          - test.aws
 
   ws-echo-server:
     environment:
