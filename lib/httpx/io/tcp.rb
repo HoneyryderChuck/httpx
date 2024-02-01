@@ -78,7 +78,8 @@ module HTTPX
     rescue Errno::ECONNREFUSED,
            Errno::EADDRNOTAVAIL,
            Errno::EHOSTUNREACH,
-           SocketError => e
+           SocketError,
+           IOError => e
       raise e if @ip_index <= 0
 
       log { "failed connecting to #{@ip} (#{e.message}), trying next..." }
