@@ -25,6 +25,8 @@ group :test do
     gem "marcel", require: false
     gem "mimemagic", require: false
     gem "ruby-filemagic", require: false
+    # https://github.com/TwP/logging/issues/247
+    gem "syslog"
 
     if RUBY_VERSION >= "3.0.0"
       gem "multi_json", require: false
