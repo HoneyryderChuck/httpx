@@ -64,10 +64,10 @@ module HTTPX
 
           metadata = http.get("#{@issuer}/.well-known/oauth-authorization-server").raise_for_status.json
 
-          @token_endpoint ||= metadata["token_endpoint"]
-          @scope ||= metadata["scopes_supported"]
-          @grant_type ||= Array(metadata["grant_types_supported"]).find { |gr| SUPPORTED_GRANT_TYPES.include?(gr) }
-          @token_endpoint_auth_method ||= Array(metadata["token_endpoint_auth_methods_supported"]).find do |am|
+          @token_endpoint = metadata["token_endpoint"]
+          @scope = metadata["scopes_supported"]
+          @grant_type = Array(metadata["grant_types_supported"]).find { |gr| SUPPORTED_GRANT_TYPES.include?(gr) }
+          @token_endpoint_auth_method = Array(metadata["token_endpoint_auth_methods_supported"]).find do |am|
             SUPPORTED_AUTH_METHODS.include?(am)
           end
           nil
