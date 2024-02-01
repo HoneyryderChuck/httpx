@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "base64"
 require "forwardable"
 require "websocket/driver"
 
@@ -14,7 +13,7 @@ class WSDriver < WebSocket::Driver::Hybi
     super
     @headers = h
 
-    @key = Base64.strict_encode64(SecureRandom.random_bytes(16))
+    @key = SecureRandom.base64(16)
     @headers["upgrade"]               = "websocket"
     @headers["connection"]            = "Upgrade"
     @headers["sec-websocket-key"]     = @key
