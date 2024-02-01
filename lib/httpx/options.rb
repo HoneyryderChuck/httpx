@@ -47,13 +47,13 @@ module HTTPX
         write_timeout: WRITE_TIMEOUT,
         request_timeout: REQUEST_TIMEOUT,
       },
+      :headers_class => Class.new(Headers),
       :headers => {},
       :window_size => WINDOW_SIZE,
       :buffer_size => BUFFER_SIZE,
       :body_threshold_size => MAX_BODY_THRESHOLD_SIZE,
       :request_class => Class.new(Request),
       :response_class => Class.new(Response),
-      :headers_class => Class.new(Headers),
       :request_body_class => Class.new(Request::Body),
       :response_body_class => Class.new(Response::Body),
       :connection_class => Class.new(Connection),
@@ -154,7 +154,7 @@ module HTTPX
     end
 
     def option_headers(value)
-      Headers.new(value)
+      headers_class.new(value)
     end
 
     def option_timeout(value)

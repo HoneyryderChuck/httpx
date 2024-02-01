@@ -61,7 +61,7 @@ module HTTPX
         @uri = origin.merge("#{base_path}#{@uri}")
       end
 
-      @headers = @options.headers_class.new(@options.headers)
+      @headers = @options.headers.dup
       @headers["user-agent"] ||= USER_AGENT
       @headers["accept"]     ||= "*/*"
 

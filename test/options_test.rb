@@ -45,6 +45,17 @@ class OptionsTest < Minitest::Test
     assert opt2.headers.to_a == [%w[accept */*]], "headers are unexpected"
   end
 
+  def test_options_headers_with_instance
+    proc_headers_class = Class.new(HTTPX::Headers) do
+      def initialize(headers = nil)
+        super(headers.transform_values(&:call))
+      end
+    end
+
+    opts = Options.new(headers_class: proc_headers_class, headers: { "x-number" => -> { 1 + 1 } })
+    assert_equal "2", opts.headers["x-number"]
+  end
+
   def test_options_merge_hash
     opts = Options.new(body: "fat")
     merged_opts = opts.merge(body: "thin")
