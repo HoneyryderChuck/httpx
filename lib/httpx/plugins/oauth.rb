@@ -60,7 +60,7 @@ module HTTPX
         end
 
         def load(http)
-          return if @token_endpoint && @token_endpoint_auth_method && @grant_type && @scope
+          return if @token_endpoint_auth_method && @grant_type && @scope
 
           metadata = http.get("#{@issuer}/.well-known/oauth-authorization-server").raise_for_status.json
 
