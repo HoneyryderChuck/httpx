@@ -58,8 +58,6 @@ module HTTPX
 
         def option_max_retries(value)
           num = Integer(value)
-          raise TypeError, ":max_retries must be positive" unless num.positive?
-
           num
         end
 
