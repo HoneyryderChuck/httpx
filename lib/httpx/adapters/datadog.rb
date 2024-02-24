@@ -147,17 +147,14 @@ module Datadog::Tracing
           else
             option :enabled do |o|
               o.default { env_to_bool("DD_TRACE_HTTPX_ENABLED", true) }
-              o.lazy
             end
 
             option :analytics_enabled do |o|
               o.default { env_to_bool(%w[DD_TRACE_HTTPX_ANALYTICS_ENABLED DD_HTTPX_ANALYTICS_ENABLED], false) }
-              o.lazy
             end
 
             option :analytics_sample_rate do |o|
               o.default { env_to_float(%w[DD_TRACE_HTTPX_ANALYTICS_SAMPLE_RATE DD_HTTPX_ANALYTICS_SAMPLE_RATE], 1.0) }
-              o.lazy
             end
           end
 
@@ -169,14 +166,12 @@ module Datadog::Tracing
                   "httpx"
                 )
               end
-              o.lazy
             end
           else
             option :service_name do |o|
               o.default do
                 ENV.fetch("DD_TRACE_HTTPX_SERVICE_NAME", "httpx")
               end
-              o.lazy
             end
           end
 
