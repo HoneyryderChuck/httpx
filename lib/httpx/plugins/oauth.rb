@@ -16,7 +16,7 @@ module HTTPX
       SUPPORTED_AUTH_METHODS = %w[client_secret_basic client_secret_post].freeze
 
       class OAuthSession
-        attr_reader :token_endpoint_auth_method, :grant_type, :client_id, :client_secret, :access_token, :refresh_token, :scope
+        attr_reader :grant_type, :client_id, :client_secret, :access_token, :refresh_token, :scope
 
         def initialize(
           issuer:,
@@ -28,7 +28,7 @@ module HTTPX
           token_endpoint: nil,
           response_type: nil,
           grant_type: nil,
-          token_endpoint_auth_method: "client_secret_basic"
+          token_endpoint_auth_method: nil
         )
           @issuer = URI(issuer)
           @client_id = client_id
@@ -43,10 +43,10 @@ module HTTPX
           end
           @access_token = access_token
           @refresh_token = refresh_token
-          @token_endpoint_auth_method = String(token_endpoint_auth_method)
+          @token_endpoint_auth_method = String(token_endpoint_auth_method) if token_endpoint_auth_method
           @grant_type = grant_type || (@refresh_token ? "refresh_token" : "client_credentials")
 
-          unless SUPPORTED_AUTH_METHODS.include?(@token_endpoint_auth_method)
+          unless @token_endpoint_auth_method.nil? || SUPPORTED_AUTH_METHODS.include?(@token_endpoint_auth_method)
             raise Error, "#{@token_endpoint_auth_method} is not a supported auth method"
           end
 
@@ -59,8 +59,12 @@ module HTTPX
           @token_endpoint || "#{@issuer}/token"
         end
 
+        def token_endpoint_auth_method
+          @token_endpoint_auth_method || "client_secret_basic"
+        end
+
         def load(http)
-          return if @token_endpoint_auth_method && @grant_type && @scope
+          return if @grant_type && @scope
 
           metadata = http.get("#{@issuer}/.well-known/oauth-authorization-server").raise_for_status.json
 
@@ -123,11 +127,11 @@ module HTTPX
 
           # auth
           case oauth_session.token_endpoint_auth_method
-          when "client_secret_basic"
-            headers["authorization"] = Authentication::Basic.new(oauth_session.client_id, oauth_session.client_secret).authenticate
           when "client_secret_post"
             form_post["client_id"] = oauth_session.client_id
             form_post["client_secret"] = oauth_session.client_secret
+          when "client_secret_basic"
+            headers["authorization"] = Authentication::Basic.new(oauth_session.client_id, oauth_session.client_secret).authenticate
           end
 
           case grant_type

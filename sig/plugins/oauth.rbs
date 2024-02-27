@@ -15,8 +15,6 @@ module HTTPX
       SUPPORTED_AUTH_METHODS: ::Array[token_auth_method]
 
       class OAuthSession
-        attr_reader token_endpoint_auth_method: token_auth_method
-
         attr_reader grant_type: grant_type
 
         attr_reader client_id: String
@@ -32,6 +30,8 @@ module HTTPX
         def initialize: (issuer: uri, client_id: String, client_secret: String, ?access_token: String?, ?refresh_token: String?, ?scope: (Array[String] | String)?, ?token_endpoint: String?, ?response_type: String?, ?grant_type: String?, ?token_endpoint_auth_method: ::String) -> void
 
         def token_endpoint: () -> String
+
+        def token_endpoint_auth_method: () -> token_auth_method
 
         def load: (Session http) -> void
 
