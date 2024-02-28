@@ -169,14 +169,14 @@ module Datadog::Tracing
                   "httpx"
                 )
               end
-              o.lazy
+              o.lazy unless Gem::Version.new(DDTrace::VERSION::STRING) >= Gem::Version.new("1.13.0")
             end
           else
             option :service_name do |o|
               o.default do
                 ENV.fetch("DD_TRACE_HTTPX_SERVICE_NAME", "httpx")
               end
-              o.lazy
+              o.lazy unless Gem::Version.new(DDTrace::VERSION::STRING) >= Gem::Version.new("1.13.0")
             end
           end
 
