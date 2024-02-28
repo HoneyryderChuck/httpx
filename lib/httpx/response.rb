@@ -7,10 +7,18 @@ require "fileutils"
 require "forwardable"
 
 module HTTPX
-  # Defines a HTTP response is handled internally, with a few properties exposed as attributes,
-  # implements (indirectly, via the +body+) the IO write protocol to internally buffer payloads,
-  # implements the IO reader protocol in order for users to buffer/stream it, acts as an enumerable
+  # Defines a HTTP response is handled internally, with a few properties exposed as attributes.
+  #
+  # It delegates the following methods to the corresponding HTTPX::Request:
+  #
+  # * HTTPX::Request#uri
+  # * HTTPX::Request#peer_address
+  #
+  # It implements (indirectly, via the +body+) the IO write protocol to internally buffer payloads.
+  #
+  # It implements the IO reader protocol in order for users to buffer/stream it, acts as an enumerable
   # (of payload chunks).
+  #
   class Response
     extend Forwardable
     include Callbacks
@@ -21,7 +29,13 @@ module HTTPX
     # an HTTPX::Headers object containing the response HTTP headers.
     attr_reader :headers
 
-    # a HTTPX::Response::Body object wrapping the response body.
+    # a HTTPX::Response::Body object wrapping the response body. The following methods are delegated to it:
+    #
+    # * HTTPX::Response::Body#to_s
+    # * HTTPX::Response::Body#to_str
+    # * HTTPX::Response::Body#read
+    # * HTTPX::Response::Body#copy_to
+    # * HTTPX::Response::Body#close
     attr_reader  :body
 
     # The HTTP protocol version used to fetch the response.
