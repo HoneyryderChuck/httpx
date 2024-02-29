@@ -187,10 +187,10 @@ module HTTPX
             next unless @large_packet.full?
 
             parse(@large_packet.to_s)
-
             @socket_type = @resolver_options.fetch(:socket_type, :udp)
             @large_packet = nil
-            transition(:closed)
+            transition(:idle)
+            transition(:open)
             return
           else
             size = @read_buffer[0, 2].unpack1("n")

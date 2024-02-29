@@ -179,6 +179,7 @@ module HTTPX
       connection.once(:connect_error) do |err|
         if new_connection.connecting?
           new_connection.merge(connection)
+          connection.emit(:cloned, new_connection)
           connection.force_reset
         else
           connection.__send__(:handle_error, err)
@@ -195,6 +196,7 @@ module HTTPX
         if connection.connecting?
           # main connection has the requests
           connection.merge(new_connection)
+          new_connection.emit(:cloned, connection)
           new_connection.force_reset
         else
           new_connection.__send__(:handle_error, err)

@@ -245,6 +245,48 @@ module Requests
           assert resolver_class.ios.any?(HTTPX::TCP), "resolver did not upgrade to tcp"
         end
 
+        define_method :"test_resolver_#{resolver_type}_max_udp_size_exceeded_with_cname" do
+          httpbin_hostname = httpbin
+          uri = origin("1024.size.dns.netmeister.org")
+          session = HTTPX.plugin(SessionWithPool)
+
+          resolver_class = Class.new(HTTPX::Resolver::Native) do
+            @ios = []
+
+            class << self
+              attr_reader :ios
+            end
+
+            def build_socket
+              io = super
+              self.class.ios << io
+              io
+            end
+
+            def parse_addresses(addresses)
+              addr = addresses.first
+
+              return super unless addr["name"] == "1024.size.dns.netmeister.org"
+
+              # insert bogus CNAME
+              addresses.unshift(
+                {
+                  "name" => "1024.size.dns.netmeister.org",
+                  "TTL" => 10,
+                  "alias" => ENV.fetch("HTTPBIN_HOST", "nghttp2.org/httpbin"),
+                }
+              )
+              super
+            end
+          end
+
+          response = session.head(uri, timeout: { connect_timeout: 2 }, resolver_class: resolver_class,
+                                       resolver_options: options.merge(nameserver: %w[166.84.7.99]))
+          verify_error_response(response, HTTPX::Error)
+
+          assert resolver_class.ios.any?(HTTPX::TCP), "resolver did not upgrade to tcp"
+        end
+
         define_method :"test_resolver_#{resolver_type}_no_addresses" do
           start_test_servlet(DNSNoAddress) do |slow_dns_server|
             start_test_servlet(DNSNoAddress) do |not_so_slow_dns_server|

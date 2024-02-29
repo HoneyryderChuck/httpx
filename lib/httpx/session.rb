@@ -138,7 +138,7 @@ module HTTPX
 
     # sets the callbacks on the +connection+ required to process certain specific
     # connection lifecycle events which deal with request rerouting.
-    def set_connection_callbacks(connection, connections, options)
+    def set_connection_callbacks(connection, connections, options, cloned: false)
       connection.only(:misdirected) do |misdirected_request|
         other_connection = connection.create_idle(ssl: { alpn_protocols: %w[http/1.1] })
         other_connection.merge(connection)
@@ -154,6 +154,10 @@ module HTTPX
         other_connection = build_altsvc_connection(connection, connections, alt_origin, origin, alt_params, options)
         connections << other_connection if other_connection
       end
+      connection.only(:cloned) do |cloned_conn|
+        set_connection_callbacks(cloned_conn, connections, options, cloned: true)
+        connections << cloned_conn
+      end unless cloned
     end
 
     # returns an HTTPX::Connection for the negotiated Alternative Service (or none).
