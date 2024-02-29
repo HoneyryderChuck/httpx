@@ -97,7 +97,10 @@ module HTTPX
       def elapse(elapsed)
         @interval -= elapsed
 
-        @callbacks.each(&:call) if @interval <= 0
+        if @interval <= 0
+          cb = @callbacks.dup
+          cb.each(&:call)
+        end
 
         @interval
       end
