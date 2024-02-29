@@ -246,7 +246,6 @@ module Requests
         end
 
         define_method :"test_resolver_#{resolver_type}_max_udp_size_exceeded_with_cname" do
-          httpbin_hostname = httpbin
           uri = origin("1024.size.dns.netmeister.org")
           session = HTTPX.plugin(SessionWithPool)
 
