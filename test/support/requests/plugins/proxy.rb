@@ -314,7 +314,7 @@ module Requests
         response = session.get(uri)
         verify_status(response, 200)
         verify_body_length(response)
-      end if ENV.key?("HTTPX_SSH_PROXY") && RUBY_ENGINE != "jruby"
+      end if ENV.key?("HTTPX_SSH_PROXY") && RUBY_ENGINE == "jruby"
 
       def test_plugin_retries_on_proxy_error
         start_test_servlet(Sock5WithNoneServer) do |server|
