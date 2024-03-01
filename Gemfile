@@ -8,7 +8,12 @@ gemspec
 gem "rake", "~> 13.0"
 
 group :test do
-  gem "ddtrace"
+  if RUBY_VERSION >= "3.2.0"
+    # load from branch while there's no official release
+    gem "ddtrace", github: "DataDog/dd-trace-rb", branch: "2.0"
+  else
+    gem "ddtrace"
+  end
   gem "http-form_data", ">= 2.0.0"
   gem "minitest"
   gem "minitest-proveit"

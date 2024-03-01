@@ -189,7 +189,11 @@ class DatadogTest < Minitest::Test
   end
 
   def verify_instrumented_request(response, verb:, uri:, span: fetch_spans.first, service: "httpx", error: nil)
-    assert span.span_type == "http"
+    if defined?(::DDTrace) && Gem::Version.new(::DDTrace::VERSION::STRING) >= Gem::Version.new("2.0.0.dev")
+      assert span.type == "http"
+    else
+      assert span.span_type == "http"
+    end
     assert span.name == "httpx.request"
     assert span.service == service
 
@@ -232,7 +236,11 @@ class DatadogTest < Minitest::Test
   def verify_distributed_headers(response, span: fetch_spans.first, sampling_priority: 1)
     request = response.instance_variable_get(:@request)
 
-    assert request.headers["x-datadog-parent-id"] == span.span_id.to_s
+    if defined?(::DDTrace) && Gem::Version.new(::DDTrace::VERSION::STRING) >= Gem::Version.new("2.0.0.dev")
+      assert request.headers["x-datadog-parent-id"] == span.id.to_s
+    else
+      assert request.headers["x-datadog-parent-id"] == span.span_id.to_s
+    end
     assert request.headers["x-datadog-trace-id"] == trace_id(span)
     assert request.headers["x-datadog-sampling-priority"] == sampling_priority.to_s
   end

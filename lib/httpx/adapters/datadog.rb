@@ -44,11 +44,7 @@ module Datadog::Tracing
             verb = @request.verb
             uri = @request.uri
 
-            @span = Datadog::Tracing.trace(
-              SPAN_REQUEST,
-              service: service_name(@request.uri.host, configuration, Datadog.configuration_for(self)),
-              span_type: TYPE_OUTBOUND
-            )
+            @span = create_span(@request)
 
             @span.resource = verb
 
@@ -63,16 +59,20 @@ module Datadog::Tracing
             # Tag as an external peer service
             @span.set_tag(TAG_PEER_SERVICE, @span.service)
 
-            Datadog::Tracing::Propagation::HTTP.inject!(Datadog::Tracing.active_trace,
-                                                        @request.headers) if @configuration[:distributed_tracing]
+            if @configuration[:distributed_tracing]
+              propagate_trace_http(
+                Datadog::Tracing.active_trace.to_digest,
+                @request.headers
+              )
+            end
 
             # Set analytics sample rate
-            if Contrib::Analytics.enabled?(@configuration[:analytics_enabled])
-              Contrib::Analytics.set_sample_rate(@span, @configuration[:analytics_sample_rate])
-            end
-          rescue StandardError => e
-            Datadog.logger.error("error preparing span for http request: #{e}")
-            Datadog.logger.error(e.backtrace)
+            return unless Contrib::Analytics.enabled?(@configuration[:analytics_enabled])
+
+            Contrib::Analytics.set_sample_rate(@span, @configuration[:analytics_sample_rate])
+            rescue StandardError => e
+              Datadog.logger.error("error preparing span for http request: #{e}")
+              Datadog.logger.error(e.backtrace)
           end
 
           def finish(response)
@@ -93,6 +93,32 @@ module Datadog::Tracing
 
           def configuration
             @configuration ||= Datadog.configuration.tracing[:httpx, @request.uri.host]
+          end
+
+          if Gem::Version.new(DDTrace::VERSION::STRING) >= Gem::Version.new("2.0.0.dev")
+            def propagate_trace_http(digest, headers)
+              Datadog::Tracing::Contrib::HTTP.inject(digest, headers)
+            end
+
+            def create_span(request)
+              Datadog::Tracing.trace(
+                SPAN_REQUEST,
+                service: service_name(request.uri.host, configuration, Datadog.configuration_for(self)),
+                type: TYPE_OUTBOUND
+              )
+            end
+          else
+            def propagate_trace_http(digest, headers)
+              Datadog::Tracing::Propagation::HTTP.inject!(digest, headers)
+            end
+
+            def create_span(request)
+              Datadog::Tracing.trace(
+                SPAN_REQUEST,
+                service: service_name(request.uri.host, configuration, Datadog.configuration_for(self)),
+                span_type: TYPE_OUTBOUND
+              )
+            end
           end
         end
 
