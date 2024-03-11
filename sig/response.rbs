@@ -70,6 +70,7 @@ module HTTPX
 
   class ErrorResponse
     include _Response
+    include _Reader
     include Loggable
     extend Forwardable
 

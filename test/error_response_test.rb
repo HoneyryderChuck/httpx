@@ -37,6 +37,15 @@ class ErrorResponseTest < Minitest::Test
     assert response.body.closed?
   end
 
+  def test_error_response_body_write
+    response = Response.new(request_mock, 200, "1.1", {})
+    request_mock.response = response
+    r = ErrorResponse.new(request_mock, RuntimeError.new("wow"), {})
+    assert response.body.empty?, "body should be empty after init"
+    r << "data"
+    assert response.body == "data", "body should have been updated"
+  end
+
   private
 
   def request_mock
