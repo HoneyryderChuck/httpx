@@ -274,6 +274,11 @@ module HTTPX
     def raise_for_status
       raise @error
     end
+
+    # buffers lost chunks to error response
+    def <<(data)
+      @response << data
+    end
   end
 end
 
