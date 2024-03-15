@@ -241,8 +241,8 @@ module HTTPX
           # for such cases, we want to ping for availability before deciding to shovel requests.
           log(level: 3) { "keep alive timeout expired, pinging connection..." }
           @pending << request
-          parser.ping
           transition(:active) if @state == :inactive
+          parser.ping
           return
         end
 
