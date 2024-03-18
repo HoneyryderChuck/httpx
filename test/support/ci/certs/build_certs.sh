@@ -241,15 +241,32 @@ openssl x509 -req -in doh.csr \
   -days 358000 -sha256
 echo "DOH certs built!!!"
 
+# build https proxy certificate
+echo "building HTTPS proxy certs..."
+openssl genrsa -out proxy.key 2048
+openssl req -new -sha256 \
+  -key proxy.key \
+  -subj "/C=PT/ST=LX/O=Bumbaklat/CN=httpsproxy" \
+  -out proxy.csr
+
+openssl x509 -req -in proxy.csr \
+  -CA ca.crt \
+  -CAkey ca.key \
+  -CAcreateserial -out proxy.crt \
+  -days 358000 -sha256
+echo "HTTPS proxy certs built!!!"
+
 # ca-bundle.crt
 echo "building ca-bundle..."
-cat doh.crt localhost-server.crt server.crt ca.crt > ca-bundle.crt
+cat proxy.crt doh.crt localhost-server.crt server.crt ca.crt > ca-bundle.crt
 echo "ca-bundle built!!!"
 
 # verification steps
 openssl verify -CAfile ca.crt server.crt
 echo "server verified!"
 openssl verify -CAfile ca.crt localhost-server.crt
-echo "server verified!"
+echo "localhost-server verified!"
 openssl verify -CAfile ca.crt doh.crt
 echo "doh verified!"
+openssl verify -CAfile ca.crt proxy.crt
+echo "proxy verified!"
