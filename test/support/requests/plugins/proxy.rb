@@ -49,10 +49,6 @@ module Requests
           assert connection.inflight.zero?
         end
       end
-
-      def test_plugin_http_no_proxy
-        return unless origin.start_with?("http://")
-
         session = HTTPX.plugin(SessionWithPool)
                        .plugin(:proxy)
                        .plugin(ProxyResponseDetector)
