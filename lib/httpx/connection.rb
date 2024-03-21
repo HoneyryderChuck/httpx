@@ -826,12 +826,12 @@ module HTTPX
       nil
     end
 
-    def build_socket(addrs = nil)
+    def build_socket(addrs = nil, options = @options)
       case @type
       when "tcp"
-        TCP.new(peer, addrs, @options)
+        TCP.new(peer, addrs, options)
       when "ssl"
-        SSL.new(peer, addrs, @options) do |sock|
+        SSL.new(peer, addrs, options) do |sock|
           sock.ssl_session = @ssl_session
           sock.session_new_cb do |sess|
             @ssl_session = sess
@@ -844,7 +844,7 @@ module HTTPX
 
         path = String(path) if path
 
-        UNIX.new(peer, path, @options)
+        UNIX.new(peer, path, options)
       else
         raise Error, "unsupported transport (#{@type})"
       end

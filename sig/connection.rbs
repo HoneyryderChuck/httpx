@@ -85,7 +85,7 @@ module HTTPX
 
     def interests: () -> io_interests?
 
-    def to_io: () -> IO
+    def to_io: () -> io
 
     def call: () -> void
 
@@ -149,7 +149,7 @@ module HTTPX
 
     def build_altsvc_connection: (URI::Generic alt_origin, String origin, Hash[String, String] alt_params) -> void
 
-    def build_socket: (?Array[Resolver::Entry]? addrs) -> (TCP | SSL | UNIX)
+    def build_socket: (?Array[Resolver::Entry]? addrs, ?Options options) -> (TCP | SSL | UNIX)
 
     def handle_error: (StandardError error, ?Request? request) -> void
 
