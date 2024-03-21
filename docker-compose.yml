@@ -4,7 +4,7 @@ services:
       - HTTPBIN_HOST=nghttp2
       - HTTPBIN_NO_PROXY_HOST=http://httpbin:8000
       - HTTPX_HTTP_PROXY=http://proxyuser:password@httpproxy:3128
-      - HTTPX_HTTPS_PROXY=http://proxyuser:password@httpproxy:3128
+      - HTTPX_HTTPS_PROXY=https://proxyuser:password@httpsproxy:9080
       - HTTPX_HTTP2_PROXY=http://proxyuser:password@http2proxy:80
       - HTTPX_SOCKS4_PROXY=socks4://user4:@socksproxy:8080
       - HTTPX_SOCKS4A_PROXY=socks4a://user4:@socksproxy:8080
@@ -25,10 +25,10 @@ services:
       - AMZ_HOST=aws:4566
       - WEBDAV_HOST=webdav
       - DD_INSTRUMENTATION_TELEMETRY_ENABLED=false
-      - GRPC_VERBOSITY=ERROR
-    image: ruby:alpine
+    image: ruby:latest
     privileged: true
     depends_on:
+      - httpsproxy
       - httpproxy
       - http2proxy
       - socksproxy
@@ -53,7 +53,6 @@ services:
     image: qautomatron/docker-3proxy
     ports:
       - "8080:8080"
-      - "3129:3129"
     volumes:
       - ./test/support/ci:/etc/3proxy
 
@@ -66,6 +65,16 @@ services:
       - ./test/support/ci/squid/proxy-users-basic.txt:/etc/squid/proxy-users-basic.txt
       - ./test/support/ci/squid/proxy-users-digest.txt:/etc/squid/proxy-users-digest.txt
     command: -d 3
+
+  httpsproxy:
+    image: easypi/stunnel
+    depends_on:
+      - httpproxy
+    ports:
+      - "9080:9080"
+    volumes:
+      - ./test/support/ci/stunnel.conf:/etc/stunnel/stunnel.conf
+      - ./test/support/ci/certs:/etc/stunnel/ssl
 
   http2proxy:
     image: registry.gitlab.com/os85/httpx/nghttp2:3
