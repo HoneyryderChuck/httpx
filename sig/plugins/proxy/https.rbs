@@ -1,0 +1,9 @@
+module HTTPX
+  module Plugins
+    module Proxy
+      module HTTPS
+      end
+    end
+    type httpsProxy = httpProxy
+  end
+end

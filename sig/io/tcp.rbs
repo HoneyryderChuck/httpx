@@ -38,7 +38,7 @@ module HTTPX
 
     def next_address!: (StandardError e) -> void
 
-    def to_io: () -> IO
+    def to_io: () -> _ToIO
 
     def protocol: () -> String
 

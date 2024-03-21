@@ -44,15 +44,11 @@ module Requests
           assert response.proxied?
 
           assert session.connection_count == 1
-          connection = session.pool.connections.first
+          connection = session.connections.first
           assert connection.io.is_a?(HTTPX::SSL)
-          assert connection.inflight.zero?
+          assert connection.no_more_requests?
         end
       end
-
-      def test_plugin_http_no_proxy
-        return unless origin.start_with?("http://")
-
         session = HTTPX.plugin(SessionWithPool)
                        .plugin(:proxy)
                        .plugin(ProxyResponseDetector)

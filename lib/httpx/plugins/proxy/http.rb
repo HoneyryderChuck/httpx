@@ -113,7 +113,7 @@ module HTTPX
           end
 
           def handle_transition(nextstate)
-            return super unless @options.proxy && @options.proxy.uri.scheme == "http"
+            return super unless @options.proxy && @options.proxy.uri.scheme.start_with?("http")
 
             case nextstate
             when :connecting
