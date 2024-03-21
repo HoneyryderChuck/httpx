@@ -24,6 +24,7 @@ module HTTPX
       class << self
         def configure(klass)
           klass.plugin(:"proxy/http")
+          klass.plugin(:"proxy/https")
           klass.plugin(:"proxy/socks4")
           klass.plugin(:"proxy/socks5")
         end
@@ -40,11 +41,12 @@ module HTTPX
       end
 
       class Parameters
-        attr_reader :uri, :username, :password, :scheme, :no_proxy
+        attr_reader :uri, :username, :password, :scheme, :no_proxy, :ssl
 
-        def initialize(uri: nil, ns: 0, scheme: nil, username: nil, password: nil, no_proxy: nil, **extra)
+        def initialize(ssl: nil, uri: nil, ns: 0, scheme: nil, username: nil, password: nil, no_proxy: nil, **extra)
           @no_proxy = Array(no_proxy) if no_proxy
           @uris = Array(uri)
+          @ssl = ssl
           uri = @uris[ns]
 
           @username = username
@@ -251,13 +253,14 @@ module HTTPX
       module ConnectionMethods
         using URIExtensions
 
-        def initialize(*)
+        def initialize(_, options)
           super
-          return unless @options.proxy
+
+          return unless options.proxy
 
           # redefining the connection origin as the proxy's URI,
           # as this will be used as the tcp peer ip.
-          @proxy_uri = @options.proxy.uri
+          @proxy_uri = URI(@options.proxy.uri)
         end
 
         def peer
@@ -303,6 +306,8 @@ module HTTPX
         def initialize_type(uri, options)
           return super unless options.proxy
 
+          return "ssl" if options.proxy.uri.scheme == "https"
+
           "tcp"
         end
 
@@ -338,6 +343,13 @@ module HTTPX
             super
           end
         end
+
+        def build_socket(addrs = nil, options = @options)
+          if @type == "ssl" && (proxy_ssl_options = options.proxy.ssl)
+            options = options.merge(ssl: proxy_ssl_options)
+          end
+          super
+        end
       end
 
       module ProxyRetries
@@ -360,10 +372,10 @@ module HTTPX
   class ProxySSL < SSL
     attr_reader :proxy_io
 
-    def initialize(tcp, request_uri, options)
-      @proxy_io = tcp
-      @io = tcp.to_io
-      super(request_uri, tcp.addresses, options)
+    def initialize(io, request_uri, options)
+      @proxy_io = io
+      super(request_uri, io.addresses, options)
+      @io = io.is_a?(SSL) ? build_ssl_socket(io.ssl_socket) : io.to_io
       @hostname = request_uri.host
       @state = :connected
     end
