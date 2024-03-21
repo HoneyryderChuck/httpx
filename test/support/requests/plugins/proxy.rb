@@ -19,8 +19,6 @@ module Requests
       end
 
       def test_plugin_http_http_proxy
-        return unless origin.start_with?("http://")
-
         session = HTTPX.plugin(SessionWithPool)
                        .plugin(:proxy, fallback_protocol: "http/1.1")
                        .plugin(ProxyResponseDetector)
@@ -33,7 +31,23 @@ module Requests
 
         assert session.connection_count == 1
         connection = session.connections.first
+        assert connection.io.is_a?(HTTPX::TCP)
         assert connection.inflight.zero?
+      end
+
+      def test_plugin_http_https_proxy
+        HTTPX.plugin(SessionWithPool).plugin(ProxyResponseDetector).plugin(:proxy).with_proxy(uri: https_proxy).wrap do |session|
+          uri = build_uri("/get")
+          response = session.get(uri)
+          verify_status(response, 200)
+          verify_body_length(response)
+          assert response.proxied?
+
+          assert session.connection_count == 1
+          connection = session.pool.connections.first
+          assert connection.io.is_a?(HTTPX::SSL)
+          assert connection.inflight.zero?
+        end
       end
 
       def test_plugin_http_no_proxy
