@@ -41,6 +41,10 @@ module HTTPX
       @verify_hostname = @ctx.verify_hostname
     end
 
+    def ssl_socket
+      @io if @io.is_a?(OpenSSL::SSL::SSLSocket)
+    end
+
     if OpenSSL::SSL::SSLContext.method_defined?(:session_new_cb=)
       def session_new_cb(&pr)
         @ctx.session_new_cb = proc { |_, sess| pr.call(sess) }
@@ -97,20 +101,7 @@ module HTTPX
         return unless @state == :connected
       end
 
-      unless @io.is_a?(OpenSSL::SSL::SSLSocket)
-        if (hostname_is_ip = (@ip == @sni_hostname)) && @ctx.verify_hostname
-          # IPv6 address would be "[::1]", must turn to "0000:0000:0000:0000:0000:0000:0000:0001" for cert SAN check
-          @sni_hostname = @ip.to_string
-          # IP addresses in SNI is not valid per RFC 6066, section 3.
-          @ctx.verify_hostname = false
-        end
-
-        @io = OpenSSL::SSL::SSLSocket.new(@io, @ctx)
-
-        @io.hostname = @sni_hostname unless hostname_is_ip
-        @io.session = @ssl_session unless ssl_session_expired?
-        @io.sync_close = true
-      end
+      @io = build_ssl_socket unless @io.is_a?(OpenSSL::SSL::SSLSocket)
       try_ssl_connect
     end
 
@@ -131,6 +122,22 @@ module HTTPX
     end
 
     private
+
+    def build_ssl_socket(socket = @io)
+      if (hostname_is_ip = (@ip == @sni_hostname)) && @ctx.verify_hostname
+        # IPv6 address would be "[::1]", must turn to "0000:0000:0000:0000:0000:0000:0000:0001" for cert SAN check
+        @sni_hostname = @ip.to_string
+        # IP addresses in SNI is not valid per RFC 6066, section 3.
+        @ctx.verify_hostname = false
+      end
+
+      io = OpenSSL::SSL::SSLSocket.new(socket, @ctx)
+
+      io.hostname = @sni_hostname unless hostname_is_ip
+      io.session = @ssl_session unless ssl_session_expired?
+      io.sync_close = true
+      io
+    end
 
     def transition(nextstate)
       case nextstate
