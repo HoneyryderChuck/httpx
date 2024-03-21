@@ -176,6 +176,20 @@ class DatadogTest < Minitest::Test
     verify_analytics_headers(span, sample_rate: 0.5)
   end
 
+  def test_datadog_per_request_span_with_retries
+    set_datadog
+    uri = URI(build_uri("/status/404", "http://#{httpbin}"))
+
+    http = HTTPX.plugin(:retries, max_retries: 2, retry_on: ->(r) { r.status == 404 })
+    response = http.get(uri)
+    verify_status(response, 404)
+
+    assert fetch_spans.size == 3, "expected to 3 spans"
+    fetch_spans.each do |span|
+      verify_instrumented_request(response, span: span, verb: "GET", uri: uri)
+    end
+  end
+
   private
 
   def setup

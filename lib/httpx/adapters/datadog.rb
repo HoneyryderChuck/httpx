@@ -22,9 +22,10 @@ module Datadog::Tracing
 
       # HTTPX Datadog Plugin
       #
-      # Enables tracing for httpx requests. A span will be created for each individual requests,
-      # and it'll trace since the moment it is fed to the connection, until the moment the response is
-      # fed back to the session.
+      # Enables tracing for httpx requests.
+      #
+      # A span will be created for each request transaction; the span is created lazily only when
+      # receiving a response, and it is fed the start time stored inside the tracer object.
       #
       module Plugin
         class RequestTracer
@@ -32,34 +33,88 @@ module Datadog::Tracing
 
           SPAN_REQUEST = "httpx.request"
 
+          # initializes the tracer object on the +request+.
           def initialize(request)
             @request = request
+            @start_time = nil
+
+            # request objects are reused, when already buffered requests get rerouted to a different
+            # connection due to connection issues, or when they already got a response, but need to
+            # be retried. In such situations, the original span needs to be extended for the former,
+            # while a new is required for the latter.
+            request.on(:idle) { reset }
+            # the span is initialized when the request is buffered in the parser, which is the closest
+            # one gets to actually sending the request.
+            request.on(:headers) { call }
           end
 
-          def call
-            return unless Datadog::Tracing.enabled?
+          # sets up the span start time, while preparing the on response callback.
+          def call(*args)
+            return if @start_time
 
-            @request.on(:response, &method(:finish))
+            start(*args)
 
+            @request.once(:response, &method(:finish))
+          end
+
+          private
+
+          # just sets the span init time. It can be passed a +start_time+ in cases where
+          # this is collected outside the request transaction.
+          def start(start_time = now)
+            @start_time = start_time
+          end
+
+          # resets the start time for already finished request transactions.
+          def reset
+            return unless @start_time
+
+            start
+          end
+
+          # creates the span from the collected +@start_time+ to what the +response+ state
+          # contains. It also resets internal state to allow this object to be reused.
+          def finish(response)
+            return unless @start_time
+
+            span = initialize_span
+
+            return unless span
+
+            if response.is_a?(::HTTPX::ErrorResponse)
+              span.set_error(response.error)
+            else
+              span.set_tag(TAG_STATUS_CODE, response.status.to_s)
+
+              span.set_error(::HTTPX::HTTPError.new(response)) if response.status >= 400 && response.status <= 599
+            end
+
+            span.finish
+          ensure
+            @start_time = nil
+          end
+
+          # return a span initialized with the +@request+ state.
+          def initialize_span
             verb = @request.verb
             uri = @request.uri
 
-            @span = create_span(@request)
+            span = create_span(@request)
 
-            @span.resource = verb
+            span.resource = verb
 
             # Add additional request specific tags to the span.
 
-            @span.set_tag(TAG_URL, @request.path)
-            @span.set_tag(TAG_METHOD, verb)
+            span.set_tag(TAG_URL, @request.path)
+            span.set_tag(TAG_METHOD, verb)
 
-            @span.set_tag(TAG_TARGET_HOST, uri.host)
-            @span.set_tag(TAG_TARGET_PORT, uri.port.to_s)
+            span.set_tag(TAG_TARGET_HOST, uri.host)
+            span.set_tag(TAG_TARGET_PORT, uri.port.to_s)
 
             # Tag as an external peer service
-            @span.set_tag(TAG_PEER_SERVICE, @span.service)
+            span.set_tag(TAG_PEER_SERVICE, span.service)
 
-            if @configuration[:distributed_tracing]
+            if configuration[:distributed_tracing]
               propagate_trace_http(
                 Datadog::Tracing.active_trace.to_digest,
                 @request.headers
@@ -67,29 +122,19 @@ module Datadog::Tracing
             end
 
             # Set analytics sample rate
-            return unless Contrib::Analytics.enabled?(@configuration[:analytics_enabled])
-
-            Contrib::Analytics.set_sample_rate(@span, @configuration[:analytics_sample_rate])
-            rescue StandardError => e
-              Datadog.logger.error("error preparing span for http request: #{e}")
-              Datadog.logger.error(e.backtrace)
-          end
-
-          def finish(response)
-            return unless @span
-
-            if response.is_a?(::HTTPX::ErrorResponse)
-              @span.set_error(response.error)
-            else
-              @span.set_tag(TAG_STATUS_CODE, response.status.to_s)
-
-              @span.set_error(::HTTPX::HTTPError.new(response)) if response.status >= 400 && response.status <= 599
+            if Contrib::Analytics.enabled?(configuration[:analytics_enabled])
+              Contrib::Analytics.set_sample_rate(span, configuration[:analytics_sample_rate])
             end
 
-            @span.finish
+            span
+          rescue StandardError => e
+            Datadog.logger.error("error preparing span for http request: #{e}")
+            Datadog.logger.error(e.backtrace)
           end
 
-          private
+          def now
+            ::Datadog::Core::Utils::Time.now.utc
+          end
 
           def configuration
             @configuration ||= Datadog.configuration.tracing[:httpx, @request.uri.host]
@@ -104,7 +149,8 @@ module Datadog::Tracing
               Datadog::Tracing.trace(
                 SPAN_REQUEST,
                 service: service_name(request.uri.host, configuration, Datadog.configuration_for(self)),
-                type: TYPE_OUTBOUND
+                type: TYPE_OUTBOUND,
+                start_time: @start_time
               )
             end
           else
@@ -116,24 +162,45 @@ module Datadog::Tracing
               Datadog::Tracing.trace(
                 SPAN_REQUEST,
                 service: service_name(request.uri.host, configuration, Datadog.configuration_for(self)),
-                span_type: TYPE_OUTBOUND
+                span_type: TYPE_OUTBOUND,
+                start_time: @start_time
               )
             end
           end
         end
 
         module RequestMethods
-          def __datadog_enable_trace!
-            return if @__datadog_enable_trace
+          # intercepts request initialization to inject the tracing logic.
+          def initialize(*)
+            super
 
-            RequestTracer.new(self).call
-            @__datadog_enable_trace = true
+            return unless Datadog::Tracing.enabled?
+
+            RequestTracer.new(self)
           end
         end
 
         module ConnectionMethods
-          def send(request)
-            request.__datadog_enable_trace!
+          attr_reader :init_time
+
+          def initialize(*)
+            super
+
+            @init_time = ::Datadog::Core::Utils::Time.now.utc
+          end
+
+          # handles the case when the +error+ happened during name resolution, which meanns
+          # that the tracing logic hasn't been injected yet; in such cases, the approximate
+          # initial resolving time is collected from the connection, and used as span start time,
+          # and the tracing object in inserted before the on response callback is called.
+          def handle_error(error)
+            return super unless Datadog::Tracing.enabled?
+
+            return super unless error.respond_to?(:connection)
+
+            @pending.each do |request|
+              RequestTracer.new(request).call(error.connection.init_time)
+            end
 
             super
           end
