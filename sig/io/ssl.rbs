@@ -14,7 +14,10 @@ module HTTPX
     # TODO: lift when https://github.com/ruby/rbs/issues/1497 fixed
     # def initialize: (URI::Generic origin, Array[Resolver::Entry]? addresses, options options) ?{ (self) -> void } -> void
 
+    def ssl_socket: () -> OpenSSL::SSL::SSLSocket?
+
     def session_new_cb: { (OpenSSL::SSL::Session sess) -> void } -> void
+
     def can_verify_peer?: () -> bool
 
     def verify_hostname: (String host) -> bool
@@ -23,5 +26,9 @@ module HTTPX
 
     # :nocov:
     def try_ssl_connect: () -> void
+
+    private
+
+    def build_ssl_socket: (?(TCPSocket | OpenSSL::SSL::SSLSocket) io) -> OpenSSL::SSL::SSLSocket
   end
 end

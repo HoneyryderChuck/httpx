@@ -33,7 +33,7 @@ module HTTPX
 
     def addresses?: () -> bool
 
-    def to_io: () -> IO
+    def to_io: () -> io
 
     def protocol: () -> String
 
