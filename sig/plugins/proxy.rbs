@@ -23,6 +23,7 @@ module HTTPX
         attr_reader password: String?
         attr_reader scheme: String?
         attr_reader no_proxy: Array[String]?
+        attr_reader ssl: Hash[Symbol, untyped]?
 
         @ns: Integer
         @uris: Array[URI::Generic | String]
@@ -38,7 +39,7 @@ module HTTPX
 
         private
 
-        def initialize: (?uri: generic_uri | Array[generic_uri], ?scheme: String, ?username: String, ?password: String, ?no_proxy: Array[generic_uri] | generic_uri, **untyped) -> void
+        def initialize: (?ssl: Hash[Symbol, untyped], ?uri: generic_uri | Array[generic_uri], ?scheme: String, ?username: String, ?password: String, ?no_proxy: Array[generic_uri] | generic_uri, **untyped) -> void
 
         def infer_default_auth_scheme: (URI::Generic uri) -> String?
 
