@@ -21,6 +21,7 @@ module HTTPX
       class << self
         def configure(klass)
           klass.plugin(:"proxy/http")
+          klass.plugin(:"proxy/https")
           klass.plugin(:"proxy/socks4")
           klass.plugin(:"proxy/socks5")
         end
@@ -223,9 +224,8 @@ module HTTPX
       module ConnectionMethods
         using URIExtensions
 
-        def initialize(*)
-          super
-          return unless @options.proxy
+        def initialize(_, options)
+          return super unless options.proxy
 
           # redefining the connection origin as the proxy's URI,
           # as this will be used as the tcp peer ip.
@@ -267,6 +267,8 @@ module HTTPX
         def initialize_type(uri, options)
           return super unless options.proxy
 
+          return "ssl" if uri.scheme == "https"
+
           "tcp"
         end
 
@@ -298,11 +300,31 @@ module HTTPX
   end
 
   class ProxySSL < SSL
-    def initialize(tcp, request_uri, options)
-      @io = tcp.to_io
-      super(request_uri, tcp.addresses, options)
+    # def self.new(io, request_uri, options)
+    #   if io.is_a?(SSL) # TLS proxy
+    #   require "pry-byebug"; binding.pry
+    #     return io
+    #   end
+
+    #   super
+    # end
+
+    def initialize(io, request_uri, options)
+      @io = io.is_a?(SSL) ? io.instance_variable_get(:@io) : io.to_io
+      super(request_uri, io.addresses, options)
       @hostname = request_uri.host
-      @state = :connected
+      @state = io.is_a?(SSL) ? :negotiated : :connected
+
+      # if io.is_a?(SSL)
+      #   @io = OpenSSL::SSL::SSLSocket.new(@io, @ctx)
+      #   @io.hostname = @hostname
+      #   @io.sync_close = true
+      # end
+      #   @state = :negotiated
+      #   @ctx = io.instance_variable_get(:@ctx)
+      #   @ssl_session = io.instance_variable_get(:@ssl_session)
+      # else
+      # end
     end
   end
 end
