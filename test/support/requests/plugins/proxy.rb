@@ -19,14 +19,32 @@ module Requests
       end
 
       def test_plugin_http_http_proxy
-        return unless origin.start_with?("http://")
+        HTTPX.plugin(SessionWithPool)
+             .plugin(ProxyResponseDetector)
+             .plugin(:proxy, fallback_protocol: "http/1.1")
+             .with_proxy(uri: http_proxy).wrap do |session|
+          uri = build_uri("/get")
+          response = session.get(uri)
+          verify_status(response, 200)
+          verify_body_length(response)
+          assert response.proxied?
 
-        session = HTTPX.plugin(:proxy, fallback_protocol: "http/1.1").plugin(ProxyResponseDetector).with_proxy(uri: http_proxy)
-        uri = build_uri("/get")
-        response = session.get(uri)
-        verify_status(response, 200)
-        verify_body_length(response)
-        assert response.proxied?
+          conn = session.pool.connections.first
+          assert conn.io.is_a?(HTTPX::TCP)
+        end
+      end
+
+      def test_plugin_http_https_proxy
+        HTTPX.plugin(SessionWithPool).plugin(ProxyResponseDetector).plugin(:proxy).with_proxy(uri: https_proxy).wrap do |session|
+          uri = build_uri("/get")
+          response = session.get(uri)
+          verify_status(response, 200)
+          verify_body_length(response)
+          assert response.proxied?
+
+          conn = session.pool.connections.first
+          assert conn.io.is_a?(HTTPX::SSL)
+        end
       end
 
       def test_plugin_http_no_proxy
@@ -53,16 +71,6 @@ module Requests
         return unless origin.start_with?("http://")
 
         session = HTTPX.plugin(:proxy, fallback_protocol: "h2").plugin(ProxyResponseDetector).with_proxy(uri: http2_proxy)
-        uri = build_uri("/get")
-        response = session.get(uri)
-        verify_status(response, 200)
-        verify_body_length(response)
-        assert response.proxied?
-      end
-
-      def test_plugin_https_connect_http1_proxy
-        # return unless origin.start_with?("https://")
-        session = HTTPX.plugin(:proxy).plugin(ProxyResponseDetector).with_proxy(uri: http_proxy)
         uri = build_uri("/get")
         response = session.get(uri)
         verify_status(response, 200)
