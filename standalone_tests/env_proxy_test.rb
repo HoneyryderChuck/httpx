@@ -4,8 +4,7 @@ require "uri"
 
 HTTP_PROXY = ENV["HTTPX_HTTP_PROXY"]
 ENV["http_proxy"] = HTTP_PROXY
-HTTPS_PROXY = ENV["HTTPX_HTTPS_PROXY"]
-ENV["https_proxy"] = HTTPS_PROXY
+ENV["https_proxy"] = HTTP_PROXY
 NO_PROXY = ENV["HTTPBIN_NO_PROXY_HOST"]
 ENV["no_proxy"] = URI(NO_PROXY).authority
 
@@ -44,7 +43,7 @@ class EnvProxyTest < Minitest::Test
 
       assert connections.size == 1
       connection = connections.first
-      assert HTTPS_PROXY.end_with?(connection.peer.authority), "#{connection.peer.authority} not found in #{HTTPS_PROXY}"
+      assert HTTP_PROXY.end_with?(connection.peer.authority), "#{connection.peer.authority} not found in #{HTTP_PROXY}"
     end
   end
 
@@ -64,7 +63,7 @@ class EnvProxyTest < Minitest::Test
 
       assert connections.size == 1
       connections.each do |connection|
-        assert HTTP_PROXY.end_with?(connection.peer.authority), "#{connection.peer.authority} not found in #{HTTPS_PROXY}"
+        assert HTTP_PROXY.end_with?(connection.peer.authority), "#{connection.peer.authority} not found in #{HTTP_PROXY}"
       end
     end
   end
@@ -86,7 +85,7 @@ class EnvProxyTest < Minitest::Test
 
   #     assert connections.size == 1
   #     connections.each do |connection|
-  #       assert HTTPS_PROXY.end_with?(connection.origin.authority), "#{connection.origin.authority} not found in #{HTTPS_PROXY}"
+  #       assert HTTP_PROXY.end_with?(connection.origin.authority), "#{connection.origin.authority} not found in #{HTTP_PROXY}"
   #     end
   #   end
   # end

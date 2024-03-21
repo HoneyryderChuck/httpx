@@ -29,7 +29,7 @@ module Requests
           verify_body_length(response)
           assert response.proxied?
 
-          conn = session.pool.connections.first
+          conn = session.connections.first
           assert conn.io.is_a?(HTTPX::TCP)
         end
       end
@@ -42,7 +42,7 @@ module Requests
           verify_body_length(response)
           assert response.proxied?
 
-          conn = session.pool.connections.first
+          conn = session.connections.first
           assert conn.io.is_a?(HTTPX::SSL)
         end
       end

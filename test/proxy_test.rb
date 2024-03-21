@@ -30,9 +30,9 @@ class ProxyTest < Minitest::Test
   end
 
   def test_proxy_unsupported_scheme
-    res = HTTPX.plugin(:proxy).with_proxy(uri: "https://proxy:123").get("http://smth.com")
+    res = HTTPX.plugin(:proxy).with_proxy(uri: "smth://proxy:123").get("http://smth.com")
     verify_error_response(res, HTTPX::ProxyError)
-    verify_error_response(res, "https: unsupported proxy protocol")
+    verify_error_response(res, "smth: unsupported proxy protocol")
   end
 
   private
