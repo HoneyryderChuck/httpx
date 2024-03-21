@@ -28,6 +28,15 @@ module HTTPX
       else
         @ctx = OpenSSL::SSL::SSLContext.new
         @ctx.set_params(ctx_options) unless ctx_options.empty?
+        @ctx.renegotiation_cb = ->(ssl) do
+          puts "renegotiated: #{ssl}"
+        end
+        @ctx.servername_cb = ->(*ar) do
+          puts "servername_cb: #{ar}"
+        end
+        @ctx.session_get_cb = ->(ssl, n) do
+          puts "session_get_cb: #{ssl}, #{n}"
+        end
         unless @ctx.session_cache_mode.nil? # a dummy method on JRuby
           @ctx.session_cache_mode =
             OpenSSL::SSL::SSLContext::SESSION_CACHE_CLIENT | OpenSSL::SSL::SSLContext::SESSION_CACHE_NO_INTERNAL_STORE
