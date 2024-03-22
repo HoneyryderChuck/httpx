@@ -100,7 +100,7 @@ module HTTPX
 
             error = ServerSideRequestForgeryError.new("#{request.uri} URI scheme not allowed")
             error.set_backtrace(caller)
-            response = ErrorResponse.new(request, error, request.options)
+            response = ErrorResponse.new(request, error)
             request.emit(:response, response)
             response
           end

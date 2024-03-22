@@ -22,7 +22,7 @@ module ResponsePatternMatchTests
       Response.new(request, 202, "2.0", { "x-success" => "true" }),
       Response.new(request, 400, "2.0", { "x-client-error" => "true" }),
       Response.new(request, 500, "2.0", { "x-server-error" => "true" }),
-      ErrorResponse.new(request, StandardError.new("match error"), Options.new),
+      ErrorResponse.new(request, StandardError.new("match error")),
     ]
 
     responses.each do |response|
@@ -52,7 +52,7 @@ module ResponsePatternMatchTests
       Response.new(request, 202, "2.0", { "x-success" => "true" }),
       Response.new(request, 400, "2.0", { "x-client-error" => "true" }),
       Response.new(request, 500, "2.0", { "x-server-error" => "true" }),
-      ErrorResponse.new(request, StandardError.new("match error"), Options.new),
+      ErrorResponse.new(request, StandardError.new("match error")),
     ]
 
     responses.each do |response|

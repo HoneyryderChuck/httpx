@@ -91,7 +91,7 @@ module HTTPX
 
     private
 
-    def initialize: (Request, Exception, options) -> untyped
+    def initialize: (Request, Exception) -> untyped
   end
 
   type response = Response | ErrorResponse

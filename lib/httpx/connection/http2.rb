@@ -309,7 +309,7 @@ module HTTPX
       if error
         ex = Error.new(stream.id, error)
         ex.set_backtrace(caller)
-        response = ErrorResponse.new(request, ex, request.options)
+        response = ErrorResponse.new(request, ex)
         request.response = response
         emit(:response, request, response)
       else

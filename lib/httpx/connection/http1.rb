@@ -146,7 +146,7 @@ module HTTPX
 
       response << chunk
     rescue StandardError => e
-      error_response = ErrorResponse.new(request, e, request.options)
+      error_response = ErrorResponse.new(request, e)
       request.response = error_response
       dispatch
     end

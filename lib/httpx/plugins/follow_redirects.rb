@@ -90,7 +90,7 @@ module HTTPX
              redirect_uri.scheme == "http"
             error = InsecureRedirectError.new(redirect_uri.to_s)
             error.set_backtrace(caller)
-            return ErrorResponse.new(request, error, options)
+            return ErrorResponse.new(request, error)
           end
 
           if (redirect_body = redirect_request.body)
