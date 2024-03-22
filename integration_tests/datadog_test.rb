@@ -211,7 +211,7 @@ class DatadogTest < Minitest::Test
   end
 
   def verify_instrumented_request(response, verb:, uri:, span: fetch_spans.first, service: "httpx", error: nil)
-    if Gem::Version.new(DATADOG_VERSION::STRING) >= Gem::Version.new("2.0.0.dev")
+    if Gem::Version.new(DATADOG_VERSION::STRING) >= Gem::Version.new("2.0.0.beta1")
       assert span.type == "http"
     else
       assert span.span_type == "http"
@@ -258,7 +258,7 @@ class DatadogTest < Minitest::Test
   def verify_distributed_headers(response, span: fetch_spans.first, sampling_priority: 1)
     request = response.instance_variable_get(:@request)
 
-    if Gem::Version.new(DATADOG_VERSION::STRING) >= Gem::Version.new("2.0.0.dev")
+    if Gem::Version.new(DATADOG_VERSION::STRING) >= Gem::Version.new("2.0.0.beta1")
       assert request.headers["x-datadog-parent-id"] == span.id.to_s
     else
       assert request.headers["x-datadog-parent-id"] == span.span_id.to_s
