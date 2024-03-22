@@ -132,7 +132,7 @@ module HTTPX
       end
       return unless error.is_a?(Error)
 
-      request.emit(:response, ErrorResponse.new(request, error, options))
+      request.emit(:response, ErrorResponse.new(request, error))
     end
 
     # sets the callbacks on the +connection+ required to process certain specific

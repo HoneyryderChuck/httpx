@@ -79,8 +79,9 @@ module HTTPX
             # the Location field. The Location field gives the URI of the proxy.
             redirect_options = options.merge(headers: redirect_request.headers,
                                              proxy: { uri: redirect_uri },
-                                             body: request_body,
                                              max_redirects: max_redirects - 1)
+
+            redirect_params[:body] = request_body
             redirect_uri = redirect_request.uri
             options = redirect_options
           else
@@ -113,7 +114,7 @@ module HTTPX
              redirect_uri.scheme == "http"
             error = InsecureRedirectError.new(redirect_uri.to_s)
             error.set_backtrace(caller)
-            return ErrorResponse.new(request, error, options)
+            return ErrorResponse.new(request, error)
           end
 
           retry_request = build_request(redirect_method, redirect_uri, redirect_params, options)

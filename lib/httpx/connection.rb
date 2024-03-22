@@ -506,7 +506,7 @@ module HTTPX
         when MisdirectedRequestError
           emit(:misdirected, request)
         else
-          response = ErrorResponse.new(request, ex, @options)
+          response = ErrorResponse.new(request, ex)
           request.response = response
           request.emit(:response, response)
         end
@@ -659,7 +659,7 @@ module HTTPX
     def handle_error(error)
       parser.handle_error(error) if @parser && parser.respond_to?(:handle_error)
       while (request = @pending.shift)
-        response = ErrorResponse.new(request, error, request.options)
+        response = ErrorResponse.new(request, error)
         request.response = response
         request.emit(:response, response)
       end
