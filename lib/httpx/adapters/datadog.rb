@@ -7,6 +7,8 @@ require "datadog/tracing/contrib/patcher"
 module Datadog::Tracing
   module Contrib
     module HTTPX
+      DATADOG_VERSION = defined?(::DDTrace) ? ::DDTrace::VERSION : ::Datadog::VERSION
+
       METADATA_MODULE = Datadog::Tracing::Metadata
 
       TYPE_OUTBOUND = Datadog::Tracing::Metadata::Ext::HTTP::TYPE_OUTBOUND
@@ -140,7 +142,7 @@ module Datadog::Tracing
             @configuration ||= Datadog.configuration.tracing[:httpx, @request.uri.host]
           end
 
-          if Gem::Version.new(DDTrace::VERSION::STRING) >= Gem::Version.new("2.0.0.dev")
+          if Gem::Version.new(DATADOG_VERSION::STRING) >= Gem::Version.new("2.0.0.dev")
             def propagate_trace_http(digest, headers)
               Datadog::Tracing::Contrib::HTTP.inject(digest, headers)
             end
@@ -219,7 +221,7 @@ module Datadog::Tracing
           option :distributed_tracing, default: true
           option :split_by_domain, default: false
 
-          if Gem::Version.new(DDTrace::VERSION::STRING) >= Gem::Version.new("1.13.0")
+          if Gem::Version.new(DATADOG_VERSION::STRING) >= Gem::Version.new("1.13.0")
             option :enabled do |o|
               o.type :bool
               o.env "DD_TRACE_HTTPX_ENABLED"
@@ -262,25 +264,25 @@ module Datadog::Tracing
                   "httpx"
                 )
               end
-              o.lazy unless Gem::Version.new(DDTrace::VERSION::STRING) >= Gem::Version.new("1.13.0")
+              o.lazy unless Gem::Version.new(DATADOG_VERSION::STRING) >= Gem::Version.new("1.13.0")
             end
           else
             option :service_name do |o|
               o.default do
                 ENV.fetch("DD_TRACE_HTTPX_SERVICE_NAME", "httpx")
               end
-              o.lazy unless Gem::Version.new(DDTrace::VERSION::STRING) >= Gem::Version.new("1.13.0")
+              o.lazy unless Gem::Version.new(DATADOG_VERSION::STRING) >= Gem::Version.new("1.13.0")
             end
           end
 
           option :distributed_tracing, default: true
 
-          if Gem::Version.new(DDTrace::VERSION::STRING) >= Gem::Version.new("1.15.0")
+          if Gem::Version.new(DATADOG_VERSION::STRING) >= Gem::Version.new("1.15.0")
             option :error_handler do |o|
               o.type :proc
               o.default_proc(&DEFAULT_ERROR_HANDLER)
             end
-          elsif Gem::Version.new(DDTrace::VERSION::STRING) >= Gem::Version.new("1.13.0")
+          elsif Gem::Version.new(DATADOG_VERSION::STRING) >= Gem::Version.new("1.13.0")
             option :error_handler do |o|
               o.type :proc
               o.experimental_default_proc(&DEFAULT_ERROR_HANDLER)

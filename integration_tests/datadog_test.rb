@@ -1,9 +1,17 @@
 # frozen_string_literal: true
 
-require "ddtrace"
+begin
+  # upcoming 2.0
+  require "datadog"
+rescue LoadError
+  require "ddtrace"
+end
+
 require "test_helper"
 require "support/http_helpers"
 require "httpx/adapters/datadog"
+
+DATADOG_VERSION = defined?(DDTrace) ? DDTrace::VERSION : Datadog::VERSION
 
 class DatadogTest < Minitest::Test
   include HTTPHelpers
@@ -203,7 +211,7 @@ class DatadogTest < Minitest::Test
   end
 
   def verify_instrumented_request(response, verb:, uri:, span: fetch_spans.first, service: "httpx", error: nil)
-    if defined?(::DDTrace) && Gem::Version.new(::DDTrace::VERSION::STRING) >= Gem::Version.new("2.0.0.dev")
+    if Gem::Version.new(DATADOG_VERSION::STRING) >= Gem::Version.new("2.0.0.dev")
       assert span.type == "http"
     else
       assert span.span_type == "http"
@@ -216,7 +224,7 @@ class DatadogTest < Minitest::Test
     assert span.get_tag("http.method") == verb
     assert span.get_tag("http.url") == uri.path
 
-    error_tag = if defined?(::DDTrace) && Gem::Version.new(::DDTrace::VERSION::STRING) >= Gem::Version.new("1.8.0")
+    error_tag = if Gem::Version.new(DATADOG_VERSION::STRING) >= Gem::Version.new("1.8.0")
       "error.message"
     else
       "error.msg"
@@ -250,7 +258,7 @@ class DatadogTest < Minitest::Test
   def verify_distributed_headers(response, span: fetch_spans.first, sampling_priority: 1)
     request = response.instance_variable_get(:@request)
 
-    if defined?(::DDTrace) && Gem::Version.new(::DDTrace::VERSION::STRING) >= Gem::Version.new("2.0.0.dev")
+    if Gem::Version.new(DATADOG_VERSION::STRING) >= Gem::Version.new("2.0.0.dev")
       assert request.headers["x-datadog-parent-id"] == span.id.to_s
     else
       assert request.headers["x-datadog-parent-id"] == span.span_id.to_s
@@ -259,7 +267,7 @@ class DatadogTest < Minitest::Test
     assert request.headers["x-datadog-sampling-priority"] == sampling_priority.to_s
   end
 
-  if defined?(::DDTrace) && Gem::Version.new(::DDTrace::VERSION::STRING) >= Gem::Version.new("1.17.0")
+  if Gem::Version.new(DATADOG_VERSION::STRING) >= Gem::Version.new("1.17.0")
     def trace_id(span)
       Datadog::Tracing::Utils::TraceId.to_low_order(span.trace_id).to_s
     end
