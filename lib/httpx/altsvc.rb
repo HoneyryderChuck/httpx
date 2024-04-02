@@ -131,9 +131,9 @@ module HTTPX
           scanner.skip(/;/)
           break if scanner.eos? || scanner.scan(/ *, */)
         end
-        alt_params = Hash[alt_params.map { |field| field.split("=") }]
+        alt_params = Hash[alt_params.map { |field| field.split("=", 2) }]
 
-        alt_proto, alt_authority = alt_service.split("=")
+        alt_proto, alt_authority = alt_service.split("=", 2)
         alt_origin = parse_altsvc_origin(alt_proto, alt_authority)
         return unless alt_origin
 

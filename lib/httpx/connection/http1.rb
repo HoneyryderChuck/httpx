@@ -245,7 +245,7 @@ module HTTPX
         return unless keep_alive
 
         parameters = Hash[keep_alive.split(/ *, */).map do |pair|
-          pair.split(/ *= */)
+          pair.split(/ *= */, 2)
         end]
         @max_requests = parameters["max"].to_i - 1 if parameters.key?("max")
 

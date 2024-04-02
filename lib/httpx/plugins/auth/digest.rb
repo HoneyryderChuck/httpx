@@ -30,7 +30,8 @@ module HTTPX
           auth_info = authenticate[/^(\w+) (.*)/, 2]
 
           params = auth_info.split(/ *, */)
-                            .to_h { |val| val.split("=") }.transform_values { |v| v.delete("\"") }
+                            .to_h { |val| val.split("=", 2) }
+                            .transform_values { |v| v.delete("\"") }
           nonce = params["nonce"]
           nc = next_nonce
 

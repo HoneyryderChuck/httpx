@@ -197,8 +197,8 @@ module HTTPX
           params.each.with_index.sort do |a, b|
             a, a_offset = a
             b, b_offset = b
-            a_name, a_value = a.split("=")
-            b_name, b_value = b.split("=")
+            a_name, a_value = a.split("=", 2)
+            b_name, b_value = b.split("=", 2)
             if a_name == b_name
               if a_value == b_value
                 a_offset <=> b_offset
