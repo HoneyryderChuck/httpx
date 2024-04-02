@@ -9,8 +9,11 @@ class Sock5WithNoneServer
 
     @server = TCPServer.new(0)
 
+    puts "socks5 host is #{@server}"
+    puts @server.addr.inspect
     _, port, ip, _ = @server.addr
     @origin = "socks5://#{ip}:#{port}"
+    puts "origin: #{@origin}"
   end
 
   def shutdown

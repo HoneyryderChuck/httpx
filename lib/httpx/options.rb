@@ -19,14 +19,19 @@ module HTTPX
     ip_address_families = begin
       list = Socket.ip_address_list
       if list.any? { |a| a.ipv6? && !a.ipv6_loopback? && !a.ipv6_linklocal? && !a.ipv6_unique_local? }
+        b = list.find { |a| a.ipv6? && !a.ipv6_loopback? && !a.ipv6_linklocal? && !a.ipv6_unique_local? }
+        puts "#{b.inspect}: loopback? #{b.ipv6_loopback?}, linklocal? #{b.ipv6_linklocal?}, unique local? #{b.ipv6_unique_local?}"
         [Socket::AF_INET6, Socket::AF_INET]
       else
+        puts "should be 1"
         [Socket::AF_INET]
       end
     rescue NotImplementedError
+      puts "error"
       [Socket::AF_INET]
     end
 
+    puts "families: #{ip_address_families}"
     DEFAULT_OPTIONS = {
       :max_requests => Float::INFINITY,
       :debug => ENV.key?("HTTPX_DEBUG") ? $stderr : nil,
