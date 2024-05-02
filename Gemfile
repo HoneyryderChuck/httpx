@@ -10,7 +10,7 @@ gem "rake", "~> 13.0"
 group :test do
   if RUBY_VERSION >= "3.2.0"
     # load from branch while there's no official release
-    gem "datadog", github: "DataDog/dd-trace-rb", branch: "2.0"
+    gem "datadog", "~> 2.0.0.beta2"
   else
     gem "ddtrace"
   end
