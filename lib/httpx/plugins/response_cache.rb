@@ -102,6 +102,9 @@ module HTTPX
 
       module ResponseMethods
         def copy_from_cached(other)
+          # 304 responses do not have content-type, which are needed for decoding.
+          @headers = @headers.class.new(other.headers.merge(@headers))
+
           @body = other.body.dup
 
           @body.rewind
