@@ -40,7 +40,7 @@ module HTTPX
             # the Range and Content-Range headers MUST NOT cache 206 (Partial
             # Content) responses.
             response.status != 206 && (
-            response.headers.key?("etag") || response.headers.key?("last-modified-at") || response.fresh?
+            response.headers.key?("etag") || response.headers.key?("last-modified") || response.fresh?
           )
         end
 
@@ -102,6 +102,9 @@ module HTTPX
 
       module ResponseMethods
         def copy_from_cached(other)
+          # 304 responses do not have content-type, which are needed for decoding.
+          @headers = @headers.class.new(other.headers.merge(@headers))
+
           @body = other.body.dup
 
           @body.rewind
