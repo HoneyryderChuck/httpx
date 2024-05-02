@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "uri"
+
 HTTP_PROXY = ENV["HTTPX_HTTP_PROXY"]
 ENV["http_proxy"] = HTTP_PROXY
 HTTPS_PROXY = ENV["HTTPX_HTTPS_PROXY"]
