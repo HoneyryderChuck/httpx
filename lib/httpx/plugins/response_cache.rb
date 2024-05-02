@@ -40,7 +40,7 @@ module HTTPX
             # the Range and Content-Range headers MUST NOT cache 206 (Partial
             # Content) responses.
             response.status != 206 && (
-            response.headers.key?("etag") || response.headers.key?("last-modified-at") || response.fresh?
+            response.headers.key?("etag") || response.headers.key?("last-modified") || response.fresh?
           )
         end
 
