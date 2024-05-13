@@ -48,10 +48,10 @@ module HTTPX
     attr_accessor :family
 
     def initialize(uri, options)
-      @origins = [uri.origin]
-      @origin = Utils.to_uri(uri.origin)
       @options = Options.new(options)
       @type = initialize_type(uri, @options)
+      @origins = [uri.origin]
+      @origin = Utils.to_uri(uri.origin)
       @window_size = @options.window_size
       @read_buffer = Buffer.new(@options.buffer_size)
       @write_buffer = Buffer.new(@options.buffer_size)
