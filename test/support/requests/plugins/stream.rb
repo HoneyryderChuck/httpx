@@ -37,6 +37,15 @@ module Requests
         assert payload.lines.size == 3, "all the lines should have been yielded"
       end
 
+      def test_plugin_stream_each_after_buffer
+        session = HTTPX.plugin(:stream)
+
+        response = session.get(build_uri("/stream/3"), stream: true)
+        verify_status(response, 200) # forces buffering
+        payload = response.each.to_a.join
+        assert payload.lines.size == 3, "all the lines should have been yielded"
+      end
+
       def test_plugin_stream_each_line
         session = HTTPX.plugin(:stream)
 

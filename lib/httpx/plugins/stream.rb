@@ -16,9 +16,18 @@ module HTTPX
       begin
         @on_chunk = block
 
+        if @request.response
+          # if we've already started collecting the payload, yield it first
+          # before proceeding.
+          body = @request.response.body
+
+          body.each do |chunk|
+            on_chunk(chunk)
+          end
+        end
+
         response.raise_for_status
       ensure
-        response.close if @response
         @on_chunk = nil
       end
     end
