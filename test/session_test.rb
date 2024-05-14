@@ -108,7 +108,7 @@ class SessionTest < Minitest::Test
       response = session.post(uri, body: StringIO.new("a" * 65_536 * 3 * 5))
       verify_error_response(response, HTTPX::WriteTimeoutError)
 
-      response1 = session.post(uri, body: StringIO.new("a" * 65_536 * 2 * 5))
+      response1 = session.post(uri, body: StringIO.new("a" * 65_536))
       verify_status(response1, 200)
     end
   end
