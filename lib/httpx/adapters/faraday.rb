@@ -61,6 +61,7 @@ module Faraday
           request_options = {
             headers: env.request_headers,
             body: env.body,
+            **options_from_env(env),
           }
           [meth.to_s.upcase, env.url, request_options]
         end
