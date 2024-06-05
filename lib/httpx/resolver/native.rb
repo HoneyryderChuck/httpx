@@ -144,6 +144,8 @@ module HTTPX
 
       if !@timeouts[host].empty?
         log { "resolver: timeout after #{timeout}s, retry(#{@timeouts[host].first}) #{host}..." }
+        # must downgrade to tcp AND retry on same host as last
+        downgrade_socket
         resolve(connection)
       elsif @ns_index + 1 < @nameserver.size
         # try on the next nameserver
@@ -189,10 +191,9 @@ module HTTPX
             next unless @large_packet.full?
 
             parse(@large_packet.to_s)
-            @socket_type = @resolver_options.fetch(:socket_type, :udp)
             @large_packet = nil
-            transition(:idle)
-            transition(:open)
+            # downgrade to udp again
+            downgrade_socket
             return
           else
             size = @read_buffer[0, 2].unpack1("n")
@@ -313,6 +314,12 @@ module HTTPX
           if catch(:coalesced) { early_resolve(connection, hostname: hostname_alias) }
             @connections.delete(connection)
           else
+            if @socket_type == :tcp
+              # must downgrade to udp if tcp
+              @socket_type = @resolver_options.fetch(:socket_type, :udp)
+              transition(:idle)
+              transition(:open)
+            end
             log { "resolver: ALIAS #{hostname_alias} for #{name}" }
             resolve(connection, hostname_alias)
             return
@@ -388,6 +395,14 @@ module HTTPX
         origin = URI("tcp://#{ip}:#{port}")
         TCP.new(origin, [ip], @options)
       end
+    end
+
+    def downgrade_socket
+      return unless @socket_type == :tcp
+
+      @socket_type = @resolver_options.fetch(:socket_type, :udp)
+      transition(:idle)
+      transition(:open)
     end
 
     def transition(nextstate)
