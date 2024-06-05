@@ -65,6 +65,7 @@ module HTTPX
       if nameserver && @ns_index < nameserver.size
         log { "resolver: failed resolving on nameserver #{@nameserver[@ns_index - 1]} (#{e.message})" }
         transition(:idle)
+        @timeouts.clear
       else
         handle_error(e)
       end
@@ -149,6 +150,7 @@ module HTTPX
         @ns_index += 1
         log { "resolver: failed resolving #{host} on nameserver #{@nameserver[@ns_index - 1]} (timeout error)" }
         transition(:idle)
+        @timeouts.clear
         resolve(connection)
       else
 
@@ -393,7 +395,6 @@ module HTTPX
           @io.close
           @io = nil
         end
-        @timeouts.clear
       when :open
         return unless @state == :idle
 
