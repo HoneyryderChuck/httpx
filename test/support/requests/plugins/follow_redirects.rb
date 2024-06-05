@@ -16,6 +16,51 @@ module Requests
         assert body["url"] == redirect_location, "url should have been the given redirection url"
       end
 
+      def test_plugin_follow_redirects_on_post_302
+        session = HTTPX.plugin(:follow_redirects)
+        redirect_response = session.post(redirect_uri, body: "bang")
+        verify_status(redirect_response, 200)
+        body = json_body(redirect_response)
+        assert body.key?("url"), "url should be set"
+        assert body["url"] == redirect_location, "url should have been the given redirection url"
+
+        request = redirect_response.instance_variable_get(:@request)
+        assert request.uri.to_s == redirect_location
+        assert request.verb == "GET"
+        verify_no_header(request.headers, "content-type")
+        verify_no_header(request.headers, "content-length")
+
+        root_request = request.root_request
+        assert root_request.uri.to_s == redirect_uri
+        assert root_request.verb == "POST"
+        verify_header(root_request.headers, "content-type", "application/octet-stream")
+        verify_header(root_request.headers, "content-length", "4")
+      end
+
+      def test_plugin_follow_redirects_on_post_307
+        return unless origin.start_with?("http://")
+
+        start_test_servlet(Redirector307Server) do |server|
+          uri = "#{server.origin}/307"
+          session = HTTPX.plugin(:follow_redirects)
+          redirect_response = session.post(uri, body: "bang")
+          verify_status(redirect_response, 200)
+          assert redirect_response.body == "ok"
+
+          request = redirect_response.instance_variable_get(:@request)
+          assert request.uri.to_s == "#{server.origin}/"
+          assert request.verb == "POST"
+          verify_header(request.headers, "content-type", "application/octet-stream")
+          verify_header(request.headers, "content-length", "4")
+
+          root_request = request.root_request
+          assert root_request.uri.to_s == "#{server.origin}/307"
+          assert root_request.verb == "POST"
+          verify_header(root_request.headers, "content-type", "application/octet-stream")
+          verify_header(root_request.headers, "content-length", "4")
+        end
+      end
+
       def test_plugin_follow_redirects_no_location_no_follow
         session = HTTPX.plugin(:follow_redirects)
 
