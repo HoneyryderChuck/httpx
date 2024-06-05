@@ -131,7 +131,7 @@ module Requests
               uri = build_uri("/get")
 
               before_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)
-              response = session.get(uri, resolver_class: resolver_type, resolver_options: resolver_opts)
+              response = session.get(uri, resolver_class: resolver_type, resolver_options: options.merge(resolver_opts))
               after_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)
               total_time = after_time - before_time
 
@@ -160,7 +160,7 @@ module Requests
               HTTPX.plugin(SessionWithPool).wrap do |session|
                 uri = build_uri("/get")
 
-                response = session.get(uri, resolver_class: resolver_type, resolver_options: resolver_opts)
+                response = session.get(uri, resolver_class: resolver_type, resolver_options: options.merge(resolver_opts))
                 verify_status(response, 200)
 
                 resolver = session.pool.resolver.resolvers[0]
@@ -180,7 +180,7 @@ module Requests
               HTTPX.plugin(SessionWithPool).wrap do |session|
                 uri = build_uri("/get")
 
-                response = session.get(uri, resolver_class: resolver_type, resolver_options: resolver_opts)
+                response = session.get(uri, resolver_class: resolver_type, resolver_options: options.merge(resolver_opts))
                 verify_error_response(response, /unknown DNS error/)
               end
             end
@@ -230,6 +230,8 @@ module Requests
             class << self
               attr_reader :ios
             end
+
+            private
 
             def build_socket
               io = super
