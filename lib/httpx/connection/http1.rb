@@ -387,6 +387,7 @@ module HTTPX
     UPCASED = {
       "www-authenticate" => "WWW-Authenticate",
       "http2-settings" => "HTTP2-Settings",
+      "content-md5" => "Content-MD5",
     }.freeze
 
     def capitalized(field)

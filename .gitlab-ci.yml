@@ -8,7 +8,7 @@ image:
   name: docker/compose:latest
 
 variables:
-  # this variable enables caching withing docker-in-docker
+  # this variable enables caching within docker-in-docker
   # https://docs.gitlab.com/ee/ci/docker/using_docker_build.html#use-docker-in-docker-workflow-with-docker-executor
   MOUNT_POINT: /builds/$CI_PROJECT_PATH/vendor
   # bundler-specific
