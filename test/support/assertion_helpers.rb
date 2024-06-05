@@ -99,8 +99,8 @@ module ResponseHelpers
     File.join("test", "support", "fixtures", fixture_file_name)
   end
 
-  def start_test_servlet(servlet_class, *args)
-    server = servlet_class.new(*args)
+  def start_test_servlet(servlet_class, *args, **kwargs)
+    server = servlet_class.new(*args, **kwargs)
     th = Thread.new { server.start }
     begin
       yield server

@@ -116,11 +116,12 @@ end
 class TestDNSResolver
   attr_reader :queries, :answers
 
-  def initialize
-    @port = next_available_port
+  def initialize(port = next_available_port, socket_type = :udp)
+    @port = port
     @can_log = ENV.key?("HTTPX_DEBUG")
     @queries = 0
     @answers = 0
+    @socket_type = socket_type
   end
 
   def nameserver
@@ -128,10 +129,31 @@ class TestDNSResolver
   end
 
   def start
-    Socket.udp_server_loop(@port) do |query, src|
-      @queries += 1
-      src.reply(dns_response(query))
-      @answers += 1
+    if @socket_type == :udp
+      Socket.udp_server_loop(@port) do |query, src|
+        puts "bang bang"
+        @queries += 1
+        src.reply(dns_response(query))
+        @answers += 1
+      end
+    elsif @socket_type == :tcp
+      Socket.tcp_server_loop(@port) do |sock, _addrinfo|
+        begin
+          loop do
+            query = sock.readpartial(2048)
+            size = query[0, 2].unpack1("n")
+            query = query.byteslice(2..-1)
+            query << sock.readpartial(size - query.size) while query.size < size
+            @queries += 1
+            answer = dns_response(query)
+
+            answer.prepend([answer.size].pack("n"))
+            sock.write(answer)
+            @answers += 1
+          end
+        rescue EOFError
+        end
+      end
     end
   end
 
