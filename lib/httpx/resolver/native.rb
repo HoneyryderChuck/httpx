@@ -306,13 +306,15 @@ module HTTPX
         end
 
         if address.key?("alias") # CNAME
+          hostname_alias = address["alias"]
           # clean up intermediate queries
           @timeouts.delete(name) unless connection.origin.host == name
 
-          if catch(:coalesced) { early_resolve(connection, hostname: address["alias"]) }
+          if catch(:coalesced) { early_resolve(connection, hostname: hostname_alias) }
             @connections.delete(connection)
           else
-            resolve(connection, address["alias"])
+            log { "resolver: ALIAS #{hostname_alias} for #{name}" }
+            resolve(connection, hostname_alias)
             return
           end
         else
