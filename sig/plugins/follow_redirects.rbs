@@ -13,7 +13,7 @@ module HTTPX
 
         def allow_auth_to_other_origins: () -> bool?
 
-        def redirect_on: (http_uri) -> bool?
+        def redirect_on: () -> (^(http_uri) -> boolish | nil)
       end
 
       def self.extra_options: (Options) -> (Options & _FollowRedirectsOptions)
