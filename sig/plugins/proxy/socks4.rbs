@@ -13,7 +13,10 @@ module HTTPX
         end
 
         class SocksParser
-          include Callbacks
+          include HTTPX::Callbacks
+
+          @buffer: Buffer
+          @options: Options
 
           def close: () -> void
           def consume: (*untyped) -> void
@@ -22,7 +25,7 @@ module HTTPX
 
           private
 
-          def initialize: (Buffer buffer, Options) -> untyped
+          def initialize: (Buffer buffer, Options options) -> untyped
         end
 
         module Packet

@@ -7,6 +7,11 @@ module HTTPX
 
   module Plugins
     module GRPC
+      DEADLINE: Integer
+      MARSHAL_METHOD: Symbol
+      UNMARSHAL_METHOD: Symbol
+      HEADERS: Hash[String, String]
+
       type compression_option = bool | String
       type rpc_def = [String, untyped, untyped, Hash[Symbol, untyped]]
 

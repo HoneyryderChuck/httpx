@@ -75,6 +75,7 @@ module HTTPX
         buffer = @buffer
 
         while (idx = buffer.index("\n"))
+          # @type var line: String
           line = buffer.byteslice(0..idx)
           raise Error, "wrong header format" if line.start_with?("\s", "\t")
 
@@ -101,9 +102,11 @@ module HTTPX
           separator_index = line.index(":")
           raise Error, "wrong header format" unless separator_index
 
+          # @type var key: String
           key = line.byteslice(0..(separator_index - 1))
 
           key.rstrip! # was lstripped previously!
+          # @type var value: String
           value = line.byteslice((separator_index + 1)..-1)
           value.strip!
           raise Error, "wrong header format" if value.nil?
@@ -118,6 +121,7 @@ module HTTPX
             @observer.on_data(chunk)
           end
         elsif @content_length
+          # @type var data: String
           data = @buffer.byteslice(0, @content_length)
           @buffer = @buffer.byteslice(@content_length..-1) || "".b
           @content_length -= data.bytesize

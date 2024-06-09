@@ -32,7 +32,7 @@ module HTTPX
 
     def exhausted?: () -> bool
 
-    def <<: (String) -> void
+    def <<: (string) -> void
 
     def send: (Request) -> void
 

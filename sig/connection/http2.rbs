@@ -24,7 +24,7 @@ module HTTPX
 
     def exhausted?: () -> bool
 
-    def <<: (String) -> void
+    def <<: (string) -> void
 
     def can_buffer_more_requests?: () -> bool
 

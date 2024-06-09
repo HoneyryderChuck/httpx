@@ -21,8 +21,8 @@ module HTTPX
         @part_index: Integer
         @buffer: String
 
-        @form: Enumerable[[Symbol | string, multipart_nested_value]]
-        @parts: Array[_Reader]
+        @form: Enumerable[[Symbol | string, Object & multipart_nested_value]]
+        @parts: Array[Object & _Reader]
 
         def bytesize: () -> Integer
 
@@ -40,13 +40,18 @@ module HTTPX
 
         def header_part: (string key, String content_type, String? filename) -> StringIO
 
-        def read_chunks: (String buffer, ?Integer? length) -> void
+        def read_chunks: (String buffer, ?int? length) -> void
 
-        def read_from_part: (?Integer? max_length) -> String?
+        def read_from_part: (?int? max_length) -> String?
       end
 
       class Decoder
+        CRLF: String
         BOUNDARY_RE: Regexp
+        MULTIPART_CONTENT_TYPE: Regexp
+        MULTIPART_CONTENT_DISPOSITION: Regexp
+        MULTIPART_CONTENT_ID: Regexp
+        WINDOW_SIZE: Integer
 
         @state: :idle | :part_header | :part_body | :parse_boundary | :done
         @buffer: String
@@ -75,8 +80,8 @@ module HTTPX
       end
 
       module Part
-        def self?.call: [U] (_MultipartInput multipart_input) -> [U, String, String]
-                      | (multipart_nested_value input) -> ([StringIO, String, String?] | [File, String, String])
+        def self?.call: [U] (Object & _MultipartInput multipart_input) -> [U, String, String]
+                      | (Object & multipart_nested_value input) -> ([StringIO, String, String?] | [File, String, String])
       end
 
       module MimeTypeDetector

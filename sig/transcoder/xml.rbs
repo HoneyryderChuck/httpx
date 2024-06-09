@@ -1,5 +1,6 @@
 module HTTPX::Transcoder
   module Xml
+    MIME_TYPES: Regexp
 
     def self?.encode: (untyped xml) -> Encoder
     def self?.decode: (HTTPX::Response response) -> _Decoder

@@ -5,6 +5,23 @@ module HTTPX
 
     alias host path
 
-    def initialize: (http_uri origin, Array[String]? addresses, options options) -> void
+    @hostname: String
+
+    @options: Options
+
+    @fallback_protocol: String
+
+    @keep_open: bool
+
+    @io: Socket
+
+    def initialize: (http_uri origin, String? path, options options) -> void
+
+    def connect: () -> void
+
+    def expired?: () -> bool
+    private
+
+    def build_socket: () -> Socket
   end
 end

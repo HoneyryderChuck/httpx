@@ -29,7 +29,7 @@ module HTTPX
       @_has_trailers: bool
       @upgrade: bool
 
-      def <<: (String chunk) -> void
+      def <<: (string chunk) -> void
 
       def reset!: () -> void
 

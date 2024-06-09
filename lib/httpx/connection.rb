@@ -626,7 +626,11 @@ module HTTPX
           end
         end
       when "unix"
-        UNIX.new(@origin, addrs, @options)
+        path = Array(addrs).first
+
+        path = String(path) if path
+
+        UNIX.new(@origin, path, @options)
       else
         raise Error, "unsupported transport (#{@type})"
       end
