@@ -5,6 +5,9 @@ module HTTPX
     module FollowRedirects
       MAX_REDIRECTS: Integer
       REDIRECT_STATUS: Range[Integer]
+      REQUEST_BODY_HEADERS: Array[String]
+
+      type redirect_request = Request & RequestMethods
 
       interface _FollowRedirectsOptions
         def max_redirects: () -> Integer?
@@ -23,15 +26,17 @@ module HTTPX
 
         def redirect_request_headers: (http_uri original_uri, http_uri redirect_uri, Headers headers, Options & _FollowRedirectsOptions options) -> Headers
 
-        def __get_location_from_response: (Response) -> (URI::HTTP | URI::HTTPS)
+        def __get_location_from_response: (Response) -> http_uri
       end
 
       module RequestMethods
         attr_accessor root_request: instance?
 
-        def redirect_request: () -> instance
+        @redirect_request: redirect_request
 
-        def redirect_request=: (Request) -> void
+        def redirect_request: () -> redirect_request
+
+        def redirect_request=: (redirect_request req) -> void
 
         def max_redirects: () -> Integer
       end

@@ -7,7 +7,7 @@ module HTTPX
       module InstanceMethods
         include HTTPX::Callbacks
 
-        type socket = TCPSocket | SSLSocket | UNIXSocket
+        type socket = TCPSocket | OpenSSL::SSL::SSLSocket | UNIXSocket
 
         def on_connection_opened: () { (http_uri origin, socket sock) -> void } -> self
 

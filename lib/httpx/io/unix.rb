@@ -8,7 +8,7 @@ module HTTPX
 
     alias_method :host, :path
 
-    def initialize(origin, addresses, options)
+    def initialize(origin, path, options)
       @addresses = []
       @hostname = origin.host
       @state = :idle
@@ -26,8 +26,10 @@ module HTTPX
         @path = @io.path
         @keep_open = true
         @state = :connected
+      elsif path
+        @path = path
       else
-        @path = addresses.first
+        raise Error, "No path given where to store the socket"
       end
       @io ||= build_socket
     end

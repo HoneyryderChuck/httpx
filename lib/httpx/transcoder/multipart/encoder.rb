@@ -19,7 +19,7 @@ module HTTPX
       end
 
       def read(length = nil, outbuf = nil)
-        data   = outbuf.clear.force_encoding(Encoding::BINARY) if outbuf
+        data   = String(outbuf).clear.force_encoding(Encoding::BINARY) if outbuf
         data ||= "".b
 
         read_chunks(data, length)

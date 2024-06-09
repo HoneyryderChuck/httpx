@@ -15,7 +15,7 @@ module HTTPX
     alias host ip
 
     # TODO: lift when https://github.com/ruby/rbs/issues/1497 fixed
-    def initialize: (URI::Generic origin, Array[ipaddr]? addresses, options options) ?{ (self) -> void } -> void
+    def initialize: (URI::Generic origin, Array[ipaddr]? addresses, options options) ?{ (instance) -> void } -> void
 
     def add_addresses: (Array[ipaddr] addrs) -> void
 

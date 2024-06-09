@@ -20,11 +20,12 @@ module HTTPX
 
 
     attr_reader type: io_type
-    attr_reader origin: URI::Generic
+    attr_reader origin: http_uri
     attr_reader origins: Array[String]
     attr_reader state: Symbol
     attr_reader pending: Array[Request]
     attr_reader options: Options
+    attr_reader ssl_session: OpenSSL::SSL::Session?
     attr_writer timers: Timers
 
     attr_accessor family: Integer?
@@ -37,7 +38,7 @@ module HTTPX
     @timeout: Numeric?
     @current_timeout: Numeric?
     @io: TCP | SSL | UNIX
-    @parser: HTTP1 | HTTP2 | _Parser
+    @parser: Object & _Parser
     @connected_at: Float
     @response_received_at: Float
     @intervals: Array[Timers::Interval]
@@ -92,9 +93,9 @@ module HTTPX
 
     private
 
-    def initialize: (URI::Generic uri, options) -> void
+    def initialize: (http_uri uri, options) -> void
 
-    def initialize_type: (URI::Generic uri, options) -> io_type
+    def initialize_type: (http_uri uri, Options) -> io_type
 
     def connect: () -> void
 
@@ -104,11 +105,11 @@ module HTTPX
 
     def send_pending: () -> void
 
-    def parser: () -> (HTTP1 | HTTP2 | _Parser)
+    def parser: () -> (Object & _Parser)
 
     def send_request_to_parser: (Request request) -> void
 
-    def build_parser: (?String protocol) -> (HTTP1 | HTTP2)
+    def build_parser: (?String protocol) -> (Object & _Parser)
 
     def set_parser_callbacks: (HTTP1 | HTTP2 parser) -> void
 

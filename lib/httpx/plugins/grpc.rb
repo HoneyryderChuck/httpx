@@ -124,6 +124,7 @@ module HTTPX
 
       module InstanceMethods
         def with_channel_credentials(ca_path, key = nil, cert = nil, **ssl_opts)
+          # @type var ssl_params: ::Hash[::Symbol, untyped]
           ssl_params = {
             **ssl_opts,
             ca_file: ca_path,

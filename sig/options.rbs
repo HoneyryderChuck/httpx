@@ -6,6 +6,9 @@ module HTTPX
     WINDOW_SIZE: Integer
     MAX_BODY_THRESHOLD_SIZE: Integer
     CONNECT_TIMEOUT: Integer
+    READ_TIMEOUT: Integer
+    WRITE_TIMEOUT: Integer
+    REQUEST_TIMEOUT: Integer
     OPERATION_TIMEOUT: Integer
     KEEP_ALIVE_TIMEOUT: Integer
     SETTINGS_TIMEOUT: Integer
@@ -46,7 +49,7 @@ module HTTPX
     attr_reader body_threshold_size: Integer
 
     # transport
-    attr_reader transport: "unix" | nil
+    attr_reader transport: io_type | nil
 
     # addresses
     attr_reader addresses: Array[ipaddr]?

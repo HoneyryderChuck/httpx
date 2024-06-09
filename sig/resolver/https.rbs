@@ -11,7 +11,7 @@ module HTTPX
       @options: Options
       @requests: Hash[Request, String]
       @connections: Array[Connection]
-      @uri: URI::Generic
+      @uri: http_uri
       @uri_addresses: Array[String]?
       @resolver: Resolv::DNS
       @resolver_connection: Connection
