@@ -16,6 +16,7 @@ module HTTPX
     module FollowRedirects
       MAX_REDIRECTS = 3
       REDIRECT_STATUS = (300..399).freeze
+      REQUEST_BODY_HEADERS = %w[transfer-encoding content-encoding content-type content-length content-language content-md5 trailer].freeze
 
       using URIExtensions
 
@@ -60,7 +61,6 @@ module HTTPX
           return response unless REDIRECT_STATUS.include?(response.status) && response.headers.key?("location")
           return response unless max_redirects.positive?
 
-          # build redirect request
           redirect_uri = __get_location_from_response(response)
 
           if options.redirect_on
@@ -68,24 +68,42 @@ module HTTPX
             return response unless redirect_allowed
           end
 
+          # build redirect request
+          request_body = redirect_request.body
+          redirect_method = "GET"
+
           if response.status == 305 && options.respond_to?(:proxy)
+            request_body.rewind
             # The requested resource MUST be accessed through the proxy given by
             # the Location field. The Location field gives the URI of the proxy.
             retry_options = options.merge(headers: redirect_request.headers,
                                           proxy: { uri: redirect_uri },
-                                          body: redirect_request.body,
+                                          body: request_body,
                                           max_redirects: max_redirects - 1)
             redirect_uri = redirect_request.uri
             options = retry_options
           else
             redirect_headers = redirect_request_headers(redirect_request.uri, redirect_uri, request.headers, options)
 
-            # redirects are **ALWAYS** GET
-            retry_opts = Hash[options].merge(
-              headers: redirect_headers.to_h,
-              body: redirect_request.body,
-              max_redirects: max_redirects - 1
-            )
+            retry_opts = Hash[options].merge(max_redirects: max_redirects - 1)
+
+            unless request_body.empty?
+              if response.status == 307
+                # The method and the body of the original request are reused to perform the redirected request.
+                redirect_method = redirect_request.verb
+                request_body.rewind
+                retry_opts[:body] = request_body
+              else
+                # redirects are **ALWAYS** GET, so remove body-related headers
+                REQUEST_BODY_HEADERS.each do |h|
+                  redirect_headers.delete(h)
+                end
+                retry_opts.delete(:body)
+              end
+            end
+
+            retry_opts[:headers] = redirect_headers.to_h
+
             retry_options = options.class.new(retry_opts)
           end
 
@@ -99,7 +117,7 @@ module HTTPX
             return ErrorResponse.new(request, error, options)
           end
 
-          retry_request = build_request("GET", redirect_uri, retry_options)
+          retry_request = build_request(redirect_method, redirect_uri, retry_options)
 
           request.redirect_request = retry_request
 
@@ -125,6 +143,8 @@ module HTTPX
         end
 
         def redirect_request_headers(original_uri, redirect_uri, headers, options)
+          headers = headers.dup
+
           return headers if options.allow_auth_to_other_origins
 
           return headers unless headers.key?("authorization")
