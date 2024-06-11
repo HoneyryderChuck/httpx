@@ -146,14 +146,14 @@ module HTTPX
         log { "resolver: timeout after #{timeout}s, retry(#{@timeouts[host].first}) #{host}..." }
         # must downgrade to tcp AND retry on same host as last
         downgrade_socket
-        resolve(connection)
+        resolve(connection, h)
       elsif @ns_index + 1 < @nameserver.size
         # try on the next nameserver
         @ns_index += 1
         log { "resolver: failed resolving #{host} on nameserver #{@nameserver[@ns_index - 1]} (timeout error)" }
         transition(:idle)
         @timeouts.clear
-        resolve(connection)
+        resolve(connection, h)
       else
 
         @timeouts.delete(host)
