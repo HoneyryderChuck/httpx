@@ -39,6 +39,8 @@ module HTTPX
         # the redirected request.
         #
         def retry_after_rate_limit(_, response)
+          return unless response.is_a?(Response)
+
           retry_after = response.headers["retry-after"]
 
           return unless retry_after
