@@ -5,7 +5,7 @@ module HTTPX
 
       def self.retry_on_rate_limited_response: (_Response) -> bool
 
-      def self.retry_after_rate_limit: (untyped, _Response) -> Numeric?
+      def self.retry_after_rate_limit: (untyped, response) -> Numeric?
     end
   end
 end

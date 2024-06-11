@@ -29,6 +29,8 @@ module HTTPX
 
         private
 
+        def fetch_response: (retriesRequest request, Array[Connection] connections, retriesOptions options) -> (retriesResponse | ErrorResponse)?
+
         def __repeatable_request?: (retriesRequest request, retriesOptions options) -> boolish
 
         def __retryable_error?: (_Exception error) -> bool
