@@ -65,6 +65,7 @@ module HTTPX
       if nameserver && @ns_index < nameserver.size
         log { "resolver: failed resolving on nameserver #{@nameserver[@ns_index - 1]} (#{e.message})" }
         transition(:idle)
+        @timeouts.clear
       else
         handle_error(e)
       end
@@ -143,13 +144,16 @@ module HTTPX
 
       if !@timeouts[host].empty?
         log { "resolver: timeout after #{timeout}s, retry(#{@timeouts[host].first}) #{host}..." }
-        resolve(connection)
+        # must downgrade to tcp AND retry on same host as last
+        downgrade_socket
+        resolve(connection, h)
       elsif @ns_index + 1 < @nameserver.size
         # try on the next nameserver
         @ns_index += 1
         log { "resolver: failed resolving #{host} on nameserver #{@nameserver[@ns_index - 1]} (timeout error)" }
         transition(:idle)
-        resolve(connection)
+        @timeouts.clear
+        resolve(connection, h)
       else
 
         @timeouts.delete(host)
@@ -187,10 +191,9 @@ module HTTPX
             next unless @large_packet.full?
 
             parse(@large_packet.to_s)
-            @socket_type = @resolver_options.fetch(:socket_type, :udp)
             @large_packet = nil
-            transition(:idle)
-            transition(:open)
+            # downgrade to udp again
+            downgrade_socket
             return
           else
             size = @read_buffer[0, 2].unpack1("n")
@@ -304,13 +307,21 @@ module HTTPX
         end
 
         if address.key?("alias") # CNAME
+          hostname_alias = address["alias"]
           # clean up intermediate queries
           @timeouts.delete(name) unless connection.origin.host == name
 
-          if catch(:coalesced) { early_resolve(connection, hostname: address["alias"]) }
+          if catch(:coalesced) { early_resolve(connection, hostname: hostname_alias) }
             @connections.delete(connection)
           else
-            resolve(connection, address["alias"])
+            if @socket_type == :tcp
+              # must downgrade to udp if tcp
+              @socket_type = @resolver_options.fetch(:socket_type, :udp)
+              transition(:idle)
+              transition(:open)
+            end
+            log { "resolver: ALIAS #{hostname_alias} for #{name}" }
+            resolve(connection, hostname_alias)
             return
           end
         else
@@ -386,6 +397,14 @@ module HTTPX
       end
     end
 
+    def downgrade_socket
+      return unless @socket_type == :tcp
+
+      @socket_type = @resolver_options.fetch(:socket_type, :udp)
+      transition(:idle)
+      transition(:open)
+    end
+
     def transition(nextstate)
       case nextstate
       when :idle
@@ -393,7 +412,6 @@ module HTTPX
           @io.close
           @io = nil
         end
-        @timeouts.clear
       when :open
         return unless @state == :idle
 

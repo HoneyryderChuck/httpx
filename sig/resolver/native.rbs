@@ -59,6 +59,8 @@ module HTTPX
 
       def build_socket: () -> (UDP | TCP)
 
+      def downgrade_socket: () -> void
+
       def transition: (Symbol nextstate) -> void
 
       def handle_error: (NativeResolveError | StandardError) -> void
