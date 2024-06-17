@@ -5,7 +5,7 @@ module HTTPX
 
     MAX_CONCURRENT_REQUESTS: Integer
 
-    attr_reader streams: Hash[Request, HTTP2Next::Stream]
+    attr_reader streams: Hash[Request, ::HTTP2::Stream]
     attr_reader pending: Array[Request]
 
     @options: Options
@@ -48,29 +48,29 @@ module HTTPX
 
     def set_protocol_headers: (Request) -> _Each[[String, String]]
 
-    def handle: (Request request, HTTP2Next::Stream stream) -> void
+    def handle: (Request request, ::HTTP2::Stream stream) -> void
 
     def init_connection: () -> void
 
-    def handle_stream: (HTTP2Next::Stream stream, Request request) -> void
+    def handle_stream: (::HTTP2::Stream stream, Request request) -> void
 
     def join_headline: (Request request) -> String
 
-    def join_headers: (HTTP2Next::Stream stream, Request request) -> void
+    def join_headers: (::HTTP2::Stream stream, Request request) -> void
 
-    def join_trailers: (HTTP2Next::Stream stream, Request request) -> void
+    def join_trailers: (::HTTP2::Stream stream, Request request) -> void
 
-    def join_body: (HTTP2Next::Stream stream, Request request) -> void
+    def join_body: (::HTTP2::Stream stream, Request request) -> void
 
-    def on_stream_headers: (HTTP2Next::Stream stream, Request request, Array[[String, String]] headers) -> void
+    def on_stream_headers: (::HTTP2::Stream stream, Request request, Array[[String, String]] headers) -> void
 
-    def on_stream_trailers: (HTTP2Next::Stream stream, Response response, Array[[String, String]] headers) -> void
+    def on_stream_trailers: (::HTTP2::Stream stream, Response response, Array[[String, String]] headers) -> void
 
-    def on_stream_data: (HTTP2Next::Stream stream, Request request, String data) -> void
+    def on_stream_data: (::HTTP2::Stream stream, Request request, String data) -> void
 
-    def on_stream_refuse: (HTTP2Next::Stream stream, Request request, StandardError error) -> void
+    def on_stream_refuse: (::HTTP2::Stream stream, Request request, StandardError error) -> void
 
-    def on_stream_close: (HTTP2Next::Stream stream, Request request, (Symbol | StandardError)? error) -> void
+    def on_stream_close: (::HTTP2::Stream stream, Request request, (Symbol | StandardError)? error) -> void
 
     def on_frame: (string bytes) -> void
 
@@ -78,13 +78,13 @@ module HTTPX
 
     def on_close: (Integer last_frame, Symbol? error, String? payload) -> void
 
-    def on_frame_sent: (HTTP2Next::frame) -> void
+    def on_frame_sent: (::HTTP2::frame) -> void
 
-    def on_frame_received: (HTTP2Next::frame) -> void
+    def on_frame_received: (::HTTP2::frame) -> void
 
-    def on_altsvc: (String origin, HTTP2Next::frame) -> void
+    def on_altsvc: (String origin, ::HTTP2::frame) -> void
 
-    def on_promise: (HTTP2Next::Stream) -> void
+    def on_promise: (::HTTP2::Stream) -> void
 
     def on_origin: (String) -> void
 

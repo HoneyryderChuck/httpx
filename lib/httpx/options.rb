@@ -91,7 +91,7 @@ module HTTPX
     # :debug :: an object which log messages are written to (must respond to <tt><<</tt>)
     # :debug_level :: the log level of messages (can be 1, 2, or 3).
     # :ssl :: a hash of options which can be set as params of OpenSSL::SSL::SSLContext (see HTTPX::IO::SSL)
-    # :http2_settings :: a hash of options to be passed to a HTTP2Next::Connection (ex: <tt>{ max_concurrent_streams: 2 }</tt>)
+    # :http2_settings :: a hash of options to be passed to a HTTP2::Connection (ex: <tt>{ max_concurrent_streams: 2 }</tt>)
     # :fallback_protocol :: version of HTTP protocol to use by default in the absence of protocol negotiation
     #                       like ALPN (defaults to <tt>"http/1.1"</tt>)
     # :supported_compression_formats :: list of compressions supported by the transcoder layer (defaults to <tt>%w[gzip deflate]</tt>).
