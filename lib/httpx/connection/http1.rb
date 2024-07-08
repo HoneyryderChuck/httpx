@@ -15,7 +15,7 @@ module HTTPX
     attr_accessor :max_concurrent_requests
 
     def initialize(buffer, options)
-      @options = Options.new(options)
+      @options = options
       @max_concurrent_requests = @options.max_concurrent_requests || MAX_REQUESTS
       @max_requests = @options.max_requests
       @parser = Parser::HTTP1.new(self)
@@ -146,7 +146,7 @@ module HTTPX
 
       response << chunk
     rescue StandardError => e
-      error_response = ErrorResponse.new(request, e, request.options)
+      error_response = ErrorResponse.new(request, e)
       request.response = error_response
       dispatch
     end

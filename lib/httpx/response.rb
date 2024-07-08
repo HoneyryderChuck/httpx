@@ -247,11 +247,11 @@ module HTTPX
     # the IP address of the peer server.
     def_delegator :@request, :peer_address
 
-    def initialize(request, error, options)
+    def initialize(request, error)
       @request = request
       @response = request.response if request.response.is_a?(Response)
       @error = error
-      @options = Options.new(options)
+      @options = request.options
       log_exception(@error)
     end
 

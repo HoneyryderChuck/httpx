@@ -141,7 +141,7 @@ module HTTPX
 
           def initialize(buffer, options)
             @buffer = buffer
-            @options = Options.new(options)
+            @options = options
           end
 
           def close; end

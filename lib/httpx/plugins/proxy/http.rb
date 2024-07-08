@@ -163,8 +163,8 @@ module HTTPX
         end
 
         class ConnectRequest < Request
-          def initialize(uri, _options)
-            super("CONNECT", uri, {})
+          def initialize(uri, options)
+            super("CONNECT", uri, options)
             @headers.delete("accept")
           end
 

@@ -48,6 +48,8 @@ module HTTPX
     attr_accessor :family
 
     def initialize(uri, options)
+      @origins = [uri.origin]
+      @origin = Utils.to_uri(uri.origin)
       @options = Options.new(options)
       @type = initialize_type(uri, @options)
       @origins = [uri.origin]
@@ -337,7 +339,7 @@ module HTTPX
           #
           loop do
             siz = @io.read(@window_size, @read_buffer)
-            log(level: 3, color: :cyan) { "IO READ: #{siz} bytes..." }
+            log(level: 3, color: :cyan) { "IO READ: #{siz} bytes... (wsize: #{@window_size}, rbuffer: #{@read_buffer.bytesize})" }
             unless siz
               ex = EOFError.new("descriptor closed")
               ex.set_backtrace(caller)
@@ -504,7 +506,7 @@ module HTTPX
         when MisdirectedRequestError
           emit(:misdirected, request)
         else
-          response = ErrorResponse.new(request, ex, @options)
+          response = ErrorResponse.new(request, ex)
           request.response = response
           request.emit(:response, response)
         end
@@ -657,7 +659,7 @@ module HTTPX
     def handle_error(error)
       parser.handle_error(error) if @parser && parser.respond_to?(:handle_error)
       while (request = @pending.shift)
-        response = ErrorResponse.new(request, error, request.options)
+        response = ErrorResponse.new(request, error)
         request.response = response
         request.emit(:response, response)
       end

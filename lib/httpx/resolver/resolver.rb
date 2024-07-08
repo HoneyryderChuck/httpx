@@ -33,7 +33,7 @@ module HTTPX
     def initialize(family, options)
       @family = family
       @record_type = RECORD_TYPES[family]
-      @options = Options.new(options)
+      @options = options
     end
 
     def close; end

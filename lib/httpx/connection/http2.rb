@@ -25,7 +25,7 @@ module HTTPX
     attr_reader :streams, :pending
 
     def initialize(buffer, options)
-      @options = Options.new(options)
+      @options = options
       @settings = @options.http2_settings
       @pending = []
       @streams = {}
@@ -309,7 +309,7 @@ module HTTPX
       if error
         ex = Error.new(stream.id, error)
         ex.set_backtrace(caller)
-        response = ErrorResponse.new(request, ex, request.options)
+        response = ErrorResponse.new(request, ex)
         request.response = response
         emit(:response, request, response)
       else

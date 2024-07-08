@@ -110,10 +110,10 @@ module HTTPX
       end
 
       module RequestBodyMethods
-        def initialize(headers, _)
+        def initialize(*, **)
           super
 
-          if (compression = headers["grpc-encoding"])
+          if (compression = @headers["grpc-encoding"])
             deflater_body = self.class.initialize_deflater_body(@body, compression)
             @body = Transcoder::GRPCEncoding.encode(deflater_body || @body, compressed: !deflater_body.nil?)
           else

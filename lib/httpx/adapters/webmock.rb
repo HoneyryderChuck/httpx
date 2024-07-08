@@ -47,7 +47,7 @@ module WebMock
         end
 
         def build_error_response(request, exception)
-          HTTPX::ErrorResponse.new(request, exception, request.options)
+          HTTPX::ErrorResponse.new(request, exception)
         end
       end
 

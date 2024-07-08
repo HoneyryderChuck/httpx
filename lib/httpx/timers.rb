@@ -43,7 +43,7 @@ module HTTPX
 
       elapsed_time = Utils.elapsed_time(@next_interval_at)
 
-      @intervals.delete_if { |interval| interval.elapse(elapsed_time) <= 0 }
+      @intervals = @intervals.drop_while { |interval| interval.elapse(elapsed_time) <= 0 }
 
       @next_interval_at = nil if @intervals.empty?
     end

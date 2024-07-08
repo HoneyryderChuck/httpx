@@ -160,7 +160,7 @@ module HTTPX
           with(sigv4_signer: Signer.new(**options))
         end
 
-        def build_request(*, _)
+        def build_request(*)
           request = super
 
           return request if request.headers.key?("authorization")

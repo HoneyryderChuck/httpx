@@ -71,40 +71,40 @@ module HTTPX
           # build redirect request
           request_body = redirect_request.body
           redirect_method = "GET"
+          redirect_params = {}
 
           if response.status == 305 && options.respond_to?(:proxy)
             request_body.rewind
             # The requested resource MUST be accessed through the proxy given by
             # the Location field. The Location field gives the URI of the proxy.
-            retry_options = options.merge(headers: redirect_request.headers,
-                                          proxy: { uri: redirect_uri },
-                                          body: request_body,
-                                          max_redirects: max_redirects - 1)
+            redirect_options = options.merge(headers: redirect_request.headers,
+                                             proxy: { uri: redirect_uri },
+                                             max_redirects: max_redirects - 1)
+
+            redirect_params[:body] = request_body
             redirect_uri = redirect_request.uri
-            options = retry_options
+            options = redirect_options
           else
             redirect_headers = redirect_request_headers(redirect_request.uri, redirect_uri, request.headers, options)
-
-            retry_opts = Hash[options].merge(max_redirects: max_redirects - 1)
+            redirect_opts = Hash[options]
+            redirect_params[:max_redirects] = max_redirects - 1
 
             unless request_body.empty?
               if response.status == 307
                 # The method and the body of the original request are reused to perform the redirected request.
                 redirect_method = redirect_request.verb
                 request_body.rewind
-                retry_opts[:body] = request_body
+                redirect_params[:body] = request_body
               else
                 # redirects are **ALWAYS** GET, so remove body-related headers
                 REQUEST_BODY_HEADERS.each do |h|
                   redirect_headers.delete(h)
                 end
-                retry_opts.delete(:body)
+                redirect_params[:body] = nil
               end
             end
 
-            retry_opts[:headers] = redirect_headers.to_h
-
-            retry_options = options.class.new(retry_opts)
+            options = options.class.new(redirect_opts.merge(headers: redirect_headers.to_h))
           end
 
           redirect_uri = Utils.to_uri(redirect_uri)
@@ -114,26 +114,26 @@ module HTTPX
              redirect_uri.scheme == "http"
             error = InsecureRedirectError.new(redirect_uri.to_s)
             error.set_backtrace(caller)
-            return ErrorResponse.new(request, error, options)
+            return ErrorResponse.new(request, error)
           end
 
-          retry_request = build_request(redirect_method, redirect_uri, retry_options)
+          retry_request = build_request(redirect_method, redirect_uri, redirect_params, options)
 
           request.redirect_request = retry_request
 
-          retry_after = response.headers["retry-after"]
+          redirect_after = response.headers["retry-after"]
 
-          if retry_after
+          if redirect_after
             # Servers send the "Retry-After" header field to indicate how long the
             # user agent ought to wait before making a follow-up request.
             # When sent with any 3xx (Redirection) response, Retry-After indicates
             # the minimum time that the user agent is asked to wait before issuing
             # the redirected request.
             #
-            retry_after = Utils.parse_retry_after(retry_after)
+            redirect_after = Utils.parse_retry_after(redirect_after)
 
-            log { "redirecting after #{retry_after} secs..." }
-            pool.after(retry_after) do
+            log { "redirecting after #{redirect_after} secs..." }
+            pool.after(redirect_after) do
               send_request(retry_request, connections, options)
             end
           else
@@ -149,10 +149,9 @@ module HTTPX
 
           return headers unless headers.key?("authorization")
 
-          unless original_uri.origin == redirect_uri.origin
-            headers = headers.dup
-            headers.delete("authorization")
-          end
+          return headers if original_uri.origin == redirect_uri.origin
+
+          headers.delete("authorization")
 
           headers
         end
