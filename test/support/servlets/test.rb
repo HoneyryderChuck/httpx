@@ -60,7 +60,7 @@ class TestHTTP2Server
       loop do
         sock = @server.accept
 
-        conn = HTTP2Next::Server.new
+        conn = ::HTTP2::Server.new
         handle_connection(conn, sock)
         handle_socket(conn, sock)
       end
@@ -131,7 +131,6 @@ class TestDNSResolver
   def start
     if @socket_type == :udp
       Socket.udp_server_loop(@port) do |query, src|
-        puts "bang bang"
         @queries += 1
         src.reply(dns_response(query))
         @answers += 1

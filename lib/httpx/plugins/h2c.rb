@@ -39,7 +39,7 @@ module HTTPX
           upgrade_request.headers.add("connection", "upgrade")
           upgrade_request.headers.add("connection", "http2-settings")
           upgrade_request.headers["upgrade"] = "h2c"
-          upgrade_request.headers["http2-settings"] = HTTP2Next::Client.settings_header(upgrade_request.options.http2_settings)
+          upgrade_request.headers["http2-settings"] = ::HTTP2::Client.settings_header(upgrade_request.options.http2_settings)
 
           super(upgrade_request, *remainder)
         end

@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
 require "securerandom"
-require "http/2/next"
+require "http/2"
 
 module HTTPX
   class Connection::HTTP2
     include Callbacks
     include Loggable
 
-    MAX_CONCURRENT_REQUESTS = HTTP2Next::DEFAULT_MAX_CONCURRENT_STREAMS
+    MAX_CONCURRENT_REQUESTS = ::HTTP2::DEFAULT_MAX_CONCURRENT_STREAMS
 
     class Error < Error
       def initialize(id, code)
@@ -111,7 +111,7 @@ module HTTPX
       end
       handle(request, stream)
       true
-    rescue HTTP2Next::Error::StreamLimitExceeded
+    rescue ::HTTP2::Error::StreamLimitExceeded
       @pending.unshift(request)
     end
 
@@ -168,7 +168,7 @@ module HTTPX
     end
 
     def init_connection
-      @connection = HTTP2Next::Client.new(@settings)
+      @connection = ::HTTP2::Client.new(@settings)
       @connection.on(:frame, &method(:on_frame))
       @connection.on(:frame_sent, &method(:on_frame_sent))
       @connection.on(:frame_received, &method(:on_frame_received))

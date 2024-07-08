@@ -36,7 +36,7 @@ module ProfilerHelpers
                     .flatten
                     .grep(Class)
 
-    http2_next_classes = HTTP2Next.constants.map { |sym| HTTP2Next.const_get(sym) }.grep(Class)
+    http2_next_classes = HTTP2.constants.map { |sym| HTTP2.const_get(sym) }.grep(Class)
 
     obj_memsize_proc = lambda do
       [*httpx_classes, *http2_next_classes, Hash, Array, String].to_h do |klass|
