@@ -10,7 +10,7 @@ class Sock5WithNoneServer
     @server = TCPServer.new(0)
 
     _, port, ip, _ = @server.addr
-    @origin = "socks5://#{ip}:#{port}"
+    @origin = URI::Generic.build(scheme: "socks5", host: ip, port: port)
   end
 
   def shutdown
