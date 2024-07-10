@@ -40,6 +40,12 @@ module HTTPX
           end
         end
 
+        def build_request(*)
+          request = super
+          request.headers.set_cookie(request.options.cookies[request.uri])
+          request
+        end
+
         private
 
         def on_response(_request, response)
@@ -51,12 +57,6 @@ module HTTPX
           end
 
           super
-        end
-
-        def build_request(*)
-          request = super
-          request.headers.set_cookie(request.options.cookies[request.uri])
-          request
         end
       end
 
