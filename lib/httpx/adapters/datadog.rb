@@ -142,7 +142,7 @@ module Datadog::Tracing
             @configuration ||= Datadog.configuration.tracing[:httpx, @request.uri.host]
           end
 
-          if Gem::Version.new(DATADOG_VERSION::STRING) >= Gem::Version.new("2.0.0.beta1")
+          if Gem::Version.new(DATADOG_VERSION::STRING) >= Gem::Version.new("2.0.0")
             def propagate_trace_http(digest, headers)
               Datadog::Tracing::Contrib::HTTP.inject(digest, headers)
             end
