@@ -143,7 +143,7 @@ module HTTPX
           proxy = Parameters.new(**proxy_opts)
 
           proxy_options = options.merge(proxy: proxy)
-          connection = pool.find_connection(uri, proxy_options) || init_connection(uri, proxy_options)
+          connection = pool.find_or_new_connection(uri, proxy_options)
           unless connections.nil? || connections.include?(connection)
             connections << connection
             set_connection_callbacks(connection, connections, options)

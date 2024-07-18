@@ -31,16 +31,15 @@ module HTTPX
 
         private
 
-        def init_connection(uri, options)
-          connection = super
-          connection.on(:open) do
-            emit_or_callback_error(:connection_opened, connection.origin, connection.io.socket)
+        def find_connection(*)
+          super do |connection|
+            connection.on(:open) do
+              emit_or_callback_error(:connection_opened, connection.origin, connection.io.socket)
+            end
+            connection.on(:close) do
+              emit_or_callback_error(:connection_closed, connection.origin) if connection.used?
+            end
           end
-          connection.on(:close) do
-            emit_or_callback_error(:connection_closed, connection.origin) if connection.used?
-          end
-
-          connection
         end
 
         def set_request_callbacks(request)

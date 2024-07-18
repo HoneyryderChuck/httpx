@@ -132,10 +132,6 @@ module HTTPX
       end
     end
 
-    def create_idle(options = {})
-      self.class.new(@origin, @options.merge(options))
-    end
-
     def merge(connection)
       @origins |= connection.instance_variable_get(:@origins)
       if connection.ssl_session

@@ -114,10 +114,10 @@ module HTTPX
     end
 
     # returns the HTTPX::Connection through which the +request+ should be sent through.
-    def find_connection(request, connections, options)
+    def find_connection(request, connections, options, &blk)
       uri = request.uri
 
-      connection = pool.find_connection(uri, options) || init_connection(uri, options)
+      connection = pool.find_or_new_connection(uri, options, &blk)
       unless connections.nil? || connections.include?(connection)
         connections << connection
         set_connection_callbacks(connection, connections, options)
@@ -139,11 +139,7 @@ module HTTPX
     # connection lifecycle events which deal with request rerouting.
     def set_connection_callbacks(connection, connections, options, cloned: false)
       connection.only(:misdirected) do |misdirected_request|
-        other_connection = connection.create_idle(ssl: { alpn_protocols: %w[http/1.1] })
-        other_connection.merge(connection)
-        catch(:coalesced) do
-          pool.init_connection(other_connection, options)
-        end
+        other_connection = pool.find_or_new_idle_connection(connection, ssl: { alpn_protocols: %w[http/1.1] })
         set_connection_callbacks(other_connection, connections, options)
         connections << other_connection
         misdirected_request.transition(:idle)
@@ -160,7 +156,7 @@ module HTTPX
     end
 
     # returns an HTTPX::Connection for the negotiated Alternative Service (or none).
-    def build_altsvc_connection(existing_connection, connections, alt_origin, origin, alt_params, options)
+    def build_altsvc_connection(existing_connection, connections, alt_origin, origin, alt_params, options, &blk)
       # do not allow security downgrades on altsvc negotiation
       return if existing_connection.origin.scheme == "https" && alt_origin.scheme != "https"
 
@@ -171,7 +167,7 @@ module HTTPX
 
       alt_options = options.merge(ssl: options.ssl.merge(hostname: URI(origin).host))
 
-      connection = pool.find_connection(alt_origin, alt_options) || init_connection(alt_origin, alt_options)
+      connection = pool.find_or_new_connection(alt_origin, alt_options, &blk)
 
       # advertised altsvc is the same origin being used, ignore
       return if connection == existing_connection
@@ -221,14 +217,6 @@ module HTTPX
     def set_request_callbacks(request)
       request.on(:response, &method(:on_response).curry(2)[request])
       request.on(:promise, &method(:on_promise))
-    end
-
-    def init_connection(uri, options)
-      connection = options.connection_class.new(uri, options)
-      catch(:coalesced) do
-        pool.init_connection(connection, options)
-        connection
-      end
     end
 
     # sends an array of HTTPX::Request +requests+, returns the respective array of HTTPX::Response objects.

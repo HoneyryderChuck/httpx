@@ -30,7 +30,7 @@ module HTTPX
 
     def fetch_response: (Request request, Array[Connection] connections, untyped options) -> response?
 
-    def find_connection: (Request request, Array[Connection] connections, Options options) -> Connection
+    def find_connection: (Request request, Array[Connection] connections, Options options) ?{ (Connection new_connection) -> void } -> Connection
 
     def send_request: (Request request, Array[Connection] connections, ?Options options) -> void
 
@@ -38,15 +38,13 @@ module HTTPX
 
     def set_request_callbacks: (Request request) -> void
 
-    def build_altsvc_connection: (Connection existing_connection, Array[Connection] connections, URI::Generic alt_origin, String origin, Hash[String, String] alt_params, Options options) -> (Connection & AltSvc::ConnectionMixin)?
+    def build_altsvc_connection: (Connection existing_connection, Array[Connection] connections, URI::Generic alt_origin, String origin, Hash[String, String] alt_params, Options options)(URI::Generic uri, Options options) ?{ (Connection new_connection) -> void } -> (Connection & AltSvc::ConnectionMixin)?
 
     def build_requests: (verb, uri, request_params) -> Array[Request]
                       | (Array[[verb, uri, request_params]], Hash[Symbol, untyped]) -> Array[Request]
                       | (Array[[verb, uri]], request_params) -> Array[Request]
                       | (verb, _Each[[uri, request_params]], Hash[Symbol, untyped]) -> Array[Request]
                       | (verb, _Each[uri], request_params) -> Array[Request]
-
-    def init_connection: (http_uri uri, Options options) -> Connection
 
     def send_requests: (*Request) -> Array[response]
 

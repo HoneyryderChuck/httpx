@@ -57,8 +57,6 @@ module HTTPX
 
     def coalescable?: (Connection connection) -> bool
 
-    def create_idle: (?Hash[Symbol, untyped] options) -> Connection
-
     def merge: (Connection connection) -> void
 
     def purge_pending: () { (Request request) -> void } -> void

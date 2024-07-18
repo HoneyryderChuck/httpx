@@ -52,16 +52,16 @@ module WebMock
       end
 
       module InstanceMethods
-        def init_connection(*)
-          connection = super
-          connection.once(:unmock_connection) do
-            unless connection.addresses
-              connection.__send__(:callbacks)[:connect_error].clear
-              pool.__send__(:unregister_connection, connection)
+        def find_connection(*)
+          super do |connection|
+            connection.once(:unmock_connection) do
+              unless connection.addresses
+                connection.__send__(:callbacks)[:connect_error].clear
+                pool.__send__(:unregister_connection, connection)
+              end
+              pool.__send__(:resolve_connection, connection)
             end
-            pool.__send__(:resolve_connection, connection)
           end
-          connection
         end
       end
 
@@ -86,6 +86,15 @@ module WebMock
         def initialize(*)
           super
           @mocked = true
+
+          connection.once(:unmock_connection) do
+            unless connection.addresses
+              connection.__send__(:callbacks)[:connect_error].clear
+              pool.__send__(:unregister_connection, connection)
+            end
+            pool.__send__(:resolve_connection, connection)
+          end
+          connection
         end
 
         def open?
@@ -124,7 +133,7 @@ module WebMock
               end
             end
             @mocked = false
-            emit(:unmock_connection, self)
+            emit(:unmock_connection)
             super
           else
             raise WebMock::NetConnectNotAllowedError, request_signature

@@ -68,8 +68,7 @@ module HTTPX
     def resolver_connection
       @resolver_connection ||= @pool.find_connection(@uri, @options) || begin
         @building_connection = true
-        connection = @options.connection_class.new(@uri, @options.merge(ssl: { alpn_protocols: %w[h2] }))
-        @pool.init_connection(connection, @options)
+        connection = @pool.new_connection(@uri, @options.merge(ssl: { alpn_protocols: %w[h2] }))
         # only explicity emit addresses if connection didn't pre-resolve, i.e. it's not an IP.
         emit_addresses(connection, @family, @uri_addresses) unless connection.addresses
         @building_connection = false

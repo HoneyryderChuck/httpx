@@ -15,6 +15,12 @@ module HTTPX
 
     def close: (?Array[Connection] connections) -> void
 
+    def find_or_new_connection: (URI::Generic uri, Options options) ?{ (Connection new_connection) -> void } -> Connection
+
+    def find_or_idle_connection: (Connection connection,  ?Hash[Symbol, untyped] extra_options) -> Connection
+
+    def new_connection: (URI::Generic uri, Options options) ?{ (Connection new_connection) -> void } -> Connection
+
     def init_connection: (Connection connection, Options options) -> void
 
     def find_connection: (URI::Generic uri, Options options) -> Connection?
@@ -45,7 +51,7 @@ module HTTPX
 
     def coalesce_connections: (Connection coalescable, Connection coalescing) -> void
 
-    def next_timeout: () -> Numeric?
+    def next_timeout: (Array[Connection] connections) -> Numeric?
 
     def find_resolver_for: (Connection) { (Resolver::Resolver resolver) -> void } -> resolver_manager
   end

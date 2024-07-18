@@ -91,6 +91,32 @@ module HTTPX
       next_tick(resolver_connections) until resolver_connections.none? { |c| c.state != :idle && @connections.include?(c) }
     end
 
+    def find_or_new_connection(uri, options, &blk)
+      find_connection(uri, options) || new_connection(uri, options, &blk)
+    end
+
+    def find_or_new_idle_connection(connection, extra_options)
+      options = connection.options.merge(extra_options)
+
+      find_connection(connection.origin, options) || begin
+        other_connection = connection.class.new(connection.origin, options)
+        other_connection.merge(connection)
+        catch(:coalesced) do
+          init_connection(other_connection, options)
+        end
+        other_connection
+      end
+    end
+
+    def new_connection(uri, options, &blk)
+      connection = options.connection_class.new(uri, options)
+      catch(:coalesced) do
+        init_connection(connection, options)
+        blk.call(connection) if blk
+        connection
+      end
+    end
+
     def init_connection(connection, _options)
       connection.timers = @timers
       connection.on(:activate) do
