@@ -269,7 +269,7 @@ module HTTPX
 
           return responses unless request
 
-          catch(:coalesced) { pool.next_tick } until (response = fetch_response(request, connections, request.options))
+          catch(:coalesced) { pool.next_tick(connections) } until (response = fetch_response(request, connections, request.options))
           request.emit(:complete, response)
 
           responses << response
