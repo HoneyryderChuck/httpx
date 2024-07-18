@@ -6,6 +6,17 @@ require "httpx/connection"
 require "httpx/resolver"
 
 module HTTPX
+  def self.pool_for(pool)
+    case pool
+    when :pool
+      Thread.current[:httpx_connection_pool] ||= Pool.new
+    else
+      return pool if pool.is_a?(Pool)
+
+      raise Error, "unsupported pool type (#{pool.class})"
+    end
+  end
+
   class Pool
     using ArrayExtensions::FilterMap
     extend Forwardable

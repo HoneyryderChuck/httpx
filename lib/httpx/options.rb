@@ -63,6 +63,7 @@ module HTTPX
       :persistent => false,
       :resolver_class => (ENV["HTTPX_RESOLVER"] || :native).to_sym,
       :resolver_options => { cache: true },
+      :pool => (ENV["HTTPX_POOL"] || :pool).to_sym,
       :ip_families => ip_address_families,
     }.freeze
 
@@ -215,7 +216,7 @@ module HTTPX
       ssl http2_settings
       request_class response_class headers_class request_body_class
       response_body_class connection_class options_class
-      io fallback_protocol debug debug_level resolver_class resolver_options
+      io fallback_protocol debug debug_level resolver_class resolver_options pool
       compress_request_body decompress_response_body
       persistent
     ].each do |method_name|

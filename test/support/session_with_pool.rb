@@ -1,20 +1,16 @@
 # frozen_string_literal: true
 
 module SessionWithPool
-  ConnectionPool = Class.new(HTTPX::Pool) do
-    attr_reader :resolver, :connections, :selector
-    attr_reader :connection_count
-    attr_reader :ping_count
-    attr_reader :timers
-    attr_reader :conn_store
+  class ConnectionPool < HTTPX::Pool
+    attr_reader :resolver, :connections, :selector, :connection_count, :ping_count, :timers, :conn_store
 
     def initialize(*)
       super
       @connection_count = 0
       @ping_count = 0
       @conn_store = []
-      def @timers.intervals
-        @intervals
+      @timers.singleton_class.class_eval do
+        attr_accessor :intervals
       end
     end
 
@@ -36,18 +32,24 @@ module SessionWithPool
     end
   end
 
+  def self.extra_options(options)
+    options.merge(pool: ConnectionPool.new)
+  end
+
   module InstanceMethods
     attr_reader :connection_exausted
-
-    def pool
-      @pool ||= ConnectionPool.new
-    end
 
     def set_connection_callbacks(connection, connections, options)
       super
       connection.on(:exhausted) do
         @connection_exausted = true
       end
+    end
+
+    def self.included(klass)
+      super
+
+      klass.__send__(:public, :pool)
     end
   end
 

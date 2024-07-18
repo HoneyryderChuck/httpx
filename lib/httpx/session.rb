@@ -94,7 +94,7 @@ module HTTPX
     # returns the HTTPX::Pool object which manages the networking required to
     # perform requests.
     def pool
-      Thread.current[:httpx_connection_pool] ||= Pool.new
+      HTTPX.pool_for(@options.pool)
     end
 
     # callback executed when a response for a given request has been received.
