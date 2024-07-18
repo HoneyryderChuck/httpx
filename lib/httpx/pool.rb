@@ -45,9 +45,9 @@ module HTTPX
       @connections.empty?
     end
 
-    def next_tick
+    def next_tick(connections)
       catch(:jump_tick) do
-        timeout = next_timeout
+        timeout = next_timeout(connections)
         if timeout && timeout.negative?
           @timers.fire
           throw(:jump_tick)
@@ -61,11 +61,11 @@ module HTTPX
         end
       end
     rescue StandardError => e
-      @connections.each do |connection|
+      connections.each do |connection|
         connection.emit(:error, e)
       end
     rescue Exception # rubocop:disable Lint/RescueException
-      @connections.each(&:force_reset)
+      connections.each(&:force_reset)
       raise
     end
 
@@ -74,7 +74,7 @@ module HTTPX
 
       connections = connections.reject(&:inflight?)
       connections.each(&:terminate)
-      next_tick until connections.none? { |c| c.state != :idle && @connections.include?(c) }
+      next_tick(connections) until connections.none? { |c| c.state != :idle && @connections.include?(c) }
 
       # close resolvers
       outstanding_connections = @connections
@@ -88,7 +88,7 @@ module HTTPX
       end
       # for https resolver
       resolver_connections.each(&:terminate)
-      next_tick until resolver_connections.none? { |c| c.state != :idle && @connections.include?(c) }
+      next_tick(resolver_connections) until resolver_connections.none? { |c| c.state != :idle && @connections.include?(c) }
     end
 
     def init_connection(connection, _options)
@@ -276,11 +276,11 @@ module HTTPX
       @connections.delete(conn2)
     end
 
-    def next_timeout
+    def next_timeout(connections)
       [
         @timers.wait_interval,
         *@resolvers.values.reject(&:closed?).filter_map(&:timeout),
-        *@connections.filter_map(&:timeout),
+        *connections.filter_map(&:timeout),
       ].compact.min
     end
 
