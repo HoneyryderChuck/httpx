@@ -127,6 +127,12 @@ module HTTPX
 
     def set_request_timeouts: (Request request) -> void
 
+    def set_request_read_timeout: (Request request) -> void
+
+    def set_request_write_timeout: (Request request) -> void
+
+    def set_request_request_timeout: (Request request) -> void
+
     def write_timeout_callback: (Request request, Numeric write_timeout) -> void
 
     def read_timeout_callback: (Request request, Numeric read_timeout, ?singleton(RequestTimeoutError) error_type) -> void

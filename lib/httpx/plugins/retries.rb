@@ -76,7 +76,7 @@ module HTTPX
 
       module InstanceMethods
         def max_retries(n)
-          with(max_retries: n.to_i)
+          with(max_retries: n)
         end
 
         private

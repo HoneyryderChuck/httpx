@@ -666,25 +666,37 @@ module HTTPX
     end
 
     def set_request_timeouts(request)
-      write_timeout = request.write_timeout
+      set_request_write_timeout(request)
+      set_request_read_timeout(request)
+      set_request_request_timeout(request)
+    end
+
+    def set_request_read_timeout(request)
       read_timeout = request.read_timeout
+
+      return if read_timeout.nil? || read_timeout.infinite?
+
+      set_request_timeout(request, read_timeout, :done, :response) do
+        read_timeout_callback(request, read_timeout)
+      end
+    end
+
+    def set_request_write_timeout(request)
+      write_timeout = request.write_timeout
+
+      return if write_timeout.nil? || write_timeout.infinite?
+
+      set_request_timeout(request, write_timeout, :headers, %i[done response]) do
+        write_timeout_callback(request, write_timeout)
+      end
+    end
+
+    def set_request_request_timeout(request)
       request_timeout = request.request_timeout
-
-      unless write_timeout.nil? || write_timeout.infinite?
-        set_request_timeout(request, write_timeout, :headers, %i[done response]) do
-          write_timeout_callback(request, write_timeout)
-        end
-      end
-
-      unless read_timeout.nil? || read_timeout.infinite?
-        set_request_timeout(request, read_timeout, :done, :response) do
-          read_timeout_callback(request, read_timeout)
-        end
-      end
 
       return if request_timeout.nil? || request_timeout.infinite?
 
-      set_request_timeout(request, request_timeout, :headers, :response) do
+      set_request_timeout(request, request_timeout, :headers, :complete) do
         read_timeout_callback(request, request_timeout, RequestTimeoutError)
       end
     end

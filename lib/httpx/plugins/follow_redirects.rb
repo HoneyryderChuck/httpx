@@ -187,6 +187,16 @@ module HTTPX
           @options.max_redirects || MAX_REDIRECTS
         end
       end
+
+      module ConnectionMethods
+        private
+
+        def set_request_request_timeout(request)
+          return unless request.root_request.nil?
+
+          super
+        end
+      end
     end
     register_plugin :follow_redirects, FollowRedirects
   end

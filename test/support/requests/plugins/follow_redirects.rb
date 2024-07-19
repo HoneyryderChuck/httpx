@@ -111,6 +111,13 @@ module Requests
         assert total_time >= 2, "request didn't take as expected to redirect (#{total_time} secs)"
       end
 
+      def test_plugin_follow_redirects_retry_after_with_request_timeout
+        session = HTTPX.plugin(SessionWithMockResponse, mock_status: 302, mock_headers: { "retry-after" => "2" }).plugin(:follow_redirects)
+
+        timeout_response = session.get(max_redirect_uri(2), timeout: { request_timeout: 1 })
+        verify_error_response(timeout_response, HTTPX::RequestTimeoutError)
+      end
+
       def test_plugin_follow_insecure_no_insecure_downgrade
         return unless origin.start_with?("https")
 

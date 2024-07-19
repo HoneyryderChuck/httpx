@@ -261,6 +261,7 @@ module HTTPX
           return responses unless request
 
           catch(:coalesced) { pool.next_tick } until (response = fetch_response(request, connections, request.options))
+          request.emit(:complete, response)
 
           responses << response
           requests.shift
@@ -274,7 +275,9 @@ module HTTPX
           # opportunity to traverse the requests, hence we're returning only a fraction of the errors
           # we were supposed to. This effectively fetches the existing responses and return them.
           while (request = requests.shift)
-            responses << fetch_response(request, connections, request.options)
+            response = fetch_response(request, connections, request.options)
+            request.emit(:complete, response) if response
+            responses << response
           end
           break
         end
