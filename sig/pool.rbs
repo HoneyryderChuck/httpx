@@ -19,7 +19,7 @@ module HTTPX
 
     def find_connection: (URI::Generic uri, Options options) -> Connection?
 
-    def deactivate: (*Array[Connection]) -> void
+    def deactivate: (*Connection connections) -> void
 
     private
 

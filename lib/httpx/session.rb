@@ -281,7 +281,7 @@ module HTTPX
         responses
       ensure
         if @persistent
-          pool.deactivate(connections)
+          pool.deactivate(*connections)
         else
           close(connections)
         end

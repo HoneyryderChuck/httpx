@@ -108,7 +108,7 @@ module HTTPX
       resolve_connection(connection) unless connection.family
     end
 
-    def deactivate(connections)
+    def deactivate(*connections)
       connections.each do |connection|
         connection.deactivate
         deselect_connection(connection) if connection.state == :inactive
