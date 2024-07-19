@@ -5,7 +5,7 @@ module Requests
     module RateLimiter
       def test_plugin_rate_limiter_429
         rate_limiter_session = HTTPX.plugin(RequestInspector)
-                                    .plugin(SessionWithMockResponse[429])
+                                    .plugin(SessionWithMockResponse, mock_status: 429)
                                     .plugin(:rate_limiter)
 
         uri = build_uri("/get")
@@ -17,7 +17,7 @@ module Requests
 
       def test_plugin_rate_limiter_503
         rate_limiter_session = HTTPX.plugin(RequestInspector)
-                                    .plugin(SessionWithMockResponse[503])
+                                    .plugin(SessionWithMockResponse, mock_status: 503)
                                     .plugin(:rate_limiter)
 
         uri = build_uri("/get")
@@ -29,7 +29,7 @@ module Requests
 
       def test_plugin_rate_limiter_retry_after_integer
         rate_limiter_session = HTTPX.plugin(RequestInspector)
-                                    .plugin(SessionWithMockResponse[429, "retry-after" => "2"])
+                                    .plugin(SessionWithMockResponse, mock_status: 429, mock_headers: { "retry-after" => "2" })
                                     .plugin(:rate_limiter)
 
         uri = build_uri("/get")
@@ -45,8 +45,9 @@ module Requests
       end
 
       def test_plugin_rate_limiter_retry_after_date
+        retry_after = (Time.now + 3).httpdate
         rate_limiter_session = HTTPX.plugin(RequestInspector)
-                                    .plugin(SessionWithMockResponse[429, "retry-after" => (Time.now + 3).httpdate])
+                                    .plugin(SessionWithMockResponse, mock_status: 429, mock_headers: { "retry-after" => retry_after })
                                     .plugin(:rate_limiter)
 
         uri = build_uri("/get")

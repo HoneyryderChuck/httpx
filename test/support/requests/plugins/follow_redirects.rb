@@ -99,7 +99,7 @@ module Requests
       end
 
       def test_plugin_follow_redirects_retry_after
-        session = HTTPX.plugin(SessionWithMockResponse[302, "retry-after" => "2"]).plugin(:follow_redirects)
+        session = HTTPX.plugin(SessionWithMockResponse, mock_status: 302, mock_headers: { "retry-after" => "2" }).plugin(:follow_redirects)
 
         before_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)
         response = session.get(max_redirect_uri(1))
