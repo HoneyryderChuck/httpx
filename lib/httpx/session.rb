@@ -231,6 +231,14 @@ module HTTPX
       end
     end
 
+    def deactivate_connection(request, connections, options)
+      conn = connections.find do |c|
+        c.match?(request.uri, options)
+      end
+
+      pool.deactivate(conn) if conn
+    end
+
     # sends an array of HTTPX::Request +requests+, returns the respective array of HTTPX::Response objects.
     def send_requests(*requests)
       connections = _send_requests(requests)

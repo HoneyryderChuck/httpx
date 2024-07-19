@@ -32,6 +32,8 @@ module HTTPX
 
     def find_connection: (Request request, Array[Connection] connections, Options options) -> Connection
 
+    def deactivate_connection: (Request request, Array[Connection] connections, Options options) -> void
+
     def send_request: (Request request, Array[Connection] connections, ?Options options) -> void
 
     def set_connection_callbacks: (Connection connection, Array[Connection] connections, Options options, ?cloned: bool) -> void

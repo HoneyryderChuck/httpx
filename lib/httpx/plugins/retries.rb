@@ -111,6 +111,9 @@ module HTTPX
 
               retry_start = Utils.now
               log { "retrying after #{retry_after} secs..." }
+
+              deactivate_connection(request, connections, options)
+
               pool.after(retry_after) do
                 log { "retrying (elapsed time: #{Utils.elapsed_time(retry_start)})!!" }
                 send_request(request, connections, options)

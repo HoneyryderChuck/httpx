@@ -133,6 +133,9 @@ module HTTPX
             redirect_after = Utils.parse_retry_after(redirect_after)
 
             log { "redirecting after #{redirect_after} secs..." }
+
+            deactivate_connection(request, connections, options)
+
             pool.after(redirect_after) do
               send_request(retry_request, connections, options)
             end

@@ -562,6 +562,9 @@ module HTTPX
         emit(:open)
       when :inactive
         return unless @state == :open
+
+        # do not deactivate connection in use
+        return if @inflight.positive?
       when :closing
         return unless @state == :idle || @state == :open
 
