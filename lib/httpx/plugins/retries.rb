@@ -115,8 +115,13 @@ module HTTPX
               deactivate_connection(request, connections, options)
 
               pool.after(retry_after) do
-                log { "retrying (elapsed time: #{Utils.elapsed_time(retry_start)})!!" }
-                send_request(request, connections, options)
+                if request.response
+                  # request has terminated abruptly meanwhile
+                  request.emit(:response, request.response)
+                else
+                  log { "retrying (elapsed time: #{Utils.elapsed_time(retry_start)})!!" }
+                  send_request(request, connections, options)
+                end
               end
             else
               send_request(request, connections, options)

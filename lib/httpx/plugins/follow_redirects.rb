@@ -137,7 +137,12 @@ module HTTPX
             deactivate_connection(request, connections, options)
 
             pool.after(redirect_after) do
-              send_request(retry_request, connections, options)
+              if request.response
+                # request has terminated abruptly meanwhile
+                retry_request.emit(:response, request.response)
+              else
+                send_request(retry_request, connections, options)
+              end
             end
           else
             send_request(retry_request, connections, options)
@@ -181,7 +186,7 @@ module HTTPX
         end
 
         def response
-          return super unless @redirect_request
+          return super unless @redirect_request && @response.nil?
 
           @redirect_request.response
         end
