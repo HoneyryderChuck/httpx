@@ -32,9 +32,14 @@ module HTTPX
                !request.headers.key?("proxy-authorization") &&
                response.headers.key?("proxy-authenticate")
 
-              connection = find_connection(request, connections, options)
+              uri = request.uri
 
-              if connection.options.proxy.can_authenticate?(response.headers["proxy-authenticate"])
+              proxy_options = proxy_options(uri, options)
+              connection = connections.find do |conn|
+                conn.match?(uri, proxy_options)
+              end
+
+              if connection && connection.options.proxy.can_authenticate?(response.headers["proxy-authenticate"])
                 request.transition(:idle)
                 request.headers["proxy-authorization"] =
                   connection.options.proxy.authenticate(request, response.headers["proxy-authenticate"])
