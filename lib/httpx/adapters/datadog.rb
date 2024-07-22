@@ -195,14 +195,18 @@ module Datadog::Tracing
           # that the tracing logic hasn't been injected yet; in such cases, the approximate
           # initial resolving time is collected from the connection, and used as span start time,
           # and the tracing object in inserted before the on response callback is called.
-          def handle_error(error)
+          def handle_error(error, request = nil)
             return super unless Datadog::Tracing.enabled?
 
             return super unless error.respond_to?(:connection)
 
-            @pending.each do |request|
-              RequestTracer.new(request).call(error.connection.init_time)
+            @pending.each do |req|
+              next if request and request == req
+
+              RequestTracer.new(req).call(error.connection.init_time)
             end
+
+            RequestTracer.new(request).call(error.connection.init_time) if request
 
             super
           end

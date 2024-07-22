@@ -119,9 +119,9 @@ module HTTPX
 
     def build_socket: (?Array[ipaddr]? addrs) -> (TCP | SSL | UNIX)
 
-    def on_error: (HTTPX::TimeoutError | Error | StandardError error) -> void
+    def on_error: (HTTPX::TimeoutError | Error | StandardError error, ?Request? request) -> void
 
-    def handle_error: (StandardError error) -> void
+    def handle_error: (StandardError error, ?Request? request) -> void
 
     def purge_after_closed: () -> void
 
