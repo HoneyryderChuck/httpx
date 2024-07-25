@@ -70,6 +70,9 @@ module HTTPX
         end
       end
 
+      # adds support for the following options:
+      #
+      # :cookies :: cookie jar for the session (can be a Hash, an Array, an instance of HTTPX::Plugins::Cookies::CookieJar)
       module OptionsMethods
         def option_headers(*)
           value = super

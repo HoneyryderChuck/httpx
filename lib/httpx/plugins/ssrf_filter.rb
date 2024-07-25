@@ -87,6 +87,9 @@ module HTTPX
         end
       end
 
+      # adds support for the following options:
+      #
+      # :allowed_schemes :: list of URI schemes allowed (defaults to <tt>["https", "http"]</tt>)
       module OptionsMethods
         def option_allowed_schemes(value)
           Array(value)

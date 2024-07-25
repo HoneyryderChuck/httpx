@@ -98,17 +98,17 @@ module HTTPX
       @persistent = @options.persistent
     end
 
-    # the read timeout defied for this requet.
+    # the read timeout defined for this requet.
     def read_timeout
       @options.timeout[:read_timeout]
     end
 
-    # the write timeout defied for this requet.
+    # the write timeout defined for this requet.
     def write_timeout
       @options.timeout[:write_timeout]
     end
 
-    # the request timeout defied for this requet.
+    # the request timeout defined for this requet.
     def request_timeout
       @options.timeout[:request_timeout]
     end
@@ -117,10 +117,12 @@ module HTTPX
       @persistent
     end
 
+    # if the request contains trailer headers
     def trailers?
       defined?(@trailers)
     end
 
+    # returns an instance of HTTPX::Headers containing the trailer headers
     def trailers
       @trailers ||= @options.headers_class.new
     end
@@ -132,6 +134,7 @@ module HTTPX
       :w
     end
 
+    # merges +h+ into the instance of HTTPX::Headers of the request.
     def merge_headers(h)
       @headers = @headers.merge(h)
     end

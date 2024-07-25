@@ -72,6 +72,9 @@ module HTTPX
         end
       end
 
+      # adds support for the following options:
+      #
+      # :aws_profile :: AWS account profile to retrieve credentials from.
       module OptionsMethods
         def option_aws_profile(value)
           String(value)

@@ -89,6 +89,10 @@ module HTTPX
         end
       end
 
+      # adds support for the following options:
+      #
+      # :proxy :: proxy options defining *:uri*, *:username*, *:password* or
+      #           *:scheme* (i.e. <tt>{ uri: "http://proxy" }</tt>)
       module OptionsMethods
         def option_proxy(value)
           value.is_a?(Parameters) ? value : Hash[value]

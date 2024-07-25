@@ -220,6 +220,7 @@ module HTTPX
       persistent
     ].each do |method_name|
       class_eval(<<-OUT, __FILE__, __LINE__ + 1)
+        # sets +v+ as the value of #{method_name}
         def option_#{method_name}(v); v; end # def option_smth(v); v; end
       OUT
     end

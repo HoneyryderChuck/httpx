@@ -125,6 +125,7 @@ module HTTPX
       connection
     end
 
+    # sends the +request+ to the corresponding HTTPX::Connection
     def send_request(request, connections, options = request.options)
       error = catch(:resolve_error) do
         connection = find_connection(request, connections, options)
