@@ -30,6 +30,7 @@ module Faraday
           end
           @connection = @connection.plugin(OnDataPlugin) if env.request.stream_response?
 
+          @connection = @config_block.call(@connection) || @connection if @config_block
           @connection
         end
 
