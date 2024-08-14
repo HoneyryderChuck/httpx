@@ -43,10 +43,10 @@ class HTTPSTest < Minitest::Test
     uri = build_uri("/get")
     HTTPX.with(ssl: { ssl_version: :TLSv1_2, alpn_protocols: %w[http1.1] }).plugin(SessionWithPool).wrap do |http|
       http.get(uri)
-      conn1 = http.pool.conn_store.last
+      conn1 = http.connections.last
 
       http.get(uri)
-      conn2 = http.pool.conn_store.last
+      conn2 = http.connections.last
 
       # because there's reconnection
       assert conn1 == conn2
@@ -63,8 +63,7 @@ class HTTPSTest < Minitest::Test
       response2 = http.get(coalesced_origin)
       verify_status(response2, 200)
       # introspection time
-      pool = http.pool
-      connections = pool.connections
+      connections = http.connections
       origins = connections.map(&:origins)
       assert origins.any? { |orgs| orgs.sort == [origin, coalesced_origin].sort },
              "connections for #{[origin, coalesced_origin]} didn't coalesce (expected connection with both origins (#{origins}))"
@@ -75,8 +74,7 @@ class HTTPSTest < Minitest::Test
       verify_status(response3, 200)
 
       # introspection time
-      pool = http.pool
-      connections = pool.connections
+      connections = http.connections
       origins = connections.map(&:origins)
       refute origins.any?([origin]),
              "connection coalesced inexpectedly (expected connection with both origins (#{origins}))"
@@ -130,12 +128,12 @@ class HTTPSTest < Minitest::Test
         verify_body_length(response2)
         verify_status(response3, 200)
         verify_body_length(response3)
-        connection_count = http.pool.connection_count
+        connection_count = http.connection_count
         assert connection_count == 2, "expected to have 2 connections, instead have #{connection_count}"
-        assert http.connection_exausted, "expected 1 connnection to have exhausted"
+        assert http.connections.size == 1, "expected connection to have been reused on exhaustion"
 
         # ssl session ought to be reused
-        conn = http.pool.connections.first
+        conn = http.connections.first
         assert conn.io.instance_variable_get(:@io).session_reused? unless RUBY_ENGINE == "jruby"
       end
     end
@@ -146,7 +144,7 @@ class HTTPSTest < Minitest::Test
     HTTPX.plugin(SessionWithPool).wrap do |http|
       response = http.get(uri)
       verify_status(response, 421)
-      connection_count = http.pool.connection_count
+      connection_count = http.connection_count
       assert connection_count == 2, "expected to have 2 connections, instead have #{connection_count}"
       assert response.version == "1.1", "request should have been retried with HTTP/1.1"
     end
