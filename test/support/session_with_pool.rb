@@ -1,53 +1,36 @@
 # frozen_string_literal: true
 
 module SessionWithPool
-  ConnectionPool = Class.new(HTTPX::Pool) do
-    attr_reader :resolver, :connections, :selector
-    attr_reader :connection_count
-    attr_reader :ping_count
-    attr_reader :timers
-    attr_reader :conn_store
+  module InstanceMethods
+    attr_reader :connections_exausted, :resolver, :selector, :connection_count, :ping_count, :connections
 
     def initialize(*)
-      super
       @connection_count = 0
+      @connections_exausted = 0
       @ping_count = 0
-      @conn_store = []
-      def @timers.intervals
-        @intervals
-      end
+      @connections = []
+      super
     end
 
-    def init_connection(connection, _)
+    def pool
+      @pool ||= HTTPX::Pool.new
+    end
+
+    private
+
+    def do_init_connection(connection, *)
       super
       connection.on(:open) { @connection_count += 1 }
       connection.on(:pong) { @ping_count += 1 }
-
-      @conn_store << connection
-    end
-
-    def selectable_count
-      @selector.instance_variable_get(:@selectables).size
+      connection.on(:exhausted) do
+        @connections_exausted += 1
+      end
+      @connections << connection
     end
 
     def find_resolver_for(*args, &blk)
       @resolver = super(*args, &blk)
       @resolver
-    end
-  end
-
-  module InstanceMethods
-    attr_reader :connection_exausted
-
-    def pool
-      @pool ||= ConnectionPool.new
-    end
-
-    def set_connection_callbacks(connection, connections, options)
-      super
-      connection.on(:exhausted) do
-        @connection_exausted = true
-      end
     end
   end
 

@@ -141,7 +141,7 @@ class SessionTest < Minitest::Test
 
       verify_status(response1, 200)
       verify_status(response2, 200)
-      connection_count = http.pool.connection_count
+      connection_count = http.connection_count
       assert connection_count == 1, "session opened more connections than expected (#{connection_count})"
     end
 
@@ -152,7 +152,7 @@ class SessionTest < Minitest::Test
 
       verify_status(response1, 200)
       verify_status(response2, 200)
-      ping_count = http.pool.ping_count
+      ping_count = http.ping_count
       assert ping_count == 1, "session should have pinged after timeout (#{ping_count})"
     end
   end
