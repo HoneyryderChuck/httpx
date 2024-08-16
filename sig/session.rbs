@@ -7,20 +7,35 @@ module HTTPX
 
     @options: Options
     @responses: Hash[Request, response]
-    @persistent: bool?
+    @persistent: bool
+    @wrapped: bool
 
     def self.plugin: (Symbol | Module plugin, ?options? options) ?{ (Class) -> void } -> singleton(Session)
 
     def wrap: () { (instance) -> void } -> void
 
-    def close: (*untyped) -> void
+    def close: (?Selector selector) -> void
 
     def build_request: (verb verb, generic_uri uri, ?request_params params, ?Options options) -> Request
+
+    def select_connection: (Connection connection, Selector selector) -> void
+
+    def deselect_connection: (Connection connection, Selector selector, ?bool cloned) -> void
+
+    def select_resolver: (Resolver::Native | Resolver::HTTPS resolver, Selector selector) -> void
+
+    def deselect_resolver: (Resolver::Resolver resolver, Selector selector) -> void
+
+    def try_clone_connection: (Connection connection, Selector selector, Integer? family) -> Connection
+
+    def find_connection: (http_uri request_uri, Selector selector, Options options) -> Connection
+
+    private
 
     def initialize: (?options) { (self) -> void } -> void
                   | (?options) -> void
 
-    private
+    def deactivate: (Selector selector) -> void
 
     def pool: -> Pool
 
@@ -28,19 +43,11 @@ module HTTPX
 
     def on_promise: (untyped, untyped) -> void
 
-    def fetch_response: (Request request, Array[Connection] connections, untyped options) -> response?
+    def fetch_response: (Request request, Selector selector, Options options) -> response?
 
-    def find_connection: (Request request, Array[Connection] connections, Options options) -> Connection
-
-    def deactivate_connection: (Request request, Array[Connection] connections, Options options) -> void
-
-    def send_request: (Request request, Array[Connection] connections, ?Options options) -> void
-
-    def set_connection_callbacks: (Connection connection, Array[Connection] connections, Options options, ?cloned: bool) -> void
+    def send_request: (Request request, Selector selector, ?Options options) -> void
 
     def set_request_callbacks: (Request request) -> void
-
-    def build_altsvc_connection: (Connection existing_connection, Array[Connection] connections, URI::Generic alt_origin, String origin, Hash[String, String] alt_params, Options options) -> (Connection & AltSvc::ConnectionMixin)?
 
     def build_requests: (verb, uri, request_params) -> Array[Request]
                       | (Array[[verb, uri, request_params]], Hash[Symbol, untyped]) -> Array[Request]
@@ -48,13 +55,23 @@ module HTTPX
                       | (verb, _Each[[uri, request_params]], Hash[Symbol, untyped]) -> Array[Request]
                       | (verb, _Each[uri], request_params) -> Array[Request]
 
-    def init_connection: (http_uri uri, Options options) -> Connection
+    def do_init_connection: (Connection connection, Selector selector) -> Connection
 
     def send_requests: (*Request) -> Array[response]
 
-    def _send_requests: (Array[Request] requests) -> Array[Connection]
+    def _send_requests: (Array[Request] requests, Selector selector) -> void
 
-    def receive_requests: (Array[Request] requests, Array[Connection] connections) -> Array[response]
+    def receive_requests: (Array[Request] requests, Selector selector) -> Array[response]
+
+    def resolve_connection: (Connection connection, Selector selector) -> void
+
+    def on_resolve_connection: (Connection connection, Selector selector) -> void
+
+    def on_resolver_close: (Resolver::Resolver resolver, Selector selector) -> void
+
+    def find_resolver_for: (Connection connection, Selector selector) -> (Resolver::Multi | Resolver::Resolver)
+
+    def coalesce_connections: (Connection conn1, Connection conn2, Selector selector) -> bool
 
     attr_reader self.default_options: Options
   end

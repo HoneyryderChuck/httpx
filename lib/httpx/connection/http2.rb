@@ -327,10 +327,14 @@ module HTTPX
         end
       end
       send(@pending.shift) unless @pending.empty?
+
       return unless @streams.empty? && exhausted?
 
-      close
-      emit(:exhausted) unless @pending.empty?
+      if @pending.empty?
+        close
+      else
+        emit(:exhausted)
+      end
     end
 
     def on_frame(bytes)

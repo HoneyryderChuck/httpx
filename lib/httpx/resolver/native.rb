@@ -164,7 +164,10 @@ module HTTPX
         @connections.delete(connection)
         # This loop_time passed to the exception is bogus. Ideally we would pass the total
         # resolve timeout, including from the previous retries.
-        raise ResolveTimeoutError.new(loop_time, "Timed out while resolving #{connection.origin.host}")
+        ex = ResolveTimeoutError.new(loop_time, "Timed out while resolving #{connection.origin.host}")
+        ex.set_backtrace(ex ? ex.backtrace : caller)
+        emit_resolve_error(connection, host, ex)
+        emit(:close, self)
       end
     end
 
@@ -248,7 +251,10 @@ module HTTPX
 
         unless @queries.value?(connection)
           @connections.delete(connection)
-          raise NativeResolveError.new(connection, connection.origin.host, "name or service not known")
+          ex = NativeResolveError.new(connection, connection.origin.host, "name or service not known")
+          ex.set_backtrace(ex ? ex.backtrace : caller)
+          emit_resolve_error(connection, connection.origin.host, ex)
+          emit(:close, self)
         end
 
         resolve
@@ -311,7 +317,7 @@ module HTTPX
           # clean up intermediate queries
           @timeouts.delete(name) unless connection.origin.host == name
 
-          if catch(:coalesced) { early_resolve(connection, hostname: hostname_alias) }
+          if early_resolve(connection, hostname: hostname_alias)
             @connections.delete(connection)
           else
             if @socket_type == :tcp
@@ -332,7 +338,7 @@ module HTTPX
           catch(:coalesced) { emit_addresses(connection, @family, addresses.map { |addr| addr["data"] }) }
         end
       end
-      return emit(:close) if @connections.empty?
+      return emit(:close, self) if @connections.empty?
 
       resolve
     end
@@ -358,7 +364,10 @@ module HTTPX
       begin
         @write_buffer << encode_dns_query(hostname)
       rescue Resolv::DNS::EncodeError => e
+        reset_hostname(hostname, connection: connection)
+        @connections.delete(connection)
         emit_resolve_error(connection, hostname, e)
+        emit(:close, self) if @connections.empty?
       end
     end
 
@@ -435,12 +444,17 @@ module HTTPX
     def handle_error(error)
       if error.respond_to?(:connection) &&
          error.respond_to?(:host)
+        reset_hostname(error.host, connection: error.connection)
+        @connections.delete(error.connection)
         emit_resolve_error(error.connection, error.host, error)
       else
         @queries.each do |host, connection|
+          reset_hostname(host, connection: connection)
+          @connections.delete(connection)
           emit_resolve_error(connection, host, error)
         end
       end
+      emit(:close, self) if @connections.empty?
     end
 
     def reset_hostname(hostname, connection: @queries.delete(hostname), reset_candidates: true)

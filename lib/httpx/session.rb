@@ -19,6 +19,7 @@ module HTTPX
       @options = self.class.default_options.merge(options)
       @responses = {}
       @persistent = @options.persistent
+      @wrapped = false
       wrap(&blk) if blk
     end
 
@@ -28,21 +29,49 @@ module HTTPX
     #     http.get("https://wikipedia.com")
     #   end # wikipedia connection closes here
     def wrap
-      prev_persistent = @persistent
-      @persistent = true
-      pool.wrap do
-        begin
-          yield self
-        ensure
-          @persistent = prev_persistent
-          close unless @persistent
+      prev_wrapped = @wrapped
+      @wrapped = true
+      prev_selector = Thread.current[:httpx_selector]
+      Thread.current[:httpx_selector] = current_selector = Selector.new
+      begin
+        yield self
+      ensure
+        unless prev_wrapped
+          if @persistent
+            deactivate(current_selector)
+          else
+            close(current_selector)
+          end
         end
+        @wrapped = prev_wrapped
+        Thread.current[:httpx_selector] = prev_selector
       end
     end
 
-    # closes all the active connections from the session
-    def close(*args)
-      pool.close(*args)
+    # closes all the active connections from the session.
+    #
+    # when called directly with +selector+ as nil, all available connections
+    # will be picked up from the connection pool and closed. Connections in use
+    # by other sessions, or same session in a different thread, will not be reaped.
+    def close(selector = nil)
+      if selector.nil?
+        selector = Selector.new
+
+        while (connection = pool.checkout_by_options(@options))
+          connection.current_session = self
+          connection.current_selector = selector
+          select_connection(connection, selector)
+        end
+
+        return close(selector)
+      end
+
+      begin
+        @closing = true
+        selector.terminate
+      ensure
+        @closing = false
+      end
     end
 
     # performs one, or multple requests; it accepts:
@@ -89,7 +118,105 @@ module HTTPX
       request
     end
 
+    def select_connection(connection, selector)
+      selector.register(connection)
+    end
+
+    alias_method :select_resolver, :select_connection
+
+    def deselect_connection(connection, selector, cloned = false)
+      selector.deregister(connection)
+
+      return if cloned
+
+      pool.checkin_connection(connection)
+    end
+
+    def deselect_resolver(resolver, selector)
+      selector.deregister(resolver)
+
+      pool.checkin_resolver(resolver)
+    end
+
+    def try_clone_connection(connection, selector, family)
+      connection.family ||= family
+
+      return connection if connection.family == family
+
+      new_connection = connection.class.new(connection.origin, connection.options)
+
+      new_connection.family = family
+      new_connection.current_session = self
+      new_connection.current_selector = selector
+
+      connection.once(:tcp_open) { new_connection.force_reset(true) }
+      connection.once(:connect_error) do |err|
+        if new_connection.connecting?
+          new_connection.merge(connection)
+          connection.emit(:cloned, new_connection)
+          connection.force_reset(true)
+        else
+          connection.__send__(:handle_error, err)
+        end
+      end
+
+      new_connection.once(:tcp_open) do |new_conn|
+        if new_conn != connection
+          new_conn.merge(connection)
+          connection.force_reset(true)
+        end
+      end
+      new_connection.once(:connect_error) do |err|
+        if connection.connecting?
+          # main connection has the requests
+          connection.merge(new_connection)
+          new_connection.emit(:cloned, connection)
+          new_connection.force_reset(true)
+        else
+          new_connection.__send__(:handle_error, err)
+        end
+      end
+
+      do_init_connection(new_connection, selector)
+    end
+
+    # returns the HTTPX::Connection through which the +request+ should be sent through.
+    def find_connection(request_uri, selector, options)
+      if (connection = selector.find_connection(request_uri, options))
+        return connection
+      end
+
+      connection = pool.checkout_connection(request_uri, options)
+
+      connection.current_session = self
+      connection.current_selector = selector
+
+      case connection.state
+      when :idle
+        do_init_connection(connection, selector)
+      when :open
+        select_connection(connection, selector) if options.io
+      when :closed
+        connection.idling
+        select_connection(connection, selector)
+      when :closing
+        connection.once(:close) do
+          connection.idling
+          select_connection(connection, selector)
+        end
+      end
+
+      connection
+    end
+
     private
+
+    def deactivate(selector)
+      selector.each_connection do |connection|
+        connection.deactivate
+        deselect_connection(connection, selector) if connection.state == :inactive
+      end
+    end
 
     # returns the HTTPX::Pool object which manages the networking required to
     # perform requests.
@@ -109,86 +236,19 @@ module HTTPX
     end
 
     # returns the corresponding HTTP::Response to the given +request+ if it has been received.
-    def fetch_response(request, _, _)
+    def fetch_response(request, _selector, _options)
       @responses.delete(request)
     end
 
-    # returns the HTTPX::Connection through which the +request+ should be sent through.
-    def find_connection(request, connections, options)
-      uri = request.uri
-
-      connection = pool.find_connection(uri, options) || init_connection(uri, options)
-      unless connections.nil? || connections.include?(connection)
-        connections << connection
-        set_connection_callbacks(connection, connections, options)
-      end
-      connection
-    end
-
     # sends the +request+ to the corresponding HTTPX::Connection
-    def send_request(request, connections, options = request.options)
+    def send_request(request, selector, options = request.options)
       error = catch(:resolve_error) do
-        connection = find_connection(request, connections, options)
+        connection = find_connection(request.uri, selector, options)
         connection.send(request)
       end
       return unless error.is_a?(Error)
 
       request.emit(:response, ErrorResponse.new(request, error))
-    end
-
-    # sets the callbacks on the +connection+ required to process certain specific
-    # connection lifecycle events which deal with request rerouting.
-    def set_connection_callbacks(connection, connections, options, cloned: false)
-      connection.only(:misdirected) do |misdirected_request|
-        other_connection = connection.create_idle(ssl: { alpn_protocols: %w[http/1.1] })
-        other_connection.merge(connection)
-        catch(:coalesced) do
-          pool.init_connection(other_connection, options)
-        end
-        set_connection_callbacks(other_connection, connections, options)
-        connections << other_connection
-        misdirected_request.transition(:idle)
-        other_connection.send(misdirected_request)
-      end
-      connection.only(:altsvc) do |alt_origin, origin, alt_params|
-        other_connection = build_altsvc_connection(connection, connections, alt_origin, origin, alt_params, options)
-        connections << other_connection if other_connection
-      end
-      connection.only(:cloned) do |cloned_conn|
-        set_connection_callbacks(cloned_conn, connections, options, cloned: true)
-        connections << cloned_conn
-      end unless cloned
-    end
-
-    # returns an HTTPX::Connection for the negotiated Alternative Service (or none).
-    def build_altsvc_connection(existing_connection, connections, alt_origin, origin, alt_params, options)
-      # do not allow security downgrades on altsvc negotiation
-      return if existing_connection.origin.scheme == "https" && alt_origin.scheme != "https"
-
-      altsvc = AltSvc.cached_altsvc_set(origin, alt_params.merge("origin" => alt_origin))
-
-      # altsvc already exists, somehow it wasn't advertised, probably noop
-      return unless altsvc
-
-      alt_options = options.merge(ssl: options.ssl.merge(hostname: URI(origin).host))
-
-      connection = pool.find_connection(alt_origin, alt_options) || init_connection(alt_origin, alt_options)
-
-      # advertised altsvc is the same origin being used, ignore
-      return if connection == existing_connection
-
-      connection.extend(AltSvc::ConnectionMixin) unless connection.is_a?(AltSvc::ConnectionMixin)
-
-      set_connection_callbacks(connection, connections, alt_options)
-
-      log(level: 1) { "#{origin} alt-svc: #{alt_origin}" }
-
-      connection.merge(existing_connection)
-      existing_connection.terminate
-      connection
-    rescue UnsupportedSchemeError
-      altsvc["noop"] = true
-      nil
     end
 
     # returns a set of HTTPX::Request objects built from the given +args+ and +options+.
@@ -224,12 +284,9 @@ module HTTPX
       request.on(:promise, &method(:on_promise))
     end
 
-    def init_connection(uri, options)
-      connection = options.connection_class.new(uri, options)
-      catch(:coalesced) do
-        pool.init_connection(connection, options)
-        connection
-      end
+    def do_init_connection(connection, selector)
+      resolve_connection(connection, selector) unless connection.family
+      connection
     end
 
     def deactivate_connection(request, connections, options)
@@ -242,62 +299,126 @@ module HTTPX
 
     # sends an array of HTTPX::Request +requests+, returns the respective array of HTTPX::Response objects.
     def send_requests(*requests)
-      connections = _send_requests(requests)
-      receive_requests(requests, connections)
+      selector = Thread.current[:httpx_selector] || Selector.new
+      _send_requests(requests, selector)
+      receive_requests(requests, selector)
+    ensure
+      unless @wrapped
+        if @persistent
+          deactivate(selector)
+        else
+          close(selector)
+        end
+      end
     end
 
     # sends an array of HTTPX::Request objects
-    def _send_requests(requests)
-      connections = []
-
+    def _send_requests(requests, selector)
       requests.each do |request|
-        send_request(request, connections)
+        send_request(request, selector)
       end
-
-      connections
     end
 
     # returns the array of HTTPX::Response objects corresponding to the array of HTTPX::Request +requests+.
-    def receive_requests(requests, connections)
+    def receive_requests(requests, selector)
       # @type var responses: Array[response]
       responses = []
 
-      begin
-        # guarantee ordered responses
-        loop do
-          request = requests.first
+      # guarantee ordered responses
+      loop do
+        request = requests.first
 
-          return responses unless request
+        return responses unless request
 
-          catch(:coalesced) { pool.next_tick(connections) } until (response = fetch_response(request, connections, request.options))
-          request.emit(:complete, response)
+        catch(:coalesced) { selector.next_tick } until (response = fetch_response(request, selector, request.options))
+        request.emit(:complete, response)
 
+        responses << response
+        requests.shift
+
+        break if requests.empty?
+
+        next unless selector.empty?
+
+        # in some cases, the pool of connections might have been drained because there was some
+        # handshake error, and the error responses have already been emitted, but there was no
+        # opportunity to traverse the requests, hence we're returning only a fraction of the errors
+        # we were supposed to. This effectively fetches the existing responses and return them.
+        while (request = requests.shift)
+          response = fetch_response(request, selector, request.options)
+          request.emit(:complete, response) if response
           responses << response
-          requests.shift
-
-          break if requests.empty?
-
-          next unless pool.empty?
-
-          # in some cases, the pool of connections might have been drained because there was some
-          # handshake error, and the error responses have already been emitted, but there was no
-          # opportunity to traverse the requests, hence we're returning only a fraction of the errors
-          # we were supposed to. This effectively fetches the existing responses and return them.
-          while (request = requests.shift)
-            response = fetch_response(request, connections, request.options)
-            request.emit(:complete, response) if response
-            responses << response
-          end
-          break
         end
-        responses
-      ensure
-        if @persistent
-          pool.deactivate(*connections)
-        else
-          close(connections)
+        break
+      end
+      responses
+    end
+
+    def resolve_connection(connection, selector)
+      if connection.addresses || connection.open?
+        #
+        # there are two cases in which we want to activate initialization of
+        # connection immediately:
+        #
+        # 1. when the connection already has addresses, i.e. it doesn't need to
+        #    resolve a name (not the same as name being an IP, yet)
+        # 2. when the connection is initialized with an external already open IO.
+        #
+        connection.once(:connect_error, &connection.method(:handle_error))
+        on_resolver_connection(connection, selector)
+        return
+      end
+
+      resolver = find_resolver_for(connection, selector)
+
+      resolver.early_resolve(connection) || resolver.lazy_resolve(connection)
+    end
+
+    def on_resolver_connection(connection, selector)
+      found_connection = selector.find_mergeable_connection(connection) ||
+                         pool.checkout_mergeable_connection(connection)
+
+      return select_connection(connection, selector) unless found_connection
+
+      if found_connection.open?
+        coalesce_connections(found_connection, connection, selector)
+      else
+        found_connection.once(:open) do
+          coalesce_connections(found_connection, connection, selector)
         end
       end
+    end
+
+    def on_resolver_close(resolver, selector)
+      return if resolver.closed?
+
+      deselect_resolver(resolver, selector)
+      resolver.close unless resolver.closed?
+    end
+
+    def find_resolver_for(connection, selector)
+      resolver = selector.find_resolver(connection.options)
+
+      unless resolver
+        resolver = pool.checkout_resolver(connection.options)
+        resolver.current_session = self
+        resolver.current_selector = selector
+      end
+
+      resolver
+    end
+
+    def coalesce_connections(conn1, conn2, selector)
+      unless conn1.coalescable?(conn2)
+        select_connection(conn2, selector)
+        return false
+      end
+
+      conn2.emit(:tcp_open, conn1)
+      conn1.merge(conn2)
+      conn2.coalesced_connection = conn1
+      deselect_connection(conn2, selector)
+      true
     end
 
     @default_options = Options.new
