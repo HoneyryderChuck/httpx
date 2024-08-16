@@ -96,15 +96,16 @@ module HTTPX
       end
 
       module InstanceMethods
-        def fetch_response(request, connections, options)
-          response = @responses.delete(request)
+        def fetch_response(request, selector, options)
+          response = super
+
           return unless response
 
           if response.is_a?(Response) && response.status == 417 && request.headers.key?("expect")
             response.close
             request.headers.delete("expect")
             request.transition(:idle)
-            send_request(request, connections, options)
+            send_request(request, selector, options)
             return
           end
 

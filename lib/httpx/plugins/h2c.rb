@@ -25,26 +25,6 @@ module HTTPX
         end
       end
 
-      module InstanceMethods
-        def send_requests(*requests)
-          upgrade_request, *remainder = requests
-
-          return super unless VALID_H2C_VERBS.include?(upgrade_request.verb) && upgrade_request.scheme == "http"
-
-          connection = pool.find_connection(upgrade_request.uri, upgrade_request.options)
-
-          return super if connection && connection.upgrade_protocol == "h2c"
-
-          # build upgrade request
-          upgrade_request.headers.add("connection", "upgrade")
-          upgrade_request.headers.add("connection", "http2-settings")
-          upgrade_request.headers["upgrade"] = "h2c"
-          upgrade_request.headers["http2-settings"] = ::HTTP2::Client.settings_header(upgrade_request.options.http2_settings)
-
-          super(upgrade_request, *remainder)
-        end
-      end
-
       class H2CParser < Connection::HTTP2
         def upgrade(request, response)
           # skip checks, it is assumed that this is the first
@@ -64,6 +44,29 @@ module HTTPX
 
       module ConnectionMethods
         using URIExtensions
+
+        def initialize(*)
+          super
+          @h2c_handshake = false
+        end
+
+        def send(request)
+          return super if @h2c_handshake
+
+          return super unless VALID_H2C_VERBS.include?(request.verb) && request.scheme == "http"
+
+          return super if @upgrade_protocol == "h2c"
+
+          @h2c_handshake = true
+
+          # build upgrade request
+          request.headers.add("connection", "upgrade")
+          request.headers.add("connection", "http2-settings")
+          request.headers["upgrade"] = "h2c"
+          request.headers["http2-settings"] = ::HTTP2::Client.settings_header(request.options.http2_settings)
+
+          super
+        end
 
         def upgrade_to_h2c(request, response)
           prev_parser = @parser

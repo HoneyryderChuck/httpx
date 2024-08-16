@@ -15,11 +15,6 @@ module HTTPX
       self
     end
 
-    def only(type, &block)
-      callbacks(type).clear
-      on(type, &block)
-    end
-
     def emit(type, *args)
       callbacks(type).delete_if { |pr| :delete == pr.call(*args) } # rubocop:disable Style/YodaCondition
     end

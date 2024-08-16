@@ -10,10 +10,10 @@ module Requests
 
       RESOLVER = Resolv::DNS.new
 
-      def test_plugin_no_proxy
+      def test_plugin_no_proxy_defined
+        http = HTTPX.plugin(:proxy)
         uri = build_uri("/get")
-        session = HTTPX.plugin(:proxy).with_proxy(uri: [])
-        assert_raises(HTTPX::HTTPProxyError) { session.get(uri) }
+        assert_raises(HTTPX::HTTPProxyError) { http.with_proxy(uri: []).get(uri) }
       end
 
       def test_plugin_http_http_proxy

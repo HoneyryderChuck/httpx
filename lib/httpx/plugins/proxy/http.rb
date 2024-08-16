@@ -23,29 +23,19 @@ module HTTPX
             with(proxy: opts.merge(scheme: "ntlm"))
           end
 
-          def fetch_response(request, connections, options)
+          def fetch_response(request, selector, options)
             response = super
 
             if response &&
                response.is_a?(Response) &&
                response.status == 407 &&
                !request.headers.key?("proxy-authorization") &&
-               response.headers.key?("proxy-authenticate")
-
-              uri = request.uri
-
-              proxy_options = proxy_options(uri, options)
-              connection = connections.find do |conn|
-                conn.match?(uri, proxy_options)
-              end
-
-              if connection && connection.options.proxy.can_authenticate?(response.headers["proxy-authenticate"])
-                request.transition(:idle)
-                request.headers["proxy-authorization"] =
-                  connection.options.proxy.authenticate(request, response.headers["proxy-authenticate"])
-                send_request(request, connections)
-                return
-              end
+               response.headers.key?("proxy-authenticate") && options.proxy.can_authenticate?(response.headers["proxy-authenticate"])
+              request.transition(:idle)
+              request.headers["proxy-authorization"] =
+                options.proxy.authenticate(request, response.headers["proxy-authenticate"])
+              send_request(request, selector, options)
+              return
             end
 
             response
@@ -74,7 +64,14 @@ module HTTPX
                 parser = @parser
                 parser.extend(ProxyParser)
                 parser.on(:response, &method(:__http_on_connect))
-                parser.on(:close) { transition(:closing) }
+                parser.on(:close) do |force|
+                  next unless @parser
+
+                  if force
+                    reset
+                    emit(:terminate)
+                  end
+                end
                 parser.on(:reset) do
                   if parser.empty?
                     reset
@@ -95,8 +92,9 @@ module HTTPX
 
               case @state
               when :connecting
-                @parser.close
+                parser = @parser
                 @parser = nil
+                parser.close
               when :idle
                 @parser.callbacks.clear
                 set_parser_callbacks(@parser)
