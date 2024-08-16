@@ -26,14 +26,26 @@ module HTTPX
       end
     end
 
-    attr_reader :family
+    attr_reader :family, :options
 
-    attr_writer :pool
+    attr_writer :current_selector, :current_session
+
+    attr_accessor :multi
 
     def initialize(family, options)
       @family = family
       @record_type = RECORD_TYPES[family]
       @options = options
+
+      set_resolver_callbacks
+    end
+
+    def each_connection(&block)
+      enum_for(__method__) unless block
+
+      return unless @connections
+
+      @connections.each(&block)
     end
 
     def close; end
@@ -48,6 +60,10 @@ module HTTPX
       true
     end
 
+    def inflight?
+      false
+    end
+
     def emit_addresses(connection, family, addresses, early_resolve = false)
       addresses.map! do |address|
         address.is_a?(IPAddr) ? address : IPAddr.new(address.to_s)
@@ -57,13 +73,13 @@ module HTTPX
       return if !early_resolve && connection.addresses && !addresses.intersect?(connection.addresses)
 
       log { "resolver: answer #{FAMILY_TYPES[RECORD_TYPES[family]]} #{connection.origin.host}: #{addresses.inspect}" }
-      if @pool && # if triggered by early resolve, pool may not be here yet
+      if @current_selector && # if triggered by early resolve, session may not be here yet
          !connection.io &&
          connection.options.ip_families.size > 1 &&
          family == Socket::AF_INET &&
          addresses.first.to_s != connection.origin.host.to_s
         log { "resolver: A response, applying resolution delay..." }
-        @pool.after(0.05) do
+        @current_selector.after(0.05) do
           unless connection.state == :closed ||
                  # double emission check
                  (connection.addresses && addresses.intersect?(connection.addresses))
@@ -102,10 +118,12 @@ module HTTPX
       return if addresses.empty?
 
       emit_addresses(connection, @family, addresses, true)
+
+      addresses
     end
 
     def emit_resolve_error(connection, hostname = connection.origin.host, ex = nil)
-      emit(:error, connection, resolve_error(hostname, ex))
+      emit_connection_error(connection, resolve_error(hostname, ex))
     end
 
     def resolve_error(hostname, ex = nil)
@@ -115,6 +133,26 @@ module HTTPX
       error = ResolveError.new(message)
       error.set_backtrace(ex ? ex.backtrace : caller)
       error
+    end
+
+    def set_resolver_callbacks
+      on(:resolve, &method(:resolve_connection))
+      on(:error, &method(:emit_connection_error))
+      on(:close, &method(:close_resolver))
+    end
+
+    def resolve_connection(connection)
+      @current_session.__send__(:on_resolver_connection, connection, @current_selector)
+    end
+
+    def emit_connection_error(connection, error)
+      return connection.emit(:connect_error, error) if connection.connecting? && connection.callbacks_for?(:connect_error)
+
+      connection.emit(:error, error)
+    end
+
+    def close_resolver(resolver)
+      @current_session.__send__(:on_resolver_close, resolver, @current_selector)
     end
   end
 end

@@ -47,8 +47,12 @@ module HTTPX
       yield self
     end
 
-    def connections
-      EMPTY
+    def multi
+      self
+    end
+
+    def empty?
+      true
     end
 
     def close
@@ -92,6 +96,11 @@ module HTTPX
       resolve
     end
 
+    def early_resolve(connection)
+      self << connection
+      true
+    end
+
     def handle_socket_timeout(interval)
       error = HTTPX::ResolveTimeoutError.new(interval, "timed out while waiting on select")
       error.set_backtrace(caller)
@@ -120,23 +129,26 @@ module HTTPX
     def consume
       return if @connections.empty?
 
-      while @pipe_read.ready? && (event = @pipe_read.getbyte)
+      if @pipe_read.wait_readable
+        event = @pipe_read.getbyte
+
         case event
         when DONE
           *pair, addrs = @pipe_mutex.synchronize { @ips.pop }
           @queries.delete(pair)
+          _, connection = pair
+          @connections.delete(connection)
 
           family, connection = pair
           catch(:coalesced) { emit_addresses(connection, family, addrs) }
         when ERROR
           *pair, error = @pipe_mutex.synchronize { @ips.pop }
           @queries.delete(pair)
+          @connections.delete(connection)
 
-          family, connection = pair
+          _, connection = pair
           emit_resolve_error(connection, connection.origin.host, error)
         end
-
-        @connections.delete(connection) if @queries.empty?
       end
 
       return emit(:close, self) if @connections.empty?
@@ -210,5 +222,11 @@ module HTTPX
     def __addrinfo_resolve(host, scheme)
       Addrinfo.getaddrinfo(host, scheme, Socket::AF_UNSPEC, Socket::SOCK_STREAM)
     end
+
+    def emit_connection_error(_, error)
+      throw(:resolve_error, error)
+    end
+
+    def close_resolver(resolver); end
   end
 end

@@ -8,25 +8,43 @@ module HTTPX
     include Callbacks
     using ArrayExtensions::FilterMap
 
-    attr_reader :resolvers
+    attr_reader :resolvers, :options
 
     def initialize(resolver_type, options)
+      @current_selector = nil
+      @current_session = nil
       @options = options
       @resolver_options = @options.resolver_options
 
       @resolvers = options.ip_families.map do |ip_family|
         resolver = resolver_type.new(ip_family, options)
-        resolver.on(:resolve, &method(:on_resolver_connection))
-        resolver.on(:error, &method(:on_resolver_error))
-        resolver.on(:close) { on_resolver_close(resolver) }
+        resolver.multi = self
         resolver
       end
 
       @errors = Hash.new { |hs, k| hs[k] = [] }
     end
 
+    def current_selector=(s)
+      @current_selector = s
+      @resolvers.each { |r| r.__send__(__method__, s) }
+    end
+
+    def current_session=(s)
+      @current_session = s
+      @resolvers.each { |r| r.__send__(__method__, s) }
+    end
+
     def closed?
       @resolvers.all?(&:closed?)
+    end
+
+    def empty?
+      @resolvers.all?(&:empty?)
+    end
+
+    def inflight?
+      @resolvers.any(&:inflight?)
     end
 
     def timeout
@@ -58,18 +76,13 @@ module HTTPX
       end
     end
 
-    private
+    def lazy_resolve(connection)
+      @resolvers.each do |resolver|
+        resolver << @current_session.try_clone_connection(connection, @current_selector, resolver.family)
+        next if resolver.empty?
 
-    def on_resolver_connection(connection)
-      emit(:resolve, connection)
-    end
-
-    def on_resolver_error(connection, error)
-      emit(:error, connection, error)
-    end
-
-    def on_resolver_close(resolver)
-      emit(:close, resolver)
+        @current_session.select_resolver(resolver, @current_selector)
+      end
     end
   end
 end

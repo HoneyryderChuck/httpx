@@ -13,7 +13,7 @@ module MinitestExtensions
   module FirstFailedTestInThread
     def self.prepended(*)
       super
-      HTTPX::Session.include SessionExtensions
+      HTTPX::Connection.include ConnectionExtensions
     end
 
     def setup
@@ -21,11 +21,10 @@ module MinitestExtensions
       extend(OnTheFly)
     end
 
-    module SessionExtensions
-      def find_connection(request, connections, _)
-        connection = super
+    module ConnectionExtensions
+      def send(request)
         request.instance_variable_set(:@connection, connection)
-        connection
+        super
       end
     end
 

@@ -27,7 +27,7 @@ module HTTPX
       use_get: false,
     }.freeze
 
-    def_delegators :@resolver_connection, :state, :connecting?, :to_io, :call, :close, :terminate
+    def_delegators :@resolver_connection, :state, :connecting?, :to_io, :call, :close, :terminate, :inflight?
 
     def initialize(_, options)
       super
@@ -66,23 +66,15 @@ module HTTPX
     end
 
     def resolver_connection
-      @resolver_connection ||= @pool.find_connection(@uri, @options) || begin
-        @building_connection = true
-        connection = @options.connection_class.new(@uri, @options.merge(ssl: { alpn_protocols: %w[h2] }))
-        @pool.init_connection(connection, @options)
-        # only explicity emit addresses if connection didn't pre-resolve, i.e. it's not an IP.
-        catch(:coalesced) do
-          @building_connection = false
-          emit_addresses(connection, @family, @uri_addresses) unless connection.addresses
-          connection
-        end
+      @resolver_connection ||= @current_session.find_connection(@uri, @current_selector,
+                                                                @options.merge(ssl: { alpn_protocols: %w[h2] })).tap do |conn|
+        emit_addresses(conn, @family, @uri_addresses) unless conn.addresses
       end
     end
 
     private
 
     def resolve(connection = @connections.first, hostname = nil)
-      return if @building_connection
       return unless connection
 
       hostname ||= @queries.key(connection)
@@ -176,7 +168,7 @@ module HTTPX
               alias_address = answers[address["alias"]]
               if alias_address.nil?
                 reset_hostname(address["name"])
-                if catch(:coalesced) { early_resolve(connection, hostname: address["alias"]) }
+                if early_resolve(connection, hostname: address["alias"])
                   @connections.delete(connection)
                 else
                   resolve(connection, address["alias"])

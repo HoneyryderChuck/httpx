@@ -130,17 +130,11 @@ module WSTestPlugin
     end
   end
 
-  module InstanceMethods
-    def find_connection(request, *)
-      return super if request.websocket
+  module ConnectionMethods
+    def send(request)
+      request.init_websocket(self) unless request.websocket || @upgrade_protocol
 
-      conn = super
-
-      return conn unless conn && !conn.upgrade_protocol
-
-      request.init_websocket(conn)
-
-      conn
+      super
     end
   end
 
