@@ -28,7 +28,7 @@ module HTTPX
       end
 
       module InstanceMethods
-        def fetch_response(request, connections, options)
+        def fetch_response(request, selector, options)
           response = super
 
           if response
@@ -45,7 +45,7 @@ module HTTPX
             return response unless protocol_handler
 
             log { "upgrading to #{upgrade_protocol}..." }
-            connection = find_connection(request, connections, options)
+            connection = find_connection(request.uri, selector, options)
 
             # do not upgrade already upgraded connections
             return if connection.upgrade_protocol == upgrade_protocol
@@ -60,14 +60,6 @@ module HTTPX
 
           response
         end
-
-        def close(*args)
-          return super if args.empty?
-
-          connections, = args
-
-          pool.close(connections.reject(&:hijacked))
-        end
       end
 
       module ConnectionMethods
@@ -75,6 +67,9 @@ module HTTPX
 
         def hijack_io
           @hijacked = true
+
+          # connection is taken away from selector and not given back to the pool.
+          @current_session.deselect_connection(self, @current_selector, true)
         end
       end
     end

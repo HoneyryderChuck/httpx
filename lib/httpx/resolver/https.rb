@@ -66,6 +66,7 @@ module HTTPX
     end
 
     def resolver_connection
+      # TODO: leaks connection object into the pool
       @resolver_connection ||= @current_session.find_connection(@uri, @current_selector,
                                                                 @options.merge(ssl: { alpn_protocols: %w[h2] })).tap do |conn|
         emit_addresses(conn, @family, @uri_addresses) unless conn.addresses

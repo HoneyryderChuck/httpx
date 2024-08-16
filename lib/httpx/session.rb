@@ -20,6 +20,7 @@ module HTTPX
       @responses = {}
       @persistent = @options.persistent
       @wrapped = false
+      @closing = false
       wrap(&blk) if blk
     end
 
@@ -50,27 +51,32 @@ module HTTPX
 
     # closes all the active connections from the session.
     #
-    # when called directly with +selector+ as nil, all available connections
+    # when called directly without specifying +selector+, all available connections
     # will be picked up from the connection pool and closed. Connections in use
     # by other sessions, or same session in a different thread, will not be reaped.
-    def close(selector = nil)
-      if selector.nil?
-        selector = Selector.new
+    def close(selector = Selector.new)
+      # throw resolver away from the pool
+      pool.checkout_resolver(@options)
 
-        while (connection = pool.checkout_by_options(@options))
-          connection.current_session = self
-          connection.current_selector = selector
-          select_connection(connection, selector)
-        end
+      # preparing to throw away connections
+      while (connection = pool.checkout_connection_by_options(@options))
+        next if connection.state == :closed
 
-        return close(selector)
+        connection.current_session = self
+        connection.current_selector = selector
+        select_connection(connection, selector)
       end
 
       return if selector.empty?
 
-      selector.terminate
+      begin
+        @closing = true
+        selector.terminate
 
-      next_tick(selector) until selector.empty?
+        next_tick(selector) until selector.empty?
+      ensure
+        @closing = false
+      end
     end
 
     # performs one, or multple requests; it accepts:
@@ -128,11 +134,15 @@ module HTTPX
 
       return if cloned
 
+      return if @closing && connection.state == :closed
+
       pool.checkin_connection(connection)
     end
 
     def deselect_resolver(resolver, selector)
       selector.deregister(resolver)
+
+      return if @closing && resolver.closed?
 
       pool.checkin_resolver(resolver)
     end
