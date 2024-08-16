@@ -64,9 +64,9 @@ module HTTPX
 
         private
 
-        def fetch_response(request, connections, options)
+        def fetch_response(request, selector, options)
           redirect_request = request.redirect_request
-          response = super(redirect_request, connections, options)
+          response = super(redirect_request, selector, options)
           return unless response
 
           max_redirects = redirect_request.max_redirects
@@ -146,20 +146,19 @@ module HTTPX
             #
             redirect_after = Utils.parse_retry_after(redirect_after)
 
+            retry_start = Utils.now
             log { "redirecting after #{redirect_after} secs..." }
-
-            deactivate_connection(request, connections, options)
-
-            pool.after(redirect_after) do
+            selector.after(redirect_after) do
               if request.response
                 # request has terminated abruptly meanwhile
                 retry_request.emit(:response, request.response)
               else
-                send_request(retry_request, connections, options)
+                log { "redirecting (elapsed time: #{Utils.elapsed_time(retry_start)})!!" }
+                send_request(retry_request, selector, options)
               end
             end
           else
-            send_request(retry_request, connections, options)
+            send_request(retry_request, selector, options)
           end
           nil
         end

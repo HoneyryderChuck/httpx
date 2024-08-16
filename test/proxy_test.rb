@@ -22,9 +22,9 @@ class ProxyTest < Minitest::Test
       basic_proxy_opts = HTTPX.plugin(:proxy).__send__(:"with_proxy_#{auth_method}_auth", username: "user",
                                                                                           password: "pass").instance_variable_get(:@options)
       proxy = basic_proxy_opts.proxy
-      assert proxy[:username] == "user"
-      assert proxy[:password] == "pass"
-      assert proxy[:scheme] == auth_method
+      assert proxy.username == "user"
+      assert proxy.password == "pass"
+      assert proxy.scheme == auth_method
     end
   end
 

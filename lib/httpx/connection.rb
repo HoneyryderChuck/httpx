@@ -97,6 +97,7 @@ module HTTPX
       # sets the callbacks on the +connection+ required to process certain specific
       # connection lifecycle events which deal with request rerouting.
       on(:misdirected) do |misdirected_request|
+        # TODO: leaks connection object into the pool
         other_connection = @current_session.find_connection(@origin, @current_selector,
                                                             @options.merge(ssl: { alpn_protocols: %w[http/1.1] }))
         other_connection.merge(self)
@@ -712,6 +713,7 @@ module HTTPX
 
       alt_options = @options.merge(ssl: @options.ssl.merge(hostname: URI(origin).host))
 
+      # TODO: leaks connection object into the pool
       connection = @current_session.find_connection(alt_origin, @current_selector, alt_options)
 
       # advertised altsvc is the same origin being used, ignore

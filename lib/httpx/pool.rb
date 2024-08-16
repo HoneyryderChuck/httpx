@@ -13,10 +13,8 @@ module HTTPX
       @connections = []
     end
 
-    def checkout_by_options(options)
+    def checkout_connection_by_options(options)
       conn = @connections.find do |connection|
-        next if connection.state == :closed
-
         connection.options == options
       end
       return unless conn

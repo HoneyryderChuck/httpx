@@ -76,6 +76,14 @@ module HTTPX
           meter_elapsed_time("Session -> response") if response
           response
         end
+
+        def coalesce_connections(conn1, conn2, selector)
+          result = super
+
+          meter_elapsed_time("Connection##{conn2.object_id} coalescing to Connection##{conn1.object_id}") if result
+
+          result
+        end
       end
 
       module RequestMethods
