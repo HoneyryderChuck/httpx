@@ -71,9 +71,11 @@ module HTTPX
         connection = @options.connection_class.new(@uri, @options.merge(ssl: { alpn_protocols: %w[h2] }))
         @pool.init_connection(connection, @options)
         # only explicity emit addresses if connection didn't pre-resolve, i.e. it's not an IP.
-        emit_addresses(connection, @family, @uri_addresses) unless connection.addresses
-        @building_connection = false
-        connection
+        catch(:coalesced) do
+          @building_connection = false
+          emit_addresses(connection, @family, @uri_addresses) unless connection.addresses
+          connection
+        end
       end
     end
 
@@ -199,7 +201,7 @@ module HTTPX
           @queries.delete_if { |_, conn| connection == conn }
 
           Resolver.cached_lookup_set(hostname, @family, addresses) if @resolver_options[:cache]
-          emit_addresses(connection, @family, addresses.map { |addr| addr["data"] })
+          catch(:coalesced) { emit_addresses(connection, @family, addresses.map { |addr| addr["data"] }) }
         end
       end
       return if @connections.empty?

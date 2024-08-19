@@ -28,7 +28,7 @@ module HTTPX
 
       def initialize: (ip_family? family, Options options) -> void
 
-      def early_resolve: (Connection connection, ?hostname: String) -> void
+      def early_resolve: (Connection connection, ?hostname: String) -> boolish
 
       def emit_resolve_error: (Connection connection, ?String hostname, ?StandardError) -> void
 

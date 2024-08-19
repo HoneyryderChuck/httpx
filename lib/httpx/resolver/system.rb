@@ -127,7 +127,7 @@ module HTTPX
           @queries.delete(pair)
 
           family, connection = pair
-          emit_addresses(connection, family, addrs)
+          catch(:coalesced) { emit_addresses(connection, family, addrs) }
         when ERROR
           *pair, error = @pipe_mutex.synchronize { @ips.pop }
           @queries.delete(pair)
