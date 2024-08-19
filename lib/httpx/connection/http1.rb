@@ -197,7 +197,7 @@ module HTTPX
       end
     end
 
-    def handle_error(ex)
+    def handle_error(ex, request = nil)
       if (ex.is_a?(EOFError) || ex.is_a?(TimeoutError)) && @request && @request.response &&
          !@request.response.headers.key?("content-length") &&
          !@request.response.headers.key?("transfer-encoding")
@@ -211,11 +211,15 @@ module HTTPX
       if @pipelining
         catch(:called) { disable }
       else
-        @requests.each do |request|
-          emit(:error, request, ex)
+        @requests.each do |req|
+          next if request && request == req
+
+          emit(:error, req, ex)
         end
-        @pending.each do |request|
-          emit(:error, request, ex)
+        @pending.each do |req|
+          next if request && request == req
+
+          emit(:error, req, ex)
         end
       end
     end

@@ -43,6 +43,8 @@ module HTTPX
         private
 
         def proxy_error?: (Request request, response) -> bool
+
+        def proxy_options: (http_uri request_uri, Options & _ProxyOptions options) -> (Options & _ProxyOptions)
       end
 
       module ConnectionMethods

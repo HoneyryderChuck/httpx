@@ -562,6 +562,9 @@ module HTTPX
         emit(:open)
       when :inactive
         return unless @state == :open
+
+        # do not deactivate connection in use
+        return if @inflight.positive?
       when :closing
         return unless @state == :idle || @state == :open
 
@@ -638,7 +641,7 @@ module HTTPX
       end
     end
 
-    def on_error(error)
+    def on_error(error, request = nil)
       if error.instance_of?(TimeoutError)
 
         # inactive connections do not contribute to the select loop, therefore
@@ -652,39 +655,59 @@ module HTTPX
 
         error = error.to_connection_error if connecting?
       end
-      handle_error(error)
+      handle_error(error, request)
       reset
     end
 
-    def handle_error(error)
-      parser.handle_error(error) if @parser && parser.respond_to?(:handle_error)
-      while (request = @pending.shift)
-        response = ErrorResponse.new(request, error)
-        request.response = response
-        request.emit(:response, response)
+    def handle_error(error, request = nil)
+      parser.handle_error(error, request) if @parser && parser.respond_to?(:handle_error)
+      while (req = @pending.shift)
+        next if request && req == request
+
+        response = ErrorResponse.new(req, error)
+        req.response = response
+        req.emit(:response, response)
       end
+
+      return unless request
+
+      response = ErrorResponse.new(request, error)
+      request.response = response
+      request.emit(:response, response)
     end
 
     def set_request_timeouts(request)
-      write_timeout = request.write_timeout
+      set_request_write_timeout(request)
+      set_request_read_timeout(request)
+      set_request_request_timeout(request)
+    end
+
+    def set_request_read_timeout(request)
       read_timeout = request.read_timeout
+
+      return if read_timeout.nil? || read_timeout.infinite?
+
+      set_request_timeout(request, read_timeout, :done, :response) do
+        read_timeout_callback(request, read_timeout)
+      end
+    end
+
+    def set_request_write_timeout(request)
+      write_timeout = request.write_timeout
+
+      return if write_timeout.nil? || write_timeout.infinite?
+
+      set_request_timeout(request, write_timeout, :headers, %i[done response]) do
+        write_timeout_callback(request, write_timeout)
+      end
+    end
+
+    def set_request_request_timeout(request)
       request_timeout = request.request_timeout
-
-      unless write_timeout.nil? || write_timeout.infinite?
-        set_request_timeout(request, write_timeout, :headers, %i[done response]) do
-          write_timeout_callback(request, write_timeout)
-        end
-      end
-
-      unless read_timeout.nil? || read_timeout.infinite?
-        set_request_timeout(request, read_timeout, :done, :response) do
-          read_timeout_callback(request, read_timeout)
-        end
-      end
 
       return if request_timeout.nil? || request_timeout.infinite?
 
-      set_request_timeout(request, request_timeout, :headers, :response) do
+      set_request_timeout(request, request_timeout, :headers, :complete) do
         read_timeout_callback(request, request_timeout, RequestTimeoutError)
       end
     end
@@ -694,7 +717,8 @@ module HTTPX
 
       @write_buffer.clear
       error = WriteTimeoutError.new(request, nil, write_timeout)
-      on_error(error)
+
+      on_error(error, request)
     end
 
     def read_timeout_callback(request, read_timeout, error_type = ReadTimeoutError)
@@ -704,7 +728,8 @@ module HTTPX
 
       @write_buffer.clear
       error = error_type.new(request, request.response, read_timeout)
-      on_error(error)
+
+      on_error(error, request)
     end
 
     def set_request_timeout(request, timeout, start_event, finish_events, &callback)

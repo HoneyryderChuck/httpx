@@ -1,10 +1,14 @@
 # frozen_string_literal: true
 
 module SessionWithMockResponse
-  def self.[](status, headers = {})
-    Thread.current[:httpx_mock_response_status] = status
-    Thread.current[:httpx_mock_response_headers] = headers
-    self
+  module OptionsMethods
+    def option_mock_status(status)
+      status
+    end
+
+    def option_mock_headers(headers)
+      headers
+    end
   end
 
   module ResponseMethods
@@ -23,8 +27,8 @@ module SessionWithMockResponse
       @mock_responses_counter -= 1
 
       unless response.is_a?(HTTPX::ErrorResponse)
-        response.status = Thread.current[:httpx_mock_response_status]
-        response.merge_headers(Thread.current[:httpx_mock_response_headers])
+        response.status = request.options.mock_status if request.options.mock_status
+        response.merge_headers(request.options.mock_headers) if request.options.mock_headers
       end
       super(request, response)
     end

@@ -20,6 +20,9 @@ module HTTPX
         end
       end
 
+      # adds support for the following options:
+      #
+      # :digest :: instance of HTTPX::Plugins::Authentication::Digest, used to authenticate requests in the session.
       module OptionsMethods
         def option_digest(value)
           raise TypeError, ":digest must be a #{Authentication::Digest}" unless value.is_a?(Authentication::Digest)

@@ -12,6 +12,7 @@ module HTTPX
     module AWSSigV4
       Credentials = Struct.new(:username, :password, :security_token)
 
+      # Signs requests using the AWS sigv4 signing.
       class Signer
         def initialize(
           service:,
@@ -149,6 +150,9 @@ module HTTPX
         end
       end
 
+      # adds support for the following options:
+      #
+      # :sigv4_signer :: instance of HTTPX::Plugins::AWSSigV4 used to sign requests.
       module OptionsMethods
         def option_sigv4_signer(value)
           value.is_a?(Signer) ? value : Signer.new(value)

@@ -4,12 +4,17 @@ module HTTPX
   InsecureRedirectError = Class.new(Error)
   module Plugins
     #
-    # This plugin adds support for following redirect (status 30X) responses.
+    # This plugin adds support for automatically following redirect (status 30X) responses.
     #
-    # It has an upper bound of followed redirects (see *MAX_REDIRECTS*), after which it
-    # will return the last redirect response. It will **not** raise an exception.
+    # It has a default upper bound of followed redirects (see *MAX_REDIRECTS* and the *max_redirects* option),
+    # after which it will return the last redirect response. It will **not** raise an exception.
     #
-    # It also doesn't follow insecure redirects (https -> http) by default (see *follow_insecure_redirects*).
+    # It doesn't follow insecure redirects (https -> http) by default (see *follow_insecure_redirects*).
+    #
+    # It doesn't propagate authorization related headers to requests redirecting to different origins
+    # (see *allow_auth_to_other_origins*) to override.
+    #
+    # It allows customization of when to redirect via the *redirect_on* callback option).
     #
     # https://gitlab.com/os85/httpx/wikis/Follow-Redirects
     #
@@ -20,6 +25,14 @@ module HTTPX
 
       using URIExtensions
 
+      # adds support for the following options:
+      #
+      # :max_redirects :: max number of times a request will be redirected (defaults to <tt>3</tt>).
+      # :follow_insecure_redirects :: whether redirects to an "http://" URI, when coming from an "https//", are allowed
+      #                               (defaults to <tt>false</tt>).
+      # :allow_auth_to_other_origins :: whether auth-related headers, such as "Authorization", are propagated on redirection
+      #                                 (defaults to <tt>false</tt>).
+      # :redirect_on :: optional callback which receives the redirect location and can halt the redirect chain if it returns <tt>false</tt>.
       module OptionsMethods
         def option_max_redirects(value)
           num = Integer(value)
@@ -44,6 +57,7 @@ module HTTPX
       end
 
       module InstanceMethods
+        # returns a session with the *max_redirects* option set to +n+
         def max_redirects(n)
           with(max_redirects: n.to_i)
         end
@@ -133,8 +147,16 @@ module HTTPX
             redirect_after = Utils.parse_retry_after(redirect_after)
 
             log { "redirecting after #{redirect_after} secs..." }
+
+            deactivate_connection(request, connections, options)
+
             pool.after(redirect_after) do
-              send_request(retry_request, connections, options)
+              if request.response
+                # request has terminated abruptly meanwhile
+                retry_request.emit(:response, request.response)
+              else
+                send_request(retry_request, connections, options)
+              end
             end
           else
             send_request(retry_request, connections, options)
@@ -142,6 +164,7 @@ module HTTPX
           nil
         end
 
+        # :nodoc:
         def redirect_request_headers(original_uri, redirect_uri, headers, options)
           headers = headers.dup
 
@@ -156,6 +179,7 @@ module HTTPX
           headers
         end
 
+        # :nodoc:
         def __get_location_from_response(response)
           # @type var location_uri: http_uri
           location_uri = URI(response.headers["location"])
@@ -165,12 +189,15 @@ module HTTPX
       end
 
       module RequestMethods
+        # returns the top-most original HTTPX::Request from the redirect chain
         attr_accessor :root_request
 
+        # returns the follow-up redirect request, or itself
         def redirect_request
           @redirect_request || self
         end
 
+        # sets the follow-up redirect request
         def redirect_request=(req)
           @redirect_request = req
           req.root_request = @root_request || self
@@ -178,13 +205,23 @@ module HTTPX
         end
 
         def response
-          return super unless @redirect_request
+          return super unless @redirect_request && @response.nil?
 
           @redirect_request.response
         end
 
         def max_redirects
           @options.max_redirects || MAX_REDIRECTS
+        end
+      end
+
+      module ConnectionMethods
+        private
+
+        def set_request_request_timeout(request)
+          return unless request.root_request.nil?
+
+          super
         end
       end
     end

@@ -20,6 +20,11 @@ module HTTPX
         end
       end
 
+      # adds support for the following options:
+      #
+      # :expect_timeout :: time (in seconds) to wait for a 100-expect response,
+      #                    before retrying without the Expect header (defaults to <tt>2</tt>).
+      # :expect_threshold_size :: min threshold (in bytes) of the request payload to enable the 100-continue negotiation on.
       module OptionsMethods
         def option_expect_timeout(value)
           seconds = Float(value)

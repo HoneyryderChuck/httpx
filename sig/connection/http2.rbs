@@ -32,7 +32,7 @@ module HTTPX
 
     def consume: () -> void
 
-    def handle_error: (StandardError ex) -> void
+    def handle_error: (StandardError ex, ?Request? request) -> void
 
     def ping: () -> void
 

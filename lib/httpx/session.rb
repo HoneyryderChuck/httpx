@@ -125,6 +125,7 @@ module HTTPX
       connection
     end
 
+    # sends the +request+ to the corresponding HTTPX::Connection
     def send_request(request, connections, options = request.options)
       error = catch(:resolve_error) do
         connection = find_connection(request, connections, options)
@@ -231,6 +232,14 @@ module HTTPX
       end
     end
 
+    def deactivate_connection(request, connections, options)
+      conn = connections.find do |c|
+        c.match?(request.uri, options)
+      end
+
+      pool.deactivate(conn) if conn
+    end
+
     # sends an array of HTTPX::Request +requests+, returns the respective array of HTTPX::Response objects.
     def send_requests(*requests)
       connections = _send_requests(requests)
@@ -261,6 +270,7 @@ module HTTPX
           return responses unless request
 
           catch(:coalesced) { pool.next_tick } until (response = fetch_response(request, connections, request.options))
+          request.emit(:complete, response)
 
           responses << response
           requests.shift
@@ -274,14 +284,16 @@ module HTTPX
           # opportunity to traverse the requests, hence we're returning only a fraction of the errors
           # we were supposed to. This effectively fetches the existing responses and return them.
           while (request = requests.shift)
-            responses << fetch_response(request, connections, request.options)
+            response = fetch_response(request, connections, request.options)
+            request.emit(:complete, response) if response
+            responses << response
           end
           break
         end
         responses
       ensure
         if @persistent
-          pool.deactivate(connections)
+          pool.deactivate(*connections)
         else
           close(connections)
         end

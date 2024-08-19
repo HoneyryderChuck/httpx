@@ -89,6 +89,10 @@ module HTTPX
         end
       end
 
+      # adds support for the following options:
+      #
+      # :proxy :: proxy options defining *:uri*, *:username*, *:password* or
+      #           *:scheme* (i.e. <tt>{ uri: "http://proxy" }</tt>)
       module OptionsMethods
         def option_proxy(value)
           value.is_a?(Parameters) ? value : Hash[value]
@@ -107,16 +111,29 @@ module HTTPX
         def find_connection(request, connections, options)
           return super unless options.respond_to?(:proxy)
 
-          uri = URI(request.uri)
+          uri = request.uri
 
-          proxy_opts = if (next_proxy = uri.find_proxy)
+          proxy_options = proxy_options(uri, options)
+
+          return super(request, connections, proxy_options) unless proxy_options.proxy
+
+          connection = pool.find_connection(uri, proxy_options) || init_connection(uri, proxy_options)
+          unless connections.nil? || connections.include?(connection)
+            connections << connection
+            set_connection_callbacks(connection, connections, options)
+          end
+          connection
+        end
+
+        def proxy_options(request_uri, options)
+          proxy_opts = if (next_proxy = request_uri.find_proxy)
             { uri: next_proxy }
           else
             proxy = options.proxy
 
-            return super unless proxy
+            return options unless proxy
 
-            return super(request, connections, options.merge(proxy: nil)) unless proxy.key?(:uri)
+            return options.merge(proxy: nil) unless proxy.key?(:uri)
 
             @_proxy_uris ||= Array(proxy[:uri])
 
@@ -133,8 +150,8 @@ module HTTPX
               no_proxy = proxy[:no_proxy]
               no_proxy = no_proxy.join(",") if no_proxy.is_a?(Array)
 
-              return super(request, connections, options.merge(proxy: nil)) unless URI::Generic.use_proxy?(uri.host, next_proxy.host,
-                                                                                                           next_proxy.port, no_proxy)
+              return options.merge(proxy: nil) unless URI::Generic.use_proxy?(request_uri.host, next_proxy.host,
+                                                                              next_proxy.port, no_proxy)
             end
 
             proxy.merge(uri: next_proxy)
@@ -142,13 +159,7 @@ module HTTPX
 
           proxy = Parameters.new(**proxy_opts)
 
-          proxy_options = options.merge(proxy: proxy)
-          connection = pool.find_connection(uri, proxy_options) || init_connection(uri, proxy_options)
-          unless connections.nil? || connections.include?(connection)
-            connections << connection
-            set_connection_callbacks(connection, connections, options)
-          end
-          connection
+          options.merge(proxy: proxy)
         end
 
         def fetch_response(request, connections, options)

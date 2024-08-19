@@ -3,7 +3,12 @@
 module HTTPX
   module Plugins
     #
-    # This plugin adds support for retrying requests when certain errors happen.
+    # This plugin adds support for retrying requests when errors happen.
+    #
+    # It has a default max number of retries (see *MAX_RETRIES* and the *max_retries* option),
+    # after which it will return the last response, error or not. It will **not** raise an exception.
+    #
+    # It does not retry which are not considered idempotent (see *retry_change_requests* to override).
     #
     # https://gitlab.com/os85/httpx/wikis/Retries
     #
@@ -38,6 +43,14 @@ module HTTPX
         end
       end
 
+      # adds support for the following options:
+      #
+      # :max_retries :: max number of times a request will be retried (defaults to <tt>3</tt>).
+      # :retry_change_requests :: whether idempotent requests are retried (defaults to <tt>false</tt>).
+      # :retry_after:: seconds after which a request is retried; can also be a callable object (i.e. <tt>->(req, res) { ... } </tt>)
+      # :retry_jitter :: number of seconds applied to *:retry_after* (must be a callable, i.e. <tt>->(retry_after) { ... } </tt>).
+      # :retry_on :: callable which alternatively defines a different rule for when a response is to be retried
+      #              (i.e. <tt>->(res) { ... }</tt>).
       module OptionsMethods
         def option_retry_after(value)
           # return early if callable
@@ -76,7 +89,7 @@ module HTTPX
 
       module InstanceMethods
         def max_retries(n)
-          with(max_retries: n.to_i)
+          with(max_retries: n)
         end
 
         private
@@ -111,9 +124,17 @@ module HTTPX
 
               retry_start = Utils.now
               log { "retrying after #{retry_after} secs..." }
+
+              deactivate_connection(request, connections, options)
+
               pool.after(retry_after) do
-                log { "retrying (elapsed time: #{Utils.elapsed_time(retry_start)})!!" }
-                send_request(request, connections, options)
+                if request.response
+                  # request has terminated abruptly meanwhile
+                  request.emit(:response, request.response)
+                else
+                  log { "retrying (elapsed time: #{Utils.elapsed_time(retry_start)})!!" }
+                  send_request(request, connections, options)
+                end
               end
             else
               send_request(request, connections, options)

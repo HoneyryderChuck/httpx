@@ -97,6 +97,16 @@ module HTTPX
         end
       end
 
+      # adds support for the following options:
+      #
+      # :circuit_breaker_max_attempts :: the number of attempts the circuit allows, before it is opened (defaults to <tt>3</tt>).
+      # :circuit_breaker_reset_attempts_in :: the time a circuit stays open at most, before it resets (defaults to <tt>60</tt>).
+      # :circuit_breaker_break_on :: callable defining an alternative rule for a response to break
+      #                              (i.e. <tt>->(res) { res.status == 429 } </tt>)
+      # :circuit_breaker_break_in :: the time that must elapse before an open circuit can transit to the half-open state
+      #                              (defaults to <tt><60</tt>).
+      # :circuit_breaker_half_open_drip_rate :: the rate of requests a circuit allows to be performed when in an half-open state
+      #                                         (defaults to <tt>1</tt>).
       module OptionsMethods
         def option_circuit_breaker_max_attempts(value)
           attempts = Integer(value)
