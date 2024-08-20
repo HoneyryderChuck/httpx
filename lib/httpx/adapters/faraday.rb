@@ -213,7 +213,7 @@ module Faraday
             Array(responses).each_with_index do |response, index|
               handler = @handlers[index]
               handler.on_response.call(response)
-              handler.on_complete.call(handler.env)
+              handler.on_complete.call(handler.env) if handler.on_complete
             end
           end
         rescue ::HTTPX::TimeoutError => e
