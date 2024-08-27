@@ -8,20 +8,26 @@ module HTTPX
   class Pool
     using ArrayExtensions::FilterMap
 
-    def initialize
+    def initialize(options)
+      @options = options
+      @pool_options = options.pool_options
       @resolvers = Hash.new { |hs, resolver_type| hs[resolver_type] = [] }
       @connections = []
     end
 
-    def checkout_connection_by_options(options)
-      conn = @connections.find do |connection|
-        connection.options == options
-      end
-      return unless conn
+    # def checkout_connection_by_options(options)
+    #   conn = @connections.find do |connection|
+    #     connection.options == options
+    #   end
+    #   return unless conn
 
-      @connections.delete(conn)
+    #   @connections.delete(conn)
 
-      conn
+    #   conn
+    # end
+
+    def pop_connection
+      @connections.shift
     end
 
     # opens a connection to the IP reachable through +uri+.
@@ -54,6 +60,10 @@ module HTTPX
       @connections.find do |ch|
         ch != connection && ch.mergeable?(connection)
       end
+    end
+
+    def reset_resolvers
+      @resolvers.clear
     end
 
     def checkout_resolver(options)
