@@ -77,6 +77,8 @@ module HTTPX
     # classes
     attr_reader connection_class: singleton(Connection)
 
+    attr_reader pool_class: singleton(Pool)
+
     attr_reader request_class: singleton(Request)
 
     attr_reader response_class: singleton(Response)
@@ -109,6 +111,9 @@ module HTTPX
 
     # resolver_options
     attr_reader resolver_options: Hash[Symbol, untyped]
+
+    # resolver_options
+    attr_reader pool_options: Hash[Symbol, untyped]
 
     # ip_families
     attr_reader ip_families: Array[ip_family]

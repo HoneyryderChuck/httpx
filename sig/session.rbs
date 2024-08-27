@@ -7,6 +7,11 @@ module HTTPX
 
     @options: Options
     @responses: Hash[Request, response]
+
+    # returns the HTTPX::Pool object which manages the networking required to
+    # perform requests.
+    @pool: Pool
+
     @persistent: bool
     @wrapped: bool
 
@@ -36,8 +41,6 @@ module HTTPX
                   | (?options) -> void
 
     def deactivate: (Selector selector) -> void
-
-    def pool: -> Pool
 
     def on_response: (Request, response) -> void
 

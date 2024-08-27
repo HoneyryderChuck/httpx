@@ -2,10 +2,11 @@ module HTTPX
   class Pool
     type resolver_manager = Resolver::Multi | Resolver::System
 
+    @options: Options
     @resolvers: Hash[Class, Array[resolver_manager]]
     @connections: Array[Connection]
 
-    def checkout_by_options: (Options options) -> Connection?
+    def pop_connection: () -> Connection?
 
     def checkout_connection: (http_uri uri, Options options) -> Connection
 
@@ -13,13 +14,15 @@ module HTTPX
 
     def checkout_mergeable_connection: (Connection connection) -> Connection?
 
+    def reset_resolvers: () -> void
+
     def checkout_resolver: (Options options) -> resolver_manager
 
     def checkin_resolver: (Resolver::Resolver resolver) -> void
 
     private
 
-    def initialize: () -> void
+    def initialize: (Options options) -> void
 
     def checkout_new_connection: (http_uri uri, Options options) -> Connection
 

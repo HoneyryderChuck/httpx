@@ -12,10 +12,6 @@ module SessionWithPool
       super
     end
 
-    def pool
-      @pool ||= HTTPX::Pool.new
-    end
-
     private
 
     def do_init_connection(connection, *)
