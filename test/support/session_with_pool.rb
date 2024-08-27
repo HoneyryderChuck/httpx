@@ -1,8 +1,25 @@
 # frozen_string_literal: true
 
 module SessionWithPool
+  module PoolMethods
+    include HTTPX
+
+    attr_reader :resolvers
+
+    def resolver
+      resolver_type = @options.resolver_class
+      resolver_type = Resolver.resolver_for(resolver_type)
+
+      resolver = @resolvers[resolver_type].first
+
+      resolver = resolver.resolvers[0] if resolver.is_a?(Resolver::Multi)
+
+      resolver
+    end
+  end
+
   module InstanceMethods
-    attr_reader :connections_exausted, :resolver, :selector, :connection_count, :ping_count, :connections
+    attr_reader :pool, :connections_exausted, :connection_count, :ping_count, :connections
 
     def initialize(*)
       @connection_count = 0
@@ -22,11 +39,6 @@ module SessionWithPool
         @connections_exausted += 1
       end
       @connections << connection
-    end
-
-    def find_resolver_for(*args, &blk)
-      @resolver = super(*args, &blk)
-      @resolver
     end
   end
 
