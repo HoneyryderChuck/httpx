@@ -19,6 +19,7 @@ module HTTPX
       @options = self.class.default_options.merge(options)
       @responses = {}
       @persistent = @options.persistent
+      @pool = @options.pool_class.new(@options)
       @wrapped = false
       @closing = false
       wrap(&blk) if blk
@@ -55,11 +56,11 @@ module HTTPX
     # will be picked up from the connection pool and closed. Connections in use
     # by other sessions, or same session in a different thread, will not be reaped.
     def close(selector = Selector.new)
-      # throw resolver away from the pool
-      pool.checkout_resolver(@options)
+      # throw resolvers away from the pool
+      @pool.reset_resolvers
 
       # preparing to throw away connections
-      while (connection = pool.checkout_connection_by_options(@options))
+      while (connection = @pool.pop_connection)
         next if connection.state == :closed
 
         connection.current_session = self
@@ -131,7 +132,7 @@ module HTTPX
 
       return if @closing && connection.state == :closed
 
-      pool.checkin_connection(connection)
+      @pool.checkin_connection(connection)
     end
 
     def deselect_resolver(resolver, selector)
@@ -139,7 +140,7 @@ module HTTPX
 
       return if @closing && resolver.closed?
 
-      pool.checkin_resolver(resolver)
+      @pool.checkin_resolver(resolver)
     end
 
     def try_clone_connection(connection, selector, family)
@@ -190,7 +191,7 @@ module HTTPX
         return connection
       end
 
-      connection = pool.checkout_connection(request_uri, options)
+      connection = @pool.checkout_connection(request_uri, options)
 
       connection.current_session = self
       connection.current_selector = selector
@@ -220,12 +221,6 @@ module HTTPX
         connection.deactivate
         deselect_connection(connection, selector) if connection.state == :inactive
       end
-    end
-
-    # returns the HTTPX::Pool object which manages the networking required to
-    # perform requests.
-    def pool
-      Thread.current[:httpx_connection_pool] ||= Pool.new
     end
 
     # callback executed when a response for a given request has been received.
@@ -298,7 +293,7 @@ module HTTPX
         c.match?(request.uri, options)
       end
 
-      pool.deactivate(conn) if conn
+      @pool.deactivate(conn) if conn
     end
 
     # sends an array of HTTPX::Request +requests+, returns the respective array of HTTPX::Response objects.
@@ -380,7 +375,7 @@ module HTTPX
 
     def on_resolver_connection(connection, selector)
       found_connection = selector.find_mergeable_connection(connection) ||
-                         pool.checkout_mergeable_connection(connection)
+                         @pool.checkout_mergeable_connection(connection)
 
       return select_connection(connection, selector) unless found_connection
 
@@ -404,7 +399,7 @@ module HTTPX
       resolver = selector.find_resolver(connection.options)
 
       unless resolver
-        resolver = pool.checkout_resolver(connection.options)
+        resolver = @pool.checkout_resolver(connection.options)
         resolver.current_session = self
         resolver.current_selector = selector
       end

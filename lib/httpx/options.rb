@@ -56,6 +56,7 @@ module HTTPX
       :response_class => Class.new(Response),
       :request_body_class => Class.new(Request::Body),
       :response_body_class => Class.new(Response::Body),
+      :pool_class => Class.new(Pool),
       :connection_class => Class.new(Connection),
       :options_class => Class.new(self),
       :transport => nil,
@@ -63,6 +64,7 @@ module HTTPX
       :persistent => false,
       :resolver_class => (ENV["HTTPX_RESOLVER"] || :native).to_sym,
       :resolver_options => { cache: true },
+      :pool_options => {},
       :ip_families => ip_address_families,
     }.freeze
 
@@ -110,6 +112,7 @@ module HTTPX
     # :request_body_class :: class used to instantiate a request body
     # :response_body_class :: class used to instantiate a response body
     # :connection_class :: class used to instantiate connections
+    # :pool_class :: class used to instantiate the session connection pool
     # :options_class :: class used to instantiate options
     # :transport :: type of transport to use (set to "unix" for UNIX sockets)
     # :addresses :: bucket of peer addresses (can be a list of IP addresses, a hash of domain to list of adddresses;
@@ -119,6 +122,7 @@ module HTTPX
     # :resolver_class :: which resolver to use (defaults to <tt>:native</tt>, can also be <tt>:system<tt> for
     #                    using getaddrinfo or <tt>:https</tt> for DoH resolver, or a custom class)
     # :resolver_options :: hash of options passed to the resolver
+    # :pool_options :: hash of options passed to the connection pool
     # :ip_families :: which socket families are supported (system-dependent)
     # :origin :: HTTP origin to set on requests with relative path (ex: "https://api.serv.com")
     # :base_path :: path to prefix given relative paths with (ex: "/v2")
@@ -215,6 +219,7 @@ module HTTPX
       ssl http2_settings
       request_class response_class headers_class request_body_class
       response_body_class connection_class options_class
+      pool_class pool_options
       io fallback_protocol debug debug_level resolver_class resolver_options
       compress_request_body decompress_response_body
       persistent
@@ -321,6 +326,10 @@ module HTTPX
         @response_body_class = @response_body_class.dup
         @response_body_class.__send__(:include, pl::ResponseBodyMethods) if defined?(pl::ResponseBodyMethods)
         @response_body_class.extend(pl::ResponseBodyClassMethods) if defined?(pl::ResponseBodyClassMethods)
+      end
+      if defined?(pl::PoolMethods)
+        @pool_class = @pool_class.dup
+        @pool_class.__send__(:include, pl::PoolMethods)
       end
       if defined?(pl::ConnectionMethods)
         @connection_class = @connection_class.dup
