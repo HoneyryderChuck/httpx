@@ -133,6 +133,9 @@ module HTTPX
     def deselect_connection(connection, selector, cloned = false)
       selector.deregister(connection)
 
+      # when connections coalesce
+      return if connection.state == :idle
+
       return if cloned
 
       return if @closing && connection.state == :closed
