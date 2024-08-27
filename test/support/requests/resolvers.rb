@@ -163,7 +163,7 @@ module Requests
                 response = session.get(uri, resolver_class: resolver_type, resolver_options: options.merge(resolver_opts))
                 verify_status(response, 200)
 
-                resolver = session.resolver.resolvers[0]
+                resolver = session.pool.resolver
                 assert resolver.instance_variable_get(:@ns_index) == 1
               end
             end
