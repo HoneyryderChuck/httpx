@@ -28,7 +28,7 @@ module Requests
       assert response.uri.request_uri == "#{status_uri.request_uri}/200"
     end
 
-    def test_http_request
+    def test_http_get_request
       uri = build_uri("/get")
       response = HTTPX.request("GET", uri)
       verify_status(response, 200)
@@ -45,7 +45,7 @@ module Requests
       end
     end
 
-    def test_multiple_get
+    def test_get_multiple
       uri = build_uri("/delay/2")
       response1, response2 = HTTPX.get(uri, uri)
 
@@ -56,7 +56,7 @@ module Requests
       verify_body_length(response2)
     end
 
-    def test_multiple_get_no_concurrency
+    def test_get_multiple_no_concurrency
       uri = build_uri("/delay/2")
       response1, response2 = HTTPX.plugin(:persistent).get(uri, uri, max_concurrent_requests: 1)
 
@@ -77,7 +77,7 @@ module Requests
       assert time_it_took >= 2, "time between requests took < 2 secs (actual: #{time_it_took} secs)"
     end
 
-    def test_http_accept
+    def test_get_http_accept
       uri = build_uri("/get")
       response = HTTPX.accept("text/html").get(uri)
       verify_status(response, 200)
