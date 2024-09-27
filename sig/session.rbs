@@ -74,7 +74,7 @@ module HTTPX
 
     def find_resolver_for: (Connection connection, Selector selector) -> (Resolver::Multi | Resolver::Resolver)
 
-    def coalesce_connections: (Connection conn1, Connection conn2, Selector selector) -> bool
+    def coalesce_connections: (Connection conn1, Connection conn2, Selector selector, bool from_pool) -> bool
 
     attr_reader self.default_options: Options
   end

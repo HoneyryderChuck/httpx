@@ -713,7 +713,6 @@ module HTTPX
 
       alt_options = @options.merge(ssl: @options.ssl.merge(hostname: URI(origin).host))
 
-      # TODO: leaks connection object into the pool
       connection = @current_session.find_connection(alt_origin, @current_selector, alt_options)
 
       # advertised altsvc is the same origin being used, ignore

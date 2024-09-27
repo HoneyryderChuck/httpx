@@ -257,7 +257,6 @@ module HTTPX
     def build_requests(*args, params)
       requests = if args.size == 1
         reqs = args.first
-        # TODO: find a way to make requests share same options object
         reqs.map do |verb, uri, ps = EMPTY_HASH|
           request_params = params
           request_params = request_params.merge(ps) unless ps.empty?
@@ -266,7 +265,6 @@ module HTTPX
       else
         verb, uris = args
         if uris.respond_to?(:each)
-          # TODO: find a way to make requests share same options object
           uris.enum_for(:each).map do |uri, ps = EMPTY_HASH|
             request_params = params
             request_params = request_params.merge(ps) unless ps.empty?
@@ -377,16 +375,19 @@ module HTTPX
     end
 
     def on_resolver_connection(connection, selector)
-      found_connection = selector.find_mergeable_connection(connection) ||
-                         @pool.checkout_mergeable_connection(connection)
+      from_pool = false
+      found_connection = selector.find_mergeable_connection(connection) || begin
+        from_pool = true
+        @pool.checkout_mergeable_connection(connection)
+      end
 
       return select_connection(connection, selector) unless found_connection
 
       if found_connection.open?
-        coalesce_connections(found_connection, connection, selector)
+        coalesce_connections(found_connection, connection, selector, from_pool)
       else
         found_connection.once(:open) do
-          coalesce_connections(found_connection, connection, selector)
+          coalesce_connections(found_connection, connection, selector, from_pool)
         end
       end
     end
@@ -410,15 +411,19 @@ module HTTPX
       resolver
     end
 
-    def coalesce_connections(conn1, conn2, selector)
+    # coalesces +conn2+ into +conn1+. if +conn1+ was loaded from the connection pool
+    # (it is known via +from_pool+), then it adds its to the +selector+.
+    def coalesce_connections(conn1, conn2, selector, from_pool)
       unless conn1.coalescable?(conn2)
         select_connection(conn2, selector)
+        @pool.checkin_connection(conn1) if from_pool
         return false
       end
 
       conn2.emit(:tcp_open, conn1)
       conn1.merge(conn2)
       conn2.coalesced_connection = conn1
+      select_connection(conn1, selector) if from_pool
       deselect_connection(conn2, selector)
       true
     end

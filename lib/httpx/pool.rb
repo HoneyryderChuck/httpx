@@ -12,22 +12,13 @@ module HTTPX
       @options = options
       @pool_options = options.pool_options
       @resolvers = Hash.new { |hs, resolver_type| hs[resolver_type] = [] }
+      @resolver_mtx = Thread::Mutex.new
       @connections = []
+      @connection_mtx = Thread::Mutex.new
     end
 
-    # def checkout_connection_by_options(options)
-    #   conn = @connections.find do |connection|
-    #     connection.options == options
-    #   end
-    #   return unless conn
-
-    #   @connections.delete(conn)
-
-    #   conn
-    # end
-
     def pop_connection
-      @connections.shift
+      @connection_mtx.synchronize { @connections.shift }
     end
 
     # opens a connection to the IP reachable through +uri+.
@@ -37,58 +28,63 @@ module HTTPX
     def checkout_connection(uri, options)
       return checkout_new_connection(uri, options) if options.io
 
-      conn = @connections.find do |connection|
-        connection.match?(uri, options)
-      end
+      @connection_mtx.synchronize do
+        conn = @connections.find do |connection|
+          connection.match?(uri, options)
+        end
+        @connections.delete(conn) if conn
 
-      return checkout_new_connection(uri, options) unless conn
-
-      @connections.delete(conn)
-
-      conn
+        conn
+      end || checkout_new_connection(uri, options)
     end
 
     def checkin_connection(connection, delete = false)
       return if connection.options.io
 
-      @connections << connection unless delete
+      @connection_mtx.synchronize { @connections << connection } unless delete
     end
 
     def checkout_mergeable_connection(connection)
       return if connection.options.io
 
-      @connections.find do |ch|
-        ch != connection && ch.mergeable?(connection)
+      @connection_mtx.synchronize do
+        conn = @connections.find do |ch|
+          ch != connection && ch.mergeable?(connection)
+        end
+        @connections.delete(conn) if conn
+
+        conn
       end
     end
 
     def reset_resolvers
-      @resolvers.clear
+      @resolver_mtx.synchronize { @resolvers.clear }
     end
 
     def checkout_resolver(options)
       resolver_type = options.resolver_class
       resolver_type = Resolver.resolver_for(resolver_type)
 
-      resolvers = @resolvers[resolver_type]
+      @resolver_mtx.synchronize do
+        resolvers = @resolvers[resolver_type]
 
-      resolver = resolvers.find do |res|
-        res.options == options
-      end
+        resolver = resolvers.find do |res|
+          res.options == options
+        end
+        resolvers.delete(resolver)
 
-      return checkout_new_resolver(resolver_type, options) unless resolver
-
-      resolvers.delete(resolver)
-
-      resolver
+        resolver
+      end || checkout_new_resolver(resolver_type, options)
     end
 
     def checkin_resolver(resolver)
-      resolvers = @resolvers[resolver.class]
+      @resolver_mtx.synchronize do
+        resolvers = @resolvers[resolver.class]
 
-      resolver = resolver.multi
+        resolver = resolver.multi
 
-      resolvers << resolver unless resolvers.include?(resolver)
+        resolvers << resolver unless resolvers.include?(resolver)
+      end
     end
 
     private
