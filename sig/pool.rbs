@@ -4,7 +4,9 @@ module HTTPX
 
     @options: Options
     @resolvers: Hash[Class, Array[resolver_manager]]
+    @resolver_mtx: Thread::Mutex
     @connections: Array[Connection]
+    @connection_mtx: Thread::Mutex
 
     def pop_connection: () -> Connection?
 
