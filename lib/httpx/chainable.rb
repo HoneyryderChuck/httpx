@@ -101,4 +101,6 @@ module HTTPX
       end
     end
   end
+
+  extend Chainable
 end

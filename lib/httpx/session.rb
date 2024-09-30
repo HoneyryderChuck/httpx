@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 module HTTPX
-  EMPTY_HASH = {}.freeze
-
   # Class implementing the APIs being used publicly.
   #
   #   HTTPX.get(..) #=> delegating to an internal HTTPX::Session object.
