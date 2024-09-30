@@ -7,18 +7,32 @@ require "httpx/resolver"
 module HTTPX
   class Pool
     using ArrayExtensions::FilterMap
+    using URIExtensions
 
+    POOL_TIMEOUT = 5
+
+    # Sets up the connection pool with the given +options+, which can be the following:
+    #
+    # :max_connections_per_origin :: the maximum number of connections held in the pool pointing to a given origin.
+    # :pool_timeout :: the number of seconds to wait for a connection to a given origin (before raising HTTPX::PoolTimeoutError)
+    #
     def initialize(options)
-      @options = options
-      @pool_options = options.pool_options
+      @max_connections_per_origin = options.fetch(:max_connections_per_origin, Float::INFINITY)
+      @pool_timeout = options.fetch(:pool_timeout, POOL_TIMEOUT)
       @resolvers = Hash.new { |hs, resolver_type| hs[resolver_type] = [] }
       @resolver_mtx = Thread::Mutex.new
       @connections = []
       @connection_mtx = Thread::Mutex.new
+      @origin_counters = Hash.new(0)
+      @origin_conds = Hash.new { |hs, orig| hs[orig] = ConditionVariable.new }
     end
 
     def pop_connection
-      @connection_mtx.synchronize { @connections.shift }
+      @connection_mtx.synchronize do
+        conn = @connections.shift
+        @origin_conds.delete(conn.origin) if conn && ((@origin_counters[conn.origin.to_s] -= 1) == 0)
+        conn
+      end
     end
 
     # opens a connection to the IP reachable through +uri+.
@@ -29,19 +43,29 @@ module HTTPX
       return checkout_new_connection(uri, options) if options.io
 
       @connection_mtx.synchronize do
-        conn = @connections.find do |connection|
-          connection.match?(uri, options)
-        end
-        @connections.delete(conn) if conn
+        acquire_connection(uri, options) || begin
+          if @origin_counters[uri.origin] == @max_connections_per_origin
 
-        conn
-      end || checkout_new_connection(uri, options)
+            @origin_conds[uri.origin].wait(@connection_mtx, @pool_timeout)
+
+            return acquire_connection(uri, options) || raise(PoolTimeoutError.new(uri.origin, @pool_timeout))
+          end
+
+          @origin_counters[uri.origin] += 1
+
+          checkout_new_connection(uri, options)
+        end
+      end
     end
 
-    def checkin_connection(connection, delete = false)
+    def checkin_connection(connection)
       return if connection.options.io
 
-      @connection_mtx.synchronize { @connections << connection } unless delete
+      @connection_mtx.synchronize do
+        @connections << connection
+
+        @origin_conds[connection.origin.to_s].signal
+      end
     end
 
     def checkout_mergeable_connection(connection)
@@ -88,6 +112,16 @@ module HTTPX
     end
 
     private
+
+    def acquire_connection(uri, options)
+      conn = @connections.find do |connection|
+        connection.match?(uri, options)
+      end
+
+      @connections.delete(conn) if conn
+
+      conn
+    end
 
     def checkout_new_connection(uri, options)
       options.connection_class.new(uri, options)

@@ -17,7 +17,7 @@ module HTTPX
       @options = self.class.default_options.merge(options)
       @responses = {}
       @persistent = @options.persistent
-      @pool = @options.pool_class.new(@options)
+      @pool = @options.pool_class.new(@options.pool_options)
       @wrapped = false
       @closing = false
       wrap(&blk) if blk
@@ -242,9 +242,13 @@ module HTTPX
 
     # sends the +request+ to the corresponding HTTPX::Connection
     def send_request(request, selector, options = request.options)
-      error = catch(:resolve_error) do
-        connection = find_connection(request.uri, selector, options)
-        connection.send(request)
+      error = begin
+        catch(:resolve_error) do
+          connection = find_connection(request.uri, selector, options)
+          connection.send(request)
+        end
+      rescue StandardError => e
+        e
       end
       return unless error.is_a?(Error)
 
