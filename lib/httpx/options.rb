@@ -64,7 +64,7 @@ module HTTPX
       :persistent => false,
       :resolver_class => (ENV["HTTPX_RESOLVER"] || :native).to_sym,
       :resolver_options => { cache: true },
-      :pool_options => {},
+      :pool_options => EMPTY_HASH,
       :ip_families => ip_address_families,
     }.freeze
 
@@ -121,8 +121,8 @@ module HTTPX
     # :persistent :: whether to persist connections in between requests (defaults to <tt>true</tt>)
     # :resolver_class :: which resolver to use (defaults to <tt>:native</tt>, can also be <tt>:system<tt> for
     #                    using getaddrinfo or <tt>:https</tt> for DoH resolver, or a custom class)
-    # :resolver_options :: hash of options passed to the resolver
-    # :pool_options :: hash of options passed to the connection pool
+    # :resolver_options :: hash of options passed to the resolver. Accepted keys depend on the resolver type.
+    # :pool_options :: hash of options passed to the connection pool (See Pool#initialize).
     # :ip_families :: which socket families are supported (system-dependent)
     # :origin :: HTTP origin to set on requests with relative path (ex: "https://api.serv.com")
     # :base_path :: path to prefix given relative paths with (ex: "/v2")
