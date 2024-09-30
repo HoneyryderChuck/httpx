@@ -2,20 +2,7 @@
 
 module SessionWithPool
   module PoolMethods
-    include HTTPX
-
     attr_reader :resolvers
-
-    def resolver
-      resolver_type = @options.resolver_class
-      resolver_type = Resolver.resolver_for(resolver_type)
-
-      resolver = @resolvers[resolver_type].first
-
-      resolver = resolver.resolvers[0] if resolver.is_a?(Resolver::Multi)
-
-      resolver
-    end
   end
 
   module InstanceMethods
@@ -27,6 +14,16 @@ module SessionWithPool
       @ping_count = 0
       @connections = []
       super
+    end
+
+    def resolver
+      resolver_type = HTTPX::Resolver.resolver_for(@options.resolver_class)
+
+      resolver = @pool.resolvers[resolver_type].first
+
+      resolver = resolver.resolvers[0] if resolver.is_a?(HTTPX::Resolver::Multi)
+
+      resolver
     end
 
     private

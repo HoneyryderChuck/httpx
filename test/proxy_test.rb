@@ -4,6 +4,7 @@ require_relative "test_helper"
 require "httpx/plugins/proxy"
 
 class ProxyTest < Minitest::Test
+  include HTTPHelpers
   include HTTPX
 
   def test_parameters_equality
@@ -29,10 +30,9 @@ class ProxyTest < Minitest::Test
   end
 
   def test_proxy_unsupported_scheme
-    ex = assert_raises(HTTPX::HTTPProxyError) do
-      HTTPX.plugin(:proxy).with_proxy(uri: "https://proxy:123").get("http://smth.com")
-    end
-    assert ex.message == "https: unsupported proxy protocol"
+    res = HTTPX.plugin(:proxy).with_proxy(uri: "https://proxy:123").get("http://smth.com")
+    verify_error_response(res, HTTPX::HTTPProxyError)
+    verify_error_response(res, "https: unsupported proxy protocol")
   end
 
   private
