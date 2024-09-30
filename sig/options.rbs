@@ -113,7 +113,7 @@ module HTTPX
     attr_reader resolver_options: Hash[Symbol, untyped]
 
     # resolver_options
-    attr_reader pool_options: Hash[Symbol, untyped]
+    attr_reader pool_options: pool_options
 
     # ip_families
     attr_reader ip_families: Array[ip_family]

@@ -13,7 +13,8 @@ module Requests
       def test_plugin_no_proxy_defined
         http = HTTPX.plugin(:proxy)
         uri = build_uri("/get")
-        assert_raises(HTTPX::HTTPProxyError) { http.with_proxy(uri: []).get(uri) }
+        res = http.with_proxy(uri: []).get(uri)
+        verify_error_response(res, HTTPX::HTTPProxyError)
       end
 
       def test_plugin_http_http_proxy

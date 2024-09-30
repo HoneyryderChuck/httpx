@@ -1,18 +1,27 @@
 module HTTPX
+  type pool_options = {
+    max_connections_per_origin: Integer?,
+    pool_timeout: Numeric?
+  }
+
   class Pool
     type resolver_manager = Resolver::Multi | Resolver::System
 
+    @max_connections_per_origin: Integer
+    @pool_timeout: Numeric
     @options: Options
     @resolvers: Hash[Class, Array[resolver_manager]]
     @resolver_mtx: Thread::Mutex
-    @connections: Array[Connection]
+    @connections: Hash[String, Array[Connection]]
     @connection_mtx: Thread::Mutex
+    @origin_counters: Hash[String, Integer]
+    @origin_conds: Hash[String, ConditionVariable]
 
     def pop_connection: () -> Connection?
 
     def checkout_connection: (http_uri uri, Options options) -> Connection
 
-    def checkin_connection: (Connection connection, ?boolish delete) -> void
+    def checkin_connection: (Connection connection) -> void
 
     def checkout_mergeable_connection: (Connection connection) -> Connection?
 
@@ -24,7 +33,9 @@ module HTTPX
 
     private
 
-    def initialize: (Options options) -> void
+    def initialize: (pool_options options) -> void
+
+    def acquire_connection: (http_uri, Options options) -> Connection?
 
     def checkout_new_connection: (http_uri uri, Options options) -> Connection
 
