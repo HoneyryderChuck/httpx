@@ -39,11 +39,11 @@ class EnvProxyTest < Minitest::Test
       verify_status(response, 200)
       verify_body_length(response)
 
-      connections = http.conn_store
+      connections = http.connections
 
       assert connections.size == 1
       connection = connections.first
-      assert HTTPS_PROXY.end_with?(connection.origin.authority), "#{connection.origin.authority} not found in #{HTTPS_PROXY}"
+      assert HTTPS_PROXY.end_with?(connection.peer.authority), "#{connection.peer.authority} not found in #{HTTPS_PROXY}"
     end
   end
 
@@ -59,11 +59,11 @@ class EnvProxyTest < Minitest::Test
       verify_status(response2, 200)
       verify_body_length(response2)
 
-      connections = http.conn_store
+      connections = http.connections
 
       assert connections.size == 1
       connections.each do |connection|
-        assert HTTP_PROXY.end_with?(connection.origin.authority), "#{connection.origin.authority} not found in #{HTTPS_PROXY}"
+        assert HTTP_PROXY.end_with?(connection.peer.authority), "#{connection.peer.authority} not found in #{HTTPS_PROXY}"
       end
     end
   end

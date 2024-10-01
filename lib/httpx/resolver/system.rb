@@ -88,7 +88,7 @@ module HTTPX
 
       return unless connection
 
-      @timeouts[connection.origin.host].first
+      @timeouts[connection.peer.host].first
     end
 
     def <<(connection)
@@ -147,7 +147,7 @@ module HTTPX
           @connections.delete(connection)
 
           _, connection = pair
-          emit_resolve_error(connection, connection.origin.host, error)
+          emit_resolve_error(connection, connection.peer.host, error)
         end
       end
 
@@ -160,9 +160,9 @@ module HTTPX
       raise Error, "no URI to resolve" unless connection
       return unless @queries.empty?
 
-      hostname = connection.origin.host
+      hostname = connection.peer.host
       scheme = connection.origin.scheme
-      log { "resolver: resolve IDN #{connection.origin.non_ascii_hostname} as #{hostname}" } if connection.origin.non_ascii_hostname
+      log { "resolver: resolve IDN #{connection.peer.non_ascii_hostname} as #{hostname}" } if connection.peer.non_ascii_hostname
 
       transition(:open)
 
@@ -176,7 +176,7 @@ module HTTPX
     def async_resolve(connection, hostname, scheme)
       families = connection.options.ip_families
       log { "resolver: query for #{hostname}" }
-      timeouts = @timeouts[connection.origin.host]
+      timeouts = @timeouts[connection.peer.host]
       resolve_timeout = timeouts.first
 
       Thread.start do
