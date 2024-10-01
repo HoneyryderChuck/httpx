@@ -43,7 +43,7 @@ module HTTPX
     end
 
     def <<(connection)
-      return if @uri.origin == connection.origin.to_s
+      return if @uri.origin == connection.peer.to_s
 
       @uri_addresses ||= HTTPX::Resolver.nolookup_resolve(@uri.host) || @resolver.getaddresses(@uri.host)
 
@@ -81,8 +81,8 @@ module HTTPX
       hostname ||= @queries.key(connection)
 
       if hostname.nil?
-        hostname = connection.origin.host
-        log { "resolver: resolve IDN #{connection.origin.non_ascii_hostname} as #{hostname}" } if connection.origin.non_ascii_hostname
+        hostname = connection.peer.host
+        log { "resolver: resolve IDN #{connection.peer.non_ascii_hostname} as #{hostname}" } if connection.peer.non_ascii_hostname
 
         hostname = @resolver.generate_candidates(hostname).each do |name|
           @queries[name.to_s] = connection
@@ -101,7 +101,7 @@ module HTTPX
         @connections << connection
       rescue ResolveError, Resolv::DNS::EncodeError => e
         reset_hostname(hostname)
-        emit_resolve_error(connection, connection.origin.host, e)
+        emit_resolve_error(connection, connection.peer.host, e)
       end
     end
 
@@ -110,7 +110,7 @@ module HTTPX
     rescue StandardError => e
       hostname = @requests.delete(request)
       connection = reset_hostname(hostname)
-      emit_resolve_error(connection, connection.origin.host, e)
+      emit_resolve_error(connection, connection.peer.host, e)
     else
       # @type var response: HTTPX::Response
       parse(request, response)
@@ -149,7 +149,7 @@ module HTTPX
       when :decode_error
         host = @requests.delete(request)
         connection = reset_hostname(host)
-        emit_resolve_error(connection, connection.origin.host, result)
+        emit_resolve_error(connection, connection.peer.host, result)
       end
     end
 
