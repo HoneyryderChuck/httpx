@@ -48,6 +48,8 @@ module HTTPX
 
     def addresses: () -> Array[ipaddr]?
 
+    def peer: () -> URI::Generic
+
     def addresses=: (Array[ipaddr] addresses) -> void
 
     def send: (Request request) -> void

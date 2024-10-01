@@ -51,8 +51,6 @@ module HTTPX
       @current_session = @current_selector = @coalesced_connection = nil
       @exhausted = @cloned = false
 
-      @origins = [uri.origin]
-      @origin = Utils.to_uri(uri.origin)
       @options = Options.new(options)
       @type = initialize_type(uri, @options)
       @origins = [uri.origin]
@@ -114,6 +112,10 @@ module HTTPX
       @intervals = []
 
       self.addresses = @options.addresses if @options.addresses
+    end
+
+    def peer
+      @origin
     end
 
     # this is a semi-private method, to be used by the resolver
@@ -732,9 +734,9 @@ module HTTPX
     def build_socket(addrs = nil)
       case @type
       when "tcp"
-        TCP.new(@origin, addrs, @options)
+        TCP.new(peer, addrs, @options)
       when "ssl"
-        SSL.new(@origin, addrs, @options) do |sock|
+        SSL.new(peer, addrs, @options) do |sock|
           sock.ssl_session = @ssl_session
           sock.session_new_cb do |sess|
             @ssl_session = sess
@@ -747,7 +749,7 @@ module HTTPX
 
         path = String(path) if path
 
-        UNIX.new(@origin, path, @options)
+        UNIX.new(peer, path, @options)
       else
         raise Error, "unsupported transport (#{@type})"
       end

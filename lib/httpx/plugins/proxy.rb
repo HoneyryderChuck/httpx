@@ -203,10 +203,10 @@ module HTTPX
           when NativeResolveError
             proxy_uri = URI(options.proxy.uri)
 
-            origin = error.connection.origin
+            peer = error.connection.peer
 
             # failed resolving proxy domain
-            origin.host == proxy_uri.host && origin.port == proxy_uri.port
+            peer.host == proxy_uri.host && peer.port == proxy_uri.port
           when ResolveError
             proxy_uri = URI(options.proxy.uri)
 
@@ -229,25 +229,11 @@ module HTTPX
 
           # redefining the connection origin as the proxy's URI,
           # as this will be used as the tcp peer ip.
-          proxy_uri = URI(@options.proxy.uri)
-          @origin.host = proxy_uri.host
-          @origin.port = proxy_uri.port
+          @proxy_uri = URI(@options.proxy.uri)
         end
 
-        def coalescable?(connection)
-          return super unless @options.proxy
-
-          if @io.protocol == "h2" &&
-             @origin.scheme == "https" &&
-             connection.origin.scheme == "https" &&
-             @io.can_verify_peer?
-            # in proxied connections, .origin is the proxy ; Given names
-            # are stored in .origins, this is what is used.
-            origin = URI(connection.origins.first)
-            @io.verify_hostname(origin.host)
-          else
-            @origin == connection.origin
-          end
+        def peer
+          @proxy_uri || super
         end
 
         def connecting?

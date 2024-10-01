@@ -30,7 +30,7 @@ module HTTPX
     def pop_connection
       @connection_mtx.synchronize do
         conn = @connections.shift
-        @origin_conds.delete(conn.origin) if conn && ((@origin_counters[conn.origin.to_s] -= 1) == 0)
+        @origin_conds.delete(conn.origin) if conn && (@origin_counters[conn.origin.to_s] -= 1).zero?
         conn
       end
     end

@@ -56,9 +56,6 @@ module HTTPX
 
         def proxy_error?: (Request request, response, Options options) -> bool
       end
-
-      module ConnectionMethods
-      end
     end
 
     type sessionProxy = Session & Proxy::InstanceMethods

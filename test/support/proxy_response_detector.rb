@@ -19,9 +19,7 @@ module ProxyResponseDetector
     def send(request)
       return super unless @options.respond_to?(:proxy) && @options.proxy
 
-      proxy_uri = URI(@options.proxy.uri)
-
-      request.proxied = @origin.host == proxy_uri.host && @origin.port == proxy_uri.port
+      request.proxied = true
 
       super
     end

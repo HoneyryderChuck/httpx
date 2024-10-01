@@ -135,7 +135,7 @@ module HTTPX
       return unless query
 
       h, connection = query
-      host = connection.origin.host
+      host = connection.peer.host
       timeout = (@timeouts[host][0] -= loop_time)
 
       return unless timeout <= 0
@@ -164,7 +164,7 @@ module HTTPX
         @connections.delete(connection)
         # This loop_time passed to the exception is bogus. Ideally we would pass the total
         # resolve timeout, including from the previous retries.
-        ex = ResolveTimeoutError.new(loop_time, "Timed out while resolving #{connection.origin.host}")
+        ex = ResolveTimeoutError.new(loop_time, "Timed out while resolving #{connection.peer.host}")
         ex.set_backtrace(ex ? ex.backtrace : caller)
         emit_resolve_error(connection, host, ex)
         emit(:close, self)
@@ -251,9 +251,9 @@ module HTTPX
 
         unless @queries.value?(connection)
           @connections.delete(connection)
-          ex = NativeResolveError.new(connection, connection.origin.host, "name or service not known")
+          ex = NativeResolveError.new(connection, connection.peer.host, "name or service not known")
           ex.set_backtrace(ex ? ex.backtrace : caller)
-          emit_resolve_error(connection, connection.origin.host, ex)
+          emit_resolve_error(connection, connection.peer.host, ex)
           emit(:close, self)
         end
 
@@ -271,13 +271,13 @@ module HTTPX
         hostname, connection = @queries.first
         reset_hostname(hostname)
         @connections.delete(connection)
-        ex = NativeResolveError.new(connection, connection.origin.host, "unknown DNS error (error code #{result})")
+        ex = NativeResolveError.new(connection, connection.peer.host, "unknown DNS error (error code #{result})")
         raise ex
       when :decode_error
         hostname, connection = @queries.first
         reset_hostname(hostname)
         @connections.delete(connection)
-        ex = NativeResolveError.new(connection, connection.origin.host, result.message)
+        ex = NativeResolveError.new(connection, connection.peer.host, result.message)
         ex.set_backtrace(result.backtrace)
         raise ex
       end
@@ -289,7 +289,7 @@ module HTTPX
         hostname, connection = @queries.first
         reset_hostname(hostname)
         @connections.delete(connection)
-        raise NativeResolveError.new(connection, connection.origin.host)
+        raise NativeResolveError.new(connection, connection.peer.host)
       else
         address = addresses.first
         name = address["name"]
@@ -315,7 +315,7 @@ module HTTPX
         if address.key?("alias") # CNAME
           hostname_alias = address["alias"]
           # clean up intermediate queries
-          @timeouts.delete(name) unless connection.origin.host == name
+          @timeouts.delete(name) unless connection.peer.host == name
 
           if early_resolve(connection, hostname: hostname_alias)
             @connections.delete(connection)
@@ -332,9 +332,9 @@ module HTTPX
           end
         else
           reset_hostname(name, connection: connection)
-          @timeouts.delete(connection.origin.host)
+          @timeouts.delete(connection.peer.host)
           @connections.delete(connection)
-          Resolver.cached_lookup_set(connection.origin.host, @family, addresses) if @resolver_options[:cache]
+          Resolver.cached_lookup_set(connection.peer.host, @family, addresses) if @resolver_options[:cache]
           catch(:coalesced) { emit_addresses(connection, @family, addresses.map { |addr| addr["data"] }) }
         end
       end
@@ -351,8 +351,8 @@ module HTTPX
       hostname ||= @queries.key(connection)
 
       if hostname.nil?
-        hostname = connection.origin.host
-        log { "resolver: resolve IDN #{connection.origin.non_ascii_hostname} as #{hostname}" } if connection.origin.non_ascii_hostname
+        hostname = connection.peer.host
+        log { "resolver: resolve IDN #{connection.peer.non_ascii_hostname} as #{hostname}" } if connection.peer.non_ascii_hostname
 
         hostname = generate_candidates(hostname).each do |name|
           @queries[name] = connection

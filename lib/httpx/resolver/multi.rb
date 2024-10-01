@@ -60,7 +60,7 @@ module HTTPX
     end
 
     def early_resolve(connection)
-      hostname = connection.origin.host
+      hostname = connection.peer.host
       addresses = @resolver_options[:cache] && (connection.addresses || HTTPX::Resolver.nolookup_resolve(hostname))
       return unless addresses
 
