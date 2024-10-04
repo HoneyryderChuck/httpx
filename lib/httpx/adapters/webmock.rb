@@ -55,14 +55,14 @@ module WebMock
         private
 
         def do_init_connection(connection, selector)
-          super.tap |conn|
-            conn.once(:unmock_connection) do
-              unless conn.addresses
-                conn.__send__(:callbacks)[:connect_error].clear
-                deselect_connection(conn, selector)
-              end
-              resolve_connection(conn, selector)
+          super
+
+          connection.once(:unmock_connection) do
+            unless connection.addresses
+              connection.__send__(:callbacks)[:connect_error].clear
+              deselect_connection(connection, selector)
             end
+            resolve_connection(connection, selector)
           end
         end
       end

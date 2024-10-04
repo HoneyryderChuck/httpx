@@ -58,7 +58,7 @@ module HTTPX
                       | (verb, _Each[[uri, request_params]], Hash[Symbol, untyped]) -> Array[Request]
                       | (verb, _Each[uri], request_params) -> Array[Request]
 
-    def do_init_connection: (Connection connection, Selector selector) -> Connection
+    def do_init_connection: (Connection connection, Selector selector) -> void
 
     def send_requests: (*Request) -> Array[response]
 

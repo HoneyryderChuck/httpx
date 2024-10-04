@@ -184,6 +184,7 @@ module HTTPX
       end
 
       do_init_connection(new_connection, selector)
+      new_connection
     end
 
     # returns the HTTPX::Connection through which the +request+ should be sent through.
@@ -288,7 +289,6 @@ module HTTPX
 
     def do_init_connection(connection, selector)
       resolve_connection(connection, selector) unless connection.family
-      connection
     end
 
     def deactivate_connection(request, connections, options)
