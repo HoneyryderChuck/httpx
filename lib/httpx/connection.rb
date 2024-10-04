@@ -92,16 +92,6 @@ module HTTPX
         @current_session.deselect_connection(self, @current_selector)
       end
 
-      # sets the callbacks on the +connection+ required to process certain specific
-      # connection lifecycle events which deal with request rerouting.
-      on(:misdirected) do |misdirected_request|
-        # TODO: leaks connection object into the pool
-        other_connection = @current_session.find_connection(@origin, @current_selector,
-                                                            @options.merge(ssl: { alpn_protocols: %w[http/1.1] }))
-        other_connection.merge(self)
-        misdirected_request.transition(:idle)
-        other_connection.send(misdirected_request)
-      end
       on(:altsvc) do |alt_origin, origin, alt_params|
         build_altsvc_connection(alt_origin, origin, alt_params)
       end
@@ -590,7 +580,15 @@ module HTTPX
       parser.on(:error) do |request, ex|
         case ex
         when MisdirectedRequestError
-          emit(:misdirected, request)
+          current_session = @current_session
+          current_selector = @current_selector
+          parser.close
+
+          other_connection = current_session.find_connection(@origin, current_selector,
+                                                             @options.merge(ssl: { alpn_protocols: %w[http/1.1] }))
+          other_connection.merge(self)
+          request.transition(:idle)
+          other_connection.send(request)
         else
           response = ErrorResponse.new(request, ex)
           request.response = response
