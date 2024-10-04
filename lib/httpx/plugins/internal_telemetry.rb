@@ -111,6 +111,25 @@ module HTTPX
           meter_elapsed_time("Connection##{object_id}[#{@origin}]: #{state} -> #{nextstate}") if nextstate == @state
         end
       end
+
+      module PoolMethods
+        def self.included(klass)
+          klass.prepend TrackTimeMethods
+          super
+        end
+
+        def checkout_connection(request_uri, options)
+          super.tap do |connection|
+            meter_elapsed_time("Pool##{object_id}: checked out connection for Connection##{connection.object_id}[#{connection.origin}]}")
+          end
+        end
+
+        def checkin_connection(connection)
+          super.tap do
+            meter_elapsed_time("Pool##{object_id}: checked in connection for Connection##{connection.object_id}[#{connection.origin}]}")
+          end
+        end
+      end
     end
     register_plugin :internal_telemetry, InternalTelemetry
   end
