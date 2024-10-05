@@ -176,3 +176,7 @@ Performance/StringIdentifierArgument:
 
 Style/Lambda:
   Enabled: false
+
+Style/TrivialAccessors:
+  Exclude:
+    - 'test/pool_test.rb'
