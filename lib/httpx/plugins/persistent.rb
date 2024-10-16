@@ -30,6 +30,22 @@ module HTTPX
       def self.extra_options(options)
         options.merge(persistent: true)
       end
+
+      module InstanceMethods
+        private
+
+        def get_current_selector
+          super(&nil) || begin
+            return unless block_given?
+
+            default = yield
+
+            set_current_selector(default)
+
+            default
+          end
+        end
+      end
     end
     register_plugin :persistent, Persistent
   end
