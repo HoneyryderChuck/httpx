@@ -31,8 +31,8 @@ module HTTPX
     def wrap
       prev_wrapped = @wrapped
       @wrapped = true
-      prev_selector = Thread.current[:httpx_selector]
-      Thread.current[:httpx_selector] = current_selector = Selector.new
+      prev_selector = get_current_selector
+      set_current_selector(current_selector = Selector.new)
       begin
         yield self
       ensure
@@ -44,7 +44,7 @@ module HTTPX
           end
         end
         @wrapped = prev_wrapped
-        Thread.current[:httpx_selector] = prev_selector
+        set_current_selector(prev_selector)
       end
     end
 
@@ -301,7 +301,7 @@ module HTTPX
 
     # sends an array of HTTPX::Request +requests+, returns the respective array of HTTPX::Response objects.
     def send_requests(*requests)
-      selector = Thread.current[:httpx_selector] || Selector.new
+      selector = get_current_selector { Selector.new }
       _send_requests(requests, selector)
       receive_requests(requests, selector)
     ensure
@@ -428,6 +428,14 @@ module HTTPX
       select_connection(conn1, selector) if from_pool
       deselect_connection(conn2, selector)
       true
+    end
+
+    def get_current_selector
+      Thread.current.thread_variable_get(:httpx_selector) || (yield if block_given?)
+    end
+
+    def set_current_selector(selector)
+      Thread.current.thread_variable_set(:httpx_selector, selector)
     end
 
     @default_options = Options.new

@@ -4,8 +4,12 @@ module HTTPX
       def self.load_dependencies: (singleton(Session)) -> void
 
       def self.extra_options: (Options) -> (Options)
+
+      module InstanceMethods
+        def selector_store: () -> Hash[Session, Selector]
+      end
     end
 
-    type sessionPersistent = sessionFollowRedirects
+    type sessionPersistent = Session & Persistent::InstanceMethods
   end
 end

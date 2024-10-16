@@ -30,6 +30,34 @@ module HTTPX
       def self.extra_options(options)
         options.merge(persistent: true)
       end
+
+      module InstanceMethods
+        private
+
+        def get_current_selector
+          selector_store[self] || begin
+            return unless block_given?
+
+            default = yield
+
+            set_current_selector(default)
+
+            default
+          end
+        end
+
+        def set_current_selector(selector)
+          selector_store[self] = selector
+        end
+
+        def selector_store
+          Thread.current.thread_variable_get(:httpx_persistent_selector_store) || begin
+            {}.compare_by_identity.tap do |store|
+              Thread.current.thread_variable_set(:httpx_persistent_selector_store, store)
+            end
+          end
+        end
+      end
     end
     register_plugin :persistent, Persistent
   end

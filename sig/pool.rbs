@@ -35,7 +35,7 @@ module HTTPX
 
     def initialize: (pool_options options) -> void
 
-    def acquire_connection: (http_uri, Options options) -> Connection?
+    def acquire_connection: (http_uri uri, Options options) -> Connection?
 
     def checkout_new_connection: (http_uri uri, Options options) -> Connection
 
