@@ -31,8 +31,13 @@ module HTTPX
     def wrap
       prev_wrapped = @wrapped
       @wrapped = true
-      prev_selector = get_current_selector
-      set_current_selector(current_selector = Selector.new)
+      current_selector = get_current_selector do
+        selector = Selector.new
+
+        set_current_selector(selector)
+
+        selector
+      end
       begin
         yield self
       ensure
@@ -44,7 +49,6 @@ module HTTPX
           end
         end
         @wrapped = prev_wrapped
-        set_current_selector(prev_selector)
       end
     end
 
@@ -431,11 +435,19 @@ module HTTPX
     end
 
     def get_current_selector
-      Thread.current.thread_variable_get(:httpx_selector) || (yield if block_given?)
+      selector_store[self] || (yield if block_given?)
     end
 
     def set_current_selector(selector)
-      Thread.current.thread_variable_set(:httpx_selector, selector)
+      selector_store[self] = selector
+    end
+
+    def selector_store
+      Thread.current.thread_variable_get(:httpx_persistent_selector_store) || begin
+        {}.compare_by_identity.tap do |store|
+          Thread.current.thread_variable_set(:httpx_persistent_selector_store, store)
+        end
+      end
     end
 
     @default_options = Options.new
