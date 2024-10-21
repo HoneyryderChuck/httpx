@@ -191,6 +191,37 @@ class WebmockTest < Minitest::Test
     end
   end
 
+  def test_webmock_allows_real_request
+    WebMock.allow_net_connect!
+    uri = build_uri("/get?foo=bar")
+    response = HTTPX.get(uri)
+    verify_status(response, 200)
+    verify_body_length(response)
+    assert_requested(:get, uri, query: { "foo" => "bar" })
+  end
+
+  def test_webmock_allows_real_request_with_body
+    WebMock.allow_net_connect!
+    uri = build_uri("/post")
+    response = HTTPX.post(uri, form: { foo: "bar" })
+    verify_status(response, 200)
+    verify_body_length(response)
+    assert_requested(:post, uri, headers: { "Content-Type" => "application/x-www-form-urlencoded" }, body: "foo=bar")
+  end
+
+  def test_webmock_allows_real_request_with_file_body
+    WebMock.allow_net_connect!
+    uri = build_uri("/post")
+    response = HTTPX.post(uri, form: { image: File.new(fixture_file_path) })
+    verify_status(response, 200)
+    verify_body_length(response)
+    body = json_body(response)
+    verify_header(body["headers"], "Content-Type", "multipart/form-data")
+    verify_uploaded_image(body, "image", "image/jpeg")
+    # TODO: webmock does not support matching multipart request body
+    # assert_requested(:post, uri, headers: { "Content-Type" => "multipart/form-data" }, form: { "image" => File.new(fixture_file_path) })
+  end
+
   def test_webmock_mix_mock_and_real_request
     WebMock.allow_net_connect!
 
@@ -279,5 +310,9 @@ class WebmockTest < Minitest::Test
 
   def http_request(meth, *uris, **options)
     HTTPX.__send__(meth, *uris, **options)
+  end
+
+  def scheme
+    "http://"
   end
 end

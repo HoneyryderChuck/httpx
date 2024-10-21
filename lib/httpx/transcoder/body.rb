@@ -13,6 +13,8 @@ module HTTPX::Transcoder
 
       def_delegator :@raw, :to_s
 
+      def_delegator :@raw, :==
+
       def initialize(body)
         @raw = body
       end

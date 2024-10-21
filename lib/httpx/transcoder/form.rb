@@ -20,6 +20,8 @@ module HTTPX
 
         def_delegator :@raw, :bytesize
 
+        def_delegator :@raw, :==
+
         def initialize(form)
           @raw = form.each_with_object("".b) do |(key, val), buf|
             HTTPX::Transcoder.normalize_keys(key, val) do |k, v|
