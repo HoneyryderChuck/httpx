@@ -166,6 +166,8 @@ module HTTPX
           response = super
 
           if response.is_a?(ErrorResponse) && proxy_error?(request, response)
+            return response unless @_proxy_uris
+
             @_proxy_uris.shift
 
             # return last error response if no more proxies to try
