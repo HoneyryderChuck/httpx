@@ -120,7 +120,7 @@ regression tests:
     - bundle exec rake regression_tests
 
 coverage:
-  coverage: '/\(\d+.\d+\%\) covered/'
+  coverage: 'Coverage: /\(\d+.\d+\%\)/'
   stage: prepare
   variables:
     BUNDLE_WITHOUT: lint:test:assorted
