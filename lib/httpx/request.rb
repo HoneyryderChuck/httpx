@@ -83,7 +83,7 @@ module HTTPX
 
       @options = @body.options
 
-      if @uri.relative?
+      if @uri.relative? || @uri.host.nil?
         origin = @options.origin
         raise(Error, "invalid URI: #{@uri}") unless origin
 

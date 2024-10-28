@@ -2,6 +2,13 @@
 
 module Requests
   module Errors
+    def test_errors_invalid_uri
+      exc = assert_raises { HTTPX.get("/get") }
+      assert exc.message.include?("invalid URI: /get")
+      exc = assert_raises { HTTPX.get("http:/smth/get") }
+      assert exc.message.include?("invalid URI: http:/smth/get")
+    end
+
     def test_errors_connection_refused
       unavailable_host = URI(origin("localhost"))
       unavailable_host.port = next_available_port
