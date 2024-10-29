@@ -72,12 +72,10 @@ module HTTPX
       return if connection.options.io
 
       @connection_mtx.synchronize do
-        conn = @connections.find do |ch|
+        idx = @connections.find_index do |ch|
           ch != connection && ch.mergeable?(connection)
         end
-        @connections.delete(conn) if conn
-
-        conn
+        @connections.delete_at(idx) if idx
       end
     end
 
@@ -92,12 +90,10 @@ module HTTPX
       @resolver_mtx.synchronize do
         resolvers = @resolvers[resolver_type]
 
-        resolver = resolvers.find do |res|
+        idx = resolvers.find_index do |res|
           res.options == options
         end
-        resolvers.delete(resolver)
-
-        resolver
+        resolvers.delete_at(idx) if idx
       end || checkout_new_resolver(resolver_type, options)
     end
 
@@ -114,13 +110,11 @@ module HTTPX
     private
 
     def acquire_connection(uri, options)
-      conn = @connections.find do |connection|
+      idx = @connections.find_index do |connection|
         connection.match?(uri, options)
       end
 
-      @connections.delete(conn) if conn
-
-      conn
+      @connections.delete_at(idx) if idx
     end
 
     def checkout_new_connection(uri, options)
