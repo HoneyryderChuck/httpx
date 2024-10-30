@@ -12,7 +12,7 @@ module HTTPX
     using URIExtensions
 
     # default value used for "user-agent" header, when not overridden.
-    USER_AGENT = "httpx.rb/#{VERSION}"
+    USER_AGENT = "httpx.rb/#{VERSION}".freeze # rubocop:disable Style/RedundantFreeze
 
     # the upcased string HTTP verb for this request.
     attr_reader :verb

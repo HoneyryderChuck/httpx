@@ -25,14 +25,14 @@ module HTTPX
       end
     rescue NotImplementedError
       [Socket::AF_INET]
-    end
+    end.freeze
 
     DEFAULT_OPTIONS = {
       :max_requests => Float::INFINITY,
-      :debug => ENV.key?("HTTPX_DEBUG") ? $stderr : nil,
+      :debug => ENV.key?("HTTPX_DEBUG") ? STDERR : nil,
       :debug_level => (ENV["HTTPX_DEBUG"] || 1).to_i,
-      :ssl => {},
-      :http2_settings => { settings_enable_push: 0 },
+      :ssl => EMPTY_HASH,
+      :http2_settings => { settings_enable_push: 0 }.freeze,
       :fallback_protocol => "http/1.1",
       :supported_compression_formats => %w[gzip deflate],
       :decompress_response_body => true,
@@ -63,7 +63,7 @@ module HTTPX
       :addresses => nil,
       :persistent => false,
       :resolver_class => (ENV["HTTPX_RESOLVER"] || :native).to_sym,
-      :resolver_options => { cache: true },
+      :resolver_options => { cache: true }.freeze,
       :pool_options => EMPTY_HASH,
       :ip_families => ip_address_families,
     }.freeze
