@@ -251,14 +251,6 @@ module HTTPX
       end
     end
 
-    OTHER_LOOKUP = ->(obj, k, ivar_map) {
-      case obj
-      when Hash
-        obj[ivar_map[k]]
-      else
-        obj.instance_variable_get(k)
-      end
-    }
     def merge(other)
       ivar_map = nil
       other_ivars = case other
@@ -271,12 +263,12 @@ module HTTPX
 
       return self if other_ivars.empty?
 
-      return self if other_ivars.all? { |ivar| instance_variable_get(ivar) == OTHER_LOOKUP[other, ivar, ivar_map] }
+      return self if other_ivars.all? { |ivar| instance_variable_get(ivar) == access_option(other, ivar, ivar_map) }
 
       opts = dup
 
       other_ivars.each do |ivar|
-        v = OTHER_LOOKUP[other, ivar, ivar_map]
+        v = access_option(other, ivar, ivar_map)
 
         unless v
           opts.instance_variable_set(ivar, v)
@@ -353,6 +345,15 @@ module HTTPX
 
         value = __send__(option_method_name, v)
         instance_variable_set(:"@#{k}", value)
+      end
+    end
+
+    def access_option(obj, k, ivar_map)
+      case obj
+      when Hash
+        obj[ivar_map[k]]
+      else
+        obj.instance_variable_get(k)
       end
     end
   end
