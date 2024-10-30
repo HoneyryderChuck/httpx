@@ -439,6 +439,15 @@ module HTTPX
         @read_buffer.clear
       end
       @state = nextstate
+    rescue Errno::ECONNREFUSED,
+           Errno::EADDRNOTAVAIL,
+           Errno::EHOSTUNREACH,
+           SocketError,
+           IOError,
+           ConnectTimeoutError => e
+      # these errors may happen during TCP handshake
+      # treat them as resolve errors.
+      handle_error(e)
     end
 
     def handle_error(error)
