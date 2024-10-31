@@ -28,6 +28,8 @@ module HTTPX
 
         def content_type: () -> String
 
+        def to_s: () -> String
+
         def read: (?int? length, ?string? buffer) -> String?
 
         def rewind: () -> void

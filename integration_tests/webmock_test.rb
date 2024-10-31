@@ -155,6 +155,12 @@ class WebmockTest < Minitest::Test
     assert_requested(:get, MOCK_URL_HTTP, query: hash_excluding("a" => %w[b c]))
   end
 
+  def test_verification_that_expected_request_with_hash_as_body
+    stub_request(:post, MOCK_URL_HTTP).with(body: { foo: "bar" })
+    http_request(:post, MOCK_URL_HTTP, form: { foo: "bar" })
+    assert_requested(:post, MOCK_URL_HTTP, body: { foo: "bar" })
+  end
+
   def test_verification_that_non_expected_request_didnt_occur
     expected_message = Regexp.new(
       "The request GET #{MOCK_URL_HTTP}/ was not expected to execute but it executed 1 time\n\n" \

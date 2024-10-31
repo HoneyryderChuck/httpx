@@ -20,7 +20,7 @@ module WebMock
           WebMock::RequestSignature.new(
             request.verb.downcase.to_sym,
             uri.to_s,
-            body: request.body,
+            body: request.body.to_s,
             headers: request.headers.to_h
           )
         end
