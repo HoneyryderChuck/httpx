@@ -18,6 +18,12 @@ module HTTPX
         "multipart/form-data; boundary=#{@boundary}"
       end
 
+      def to_s
+        read
+      ensure
+        rewind
+      end
+
       def read(length = nil, outbuf = nil)
         data   = String(outbuf).clear.force_encoding(Encoding::BINARY) if outbuf
         data ||= "".b
