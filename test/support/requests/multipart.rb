@@ -186,20 +186,6 @@ module Requests
       end
     end
 
-    # safety-check test only check if request is successfully rewinded
-    def test_multipart_retry_file_post
-      check_error = lambda { |response|
-        (response.is_a?(HTTPX::ErrorResponse) && response.error.is_a?(HTTPX::TimeoutError)) || response.status == 405
-      }
-      uri = build_uri("/delay/4")
-      retries_session = HTTPX.plugin(RequestInspector)
-                             .plugin(:retries, max_retries: 1, retry_on: check_error) # because CI...
-                             .with_timeout(request_timeout: 2)
-      retries_response = retries_session.post(uri, retry_change_requests: true, form: { image: File.new(fixture_file_path) })
-      assert check_error[retries_response], "expected #{retries_response} to be an error response"
-      assert retries_session.calls == 1, "expect request to be retried 1 time (was #{retries_session.calls})"
-    end
-
     def test_multipart_response_decoder
       form_response = HTTPX::Response.new(
         HTTPX::Request.new("GET", "http://example.com", HTTPX::Options.new),

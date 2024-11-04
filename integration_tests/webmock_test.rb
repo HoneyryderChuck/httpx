@@ -161,6 +161,23 @@ class WebmockTest < Minitest::Test
     assert_requested(:post, MOCK_URL_HTTP, body: { foo: "bar" })
   end
 
+  def test_verification_that_expected_request_occured_with_form_file
+    file = File.new(fixture_file_path)
+    stub_request(:post, MOCK_URL_HTTP)
+    http_request(:post, MOCK_URL_HTTP, form: { file: file })
+    # TODO: webmock does not support matching multipart request body
+    assert_requested(:post, MOCK_URL_HTTP)
+  end
+
+  def test_verification_that_expected_request_occured_with_form_tempfile
+    stub_request(:post, MOCK_URL_HTTP)
+    Tempfile.open("tmp") do |file|
+      http_request(:post, MOCK_URL_HTTP, form: { file: file })
+    end
+    # TODO: webmock does not support matching multipart request body
+    assert_requested(:post, MOCK_URL_HTTP)
+  end
+
   def test_verification_that_non_expected_request_didnt_occur
     expected_message = Regexp.new(
       "The request GET #{MOCK_URL_HTTP}/ was not expected to execute but it executed 1 time\n\n" \
