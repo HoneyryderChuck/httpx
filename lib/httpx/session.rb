@@ -259,9 +259,13 @@ module HTTPX
       rescue StandardError => e
         e
       end
-      return unless error.is_a?(Error)
+      return unless error
 
-      request.emit(:response, ErrorResponse.new(request, error))
+      if error.is_a?(Error)
+        request.emit(:response, ErrorResponse.new(request, error))
+      else
+        raise error if selector.empty?
+      end
     end
 
     # returns a set of HTTPX::Request objects built from the given +args+ and +options+.
