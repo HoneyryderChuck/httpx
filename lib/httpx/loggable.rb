@@ -13,11 +13,14 @@ module HTTPX
       white: 37,
     }.freeze
 
+    USE_DEBUG_LOG = ENV.key?("HTTPX_DEBUG")
+
     def log(level: @options.debug_level, color: nil, &msg)
-      return unless @options.debug
       return unless @options.debug_level >= level
 
-      debug_stream = @options.debug
+      debug_stream = @options.debug || ($stderr if USE_DEBUG_LOG)
+
+      return unless debug_stream
 
       message = (+"" << msg.call << "\n")
       message = "\e[#{COLORS[color]}m#{message}\e[0m" if color && debug_stream.respond_to?(:isatty) && debug_stream.isatty
@@ -25,9 +28,6 @@ module HTTPX
     end
 
     def log_exception(ex, level: @options.debug_level, color: nil)
-      return unless @options.debug
-      return unless @options.debug_level >= level
-
       log(level: level, color: color) { ex.full_message }
     end
   end

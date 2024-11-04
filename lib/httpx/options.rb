@@ -29,7 +29,7 @@ module HTTPX
 
     DEFAULT_OPTIONS = {
       :max_requests => Float::INFINITY,
-      :debug => ENV.key?("HTTPX_DEBUG") ? STDERR : nil,
+      :debug => nil,
       :debug_level => (ENV["HTTPX_DEBUG"] || 1).to_i,
       :ssl => EMPTY_HASH,
       :http2_settings => { settings_enable_push: 0 }.freeze,
