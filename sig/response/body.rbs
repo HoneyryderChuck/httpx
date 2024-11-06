@@ -4,8 +4,8 @@ module HTTPX
     include _ToS
     include _ToStr
 
-    attr_reader encoding: Encoding | String
-    attr_reader encodings: Array[Encoding | String]
+    attr_reader encoding: Encoding
+    attr_reader encodings: Array[String]
 
     @response: Response
     @headers: Headers
