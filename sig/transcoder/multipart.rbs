@@ -9,7 +9,7 @@ module HTTPX
 
       MULTIPART_VALUE_COND: ^(_Reader | record_multipart_value value) -> bool
 
-      type multipart_value = string | Pathname | File | _Reader
+      type multipart_value = string | Pathname | File | Tempfile | _Reader
 
       type record_multipart_value = { content_type: String, filename: String, body: multipart_value } |
                                     { content_type: String, body: multipart_value }
@@ -83,13 +83,13 @@ module HTTPX
 
       module Part
         def self?.call: [U] (Object & _MultipartInput multipart_input) -> [U, String, String]
-                      | (Object & multipart_nested_value input) -> ([StringIO, String, String?] | [File, String, String])
+                      | (multipart_nested_value value) -> ([StringIO, String, String?] | [File | Tempfile, String, String])
       end
 
       module MimeTypeDetector
         DEFAULT_MIMETYPE: String
 
-        def self?.call: (::IO file, String filename) -> String?
+        def self?.call: (::IO | Tempfile file, String filename) -> String?
       end
     end
   end

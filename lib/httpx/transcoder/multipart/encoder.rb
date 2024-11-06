@@ -35,7 +35,9 @@ module HTTPX
 
       def rewind
         form = @form.each_with_object([]) do |(key, val), aux|
-          val = val.reopen(val.path, File::RDONLY) if val.is_a?(File) && val.closed?
+          if val.respond_to?(:path) && val.respond_to?(:reopen) && val.respond_to?(:closed?) && val.closed?
+            val = val.reopen(val.path, File::RDONLY)
+          end
           val.rewind if val.respond_to?(:rewind)
           aux << [key, val]
         end

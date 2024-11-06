@@ -5,7 +5,7 @@ module HTTPX
     @encoding: Encoding
     @buffer: StringIO | Tempfile
 
-    def initialize: (threshold_size: Integer, ?bytesize: Integer, ?encoding: Encoding | String) -> void
+    def initialize: (threshold_size: Integer, ?bytesize: Integer, ?encoding: Encoding) -> void
 
     def size: () -> Integer
 

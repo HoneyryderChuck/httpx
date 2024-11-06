@@ -17,12 +17,23 @@ module HTTPX
       @headers = response.headers
       @options = options
       @window_size = options.window_size
-      @encoding = response.content_type.charset || Encoding::BINARY
       @encodings = []
       @length = 0
       @buffer = nil
       @reader = nil
       @state = :idle
+
+      # initialize response encoding
+      @encoding = if (enc = response.content_type.charset)
+        begin
+          Encoding.find(enc)
+        rescue ArgumentError
+          Encoding::BINARY
+        end
+      else
+        Encoding::BINARY
+      end
+
       initialize_inflaters
     end
 
