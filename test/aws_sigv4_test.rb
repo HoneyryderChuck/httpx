@@ -72,6 +72,26 @@ class HTTPXAwsSigv4Test < Minitest::Test
     end
   end
 
+  def test_plugin_aws_sigv4_x_amz_content_sha256_compressed_file
+    body = Tempfile.new("httpx")
+    body.write("abcd")
+    body.flush
+
+    request = sigv4_session.build_request("GET", "http://domain.com", body: body, headers: { "content-encoding" => "gzip" })
+
+    gzip_body = StringIO.new
+    gz = Zlib::GzipWriter.new(gzip_body)
+    gz << "abcd"
+    gzip_body << gz.finish
+    gz.close
+    assert request.headers["x-amz-content-sha256"] == Digest::SHA256.hexdigest(gzip_body.read)
+  ensure
+    if body
+      body.close
+      body.unlink
+    end
+  end
+
   def test_plugin_aws_sigv4_authorization_unsigned_headers
     request = sigv4_session(
       service: "SERVICE",
