@@ -89,7 +89,7 @@ module HTTPX
           sts = "#{algo_line}" \
                 "\n#{datetime}" \
                 "\n#{credential_scope}" \
-                "\n#{hexdigest(creq)}"
+                "\n#{OpenSSL::Digest.new(@algorithm).hexdigest(creq)}"
 
           # signature
           k_date = hmac("#{upper_provider_prefix}#{@credentials.password}", date)
@@ -110,10 +110,12 @@ module HTTPX
         private
 
         def hexdigest(value)
+          digest = OpenSSL::Digest.new(@algorithm)
+
           if value.respond_to?(:read)
             if value.respond_to?(:to_path)
               # files, pathnames
-              OpenSSL::Digest.new(@algorithm).file(value.to_path).hexdigest
+              digest.file(value.to_path).hexdigest
             else
               # gzipped request bodies
               raise Error, "request body must be rewindable" unless value.respond_to?(:rewind)
@@ -121,27 +123,25 @@ module HTTPX
               buffer = Tempfile.new("httpx", encoding: Encoding::BINARY, mode: File::RDWR)
               begin
                 IO.copy_stream(value, buffer)
+                buffer.flush
 
-                OpenSSL::Digest.new(@algorithm).file(buffer.to_path).hexdigest
+                digest.file(buffer.to_path).hexdigest
               ensure
                 value.rewind
                 buffer.close
                 buffer.unlink
               end
             end
-          elsif value.respond_to?(:each)
-            digest = OpenSSL::Digest.new(@algorithm)
+          else
+            # error on endless generators
+            raise Error, "hexdigest for endless enumerators is not supported" if value.unbounded_body?
 
             mb_buffer = value.each.with_object("".b) do |chunk, b|
               b << chunk
               break if b.bytesize >= 1024 * 1024
             end
 
-            digest.update(mb_buffer)
-            value.rewind
-            digest.hexdigest
-          else
-            OpenSSL::Digest.new(@algorithm).hexdigest(value)
+            digest.hexdigest(mb_buffer)
           end
         end
 

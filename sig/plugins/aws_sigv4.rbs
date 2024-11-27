@@ -41,7 +41,7 @@ module HTTPX
         ) -> untyped
 
 
-        def hexdigest: (bodyIO value) -> String
+        def hexdigest: (Request::Body value) -> String
 
         def hmac: (String key, String value) -> String
 
