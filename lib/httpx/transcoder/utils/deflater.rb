@@ -48,6 +48,12 @@ module HTTPX
         @closed = true
       end
 
+      def rewind
+        return unless @buffer
+
+        @buffer.rewind
+      end
+
       private
 
       # rubocop:disable Naming/MemoizedInstanceVariableName
