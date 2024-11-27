@@ -110,15 +110,31 @@ module HTTPX
         private
 
         def hexdigest(value)
-          if value.respond_to?(:to_path)
-            # files, pathnames
-            OpenSSL::Digest.new(@algorithm).file(value.to_path).hexdigest
+          if value.respond_to?(:read)
+            if value.respond_to?(:to_path)
+              # files, pathnames
+              OpenSSL::Digest.new(@algorithm).file(value.to_path).hexdigest
+            else
+              # gzipped request bodies
+              raise Error, "request body must be rewindable" unless value.respond_to?(:rewind)
+
+              buffer = Tempfile.new("httpx", encoding: Encoding::BINARY, mode: File::RDWR)
+              begin
+                IO.copy_stream(value, buffer)
+
+                OpenSSL::Digest.new(@algorithm).file(buffer.to_path).hexdigest
+              ensure
+                value.rewind
+                buffer.close
+                buffer.unlink
+              end
+            end
           elsif value.respond_to?(:each)
             digest = OpenSSL::Digest.new(@algorithm)
 
-            mb_buffer = value.each.with_object("".b) do |chunk, buffer|
-              buffer << chunk
-              break if buffer.bytesize >= 1024 * 1024
+            mb_buffer = value.each.with_object("".b) do |chunk, b|
+              b << chunk
+              break if b.bytesize >= 1024 * 1024
             end
 
             digest.update(mb_buffer)
