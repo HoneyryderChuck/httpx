@@ -1,13 +1,10 @@
 # frozen_string_literal: true
 
-require "forwardable"
 require_relative "body_reader"
 
 module HTTPX
   module Transcoder
     class Deflater
-      extend Forwardable
-
       attr_reader :content_type
 
       def initialize(body)
@@ -49,6 +46,12 @@ module HTTPX
         @body.close
 
         @closed = true
+      end
+
+      def rewind
+        return unless @buffer
+
+        @buffer.rewind
       end
 
       private

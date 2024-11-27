@@ -1,8 +1,5 @@
 # frozen_string_literal: true
 
-require "forwardable"
-require "uri"
-require "stringio"
 require "zlib"
 
 module HTTPX

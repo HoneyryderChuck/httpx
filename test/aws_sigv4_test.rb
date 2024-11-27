@@ -58,6 +58,23 @@ class HTTPXAwsSigv4Test < Minitest::Test
     assert request.headers["x-amz-content-sha256"] == Digest::SHA256.hexdigest("abcd")
   end
 
+  def test_plugin_aws_sigv4_x_amz_content_sha256_array
+    request = sigv4_session.build_request("GET", "http://domain.com", body: %w[a b c d])
+    assert request.headers["x-amz-content-sha256"] == Digest::SHA256.hexdigest("abcd")
+  end
+
+  def test_plugin_aws_sigv4_x_amz_content_sha256_endless
+    body = Enumerator.new do |y|
+      loop do
+        y << "a"
+      end
+    end
+    ex = assert_raises(HTTPX::Error) do
+      sigv4_session.build_request("GET", "http://domain.com", body: body)
+    end
+    assert ex.message.include?("hexdigest for endless enumerators is not supported")
+  end
+
   def test_plugin_aws_sigv4_x_amz_content_sha256_file
     body = Tempfile.new("httpx")
     body.write("abcd")
@@ -67,6 +84,21 @@ class HTTPXAwsSigv4Test < Minitest::Test
     assert request.headers["x-amz-content-sha256"] == Digest::SHA256.hexdigest("abcd")
   ensure
     if body
+      body.close
+      body.unlink
+    end
+  end
+
+  def test_plugin_aws_sigv4_x_amz_content_sha256_compressed_file
+    body = Tempfile.new("httpx")
+    body.write("abcd")
+    body.flush
+
+    request = sigv4_session.build_request("GET", "http://domain.com", body: body, headers: { "content-encoding" => "gzip" })
+
+    assert request.headers["x-amz-content-sha256"] == Digest::SHA256.hexdigest(request.body.read)
+  ensure
+    if defined?(body)
       body.close
       body.unlink
     end
