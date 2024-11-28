@@ -15,10 +15,15 @@ class ResponseYajlTest < Minitest::Test
     assert_raises(MultiJson::ParseError) { json_response.json }
   end
 
+  def test_request_encoders
+    json_request = request json: { :a => "b" }
+    assert json_request.body.to_s == %({"a":"b"})
+  end
+
   private
 
-  def request(verb = "GET", uri = "http://google.com")
-    Request.new(verb, uri, Options.new)
+  def request(verb = "GET", uri = "http://google.com", **args)
+    Request.new(verb, uri, Options.new, **args)
   end
 
   def response(*args)
