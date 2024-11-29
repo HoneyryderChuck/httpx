@@ -45,7 +45,7 @@ module HTTPX::Transcoder
       def json_dump(*args); MultiJson.dump(*args); end
     elsif defined?(Oj)
       def json_load(response, *args); Oj.load(response.to_s, *args); end
-      def json_dump(obj, options = {}); Oj.dump(obj, {mode: :compat}.merge(options)); end
+      def json_dump(obj, options = {}); Oj.dump(obj, { mode: :compat }.merge(options)); end
     elsif defined?(Yajl)
       def json_load(response, *args); Yajl::Parser.new(*args).parse(response.to_s); end
       def json_dump(*args); Yajl::Encoder.encode(*args); end
