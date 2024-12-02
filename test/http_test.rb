@@ -23,6 +23,7 @@ class HTTPTest < Minitest::Test
   include Plugins::Authentication
   include Plugins::OAuth
   include Plugins::FollowRedirects
+  include Plugins::ContentDigest
   include Plugins::Cookies
   include Plugins::H2C
   include Plugins::Retries
