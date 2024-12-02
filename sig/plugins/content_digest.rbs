@@ -1,0 +1,51 @@
+module HTTPX
+  module Plugins
+    module ContentDigest
+      class Error < HTTPX::Error
+      end
+      class ValidationError < Error
+        attr_reader response: Response
+
+        def initialize: (String message, Response response) -> void
+      end
+      class MissingContentDigestError < ValidationError
+      end
+      class InvalidContentDigestError < ValidationError
+      end
+
+      SUPPORTED_ALGORITHMS: Hash[String, singleton(OpenSSL::Digest)]
+
+      interface _ContentDigestOptions
+        def digest_algorithm: () -> String
+        def encode_content_digest: () -> (bool | ^(Request) -> boolish)
+        def validate_content_digest: () -> (bool | ^(contentDigestResponse) -> boolish)
+      end
+
+      # def self.extra_options: (Options) -> contentDigestOptions
+
+      module InstanceMethods
+        private
+
+        def validate_content_digest: (Response response) -> void
+
+        def extract_content_digests: (String) -> Hash[String, String]
+
+        def base64digest: (Request::Body | contentDigestResponseBody body) -> String
+      end
+
+      module ResponseMethods
+        attr_reader body: contentDigestResponseBody
+      end
+
+      module ResponseBodyMethods
+        attr_reader content_digest_buffer: Response::Buffer?
+      end
+
+      type contentDigestOptions = Options & _ContentDigestOptions
+      type contentDigestResponse = Response & ResponseMethods
+      type contentDigestResponseBody = Response::Body & ResponseBodyMethods
+    end
+
+    type sessionContentDigest = Session & ContentDigest::InstanceMethods
+  end
+end
