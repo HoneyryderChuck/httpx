@@ -1,7 +1,32 @@
 module HTTPX
   module Resolver
     class Multi
+      attr_reader resolvers: Array[Native | HTTPS]
+
+      attr_reader options: Options
+
+      @current_selector: Selector?
+      @current_session: Session?
+      @resolver_options: Hash[Symbol, untyped]
+      # @errors: Hash[Symbol, untyped]
+
+      def current_selector=: (Selector s) -> void
+
+      def current_session=: (Session s) -> void
+
+      def closed?: () -> bool
+
+      def empty?: () -> bool
+
+      def timeout: () -> Numeric?
+
+      def close: () -> void
+
+      def connections: () -> Array[Connection]
+
       def early_resolve: (Connection connection, ?hostname: String) -> void
+
+      def lazy_resolve: (Connection connection) -> void
     end
   end
 end

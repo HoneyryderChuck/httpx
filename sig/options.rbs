@@ -77,6 +77,8 @@ module HTTPX
     # classes
     attr_reader connection_class: singleton(Connection)
 
+    attr_reader pool_class: singleton(Pool)
+
     attr_reader request_class: singleton(Request)
 
     attr_reader response_class: singleton(Response)
@@ -110,6 +112,9 @@ module HTTPX
     # resolver_options
     attr_reader resolver_options: Hash[Symbol, untyped]
 
+    # resolver_options
+    attr_reader pool_options: pool_options
+
     # ip_families
     attr_reader ip_families: Array[ip_family]
 
@@ -130,6 +135,8 @@ module HTTPX
     def initialize: (?options options) -> void
 
     def do_initialize: (?options options) -> void
+
+    def access_option: (Hash | Object | nil obj, Symbol k, Hash[Symbol, Symbol]? ivar_map) -> untyped
   end
 
   type options = Options | Hash[Symbol, untyped]

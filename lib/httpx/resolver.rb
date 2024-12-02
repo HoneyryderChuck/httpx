@@ -53,8 +53,8 @@ module HTTPX
 
     def cached_lookup(hostname)
       now = Utils.now
-      @lookup_mutex.synchronize do
-        lookup(hostname, now)
+      lookup_synchronize do |lookups|
+        lookup(hostname, lookups, now)
       end
     end
 
@@ -63,37 +63,37 @@ module HTTPX
       entries.each do |entry|
         entry["TTL"] += now
       end
-      @lookup_mutex.synchronize do
+      lookup_synchronize do |lookups|
         case family
         when Socket::AF_INET6
-          @lookups[hostname].concat(entries)
+          lookups[hostname].concat(entries)
         when Socket::AF_INET
-          @lookups[hostname].unshift(*entries)
+          lookups[hostname].unshift(*entries)
         end
         entries.each do |entry|
           next unless entry["name"] != hostname
 
           case family
           when Socket::AF_INET6
-            @lookups[entry["name"]] << entry
+            lookups[entry["name"]] << entry
           when Socket::AF_INET
-            @lookups[entry["name"]].unshift(entry)
+            lookups[entry["name"]].unshift(entry)
           end
         end
       end
     end
 
     # do not use directly!
-    def lookup(hostname, ttl)
-      return unless @lookups.key?(hostname)
+    def lookup(hostname, lookups, ttl)
+      return unless lookups.key?(hostname)
 
-      entries = @lookups[hostname] = @lookups[hostname].select do |address|
+      entries = lookups[hostname] = lookups[hostname].select do |address|
         address["TTL"] > ttl
       end
 
       ips = entries.flat_map do |address|
         if address.key?("alias")
-          lookup(address["alias"], ttl)
+          lookup(address["alias"], lookups, ttl)
         else
           IPAddr.new(address["data"])
         end
@@ -103,12 +103,11 @@ module HTTPX
     end
 
     def generate_id
-      @identifier_mutex.synchronize { @identifier = (@identifier + 1) & 0xFFFF }
+      id_synchronize { @identifier = (@identifier + 1) & 0xFFFF }
     end
 
     def encode_dns_query(hostname, type: Resolv::DNS::Resource::IN::A, message_id: generate_id)
-      Resolv::DNS::Message.new.tap do |query|
-        query.id = message_id
+      Resolv::DNS::Message.new(message_id).tap do |query|
         query.rd = 1
         query.add_question(hostname, type)
       end.encode
@@ -149,6 +148,14 @@ module HTTPX
       end
 
       [:ok, addresses]
+    end
+
+    def lookup_synchronize
+      @lookup_mutex.synchronize { yield(@lookups) }
+    end
+
+    def id_synchronize(&block)
+      @identifier_mutex.synchronize(&block)
     end
   end
 end

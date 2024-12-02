@@ -28,12 +28,16 @@ module HTTPX
 
     def self?.cached_lookup_set: (String hostname, ip_family family, Array[dns_result] addresses) -> void
 
-    def self?.lookup: (String hostname, Numeric ttl) -> Array[IPAddr]?
+    def self?.lookup: (String hostname, Hash[String, Array[dns_result]] lookups, Numeric ttl) -> Array[IPAddr]?
 
     def self?.generate_id: () -> Integer
 
     def self?.encode_dns_query: (String hostname, ?type: dns_resource, ?message_id: Integer) -> String
 
     def self?.decode_dns_answer: (String) -> dns_decoding_response
+
+    def self?.lookup_synchronize: [U] () { (Hash[String, Array[dns_result]] lookups) -> U } -> U
+
+    def self?.id_synchronize: () { () -> void } -> void
   end
 end

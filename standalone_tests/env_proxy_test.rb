@@ -34,17 +34,16 @@ class EnvProxyTest < Minitest::Test
   end
 
   def test_env_proxy_coalescing
-    HTTPX.plugin(SessionWithPool).wrap do |session|
-      response = session.get("https://#{httpbin}/get")
+    HTTPX.plugin(SessionWithPool).wrap do |http|
+      response = http.get("https://#{httpbin}/get")
       verify_status(response, 200)
       verify_body_length(response)
 
-      pool = session.pool
-      connections = pool.connections
+      connections = http.connections
 
       assert connections.size == 1
       connection = connections.first
-      assert HTTPS_PROXY.end_with?(connection.origin.authority), "#{connection.origin.authority} not found in #{HTTPS_PROXY}"
+      assert HTTPS_PROXY.end_with?(connection.peer.authority), "#{connection.peer.authority} not found in #{HTTPS_PROXY}"
     end
   end
 
@@ -60,12 +59,11 @@ class EnvProxyTest < Minitest::Test
       verify_status(response2, 200)
       verify_body_length(response2)
 
-      pool = http.pool
-      connections = pool.connections
+      connections = http.connections
 
       assert connections.size == 1
       connections.each do |connection|
-        assert HTTP_PROXY.end_with?(connection.origin.authority), "#{connection.origin.authority} not found in #{HTTPS_PROXY}"
+        assert HTTP_PROXY.end_with?(connection.peer.authority), "#{connection.peer.authority} not found in #{HTTPS_PROXY}"
       end
     end
   end

@@ -4,6 +4,8 @@ module HTTPX
   end
 
   module Loggable
+    USE_DEBUG_LOGS: bool
+
     COLORS: Hash[Symbol, Integer]
 
     def log: (?level: Integer?, ?color: Symbol?) { () -> String } -> void

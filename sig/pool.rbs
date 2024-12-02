@@ -1,52 +1,44 @@
 module HTTPX
+  type pool_options = {
+    max_connections_per_origin: Integer?,
+    pool_timeout: Numeric?
+  }
+
   class Pool
     type resolver_manager = Resolver::Multi | Resolver::System
 
-    @resolvers: Hash[Class, resolver_manager]
-    @timers: Timers
-    @selector: Selector
-    @connections: Array[Connection]
+    @max_connections_per_origin: Integer
+    @pool_timeout: Numeric
+    @options: Options
+    @resolvers: Hash[Class, Array[resolver_manager]]
+    @resolver_mtx: Thread::Mutex
+    @connections: Hash[String, Array[Connection]]
+    @connection_mtx: Thread::Mutex
+    @origin_counters: Hash[String, Integer]
+    @origin_conds: Hash[String, ConditionVariable]
 
-    def wrap: () { (instance) -> void } -> void
+    def pop_connection: () -> Connection?
 
-    def empty?: () -> void
+    def checkout_connection: (http_uri uri, Options options) -> Connection
 
-    def next_tick: () -> void
+    def checkin_connection: (Connection connection) -> void
 
-    def close: (?Array[Connection] connections) -> void
+    def checkout_mergeable_connection: (Connection connection) -> Connection?
 
-    def init_connection: (Connection connection, Options options) -> void
+    def reset_resolvers: () -> void
 
-    def find_connection: (URI::Generic uri, Options options) -> Connection?
+    def checkout_resolver: (Options options) -> resolver_manager
 
-    def deactivate: (*Connection connections) -> void
+    def checkin_resolver: (Resolver::Resolver resolver) -> void
 
     private
 
-    def initialize: () -> void
+    def initialize: (pool_options options) -> void
 
-    def try_clone_connection: (Connection connection, Integer? family) -> Connection
+    def acquire_connection: (http_uri uri, Options options) -> Connection?
 
-    def resolve_connection: (Connection) -> void
+    def checkout_new_connection: (http_uri uri, Options options) -> Connection
 
-    def on_resolver_connection: (Connection) -> void
-
-    def on_resolver_error: (Connection, StandardError) -> void
-
-    def on_resolver_close: (Resolver::Resolver) -> void
-
-    def register_connection: (Connection) -> void
-
-    def unregister_connection: (Connection, ?bool cleanup) -> void
-
-    def select_connection: (Selector::selectable) -> void
-
-    def deselect_connection: (Selector::selectable) -> Selector::selectable?
-
-    def coalesce_connections: (Connection coalescable, Connection coalescing) -> void
-
-    def next_timeout: () -> Numeric?
-
-    def find_resolver_for: (Connection) { (Resolver::Resolver resolver) -> void } -> resolver_manager
+    def checkout_new_resolver: (Class resolver_type, Options options) -> resolver_manager
   end
 end

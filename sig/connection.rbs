@@ -26,8 +26,9 @@ module HTTPX
     attr_reader pending: Array[Request]
     attr_reader options: Options
     attr_reader ssl_session: OpenSSL::SSL::Session?
-    attr_writer timers: Timers
-
+    attr_writer current_selector: Selector?
+    attr_writer coalesced_connection: instance?
+    attr_accessor current_session: Session?
     attr_accessor family: Integer?
 
     @window_size: Integer
@@ -42,8 +43,12 @@ module HTTPX
     @connected_at: Float
     @response_received_at: Float
     @intervals: Array[Timers::Interval]
+    @exhausted: bool
+    @cloned: bool
 
     def addresses: () -> Array[ipaddr]?
+
+    def peer: () -> URI::Generic
 
     def addresses=: (Array[ipaddr] addresses) -> void
 
@@ -57,7 +62,7 @@ module HTTPX
 
     def coalescable?: (Connection connection) -> bool
 
-    def create_idle: (?Hash[Symbol, untyped] options) -> Connection
+    def create_idle: (?Hash[Symbol, untyped] options) -> instance
 
     def merge: (Connection connection) -> void
 
@@ -76,6 +81,8 @@ module HTTPX
     def terminate: () -> void
 
     def close: () -> void
+
+    def force_reset: (?bool cloned) -> void
 
     def reset: () -> void
 
@@ -99,6 +106,8 @@ module HTTPX
 
     def connect: () -> void
 
+    def disconnect: () -> void
+
     def exhausted?: () -> boolish
 
     def consume: () -> void
@@ -116,6 +125,8 @@ module HTTPX
     def transition: (Symbol nextstate) -> void
 
     def handle_transition: (Symbol nextstate) -> void
+
+    def build_altsvc_connection: (URI::Generic alt_origin, String origin, Hash[String, String] alt_params) -> void
 
     def build_socket: (?Array[ipaddr]? addrs) -> (TCP | SSL | UNIX)
 

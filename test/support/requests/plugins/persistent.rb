@@ -9,18 +9,17 @@ module Requests
         non_persistent_session = HTTPX.plugin(SessionWithPool)
         response = non_persistent_session.get(uri)
         verify_status(response, 200)
-        response.close
-        assert non_persistent_session.pool.connections.empty?, "unexpected connections (#{non_persistent_session.pool.connections.size})"
+        assert non_persistent_session.connections.size == 1, "should have been just 1"
+        assert non_persistent_session.connections.count(&:closed?) == 1, "should have been no open connections"
 
         persistent_session = non_persistent_session.plugin(:persistent)
         response = persistent_session.get(uri)
         verify_status(response, 200)
-        response.close
-        assert persistent_session.pool.connections.size == 1, "unexpected connections (#{persistent_session.pool.connections.size})"
-        assert persistent_session.pool.selectable_count.zero?, "expected selectable connection pool to be empty"
+        assert persistent_session.connections.size == 1, "should have been just 1"
+        assert persistent_session.connections.count(&:closed?).zero?, "should have been open connections"
 
         persistent_session.close
-        assert persistent_session.pool.connections.empty?, "unexpected connections (#{persistent_session.pool.connections.size})"
+        assert persistent_session.connections.count(&:closed?) == 1, "should have been no connections"
       end
 
       def test_persistent_options
@@ -35,41 +34,6 @@ module Requests
         assert options.max_retries == 4
         assert options.retry_change_requests
         assert options.persistent
-      end
-
-      def test_persistent_with_wrap
-        return unless origin.start_with?("https")
-
-        uri = build_uri("/get")
-        session1 = HTTPX.plugin(:persistent)
-
-        begin
-          pool = session1.send(:pool)
-
-          initial_size = pool.instance_variable_get(:@connections).size
-          response = session1.get(uri)
-          verify_status(response, 200)
-
-          connections = pool.instance_variable_get(:@connections)
-          pool_size = connections.size
-          assert pool_size == initial_size + 1
-
-          HTTPX.wrap do |s|
-            response = s.get(uri)
-            verify_status(response, 200)
-            wrapped_connections = pool.instance_variable_get(:@connections)
-            pool_size = wrapped_connections.size
-            assert pool_size == 1
-            assert (connections - wrapped_connections) == connections
-          end
-
-          final_connections = pool.instance_variable_get(:@connections)
-          pool_size = final_connections.size
-          assert pool_size == initial_size + 1
-          assert (connections - final_connections).empty?
-        ensure
-          session1.close
-        end
       end
 
       def test_persistent_retry_http2_goaway

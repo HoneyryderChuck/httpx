@@ -27,7 +27,7 @@ module HTTPX
       use_get: false,
     }.freeze
 
-    def_delegators :@resolver_connection, :state, :connecting?, :to_io, :call, :close, :terminate
+    def_delegators :@resolver_connection, :state, :connecting?, :to_io, :call, :close, :terminate, :inflight?
 
     def initialize(_, options)
       super
@@ -43,7 +43,7 @@ module HTTPX
     end
 
     def <<(connection)
-      return if @uri.origin == connection.origin.to_s
+      return if @uri.origin == connection.peer.to_s
 
       @uri_addresses ||= HTTPX::Resolver.nolookup_resolve(@uri.host) || @resolver.getaddresses(@uri.host)
 
@@ -66,30 +66,23 @@ module HTTPX
     end
 
     def resolver_connection
-      @resolver_connection ||= @pool.find_connection(@uri, @options) || begin
-        @building_connection = true
-        connection = @options.connection_class.new(@uri, @options.merge(ssl: { alpn_protocols: %w[h2] }))
-        @pool.init_connection(connection, @options)
-        # only explicity emit addresses if connection didn't pre-resolve, i.e. it's not an IP.
-        catch(:coalesced) do
-          @building_connection = false
-          emit_addresses(connection, @family, @uri_addresses) unless connection.addresses
-          connection
-        end
+      # TODO: leaks connection object into the pool
+      @resolver_connection ||= @current_session.find_connection(@uri, @current_selector,
+                                                                @options.merge(ssl: { alpn_protocols: %w[h2] })).tap do |conn|
+        emit_addresses(conn, @family, @uri_addresses) unless conn.addresses
       end
     end
 
     private
 
     def resolve(connection = @connections.first, hostname = nil)
-      return if @building_connection
       return unless connection
 
       hostname ||= @queries.key(connection)
 
       if hostname.nil?
-        hostname = connection.origin.host
-        log { "resolver: resolve IDN #{connection.origin.non_ascii_hostname} as #{hostname}" } if connection.origin.non_ascii_hostname
+        hostname = connection.peer.host
+        log { "resolver: resolve IDN #{connection.peer.non_ascii_hostname} as #{hostname}" } if connection.peer.non_ascii_hostname
 
         hostname = @resolver.generate_candidates(hostname).each do |name|
           @queries[name.to_s] = connection
@@ -108,7 +101,7 @@ module HTTPX
         @connections << connection
       rescue ResolveError, Resolv::DNS::EncodeError => e
         reset_hostname(hostname)
-        emit_resolve_error(connection, connection.origin.host, e)
+        emit_resolve_error(connection, connection.peer.host, e)
       end
     end
 
@@ -117,7 +110,7 @@ module HTTPX
     rescue StandardError => e
       hostname = @requests.delete(request)
       connection = reset_hostname(hostname)
-      emit_resolve_error(connection, connection.origin.host, e)
+      emit_resolve_error(connection, connection.peer.host, e)
     else
       # @type var response: HTTPX::Response
       parse(request, response)
@@ -156,7 +149,7 @@ module HTTPX
       when :decode_error
         host = @requests.delete(request)
         connection = reset_hostname(host)
-        emit_resolve_error(connection, connection.origin.host, result)
+        emit_resolve_error(connection, connection.peer.host, result)
       end
     end
 
@@ -176,7 +169,7 @@ module HTTPX
               alias_address = answers[address["alias"]]
               if alias_address.nil?
                 reset_hostname(address["name"])
-                if catch(:coalesced) { early_resolve(connection, hostname: address["alias"]) }
+                if early_resolve(connection, hostname: address["alias"])
                   @connections.delete(connection)
                 else
                   resolve(connection, address["alias"])

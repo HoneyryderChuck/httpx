@@ -2,28 +2,11 @@
 
 require "httpx/version"
 
-require "httpx/extensions"
-
-require "httpx/errors"
-require "httpx/utils"
-require "httpx/punycode"
-require "httpx/domain_name"
-require "httpx/altsvc"
-require "httpx/callbacks"
-require "httpx/loggable"
-require "httpx/transcoder"
-require "httpx/timers"
-require "httpx/pool"
-require "httpx/headers"
-require "httpx/request"
-require "httpx/response"
-require "httpx/options"
-require "httpx/chainable"
-
 # Top-Level Namespace
 #
 module HTTPX
   EMPTY = [].freeze
+  EMPTY_HASH = {}.freeze
 
   # All plugins should be stored under this module/namespace. Can register and load
   # plugins.
@@ -53,9 +36,25 @@ module HTTPX
       m.synchronize { h[name] = mod }
     end
   end
-
-  extend Chainable
 end
+
+require "httpx/extensions"
+
+require "httpx/errors"
+require "httpx/utils"
+require "httpx/punycode"
+require "httpx/domain_name"
+require "httpx/altsvc"
+require "httpx/callbacks"
+require "httpx/loggable"
+require "httpx/transcoder"
+require "httpx/timers"
+require "httpx/pool"
+require "httpx/headers"
+require "httpx/request"
+require "httpx/response"
+require "httpx/options"
+require "httpx/chainable"
 
 require "httpx/session"
 require "httpx/session_extensions"

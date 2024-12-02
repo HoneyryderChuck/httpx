@@ -61,8 +61,8 @@ module Requests
       HTTPX.plugin(SessionWithPool).plugin(ResponseErrorEmitter).wrap do |http|
         response = http.get(uri)
         verify_error_response(response, "done with it")
-        assert http.pool.connections.size == 1
-        assert http.pool.connections.first.state == :closed
+        assert http.connections.size == 1
+        assert http.connections.first.state == :closed
       end
     end
   end

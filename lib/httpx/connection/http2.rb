@@ -98,10 +98,10 @@ module HTTPX
         @streams.size < @max_requests
     end
 
-    def send(request)
+    def send(request, head = false)
       unless can_buffer_more_requests?
-        @pending << request
-        return
+        head ? @pending.unshift(request) : @pending << request
+        return false
       end
       unless (stream = @streams[request])
         stream = @connection.new_stream
@@ -113,6 +113,7 @@ module HTTPX
       true
     rescue ::HTTP2::Error::StreamLimitExceeded
       @pending.unshift(request)
+      false
     end
 
     def consume
@@ -154,8 +155,7 @@ module HTTPX
 
     def send_pending
       while (request = @pending.shift)
-        # TODO: this request should go back to top of stack
-        break unless send(request)
+        break unless send(request, true)
       end
     end
 
@@ -327,10 +327,14 @@ module HTTPX
         end
       end
       send(@pending.shift) unless @pending.empty?
+
       return unless @streams.empty? && exhausted?
 
-      close
-      emit(:exhausted) unless @pending.empty?
+      if @pending.empty?
+        close
+      else
+        emit(:exhausted)
+      end
     end
 
     def on_frame(bytes)

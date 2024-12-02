@@ -43,13 +43,14 @@ module HTTPX
 
     attr_reader :type, :io, :origin, :origins, :state, :pending, :options, :ssl_session
 
-    attr_writer :timers
+    attr_writer :current_selector, :coalesced_connection
 
-    attr_accessor :family
+    attr_accessor :current_session, :family
 
     def initialize(uri, options)
-      @origins = [uri.origin]
-      @origin = Utils.to_uri(uri.origin)
+      @current_session = @current_selector = @coalesced_connection = nil
+      @exhausted = @cloned = false
+
       @options = Options.new(options)
       @type = initialize_type(uri, @options)
       @origins = [uri.origin]
@@ -58,6 +59,7 @@ module HTTPX
       @read_buffer = Buffer.new(@options.buffer_size)
       @write_buffer = Buffer.new(@options.buffer_size)
       @pending = []
+
       on(:error, &method(:on_error))
       if @options.io
         # if there's an already open IO, get its
@@ -68,6 +70,31 @@ module HTTPX
       else
         transition(:idle)
       end
+      on(:activate) do
+        @current_session.select_connection(self, @current_selector)
+      end
+      on(:close) do
+        next if @exhausted # it'll reset
+
+        # may be called after ":close" above, so after the connection has been checked back in.
+        # next unless @current_session
+
+        next unless @current_session
+
+        @current_session.deselect_connection(self, @current_selector, @cloned)
+      end
+      on(:terminate) do
+        next if @exhausted # it'll reset
+
+        # may be called after ":close" above, so after the connection has been checked back in.
+        next unless @current_session
+
+        @current_session.deselect_connection(self, @current_selector)
+      end
+
+      on(:altsvc) do |alt_origin, origin, alt_params|
+        build_altsvc_connection(alt_origin, origin, alt_params)
+      end
 
       @inflight = 0
       @keep_alive_timeout = @options.timeout[:keep_alive_timeout]
@@ -75,6 +102,10 @@ module HTTPX
       @intervals = []
 
       self.addresses = @options.addresses if @options.addresses
+    end
+
+    def peer
+      @origin
     end
 
     # this is a semi-private method, to be used by the resolver
@@ -168,7 +199,12 @@ module HTTPX
     end
 
     def inflight?
-      @parser && !@parser.empty? && !@write_buffer.empty?
+      @parser && (
+        # parser may be dealing with other requests (possibly started from a different fiber)
+        !@parser.empty? ||
+        # connection may be doing connection termination handshake
+        !@write_buffer.empty?
+      )
     end
 
     def interests
@@ -184,6 +220,9 @@ module HTTPX
 
       return @parser.interests if @parser
 
+      nil
+    rescue StandardError => e
+      emit(:error, e)
       nil
     end
 
@@ -205,6 +244,9 @@ module HTTPX
         consume
       end
       nil
+    rescue StandardError => e
+      emit(:error, e)
+      raise e
     end
 
     def close
@@ -221,8 +263,9 @@ module HTTPX
 
     # bypasses the state machine to force closing of connections still connecting.
     # **only** used for Happy Eyeballs v2.
-    def force_reset
+    def force_reset(cloned = false)
       @state = :closing
+      @cloned = cloned
       transition(:closed)
     end
 
@@ -235,6 +278,8 @@ module HTTPX
     end
 
     def send(request)
+      return @coalesced_connection.send(request) if @coalesced_connection
+
       if @parser && !@write_buffer.full?
         if @response_received_at && @keep_alive_timeout &&
            Utils.elapsed_time(@response_received_at) > @keep_alive_timeout
@@ -255,6 +300,8 @@ module HTTPX
     end
 
     def timeout
+      return if @state == :closed || @state == :inactive
+
       return @timeout if @timeout
 
       return @options.timeout[:connect_timeout] if @state == :idle
@@ -299,6 +346,12 @@ module HTTPX
 
     def connect
       transition(:open)
+    end
+
+    def disconnect
+      emit(:close)
+      @current_session = nil
+      @current_selector = nil
     end
 
     def consume
@@ -475,8 +528,25 @@ module HTTPX
         request.emit(:promise, parser, stream)
       end
       parser.on(:exhausted) do
+        @exhausted = true
+        current_session = @current_session
+        current_selector = @current_selector
+        parser.close
         @pending.concat(parser.pending)
-        emit(:exhausted)
+        case @state
+        when :closed
+          idling
+          @exhausted = false
+          @current_session = current_session
+          @current_selector = current_selector
+        when :closing
+          once(:close) do
+            idling
+            @exhausted = false
+            @current_session = current_session
+            @current_selector = current_selector
+          end
+        end
       end
       parser.on(:origin) do |origin|
         @origins |= [origin]
@@ -492,8 +562,14 @@ module HTTPX
       end
       parser.on(:reset) do
         @pending.concat(parser.pending) unless parser.empty?
+        current_session = @current_session
+        current_selector = @current_selector
         reset
-        idling unless @pending.empty?
+        unless @pending.empty?
+          idling
+          @current_session = current_session
+          @current_selector = current_selector
+        end
       end
       parser.on(:current_timeout) do
         @current_timeout = @timeout = parser.timeout
@@ -504,7 +580,15 @@ module HTTPX
       parser.on(:error) do |request, ex|
         case ex
         when MisdirectedRequestError
-          emit(:misdirected, request)
+          current_session = @current_session
+          current_selector = @current_selector
+          parser.close
+
+          other_connection = current_session.find_connection(@origin, current_selector,
+                                                             @options.merge(ssl: { alpn_protocols: %w[http/1.1] }))
+          other_connection.merge(self)
+          request.transition(:idle)
+          other_connection.send(request)
         else
           response = ErrorResponse.new(request, ex)
           request.response = response
@@ -531,13 +615,13 @@ module HTTPX
       error.set_backtrace(e.backtrace)
       connecting? && callbacks_for?(:connect_error) ? emit(:connect_error, error) : handle_error(error)
       @state = :closed
-      emit(:close)
+      disconnect
     rescue TLSError, ::HTTP2::Error::ProtocolError, ::HTTP2::Error::HandshakeError => e
       # connect errors, exit gracefully
       handle_error(e)
       connecting? && callbacks_for?(:connect_error) ? emit(:connect_error, e) : handle_error(e)
       @state = :closed
-      emit(:close)
+      disconnect
     end
 
     def handle_transition(nextstate)
@@ -582,7 +666,7 @@ module HTTPX
         return unless @write_buffer.empty?
 
         purge_after_closed
-        emit(:close) if @pending.empty?
+        disconnect if @pending.empty?
       when :already_open
         nextstate = :open
         # the first check for given io readiness must still use a timeout.
@@ -617,12 +701,40 @@ module HTTPX
       end
     end
 
+    # returns an HTTPX::Connection for the negotiated Alternative Service (or none).
+    def build_altsvc_connection(alt_origin, origin, alt_params)
+      # do not allow security downgrades on altsvc negotiation
+      return if @origin.scheme == "https" && alt_origin.scheme != "https"
+
+      altsvc = AltSvc.cached_altsvc_set(origin, alt_params.merge("origin" => alt_origin))
+
+      # altsvc already exists, somehow it wasn't advertised, probably noop
+      return unless altsvc
+
+      alt_options = @options.merge(ssl: @options.ssl.merge(hostname: URI(origin).host))
+
+      connection = @current_session.find_connection(alt_origin, @current_selector, alt_options)
+
+      # advertised altsvc is the same origin being used, ignore
+      return if connection == self
+
+      connection.extend(AltSvc::ConnectionMixin) unless connection.is_a?(AltSvc::ConnectionMixin)
+
+      log(level: 1) { "#{origin} alt-svc: #{alt_origin}" }
+
+      connection.merge(self)
+      terminate
+    rescue UnsupportedSchemeError
+      altsvc["noop"] = true
+      nil
+    end
+
     def build_socket(addrs = nil)
       case @type
       when "tcp"
-        TCP.new(@origin, addrs, @options)
+        TCP.new(peer, addrs, @options)
       when "ssl"
-        SSL.new(@origin, addrs, @options) do |sock|
+        SSL.new(peer, addrs, @options) do |sock|
           sock.ssl_session = @ssl_session
           sock.session_new_cb do |sess|
             @ssl_session = sess
@@ -635,7 +747,7 @@ module HTTPX
 
         path = String(path) if path
 
-        UNIX.new(@origin, path, @options)
+        UNIX.new(peer, path, @options)
       else
         raise Error, "unsupported transport (#{@type})"
       end
@@ -734,7 +846,7 @@ module HTTPX
 
     def set_request_timeout(request, timeout, start_event, finish_events, &callback)
       request.once(start_event) do
-        interval = @timers.after(timeout, callback)
+        interval = @current_selector.after(timeout, callback)
 
         Array(finish_events).each do |event|
           # clean up request timeouts if the connection errors out

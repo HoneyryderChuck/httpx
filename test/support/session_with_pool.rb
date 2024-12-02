@@ -1,53 +1,41 @@
 # frozen_string_literal: true
 
 module SessionWithPool
-  ConnectionPool = Class.new(HTTPX::Pool) do
-    attr_reader :resolver, :connections, :selector
-    attr_reader :connection_count
-    attr_reader :ping_count
-    attr_reader :timers
-    attr_reader :conn_store
-
-    def initialize(*)
-      super
-      @connection_count = 0
-      @ping_count = 0
-      @conn_store = []
-      def @timers.intervals
-        @intervals
-      end
-    end
-
-    def init_connection(connection, _)
-      super
-      connection.on(:open) { @connection_count += 1 }
-      connection.on(:pong) { @ping_count += 1 }
-
-      @conn_store << connection
-    end
-
-    def selectable_count
-      @selector.instance_variable_get(:@selectables).size
-    end
-
-    def find_resolver_for(*args, &blk)
-      @resolver = super(*args, &blk)
-      @resolver
-    end
+  module PoolMethods
+    attr_reader :resolvers
   end
 
   module InstanceMethods
-    attr_reader :connection_exausted
+    attr_reader :pool, :connections_exausted, :connection_count, :ping_count, :connections
 
-    def pool
-      @pool ||= ConnectionPool.new
+    def initialize(*)
+      @connection_count = 0
+      @connections_exausted = 0
+      @ping_count = 0
+      @connections = []
+      super
     end
 
-    def set_connection_callbacks(connection, connections, options)
+    def resolver
+      resolver_type = HTTPX::Resolver.resolver_for(@options.resolver_class)
+
+      resolver = @pool.resolvers[resolver_type].first
+
+      resolver = resolver.resolvers[0] if resolver.is_a?(HTTPX::Resolver::Multi)
+
+      resolver
+    end
+
+    private
+
+    def do_init_connection(connection, *)
       super
+      connection.on(:open) { @connection_count += 1 }
+      connection.on(:pong) { @ping_count += 1 }
       connection.on(:exhausted) do
-        @connection_exausted = true
+        @connections_exausted += 1
       end
+      @connections << connection
     end
   end
 

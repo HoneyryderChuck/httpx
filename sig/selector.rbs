@@ -1,22 +1,48 @@
 module HTTPX
+  type selectable = Connection | Resolver::Native
+
   class Selector
-    type selectable = Connection | Resolver::Native | Resolver::System
+    include _Each[selectable]
 
     READABLE: Array[Symbol]
     WRITABLE: Array[Symbol]
+
+    @timers: Timers
+
     @selectables: Array[selectable]
 
-    def register: (selectable io) -> void
-    def deregister: (selectable io) -> selectable?
+    def next_tick: () -> void
 
-    def select: (Numeric? interval) { (selectable) -> void } -> void
+    def terminate: () -> void
+
+    def find_resolver: (Options options) -> Resolver::Resolver?
+
+    def find_connection: (http_uri request_uri, Options options) -> Connection?
+
+    def each_connection: () { (Connection) -> void} -> void
+                       | () -> Enumerable[Connection]
+
+    def find_mergeable_connection: (Connection connection) -> Connection?
+
+    def empty?: () -> bool
+
+    def register: (selectable io) -> void
+
+    def deregister: (selectable io) -> selectable?
 
     private
 
-    def initialize: () -> untyped
+    def initialize: () -> void
+
+    def select: (Numeric? interval) { (selectable) -> void } -> void
 
     def select_many: (Numeric? interval) { (selectable) -> void } -> void
+
     def select_one: (Numeric? interval) { (selectable) -> void } -> void
+
+    def next_timeout: () -> Numeric?
+
+    def emit_error: (StandardError e) -> void
   end
 
   type io_interests = :r | :w | :rw

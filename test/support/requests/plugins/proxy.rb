@@ -10,10 +10,11 @@ module Requests
 
       RESOLVER = Resolv::DNS.new
 
-      def test_plugin_no_proxy
+      def test_plugin_no_proxy_defined
+        http = HTTPX.plugin(:proxy)
         uri = build_uri("/get")
-        session = HTTPX.plugin(:proxy).with_proxy(uri: [])
-        assert_raises(HTTPX::HTTPProxyError) { session.get(uri) }
+        res = http.with_proxy(uri: []).get(uri)
+        verify_error_response(res, HTTPX::HTTPProxyError)
       end
 
       def test_plugin_http_http_proxy
@@ -158,8 +159,7 @@ module Requests
           response2 = http.get(coalesced_origin)
           verify_status(response2, 200)
           # introspection time
-          pool = http.pool
-          connections = pool.connections
+          connections = http.connections
           origins = connections.map(&:origins)
           assert origins.any? { |orgs| orgs.sort == [origin, coalesced_origin].sort },
                  "connections for #{[origin, coalesced_origin]} didn't coalesce (expected connection with both origins (#{origins}))"
@@ -170,8 +170,7 @@ module Requests
           verify_status(response3, 200)
 
           # introspection time
-          pool = http.pool
-          connections = pool.connections
+          connections = http.connections
           origins = connections.map(&:origins)
           refute origins.any?([origin]),
                  "connection coalesced inexpectedly (expected connection with both origins (#{origins}))"

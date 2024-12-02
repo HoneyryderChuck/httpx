@@ -31,31 +31,53 @@ module HTTPX
       end
 
       class Parameters
-        attr_reader :uri, :username, :password, :scheme
+        attr_reader :uri, :username, :password, :scheme, :no_proxy
 
-        def initialize(uri:, scheme: nil, username: nil, password: nil, **extra)
-          @uri = uri.is_a?(URI::Generic) ? uri : URI(uri)
-          @username = username || @uri.user
-          @password = password || @uri.password
+        def initialize(uri: nil, scheme: nil, username: nil, password: nil, no_proxy: nil, **extra)
+          @no_proxy = Array(no_proxy) if no_proxy
+          @uris = Array(uri)
+          uri = @uris.first
 
-          return unless @username && @password
+          @username = username
+          @password = password
 
-          scheme ||= case @uri.scheme
-                     when "socks5"
-                       @uri.scheme
-                     when "http", "https"
-                       "basic"
-                     else
-                       return
+          @ns = 0
+
+          if uri
+            @uri = uri.is_a?(URI::Generic) ? uri : URI(uri)
+            @username ||= @uri.user
+            @password ||= @uri.password
           end
 
           @scheme = scheme
 
-          auth_scheme = scheme.to_s.capitalize
+          return unless @uri && @username && @password
 
-          require_relative "auth/#{scheme}" unless defined?(Authentication) && Authentication.const_defined?(auth_scheme, false)
+          @authenticator = nil
+          @scheme ||= infer_default_auth_scheme(@uri)
 
-          @authenticator = Authentication.const_get(auth_scheme).new(@username, @password, **extra)
+          return unless @scheme
+
+          @authenticator = load_authenticator(@scheme, @username, @password, **extra)
+        end
+
+        def shift
+          # TODO: this operation must be synchronized
+          @ns += 1
+          @uri = @uris[@ns]
+
+          return unless @uri
+
+          @uri = URI(@uri) unless @uri.is_a?(URI::Generic)
+
+          scheme = infer_default_auth_scheme(@uri)
+
+          return unless scheme != @scheme
+
+          @scheme = scheme
+          @username = username || @uri.user
+          @password = password || @uri.password
+          @authenticator = load_authenticator(scheme, @username, @password)
         end
 
         def can_authenticate?(*args)
@@ -87,6 +109,25 @@ module HTTPX
             super
           end
         end
+
+        private
+
+        def infer_default_auth_scheme(uri)
+          case uri.scheme
+          when "socks5"
+            uri.scheme
+          when "http", "https"
+            "basic"
+          end
+        end
+
+        def load_authenticator(scheme, username, password, **extra)
+          auth_scheme = scheme.to_s.capitalize
+
+          require_relative "auth/#{scheme}" unless defined?(Authentication) && Authentication.const_defined?(auth_scheme, false)
+
+          Authentication.const_get(auth_scheme).new(username, password, **extra)
+        end
       end
 
       # adds support for the following options:
@@ -95,7 +136,7 @@ module HTTPX
       #           *:scheme* (i.e. <tt>{ uri: "http://proxy" }</tt>)
       module OptionsMethods
         def option_proxy(value)
-          value.is_a?(Parameters) ? value : Hash[value]
+          value.is_a?(Parameters) ? value : Parameters.new(**Hash[value])
         end
 
         def option_supported_proxy_protocols(value)
@@ -106,97 +147,68 @@ module HTTPX
       end
 
       module InstanceMethods
-        private
-
-        def find_connection(request, connections, options)
+        def find_connection(request_uri, selector, options)
           return super unless options.respond_to?(:proxy)
 
-          uri = request.uri
-
-          proxy_options = proxy_options(uri, options)
-
-          return super(request, connections, proxy_options) unless proxy_options.proxy
-
-          connection = pool.find_connection(uri, proxy_options) || init_connection(uri, proxy_options)
-          unless connections.nil? || connections.include?(connection)
-            connections << connection
-            set_connection_callbacks(connection, connections, options)
-          end
-          connection
-        end
-
-        def proxy_options(request_uri, options)
-          proxy_opts = if (next_proxy = request_uri.find_proxy)
-            { uri: next_proxy }
-          else
-            proxy = options.proxy
-
-            return options unless proxy
-
-            return options.merge(proxy: nil) unless proxy.key?(:uri)
-
-            @_proxy_uris ||= Array(proxy[:uri])
-
-            next_proxy = @_proxy_uris.first
-            raise Error, "Failed to connect to proxy" unless next_proxy
-
-            next_proxy = URI(next_proxy)
-
-            raise Error,
-                  "#{next_proxy.scheme}: unsupported proxy protocol" unless options.supported_proxy_protocols.include?(next_proxy.scheme)
-
-            if proxy.key?(:no_proxy)
-
-              no_proxy = proxy[:no_proxy]
-              no_proxy = no_proxy.join(",") if no_proxy.is_a?(Array)
-
-              return options.merge(proxy: nil) unless URI::Generic.use_proxy?(request_uri.host, next_proxy.host,
-                                                                              next_proxy.port, no_proxy)
-            end
-
-            proxy.merge(uri: next_proxy)
+          if (next_proxy = request_uri.find_proxy)
+            return super(request_uri, selector, options.merge(proxy: Parameters.new(uri: next_proxy)))
           end
 
-          proxy = Parameters.new(**proxy_opts)
+          proxy = options.proxy
 
-          options.merge(proxy: proxy)
+          return super unless proxy
+
+          next_proxy = proxy.uri
+
+          raise Error, "Failed to connect to proxy" unless next_proxy
+
+          raise Error,
+                "#{next_proxy.scheme}: unsupported proxy protocol" unless options.supported_proxy_protocols.include?(next_proxy.scheme)
+
+          if (no_proxy = proxy.no_proxy)
+            no_proxy = no_proxy.join(",") if no_proxy.is_a?(Array)
+
+            # TODO: setting proxy to nil leaks the connection object in the pool
+            return super(request_uri, selector, options.merge(proxy: nil)) unless URI::Generic.use_proxy?(request_uri.host, next_proxy.host,
+                                                                                                          next_proxy.port, no_proxy)
+          end
+
+          super(request_uri, selector, options.merge(proxy: proxy))
         end
 
-        def fetch_response(request, connections, options)
+        private
+
+        def fetch_response(request, selector, options)
           response = super
 
-          if response.is_a?(ErrorResponse) && proxy_error?(request, response)
-            return response unless @_proxy_uris
-
-            @_proxy_uris.shift
+          if response.is_a?(ErrorResponse) && proxy_error?(request, response, options)
+            options.proxy.shift
 
             # return last error response if no more proxies to try
-            return response if @_proxy_uris.empty?
+            return response if options.proxy.uri.nil?
 
             log { "failed connecting to proxy, trying next..." }
             request.transition(:idle)
-            send_request(request, connections, options)
+            send_request(request, selector, options)
             return
           end
           response
         end
 
-        def proxy_error?(_request, response)
+        def proxy_error?(_request, response, options)
+          return false unless options.proxy
+
           error = response.error
           case error
           when NativeResolveError
-            return false unless @_proxy_uris && !@_proxy_uris.empty?
+            proxy_uri = URI(options.proxy.uri)
 
-            proxy_uri = URI(@_proxy_uris.first)
-
-            origin = error.connection.origin
+            peer = error.connection.peer
 
             # failed resolving proxy domain
-            origin.host == proxy_uri.host && origin.port == proxy_uri.port
+            peer.host == proxy_uri.host && peer.port == proxy_uri.port
           when ResolveError
-            return false unless @_proxy_uris && !@_proxy_uris.empty?
-
-            proxy_uri = URI(@_proxy_uris.first)
+            proxy_uri = URI(options.proxy.uri)
 
             error.message.end_with?(proxy_uri.to_s)
           when *PROXY_ERRORS
@@ -217,25 +229,11 @@ module HTTPX
 
           # redefining the connection origin as the proxy's URI,
           # as this will be used as the tcp peer ip.
-          proxy_uri = URI(@options.proxy.uri)
-          @origin.host = proxy_uri.host
-          @origin.port = proxy_uri.port
+          @proxy_uri = URI(@options.proxy.uri)
         end
 
-        def coalescable?(connection)
-          return super unless @options.proxy
-
-          if @io.protocol == "h2" &&
-             @origin.scheme == "https" &&
-             connection.origin.scheme == "https" &&
-             @io.can_verify_peer?
-            # in proxied connections, .origin is the proxy ; Given names
-            # are stored in .origins, this is what is used.
-            origin = URI(connection.origins.first)
-            @io.verify_hostname(origin.host)
-          else
-            @origin == connection.origin
-          end
+        def peer
+          @proxy_uri || super
         end
 
         def connecting?
@@ -261,7 +259,7 @@ module HTTPX
           @state = :open
 
           super
-          emit(:close)
+          # emit(:close)
         end
 
         private

@@ -6,8 +6,17 @@ module HTTPX
 
       RECORD_TYPES: Hash[Integer, singleton(Resolv::DNS::Resource)]
 
+      attr_reader family: ip_family
+
+      attr_reader options: Options
+
+      attr_writer current_selector: Selector?
+
+      attr_writer current_session: Session?
+
+      attr_accessor multi: Multi?
+
       @record_type: singleton(Resolv::DNS::Resource)
-      @options: Options
       @resolver_options: Hash[Symbol, untyped]
       @queries: Hash[String, Connection]
       @system_resolver: Resolv::Hosts
@@ -20,6 +29,8 @@ module HTTPX
 
       def empty?: () -> bool
 
+      def each_connection: () { (Connection connection) -> void } -> void
+
       def emit_addresses: (Connection connection, ip_family family, Array[IPAddr], ?bool early_resolve) -> void
 
       private
@@ -28,7 +39,15 @@ module HTTPX
 
       def initialize: (ip_family? family, Options options) -> void
 
-      def early_resolve: (Connection connection, ?hostname: String) -> boolish
+      def early_resolve: (Connection connection, ?hostname: String) -> Array[IPAddr]?
+
+      def set_resolver_callbacks: () -> void
+
+      def resolve_connection: (Connection connection) -> void
+
+      def emit_connection_error: (Connection connection, StandardError error) -> void
+
+      def close_resolver: (Resolver resolver) -> void
 
       def emit_resolve_error: (Connection connection, ?String hostname, ?StandardError) -> void
 

@@ -52,16 +52,18 @@ module WebMock
       end
 
       module InstanceMethods
-        def init_connection(*)
-          connection = super
+        private
+
+        def do_init_connection(connection, selector)
+          super
+
           connection.once(:unmock_connection) do
             unless connection.addresses
               connection.__send__(:callbacks)[:connect_error].clear
-              pool.__send__(:unregister_connection, connection)
+              deselect_connection(connection, selector)
             end
-            pool.__send__(:resolve_connection, connection)
+            resolve_connection(connection, selector)
           end
-          connection
         end
       end
 
@@ -98,6 +100,10 @@ module WebMock
           return if @mocked
 
           super
+        end
+
+        def terminate
+          force_reset
         end
 
         def send(request)

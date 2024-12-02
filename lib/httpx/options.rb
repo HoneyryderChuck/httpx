@@ -25,14 +25,14 @@ module HTTPX
       end
     rescue NotImplementedError
       [Socket::AF_INET]
-    end
+    end.freeze
 
     DEFAULT_OPTIONS = {
       :max_requests => Float::INFINITY,
-      :debug => ENV.key?("HTTPX_DEBUG") ? $stderr : nil,
+      :debug => nil,
       :debug_level => (ENV["HTTPX_DEBUG"] || 1).to_i,
-      :ssl => {},
-      :http2_settings => { settings_enable_push: 0 },
+      :ssl => EMPTY_HASH,
+      :http2_settings => { settings_enable_push: 0 }.freeze,
       :fallback_protocol => "http/1.1",
       :supported_compression_formats => %w[gzip deflate],
       :decompress_response_body => true,
@@ -56,13 +56,15 @@ module HTTPX
       :response_class => Class.new(Response),
       :request_body_class => Class.new(Request::Body),
       :response_body_class => Class.new(Response::Body),
+      :pool_class => Class.new(Pool),
       :connection_class => Class.new(Connection),
       :options_class => Class.new(self),
       :transport => nil,
       :addresses => nil,
       :persistent => false,
       :resolver_class => (ENV["HTTPX_RESOLVER"] || :native).to_sym,
-      :resolver_options => { cache: true },
+      :resolver_options => { cache: true }.freeze,
+      :pool_options => EMPTY_HASH,
       :ip_families => ip_address_families,
     }.freeze
 
@@ -110,6 +112,7 @@ module HTTPX
     # :request_body_class :: class used to instantiate a request body
     # :response_body_class :: class used to instantiate a response body
     # :connection_class :: class used to instantiate connections
+    # :pool_class :: class used to instantiate the session connection pool
     # :options_class :: class used to instantiate options
     # :transport :: type of transport to use (set to "unix" for UNIX sockets)
     # :addresses :: bucket of peer addresses (can be a list of IP addresses, a hash of domain to list of adddresses;
@@ -118,7 +121,8 @@ module HTTPX
     # :persistent :: whether to persist connections in between requests (defaults to <tt>true</tt>)
     # :resolver_class :: which resolver to use (defaults to <tt>:native</tt>, can also be <tt>:system<tt> for
     #                    using getaddrinfo or <tt>:https</tt> for DoH resolver, or a custom class)
-    # :resolver_options :: hash of options passed to the resolver
+    # :resolver_options :: hash of options passed to the resolver. Accepted keys depend on the resolver type.
+    # :pool_options :: hash of options passed to the connection pool (See Pool#initialize).
     # :ip_families :: which socket families are supported (system-dependent)
     # :origin :: HTTP origin to set on requests with relative path (ex: "https://api.serv.com")
     # :base_path :: path to prefix given relative paths with (ex: "/v2")
@@ -215,6 +219,7 @@ module HTTPX
       ssl http2_settings
       request_class response_class headers_class request_body_class
       response_body_class connection_class options_class
+      pool_class pool_options
       io fallback_protocol debug debug_level resolver_class resolver_options
       compress_request_body decompress_response_body
       persistent
@@ -246,14 +251,6 @@ module HTTPX
       end
     end
 
-    OTHER_LOOKUP = ->(obj, k, ivar_map) {
-      case obj
-      when Hash
-        obj[ivar_map[k]]
-      else
-        obj.instance_variable_get(k)
-      end
-    }
     def merge(other)
       ivar_map = nil
       other_ivars = case other
@@ -266,12 +263,12 @@ module HTTPX
 
       return self if other_ivars.empty?
 
-      return self if other_ivars.all? { |ivar| instance_variable_get(ivar) == OTHER_LOOKUP[other, ivar, ivar_map] }
+      return self if other_ivars.all? { |ivar| instance_variable_get(ivar) == access_option(other, ivar, ivar_map) }
 
       opts = dup
 
       other_ivars.each do |ivar|
-        v = OTHER_LOOKUP[other, ivar, ivar_map]
+        v = access_option(other, ivar, ivar_map)
 
         unless v
           opts.instance_variable_set(ivar, v)
@@ -322,6 +319,10 @@ module HTTPX
         @response_body_class.__send__(:include, pl::ResponseBodyMethods) if defined?(pl::ResponseBodyMethods)
         @response_body_class.extend(pl::ResponseBodyClassMethods) if defined?(pl::ResponseBodyClassMethods)
       end
+      if defined?(pl::PoolMethods)
+        @pool_class = @pool_class.dup
+        @pool_class.__send__(:include, pl::PoolMethods)
+      end
       if defined?(pl::ConnectionMethods)
         @connection_class = @connection_class.dup
         @connection_class.__send__(:include, pl::ConnectionMethods)
@@ -344,6 +345,15 @@ module HTTPX
 
         value = __send__(option_method_name, v)
         instance_variable_set(:"@#{k}", value)
+      end
+    end
+
+    def access_option(obj, k, ivar_map)
+      case obj
+      when Hash
+        obj[ivar_map[k]]
+      else
+        obj.instance_variable_get(k)
       end
     end
   end

@@ -31,12 +31,16 @@ module HTTPX
 
         private
 
-        def init_connection(uri, options)
-          connection = super
+        def do_init_connection(connection, selector)
+          super
           connection.on(:open) do
+            next unless connection.current_session == self
+
             emit_or_callback_error(:connection_opened, connection.origin, connection.io.socket)
           end
           connection.on(:close) do
+            next unless connection.current_session == self
+
             emit_or_callback_error(:connection_closed, connection.origin) if connection.used?
           end
 
@@ -80,6 +84,12 @@ module HTTPX
         end
 
         def receive_requests(*)
+          super
+        rescue CallbackError => e
+          raise e.cause
+        end
+
+        def close(*)
           super
         rescue CallbackError => e
           raise e.cause
