@@ -29,7 +29,7 @@ module Requests
 
       def test_content_digest_missing_validation_always
         start_test_servlet(ContentDigestServer) do |server|
-          http = HTTPX.plugin(:content_digest)
+          http = HTTPX.plugin(:content_digest, validate_content_digest: true)
 
           response = http.get("#{server.origin}/no_content_digest")
 
@@ -69,7 +69,7 @@ module Requests
 
       def test_content_digest_invalid_validation_always
         start_test_servlet(ContentDigestServer) do |server|
-          http = HTTPX.plugin(:content_digest)
+          http = HTTPX.plugin(:content_digest, validate_content_digest: true)
 
           response = http.get("#{server.origin}/invalid_content_digest")
 
