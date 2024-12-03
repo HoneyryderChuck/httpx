@@ -12,7 +12,7 @@ class ResponseTest < Minitest::Test
       require_relative "extensions/response_pattern_match"
       include ResponsePatternMatchTests
     rescue SyntaxError
-      # truffleruby advertises ruby 3 support, but still hasn't implemented pattern matching
+      # for ruby < 3.0 and truffleruby < 24.0
     end
   end
 
@@ -225,6 +225,26 @@ class ResponseTest < Minitest::Test
     form4_response = Response.new(request, 200, "2.0", { "content-type" => "application/x-www-form-urlencoded" })
     form4_response << "[]"
     assert form4_response.form == {}
+
+    json2_response = Response.new(request, 200, "2.0", { "content-type" => "application/hal+json" })
+    json2_response << %({"_links": {"self": {"href": "http://example.com/api/abc" } }, "id": "abc", "name": "ABC" })
+    assert json2_response.json == {
+      "_links" => {
+        "self" => {
+          "href" => "http://example.com/api/abc",
+        },
+      },
+      "id" => "abc",
+      "name" => "ABC",
+    }
+
+    json3_response = Response.new(request, 200, "2.0", { "content-type" => "application/vnd.com.acme.customtype+json;charset=UTF-8" })
+    json3_response << %({"custom": "data"})
+    assert json3_response.json == { "custom" => "data" }
+
+    json4_response = Response.new(request, 200, "2.0", { "content-type" => "application/invalidjson" })
+    err = assert_raises(HTTPX::Error) { json4_response.json }
+    assert err.message == "invalid json mime type (application/invalidjson)"
   end
 
   private
