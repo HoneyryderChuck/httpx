@@ -13,6 +13,7 @@ module Requests
             response = http.get(server.origin + path)
 
             verify_status(response, 200)
+            assert response.body.content_digest_buffer.nil?
           end
         end
       end
@@ -24,6 +25,7 @@ module Requests
           response = http.get("#{server.origin}/no_content_digest")
 
           verify_status(response, 200)
+          assert response.body.content_digest_buffer.nil?
         end
       end
 
@@ -44,16 +46,22 @@ module Requests
           response = http.get("#{server.origin}/valid_content_digest")
 
           verify_status(response, 200)
+          assert !response.body.content_digest_buffer.nil?
+          response.close
+          assert response.body.content_digest_buffer.nil?
         end
       end
 
       def test_content_digest_present_validation_always
         start_test_servlet(ContentDigestServer) do |server|
-          http = HTTPX.plugin(:content_digest)
+          http = HTTPX.plugin(:content_digest, validate_content_digest: true)
 
           response = http.get("#{server.origin}/valid_content_digest")
 
           verify_status(response, 200)
+          assert !response.body.content_digest_buffer.nil?
+          response.close
+          assert response.body.content_digest_buffer.nil?
         end
       end
 
@@ -64,6 +72,7 @@ module Requests
           response = http.get("#{server.origin}/invalid_content_digest")
 
           verify_error_response(response, HTTPX::Plugins::ContentDigest::InvalidContentDigestError)
+          response.close
         end
       end
 
@@ -74,36 +83,46 @@ module Requests
           response = http.get("#{server.origin}/invalid_content_digest")
 
           verify_error_response(response, HTTPX::Plugins::ContentDigest::InvalidContentDigestError)
+          response.close
         end
       end
 
       def test_content_digest_multiple_validation_always
         start_test_servlet(ContentDigestServer) do |server|
-          http = HTTPX.plugin(:content_digest)
+          http = HTTPX.plugin(:content_digest, validate_content_digest: true)
 
           response = http.get("#{server.origin}/multiple_content_digests")
 
           verify_status(response, 200)
+          assert !response.body.content_digest_buffer.nil?
+          response.close
+          assert response.body.content_digest_buffer.nil?
         end
       end
 
       def test_content_digest_gzip_encoding
         start_test_servlet(ContentDigestServer) do |server|
-          http = HTTPX.plugin(:content_digest)
+          http = HTTPX.plugin(:content_digest, validate_content_digest: true)
 
           response = http.get("#{server.origin}/gzip_content_digest")
 
           verify_status(response, 200)
+          assert !response.body.content_digest_buffer.nil?
+          response.close
+          assert response.body.content_digest_buffer.nil?
         end
       end
 
       def test_content_digest_large_response_body
         start_test_servlet(ContentDigestServer) do |server|
-          http = HTTPX.plugin(:content_digest)
+          http = HTTPX.plugin(:content_digest, validate_content_digest: true)
 
           response = http.get("#{server.origin}/large_body_content_digest")
 
           verify_status(response, 200)
+          assert !response.body.content_digest_buffer.nil?
+          response.close
+          assert response.body.content_digest_buffer.nil?
         end
       end
     end
