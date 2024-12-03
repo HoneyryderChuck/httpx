@@ -62,6 +62,7 @@ fi
 
 if [[ "$RUBY_ENGINE" = "ruby" ]] && [[ ${RUBY_VERSION:0:1} = "3" ]] && [[ ! $RUBYOPT =~ "jit" ]]; then
   echo "running runtime type checking..."
+  bundle exec rbs collection install
   export RUBYOPT="$RUBYOPT -rbundler/setup -rrbs/test/setup"
   export RBS_TEST_RAISE=true
   export RBS_TEST_LOGLEVEL=error
