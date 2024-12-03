@@ -6,7 +6,19 @@ module HTTPX::Transcoder
   module JSON
     module_function
 
-    JSON_REGEX = %r{\bapplication/(?:vnd\.api\+|hal\+)?json\b}i.freeze
+    JSON_REGEX = %r{
+      \b
+      application/
+      # optional vendor specific type
+      (?:
+        # token as per https://datatracker.ietf.org/doc/html/rfc7230#section-3.2.6
+        [!#$%&'*+\-.^_`|~0-9a-z]+
+        # literal plus sign
+        \+
+      )?
+      json
+      \b
+    }ix.freeze
 
     class Encoder
       extend Forwardable
