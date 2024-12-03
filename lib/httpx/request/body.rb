@@ -25,19 +25,10 @@ module HTTPX
     #   ..., form: { foo: Pathname.open("path/to/file") }) #=> multipart urlencoded encoder
     #   ..., form: { foo: File.open("path/to/file") }) #=> multipart urlencoded encoder
     #   ..., form: { body: "bla") }) #=> raw data encoder
-    def initialize(headers, options, body: nil, form: nil, json: nil, xml: nil, **params)
-      @headers = headers
+    def initialize(h, options, **params)
+      @headers = h
+      @body = self.class.initialize_body(params)
       @options = options.merge(params)
-
-      @body = if body
-        Transcoder::Body.encode(body)
-      elsif form
-        Transcoder::Form.encode(form)
-      elsif json
-        Transcoder::JSON.encode(json)
-      elsif xml
-        Transcoder::Xml.encode(xml)
-      end
 
       if @body
         if @options.compress_request_body && @headers.key?("content-encoding")
@@ -123,6 +114,19 @@ module HTTPX
     # :nocov:
 
     class << self
+      def initialize_body(params)
+        if (body = params.delete(:body))
+          # @type var body: bodyIO
+          Transcoder::Body.encode(body)
+        elsif (form = params.delete(:form))
+          # @type var form: Transcoder::urlencoded_input
+          Transcoder::Form.encode(form)
+        elsif (json = params.delete(:json))
+          # @type var body: _ToJson
+          Transcoder::JSON.encode(json)
+        end
+      end
+
       # returns the +body+ wrapped with the correct deflater accordinng to the given +encodisng+.
       def initialize_deflater_body(body, encoding)
         case encoding

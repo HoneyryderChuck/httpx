@@ -166,12 +166,6 @@ module HTTPX
       decode(Transcoder::Form)
     end
 
-    # decodes the response payload into a Nokogiri::XML::Node object **if** the payload is valid
-    # "application/xml" (requires the "nokogiri" gem).
-    def xml
-      decode(Transcoder::Xml)
-    end
-
     private
 
     # decodes the response payload using the given +transcoder+, which implements the decoding logic.

@@ -8,6 +8,10 @@ module HTTPX
     # https://gitlab.com/os85/httpx/wikis/WebDav
     #
     module WebDav
+      def self.configure(klass)
+        klass.plugin(:xml)
+      end
+
       module InstanceMethods
         def copy(src, dest)
           request("COPY", src, headers: { "destination" => @options.origin.merge(dest) })

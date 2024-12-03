@@ -86,7 +86,6 @@ end
 require "httpx/transcoder/body"
 require "httpx/transcoder/form"
 require "httpx/transcoder/json"
-require "httpx/transcoder/xml"
 require "httpx/transcoder/chunker"
 require "httpx/transcoder/deflate"
 require "httpx/transcoder/gzip"

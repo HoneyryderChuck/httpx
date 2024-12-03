@@ -136,7 +136,7 @@ module HTTPX
 
     def do_initialize: (?options options) -> void
 
-    def access_option: (Hash | Object | nil obj, Symbol k, Hash[Symbol, Symbol]? ivar_map) -> untyped
+    def access_option: (Hash[Symbol, untyped] | Object | nil obj, Symbol k, Hash[Symbol, Symbol]? ivar_map) -> untyped
   end
 
   type options = Options | Hash[Symbol, untyped]

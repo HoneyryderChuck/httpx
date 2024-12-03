@@ -39,6 +39,7 @@ class HTTPSTest < Minitest::Test
   include Plugins::WebDav
   include Plugins::Brotli if RUBY_ENGINE == "ruby"
   include Plugins::SsrfFilter
+  include Plugins::XML
 
   def test_ssl_session_resumption
     uri = build_uri("/get")
