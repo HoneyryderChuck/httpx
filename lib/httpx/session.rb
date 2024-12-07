@@ -259,7 +259,7 @@ module HTTPX
       rescue StandardError => e
         e
       end
-      return unless error
+      return unless error && error.is_a?(Exception)
 
       if error.is_a?(Error)
         request.emit(:response, ErrorResponse.new(request, error))
