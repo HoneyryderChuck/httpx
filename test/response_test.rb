@@ -203,6 +203,11 @@ class ResponseTest < Minitest::Test
     form_response << "богус"
     assert_raises(ArgumentError) { form_response.form }
 
+    xml_response = Response.new(request, 200, "2.0", { "content-type" => "application/xml; charset=utf-8" })
+    xml_response << "<xml></xml>"
+    xml = xml_response.xml
+    assert xml.is_a?(Nokogiri::XML::Node)
+
     form2_response = Response.new(request, 200, "2.0", { "content-type" => "application/x-www-form-urlencoded" })
     form2_response << "a[]=b&a[]=c&d[e]=f&g[h][i][j]=k&l[m][][n]=o&l[m][][p]=q&l[m][][n]=r&s[=t"
     assert form2_response.form == {

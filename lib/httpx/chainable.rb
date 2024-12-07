@@ -73,7 +73,7 @@ module HTTPX
         ].include?(callback)
 
         warn "DEPRECATION WARNING: calling `.#{meth}` on plain HTTPX sessions is deprecated. " \
-             "Use HTTPX.plugin(:callbacks).#{meth} instead."
+             "Use `HTTPX.plugin(:callbacks).#{meth}` instead."
 
         plugin(:callbacks).__send__(meth, *args, **options, &blk)
       else

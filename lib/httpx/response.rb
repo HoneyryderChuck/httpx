@@ -166,6 +166,14 @@ module HTTPX
       decode(Transcoder::Form)
     end
 
+    def xml
+      # TODO: remove at next major version.
+      warn "DEPRECATION WARNING: calling `.#{__method__}` on plain HTTPX responses is deprecated. " \
+           "Use HTTPX.plugin(:xml) sessions and call `.#{__method__}` in its responses instead."
+      require "httpx/plugins/xml"
+      decode(Plugins::XML::Transcoder)
+    end
+
     private
 
     # decodes the response payload using the given +transcoder+, which implements the decoding logic.
