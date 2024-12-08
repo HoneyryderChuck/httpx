@@ -1,0 +1,37 @@
+module HTTPX
+  module Plugins
+    module XML
+      MIME_TYPES: Regexp
+
+      module Transcoder
+        def self?.encode: (Nokogiri::XML::Node | String xml) -> Encoder
+        def self?.decode: (HTTPX::Response response) -> HTTPX::Transcoder::_Decoder
+
+        class Encoder
+          @raw: Nokogiri::XML::Node | String # can be nokogiri object
+
+          def content_type: () -> String
+
+          def bytesize: () -> (Integer | Float)
+
+          def to_s: () -> String
+
+          private
+
+          def initialize: (Nokogiri::XML::Node | String xml) -> void
+        end
+      end
+
+      module InstanceMethods
+      end
+
+      module ResponseMethods
+        def xml: () -> Nokogiri::XML::Node
+      end
+
+      module RequestBodyClassMethods
+      end
+    end
+    type sessionXML = Session & XML::InstanceMethods
+  end
+end

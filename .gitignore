@@ -16,3 +16,5 @@ public
 build
 .sass-cache
 wiki
+.gem_rbs_collection/
+rbs_collection.lock.yaml

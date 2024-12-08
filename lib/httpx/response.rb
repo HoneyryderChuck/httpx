@@ -166,10 +166,12 @@ module HTTPX
       decode(Transcoder::Form)
     end
 
-    # decodes the response payload into a Nokogiri::XML::Node object **if** the payload is valid
-    # "application/xml" (requires the "nokogiri" gem).
     def xml
-      decode(Transcoder::Xml)
+      # TODO: remove at next major version.
+      warn "DEPRECATION WARNING: calling `.#{__method__}` on plain HTTPX responses is deprecated. " \
+           "Use HTTPX.plugin(:xml) sessions and call `.#{__method__}` in its responses instead."
+      require "httpx/plugins/xml"
+      decode(Plugins::XML::Transcoder)
     end
 
     private

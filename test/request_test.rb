@@ -77,13 +77,6 @@ class RequestTest < Minitest::Test
     assert req.headers["content-length"] == "13", "content length is wrong"
   end
 
-  def test_request_body_xml
-    req = make_request("POST", "http://example.com/", xml: "<xml></xml>")
-    assert !req.body.empty?, "body should exist"
-    assert req.headers["content-type"] == "application/xml; charset=utf-8", "content type is wrong"
-    assert req.headers["content-length"] == "11", "content length is wrong"
-  end
-
   def test_request_body_deflater_for_anything
     body = Request::Body.new(Headers.new({ "content-encoding" => "unknown" }), Options.new, body: "foo")
     assert body.to_s == "foo"
