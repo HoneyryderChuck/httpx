@@ -306,14 +306,16 @@ module HTTPX
     # sends an array of HTTPX::Request +requests+, returns the respective array of HTTPX::Response objects.
     def send_requests(*requests)
       selector = get_current_selector { Selector.new }
-      _send_requests(requests, selector)
-      receive_requests(requests, selector)
-    ensure
-      unless @wrapped
-        if @persistent
-          deactivate(selector)
-        else
-          close(selector)
+      begin
+        _send_requests(requests, selector)
+        receive_requests(requests, selector)
+      ensure
+        unless @wrapped
+          if @persistent
+            deactivate(selector)
+          else
+            close(selector)
+          end
         end
       end
     end
@@ -439,7 +441,11 @@ module HTTPX
     end
 
     def set_current_selector(selector)
-      selector_store[self] = selector
+      if selector
+        selector_store[self] = selector
+      else
+        selector_store.delete(self)
+      end
     end
 
     def selector_store
