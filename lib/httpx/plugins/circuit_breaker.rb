@@ -32,11 +32,6 @@ module HTTPX
           @circuit_store = CircuitStore.new(@options)
         end
 
-        def initialize_dup(orig)
-          super
-          @circuit_store = orig.instance_variable_get(:@circuit_store).dup
-        end
-
         %i[circuit_open].each do |meth|
           class_eval(<<-MOD, __FILE__, __LINE__ + 1)
         def on_#{meth}(&blk)   # def on_circuit_open(&blk)
