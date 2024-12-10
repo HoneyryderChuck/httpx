@@ -1,7 +1,7 @@
 module HTTPX
   module Transcoder
     module GZIP
-      def self?.encode: (_Encoder body) -> Deflater
+      def self?.encode: (body_encoder body) -> Deflater
       def self?.decode: (Response response, ?bytesize: Integer) -> Inflater
 
       class Deflater < Transcoder::Deflater
