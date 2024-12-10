@@ -96,7 +96,7 @@ module HTTPX
       resolve
     end
 
-    def early_resolve(connection)
+    def early_resolve(connection, **)
       self << connection
       true
     end

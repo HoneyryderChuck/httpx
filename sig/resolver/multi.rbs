@@ -24,7 +24,7 @@ module HTTPX
 
       def connections: () -> Array[Connection]
 
-      def early_resolve: (Connection connection, ?hostname: String) -> void
+      def early_resolve: (Connection connection) -> bool
 
       def lazy_resolve: (Connection connection) -> void
     end
