@@ -303,14 +303,6 @@ module HTTPX
       resolve_connection(connection, selector) unless connection.family
     end
 
-    def deactivate_connection(request, connections, options)
-      conn = connections.find do |c|
-        c.match?(request.uri, options)
-      end
-
-      @pool.deactivate(conn) if conn
-    end
-
     # sends an array of HTTPX::Request +requests+, returns the respective array of HTTPX::Response objects.
     def send_requests(*requests)
       selector = get_current_selector { Selector.new }
