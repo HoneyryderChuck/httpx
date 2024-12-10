@@ -1,9 +1,9 @@
 module HTTPX
   module Transcoder
     class BodyReader
-      @body: _Reader | _Each[String]
+      @body: Object & (_Reader | _Each[String])
 
-      def initialize: (bodyIO body) -> void
+      def initialize: (body_encoder body) -> void
 
       def bytesize: () -> (Integer | Float)
 
