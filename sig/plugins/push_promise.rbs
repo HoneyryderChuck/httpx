@@ -2,11 +2,14 @@ module HTTPX
   module Plugins
     module PushPromise
       module ResponseMethods
+        @__pushed: bool?
+
         def pushed?: () -> boolish
         def mark_as_pushed!: () -> void
       end
 
       module InstanceMethods
+        @promise_headers: Hash[::HTTP2::Stream, Request]?
         private
 
         def promise_headers: () -> Hash[::HTTP2::Stream, Request]

@@ -1,6 +1,8 @@
 module HTTPX
   module Plugins
     module RateLimiter
+      RATE_LIMIT_CODES: Array[Integer]
+
       def self.load_dependencies: (singleton(Session)) -> void
 
       def self.retry_on_rate_limited_response: (_Response) -> bool

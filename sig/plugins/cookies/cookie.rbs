@@ -17,6 +17,10 @@ module HTTPX
 
       attr_reader created_at: Time
 
+      @for_domain: bool
+
+      @domain_name: DomainName
+
       def path=: (string) -> void
 
       def domain=: (string) -> void
@@ -43,6 +47,11 @@ module HTTPX
                     | (_ToS, _ToS, ?cookie_attributes) -> untyped
 
       def acceptable_from_uri?: (uri) -> bool
+
+      module Scanner
+        RE_BAD_CHAR: Regexp
+        def self?.quote: (String s) -> String
+      end
     end
   end
 end
