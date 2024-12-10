@@ -68,7 +68,7 @@ module HTTPX
 
     def resolve_connection: (Connection connection, Selector selector) -> void
 
-    def on_resolve_connection: (Connection connection, Selector selector) -> void
+    def on_resolver_connection: (Connection connection, Selector selector) -> void
 
     def on_resolver_close: (Resolver::Resolver resolver, Selector selector) -> void
 
