@@ -1,7 +1,7 @@
 module HTTPX
   module Transcoder
     module GZIP
-      def self?.encode: (_Encoder body) -> Deflater
+      def self?.encode: (body_encoder body) -> Deflater
       def self?.decode: (Response response, ?bytesize: Integer) -> Inflater
 
       class Deflater < Transcoder::Deflater
@@ -15,6 +15,9 @@ module HTTPX
       end
 
       class Inflater
+        @inflater: Zlib::Inflate
+        @bytesize: Integer
+
         def initialize: (Integer | Float bytesize) -> void
 
         def call: (String chunk) -> String

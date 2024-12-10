@@ -158,7 +158,6 @@ module HTTPX
         def load_dependencies(*)
           require "set"
           require "digest/sha2"
-          require "openssl"
         end
 
         def configure(klass)

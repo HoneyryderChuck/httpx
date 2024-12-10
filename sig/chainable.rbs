@@ -36,6 +36,8 @@ module HTTPX
               | (:oauth, ?options) -> Plugins::sessionOAuth
               | (:callbacks, ?options) -> Plugins::sessionCallbacks
               | (:content_digest, ?options) -> Plugins::sessionContentDigest
+              | (:ssrf_filter, ?options) -> Plugins::sessionSsrf
+              | (:webdav, ?options) -> Plugins::sessionWebDav
               | (:xml, ?options) -> Plugins::sessionXML
               | (Symbol | Module, ?options) { (Class) -> void } -> Session
               | (Symbol | Module, ?options) -> Session

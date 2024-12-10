@@ -111,15 +111,15 @@ module HTTPX
     def early_resolve(connection, hostname: connection.peer.host)
       addresses = @resolver_options[:cache] && (connection.addresses || HTTPX::Resolver.nolookup_resolve(hostname))
 
-      return unless addresses
+      return false unless addresses
 
       addresses = addresses.select { |addr| addr.family == @family }
 
-      return if addresses.empty?
+      return false if addresses.empty?
 
       emit_addresses(connection, @family, addresses, true)
 
-      addresses
+      true
     end
 
     def emit_resolve_error(connection, hostname = connection.peer.host, ex = nil)

@@ -65,7 +65,7 @@ module HTTPX
         )
         ::IO.copy_stream(self, buffer)
 
-        buffer.rewind
+        buffer.rewind if buffer.respond_to?(:rewind)
 
         @buffer = buffer
       end

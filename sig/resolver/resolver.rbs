@@ -39,7 +39,7 @@ module HTTPX
 
       def initialize: (ip_family? family, Options options) -> void
 
-      def early_resolve: (Connection connection, ?hostname: String) -> Array[IPAddr]?
+      def early_resolve: (Connection connection, ?hostname: String) -> bool
 
       def set_resolver_callbacks: () -> void
 

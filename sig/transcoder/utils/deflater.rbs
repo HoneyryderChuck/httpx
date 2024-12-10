@@ -5,12 +5,12 @@ module HTTPX
 
       @body: BodyReader
       @buffer: Response::Buffer?
-      @body: _Encoder | StringIO
+      @body: BodyReader
       @closed: bool
 
       attr_reader content_type: String
 
-      def initialize: (_Encoder body) -> void
+      def initialize: (body_encoder body) -> void
 
       def bytesize: () -> (Integer | Float)
 

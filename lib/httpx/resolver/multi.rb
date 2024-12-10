@@ -62,8 +62,9 @@ module HTTPX
     def early_resolve(connection)
       hostname = connection.peer.host
       addresses = @resolver_options[:cache] && (connection.addresses || HTTPX::Resolver.nolookup_resolve(hostname))
-      return unless addresses
+      return false unless addresses
 
+      resolved = false
       addresses.group_by(&:family).sort { |(f1, _), (f2, _)| f2 <=> f1 }.each do |family, addrs|
         # try to match the resolver by family. However, there are cases where that's not possible, as when
         # the system does not have IPv6 connectivity, but it does support IPv6 via loopback/link-local.
@@ -73,7 +74,11 @@ module HTTPX
 
         # it does not matter which resolver it is, as early-resolve code is shared.
         resolver.emit_addresses(connection, family, addrs, true)
+
+        resolved = true
       end
+
+      resolved
     end
 
     def lazy_resolve(connection)

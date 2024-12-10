@@ -108,9 +108,11 @@ module Faraday
             ssl_options
           end
         else
+          # :nocov:
           def ssl_options_from_env(*)
             {}
           end
+          # :nocov:
         end
       end
 

@@ -9,7 +9,7 @@ module HTTPX
 
     def size: () -> Integer
 
-    def write: (String) -> void
+    def write: (String chunk) -> Integer
 
     def to_s: () -> String
 
