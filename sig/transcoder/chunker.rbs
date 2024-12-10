@@ -8,7 +8,7 @@ module HTTPX::Transcoder
     def self?.encode: (_Each[String] chunks) -> Encoder
 
     class Encoder
-      @raw: _Each[String]
+      @raw: Object & _Each[String]
 
       def each: () { (String) -> void } -> void
               | () -> Enumerator[String, void]
