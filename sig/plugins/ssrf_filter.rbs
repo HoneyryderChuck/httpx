@@ -1,0 +1,26 @@
+module HTTPX
+  class ServerSideRequestForgeryError < Error
+  end
+
+  module Plugins
+    module SsrfFilter
+      IPV4_BLACKLIST: Array[IPAddr]
+
+      IPV6_BLACKLIST: Array[[IPAddr, IPAddr]]
+
+      def self?.unsafe_ip_address?: (IPAddr) -> bool
+
+      interface _Options
+        def allowed_schemes: () -> Array[String]
+      end
+
+      module InstanceMethods
+      end
+
+      module ConnectionMethods
+      end
+    end
+
+    type sessionSsrf = Session & SsrfFilter::InstanceMethods
+  end
+end

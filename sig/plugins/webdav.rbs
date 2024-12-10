@@ -1,0 +1,23 @@
+module HTTPX
+  module Plugins
+    module WebDav
+      module InstanceMethods
+        def copy: (String src, String dst) -> (Response | ErrorResponse)
+
+        def move: (String src, String dst) -> (Response | ErrorResponse)
+
+        def lock: (String path, ?timeout: Numeric) ?{ (Response response) -> void } -> (Response | ErrorResponse)
+
+        def unlock: (String path, String? lock_token) -> (Response | ErrorResponse)
+
+        def mkcol: (String dir) -> Response
+
+        def propfind: (String path, ?(:acl | String) xml) -> Response
+
+        def proppatch: (String path, String xml) -> Response
+      end
+    end
+
+    type sessionWebDav = Session & WebDav::InstanceMethods
+  end
+end

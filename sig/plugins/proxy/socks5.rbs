@@ -6,6 +6,14 @@ module HTTPX
     module Proxy
       module Socks5
         VERSION: Integer
+        NOAUTH: Integer
+        PASSWD: Integer
+        NONE: Integer
+        CONNECT: Integer
+        IPV4: Integer
+        DOMAIN: Integer
+        IPV6: Integer
+        SUCCESS: Integer
 
         module ConnectionMethods
           def __socks5_proxy_connect: () ->  void
@@ -31,9 +39,9 @@ module HTTPX
         end
 
         module Packet
-          def self?.negotiate: (Parameters) -> String
-          def self?.authenticate: (Parameters) -> String
-          def self?.connect: (uri) -> String
+          def self?.negotiate: (Parameters parameters) -> String
+          def self?.authenticate: (Parameters parameters) -> String
+          def self?.connect: (uri uri) -> String
         end
       end
     end

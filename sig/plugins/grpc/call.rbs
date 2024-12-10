@@ -4,6 +4,10 @@ module HTTPX
       class Call
         attr_writer decoder: _Callable
 
+        @response: Response | StreamResponse
+        @consumed: bool
+        @grpc_response: Enumerator[String] | String
+
         def metadata: () -> headers
 
         def trailing_metadata: () -> headers?

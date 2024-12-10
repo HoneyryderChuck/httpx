@@ -17,8 +17,14 @@ module HTTPX
 
 
       class Signer
-
+        @credentials: Object & _SigV4Credentials
+        @service: String
+        @region: String
         @unsigned_headers: Set[String]
+        @apply_checksum_header: bool
+        @provider_prefix: String
+        @header_provider_field: String
+        @algorithm: String
 
         def sign!: (Request & RequestMethods request) -> void
 

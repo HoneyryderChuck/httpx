@@ -47,6 +47,8 @@ module HTTPX
           ensure
             unlock(path, lock_token)
           end
+
+          response
         end
 
         def unlock(path, lock_token)
