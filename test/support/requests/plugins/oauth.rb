@@ -5,6 +5,7 @@ module Requests
     module OAuth
       def test_plugin_oauth_options
         with_oauth_metadata do |server|
+          # from options
           opts = HTTPX.plugin(:oauth).oauth_auth(
             issuer: server.origin,
             client_id: "CLIENT_ID", client_secret: "SECRET",
@@ -16,6 +17,7 @@ module Requests
           assert opts.oauth_session.token_endpoint_auth_method == "client_secret_basic"
           assert opts.oauth_session.scope == %w[all]
 
+          # from options, pointing to refresh
           opts = HTTPX.plugin(:oauth).oauth_auth(
             issuer: "https://smthelse",
             token_endpoint_auth_method: "client_secret_post",
@@ -28,12 +30,47 @@ module Requests
           assert opts.oauth_session.token_endpoint_auth_method == "client_secret_post"
           assert opts.oauth_session.scope == %w[foo bar]
 
+          # from oauth server metadata url
+          opts = HTTPX.plugin(:oauth).oauth_auth(
+            issuer: server.origin,
+            client_id: "CLIENT_ID", client_secret: "SECRET",
+          ).with_access_token.instance_variable_get(:@options)
+          assert opts.oauth_session.grant_type == "client_credentials"
+          assert opts.oauth_session.token_endpoint.to_s == "#{server.origin}/token"
+          assert opts.oauth_session.token_endpoint_auth_method == "client_secret_basic"
+          assert opts.oauth_session.scope == %w[openid profile email address phone offline_access]
+
+          # from hash
+          HTTPX.plugin(:oauth).with(
+            oauth_session: {
+              issuer: server.origin,
+              client_id: "CLIENT_ID", client_secret: "SECRET",
+              scope: "all"
+            }
+          ).instance_variable_get(:@options)
+          assert opts.oauth_session.grant_type == "client_credentials"
+          assert opts.oauth_session.token_endpoint.to_s == "#{server.origin}/token"
+          assert opts.oauth_session.token_endpoint_auth_method == "client_secret_basic"
+          assert opts.oauth_session.scope == %w[openid profile email address phone offline_access]
+
           assert_raises(HTTPX::Error) do
             HTTPX.plugin(:oauth).oauth_auth(
               issuer: server.origin,
               client_id: "CLIENT_ID", client_secret: "SECRET",
               token_endpoint_auth_method: "unsupported"
             )
+          end
+
+          assert_raises(HTTPX::Error) do
+            HTTPX.plugin(:oauth).oauth_auth(
+              issuer: server.origin,
+              client_id: "CLIENT_ID", client_secret: "SECRET",
+              grant_type: "implicit_grant" # not supported
+            )
+          end
+
+          assert_raises(TypeError) do
+            HTTPX.plugin(:oauth).with(oauth_session: "wrong")
           end
         end
       end
