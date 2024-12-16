@@ -14,6 +14,7 @@ AllCops:
     - regression_tests/**/*.rb
     - integration_tests/**/*.rb
     - standalone_tests/**/*.rb
+    - smoke_tests/**/*.rb
     - Rakefile
     - httpx.gemspec
     - profiler/**/*
