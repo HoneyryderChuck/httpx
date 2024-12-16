@@ -126,6 +126,22 @@ regression tests:
     - bundle install
   script:
     - bundle exec rake regression_tests
+smoke_tests:
+  image: "ruby:3.3"
+  variables:
+    BUNDLE_WITHOUT: lint:assorted
+    CI: 1
+    COVERAGE_KEY: "$RUBY_ENGINE-$RUBY_VERSION-smoke-tests"
+  artifacts:
+    paths:
+      - coverage/
+  stage: test
+  before_script:
+    - host example.com
+    - apt-get update && apt-get install -y libmagic-dev shared-mime-info
+    - bundle install
+  script:
+    - bundle exec rake smoke_tests
 
 coverage:
   coverage: '/Coverage: \d+.\d+\%/'

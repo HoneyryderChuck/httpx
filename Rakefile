@@ -24,6 +24,13 @@ Rake::TestTask.new(:regression_tests) do |t|
   t.warning = false
 end
 
+desc "smoke tests for core features not in main tests"
+Rake::TestTask.new(:smoke_tests) do |t|
+  t.libs = %w[lib test]
+  t.pattern = "smoke_tests/**/*_test.rb"
+  t.warning = false
+end
+
 RUBY_MAJOR_MINOR = RUBY_VERSION.split(".").first(2).join(".")
 
 begin
