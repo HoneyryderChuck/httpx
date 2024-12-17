@@ -127,7 +127,7 @@ regression tests:
   script:
     - bundle exec rake regression_tests
 smoke_tests:
-  image: "ruby:3.3"
+  image: "ruby:3.4"
   variables:
     BUNDLE_WITHOUT: lint:assorted
     CI: 1
