@@ -44,7 +44,12 @@ module HTTPX
     end
 
     def system_resolve(hostname)
-      ips = @system_resolver.getaddresses(hostname)
+      ips = if in_ractor?
+        Ractor.store_if_absent(:httpx_system_resolver) { Resolv::Hosts.new }
+      else
+        @system_resolver
+      end.getaddresses(hostname)
+
       return if ips.empty?
 
       ips.map { |ip| IPAddr.new(ip) }
@@ -103,7 +108,12 @@ module HTTPX
     end
 
     def generate_id
-      id_synchronize { @identifier = (@identifier + 1) & 0xFFFF }
+      if in_ractor?
+        identifier = Ractor.store_if_absent(:httpx_resolver_identifier) { -1 }
+        (Ractor.current[:httpx_resolver_identifier] = (identifier + 1) & 0xFFFF)
+      else
+        id_synchronize { @identifier = (@identifier + 1) & 0xFFFF }
+      end
     end
 
     def encode_dns_query(hostname, type: Resolv::DNS::Resource::IN::A, message_id: generate_id)
@@ -151,11 +161,28 @@ module HTTPX
     end
 
     def lookup_synchronize
+      if in_ractor?
+        lookups = Ractor.store_if_absent(:httpx_resolver_lookups) { Hash.new { |h, k| h[k] = [] } }
+        return yield(lookups)
+      end
+
       @lookup_mutex.synchronize { yield(@lookups) }
     end
 
     def id_synchronize(&block)
       @identifier_mutex.synchronize(&block)
+    end
+
+    if defined?(Ractor) &&
+       # no ractor support for 3.0
+       RUBY_VERSION >= "3.1.0"
+      def in_ractor?
+        Ractor.main != Ractor.current
+      end
+    else
+      def in_ractor?
+        false
+      end
     end
   end
 end
