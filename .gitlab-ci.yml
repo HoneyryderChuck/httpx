@@ -39,7 +39,7 @@ cache:
     - vendor
 
 lint rubocop code:
-  image: "ruby:3.3"
+  image: "ruby:3.4"
   variables:
     BUNDLE_WITHOUT: test:coverage:assorted
   before_script:
@@ -47,7 +47,7 @@ lint rubocop code:
   script:
     - bundle exec rake rubocop
 lint rubocop wiki:
-  image: "ruby:3.3"
+  image: "ruby:3.4"
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
   variables:
@@ -61,7 +61,7 @@ lint rubocop wiki:
         - rubocop-md
 
       AllCops:
-        TargetRubyVersion: 3.3
+        TargetRubyVersion: 3.4
         DisabledByDefault: true
       FILE
   script:
@@ -98,13 +98,18 @@ test ruby 3/3:
   <<: *yjit_matrix
   script:
     ./spec.sh ruby 3.3
+test ruby 3/4:
+  <<: *test_settings
+  <<: *yjit_matrix
+  script:
+    ./spec.sh ruby 3.4
 test truffleruby:
   <<: *test_settings
   script:
     ./spec.sh truffleruby latest
   allow_failure: true
 regression tests:
-  image: "ruby:3.3"
+  image: "ruby:3.4"
   variables:
     BUNDLE_WITHOUT: lint:assorted
     CI: 1
@@ -125,7 +130,7 @@ coverage:
   variables:
     BUNDLE_WITHOUT: lint:test:assorted
 
-  image: "ruby:3.3"
+  image: "ruby:3.4"
   script:
     - gem install simplecov --no-doc
     # this is a workaround, because simplecov doesn't support relative paths.
@@ -147,7 +152,7 @@ pages:
   stage: deploy
   needs:
     - coverage
-  image: "ruby:3.3"
+  image: "ruby:3.4"
   before_script:
     - gem install hanna-nouveau
   script:

@@ -9,7 +9,7 @@ gem "rake", "~> 13.0"
 
 group :test do
   if RUBY_VERSION >= "3.2.0"
-    gem "datadog", "~> 2.0.0"
+    gem "datadog", "~> 2.0"
   else
     gem "ddtrace"
   end
@@ -35,6 +35,11 @@ group :test do
       gem "oj", require: false
       gem "rbs"
       gem "yajl-ruby", require: false
+    end
+
+    if RUBY_VERSION >= "3.4.0"
+      # TODO: remove this once websocket-driver-ruby declares this as dependency
+      gem "base64"
     end
   end
 
