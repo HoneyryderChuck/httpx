@@ -61,6 +61,6 @@ require "httpx/session_extensions"
 
 # load integrations when possible
 
-require "httpx/adapters/datadog" if defined?(DDTrace) || defined?(Datadog)
+require "httpx/adapters/datadog" if defined?(DDTrace) || defined?(Datadog::Tracing)
 require "httpx/adapters/sentry" if defined?(Sentry)
 require "httpx/adapters/webmock" if defined?(WebMock)
