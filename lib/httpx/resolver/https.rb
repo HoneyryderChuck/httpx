@@ -82,7 +82,9 @@ module HTTPX
 
       if hostname.nil?
         hostname = connection.peer.host
-        log { "resolver: resolve IDN #{connection.peer.non_ascii_hostname} as #{hostname}" } if connection.peer.non_ascii_hostname
+        log do
+          "resolver #{FAMILY_TYPES[@record_type]}: resolve IDN #{connection.peer.non_ascii_hostname} as #{hostname}"
+        end if connection.peer.non_ascii_hostname
 
         hostname = @resolver.generate_candidates(hostname).each do |name|
           @queries[name.to_s] = connection
@@ -90,7 +92,7 @@ module HTTPX
       else
         @queries[hostname] = connection
       end
-      log { "resolver: query #{FAMILY_TYPES[RECORD_TYPES[@family]]} for #{hostname}" }
+      log { "resolver #{FAMILY_TYPES[@record_type]}: query for #{hostname}" }
 
       begin
         request = build_request(hostname)

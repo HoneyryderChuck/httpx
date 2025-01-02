@@ -63,7 +63,10 @@ module HTTPX
       @ns_index += 1
       nameserver = @nameserver
       if nameserver && @ns_index < nameserver.size
-        log { "resolver: failed resolving on nameserver #{@nameserver[@ns_index - 1]} (#{e.message})" }
+        log do
+          "resolver #{FAMILY_TYPES[@record_type]}: " \
+            "failed resolving on nameserver #{@nameserver[@ns_index - 1]} (#{e.message})"
+        end
         transition(:idle)
         @timeouts.clear
       else
@@ -140,17 +143,22 @@ module HTTPX
 
       return unless timeout <= 0
 
+      elapsed_after = @_timeouts[@_timeouts.size - @timeouts[host].size]
       @timeouts[host].shift
 
       if !@timeouts[host].empty?
-        log { "resolver: timeout after #{timeout}s, retry(#{@timeouts[host].first}) #{host}..." }
+        log do
+          "resolver #{FAMILY_TYPES[@record_type]}: timeout after #{elapsed_after}s, retry (with #{@timeouts[host].first}s) #{host}..."
+        end
         # must downgrade to tcp AND retry on same host as last
         downgrade_socket
         resolve(connection, h)
       elsif @ns_index + 1 < @nameserver.size
         # try on the next nameserver
         @ns_index += 1
-        log { "resolver: failed resolving #{host} on nameserver #{@nameserver[@ns_index - 1]} (timeout error)" }
+        log do
+          "resolver #{FAMILY_TYPES[@record_type]}: failed resolving #{host} on nameserver #{@nameserver[@ns_index - 1]} (timeout error)"
+        end
         transition(:idle)
         @timeouts.clear
         resolve(connection, h)
@@ -326,7 +334,7 @@ module HTTPX
               transition(:idle)
               transition(:open)
             end
-            log { "resolver: ALIAS #{hostname_alias} for #{name}" }
+            log { "resolver #{FAMILY_TYPES[@record_type]}: ALIAS #{hostname_alias} for #{name}" }
             resolve(connection, hostname_alias)
             return
           end
@@ -352,7 +360,10 @@ module HTTPX
 
       if hostname.nil?
         hostname = connection.peer.host
-        log { "resolver: resolve IDN #{connection.peer.non_ascii_hostname} as #{hostname}" } if connection.peer.non_ascii_hostname
+        log do
+          "resolver #{FAMILY_TYPES[@record_type]}: " \
+            "resolve IDN #{connection.peer.non_ascii_hostname} as #{hostname}"
+        end if connection.peer.non_ascii_hostname
 
         hostname = generate_candidates(hostname).each do |name|
           @queries[name] = connection
@@ -360,7 +371,7 @@ module HTTPX
       else
         @queries[hostname] = connection
       end
-      log { "resolver: query #{@record_type.name.split("::").last} for #{hostname}" }
+      log { "resolver #{FAMILY_TYPES[@record_type]}: query for #{hostname}" }
       begin
         @write_buffer << encode_dns_query(hostname)
       rescue Resolv::DNS::EncodeError => e
@@ -397,10 +408,10 @@ module HTTPX
 
       case @socket_type
       when :udp
-        log { "resolver: server: udp://#{ip}:#{port}..." }
+        log { "resolver #{FAMILY_TYPES[@record_type]}: server: udp://#{ip}:#{port}..." }
         UDP.new(ip, port, @options)
       when :tcp
-        log { "resolver: server: tcp://#{ip}:#{port}..." }
+        log { "resolver #{FAMILY_TYPES[@record_type]}: server: tcp://#{ip}:#{port}..." }
         origin = URI("tcp://#{ip}:#{port}")
         TCP.new(origin, [ip], @options)
       end
