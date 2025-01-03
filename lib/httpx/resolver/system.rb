@@ -162,7 +162,9 @@ module HTTPX
 
       hostname = connection.peer.host
       scheme = connection.origin.scheme
-      log { "resolver: resolve IDN #{connection.peer.non_ascii_hostname} as #{hostname}" } if connection.peer.non_ascii_hostname
+      log do
+        "resolver: resolve IDN #{connection.peer.non_ascii_hostname} as #{hostname}"
+      end if connection.peer.non_ascii_hostname
 
       transition(:open)
 

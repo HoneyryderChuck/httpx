@@ -72,13 +72,16 @@ module HTTPX
       # double emission check, but allow early resolution to work
       return if !early_resolve && connection.addresses && !addresses.intersect?(connection.addresses)
 
-      log { "resolver: answer #{FAMILY_TYPES[RECORD_TYPES[family]]} #{connection.peer.host}: #{addresses.inspect}" }
+      log do
+        "resolver #{FAMILY_TYPES[RECORD_TYPES[family]]}: " \
+          "answer #{FAMILY_TYPES[RECORD_TYPES[family]]} #{connection.peer.host}: #{addresses.inspect}"
+      end
       if @current_selector && # if triggered by early resolve, session may not be here yet
          !connection.io &&
          connection.options.ip_families.size > 1 &&
          family == Socket::AF_INET &&
          addresses.first.to_s != connection.peer.host.to_s
-        log { "resolver: A response, applying resolution delay..." }
+        log { "resolver #{FAMILY_TYPES[RECORD_TYPES[family]]}: applying resolution delay..." }
         @current_selector.after(0.05) do
           unless connection.state == :closed ||
                  # double emission check

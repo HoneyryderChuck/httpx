@@ -19,7 +19,7 @@ class OptionsTest < Minitest::Test
       end
     end
     ex = assert_raises(NoMethodError) { custom_opt_class.new(foo: "bar") }
-    assert_match("undefined method `is_a'", ex.message)
+    assert_match(/undefined method .+is_a/, ex.message)
   end
 
   def test_options_headers
