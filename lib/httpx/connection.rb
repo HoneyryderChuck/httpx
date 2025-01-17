@@ -76,8 +76,6 @@ module HTTPX
         next if @exhausted # it'll reset
 
         # may be called after ":close" above, so after the connection has been checked back in.
-        # next unless @current_session
-
         next unless @current_session
 
         @current_session.deselect_connection(self, @current_selector, @cloned)
@@ -904,6 +902,10 @@ module HTTPX
 
     def set_request_timeout(request, timeout, start_event, finish_events, &callback)
       request.once(start_event) do
+        # if a request is transferred across connections (as part of alt-svc
+        # or connection exhaustion), these callbacks linger behind.
+        next unless @current_selector
+
         interval = @current_selector.after(timeout, callback)
 
         Array(finish_events).each do |event|
