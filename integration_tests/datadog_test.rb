@@ -208,6 +208,7 @@ class DatadogTest < Minitest::Test
   def teardown
     super
     Datadog.registry[:httpx].reset_configuration!
+    Datadog.configuration.tracing[:httpx].enabled = false
   end
 
   def datadog_service_name

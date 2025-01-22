@@ -36,6 +36,17 @@ module FaradayHelpers
     end.transform_keys(&:downcase)
   end
 
+  def verify_http_error_span(span, status, error)
+    assert span.get_tag("http.status_code") == status.to_s
+
+    if status >= 500 || Gem::Version.new(DatadogHelpers::DATADOG_VERSION::STRING) >= Gem::Version.new("2.0.0")
+      assert span.get_tag("error.type") == error
+      assert span.status == 1
+    else
+      assert span.status.zero?
+    end
+  end
+
   def teardown
     super
 

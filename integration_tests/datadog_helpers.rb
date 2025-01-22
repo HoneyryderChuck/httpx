@@ -2,6 +2,11 @@
 
 module DatadogHelpers
   DATADOG_VERSION = defined?(DDTrace) ? DDTrace::VERSION : Datadog::VERSION
+  ERROR_TAG = if Gem::Version.new(DATADOG_VERSION::STRING) >= Gem::Version.new("1.8.0")
+    "error.message"
+  else
+    "error.msg"
+  end
 
   private
 
@@ -19,27 +24,29 @@ module DatadogHelpers
     assert span.get_tag("http.method") == verb
     assert span.get_tag("http.url") == uri.path
 
-    error_tag = if Gem::Version.new(DATADOG_VERSION::STRING) >= Gem::Version.new("1.8.0")
-      "error.message"
-    else
-      "error.msg"
-    end
-
     if status && status >= 400
-      assert span.get_tag("http.status_code") == status.to_s
-      assert span.get_tag("error.type") == error # "Error #{status}"
-      # assert !span.get_tag(error_tag).nil?
-      assert span.status == 1
+      verify_http_error_span(span, status, error)
     elsif error
-      assert span.get_tag("error.type") == "HTTPX::NativeResolveError"
-      assert !span.get_tag(error_tag).nil?
-      assert span.status == 1
+      verify_error_span(span)
     else
       assert span.status.zero?
       assert span.get_tag("http.status_code") == status.to_s
       # peer service
       # assert span.get_tag("peer.service") == span.service
     end
+  end
+
+  def verify_http_error_span(span, status, error)
+    assert span.get_tag("http.status_code") == status.to_s
+    assert span.get_tag("error.type") == error
+    assert !span.get_tag(ERROR_TAG).nil?
+    assert span.status == 1
+  end
+
+  def verify_error_span(span)
+    assert span.get_tag("error.type") == "HTTPX::NativeResolveError"
+    assert !span.get_tag(ERROR_TAG).nil?
+    assert span.status == 1
   end
 
   def verify_no_distributed_headers(request_headers)
