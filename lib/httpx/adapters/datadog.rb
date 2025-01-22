@@ -106,7 +106,7 @@ module Datadog::Tracing
             span.set_tag(TAG_METHOD, verb)
 
             span.set_tag(TAG_TARGET_HOST, uri.host)
-            span.set_tag(TAG_TARGET_PORT, uri.port.to_s)
+            span.set_tag(TAG_TARGET_PORT, uri.port)
 
             # Tag as an external peer service
             span.set_tag(TAG_PEER_SERVICE, span.service)
