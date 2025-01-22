@@ -39,6 +39,8 @@ module Datadog::Tracing
 
           # initializes tracing on the +request+.
           def call(request)
+            return unless configuration(request).enabled
+
             start_time = nil
 
             # request objects are reused, when already buffered requests get rerouted to a different
