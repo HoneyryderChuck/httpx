@@ -60,7 +60,7 @@ module HTTPX
               return unless @io.connected?
 
               @parser || begin
-                @parser = self.class.parser_type(@io.protocol).new(@write_buffer, @options.merge(max_concurrent_requests: 1))
+                @parser = parser_type(@io.protocol).new(@write_buffer, @options.merge(max_concurrent_requests: 1))
                 parser = @parser
                 parser.extend(ProxyParser)
                 parser.on(:response, &method(:__http_on_connect))
