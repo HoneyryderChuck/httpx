@@ -164,6 +164,6 @@ module HTTPX
 
     def set_request_timeout: (Symbol label, Request request, Numeric timeout, Symbol start_event, Symbol | Array[Symbol] finish_events) { () -> void } -> void
 
-    def self.parser_type: (String protocol) -> (singleton(HTTP1) | singleton(HTTP2))
+    def parser_type: (String protocol) -> (singleton(HTTP1) | singleton(HTTP2))
   end
 end
