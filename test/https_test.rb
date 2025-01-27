@@ -31,6 +31,7 @@ class HTTPSTest < Minitest::Test
   include Plugins::RateLimiter
   include Plugins::Persistent
   include Plugins::Stream
+  include Plugins::StreamBidi
   include Plugins::AWSAuthentication
   include Plugins::Upgrade
   include Plugins::GRPC if RUBY_ENGINE == "ruby"

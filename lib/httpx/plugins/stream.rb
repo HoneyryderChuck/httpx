@@ -2,6 +2,8 @@
 
 module HTTPX
   class StreamResponse
+    attr_reader :request
+
     def initialize(request, session)
       @request = request
       @options = @request.options
@@ -114,7 +116,7 @@ module HTTPX
 
   module Plugins
     #
-    # This plugin adds support for stream response (text/event-stream).
+    # This plugin adds support for streaming a response (useful for i.e. "text/event-stream" payloads).
     #
     # https://gitlab.com/os85/httpx/wikis/Stream
     #

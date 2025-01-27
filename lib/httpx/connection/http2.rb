@@ -252,19 +252,29 @@ module HTTPX
       chunk = @drains.delete(request) || request.drain_body
       while chunk
         next_chunk = request.drain_body
-        log(level: 1, color: :green) { "#{stream.id}: -> DATA: #{chunk.bytesize} bytes..." }
-        log(level: 2, color: :green) { "#{stream.id}: -> #{chunk.inspect}" }
-        stream.data(chunk, end_stream: !(next_chunk || request.trailers? || request.callbacks_for?(:trailers)))
+        send_chunk(request, stream, chunk, next_chunk)
+
         if next_chunk && (@buffer.full? || request.body.unbounded_body?)
           @drains[request] = next_chunk
           throw(:buffer_full)
         end
+
         chunk = next_chunk
       end
 
       return unless (error = request.drain_error)
 
       on_stream_refuse(stream, request, error)
+    end
+
+    def send_chunk(request, stream, chunk, next_chunk)
+      log(level: 1, color: :green) { "#{stream.id}: -> DATA: #{chunk.bytesize} bytes..." }
+      log(level: 2, color: :green) { "#{stream.id}: -> #{chunk.inspect}" }
+      stream.data(chunk, end_stream: end_stream?(request, next_chunk))
+    end
+
+    def end_stream?(request, next_chunk)
+      !(next_chunk || request.trailers? || request.callbacks_for?(:trailers))
     end
 
     ######
