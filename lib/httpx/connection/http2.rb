@@ -118,7 +118,7 @@ module HTTPX
 
     def consume
       @streams.each do |request, stream|
-        next if request.state == :done
+        next unless request.can_buffer?
 
         handle(request, stream)
       end
