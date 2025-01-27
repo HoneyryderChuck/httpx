@@ -23,32 +23,36 @@ end
 class TestHTTP2Server
   attr_reader :origin
 
-  def initialize
+  def initialize(tls: true)
     @port = 0
     @host = "localhost"
 
     @server = TCPServer.new(0)
 
-    @origin = "https://localhost:#{@server.addr[1]}"
+    if tls
+      @origin = "https://localhost:#{@server.addr[1]}"
 
-    ctx = OpenSSL::SSL::SSLContext.new
+      ctx = OpenSSL::SSL::SSLContext.new
 
-    certs_dir = File.expand_path(File.join("..", "..", "ci", "certs"), __FILE__)
+      certs_dir = File.expand_path(File.join("..", "..", "ci", "certs"), __FILE__)
 
-    ctx.ca_file = File.join(certs_dir, "ca-bundle.crt")
-    ctx.cert = OpenSSL::X509::Certificate.new(File.read(File.join(certs_dir, "server.crt")))
-    ctx.key = OpenSSL::PKey.read(File.read(File.join(certs_dir, "server.key")))
+      ctx.ca_file = File.join(certs_dir, "ca-bundle.crt")
+      ctx.cert = OpenSSL::X509::Certificate.new(File.read(File.join(certs_dir, "server.crt")))
+      ctx.key = OpenSSL::PKey.read(File.read(File.join(certs_dir, "server.key")))
 
-    ctx.ssl_version = :TLSv1_2
-    ctx.alpn_protocols = ["h2"]
+      ctx.ssl_version = :TLSv1_2
+      ctx.alpn_protocols = ["h2"]
 
-    ctx.alpn_select_cb = lambda do |protocols|
-      raise "Protocol h2 is required" unless protocols.include?("h2")
+      ctx.alpn_select_cb = lambda do |protocols|
+        raise "Protocol h2 is required" unless protocols.include?("h2")
 
-      "h2"
+        "h2"
+      end
+
+      @server = OpenSSL::SSL::SSLServer.new(@server, ctx)
+    else
+      @origin = "http://localhost:#{@server.addr[1]}"
     end
-
-    @server = OpenSSL::SSL::SSLServer.new(@server, ctx)
   end
 
   def shutdown
