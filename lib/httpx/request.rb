@@ -155,6 +155,10 @@ module HTTPX
       :w
     end
 
+    def can_buffer?
+      @state != :done
+    end
+
     # merges +h+ into the instance of HTTPX::Headers of the request.
     def merge_headers(h)
       @headers = @headers.merge(h)
