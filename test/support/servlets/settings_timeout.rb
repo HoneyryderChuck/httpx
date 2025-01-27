@@ -3,7 +3,7 @@
 class SettingsTimeoutServer < TestHTTP2Server
   attr_reader :frames
 
-  def initialize
+  def initialize(**)
     super
     @frames = []
   end

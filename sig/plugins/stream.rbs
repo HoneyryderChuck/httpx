@@ -26,7 +26,8 @@ module HTTPX
 
     type streamRequest = Request & Plugins::Stream::RequestMethods
 
-    @request: streamRequest
+    attr_reader request: streamRequest
+
     @session: Plugins::sessionStream
     @on_chunk: ^(String) -> void | nil
 

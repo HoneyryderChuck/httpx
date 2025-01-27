@@ -63,6 +63,10 @@ module HTTPX
 
     def join_body: (::HTTP2::Stream stream, Request request) -> void
 
+    def send_chunk: (Request request, ::HTTP2::Stream stream, String chunk, String? next_chunk) -> void
+
+    def end_stream?: (Request request, String? next_chunk) -> void
+
     def on_stream_headers: (::HTTP2::Stream stream, Request request, Array[[String, String]] headers) -> void
 
     def on_stream_trailers: (::HTTP2::Stream stream, Response response, Array[[String, String]] headers) -> void
