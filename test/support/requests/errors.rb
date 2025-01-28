@@ -9,6 +9,10 @@ module Requests
       assert exc.message.include?("invalid URI: http:/smth/get")
     end
 
+    def test_errors_invalid_scheme
+      assert_raises(HTTPX::UnsupportedSchemeError) { HTTPX.get("foo://example.com") }
+    end
+
     def test_errors_connection_refused
       unavailable_host = URI(origin("localhost"))
       unavailable_host.port = next_available_port
