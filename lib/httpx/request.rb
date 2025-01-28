@@ -11,6 +11,8 @@ module HTTPX
     include Callbacks
     using URIExtensions
 
+    ALLOWED_URI_SCHEMES = %w[https http].freeze
+
     # default value used for "user-agent" header, when not overridden.
     USER_AGENT = "httpx.rb/#{VERSION}".freeze # rubocop:disable Style/RedundantFreeze
 
@@ -91,6 +93,8 @@ module HTTPX
 
         @uri = origin.merge("#{base_path}#{@uri}")
       end
+
+      raise UnsupportedSchemeError, "#{@uri}: #{@uri.scheme}: unsupported URI scheme" unless ALLOWED_URI_SCHEMES.include?(@uri.scheme)
 
       @state = :idle
       @response = nil
