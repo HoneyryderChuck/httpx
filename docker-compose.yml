@@ -26,6 +26,7 @@ services:
       - AMZ_HOST=aws:4566
       - WEBDAV_HOST=webdav
       - DD_INSTRUMENTATION_TELEMETRY_ENABLED=false
+      - GRPC_VERBOSITY=ERROR
     image: ruby:alpine
     privileged: true
     depends_on:
