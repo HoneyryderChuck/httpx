@@ -85,10 +85,13 @@ module HTTPX
       on(:terminate) do
         next if @exhausted # it'll reset
 
-        # may be called after ":close" above, so after the connection has been checked back in.
-        next unless @current_session
+        current_session = @current_session
+        current_selector = @current_selector
 
-        @current_session.deselect_connection(self, @current_selector)
+        # may be called after ":close" above, so after the connection has been checked back in.
+        next unless current_session && current_selector
+
+        current_session.deselect_connection(self, current_selector)
       end
 
       on(:altsvc) do |alt_origin, origin, alt_params|
@@ -565,20 +568,22 @@ module HTTPX
         @exhausted = true
         current_session = @current_session
         current_selector = @current_selector
-        parser.close
-        @pending.concat(parser.pending)
+        begin
+          parser.close
+          @pending.concat(parser.pending)
+        ensure
+          @current_session = current_session
+          @current_selector = current_selector
+        end
+
         case @state
         when :closed
           idling
           @exhausted = false
-          @current_session = current_session
-          @current_selector = current_selector
         when :closing
-          once(:close) do
+          once(:closed) do
             idling
             @exhausted = false
-            @current_session = current_session
-            @current_selector = current_selector
           end
         end
       end
@@ -701,6 +706,7 @@ module HTTPX
 
         purge_after_closed
         disconnect if @pending.empty?
+
       when :already_open
         nextstate = :open
         # the first check for given io readiness must still use a timeout.
