@@ -25,6 +25,8 @@ module HTTPX
 
     def select_connection: (Connection connection, Selector selector) -> void
 
+    def pin_connection: (Connection connection, Selector selector) -> void
+
     def deselect_connection: (Connection connection, Selector selector, ?bool cloned) -> void
 
     def select_resolver: (Resolver::Native | Resolver::HTTPS resolver, Selector selector) -> void

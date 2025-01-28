@@ -69,8 +69,6 @@ module HTTPX
       while (connection = @pool.pop_connection)
         next if connection.state == :closed
 
-        connection.current_session = self
-        connection.current_selector = selector
         select_connection(connection, selector)
       end
       begin
@@ -126,7 +124,13 @@ module HTTPX
     end
 
     def select_connection(connection, selector)
+      pin_connection(connection, selector)
       selector.register(connection)
+    end
+
+    def pin_connection(connection, selector)
+      connection.current_session = self
+      connection.current_selector = selector
     end
 
     alias_method :select_resolver, :select_connection
@@ -160,8 +164,6 @@ module HTTPX
       new_connection = connection.class.new(connection.origin, connection.options)
 
       new_connection.family = family
-      new_connection.current_session = self
-      new_connection.current_selector = selector
 
       connection.sibling = new_connection
 
@@ -177,14 +179,15 @@ module HTTPX
 
       connection = @pool.checkout_connection(request_uri, options)
 
-      connection.current_session = self
-      connection.current_selector = selector
-
       case connection.state
       when :idle
         do_init_connection(connection, selector)
       when :open
-        select_connection(connection, selector) if options.io
+        if options.io
+          select_connection(connection, selector)
+        else
+          pin_connection(connection, selector)
+        end
       when :closed
         connection.idling
         select_connection(connection, selector)
@@ -193,6 +196,8 @@ module HTTPX
           connection.idling
           select_connection(connection, selector)
         end
+      else
+        pin_connection(connection, selector)
       end
 
       connection
