@@ -1,12 +1,10 @@
 # frozen_string_literal: true
 
-require "forwardable"
 require "resolv"
 
 module HTTPX
   class Resolver::System < Resolver::Resolver
     using URIExtensions
-    extend Forwardable
 
     RESOLV_ERRORS = [Resolv::ResolvError,
                      Resolv::DNS::Requester::RequestError,
@@ -23,8 +21,6 @@ module HTTPX
     end
 
     attr_reader :state
-
-    def_delegator :@connections, :empty?
 
     def initialize(options)
       super(nil, options)

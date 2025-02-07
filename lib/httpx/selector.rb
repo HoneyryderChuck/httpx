@@ -92,10 +92,6 @@ module HTTPX
       end
     end
 
-    def empty?
-      @selectables.empty?
-    end
-
     # deregisters +io+ from selectables.
     def deregister(io)
       @selectables.delete(io)
