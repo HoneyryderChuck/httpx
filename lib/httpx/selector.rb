@@ -19,6 +19,7 @@ module HTTPX
     def initialize
       @timers = Timers.new
       @selectables = []
+      @is_timer_interval = false
     end
 
     def each(&blk)
@@ -174,7 +175,7 @@ module HTTPX
       end
 
       unless result || interval.nil?
-        io.handle_socket_timeout(interval)
+        io.handle_socket_timeout(interval) unless @is_timer_interval
         return
       end
       # raise TimeoutError.new(interval, "timed out while waiting on select")
@@ -186,10 +187,21 @@ module HTTPX
     end
 
     def next_timeout
-      [
-        @timers.wait_interval,
-        @selectables.filter_map(&:timeout).min,
-      ].compact.min
+      @is_timer_interval = false
+
+      timer_interval = @timers.wait_interval
+
+      connection_interval = @selectables.filter_map(&:timeout).min
+
+      return connection_interval unless timer_interval
+
+      if connection_interval.nil? || timer_interval < connection_interval
+        @is_timer_interval = true
+
+        return timer_interval
+      end
+
+      connection_interval
     end
 
     def emit_error(e)

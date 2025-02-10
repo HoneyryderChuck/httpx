@@ -10,6 +10,7 @@ module HTTPX
     @timers: Timers
 
     @selectables: Array[selectable]
+    @is_timer_interval: bool
 
     def next_tick: () -> void
 
