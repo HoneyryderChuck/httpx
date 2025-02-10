@@ -7,8 +7,8 @@
 #
 require "httpx"
 
-URLS  = %w[http://badipv4.test.ipv6friday.org/] * 1
-# URLS  = %w[http://badipv6.test.ipv6friday.org/] * 1
+# URLS  = %w[https://ipv4.test-ipv6.com] * 1
+URLS  = %w[https://ipv6.test-ipv6.com] * 1
 
 responses = HTTPX.get(*URLS, ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE})
 
