@@ -27,7 +27,7 @@ module Datadog::Tracing
       # Enables tracing for httpx requests.
       #
       # A span will be created for each request transaction; the span is created lazily only when
-      # receiving a response, and it is fed the start time stored inside the tracer object.
+      # buffering a request, and it is fed the start time stored inside the tracer object.
       #
       module Plugin
         module RequestTracer
@@ -41,45 +41,40 @@ module Datadog::Tracing
           def call(request)
             return unless configuration(request).enabled
 
-            start_time = nil
+            span = nil
 
             # request objects are reused, when already buffered requests get rerouted to a different
             # connection due to connection issues, or when they already got a response, but need to
             # be retried. In such situations, the original span needs to be extended for the former,
             # while a new is required for the latter.
             request.on(:idle) do
-              next unless start_time
-
-              start_time = now
+              span = nil
             end
             # the span is initialized when the request is buffered in the parser, which is the closest
             # one gets to actually sending the request.
             request.on(:headers) do
-              start_time ||= now
+              next if span
+
+              span = initialize_span(request, now)
             end
 
             request.on(:response) do |response|
-              finish(request, response, start_time)
+              unless span
+                next unless response.is_a?(::HTTPX::ErrorResponse) && response.error.respond_to?(:connection)
+
+                # handles the case when the +error+ happened during name resolution, which means
+                # that the tracing start point hasn't been triggered yet; in such cases, the approximate
+                # initial resolving time is collected from the connection, and used as span start time,
+                # and the tracing object in inserted before the on response callback is called.
+                span = initialize_span(request, response.error.connection.init_time)
+
+              end
+
+              finish(response, span)
             end
           end
 
-          # creates the span from the collected +@start_time+ to what the +response+ state
-          # contains. It also resets internal state to allow this object to be reused.
-          def finish(request, response, start_time)
-            if !start_time && (response.is_a?(::HTTPX::ErrorResponse) && response.error.respond_to?(:connection))
-              # handles the case when the +error+ happened during name resolution, which means
-              # that the tracing start point hasn't been triggered yet; in such cases, the approximate
-              # initial resolving time is collected from the connection, and used as span start time,
-              # and the tracing object in inserted before the on response callback is called.
-              start_time = response.error.connection.init_time
-            end
-
-            return unless start_time
-
-            span = initialize_span(request, start_time)
-
-            return unless span
-
+          def finish(response, span)
             if response.is_a?(::HTTPX::ErrorResponse)
               span.set_error(response.error)
             else
@@ -115,7 +110,7 @@ module Datadog::Tracing
 
             if config[:distributed_tracing]
               propagate_trace_http(
-                Datadog::Tracing.active_trace.to_digest,
+                Datadog::Tracing.active_trace,
                 request.headers
               )
             end
@@ -140,8 +135,8 @@ module Datadog::Tracing
           end
 
           if Gem::Version.new(DATADOG_VERSION::STRING) >= Gem::Version.new("2.0.0")
-            def propagate_trace_http(digest, headers)
-              Datadog::Tracing::Contrib::HTTP.inject(digest, headers)
+            def propagate_trace_http(trace, headers)
+              Datadog::Tracing::Contrib::HTTP.inject(trace, headers)
             end
 
             def create_span(request, configuration, start_time)
@@ -153,8 +148,8 @@ module Datadog::Tracing
               )
             end
           else
-            def propagate_trace_http(digest, headers)
-              Datadog::Tracing::Propagation::HTTP.inject!(digest, headers)
+            def propagate_trace_http(trace, headers)
+              Datadog::Tracing::Propagation::HTTP.inject!(trace.to_digest, headers)
             end
 
             def create_span(request, configuration, start_time)
