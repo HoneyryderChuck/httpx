@@ -59,7 +59,9 @@ module WebMock
 
           connection.once(:unmock_connection) do
             unless connection.addresses
-              connection.__send__(:callbacks)[:connect_error].clear
+              # reset Happy Eyeballs, fail early
+              connection.sibling = nil
+
               deselect_connection(connection, selector)
             end
             resolve_connection(connection, selector)

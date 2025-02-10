@@ -163,33 +163,7 @@ module HTTPX
       new_connection.current_session = self
       new_connection.current_selector = selector
 
-      connection.once(:tcp_open) { new_connection.force_reset(true) }
-      connection.once(:connect_error) do |err|
-        if new_connection.connecting?
-          new_connection.merge(connection)
-          connection.emit(:cloned, new_connection)
-          connection.force_reset(true)
-        else
-          connection.__send__(:handle_error, err)
-        end
-      end
-
-      new_connection.once(:tcp_open) do |new_conn|
-        if new_conn != connection
-          new_conn.merge(connection)
-          connection.force_reset(true)
-        end
-      end
-      new_connection.once(:connect_error) do |err|
-        if connection.connecting?
-          # main connection has the requests
-          connection.merge(new_connection)
-          new_connection.emit(:cloned, connection)
-          new_connection.force_reset(true)
-        else
-          new_connection.__send__(:handle_error, err)
-        end
-      end
+      connection.sibling = new_connection
 
       do_init_connection(new_connection, selector)
       new_connection
@@ -372,7 +346,6 @@ module HTTPX
         #    resolve a name (not the same as name being an IP, yet)
         # 2. when the connection is initialized with an external already open IO.
         #
-        connection.once(:connect_error, &connection.method(:handle_error))
         on_resolver_connection(connection, selector)
         return
       end
@@ -428,8 +401,6 @@ module HTTPX
         return false
       end
 
-      conn2.emit(:tcp_open, conn1)
-      conn1.merge(conn2)
       conn2.coalesced_connection = conn1
       select_connection(conn1, selector) if from_pool
       deselect_connection(conn2, selector)

@@ -41,15 +41,17 @@ module HTTPX
 
     def_delegator :@write_buffer, :empty?
 
-    attr_reader :type, :io, :origin, :origins, :state, :pending, :options, :ssl_session
+    attr_reader :type, :io, :origin, :origins, :state, :pending, :options, :ssl_session, :sibling
 
-    attr_writer :current_selector, :coalesced_connection
+    attr_writer :current_selector
 
     attr_accessor :current_session, :family
 
+    protected :sibling
+
     def initialize(uri, options)
-      @current_session = @current_selector = @coalesced_connection = nil
-      @exhausted = @cloned = false
+      @current_session = @current_selector = @sibling = @coalesced_connection = nil
+      @exhausted = @cloned = @main_sibling = false
 
       @options = Options.new(options)
       @type = initialize_type(uri, @options)
@@ -192,6 +194,12 @@ module HTTPX
       pendings.each do |pending|
         pending.reject!(&block)
       end
+    end
+
+    def io_connected?
+      return @coalesced_connection.io_connected? if @coalesced_connection
+
+      @io && @io.state == :connected
     end
 
     def connecting?
@@ -340,6 +348,35 @@ module HTTPX
       error = HTTPX::TimeoutError.new(interval, "timed out while waiting on select")
       error.set_backtrace(caller)
       on_error(error)
+    end
+
+    def coalesced_connection=(connection)
+      @coalesced_connection = connection
+
+      close_sibling
+      connection.merge(self)
+    end
+
+    def sibling=(connection)
+      @sibling = connection
+
+      return unless connection
+
+      @main_sibling = connection.sibling.nil?
+
+      return unless @main_sibling
+
+      connection.sibling = self
+    end
+
+    def handle_connect_error(error)
+      @connect_error = error
+
+      return handle_error(error) unless @sibling && @sibling.connecting?
+
+      @sibling.merge(self)
+
+      force_reset(true)
     end
 
     private
@@ -613,13 +650,13 @@ module HTTPX
       # connect errors, exit gracefully
       error = ConnectionError.new(e.message)
       error.set_backtrace(e.backtrace)
-      connecting? && callbacks_for?(:connect_error) ? emit(:connect_error, error) : handle_error(error)
+      handle_connect_error(error) if connecting?
       @state = :closed
       disconnect
     rescue TLSError, ::HTTP2::Error::ProtocolError, ::HTTP2::Error::HandshakeError => e
       # connect errors, exit gracefully
       handle_error(e)
-      connecting? && callbacks_for?(:connect_error) ? emit(:connect_error, e) : handle_error(e)
+      handle_connect_error(e) if connecting?
       @state = :closed
       disconnect
     end
@@ -634,7 +671,7 @@ module HTTPX
         return if @state == :closed
 
         @io.connect
-        emit(:tcp_open, self) if @io.state == :connected
+        close_sibling if @io.state == :connected
 
         return unless @io.connected?
 
@@ -680,6 +717,22 @@ module HTTPX
         emit(:activate)
       end
       @state = nextstate
+    end
+
+    def close_sibling
+      return unless @sibling
+
+      if @sibling.io_connected?
+        reset
+        # TODO: transition connection to closed
+      end
+
+      unless @sibling.state == :closed
+        merge(@sibling) unless @main_sibling
+        @sibling.force_reset(true)
+      end
+
+      @sibling = nil
     end
 
     def purge_after_closed

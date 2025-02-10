@@ -153,7 +153,7 @@ module HTTPX
     end
 
     def emit_connection_error(connection, error)
-      return connection.emit(:connect_error, error) if connection.connecting? && connection.callbacks_for?(:connect_error)
+      return connection.handle_connect_error(error) if connection.connecting?
 
       connection.emit(:error, error)
     end

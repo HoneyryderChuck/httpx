@@ -26,10 +26,11 @@ module HTTPX
     attr_reader pending: Array[Request]
     attr_reader options: Options
     attr_reader ssl_session: OpenSSL::SSL::Session?
+    attr_reader sibling: instance?
     attr_writer current_selector: Selector?
-    attr_writer coalesced_connection: instance?
     attr_accessor current_session: Session?
     attr_accessor family: Integer?
+
 
     @window_size: Integer
     @read_buffer: Buffer
@@ -45,6 +46,10 @@ module HTTPX
     @intervals: Array[Timers::Interval]
     @exhausted: bool
     @cloned: bool
+    @coalesced_connection: instance?
+    @sibling: instance?
+    @main_sibling: bool
+
 
     def addresses: () -> Array[ipaddr]?
 
@@ -69,6 +74,8 @@ module HTTPX
     def purge_pending: () { (Request request) -> void } -> void
 
     def connecting?: () -> bool
+
+    def io_connected?: () -> bool
 
     def inflight?: () -> boolish
 
@@ -97,6 +104,12 @@ module HTTPX
     def open?: () -> bool
 
     def handle_socket_timeout: (Numeric interval) -> void
+
+    def coalesced_connection=: (instance connection) -> void
+
+    def sibling=: (instance? connection) -> void
+
+    def handle_connect_error: (StandardError error) -> void
 
     private
 
@@ -133,6 +146,8 @@ module HTTPX
     def on_error: (HTTPX::TimeoutError | Error | StandardError error, ?Request? request) -> void
 
     def handle_error: (StandardError error, ?Request? request) -> void
+
+    def close_sibling: () -> void
 
     def purge_after_closed: () -> void
 
