@@ -17,20 +17,48 @@ end
 
 Signal.trap("INFO") { print_status } unless ENV.key?("CI")
 
+PAGES = (ARGV.first || 10).to_i
+
 Thread.start do
-	frontpage = HTTPX.get("https://news.ycombinator.com").to_s
+  page_links = []
+  HTTPX.wrap do |http|
+    PAGES.times.each do |i|
+      frontpage = http.get("https://news.ycombinator.com?p=#{i+1}").to_s
 
-	html = Oga.parse_html(frontpage)
+      html = Oga.parse_html(frontpage)
 
-	links = html.css('.athing .title a').map{|link| link.get('href') }.select { |link| URI(link).absolute? }
+      links = html.css('.athing .title a').map{|link| link.get('href') }.select { |link| URI(link).absolute? }
 
-	links = links.select {|l| l.start_with?("https") }
+      links = links.select {|l| l.start_with?("https") }
 
-	puts links
+      puts "for page #{i+1}: #{links.size} links"
+      page_links.concat(links)
+    end
+  end
 
-	responses = HTTPX.get(*links)
+  puts "requesting #{page_links.size} links:"
+	responses = HTTPX.get(*page_links)
 
-	links.each_with_index do |l, i|
-  	puts "#{responses[i].status}: #{l}"
-	end
+	# page_links.each_with_index do |l, i|
+  # 	puts "#{responses[i].status}: #{l}"
+	# end
+
+  puts "by group:"
+  responses, error_responses = responses.partition { |r| r.is_a?(HTTPX::Response) }
+  responses.group_by(&:status).each do |st, res|
+    res.each do |r|
+      puts "#{st}: #{r.uri}"
+    end
+  end unless responses.empty?
+
+  unless error_responses.empty?
+    puts "error responses:"
+    error_responses.group_by{ |r| r.error.class }.each do |kl, res|
+      res.each do |r|
+        puts "#{r.uri}: #{r.error}"
+        puts r.error.backtrace.join("\n")
+      end
+    end
+  end
+
 end.join
