@@ -175,7 +175,8 @@ module HTTPX
         ex = ResolveTimeoutError.new(loop_time, "Timed out while resolving #{connection.peer.host}")
         ex.set_backtrace(ex ? ex.backtrace : caller)
         emit_resolve_error(connection, host, ex)
-        emit(:close, self)
+
+        close_or_resolve
       end
     end
 
@@ -257,15 +258,15 @@ module HTTPX
         hostname, connection = @queries.first
         reset_hostname(hostname, reset_candidates: false)
 
-        unless @queries.value?(connection)
+        if @queries.value?(connection)
+          resolve
+        else
           @connections.delete(connection)
           ex = NativeResolveError.new(connection, connection.peer.host, "name or service not known")
           ex.set_backtrace(ex ? ex.backtrace : caller)
           emit_resolve_error(connection, connection.peer.host, ex)
-          emit(:close, self)
+          close_or_resolve
         end
-
-        resolve
       when :message_truncated
         # TODO: what to do if it's already tcp??
         return if @socket_type == :tcp
@@ -346,9 +347,7 @@ module HTTPX
           catch(:coalesced) { emit_addresses(connection, @family, addresses.map { |addr| addr["data"] }) }
         end
       end
-      return emit(:close, self) if @connections.empty?
-
-      resolve
+      close_or_resolve
     end
 
     def resolve(connection = @connections.first, hostname = nil)
@@ -378,7 +377,7 @@ module HTTPX
         reset_hostname(hostname, connection: connection)
         @connections.delete(connection)
         emit_resolve_error(connection, hostname, e)
-        emit(:close, self) if @connections.empty?
+        close_or_resolve
       end
     end
 
@@ -474,7 +473,7 @@ module HTTPX
           emit_resolve_error(connection, host, error)
         end
       end
-      emit(:close, self) if @connections.empty?
+      close_or_resolve
     end
 
     def reset_hostname(hostname, connection: @queries.delete(hostname), reset_candidates: true)
@@ -488,6 +487,14 @@ module HTTPX
       @queries.delete_if { |h, _| candidates.include?(h) }
       # reset timeouts
       @timeouts.delete_if { |h, _| candidates.include?(h) }
+    end
+
+    def close_or_resolve
+      if @connections.empty?
+        emit(:close, self)
+      else
+        resolve
+      end
     end
   end
 end
