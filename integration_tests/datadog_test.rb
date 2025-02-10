@@ -18,7 +18,7 @@ class DatadogTest < Minitest::Test
 
   def test_datadog_successful_get_request
     set_datadog
-    uri = URI(build_uri("/status/200", "http://#{httpbin}"))
+    uri = URI(build_uri("/get", "http://#{httpbin}"))
 
     response = HTTPX.get(uri)
     verify_status(response, 200)
@@ -30,7 +30,7 @@ class DatadogTest < Minitest::Test
 
   def test_datadog_successful_post_request
     set_datadog
-    uri = URI(build_uri("/status/200", "http://#{httpbin}"))
+    uri = URI(build_uri("/post", "http://#{httpbin}"))
 
     response = HTTPX.post(uri, body: "bla")
     verify_status(response, 200)
@@ -42,16 +42,17 @@ class DatadogTest < Minitest::Test
 
   def test_datadog_successful_multiple_requests
     set_datadog
-    uri = URI(build_uri("/status/200", "http://#{httpbin}"))
+    get_uri = URI(build_uri("/get", "http://#{httpbin}"))
+    post_uri = URI(build_uri("/post", "http://#{httpbin}"))
 
-    get_response, post_response = HTTPX.request([["GET", uri], ["POST", uri]])
+    get_response, post_response = HTTPX.request([["GET", get_uri], ["POST", post_uri]])
     verify_status(get_response, 200)
     verify_status(post_response, 200)
 
     assert fetch_spans.size == 2, "expected to have 2 spans"
     get_span, post_span = fetch_spans
-    verify_instrumented_request(get_response.status, span: get_span, verb: "GET", uri: uri)
-    verify_instrumented_request(post_response.status, span: post_span, verb: "POST", uri: uri)
+    verify_instrumented_request(get_response.status, span: get_span, verb: "GET", uri: get_uri)
+    verify_instrumented_request(post_response.status, span: post_span, verb: "POST", uri: post_uri)
     verify_distributed_headers(request_headers(get_response), span: get_span)
     verify_distributed_headers(request_headers(post_response), span: post_span)
     verify_analytics_headers(get_span)
@@ -67,7 +68,6 @@ class DatadogTest < Minitest::Test
 
     assert !fetch_spans.empty?, "expected to have spans"
     verify_instrumented_request(response.status, verb: "GET", uri: uri, error: "HTTPX::HTTPError")
-    verify_distributed_headers(request_headers(response))
   end
 
   def test_datadog_client_error_request
@@ -79,7 +79,6 @@ class DatadogTest < Minitest::Test
 
     assert !fetch_spans.empty?, "expected to have spans"
     verify_instrumented_request(response.status, verb: "GET", uri: uri, error: "HTTPX::HTTPError")
-    verify_distributed_headers(request_headers(response))
   end
 
   def test_datadog_some_other_error
@@ -91,11 +90,10 @@ class DatadogTest < Minitest::Test
 
     assert !fetch_spans.empty?, "expected to have spans"
     verify_instrumented_request(nil, verb: "GET", uri: uri, error: "HTTPX::NativeResolveError")
-    verify_distributed_headers(request_headers(response))
   end
 
   def test_datadog_host_config
-    uri = URI(build_uri("/status/200", "http://#{httpbin}"))
+    uri = URI(build_uri("/get", "http://#{httpbin}"))
     set_datadog(describe: /#{uri.host}/) do |http|
       http.service_name = "httpbin"
       http.split_by_domain = false
@@ -110,7 +108,7 @@ class DatadogTest < Minitest::Test
   end
 
   def test_datadog_split_by_domain
-    uri = URI(build_uri("/status/200", "http://#{httpbin}"))
+    uri = URI(build_uri("/get", "http://#{httpbin}"))
     set_datadog do |http|
       http.split_by_domain = true
     end
@@ -125,7 +123,7 @@ class DatadogTest < Minitest::Test
 
   def test_datadog_distributed_headers_disabled
     set_datadog(distributed_tracing: false)
-    uri = URI(build_uri("/status/200", "http://#{httpbin}"))
+    uri = URI(build_uri("/get", "http://#{httpbin}"))
 
     sampling_priority = 10
     response = trace_with_sampling_priority(sampling_priority) do
@@ -142,7 +140,7 @@ class DatadogTest < Minitest::Test
 
   def test_datadog_distributed_headers_sampling_priority
     set_datadog
-    uri = URI(build_uri("/status/200", "http://#{httpbin}"))
+    uri = URI(build_uri("/get", "http://#{httpbin}"))
 
     sampling_priority = 10
     response = trace_with_sampling_priority(sampling_priority) do
@@ -160,7 +158,7 @@ class DatadogTest < Minitest::Test
 
   def test_datadog_analytics_enabled
     set_datadog(analytics_enabled: true)
-    uri = URI(build_uri("/status/200", "http://#{httpbin}"))
+    uri = URI(build_uri("/get", "http://#{httpbin}"))
 
     response = HTTPX.get(uri)
     verify_status(response, 200)
@@ -173,7 +171,7 @@ class DatadogTest < Minitest::Test
 
   def test_datadog_analytics_sample_rate
     set_datadog(analytics_enabled: true, analytics_sample_rate: 0.5)
-    uri = URI(build_uri("/status/200", "http://#{httpbin}"))
+    uri = URI(build_uri("/get", "http://#{httpbin}"))
 
     response = HTTPX.get(uri)
     verify_status(response, 200)
@@ -216,7 +214,7 @@ class DatadogTest < Minitest::Test
   end
 
   def request_headers(response)
-    request = response.instance_variable_get(:@request)
-    request.headers
+    body = json_body(response)
+    body["headers"].transform_keys(&:downcase)
   end
 end
