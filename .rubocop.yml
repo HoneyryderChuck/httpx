@@ -92,6 +92,10 @@ Style/GlobalVars:
   Exclude:
     - lib/httpx/plugins/internal_telemetry.rb
 
+Style/CommentedKeyword:
+  Exclude:
+    - integration_tests/faraday_datadog_test.rb
+
 Style/RedundantBegin:
   Enabled: false
 
