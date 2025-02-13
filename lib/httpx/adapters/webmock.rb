@@ -111,6 +111,7 @@ module WebMock
           WebMock::RequestRegistry.instance.requested_signatures.put(request_signature)
 
           if (mock_response = WebMock::StubRegistry.instance.response_for_request(request_signature))
+            request.emit(:headers, request)
             response = Plugin.build_from_webmock_response(request, mock_response)
             WebMock::CallbackRegistry.invoke_callbacks({ lib: :httpx }, request_signature, mock_response)
             log { "mocking #{request.uri} with #{mock_response.inspect}" }
