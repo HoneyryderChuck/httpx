@@ -115,7 +115,7 @@ module Requests
         # verify_uploaded(body, "data", "data")
       end
 
-      define_method :"test_#{meth}_body_io_params" do
+      define_method :"test_#{meth}_body_stringio_params" do
         uri = build_uri("/#{meth}")
         body = StringIO.new("data")
         response = HTTPX.send(meth, uri, body: body)
@@ -123,6 +123,44 @@ module Requests
         body = json_body(response)
         verify_header(body["headers"], "Content-Type", "application/octet-stream")
         verify_uploaded(body, "data", "data")
+      end
+
+      define_method :"test_#{meth}_body_file_params" do
+        uri = build_uri("/#{meth}")
+
+        rng = Random.new(42)
+        req_body = Tempfile.new("httpx-body", binmode: true)
+        req_body.write(rng.bytes(16_385))
+        req_body.rewind
+
+        response = HTTPX.send(meth, uri, body: req_body, fallback_protocol: "h2")
+        verify_status(response, 200)
+        body = json_body(response)
+        verify_header(body["headers"], "Content-Type", "application/octet-stream")
+        verify_uploaded(body, "data", data_base64(req_body.path))
+      ensure
+        req_body.close
+        req_body.unlink
+      end
+
+      define_method :"test_#{meth}_body_pathname_params" do
+        uri = build_uri("/#{meth}")
+
+        rng = Random.new(42)
+        tmpfile = Tempfile.new("httpx-body", binmode: true)
+        tmpfile.write(rng.bytes(16_385))
+        tmpfile.rewind
+
+        req_body = Pathname.new(tmpfile.path)
+
+        response = HTTPX.send(meth, uri, body: req_body)
+        verify_status(response, 200)
+        body = json_body(response)
+        verify_header(body["headers"], "Content-Type", "application/octet-stream")
+        verify_uploaded(body, "data", data_base64(tmpfile.path))
+      ensure
+        tmpfile.close
+        tmpfile.unlink
       end
 
       define_method :"test_#{meth}_multiple_params" do

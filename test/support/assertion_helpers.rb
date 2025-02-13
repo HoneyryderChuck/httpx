@@ -47,8 +47,12 @@ module ResponseHelpers
     assert_in_delta expected, actual, delta, "expected to have executed in #{expected} secs (actual: #{actual} secs)"
   end
 
+  def data_base64(path)
+    "data:application/octet-stream;base64" \
+      ",#{Base64.strict_encode64(File.read(path))}"
+  end
+
   def verify_uploaded(body, type, expect)
-    assert body.key?(type), "there is no #{type} available"
     assert body[type] == expect, "#{type} is unexpected: #{body[type]} (expected: #{expect})"
   end
 
