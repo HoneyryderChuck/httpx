@@ -4,9 +4,7 @@ module HTTPX
       class Error < HTTPX::Error
       end
 
-      class Encoder
-        extend Forwardable
-
+      class Encoder #  < SimpleDelegator
         @raw: Object & bodyIO
 
         def bytesize: () -> (Integer | Float)
