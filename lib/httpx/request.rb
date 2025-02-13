@@ -267,6 +267,8 @@ module HTTPX
         return unless @state == :body
       when :done
         return if @state == :expect
+
+        @body.close
       end
       @state = nextstate
       emit(@state, self)

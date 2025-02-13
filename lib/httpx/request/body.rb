@@ -52,12 +52,20 @@ module HTTPX
 
       body = stream(@body)
       if body.respond_to?(:read)
-        ::IO.copy_stream(body, ProcIO.new(block))
+        while (chunk = body.read(16_384))
+          block.call(chunk)
+        end
+        # TODO: use copy_stream once bug is resolved: https://bugs.ruby-lang.org/issues/21131
+        # ::IO.copy_stream(body, ProcIO.new(block))
       elsif body.respond_to?(:each)
         body.each(&block)
       else
         block[body.to_s]
       end
+    end
+
+    def close
+      @body.close if @body.respond_to?(:close)
     end
 
     # if the +@body+ is rewindable, it rewinnds it.
@@ -140,19 +148,6 @@ module HTTPX
           body
         end
       end
-    end
-  end
-
-  # Wrapper yielder which can be used with functions which expect an IO writer.
-  class ProcIO
-    def initialize(block)
-      @block = block
-    end
-
-    # Implementation the IO write protocol, which yield the given chunk to +@block+.
-    def write(data)
-      @block.call(data.dup)
-      data.bytesize
     end
   end
 end

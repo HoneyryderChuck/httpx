@@ -14,7 +14,7 @@ module HTTPX
 
       def bytesize: () -> (Integer | Float)
 
-      def read: (?int? length, ?string outbuf) -> String?
+      def read: (?int? length, ?string? outbuf) -> String?
 
       def close: () -> void
 

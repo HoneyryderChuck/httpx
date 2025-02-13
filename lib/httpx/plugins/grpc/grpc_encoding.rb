@@ -29,6 +29,8 @@ module HTTPX
 
           buf = outbuf if outbuf
 
+          buf = buf.b if buf.frozen?
+
           buf.prepend([compressed_flag, buf.bytesize].pack("CL>"))
           buf
         end
