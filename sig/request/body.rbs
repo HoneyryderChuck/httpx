@@ -31,12 +31,4 @@ module HTTPX
 
     def self.initialize_deflater_body: (body_encoder body, Encoding | String encoding) -> body_encoder
   end
-
-  class ProcIO
-    @block: ^(String) -> void
-
-    def initialize: (^(String) -> void) -> untyped
-
-    def write: (String data) -> Integer
-  end
 end

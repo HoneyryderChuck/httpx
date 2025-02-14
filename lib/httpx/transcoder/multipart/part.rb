@@ -19,7 +19,7 @@ module HTTPX
           value = value[:body]
         end
 
-        value = value.open(File::RDONLY) if Object.const_defined?(:Pathname) && value.is_a?(Pathname)
+        value = value.open(File::RDONLY, encoding: Encoding::BINARY) if Object.const_defined?(:Pathname) && value.is_a?(Pathname)
 
         if value.respond_to?(:path) && value.respond_to?(:read)
           # either a File, a Tempfile, or something else which has to quack like a file

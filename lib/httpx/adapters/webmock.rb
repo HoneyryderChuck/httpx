@@ -114,6 +114,10 @@ module WebMock
             response = Plugin.build_from_webmock_response(request, mock_response)
             WebMock::CallbackRegistry.invoke_callbacks({ lib: :httpx }, request_signature, mock_response)
             log { "mocking #{request.uri} with #{mock_response.inspect}" }
+            request.transition(:headers)
+            request.transition(:body)
+            request.transition(:trailers)
+            request.transition(:done)
             request.response = response
             request.emit(:response, response)
             response << mock_response.body.dup unless response.is_a?(HTTPX::ErrorResponse)

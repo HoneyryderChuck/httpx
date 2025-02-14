@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "forwardable"
+require "delegate"
 
 module HTTPX::Transcoder
   module Body
@@ -8,47 +8,31 @@ module HTTPX::Transcoder
 
     module_function
 
-    class Encoder
-      extend Forwardable
-
-      def_delegator :@raw, :to_s
-
-      def_delegator :@raw, :==
-
+    class Encoder < SimpleDelegator
       def initialize(body)
-        @raw = body
+        body = body.open(File::RDONLY, encoding: Encoding::BINARY) if Object.const_defined?(:Pathname) && body.is_a?(Pathname)
+        @body = body
+        super(body)
       end
 
       def bytesize
-        if @raw.respond_to?(:bytesize)
-          @raw.bytesize
-        elsif @raw.respond_to?(:to_ary)
-          @raw.sum(&:bytesize)
-        elsif @raw.respond_to?(:size)
-          @raw.size || Float::INFINITY
-        elsif @raw.respond_to?(:length)
-          @raw.length || Float::INFINITY
-        elsif @raw.respond_to?(:each)
+        if @body.respond_to?(:bytesize)
+          @body.bytesize
+        elsif @body.respond_to?(:to_ary)
+          @body.sum(&:bytesize)
+        elsif @body.respond_to?(:size)
+          @body.size || Float::INFINITY
+        elsif @body.respond_to?(:length)
+          @body.length || Float::INFINITY
+        elsif @body.respond_to?(:each)
           Float::INFINITY
         else
-          raise Error, "cannot determine size of body: #{@raw.inspect}"
+          raise Error, "cannot determine size of body: #{@body.inspect}"
         end
       end
 
       def content_type
         "application/octet-stream"
-      end
-
-      private
-
-      def respond_to_missing?(meth, *args)
-        @raw.respond_to?(meth, *args) || super
-      end
-
-      def method_missing(meth, *args, &block)
-        return super unless @raw.respond_to?(meth)
-
-        @raw.__send__(meth, *args, &block)
       end
     end
 
