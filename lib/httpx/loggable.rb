@@ -15,6 +15,8 @@ module HTTPX
 
     USE_DEBUG_LOG = ENV.key?("HTTPX_DEBUG")
 
+    PID = Process.pid
+
     def log(level: @options.debug_level, color: nil, &msg)
       return unless @options.debug_level >= level
 
@@ -22,7 +24,14 @@ module HTTPX
 
       return unless debug_stream
 
-      message = (+"" << msg.call << "\n")
+      klass = self.class
+
+      until (class_name = klass.name) do
+        klass = klass.superclass
+      end
+
+      message = +"(pid:#{PID} tid:#{Thread.current.object_id}, self:#{class_name}##{object_id}) "
+      message << msg.call << "\n"
       message = "\e[#{COLORS[color]}m#{message}\e[0m" if color && debug_stream.respond_to?(:isatty) && debug_stream.isatty
       debug_stream << message
     end
