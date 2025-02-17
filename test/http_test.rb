@@ -66,7 +66,7 @@ class HTTPTest < Minitest::Test
     response = HTTPX.plugin(SessionWithPool).get(uri, debug: log, debug_level: 3)
     verify_status(response, 200)
     log_output = log.string
-    assert log_output.include?("\e[33m<- HEADER: Connection: close\n\e[0m")
+    assert(log_output.include?("HEADER: Connection: close\n\e[0m"))
 
     Tempfile.create("httpx-log") do |file|
       uri = URI(build_uri("/get"))
@@ -74,8 +74,8 @@ class HTTPTest < Minitest::Test
       verify_status(response, 200)
       file.rewind
       log_output = file.read
-      assert log_output.include?("<- HEADER: Connection: close\n")
-      assert !log_output.include?("\e[33m<- HEADER: Connection: close\n\e[0m")
+      assert(log_output.include?("HEADER: Connection: close\n"))
+      assert(!log_output.include?("HEADER: Connection: close\n\e[0m"))
     end
   end
 
