@@ -86,7 +86,7 @@ module HTTPX
 
         @current_selector.after(0.05) do
           # double emission check
-          unless (connection.addresses && addresses.intersect?(connection.addresses))
+          unless connection.addresses && addresses.intersect?(connection.addresses)
             emit_resolved_connection(connection, addresses, early_resolve)
           end
         end
