@@ -77,8 +77,6 @@ module HTTPX
           "answer #{FAMILY_TYPES[RECORD_TYPES[family]]} #{connection.peer.host}: #{addresses.inspect}"
       end
 
-      return if connection.state == :closed
-
       if @current_selector && # if triggered by early resolve, session may not be here yet
          !connection.io &&
          connection.options.ip_families.size > 1 &&
@@ -87,9 +85,8 @@ module HTTPX
         log { "resolver #{FAMILY_TYPES[RECORD_TYPES[family]]}: applying resolution delay..." }
 
         @current_selector.after(0.05) do
-          unless connection.state == :closed ||
-                 # double emission check
-                 (connection.addresses && addresses.intersect?(connection.addresses))
+          # double emission check
+          unless (connection.addresses && addresses.intersect?(connection.addresses))
             emit_resolved_connection(connection, addresses, early_resolve)
           end
         end
@@ -103,6 +100,8 @@ module HTTPX
     def emit_resolved_connection(connection, addresses, early_resolve)
       begin
         connection.addresses = addresses
+
+        return if connection.state == :closed
 
         emit(:resolve, connection)
       rescue StandardError => e
