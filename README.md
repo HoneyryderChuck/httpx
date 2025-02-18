@@ -157,7 +157,6 @@ All Rubies greater or equal to 2.7, and always latest JRuby and Truffleruby.
 
 * Discuss your contribution in an issue
 * Fork it
-* Make your changes, add some tests
-* Ensure all tests pass (`docker-compose -f docker-compose.yml -f docker-compose-ruby-{RUBY_VERSION}.yml run httpx bundle exec rake test`)
+* Make your changes, add some tests (follow the instructions from [here](test/README.md))
 * Open a Merge Request (that's Pull Request in Github-ish)
 * Wait for feedback
