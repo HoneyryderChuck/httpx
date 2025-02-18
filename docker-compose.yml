@@ -40,8 +40,7 @@ services:
       - altsvc-nghttp2
     volumes:
       - ./:/home
-    entrypoint:
-      /home/test/support/ci/build.sh
+    entrypoint: /home/test/support/ci/build.sh
 
   sshproxy:
     image: connesc/ssh-gateway
@@ -66,8 +65,7 @@ services:
       - ./test/support/ci/squid/proxy.conf:/etc/squid/squid.conf
       - ./test/support/ci/squid/proxy-users-basic.txt:/etc/squid/proxy-users-basic.txt
       - ./test/support/ci/squid/proxy-users-digest.txt:/etc/squid/proxy-users-digest.txt
-    command:
-      -d 3
+    command: -d 3
 
   http2proxy:
     image: registry.gitlab.com/os85/httpx/nghttp2:1
@@ -75,10 +73,8 @@ services:
       - 3300:80
     depends_on:
       - httpproxy
-    entrypoint:
-      /usr/local/bin/nghttpx
-    command:
-      --no-ocsp --frontend '*,80;no-tls' --backend 'httpproxy,3128' --http2-proxy
+    entrypoint: /usr/local/bin/nghttpx
+    command: --no-ocsp --frontend '*,80;no-tls' --backend 'httpproxy,3128' --http2-proxy
 
   nghttp2:
     image: registry.gitlab.com/os85/httpx/nghttp2:1
@@ -87,12 +83,10 @@ services:
       - 443:443
     depends_on:
       - httpbin
-    entrypoint:
-      /usr/local/bin/nghttpx
+    entrypoint: /usr/local/bin/nghttpx
     volumes:
       - ./test/support/ci:/home
-    command:
-      --conf /home/nghttp.conf --no-ocsp --frontend '*,80;no-tls' --frontend '*,443'
+    command: --conf /home/nghttp.conf --no-ocsp --frontend '*,80;no-tls' --frontend '*,443'
     networks:
       default:
         aliases:
@@ -105,12 +99,10 @@ services:
       - 444:443
     depends_on:
       - httpbin
-    entrypoint:
-      /usr/local/bin/nghttpx
+    entrypoint: /usr/local/bin/nghttpx
     volumes:
       - ./test/support/ci:/home
-    command:
-      --conf /home/nghttp.conf --no-ocsp --frontend '*,80;no-tls' --frontend '*,443' --altsvc "h2,443,nghttp2"
+    command: --conf /home/nghttp.conf --no-ocsp --frontend '*,80;no-tls' --frontend '*,443' --altsvc "h2,443,nghttp2"
     networks:
       default:
         aliases:
@@ -119,8 +111,7 @@ services:
     environment:
       - DEBUG=True
     image: citizenstig/httpbin
-    command:
-      gunicorn --bind=0.0.0.0:8000 --workers=6 --access-logfile - --error-logfile - --log-level debug --capture-output httpbin:app
+    command: gunicorn --bind=0.0.0.0:8000 --workers=6 --access-logfile - --error-logfile - --log-level debug --capture-output httpbin:app
 
   aws:
     image: localstack/localstack
