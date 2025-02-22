@@ -149,7 +149,7 @@ module Faraday
 
         module ResponseMethods
           def reason
-            Net::HTTP::STATUS_CODES.fetch(@status)
+            Net::HTTP::STATUS_CODES.fetch(@status, "Non-Standard status code")
           end
         end
       end
