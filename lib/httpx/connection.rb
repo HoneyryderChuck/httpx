@@ -477,6 +477,8 @@ module HTTPX
             end
             log(level: 3, color: :cyan) { "IO WRITE: #{siz} bytes..." }
             unless siz
+              @write_buffer.clear
+
               ex = EOFError.new("descriptor closed")
               ex.set_backtrace(caller)
               on_error(ex)
