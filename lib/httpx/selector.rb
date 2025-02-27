@@ -193,7 +193,7 @@ module HTTPX
 
       return connection_interval unless timer_interval
 
-      if connection_interval.nil? || timer_interval < connection_interval
+      if connection_interval.nil? || timer_interval <= connection_interval
         @is_timer_interval = true
 
         return timer_interval
