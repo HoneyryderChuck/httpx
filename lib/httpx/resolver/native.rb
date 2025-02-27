@@ -281,8 +281,10 @@ module HTTPX
         hostname, connection = @queries.first
         reset_hostname(hostname, reset_candidates: false)
 
-        if @queries.value?(connection)
-          resolve
+        other_candidate, _ = @queries.find { |_, conn| conn == connection }
+
+        if other_candidate
+          resolve(connection, other_candidate)
         else
           @connections.delete(connection)
           ex = NativeResolveError.new(connection, connection.peer.host, "name or service not known")
