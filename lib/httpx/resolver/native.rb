@@ -130,6 +130,7 @@ module HTTPX
         retry
       else
         handle_error(e)
+        emit(:close, self)
       end
     rescue NativeResolveError => e
       handle_error(e)
@@ -489,6 +490,7 @@ module HTTPX
       # these errors may happen during TCP handshake
       # treat them as resolve errors.
       handle_error(e)
+      emit(:close, self)
     end
 
     def handle_error(error)
@@ -501,6 +503,10 @@ module HTTPX
         @queries.each do |host, connection|
           reset_hostname(host, connection: connection)
           @connections.delete(connection)
+          emit_resolve_error(connection, host, error)
+        end
+
+        while (connection = @connections.shift)
           emit_resolve_error(connection, host, error)
         end
       end
