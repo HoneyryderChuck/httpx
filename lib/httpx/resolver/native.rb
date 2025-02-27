@@ -321,8 +321,10 @@ module HTTPX
           connection = @queries.delete(name)
         end
 
-        if address.key?("alias") # CNAME
-          hostname_alias = address["alias"]
+        alias_addresses, addresses = addresses.partition { |addr| addr.key?("alias") }
+
+        if addresses.empty? && !alias_addresses.empty? # CNAME
+          hostname_alias = alias_addresses.first["alias"]
           # clean up intermediate queries
           @timeouts.delete(name) unless connection.peer.host == name
 
