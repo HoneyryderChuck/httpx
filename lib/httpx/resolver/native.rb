@@ -225,7 +225,7 @@ module HTTPX
           parse(@read_buffer)
         end
 
-        return if @state == :closed
+        return if @state == :closed || !@write_buffer.empty?
       end
     end
 
