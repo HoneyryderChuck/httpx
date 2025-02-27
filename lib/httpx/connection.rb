@@ -654,12 +654,14 @@ module HTTPX
       error.set_backtrace(e.backtrace)
       handle_connect_error(error) if connecting?
       @state = :closed
+      purge_after_closed
       disconnect
     rescue TLSError, ::HTTP2::Error::ProtocolError, ::HTTP2::Error::HandshakeError => e
       # connect errors, exit gracefully
       handle_error(e)
       handle_connect_error(e) if connecting?
       @state = :closed
+      purge_after_closed
       disconnect
     end
 
