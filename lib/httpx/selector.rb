@@ -126,24 +126,22 @@ module HTTPX
       # first, we group IOs based on interest type. On call to #interests however,
       # things might already happen, and new IOs might be registered, so we might
       # have to start all over again. We do this until we group all selectables
-      begin
-        @selectables.delete_if do |io|
-          interests = io.interests
+      @selectables.delete_if do |io|
+        interests = io.interests
 
-          (r ||= []) << io if READABLE.include?(interests)
-          (w ||= []) << io if WRITABLE.include?(interests)
+        (r ||= []) << io if READABLE.include?(interests)
+        (w ||= []) << io if WRITABLE.include?(interests)
 
-          io.state == :closed
-        end
+        io.state == :closed
+      end
 
-        # TODO: what to do if there are no selectables?
+      # TODO: what to do if there are no selectables?
 
-        readers, writers = IO.select(r, w, nil, interval)
+      readers, writers = IO.select(r, w, nil, interval)
 
-        if readers.nil? && writers.nil? && interval
-          [*r, *w].each { |io| io.handle_socket_timeout(interval) }
-          return
-        end
+      if readers.nil? && writers.nil? && interval
+        [*r, *w].each { |io| io.handle_socket_timeout(interval) }
+        return
       end
 
       if writers
