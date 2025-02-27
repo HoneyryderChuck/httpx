@@ -58,22 +58,6 @@ module HTTPX
       when :open
         consume
       end
-      nil
-    rescue Errno::EHOSTUNREACH => e
-      @ns_index += 1
-      nameserver = @nameserver
-      if nameserver && @ns_index < nameserver.size
-        log do
-          "resolver #{FAMILY_TYPES[@record_type]}: " \
-            "failed resolving on nameserver #{@nameserver[@ns_index - 1]} (#{e.message})"
-        end
-        transition(:idle)
-        @timeouts.clear
-      else
-        handle_error(e)
-      end
-    rescue NativeResolveError => e
-      handle_error(e)
     end
 
     def interests
@@ -123,9 +107,34 @@ module HTTPX
     end
 
     def consume
-      dread if calculate_interests == :r
-      do_retry
-      dwrite if calculate_interests == :w
+      loop do
+        dread if calculate_interests == :r
+
+        break unless calculate_interests == :w
+
+        # do_retry
+        dwrite
+
+        break unless calculate_interests == :r
+      end
+    rescue Errno::EHOSTUNREACH => e
+      @ns_index += 1
+      nameserver = @nameserver
+      if nameserver && @ns_index < nameserver.size
+        log do
+          "resolver #{FAMILY_TYPES[@record_type]}: " \
+            "failed resolving on nameserver #{@nameserver[@ns_index - 1]} (#{e.message})"
+        end
+        transition(:idle)
+        @timeouts.clear
+        retry
+      else
+        handle_error(e)
+      end
+    rescue NativeResolveError => e
+      handle_error(e)
+      close_or_resolve
+      retry unless closed?
     end
 
     def do_retry(loop_time = nil)
@@ -475,11 +484,9 @@ module HTTPX
           emit_resolve_error(connection, host, error)
         end
       end
-      close_or_resolve
     end
 
     def reset_hostname(hostname, connection: @queries.delete(hostname), reset_candidates: true)
-      @timeouts.delete(hostname)
       @timeouts.delete(hostname)
 
       return unless connection && reset_candidates

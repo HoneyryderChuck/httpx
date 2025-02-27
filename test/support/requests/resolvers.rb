@@ -210,7 +210,7 @@ module Requests
             end
             self.attempts = 0
 
-            def consume
+            def dwrite
               self.class.attempts += 1
               raise Errno::EHOSTUNREACH, "host unreachable"
             end
