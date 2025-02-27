@@ -74,7 +74,7 @@ module HTTPX
 
       log do
         "resolver #{FAMILY_TYPES[RECORD_TYPES[family]]}: " \
-          "answer #{FAMILY_TYPES[RECORD_TYPES[family]]} #{connection.peer.host}: #{addresses.inspect}"
+          "answer #{connection.peer.host}: #{addresses.inspect} (early resolve: #{early_resolve})"
       end
 
       if !early_resolve && # do not apply resolution delay for non-dns name resolution
