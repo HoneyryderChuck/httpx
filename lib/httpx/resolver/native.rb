@@ -492,7 +492,10 @@ module HTTPX
     end
 
     def close_or_resolve
-      if @connections.empty?
+      # drop already closed connections
+      @connections.shift until @connections.empty? || @connections.first.state != :closed
+
+      if (@connections - @queries.values).empty?
         emit(:close, self)
       else
         resolve
