@@ -374,7 +374,11 @@ module HTTPX
       close_or_resolve
     end
 
-    def resolve(connection = @connections.first, hostname = nil)
+    def resolve(connection = nil, hostname = nil)
+      @connections.shift until @connections.empty? || @connections.first.state != :closed
+
+      connection ||= @connections.find { |c| !@queries.value?(c) }
+
       raise Error, "no URI to resolve" unless connection
 
       return unless @write_buffer.empty?
