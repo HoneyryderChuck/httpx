@@ -25,6 +25,8 @@ module HTTPX
 
       def on_empty: () { () -> void } -> void
 
+      def cancel: () -> void
+
       def to_f: () -> Float
 
       def <<: (callback) -> void

@@ -63,6 +63,10 @@ module HTTPX
         @on_empty = blk
       end
 
+      def cancel
+        @on_empty.call
+      end
+
       def <=>(other)
         @interval <=> other.interval
       end
