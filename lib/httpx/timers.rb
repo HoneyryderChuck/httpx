@@ -26,7 +26,7 @@ module HTTPX
 
       @next_interval_at = nil
 
-      interval
+      Timer.new(interval, callback)
     end
 
     def wait_interval
@@ -46,6 +46,17 @@ module HTTPX
       @intervals = @intervals.drop_while { |interval| interval.elapse(elapsed_time) <= 0 }
 
       @next_interval_at = nil if @intervals.empty?
+    end
+
+    class Timer
+      def initialize(interval, callback)
+        @interval = interval
+        @callback = callback
+      end
+
+      def cancel
+        @interval.delete(@callback)
+      end
     end
 
     class Interval

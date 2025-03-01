@@ -84,7 +84,7 @@ module HTTPX
 
           return if expect_timeout.nil? || expect_timeout.infinite?
 
-          set_request_timeout(request, expect_timeout, :expect, %i[body response]) do
+          set_request_timeout(:expect_timeout, request, expect_timeout, :expect, %i[body response]) do
             # expect timeout expired
             if request.state == :expect && !request.expects?
               Expect.no_expect_store << request.origin

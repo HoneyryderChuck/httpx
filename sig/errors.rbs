@@ -45,6 +45,9 @@ module HTTPX
   class WriteTimeoutError < RequestTimeoutError
   end
 
+  class OperationTimeoutError < TimeoutError
+  end
+
   class ResolveError < Error
   end
 
