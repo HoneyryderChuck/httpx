@@ -110,6 +110,8 @@ module HTTPX
 
     def handle_connect_error: (StandardError error) -> void
 
+    def disconnect: () -> void
+
     private
 
     def initialize: (http_uri uri, Options options) -> void
@@ -117,8 +119,6 @@ module HTTPX
     def initialize_type: (http_uri uri, Options options) -> io_type
 
     def connect: () -> void
-
-    def disconnect: () -> void
 
     def exhausted?: () -> boolish
 

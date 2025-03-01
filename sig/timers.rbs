@@ -1,5 +1,7 @@
 module HTTPX
   class Timers
+    type callback = ^() -> void
+
     @intervals: Array[Interval]
     @next_interval_at: Float
 
@@ -14,8 +16,6 @@ module HTTPX
 
     class Interval
       include Comparable
-
-      type callback = ^() -> void
 
       attr_reader interval: Numeric
 

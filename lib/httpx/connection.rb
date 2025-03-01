@@ -369,16 +369,18 @@ module HTTPX
       force_reset(true)
     end
 
+    def disconnect
+      return unless @current_session && @current_selector
+
+      emit(:close)
+      @current_session = nil
+      @current_selector = nil
+    end
+
     private
 
     def connect
       transition(:open)
-    end
-
-    def disconnect
-      emit(:close)
-      @current_session = nil
-      @current_selector = nil
     end
 
     def consume

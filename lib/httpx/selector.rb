@@ -44,7 +44,11 @@ module HTTPX
     rescue StandardError => e
       emit_error(e)
     rescue Exception # rubocop:disable Lint/RescueException
-      each_connection(&:force_reset)
+      each_connection do |conn|
+        conn.force_reset
+        conn.disconnect
+      end
+
       raise
     end
 
