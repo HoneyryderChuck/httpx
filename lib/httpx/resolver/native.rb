@@ -93,8 +93,7 @@ module HTTPX
       @timeouts.values_at(*hosts).reject(&:empty?).map(&:first).min
     end
 
-    def handle_socket_timeout(interval)
-    end
+    def handle_socket_timeout(interval); end
 
     private
 
@@ -139,7 +138,6 @@ module HTTPX
     end
 
     def schedule_retry
-
       h = @name
 
       return unless h
