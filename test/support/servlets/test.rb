@@ -49,6 +49,9 @@ class TestHTTP2Server
     end
 
     @server = OpenSSL::SSL::SSLServer.new(@server, ctx)
+    @server.singleton_class.attr_reader :ctx
+    @ios = []
+    @conns = {}
   end
 
   def shutdown
@@ -58,17 +61,81 @@ class TestHTTP2Server
   def start
     begin
       loop do
-        sock = @server.accept
+        ios, * = IO.select([@server, *@ios])
 
-        conn = ::HTTP2::Server.new
-        handle_connection(conn, sock)
-        handle_socket(conn, sock)
+        return unless ios
+
+        handle_ios(ios)
       end
-    rescue IOError
+    rescue IOError, SystemCallError
     end
   end
 
   private
+
+  def handle_ios(ios)
+    ios.each do |io|
+      case io
+      when TCPServer, OpenSSL::SSL::SSLServer
+        handle_server(io)
+      else
+        handle_socket(io)
+      end
+    end
+  end
+
+  def handle_server(server)
+    loop do
+      case (sock = server.to_io.accept_nonblock(exception: false))
+      when :wait_readable
+        return
+      when nil
+        raise EOFError
+      else
+        sock = OpenSSL::SSL::SSLSocket.new(sock, server.ctx)
+        sock.sync_close = true
+        sock.accept
+
+        @ios << sock
+
+        conn = ::HTTP2::Server.new
+        handle_connection(conn, sock)
+
+        @conns[sock] = conn
+      end
+    end
+  rescue StandardError => e
+    warn "#{e.class} exception: #{e.message} - closing server."
+    warn e.backtrace
+  end
+
+  def handle_socket(sock)
+    loop do
+      case (data = sock.read_nonblock(1024, exception: false))
+      when :wait_readable
+        return
+      when nil
+        sock.close
+        @ios.delete(sock)
+        @conns.delete(sock)
+        return
+      else
+        @conns[sock] << data
+
+        if sock.closed?
+          @ios.delete(sock)
+          @conns.delete(sock)
+          return
+        end
+      end
+    end
+  rescue StandardError => e
+    puts "#{e.class} exception: #{e.message} - closing socket."
+    puts e.backtrace
+    @ios.delete(sock)
+    @conns.delete(sock)
+    sock.close
+  end
 
   def handle_stream(_conn, stream)
     stream.on(:half_close) do
@@ -91,24 +158,11 @@ class TestHTTP2Server
 
     conn.on(:goaway) do
       sock.close
+      @ios.delete(sock)
+      @conns.delete(sock)
     end
     conn.on(:stream) do |stream|
       handle_stream(conn, stream)
-    end
-  end
-
-  def handle_socket(conn, sock)
-    while !sock.closed? && !(sock.eof? rescue true) # rubocop:disable Style/RescueModifier
-      data = sock.readpartial(1024)
-      # puts "Received bytes: #{data.unpack("H*").first}"
-
-      begin
-        conn << data
-      rescue StandardError => e
-        puts "#{e.class} exception: #{e.message} - closing socket."
-        puts e.backtrace
-        sock.close
-      end
     end
   end
 end

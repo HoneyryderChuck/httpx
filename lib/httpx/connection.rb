@@ -477,6 +477,8 @@ module HTTPX
             end
             log(level: 3, color: :cyan) { "IO WRITE: #{siz} bytes..." }
             unless siz
+              @write_buffer.clear
+
               ex = EOFError.new("descriptor closed")
               ex.set_backtrace(caller)
               on_error(ex)
@@ -901,13 +903,13 @@ module HTTPX
     end
 
     def set_request_timeout(label, request, timeout, start_event, finish_events, &callback)
-      request.once(start_event) do
+      request.set_timeout_callback(start_event) do
         timer = @current_selector.after(timeout, callback)
         request.active_timeouts << label
 
         Array(finish_events).each do |event|
           # clean up request timeouts if the connection errors out
-          request.once(event) do
+          request.set_timeout_callback(event) do
             timer.cancel
             request.active_timeouts.delete(label)
           end
