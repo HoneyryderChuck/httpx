@@ -25,6 +25,7 @@ module HTTPX
           class_eval(<<-MOD, __FILE__, __LINE__ + 1)
             def on_#{meth}(&blk)   # def on_connection_opened(&blk)
               on(:#{meth}, &blk)   #   on(:connection_opened, &blk)
+              self                 #   self
             end                    # end
           MOD
         end

@@ -284,6 +284,15 @@ module HTTPX
     def expects?
       @headers["expect"] == "100-continue" && @informational_status == 100 && !@response
     end
+
+    def set_timeout_callback(event, &callback)
+      clb = once(event, &callback)
+
+      # reset timeout callbacks when requests get rerouted to a different connection
+      once(:idle) do
+        callbacks(event).delete(clb)
+      end
+    end
   end
 end
 

@@ -36,6 +36,7 @@ module HTTPX
           class_eval(<<-MOD, __FILE__, __LINE__ + 1)
         def on_#{meth}(&blk)   # def on_circuit_open(&blk)
           on(:#{meth}, &blk)   #   on(:circuit_open, &blk)
+          self                 #   self
         end                    # end
           MOD
         end

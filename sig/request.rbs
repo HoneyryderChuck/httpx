@@ -64,6 +64,8 @@ module HTTPX
 
     def request_timeout: () -> Numeric?
 
+    def set_timeout_callback: (Symbol event) { (*untyped) -> void } -> void
+
     private
 
     def initialize_body: (Options options) -> Transcoder::_Encoder?
