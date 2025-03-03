@@ -240,11 +240,9 @@ module HTTPX
       end
       return unless error && error.is_a?(Exception)
 
-      if error.is_a?(Error)
-        request.emit(:response, ErrorResponse.new(request, error))
-      else
-        raise error if selector.empty?
-      end
+      raise error unless error.is_a?(Error)
+
+      request.emit(:response, ErrorResponse.new(request, error))
     end
 
     # returns a set of HTTPX::Request objects built from the given +args+ and +options+.
