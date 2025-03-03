@@ -26,7 +26,7 @@ module HTTPX
 
       @next_interval_at = nil
 
-      interval
+      Timer.new(interval, callback)
     end
 
     def wait_interval
@@ -48,6 +48,17 @@ module HTTPX
       @next_interval_at = nil if @intervals.empty?
     end
 
+    class Timer
+      def initialize(interval, callback)
+        @interval = interval
+        @callback = callback
+      end
+
+      def cancel
+        @interval.delete(@callback)
+      end
+    end
+
     class Interval
       include Comparable
 
@@ -61,6 +72,10 @@ module HTTPX
 
       def on_empty(&blk)
         @on_empty = blk
+      end
+
+      def cancel
+        @on_empty.call
       end
 
       def <=>(other)

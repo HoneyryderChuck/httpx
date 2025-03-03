@@ -43,8 +43,9 @@ Thread.start do
   # 	puts "#{responses[i].status}: #{l}"
 	# end
 
-  puts "by group:"
   responses, error_responses = responses.partition { |r| r.is_a?(HTTPX::Response) }
+  puts "#{responses.size} responses, #{error_responses.size} errors"
+  puts "by group:"
   responses.group_by(&:status).each do |st, res|
     res.each do |r|
       puts "#{st}: #{r.uri}"
@@ -56,7 +57,7 @@ Thread.start do
     error_responses.group_by{ |r| r.error.class }.each do |kl, res|
       res.each do |r|
         puts "#{r.uri}: #{r.error}"
-        puts r.error.backtrace.join("\n")
+        puts r.error.backtrace&.join("\n")
       end
     end
   end

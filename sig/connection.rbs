@@ -43,7 +43,6 @@ module HTTPX
     @parser: Object & _Parser
     @connected_at: Float
     @response_received_at: Float
-    @intervals: Array[Timers::Interval]
     @exhausted: bool
     @cloned: bool
     @coalesced_connection: instance?
@@ -111,6 +110,8 @@ module HTTPX
 
     def handle_connect_error: (StandardError error) -> void
 
+    def disconnect: () -> void
+
     private
 
     def initialize: (http_uri uri, Options options) -> void
@@ -118,8 +119,6 @@ module HTTPX
     def initialize_type: (http_uri uri, Options options) -> io_type
 
     def connect: () -> void
-
-    def disconnect: () -> void
 
     def exhausted?: () -> boolish
 
@@ -163,7 +162,7 @@ module HTTPX
 
     def read_timeout_callback: (Request request, Numeric read_timeout, ?singleton(RequestTimeoutError) error_type) -> void
 
-    def set_request_timeout: (Request request, Numeric timeout, Symbol start_event, Symbol | Array[Symbol] finish_events) { () -> void } -> void
+    def set_request_timeout: (Symbol label, Request request, Numeric timeout, Symbol start_event, Symbol | Array[Symbol] finish_events) { () -> void } -> void
 
     def self.parser_type: (String protocol) -> (singleton(HTTP1) | singleton(HTTP2))
   end

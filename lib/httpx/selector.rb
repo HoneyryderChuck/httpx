@@ -19,6 +19,7 @@ module HTTPX
     def initialize
       @timers = Timers.new
       @selectables = []
+      @is_timer_interval = false
     end
 
     def each(&blk)
@@ -43,7 +44,11 @@ module HTTPX
     rescue StandardError => e
       emit_error(e)
     rescue Exception # rubocop:disable Lint/RescueException
-      each_connection(&:force_reset)
+      each_connection do |conn|
+        conn.force_reset
+        conn.disconnect
+      end
+
       raise
     end
 
@@ -125,24 +130,22 @@ module HTTPX
       # first, we group IOs based on interest type. On call to #interests however,
       # things might already happen, and new IOs might be registered, so we might
       # have to start all over again. We do this until we group all selectables
-      begin
-        @selectables.delete_if do |io|
-          interests = io.interests
+      @selectables.delete_if do |io|
+        interests = io.interests
 
-          (r ||= []) << io if READABLE.include?(interests)
-          (w ||= []) << io if WRITABLE.include?(interests)
+        (r ||= []) << io if READABLE.include?(interests)
+        (w ||= []) << io if WRITABLE.include?(interests)
 
-          io.state == :closed
-        end
+        io.state == :closed
+      end
 
-        # TODO: what to do if there are no selectables?
+      # TODO: what to do if there are no selectables?
 
-        readers, writers = IO.select(r, w, nil, interval)
+      readers, writers = IO.select(r, w, nil, interval)
 
-        if readers.nil? && writers.nil? && interval
-          [*r, *w].each { |io| io.handle_socket_timeout(interval) }
-          return
-        end
+      if readers.nil? && writers.nil? && interval
+        [*r, *w].each { |io| io.handle_socket_timeout(interval) }
+        return
       end
 
       if writers
@@ -174,7 +177,7 @@ module HTTPX
       end
 
       unless result || interval.nil?
-        io.handle_socket_timeout(interval)
+        io.handle_socket_timeout(interval) unless @is_timer_interval
         return
       end
       # raise TimeoutError.new(interval, "timed out while waiting on select")
@@ -186,10 +189,21 @@ module HTTPX
     end
 
     def next_timeout
-      [
-        @timers.wait_interval,
-        @selectables.filter_map(&:timeout).min,
-      ].compact.min
+      @is_timer_interval = false
+
+      timer_interval = @timers.wait_interval
+
+      connection_interval = @selectables.filter_map(&:timeout).min
+
+      return connection_interval unless timer_interval
+
+      if connection_interval.nil? || timer_interval <= connection_interval
+        @is_timer_interval = true
+
+        return timer_interval
+      end
+
+      connection_interval
     end
 
     def emit_error(e)

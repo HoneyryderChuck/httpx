@@ -77,6 +77,9 @@ module HTTPX
   # Error raised when there was a timeout while resolving a domain to an IP.
   class ResolveTimeoutError < TimeoutError; end
 
+  # Error raise when there was a timeout waiting for readiness of the socket the request is related to.
+  class OperationTimeoutError < TimeoutError; end
+
   # Error raised when there was an error while resolving a domain to an IP.
   class ResolveError < Error; end
 

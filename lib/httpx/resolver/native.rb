@@ -35,6 +35,7 @@ module HTTPX
       @_timeouts = Array(@resolver_options[:timeouts])
       @timeouts = Hash.new { |timeouts, host| timeouts[host] = @_timeouts.dup }
       @connections = []
+      @name = nil
       @queries = {}
       @read_buffer = "".b
       @write_buffer = Buffer.new(@resolver_options[:packet_size])
@@ -58,22 +59,6 @@ module HTTPX
       when :open
         consume
       end
-      nil
-    rescue Errno::EHOSTUNREACH => e
-      @ns_index += 1
-      nameserver = @nameserver
-      if nameserver && @ns_index < nameserver.size
-        log do
-          "resolver #{FAMILY_TYPES[@record_type]}: " \
-            "failed resolving on nameserver #{@nameserver[@ns_index - 1]} (#{e.message})"
-        end
-        transition(:idle)
-        @timeouts.clear
-      else
-        handle_error(e)
-      end
-    rescue NativeResolveError => e
-      handle_error(e)
     end
 
     def interests
@@ -108,9 +93,7 @@ module HTTPX
       @timeouts.values_at(*hosts).reject(&:empty?).map(&:first).min
     end
 
-    def handle_socket_timeout(interval)
-      do_retry(interval)
-    end
+    def handle_socket_timeout(interval); end
 
     private
 
@@ -123,32 +106,60 @@ module HTTPX
     end
 
     def consume
-      dread if calculate_interests == :r
-      do_retry
-      dwrite if calculate_interests == :w
+      loop do
+        dread if calculate_interests == :r
+
+        break unless calculate_interests == :w
+
+        # do_retry
+        dwrite
+
+        break unless calculate_interests == :r
+      end
+    rescue Errno::EHOSTUNREACH => e
+      @ns_index += 1
+      nameserver = @nameserver
+      if nameserver && @ns_index < nameserver.size
+        log do
+          "resolver #{FAMILY_TYPES[@record_type]}: " \
+            "failed resolving on nameserver #{@nameserver[@ns_index - 1]} (#{e.message})"
+        end
+        transition(:idle)
+        @timeouts.clear
+        retry
+      else
+        handle_error(e)
+        emit(:close, self)
+      end
+    rescue NativeResolveError => e
+      handle_error(e)
+      close_or_resolve
+      retry unless closed?
     end
 
-    def do_retry(loop_time = nil)
-      return if @queries.empty? || !@start_timeout
+    def schedule_retry
+      h = @name
 
-      loop_time ||= Utils.elapsed_time(@start_timeout)
+      return unless h
 
-      query = @queries.first
+      connection = @queries[h]
 
-      return unless query
+      timeouts = @timeouts[h]
+      timeout = timeouts.shift
 
-      h, connection = query
-      host = connection.peer.host
-      timeout = (@timeouts[host][0] -= loop_time)
+      @timer = @current_selector.after(timeout) do
+        next unless @connections.include?(connection)
 
-      return unless timeout <= 0
+        do_retry(h, connection, timeout)
+      end
+    end
 
-      elapsed_after = @_timeouts[@_timeouts.size - @timeouts[host].size]
-      @timeouts[host].shift
+    def do_retry(h, connection, interval)
+      timeouts = @timeouts[h]
 
-      if !@timeouts[host].empty?
+      if !timeouts.empty?
         log do
-          "resolver #{FAMILY_TYPES[@record_type]}: timeout after #{elapsed_after}s, retry (with #{@timeouts[host].first}s) #{host}..."
+          "resolver #{FAMILY_TYPES[@record_type]}: timeout after #{interval}s, retry (with #{timeouts.first}s) #{h}..."
         end
         # must downgrade to tcp AND retry on same host as last
         downgrade_socket
@@ -157,22 +168,28 @@ module HTTPX
         # try on the next nameserver
         @ns_index += 1
         log do
-          "resolver #{FAMILY_TYPES[@record_type]}: failed resolving #{host} on nameserver #{@nameserver[@ns_index - 1]} (timeout error)"
+          "resolver #{FAMILY_TYPES[@record_type]}: failed resolving #{h} on nameserver #{@nameserver[@ns_index - 1]} (timeout error)"
         end
         transition(:idle)
         @timeouts.clear
         resolve(connection, h)
       else
 
-        @timeouts.delete(host)
+        @timeouts.delete(h)
         reset_hostname(h, reset_candidates: false)
 
-        return unless @queries.empty?
+        unless @queries.empty?
+          resolve(connection)
+          return
+        end
 
         @connections.delete(connection)
+
+        host = connection.peer.host
+
         # This loop_time passed to the exception is bogus. Ideally we would pass the total
         # resolve timeout, including from the previous retries.
-        ex = ResolveTimeoutError.new(loop_time, "Timed out while resolving #{connection.peer.host}")
+        ex = ResolveTimeoutError.new(interval, "Timed out while resolving #{host}")
         ex.set_backtrace(ex ? ex.backtrace : caller)
         emit_resolve_error(connection, host, ex)
 
@@ -225,7 +242,7 @@ module HTTPX
           parse(@read_buffer)
         end
 
-        return if @state == :closed
+        return if @state == :closed || !@write_buffer.empty?
       end
     end
 
@@ -243,11 +260,15 @@ module HTTPX
 
         return unless siz.positive?
 
+        schedule_retry if @write_buffer.empty?
+
         return if @state == :closed
       end
     end
 
     def parse(buffer)
+      @timer.cancel
+
       code, result = Resolver.decode_dns_answer(buffer)
 
       case code
@@ -258,8 +279,10 @@ module HTTPX
         hostname, connection = @queries.first
         reset_hostname(hostname, reset_candidates: false)
 
-        if @queries.value?(connection)
-          resolve
+        other_candidate, _ = @queries.find { |_, conn| conn == connection }
+
+        if other_candidate
+          resolve(connection, other_candidate)
         else
           @connections.delete(connection)
           ex = NativeResolveError.new(connection, connection.peer.host, "name or service not known")
@@ -321,8 +344,10 @@ module HTTPX
           connection = @queries.delete(name)
         end
 
-        if address.key?("alias") # CNAME
-          hostname_alias = address["alias"]
+        alias_addresses, addresses = addresses.partition { |addr| addr.key?("alias") }
+
+        if addresses.empty? && !alias_addresses.empty? # CNAME
+          hostname_alias = alias_addresses.first["alias"]
           # clean up intermediate queries
           @timeouts.delete(name) unless connection.peer.host == name
 
@@ -350,7 +375,11 @@ module HTTPX
       close_or_resolve
     end
 
-    def resolve(connection = @connections.first, hostname = nil)
+    def resolve(connection = nil, hostname = nil)
+      @connections.shift until @connections.empty? || @connections.first.state != :closed
+
+      connection ||= @connections.find { |c| !@queries.value?(c) }
+
       raise Error, "no URI to resolve" unless connection
 
       return unless @write_buffer.empty?
@@ -370,6 +399,9 @@ module HTTPX
       else
         @queries[hostname] = connection
       end
+
+      @name = hostname
+
       log { "resolver #{FAMILY_TYPES[@record_type]}: query for #{hostname}" }
       begin
         @write_buffer << encode_dns_query(hostname)
@@ -458,6 +490,7 @@ module HTTPX
       # these errors may happen during TCP handshake
       # treat them as resolve errors.
       handle_error(e)
+      emit(:close, self)
     end
 
     def handle_error(error)
@@ -472,12 +505,14 @@ module HTTPX
           @connections.delete(connection)
           emit_resolve_error(connection, host, error)
         end
+
+        while (connection = @connections.shift)
+          emit_resolve_error(connection, host, error)
+        end
       end
-      close_or_resolve
     end
 
     def reset_hostname(hostname, connection: @queries.delete(hostname), reset_candidates: true)
-      @timeouts.delete(hostname)
       @timeouts.delete(hostname)
 
       return unless connection && reset_candidates
@@ -490,7 +525,10 @@ module HTTPX
     end
 
     def close_or_resolve
-      if @connections.empty?
+      # drop already closed connections
+      @connections.shift until @connections.empty? || @connections.first.state != :closed
+
+      if (@connections - @queries.values).empty?
         emit(:close, self)
       else
         resolve

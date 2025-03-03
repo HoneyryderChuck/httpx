@@ -101,8 +101,6 @@ module HTTPX
       @inflight = 0
       @keep_alive_timeout = @options.timeout[:keep_alive_timeout]
 
-      @intervals = []
-
       self.addresses = @options.addresses if @options.addresses
     end
 
@@ -337,15 +335,7 @@ module HTTPX
     end
 
     def handle_socket_timeout(interval)
-      @intervals.delete_if(&:elapsed?)
-
-      unless @intervals.empty?
-        # remove the intervals which will elapse
-
-        return
-      end
-
-      error = HTTPX::TimeoutError.new(interval, "timed out while waiting on select")
+      error = OperationTimeoutError.new(interval, "timed out while waiting on select")
       error.set_backtrace(caller)
       on_error(error)
     end
@@ -379,16 +369,18 @@ module HTTPX
       force_reset(true)
     end
 
+    def disconnect
+      return unless @current_session && @current_selector
+
+      emit(:close)
+      @current_session = nil
+      @current_selector = nil
+    end
+
     private
 
     def connect
       transition(:open)
-    end
-
-    def disconnect
-      emit(:close)
-      @current_session = nil
-      @current_selector = nil
     end
 
     def consume
@@ -628,11 +620,15 @@ module HTTPX
           other_connection.merge(self)
           request.transition(:idle)
           other_connection.send(request)
-        else
-          response = ErrorResponse.new(request, ex)
-          request.response = response
-          request.emit(:response, response)
+          next
+        when OperationTimeoutError
+          # request level timeouts should take precedence
+          next unless request.active_timeouts.empty?
         end
+
+        response = ErrorResponse.new(request, ex)
+        request.response = response
+        request.emit(:response, response)
       end
     end
 
@@ -654,12 +650,14 @@ module HTTPX
       error.set_backtrace(e.backtrace)
       handle_connect_error(error) if connecting?
       @state = :closed
+      purge_after_closed
       disconnect
     rescue TLSError, ::HTTP2::Error::ProtocolError, ::HTTP2::Error::HandshakeError => e
       # connect errors, exit gracefully
       handle_error(e)
       handle_connect_error(e) if connecting?
       @state = :closed
+      purge_after_closed
       disconnect
     end
 
@@ -812,7 +810,7 @@ module HTTPX
     end
 
     def on_error(error, request = nil)
-      if error.instance_of?(TimeoutError)
+      if error.is_a?(OperationTimeoutError)
 
         # inactive connections do not contribute to the select loop, therefore
         # they should not fail due to such errors.
@@ -857,7 +855,7 @@ module HTTPX
 
       return if read_timeout.nil? || read_timeout.infinite?
 
-      set_request_timeout(request, read_timeout, :done, :response) do
+      set_request_timeout(:read_timeout, request, read_timeout, :done, :response) do
         read_timeout_callback(request, read_timeout)
       end
     end
@@ -867,7 +865,7 @@ module HTTPX
 
       return if write_timeout.nil? || write_timeout.infinite?
 
-      set_request_timeout(request, write_timeout, :headers, %i[done response]) do
+      set_request_timeout(:write_timeout, request, write_timeout, :headers, %i[done response]) do
         write_timeout_callback(request, write_timeout)
       end
     end
@@ -877,7 +875,7 @@ module HTTPX
 
       return if request_timeout.nil? || request_timeout.infinite?
 
-      set_request_timeout(request, request_timeout, :headers, :complete) do
+      set_request_timeout(:request_timeout, request, request_timeout, :headers, :complete) do
         read_timeout_callback(request, request_timeout, RequestTimeoutError)
       end
     end
@@ -902,21 +900,18 @@ module HTTPX
       on_error(error, request)
     end
 
-    def set_request_timeout(request, timeout, start_event, finish_events, &callback)
+    def set_request_timeout(label, request, timeout, start_event, finish_events, &callback)
       request.once(start_event) do
-        interval = @current_selector.after(timeout, callback)
+        timer = @current_selector.after(timeout, callback)
+        request.active_timeouts << label
 
         Array(finish_events).each do |event|
           # clean up request timeouts if the connection errors out
           request.once(event) do
-            if @intervals.include?(interval)
-              interval.delete(callback)
-              @intervals.delete(interval) if interval.no_callbacks?
-            end
+            timer.cancel
+            request.active_timeouts.delete(label)
           end
         end
-
-        @intervals << interval
       end
     end
 

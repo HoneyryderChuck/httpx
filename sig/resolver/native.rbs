@@ -21,6 +21,7 @@ module HTTPX
       @write_buffer: Buffer
       @large_packet: Buffer?
       @io: UDP | TCP
+      @name: String?
 
       attr_reader state: Symbol
 
@@ -42,7 +43,9 @@ module HTTPX
 
       def consume: () -> void
 
-      def do_retry: (?Numeric? loop_time) -> void
+      def schedule_retry: () -> void
+
+      def do_retry: (String host, Connection connection, Numeric interval) -> void
 
       def dread: (Integer) -> void
                | () -> void

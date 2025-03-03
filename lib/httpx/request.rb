@@ -45,6 +45,8 @@ module HTTPX
 
     attr_writer :persistent
 
+    attr_reader :active_timeouts
+
     # will be +true+ when request body has been completely flushed.
     def_delegator :@body, :empty?
 
@@ -100,6 +102,7 @@ module HTTPX
       @response = nil
       @peer_address = nil
       @persistent = @options.persistent
+      @active_timeouts = []
     end
 
     # the read timeout defined for this requet.
@@ -245,8 +248,10 @@ module HTTPX
         @body.rewind
         @response = nil
         @drainer = nil
+        @active_timeouts.clear
       when :headers
         return unless @state == :idle
+
       when :body
         return unless @state == :headers ||
                       @state == :expect
