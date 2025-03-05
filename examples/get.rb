@@ -15,6 +15,6 @@ Array(responses).each do |res|
     puts res.error.backtrace
   else
     puts "STATUS: #{res.status}"
-    puts res.to_s
+    puts res.to_s[0..2048]
   end
 end

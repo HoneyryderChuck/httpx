@@ -44,7 +44,7 @@ Thread.start do
 	# end
 
   responses, error_responses = responses.partition { |r| r.is_a?(HTTPX::Response) }
-  puts "#{responses.size} responses, #{error_responses.size} errors"
+  puts "#{responses.size} responses (from #{page_links.size})"
   puts "by group:"
   responses.group_by(&:status).each do |st, res|
     res.each do |r|
@@ -53,7 +53,7 @@ Thread.start do
   end unless responses.empty?
 
   unless error_responses.empty?
-    puts "error responses:"
+    puts "error responses (#{error_responses.size})"
     error_responses.group_by{ |r| r.error.class }.each do |kl, res|
       res.each do |r|
         puts "#{r.uri}: #{r.error}"
