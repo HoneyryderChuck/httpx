@@ -210,7 +210,7 @@ class HTTPSTest < Minitest::Test
       verify_error_response(response, HTTPX::SettingsTimeoutError)
     end
     last_frame = test_server.frames.last
-    assert last_frame[:error] == :settings_timeout
+    assert last_frame[:error] == :settings_timeout, "expecting the last frame error to carry a settings timeout: (#{last_frame.inspect})"
   end
 
   def test_http2_client_goaway_with_no_response
