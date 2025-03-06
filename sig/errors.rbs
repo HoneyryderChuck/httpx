@@ -18,9 +18,6 @@ module HTTPX
   end
 
   class PoolTimeoutError < TimeoutError
-    attr_reader origin: String
-
-    def initialize: (String origin, Numeric timeout) -> void
   end
 
   class ConnectTimeoutError < TimeoutError
