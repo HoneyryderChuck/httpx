@@ -70,10 +70,11 @@ module HTTPX
           short_circuit_responses
         end
 
-        def on_response(request, response)
-          emit(:circuit_open, request) if try_circuit_open(request, response)
-
+        def set_request_callbacks(request)
           super
+          request.on(:response) do |response|
+            emit(:circuit_open, request) if try_circuit_open(request, response)
+          end
         end
 
         def try_circuit_open(request, response)

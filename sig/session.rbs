@@ -6,7 +6,6 @@ module HTTPX
     EMPTY_HASH: Hash[untyped, untyped]
 
     @options: Options
-    @responses: Hash[Request, response]
 
     # returns the HTTPX::Pool object which manages the networking required to
     # perform requests.
@@ -42,8 +41,6 @@ module HTTPX
                   | (?options) -> void
 
     def deactivate: (Selector selector) -> void
-
-    def on_response: (Request, response) -> void
 
     def on_promise: (untyped, untyped) -> void
 

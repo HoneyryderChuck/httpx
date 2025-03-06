@@ -122,6 +122,7 @@ module WebMock
             request.transition(:body)
             request.transition(:trailers)
             request.transition(:done)
+            response.finish!
             request.response = response
             request.emit(:response, response)
             request_signature.headers = request.headers.to_h

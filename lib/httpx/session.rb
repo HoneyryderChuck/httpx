@@ -15,7 +15,6 @@ module HTTPX
     # When pass a block, it'll yield itself to it, then closes after the block is evaluated.
     def initialize(options = EMPTY_HASH, &blk)
       @options = self.class.default_options.merge(options)
-      @responses = {}
       @persistent = @options.persistent
       @pool = @options.pool_class.new(@options.pool_options)
       @wrapped = false
@@ -208,11 +207,6 @@ module HTTPX
       end
     end
 
-    # callback executed when a response for a given request has been received.
-    def on_response(request, response)
-      @responses[request] = response
-    end
-
     # callback executed when an HTTP/2 promise frame has been received.
     def on_promise(_, stream)
       log(level: 2) { "#{stream.id}: refusing stream!" }
@@ -221,7 +215,9 @@ module HTTPX
 
     # returns the corresponding HTTP::Response to the given +request+ if it has been received.
     def fetch_response(request, _selector, _options)
-      @responses.delete(request)
+      response = request.response
+
+      response if response && response.finished?
     end
 
     # sends the +request+ to the corresponding HTTPX::Connection
@@ -238,7 +234,9 @@ module HTTPX
 
       raise error unless error.is_a?(Error)
 
-      request.emit(:response, ErrorResponse.new(request, error))
+      response = ErrorResponse.new(request, error)
+      request.response = response
+      request.emit(:response, response)
     end
 
     # returns a set of HTTPX::Request objects built from the given +args+ and +options+.
@@ -268,7 +266,6 @@ module HTTPX
     end
 
     def set_request_callbacks(request)
-      request.on(:response, &method(:on_response).curry(2)[request])
       request.on(:promise, &method(:on_promise))
     end
 

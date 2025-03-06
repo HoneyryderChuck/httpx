@@ -560,6 +560,7 @@ module HTTPX
         end
         @response_received_at = Utils.now
         @inflight -= 1
+        response.finish!
         request.emit(:response, response)
       end
       parser.on(:altsvc) do |alt_origin, origin, alt_params|

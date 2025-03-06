@@ -275,6 +275,8 @@ module HTTPX
       true
     end
 
+    def finish!; end
+
     # raises the wrapped exception.
     def raise_for_status
       raise @error
