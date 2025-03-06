@@ -138,6 +138,8 @@ module HTTPX
             else
               pending = @pending + @parser.pending
               while (req = pending.shift)
+                response.finish!
+                req.response = response
                 req.emit(:response, response)
               end
               reset

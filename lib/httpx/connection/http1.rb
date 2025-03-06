@@ -171,7 +171,6 @@ module HTTPX
       @request = nil
       @requests.shift
       response = request.response
-      response.finish! unless response.is_a?(ErrorResponse)
       emit(:response, request, response)
 
       if @parser.upgrade?

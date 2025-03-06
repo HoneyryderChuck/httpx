@@ -48,15 +48,15 @@ module HTTPX
 
         private
 
-        def on_response(_request, response)
-          if response && response.respond_to?(:headers) && (set_cookie = response.headers["set-cookie"])
+        def set_request_callbacks(request)
+          super
+          request.on(:response) do |response|
+            next unless response && response.respond_to?(:headers) && (set_cookie = response.headers["set-cookie"])
 
             log { "cookies: set-cookie is over #{Cookie::MAX_LENGTH}" } if set_cookie.bytesize > Cookie::MAX_LENGTH
 
             @options.cookies.parse(set_cookie)
           end
-
-          super
         end
       end
 

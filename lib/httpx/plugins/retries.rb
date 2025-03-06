@@ -125,9 +125,10 @@ module HTTPX
               retry_start = Utils.now
               log { "retrying after #{retry_after} secs..." }
               selector.after(retry_after) do
-                if request.response
+                if (response = request.response)
+                  response.finish!
                   # request has terminated abruptly meanwhile
-                  request.emit(:response, request.response)
+                  request.emit(:response, response)
                 else
                   log { "retrying (elapsed time: #{Utils.elapsed_time(retry_start)})!!" }
                   send_request(request, selector, options)
