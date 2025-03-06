@@ -9,6 +9,7 @@ module HTTPX
 
     type resolver_manager = Resolver::Multi | Resolver::System
 
+    @max_connections: Integer
     @max_connections_per_origin: Integer
     @pool_timeout: Numeric
     @options: Options
@@ -16,6 +17,8 @@ module HTTPX
     @resolver_mtx: Thread::Mutex
     @connections: Hash[String, Array[Connection]]
     @connection_mtx: Thread::Mutex
+    @connections_counter: Integer
+    @max_connections_cond: ConditionVariable
     @origin_counters: Hash[String, Integer]
     @origin_conds: Hash[String, ConditionVariable]
 
@@ -42,5 +45,7 @@ module HTTPX
     def checkout_new_connection: (http_uri uri, Options options) -> Connection
 
     def checkout_new_resolver: (Class resolver_type, Options options) -> resolver_manager
+
+    def drop_connection: (?Connection connection) -> Connection?
   end
 end
