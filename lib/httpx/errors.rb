@@ -29,17 +29,8 @@ module HTTPX
     end
   end
 
-  # Raise when it can't acquire a connection for a given origin.
-  class PoolTimeoutError < TimeoutError
-    attr_reader :origin
-
-    # initializes the +origin+ it refers to, and the
-    # +timeout+ causing the error.
-    def initialize(origin, timeout)
-      @origin = origin
-      super(timeout, "Timed out after #{timeout} seconds while waiting for a connection to #{origin}")
-    end
-  end
+  # Raise when it can't acquire a connection from the pool.
+  class PoolTimeoutError < TimeoutError; end
 
   # Error raised when there was a timeout establishing the connection to a server.
   # This may be raised due to timeouts during TCP and TLS (when applicable) connection
