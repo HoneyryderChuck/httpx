@@ -27,6 +27,14 @@ module HTTPX
       [Socket::AF_INET]
     end.freeze
 
+    SET_TEMPORARY_NAME = ->(mod, pl = nil) do
+      if mod.respond_to?(:set_temporary_name) # ruby 3.4 only
+        name = mod.name || "#{mod.superclass.name}(plugin)"
+        name = "#{name}/#{pl}" if pl
+        mod.set_temporary_name(name)
+      end
+    end
+
     DEFAULT_OPTIONS = {
       :max_requests => Float::INFINITY,
       :debug => nil,
@@ -47,18 +55,18 @@ module HTTPX
         write_timeout: WRITE_TIMEOUT,
         request_timeout: REQUEST_TIMEOUT,
       },
-      :headers_class => Class.new(Headers),
+      :headers_class => Class.new(Headers, &SET_TEMPORARY_NAME),
       :headers => {},
       :window_size => WINDOW_SIZE,
       :buffer_size => BUFFER_SIZE,
       :body_threshold_size => MAX_BODY_THRESHOLD_SIZE,
-      :request_class => Class.new(Request),
-      :response_class => Class.new(Response),
-      :request_body_class => Class.new(Request::Body),
-      :response_body_class => Class.new(Response::Body),
-      :pool_class => Class.new(Pool),
-      :connection_class => Class.new(Connection),
-      :options_class => Class.new(self),
+      :request_class => Class.new(Request, &SET_TEMPORARY_NAME),
+      :response_class => Class.new(Response, &SET_TEMPORARY_NAME),
+      :request_body_class => Class.new(Request::Body, &SET_TEMPORARY_NAME),
+      :response_body_class => Class.new(Response::Body, &SET_TEMPORARY_NAME),
+      :pool_class => Class.new(Pool, &SET_TEMPORARY_NAME),
+      :connection_class => Class.new(Connection, &SET_TEMPORARY_NAME),
+      :options_class => Class.new(self, &SET_TEMPORARY_NAME),
       :transport => nil,
       :addresses => nil,
       :persistent => false,
@@ -296,35 +304,42 @@ module HTTPX
     def extend_with_plugin_classes(pl)
       if defined?(pl::RequestMethods) || defined?(pl::RequestClassMethods)
         @request_class = @request_class.dup
+        SET_TEMPORARY_NAME[@request_class, pl]
         @request_class.__send__(:include, pl::RequestMethods) if defined?(pl::RequestMethods)
         @request_class.extend(pl::RequestClassMethods) if defined?(pl::RequestClassMethods)
       end
       if defined?(pl::ResponseMethods) || defined?(pl::ResponseClassMethods)
         @response_class = @response_class.dup
+        SET_TEMPORARY_NAME[@response_class, pl]
         @response_class.__send__(:include, pl::ResponseMethods) if defined?(pl::ResponseMethods)
         @response_class.extend(pl::ResponseClassMethods) if defined?(pl::ResponseClassMethods)
       end
       if defined?(pl::HeadersMethods) || defined?(pl::HeadersClassMethods)
         @headers_class = @headers_class.dup
+        SET_TEMPORARY_NAME[@headers_class, pl]
         @headers_class.__send__(:include, pl::HeadersMethods) if defined?(pl::HeadersMethods)
         @headers_class.extend(pl::HeadersClassMethods) if defined?(pl::HeadersClassMethods)
       end
       if defined?(pl::RequestBodyMethods) || defined?(pl::RequestBodyClassMethods)
         @request_body_class = @request_body_class.dup
+        SET_TEMPORARY_NAME[@request_body_class, pl]
         @request_body_class.__send__(:include, pl::RequestBodyMethods) if defined?(pl::RequestBodyMethods)
         @request_body_class.extend(pl::RequestBodyClassMethods) if defined?(pl::RequestBodyClassMethods)
       end
       if defined?(pl::ResponseBodyMethods) || defined?(pl::ResponseBodyClassMethods)
         @response_body_class = @response_body_class.dup
+        SET_TEMPORARY_NAME[@response_body_class, pl]
         @response_body_class.__send__(:include, pl::ResponseBodyMethods) if defined?(pl::ResponseBodyMethods)
         @response_body_class.extend(pl::ResponseBodyClassMethods) if defined?(pl::ResponseBodyClassMethods)
       end
       if defined?(pl::PoolMethods)
         @pool_class = @pool_class.dup
+        SET_TEMPORARY_NAME[@pool_class, pl]
         @pool_class.__send__(:include, pl::PoolMethods)
       end
       if defined?(pl::ConnectionMethods)
         @connection_class = @connection_class.dup
+        SET_TEMPORARY_NAME[@connection_class, pl]
         @connection_class.__send__(:include, pl::ConnectionMethods)
       end
       return unless defined?(pl::OptionsMethods)
