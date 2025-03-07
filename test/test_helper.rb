@@ -9,6 +9,12 @@ if ENV.key?("CI")
   SimpleCov.coverage_dir "coverage/#{coverage_key}"
 end
 
+if RUBY_VERSION >= "3.4.0"
+  Warning.categories.each do |cat|
+    Warning[cat] = true
+  end
+end
+
 gem "minitest"
 require "minitest/autorun"
 
