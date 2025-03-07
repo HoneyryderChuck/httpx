@@ -167,7 +167,12 @@ module HTTPX
 
     # :nocov:
     def inspect
-      "#<#{self.class}: #{@ip}:#{@port} (state: #{@state})>"
+      "#<#{self.class}:#{object_id} " \
+        "#{@ip}:#{@port} " \
+        "@state=#{@state} " \
+        "@hostname=#{@hostname} " \
+        "@addresses=#{@addresses} " \
+        "@state=#{@state}>"
     end
     # :nocov:
 
