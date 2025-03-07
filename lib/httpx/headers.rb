@@ -137,7 +137,8 @@ module HTTPX
 
     # :nocov:
     def inspect
-      to_hash.inspect
+      "#<#{self.class}:#{object_id} " \
+        "#{to_hash.inspect}>"
     end
     # :nocov:
 

@@ -247,7 +247,7 @@ module HTTPX
 
     # :nocov:
     def inspect
-      "#<HTTPX::Request:#{object_id} " \
+      "#<#{self.class}:#{object_id} " \
         "#{@verb} " \
         "#{uri} " \
         "@headers=#{@headers} " \

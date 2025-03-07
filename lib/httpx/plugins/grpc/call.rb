@@ -15,7 +15,7 @@ module HTTPX
         end
 
         def inspect
-          "#GRPC::Call(#{grpc_response})"
+          "#{self.class}(#{grpc_response})"
         end
 
         def to_s

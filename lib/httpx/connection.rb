@@ -378,6 +378,16 @@ module HTTPX
       @current_selector = nil
     end
 
+    # :nocov:
+    def inspect
+      "#<#{self.class}:#{object_id} " \
+        "@origin=#{@origin} " \
+        "@state=#{@state} " \
+        "@pending=#{@pending.size} " \
+        "@io=#{@io}>"
+    end
+    # :nocov:
+
     private
 
     def connect
