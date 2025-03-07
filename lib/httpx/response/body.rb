@@ -159,7 +159,7 @@ module HTTPX
 
     # :nocov:
     def inspect
-      "#<HTTPX::Response::Body:#{object_id} " \
+      "#<#{self.class}:#{object_id} " \
         "@state=#{@state} " \
         "@length=#{@length}>"
     end
