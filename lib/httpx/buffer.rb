@@ -30,9 +30,16 @@ module HTTPX
 
     attr_reader :limit
 
-    def initialize(limit)
-      @buffer = "".b
-      @limit = limit
+    if RUBY_VERSION >= "3.4.0"
+      def initialize(limit)
+        @buffer = String.new("", encoding: Encoding::BINARY, capacity: limit)
+        @limit = limit
+      end
+    else
+      def initialize(limit)
+        @buffer = "".b
+        @limit = limit
+      end
     end
 
     def full?
