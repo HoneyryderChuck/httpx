@@ -8,8 +8,8 @@ module HTTPX
 
     COLORS: Hash[Symbol, Integer]
 
-    def log: (?level: Integer?, ?color: Symbol?) { () -> String } -> void
+    def log: (?level: Integer?, ?color: Symbol?, ?debug_level: Integer, ?debug: _IOLogger?) { () -> String } -> void
 
-    def log_exception: (Exception error, ?level: Integer, ?color: Symbol) -> void
+    def log_exception: (Exception error, ?level: Integer, ?color: Symbol, ?debug_level: Integer, ?debug: _IOLogger?) -> void
   end
 end

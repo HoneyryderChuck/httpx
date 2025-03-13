@@ -13,6 +13,12 @@ module HTTPX
     # by the end user in $http_init_time, different diff metrics can be shown. The "point of time" is calculated
     # using the monotonic clock.
     module InternalTelemetry
+      DEBUG_LEVEL = 3
+
+      def self.extra_options(options)
+        options.merge(debug_level: 3)
+      end
+
       module TrackTimeMethods
         private
 
@@ -28,7 +34,19 @@ module HTTPX
           after_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :millisecond)
           # $http_init_time = after_time
           elapsed = after_time - prev_time
-          warn(+"\e[31m" << "[ELAPSED TIME]: #{label}: #{elapsed} (ms)" << "\e[0m")
+          # klass = self.class
+
+          # until (class_name = klass.name)
+          #   klass = klass.superclass
+          # end
+          log(
+            level: DEBUG_LEVEL,
+            color: :red,
+            debug_level: @options ? @options.debug_level : DEBUG_LEVEL,
+            debug: nil
+          ) do
+            "[ELAPSED TIME]: #{label}: #{elapsed} (ms)" << "\e[0m"
+          end
         end
       end
 
@@ -88,6 +106,7 @@ module HTTPX
 
       module RequestMethods
         def self.included(klass)
+          klass.prepend Loggable
           klass.prepend TrackTimeMethods
           super
         end
@@ -114,6 +133,7 @@ module HTTPX
 
       module PoolMethods
         def self.included(klass)
+          klass.prepend Loggable
           klass.prepend TrackTimeMethods
           super
         end
