@@ -95,5 +95,8 @@ module HTTPX
 
     class GoawayError < Error
     end
+
+    class PingError < Error
+    end
   end
 end
