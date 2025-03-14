@@ -115,16 +115,13 @@ class TestHTTP2Server
       when :wait_readable
         return
       when nil
-        sock.close
-        @ios.delete(sock)
-        @conns.delete(sock)
+        close_socket(sock)
         return
       else
         @conns[sock] << data
 
         if sock.closed?
-          @ios.delete(sock)
-          @conns.delete(sock)
+          purge_socket(sock)
           return
         end
       end
@@ -132,9 +129,7 @@ class TestHTTP2Server
   rescue StandardError => e
     puts "#{e.class} exception: #{e.message} - closing socket."
     puts e.backtrace
-    @ios.delete(sock)
-    @conns.delete(sock)
-    sock.close
+    close_socket(sock)
   end
 
   def handle_stream(_conn, stream)
@@ -157,13 +152,21 @@ class TestHTTP2Server
     end
 
     conn.on(:goaway) do
-      sock.close
-      @ios.delete(sock)
-      @conns.delete(sock)
+      close_socket(sock)
     end
     conn.on(:stream) do |stream|
       handle_stream(conn, stream)
     end
+  end
+
+  def close_socket(sock)
+    sock.close
+    purge_socket(sock)
+  end
+
+  def purge_socket(sock)
+    @ios.delete(sock)
+    @conns.delete(sock)
   end
 end
 
