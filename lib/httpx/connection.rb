@@ -423,6 +423,8 @@ module HTTPX
             siz = @io.read(@window_size, @read_buffer)
             log(level: 3, color: :cyan) { "IO READ: #{siz} bytes... (wsize: #{@window_size}, rbuffer: #{@read_buffer.bytesize})" }
             unless siz
+              @write_buffer.clear
+
               ex = EOFError.new("descriptor closed")
               ex.set_backtrace(caller)
               on_error(ex)
