@@ -16,6 +16,12 @@ module HTTPX
       end
     end
 
+    class PingError < Error
+      def initialize
+        super(0, :ping_error)
+      end
+    end
+
     class GoawayError < Error
       def initialize
         super(0, :no_error)
@@ -414,11 +420,9 @@ module HTTPX
     end
 
     def on_pong(ping)
-      if @pings.delete(ping.to_s)
-        emit(:pong)
-      else
-        close(:protocol_error, "ping payload did not match")
-      end
+      raise PingError unless @pings.delete(ping.to_s)
+
+      emit(:pong)
     end
   end
 end
