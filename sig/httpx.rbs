@@ -2,6 +2,7 @@ module HTTPX
   extend Chainable
 
   EMPTY: Array[untyped]
+  EMPTY_HASH: Hash[untyped, untyped]
 
   VERSION: String
 
@@ -16,7 +17,10 @@ module HTTPX
   type ip_family = Integer #Socket::AF_INET6 | Socket::AF_INET
 
   module Plugins
-    def self?.load_plugin: (Symbol) -> Module
+    self.@plugins: Hash[Symbol, Module]
+    self.@plugins_mutex: Thread::Mutex
+
+    def self?.load_plugin: (Symbol name) -> Module
 
     def self?.register_plugin: (Symbol, Module) -> void
   end
