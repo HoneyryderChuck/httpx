@@ -47,7 +47,12 @@ class FaradayDatadogTest < Minitest::Test
     set_datadog
     uri = URI(build_uri("/status/500"))
 
-    ex = assert_raises(Faraday::ServerError) { faraday_connection.get(uri) }
+    ex = assert_raises(Faraday::ServerError) do
+      faraday_connection.tap do |conn|
+        adapter_handler = conn.builder.handlers.last
+        conn.builder.insert_before adapter_handler, Faraday::Response::RaiseError
+      end.get(uri)
+    end
 
     assert !fetch_spans.empty?, "expected to have spans"
     verify_instrumented_request(ex.response[:status], verb: "GET", uri: uri, error: "Error 500")
@@ -59,7 +64,12 @@ class FaradayDatadogTest < Minitest::Test
     set_datadog
     uri = URI(build_uri("/status/404"))
 
-    ex = assert_raises(Faraday::ResourceNotFound) { faraday_connection.get(uri) }
+    ex = assert_raises(Faraday::ResourceNotFound) do
+      faraday_connection.tap do |conn|
+        adapter_handler = conn.builder.handlers.last
+        conn.builder.insert_before adapter_handler, Faraday::Response::RaiseError
+      end.get(uri)
+    end
 
     assert !fetch_spans.empty?, "expected to have spans"
     verify_instrumented_request(ex.response[:status], verb: "GET", uri: uri, error: "Error 404")
