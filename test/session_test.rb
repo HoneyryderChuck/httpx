@@ -48,6 +48,29 @@ class SessionTest < Minitest::Test
     assert body.foo == "response-body-foo", "response body method is unexpected"
   end
 
+  def test_session_subplugin
+    # main plugin loaded last
+    klient_class = Class.new(HTTPX::Session)
+    klient_class.plugin(:subfoo_test).plugin(:mainfoo_test)
+    session = klient_class.new
+    assert session.respond_to?(:foo), "instance methods weren't added"
+    assert session.foo == "sub-foo", "instance method is unexpected"
+
+    # main plugin loaded first
+    klient_class = Class.new(HTTPX::Session)
+    klient_class.plugin(:mainfoo_test).plugin(:subfoo_test)
+    session = klient_class.new
+    assert session.respond_to?(:foo), "instance methods weren't added"
+    assert session.foo == "sub-foo", "instance method is unexpected"
+
+    # subplugin not loaded
+    klient_class = Class.new(HTTPX::Session)
+    klient_class.plugin(:mainfoo_test)
+    session = klient_class.new
+    assert session.respond_to?(:foo), "instance methods weren't added"
+    assert session.foo == "main-foo", "instance method is unexpected"
+  end
+
   def test_session_make_requests
     get_uri = build_uri("/get")
     post_uri = build_uri("/post")
@@ -259,6 +282,31 @@ class SessionTest < Minitest::Test
       end)
     end
   end
+
+  TestMainPlugin = Module.new do
+    self::InstanceMethods = Module.new do
+      def foo
+        "main-foo"
+      end
+    end
+  end
+
+  TestSubPlugin = Module.new do
+    def self.subplugins
+      { mainfoo_test: TestSubPlugin::SubPlugin }
+    end
+
+    self::SubPlugin = Module.new do
+      self::InstanceMethods = Module.new do
+        def foo
+          "sub-foo"
+        end
+      end
+    end
+  end
+
+  HTTPX::Plugins.register_plugin :mainfoo_test, TestMainPlugin
+  HTTPX::Plugins.register_plugin :subfoo_test, TestSubPlugin
 
   private
 
