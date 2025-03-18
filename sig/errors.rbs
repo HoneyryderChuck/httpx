@@ -67,7 +67,4 @@ module HTTPX
 
     def initialize: (Connection connection, String hostname, ?String message) -> untyped
   end
-
-  class MisdirectedRequestError < HTTPError
-  end
 end

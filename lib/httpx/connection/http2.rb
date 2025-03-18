@@ -311,17 +311,20 @@ module HTTPX
       @streams.delete(request)
 
       if error
-        ex = Error.new(stream.id, error)
-        ex.set_backtrace(caller)
-        response = ErrorResponse.new(request, ex)
-        request.response = response
-        emit(:response, request, response)
+        case error
+        when :http_1_1_required
+          emit(:error, request, error)
+        else
+          ex = Error.new(stream.id, error)
+          ex.set_backtrace(caller)
+          response = ErrorResponse.new(request, ex)
+          request.response = response
+          emit(:response, request, response)
+        end
       else
         response = request.response
         if response && response.is_a?(Response) && response.status == 421
-          ex = MisdirectedRequestError.new(response)
-          ex.set_backtrace(caller)
-          emit(:error, request, ex)
+          emit(:error, request, :http_1_1_required)
         else
           emit(:response, request, response)
         end
@@ -352,7 +355,12 @@ module HTTPX
       is_connection_closed = @connection.state == :closed
       if error
         @buffer.clear if is_connection_closed
-        if error == :no_error
+        case error
+        when :http_1_1_required
+          while (request = @pending.shift)
+            emit(:error, request, error)
+          end
+        when :no_error
           ex = GoawayError.new
           @pending.unshift(*@streams.keys)
           @drains.clear
@@ -360,8 +368,11 @@ module HTTPX
         else
           ex = Error.new(0, error)
         end
-        ex.set_backtrace(caller)
-        handle_error(ex)
+
+        if ex
+          ex.set_backtrace(caller)
+          handle_error(ex)
+        end
       end
       return unless is_connection_closed && @streams.empty?
 

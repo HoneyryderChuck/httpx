@@ -115,8 +115,4 @@ module HTTPX
       @response.status
     end
   end
-
-  # error raised when a request was sent a server which can't reproduce a response, and
-  # has therefore returned an HTTP response using the 421 status code.
-  class MisdirectedRequestError < HTTPError; end
 end
