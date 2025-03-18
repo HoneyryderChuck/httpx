@@ -1,0 +1,18 @@
+module HTTPX
+  module Plugins
+    module Query
+      def self.subplugins: () -> Hash[Symbol, Module]
+
+      module InstanceMethods
+        def query: (uri | [uri], **untyped) -> response
+                 | (_Each[uri | [uri, request_params]], **untyped) -> Array[response]
+      end
+
+      module QueryRetries
+        module InstanceMethods
+        end
+      end
+    end
+    type sessionQuery = Session & Query::InstanceMethods
+  end
+end
