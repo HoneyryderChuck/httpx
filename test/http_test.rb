@@ -39,6 +39,7 @@ class HTTPTest < Minitest::Test
   include Plugins::Brotli if RUBY_ENGINE == "ruby"
   include Plugins::SsrfFilter
   include Plugins::XML
+  include Plugins::Query
 
   def test_verbose_log
     log = StringIO.new

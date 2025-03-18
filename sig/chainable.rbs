@@ -39,6 +39,7 @@ module HTTPX
               | (:ssrf_filter, ?options) -> Plugins::sessionSsrf
               | (:webdav, ?options) -> Plugins::sessionWebDav
               | (:xml, ?options) -> Plugins::sessionXML
+              | (:query, ?options) -> Plugins::sessionQuery
               | (Symbol | Module, ?options) { (Class) -> void } -> Session
               | (Symbol | Module, ?options) -> Session
 
