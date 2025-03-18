@@ -112,6 +112,11 @@ class FaradayTest < Minitest::Test
     assert_equal "OK", response.reason_phrase
   end
 
+  def test_adapter_get_reason_phrase_not_found
+    response = get(build_path("/status/404"))
+    assert_equal "Not Found", response.reason_phrase
+  end
+
   def test_adapter_post_send_url_encoded_params
     json = JSON.parse post(build_path("/post"), name: "zack").body
     assert_equal({ "name" => "zack" }, json["form"])

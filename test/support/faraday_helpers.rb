@@ -23,8 +23,6 @@ module FaradayHelpers
 
     @faraday_connection = Faraday::Connection.new(server.to_s, options, &builder_block).tap do |conn|
       conn.headers["X-Faraday-Adapter"] = "httpx"
-      adapter_handler = conn.builder.handlers.last
-      conn.builder.insert_before adapter_handler, Faraday::Response::RaiseError
     end
   end
 
