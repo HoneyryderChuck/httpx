@@ -5,7 +5,7 @@ module HTTPX::Transcoder
     def self?.encode: (_ToJson json) -> Encoder
     def self?.decode: (HTTPX::Response response) -> _Decoder
 
-    def self?.json_load: (string source, ?json_options) -> untyped
+    def self?.json_load: (string source, ?JSON::options) -> untyped
     def self?.json_dump: (_ToJson obj, *untyped) -> String
 
     class Encoder

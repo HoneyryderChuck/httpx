@@ -40,7 +40,7 @@ module HTTPX
 
     def complete?: () -> bool
 
-    def json: (?json_options opts) -> untyped
+    def json: (?JSON::options opts) -> untyped
 
     def form: () -> Hash[String, untyped]
 

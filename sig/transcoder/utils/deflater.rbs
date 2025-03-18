@@ -5,7 +5,6 @@ module HTTPX
 
       @body: BodyReader
       @buffer: Response::Buffer?
-      @body: BodyReader
       @closed: bool
 
       attr_reader content_type: String
