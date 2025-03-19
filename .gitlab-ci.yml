@@ -90,12 +90,10 @@ test ruby 3/1:
     ./spec.sh ruby 3.1
 test ruby 3/2:
   <<: *test_settings
-  <<: *yjit_matrix
   script:
     ./spec.sh ruby 3.2
 test ruby 3/3:
   <<: *test_settings
-  <<: *yjit_matrix
   script:
     ./spec.sh ruby 3.3
 test ruby 3/4:
