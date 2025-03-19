@@ -5,6 +5,8 @@ module HTTPX
   }
 
   class Pool
+    POOL_TIMEOUT: Integer
+
     type resolver_manager = Resolver::Multi | Resolver::System
 
     @max_connections_per_origin: Integer

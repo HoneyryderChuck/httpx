@@ -8,6 +8,7 @@ module HTTPX
     attr_reader streams: Hash[Request, ::HTTP2::Stream]
     attr_reader pending: Array[Request]
 
+    @connection: HTTP2::Client
     @options: Options
     @settings: Hash[Symbol, Integer | bool]
     @max_concurrent_requests: Integer
