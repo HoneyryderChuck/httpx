@@ -109,6 +109,9 @@ module HTTPX
     # persistent
     attr_reader persistent: bool
 
+    # close_on_fork
+    attr_reader close_on_fork: bool
+
     # resolver_options
     attr_reader resolver_options: Hash[Symbol, untyped]
 

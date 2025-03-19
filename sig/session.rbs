@@ -14,8 +14,7 @@ module HTTPX
 
     @persistent: bool
     @wrapped: bool
-
-    def self.plugin: (Symbol | Module plugin, ?options? options) ?{ (Class) -> void } -> singleton(Session)
+    @closing: bool
 
     def wrap: () { (instance) -> void } -> void
 
@@ -86,6 +85,18 @@ module HTTPX
     def selector_store: () -> Hash[instance, Selector]
 
     attr_reader self.default_options: Options
+    self.@plugins: Array[Module]
+
+    def self.plugin: (Symbol | Module plugin, ?options? options) ?{ (Class) -> void } -> singleton(Session)
+
+
+    INSTANCES: Hash[Session, Session]
+
+    def self.after_fork: () -> void
+
+    module ForkTracker
+      def _fork: () -> void
+    end
   end
 
   OriginalSession: singleton(Session)
