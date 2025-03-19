@@ -132,6 +132,7 @@ class OptionsTest < Minitest::Test
       :transport_options => nil,
       :addresses => nil,
       :persistent => false,
+      :close_on_fork => false,
       :resolver_class => bar.resolver_class,
       :resolver_options => bar.resolver_options,
       :ip_families => bar.ip_families,

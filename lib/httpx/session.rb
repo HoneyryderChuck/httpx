@@ -20,6 +20,7 @@ module HTTPX
       @pool = @options.pool_class.new(@options.pool_options)
       @wrapped = false
       @closing = false
+      INSTANCES[self] = self if @persistent && @options.close_on_fork && INSTANCES
       wrap(&blk) if blk
     end
 
@@ -484,6 +485,36 @@ module HTTPX
           @default_options.freeze
         end
         self
+      end
+    end
+
+    # setup of the support for close_on_fork sessions.
+    # adapted from https://github.com/mperham/connection_pool/blob/main/lib/connection_pool.rb#L48
+    if Process.respond_to?(:fork)
+      INSTANCES = ObjectSpace::WeakMap.new
+      private_constant :INSTANCES
+
+      def self.after_fork
+        INSTANCES.each_value(&:close)
+        nil
+      end
+
+      if ::Process.respond_to?(:_fork)
+        module ForkTracker
+          def _fork
+            pid = super
+            Session.after_fork if pid.zero?
+            pid
+          end
+        end
+        Process.singleton_class.prepend(ForkTracker)
+      end
+    else
+      INSTANCES = nil
+      private_constant :INSTANCES
+
+      def self.after_fork
+        # noop
       end
     end
   end
