@@ -28,6 +28,10 @@ module HTTPX
 
     def initialize: (Symbol | String verb, generic_uri uri, Options options, ?request_params params) -> untyped
 
+    def empty?: () -> bool
+
+    def close: () -> void
+
     def interests: () -> (:r | :w)
 
     def merge_headers: (_Each[[String, headers_value]]) -> void

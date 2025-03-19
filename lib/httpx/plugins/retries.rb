@@ -167,7 +167,7 @@ module HTTPX
           unless response.headers.key?("accept-ranges") &&
                  response.headers["accept-ranges"] == "bytes" && # there's nothing else supported though...
                  (original_body = response.body)
-            response.close if response.respond_to?(:close)
+            response.body.close
             return
           end
 

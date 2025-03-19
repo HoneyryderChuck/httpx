@@ -24,7 +24,7 @@ module HTTPX
         @form: Enumerable[[Symbol | string, Object & multipart_nested_value]]
         @parts: Array[Object & _Reader]
 
-        def bytesize: () -> Integer
+        attr_reader bytesize: Integer
 
         def content_type: () -> String
 

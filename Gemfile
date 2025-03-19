@@ -57,6 +57,7 @@ group :test do
 
   gem "aws-sdk-s3"
   gem "faraday"
+  gem "faraday-multipart"
   gem "idnx"
   gem "oga"
 

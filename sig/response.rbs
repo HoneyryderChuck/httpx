@@ -1,5 +1,7 @@
 module HTTPX
   interface _Response
+    def <<: (String data) -> void
+
     def finished?: () -> bool
 
     def raise_for_status: () -> self
@@ -23,6 +25,7 @@ module HTTPX
     @options: Options
     @request: Request
     @content_type: ContentType
+    @finished: bool
 
     def copy_to: (_ToPath | _Writer destination) -> void
 
@@ -37,6 +40,8 @@ module HTTPX
     def bodyless?: () -> bool
 
     def content_type: () -> ContentType
+
+    def finish!: () -> void
 
     def complete?: () -> bool
 
@@ -77,9 +82,9 @@ module HTTPX
     @options: Options
     @error: Exception
 
-    attr_reader request: Request
+    %a{pure} attr_reader request: Request
 
-    attr_reader response: Response?
+    %a{pure} attr_reader response: Response?
 
     def status: () -> (Integer | _ToS)
 
