@@ -50,6 +50,9 @@ module HTTPX
     # will be +true+ when request body has been completely flushed.
     def_delegator :@body, :empty?
 
+    # closes the body
+    def_delegator :@body, :close
+
     # initializes the instance with the given +verb+ (an upppercase String, ex. 'GEt'),
     # an absolute or relative +uri+ (either as String or URI::HTTP object), the
     # request +options+ (instance of HTTPX::Options) and an optional Hash of +params+.
@@ -273,7 +276,6 @@ module HTTPX
       when :done
         return if @state == :expect
 
-        @body.close
       end
       @state = nextstate
       emit(@state, self)

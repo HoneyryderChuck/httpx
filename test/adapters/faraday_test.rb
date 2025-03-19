@@ -2,6 +2,7 @@
 
 require_relative "../test_helper"
 require "faraday"
+require "faraday/multipart"
 require "forwardable"
 require "httpx/adapters/faraday"
 require_relative "../support/http_helpers"
@@ -235,6 +236,27 @@ class FaradayTest < Minitest::Test
     assert res.status == 200
 
     # TODO: test that request has been proxied
+  end
+
+  def test_adapter_multipart_retried
+    request = nil
+    check_error = lambda { |response|
+      request = response.instance_variable_get(:@request)
+      (response.is_a?(HTTPX::ErrorResponse) && response.error.is_a?(HTTPX::TimeoutError)) || response.status == 405
+    }
+    session = nil
+    faraday_conn = faraday_connection(request: { read_timeout: 2 }) do |http|
+      session = http.with(max_retries: 1, retry_on: check_error)
+    end
+    adapter_handler = faraday_conn.builder.handlers.last
+    faraday_conn.builder.insert_before adapter_handler, Faraday::Multipart::Middleware
+    response = faraday_conn.post(build_path("/delay/4")) do |req|
+      req.body = {
+        image: Faraday::UploadIO.new(StringIO.new(File.read(fixture_file_path)), "image/jpeg"),
+      }
+    end
+    verify_status(response, 405)
+    assert request.retries.zero?, "expect request to have exhausted retries"
   end
 
   private

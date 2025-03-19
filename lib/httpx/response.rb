@@ -52,9 +52,6 @@ module HTTPX
     # copies the response body to a different location.
     def_delegator :@body, :copy_to
 
-    # closes the body.
-    def_delegator :@body, :close
-
     # the corresponding request uri.
     def_delegator :@request, :uri
 
@@ -72,6 +69,12 @@ module HTTPX
       @body = @options.response_body_class.new(self, @options)
       @finished = complete?
       @content_type = nil
+    end
+
+    # closes the respective +@request+ and +@body+.
+    def close
+      @request.close
+      @body.close
     end
 
     # merges headers defined in +h+ into the response headers.
@@ -264,7 +267,7 @@ module HTTPX
 
     # closes the error resources.
     def close
-      @response.close if @response && @response.respond_to?(:close)
+      @response.close if @response
     end
 
     # always true for error responses.
