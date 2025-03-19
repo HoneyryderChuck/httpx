@@ -11,6 +11,7 @@ module HTTPX
         @buffer = "".b
 
         @form = form
+        @bytesize = 0
         @parts = to_parts(form)
       end
 
@@ -42,6 +43,7 @@ module HTTPX
           aux << [key, val]
         end
         @form = form
+        @bytesize = 0
         @parts = to_parts(form)
         @part_index = 0
       end
@@ -49,7 +51,6 @@ module HTTPX
       private
 
       def to_parts(form)
-        @bytesize = 0
         params = form.each_with_object([]) do |(key, val), aux|
           Transcoder.normalize_keys(key, val, MULTIPART_VALUE_COND) do |k, v|
             next if v.nil?
