@@ -610,9 +610,9 @@ module HTTPX
       parser.on(:timeout) do |tout|
         @timeout = tout
       end
-      parser.on(:error) do |request, ex|
-        case ex
-        when MisdirectedRequestError
+      parser.on(:error) do |request, error|
+        case error
+        when :http_1_1_required
           current_session = @current_session
           current_selector = @current_selector
           parser.close
@@ -628,7 +628,7 @@ module HTTPX
           next unless request.active_timeouts.empty?
         end
 
-        response = ErrorResponse.new(request, ex)
+        response = ErrorResponse.new(request, error)
         request.response = response
         request.emit(:response, response)
       end

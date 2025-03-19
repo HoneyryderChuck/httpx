@@ -150,6 +150,17 @@ class HTTPSTest < Minitest::Test
       assert connection_count == 2, "expected to have 2 connections, instead have #{connection_count}"
       assert response.version == "1.1", "request should have been retried with HTTP/1.1"
     end
+
+    start_test_servlet(MisdirectedServer) do |server|
+      HTTPX.plugin(SessionWithPool).with(ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE }).wrap do |http|
+        uri = "#{server.origin}/"
+        response = http.get(uri)
+        verify_status(response, 200)
+        connection_count = http.connection_count
+        assert connection_count == 2, "expected to have 2 connections, instead have #{connection_count}"
+        assert response.version == "1.1", "request should have been retried with HTTP/1.1"
+      end
+    end
   end
 
   def test_http2_settings_timeout
