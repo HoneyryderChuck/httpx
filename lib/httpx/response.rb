@@ -282,6 +282,8 @@ module HTTPX
 
     # buffers lost chunks to error response
     def <<(data)
+      return unless @response
+
       @response << data
     end
   end
