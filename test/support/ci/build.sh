@@ -60,7 +60,7 @@ else
   export SSL_CERT_FILE=$CABUNDLEDIR/ca-bundle.crt
 fi
 
-if [[ "$RUBY_ENGINE" = "ruby" ]] && [[ ${RUBY_VERSION:0:1} = "3" ]] && [[ ! $RUBYOPT =~ "jit" ]]; then
+if [[ "$RUBY_ENGINE" = "ruby" ]] && [[ ${RUBY_VERSION:0:3} = "3.4" ]] && [[ ! $RUBYOPT =~ "jit" ]]; then
   echo "running runtime type checking..."
   bundle exec rbs collection install
   export RUBYOPT="$RUBYOPT -rbundler/setup -rrbs/test/setup"
