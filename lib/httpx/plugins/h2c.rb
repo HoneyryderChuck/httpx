@@ -42,6 +42,12 @@ module HTTPX
         end
       end
 
+      module RequestMethods
+        def valid_h2c_verb?
+          VALID_H2C_VERBS.include?(@verb)
+        end
+      end
+
       module ConnectionMethods
         using URIExtensions
 
@@ -53,7 +59,7 @@ module HTTPX
         def send(request)
           return super if @h2c_handshake
 
-          return super unless VALID_H2C_VERBS.include?(request.verb) && request.scheme == "http"
+          return super unless request.valid_h2c_verb? && request.scheme == "http"
 
           return super if @upgrade_protocol == "h2c"
 

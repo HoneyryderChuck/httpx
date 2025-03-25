@@ -11,6 +11,10 @@ module HTTPX
         def upgrade: (Request, Response) -> void
       end
 
+      module RequestMethods
+        def valid_h2c_verb?: () -> bool
+      end
+
       module ConnectionMethods
         def upgrade_to_h2c: (Request, Response) -> void
       end
