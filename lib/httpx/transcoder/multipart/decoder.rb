@@ -12,6 +12,7 @@ module HTTPX
         def initialize(filename, content_type)
           @original_filename = filename
           @content_type = content_type
+          @current = nil
           @file = Tempfile.new("httpx", encoding: Encoding::BINARY, mode: File::RDWR)
           super(@file)
         end
@@ -68,11 +69,12 @@ module HTTPX
             # raise Error, "couldn't parse part headers" unless idx
             return unless idx
 
+            # @type var head: String
             head = @buffer.byteslice(0..idx + 4 - 1)
 
             @buffer = @buffer.byteslice(head.bytesize..-1)
 
-            content_type = head[MULTIPART_CONTENT_TYPE, 1]
+            content_type = head[MULTIPART_CONTENT_TYPE, 1] || "text/plain"
             if (name = head[MULTIPART_CONTENT_DISPOSITION, 1])
               name = /\A"(.*)"\Z/ =~ name ? Regexp.last_match(1) : name.dup
               name.gsub!(/\\(.)/, "\\1")
@@ -83,7 +85,7 @@ module HTTPX
 
             filename = HTTPX::Utils.get_filename(head)
 
-            name = filename || +"#{content_type || "text/plain"}[]" if name.nil? || name.empty?
+            name = filename || +"#{content_type}[]" if name.nil? || name.empty?
 
             @current = name
 
