@@ -214,7 +214,7 @@ class HTTPSTest < Minitest::Test
   end
 
   def test_http2_client_goaway_with_no_response
-    start_test_servlet(KeepAlivePongServer) do |server|
+    start_test_servlet(KeepAlivePongThenGoawayServer) do |server|
       uri = "#{server.origin}/"
       HTTPX.plugin(SessionWithPool).with(ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE }) do |http|
         response = http.get(uri)

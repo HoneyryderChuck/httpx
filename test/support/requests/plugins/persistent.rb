@@ -39,7 +39,7 @@ module Requests
       def test_persistent_retry_http2_goaway
         return unless origin.start_with?("https")
 
-        start_test_servlet(KeepAlivePongServer) do |server|
+        start_test_servlet(KeepAlivePongThenGoawayServer) do |server|
           http = HTTPX.plugin(SessionWithPool)
                       .plugin(RequestInspector)
                       .plugin(:persistent) # implicit max_retries == 1
