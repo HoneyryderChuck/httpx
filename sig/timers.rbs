@@ -14,18 +14,16 @@ module HTTPX
 
     def initialize: () -> void
 
+    private
+
+    def drop_elapsed!: (?Numeric elapsed_time) -> void
+
     class Interval
       include Comparable
 
       attr_reader interval: Numeric
 
       @callbacks: Array[callback]
-      @on_empty: callback?
-
-
-      def on_empty: () { () -> void } -> void
-
-      def cancel: () -> void
 
       def to_f: () -> Float
 
@@ -35,7 +33,7 @@ module HTTPX
 
       def elapse: (Numeric elapsed) -> Numeric
 
-      def elapsed?: () -> bool
+      def elapsed?: (?Numeric elapsed_time) -> bool
 
       def no_callbacks?: () -> bool
 

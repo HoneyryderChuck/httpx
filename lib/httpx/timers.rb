@@ -7,17 +7,16 @@ module HTTPX
     end
 
     def after(interval_in_secs, cb = nil, &blk)
-      return unless interval_in_secs
-
       callback = cb || blk
+
+      raise Error, "timer must have a callback" unless callback
 
       # I'm assuming here that most requests will have the same
       # request timeout, as in most cases they share common set of
       # options. A user setting different request timeouts for 100s of
       # requests will already have a hard time dealing with that.
-      unless (interval = @intervals.find { |t| t.interval == interval_in_secs })
+      unless (interval = @intervals.bsearch { |t| t.interval == interval_in_secs })
         interval = Interval.new(interval_in_secs)
-        interval.on_empty { @intervals.delete(interval) }
         @intervals << interval
         @intervals.sort!
       end
@@ -30,6 +29,8 @@ module HTTPX
     end
 
     def wait_interval
+      drop_elapsed!
+
       return if @intervals.empty?
 
       @next_interval_at = Utils.now
@@ -43,9 +44,23 @@ module HTTPX
 
       elapsed_time = Utils.elapsed_time(@next_interval_at)
 
+      drop_elapsed!(elapsed_time)
+
       @intervals = @intervals.drop_while { |interval| interval.elapse(elapsed_time) <= 0 }
 
       @next_interval_at = nil if @intervals.empty?
+    end
+
+    private
+
+    def drop_elapsed!(elapsed_time = 0)
+      # check first, if not elapsed, then return
+      first_interval = @intervals.first
+
+      return unless first_interval && first_interval.elapsed?(elapsed_time)
+
+      # TODO: would be nice to have a drop_while!
+      @intervals = @intervals.drop_while { |interval| interval.elapse(elapsed_time) <= 0 }
     end
 
     class Timer
@@ -67,15 +82,6 @@ module HTTPX
       def initialize(interval)
         @interval = interval
         @callbacks = []
-        @on_empty = nil
-      end
-
-      def on_empty(&blk)
-        @on_empty = blk
-      end
-
-      def cancel
-        @on_empty.call
       end
 
       def <=>(other)
@@ -98,18 +104,20 @@ module HTTPX
 
       def delete(callback)
         @callbacks.delete(callback)
-        @on_empty.call if @callbacks.empty?
       end
 
       def no_callbacks?
         @callbacks.empty?
       end
 
-      def elapsed?
-        @interval <= 0
+      def elapsed?(elapsed = 0)
+        (@interval - elapsed) <= 0 || @callbacks.empty?
       end
 
       def elapse(elapsed)
+        # same as elapsing
+        return 0 if @callbacks.empty?
+
         @interval -= elapsed
 
         if @interval <= 0
