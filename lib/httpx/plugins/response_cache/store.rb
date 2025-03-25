@@ -25,7 +25,7 @@ module HTTPX::Plugins
       end
 
       def cache(request, response)
-        return unless ResponseCache.cacheable_request?(request) && ResponseCache.cacheable_response?(response)
+        return unless request.cacheable_verb? && ResponseCache.cacheable_response?(response)
 
         _set(request, response)
       end

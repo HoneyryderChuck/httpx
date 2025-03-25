@@ -4,7 +4,6 @@ module HTTPX
       CACHEABLE_VERBS: Array[verb]
       CACHEABLE_STATUS_CODES: Array[Integer]
 
-      def self?.cacheable_request?: (Request & RequestMethods request) -> bool
       def self?.cacheable_response?: (::HTTPX::ErrorResponse | (Response & ResponseMethods) response) -> bool
       def self?.cached_response?: (response response) -> bool
 
@@ -34,12 +33,16 @@ module HTTPX
         @response_cache: Store
 
         def clear_response_cache: () -> void
+
+        def cacheable_request?: (Request & RequestMethods request) -> bool
       end
 
       module RequestMethods
         @response_cache_key: String
 
         def response_cache_key: () -> String
+
+        def cacheable_verb?: () -> bool
       end
 
       module ResponseMethods
