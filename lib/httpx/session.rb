@@ -193,6 +193,8 @@ module HTTPX
         select_connection(connection, selector)
       when :closing
         connection.once(:close) do
+          next unless connection.current_session == self
+
           connection.idling
           select_connection(connection, selector)
         end
@@ -371,6 +373,8 @@ module HTTPX
         coalesce_connections(found_connection, connection, selector, from_pool)
       else
         found_connection.once(:open) do
+          next unless found_connection.current_session == self
+
           coalesce_connections(found_connection, connection, selector, from_pool)
         end
       end
