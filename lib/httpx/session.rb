@@ -188,16 +188,9 @@ module HTTPX
         else
           pin_connection(connection, selector)
         end
-      when :closed
+      when :closing, :closed
         connection.idling
         select_connection(connection, selector)
-      when :closing
-        connection.once(:close) do
-          next unless connection.current_session == self
-
-          connection.idling
-          select_connection(connection, selector)
-        end
       else
         pin_connection(connection, selector)
       end
