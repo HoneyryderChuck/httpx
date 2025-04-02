@@ -631,6 +631,7 @@ module HTTPX
           next unless request.active_timeouts.empty?
         end
 
+        @inflight -= 1
         response = ErrorResponse.new(request, error)
         request.response = response
         request.emit(:response, response)
@@ -844,6 +845,7 @@ module HTTPX
 
       return unless request
 
+      @inflight -= 1
       response = ErrorResponse.new(request, error)
       request.response = response
       request.emit(:response, response)
