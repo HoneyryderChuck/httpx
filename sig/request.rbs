@@ -20,6 +20,7 @@ module HTTPX
 
     attr_writer persistent: bool
 
+    @ping: bool
     @query_params: Hash[interned, untyped]?
     @trailers: Headers?
     @informational_status: Integer?
@@ -27,6 +28,10 @@ module HTTPX
     @drainer: Enumerator[String, void]?
 
     def initialize: (Symbol | String verb, generic_uri uri, Options options, ?request_params params) -> untyped
+
+    def ping?: () -> bool
+
+    def ping!: () -> void
 
     def empty?: () -> bool
 

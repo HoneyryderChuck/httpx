@@ -296,6 +296,7 @@ module HTTPX
           @pending << request
           transition(:active) if @state == :inactive
           parser.ping
+          request.ping!
           return
         end
 
