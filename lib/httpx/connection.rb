@@ -672,7 +672,7 @@ module HTTPX
       when :idle
         @timeout = @current_timeout = @options.timeout[:connect_timeout]
 
-        @connected_at = nil
+        @connected_at = @response_received_at = nil
       when :open
         return if @state == :closed
 
