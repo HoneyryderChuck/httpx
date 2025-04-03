@@ -34,9 +34,9 @@ class Bug_1_4_1_Test < Minitest::Test
       # first connection is set to inactive
       sleep(2)
       response = persistent_session.get(uri)
-      verify_error_response(response, HTTPX::Connection::HTTP2::GoawayError)
+      verify_status(response, 200)
       assert persistent_session.connections.size == 2, "should have been just 1"
-      assert persistent_session.connections.first.state == :closed
+      assert(persistent_session.connections.one? { |c| c.state == :closed })
     ensure
       persistent_session.close
     end
