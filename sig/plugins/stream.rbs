@@ -27,7 +27,10 @@ module HTTPX
     type streamRequest = Request & Plugins::Stream::RequestMethods
 
     @request: streamRequest
+    @options: Options
     @session: Plugins::sessionStream
+    @response_enum: Enumerator[String]?
+    @buffered_chunks: Array[String]
     @on_chunk: ^(String) -> void | nil
 
     def each: () { (String) -> void } -> void

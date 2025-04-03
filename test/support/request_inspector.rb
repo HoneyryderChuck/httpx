@@ -17,6 +17,8 @@ module RequestInspector
       @total_responses.clear
     end
 
+    private
+
     def fetch_response(*)
       response = super
       if response
