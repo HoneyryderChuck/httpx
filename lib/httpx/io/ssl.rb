@@ -92,9 +92,12 @@ module HTTPX
     end
 
     def connect
-      super
-      return if @state == :negotiated ||
-                @state != :connected
+      return if @state == :negotiated
+
+      unless @state == :connected
+        super
+        return unless @state == :connected
+      end
 
       unless @io.is_a?(OpenSSL::SSL::SSLSocket)
         if (hostname_is_ip = (@ip == @sni_hostname))
