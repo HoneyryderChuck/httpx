@@ -110,7 +110,7 @@ module HTTPX
              )
             __try_partial_retry(request, response)
             log { "failed to get response, #{request.retries} tries to go..." }
-            request.retries -= 1
+            request.retries -= 1 unless request.ping? # do not exhaust retries on connection liveness probes
             request.transition(:idle)
 
             retry_after = options.retry_after

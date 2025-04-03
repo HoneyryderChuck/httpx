@@ -50,3 +50,24 @@ class KeepAlivePongServer < TestHTTP2Server
     end
   end
 end
+
+class KeepAlivePongThenCloseSocketServer < TestHTTP2Server
+  attr_reader :pings, :pongs
+
+  def initialize
+    @sent = false
+    super
+  end
+
+  private
+
+  def handle_connection(conn, sock)
+    super
+    conn.on(:stream) do |stream|
+      stream.on(:close) do
+        @sent = true
+        close_socket(sock)
+      end
+    end
+  end
+end

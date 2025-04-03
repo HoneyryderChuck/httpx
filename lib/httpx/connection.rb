@@ -296,6 +296,7 @@ module HTTPX
           @pending << request
           transition(:active) if @state == :inactive
           parser.ping
+          request.ping!
           return
         end
 
@@ -630,6 +631,7 @@ module HTTPX
           next unless request.active_timeouts.empty?
         end
 
+        @inflight -= 1
         response = ErrorResponse.new(request, error)
         request.response = response
         request.emit(:response, response)
@@ -670,7 +672,7 @@ module HTTPX
       when :idle
         @timeout = @current_timeout = @options.timeout[:connect_timeout]
 
-        @connected_at = nil
+        @connected_at = @response_received_at = nil
       when :open
         return if @state == :closed
 
@@ -843,6 +845,7 @@ module HTTPX
 
       return unless request
 
+      @inflight -= 1
       response = ErrorResponse.new(request, error)
       request.response = response
       request.emit(:response, response)

@@ -3,17 +3,17 @@
 require "test_helper"
 require "support/http_helpers"
 require "webmock/minitest"
+require "httpx/adapters/webmock"
 
 class Bug_1_4_1_Test < Minitest::Test
   include HTTPHelpers
 
-  def test_persistent_get_first_then_fail_on_next_and_retry
-    start_test_servlet(OnPingDisconnectServer) do |server|
+  def test_persistent_do_not_exhaust_retry_on_eof_error
+    start_test_servlet(KeepAlivePongThenCloseSocketServer) do |server|
       persistent_session = HTTPX.plugin(SessionWithPool)
                                 .plugin(:persistent)
                                 .with(ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE })
-                                .with(timeout: { request_timeout: 3,
-                                                 keep_alive_timeout: 1 })
+                                .with(timeout: { keep_alive_timeout: 1 })
       uri = "#{server.origin}/"
       # artificially create two connections
       responses = 2.times.map do
@@ -29,13 +29,16 @@ class Bug_1_4_1_Test < Minitest::Test
         verify_status(response, 200)
       end
 
-      assert persistent_session.connections.size == 2, "should have started two different connections to the same origin"
-      # first connection is set to inactive
+      conns1 = persistent_session.connections
+      assert conns1.size == 2, "should have started two different connections to the same origin"
+      assert conns1.none? { |c| c.state == :closed }, "all connections should have been open"
+      # both connections are shutdown by the server
       sleep(2)
       response = persistent_session.get(uri)
-      verify_status(response, 200)
-      assert persistent_session.connections.size == 2, "should have been just 1"
-      assert(persistent_session.connections.one? { |c| c.state == :closed })
+      verify_status(response, 200) # should not raise EOFError
+      conns2 = persistent_session.connections
+      assert conns2.size == 2
+      assert conns2.count { |c| c.state == :closed } == 1, "one of them should have been closed"
     ensure
       persistent_session.close
     end
