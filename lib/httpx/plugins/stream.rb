@@ -4,27 +4,39 @@ module HTTPX
   class StreamResponse
     def initialize(request, session)
       @request = request
+      @options = @request.options
       @session = session
-      @response = nil
+      @response_enum = nil
+      @buffered_chunks = []
     end
 
     def each(&block)
       return enum_for(__method__) unless block
+
+      if (response_enum = @response_enum)
+        @response_enum = nil
+        # streaming already started, let's finish it
+
+        while (chunk = @buffered_chunks.shift)
+          block.call(chunk)
+        end
+
+        # consume enum til the end
+        begin
+          while (chunk = response_enum.next)
+            block.call(chunk)
+          end
+        rescue StopIteration
+          return
+        end
+      end
 
       @request.stream = self
 
       begin
         @on_chunk = block
 
-        if @request.response
-          # if we've already started collecting the payload, yield it first
-          # before proceeding.
-          body = @request.response.body
-
-          body.each do |chunk|
-            on_chunk(chunk)
-          end
-        end
+        response = @session.request(@request)
 
         response.raise_for_status
       ensure
@@ -64,27 +76,39 @@ module HTTPX
     # :nocov:
 
     def to_s
-      response.to_s
+      if @request.response
+        @request.response.to_s
+      else
+        @buffered_chunks.join
+      end
     end
 
     private
 
     def response
-      return @response if @response
-
       @request.response || begin
-        @response = @session.request(@request)
+        response_enum = each
+        while (chunk = response_enum.next)
+          @buffered_chunks << chunk
+          break if @request.response
+        end
+        @response_enum = response_enum
+        @request.response
       end
     end
 
-    def respond_to_missing?(meth, *args)
-      response.respond_to?(meth, *args) || super
+    def respond_to_missing?(meth, include_private)
+      if (response = @request.response)
+        response.respond_to_missing?(meth, include_private)
+      else
+        @options.response_class.method_defined?(meth) || (include_private && @options.response_class.private_method_defined?(meth))
+      end || super
     end
 
-    def method_missing(meth, *args, &block)
+    def method_missing(meth, *args, **kwargs, &block)
       return super unless response.respond_to?(meth)
 
-      response.__send__(meth, *args, &block)
+      response.__send__(meth, *args, **kwargs, &block)
     end
   end
 

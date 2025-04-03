@@ -4,16 +4,14 @@ module Requests
   module Plugins
     module Stream
       def test_plugin_stream
-        session = HTTPX.plugin(RequestInspector).plugin(:stream)
+        session = HTTPX.plugin(:stream)
 
         uri = build_uri("/get")
 
         no_stream_response = session.get(uri)
         stream_response = session.get(uri, stream: true)
 
-        assert session.total_responses.size == 1, "there should be an available response"
-
-        assert no_stream_response.to_s == stream_response.to_s, "content should be the same"
+        assert no_stream_response.to_s != stream_response.to_s, "stream response should only eager load the first chunk"
 
         assert stream_response.respond_to?(:headers) # test respond_to_missing?
 
@@ -25,19 +23,18 @@ module Requests
         assert no_stream_headers == stream_headers, "headers should be the same " \
                                                     "(h1: #{no_stream_response.headers}, " \
                                                     "(h2: #{stream_response.headers}) "
-
-        assert session.total_responses.size == 2, "there should be 2 available responses"
       end
 
       def test_plugin_stream_each
         session = HTTPX.plugin(:stream)
 
         response = session.get(build_uri("/stream/3"), stream: true)
-        payload = response.each.to_a.join
+        body = response.each
+        payload = body.to_a.join
         assert payload.lines.size == 3, "all the lines should have been yielded"
       end
 
-      def test_plugin_stream_each_after_buffer
+      def test_plugin_stream_each_after_buffering_some_content
         session = HTTPX.plugin(:stream)
 
         response = session.get(build_uri("/stream/3"), stream: true)
