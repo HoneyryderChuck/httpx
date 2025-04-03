@@ -3,7 +3,6 @@
 require "test_helper"
 require "support/http_helpers"
 require "webmock/minitest"
-require "httpx/adapters/webmock"
 
 class Bug_1_4_1_Test < Minitest::Test
   include HTTPHelpers
