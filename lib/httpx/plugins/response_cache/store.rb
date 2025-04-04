@@ -35,7 +35,13 @@ module HTTPX::Plugins
 
         return unless cached_response
 
-        return unless match_by_vary?(request, cached_response)
+        if cached_response.fresh?
+          cached_response = cached_response.dup
+          cached_response.mark_as_cached!
+          request.response = cached_response
+          request.emit(:response, cached_response)
+          return
+        end
 
         if !request.headers.key?("if-modified-since") && (last_modified = cached_response.headers["last-modified"])
           request.headers.add("if-modified-since", last_modified)
@@ -69,8 +75,8 @@ module HTTPX::Plugins
 
           return unless responses
 
-          responses.select! do |res|
-            !res.body.closed? && res.fresh?
+          responses.reject! do |res|
+            res.body.closed?
           end
 
           responses
@@ -82,7 +88,7 @@ module HTTPX::Plugins
           responses = (@store[request.response_cache_key] ||= [])
 
           responses.reject! do |res|
-            res.body.closed? || !res.fresh? || match_by_vary?(request, res)
+            res.body.closed? || match_by_vary?(request, res)
           end
 
           responses << response
