@@ -448,6 +448,7 @@ module HTTPX
       #   session_with_custom = session.plugin(CustomPlugin)
       #
       def plugin(pl, options = nil, &block)
+        label = pl
         # raise Error, "Cannot add a plugin to a frozen config" if frozen?
         pl = Plugins.load_plugin(pl) if pl.is_a?(Symbol)
         if !@plugins.include?(pl)
@@ -472,7 +473,33 @@ module HTTPX
           @default_options = pl.extra_options(@default_options) if pl.respond_to?(:extra_options)
           @default_options = @default_options.merge(options) if options
 
+          if pl.respond_to?(:subplugins)
+            pl.subplugins.transform_keys(&Plugins.method(:load_plugin)).each do |main_pl, sub_pl|
+              # in case the main plugin has already been loaded, then apply subplugin functionality
+              # immediately
+              next unless @plugins.include?(main_pl)
+
+              plugin(sub_pl, options, &block)
+            end
+          end
+
           pl.configure(self, &block) if pl.respond_to?(:configure)
+
+          if label.is_a?(Symbol)
+            # in case an already-loaded plugin complements functionality of
+            # the plugin currently being loaded, loaded it now
+            @plugins.each do |registered_pl|
+              next if registered_pl == pl
+
+              next unless registered_pl.respond_to?(:subplugins)
+
+              sub_pl = registered_pl.subplugins[label]
+
+              next unless sub_pl
+
+              plugin(sub_pl, options, &block)
+            end
+          end
 
           @default_options.freeze
           set_temporary_name("#{superclass}/#{pl}") if respond_to?(:set_temporary_name) # ruby 3.4 only
@@ -484,6 +511,7 @@ module HTTPX
 
           @default_options.freeze
         end
+
         self
       end
     end

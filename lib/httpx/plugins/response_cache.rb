@@ -18,13 +18,6 @@ module HTTPX
           require_relative "response_cache/store"
         end
 
-        def cacheable_request?(request)
-          CACHEABLE_VERBS.include?(request.verb) &&
-            (
-              !request.headers.key?("cache-control") || !request.headers.get("cache-control").include?("no-store")
-            )
-        end
-
         def cacheable_response?(response)
           response.is_a?(Response) &&
             (
@@ -68,12 +61,14 @@ module HTTPX
 
         def build_request(*)
           request = super
-          return request unless ResponseCache.cacheable_request?(request) && @options.response_cache_store.cached?(request)
+          return request unless cacheable_request?(request)
 
           @options.response_cache_store.prepare(request)
 
           request
         end
+
+        private
 
         def fetch_response(request, *)
           response = super
@@ -92,9 +87,20 @@ module HTTPX
 
           response
         end
+
+        def cacheable_request?(request)
+          request.cacheable_verb? &&
+            (
+              !request.headers.key?("cache-control") || !request.headers.get("cache-control").include?("no-store")
+            )
+        end
       end
 
       module RequestMethods
+        def cacheable_verb?
+          CACHEABLE_VERBS.include?(@verb)
+        end
+
         def response_cache_key
           @response_cache_key ||= Digest::SHA1.hexdigest("httpx-response-cache-#{@verb}-#{@uri}")
         end
