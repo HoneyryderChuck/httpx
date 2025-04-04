@@ -46,6 +46,12 @@ module HTTPX
       end
 
       module ResponseMethods
+        @cache: bool
+
+        def cached?: () -> bool
+
+        def mark_as_cached!: () -> void
+
         def copy_from_cached: (Response other) -> void
 
         def fresh?: () -> bool

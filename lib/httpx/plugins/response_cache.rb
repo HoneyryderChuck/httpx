@@ -70,6 +70,12 @@ module HTTPX
 
         private
 
+        def send_request(request, *)
+          return request if request.response
+
+          super
+        end
+
         def fetch_response(request, *)
           response = super
 
@@ -82,7 +88,7 @@ module HTTPX
             response.copy_from_cached(cached_response)
 
           else
-            @options.response_cache_store.cache(request, response)
+            @options.response_cache_store.cache(request, response) unless response.cached?
           end
 
           response
@@ -107,6 +113,19 @@ module HTTPX
       end
 
       module ResponseMethods
+        def initialize(*)
+          super
+          @cached = false
+        end
+
+        def cached?
+          @cached
+        end
+
+        def mark_as_cached!
+          @cached = true
+        end
+
         def copy_from_cached(other)
           # 304 responses do not have content-type, which are needed for decoding.
           @headers = @headers.class.new(other.headers.merge(@headers))
@@ -138,13 +157,13 @@ module HTTPX
             begin
               expires = Time.httpdate(@headers["expires"])
             rescue ArgumentError
-              return true
+              return false
             end
 
             return (expires - Time.now).to_i.positive?
           end
 
-          true
+          false
         end
 
         def cache_control

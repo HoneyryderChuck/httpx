@@ -71,6 +71,14 @@ module HTTPX
       @content_type = nil
     end
 
+    # dupped initialization
+    def initialize_dup(orig)
+      super
+      # if a response gets dupped, the body handle must also get dupped to prevent
+      # two responses from using the same file handle to read.
+      @body = orig.body.dup
+    end
+
     # closes the respective +@request+ and +@body+.
     def close
       @request.close
