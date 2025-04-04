@@ -74,6 +74,7 @@ module HTTPX
       :resolver_options => { cache: true }.freeze,
       :pool_options => EMPTY_HASH,
       :ip_families => ip_address_families,
+      :close_on_fork => false,
     }.freeze
 
     class << self
@@ -136,6 +137,8 @@ module HTTPX
     # :base_path :: path to prefix given relative paths with (ex: "/v2")
     # :max_concurrent_requests :: max number of requests which can be set concurrently
     # :max_requests :: max number of requests which can be made on socket before it reconnects.
+    # :close_on_fork :: whether the session automatically closes when the process is fork (defaults to <tt>false</tt>).
+    #                   it only works if the session is persistent (and ruby 3.1 or higher is used).
     #
     # This list of options are enhanced with each loaded plugin, see the plugin docs for details.
     def initialize(options = {})
@@ -230,7 +233,7 @@ module HTTPX
       pool_class pool_options
       io fallback_protocol debug debug_level resolver_class resolver_options
       compress_request_body decompress_response_body
-      persistent
+      persistent close_on_fork
     ].each do |method_name|
       class_eval(<<-OUT, __FILE__, __LINE__ + 1)
         # sets +v+ as the value of #{method_name}
