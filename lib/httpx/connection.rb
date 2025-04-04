@@ -548,7 +548,7 @@ module HTTPX
     end
 
     def build_parser(protocol = @io.protocol)
-      parser = self.class.parser_type(protocol).new(@write_buffer, @options)
+      parser = parser_type(protocol).new(@write_buffer, @options)
       set_parser_callbacks(parser)
       parser
     end
@@ -932,14 +932,12 @@ module HTTPX
       end
     end
 
-    class << self
-      def parser_type(protocol)
-        case protocol
-        when "h2" then HTTP2
-        when "http/1.1" then HTTP1
-        else
-          raise Error, "unsupported protocol (##{protocol})"
-        end
+    def parser_type(protocol)
+      case protocol
+      when "h2" then HTTP2
+      when "http/1.1" then HTTP1
+      else
+        raise Error, "unsupported protocol (##{protocol})"
       end
     end
   end

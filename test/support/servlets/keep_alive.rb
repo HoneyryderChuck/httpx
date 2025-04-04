@@ -32,7 +32,7 @@ end
 class KeepAlivePongThenGoawayServer < TestHTTP2Server
   attr_reader :pings, :pongs
 
-  def initialize
+  def initialize(**)
     @sent = false
     super
   end

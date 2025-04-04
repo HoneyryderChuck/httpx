@@ -1,0 +1,34 @@
+module HTTPX
+  module Plugins
+    class HTTP2Bidi < Connection::HTTP2
+    end
+
+    module StreamBidi
+      def self.load_dependencies: (singleton(Session)) -> void
+
+      def self.extra_options: (Options) -> (Options)
+
+
+      module InstanceMethods
+      end
+
+      module RequestMethods
+        attr_accessor headers_sent: bool
+
+        @closed: bool
+      end
+
+      module RequestBodyMethods
+      end
+
+      module ConnectionMethods
+        private
+
+        def parser_type: (String protocol) -> (singleton(HTTP1) | singleton(HTTP2) | singleton(HTTP2Bidi))
+      end
+
+    end
+
+    type sessionStreamBidi = Session & StreamBidi::InstanceMethods
+  end
+end

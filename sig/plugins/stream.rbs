@@ -26,8 +26,9 @@ module HTTPX
 
     type streamRequest = Request & Plugins::Stream::RequestMethods
 
-    @request: streamRequest
+    attr_reader request: streamRequest
     @options: Options
+
     @session: Plugins::sessionStream
     @response_enum: Enumerator[String]?
     @buffered_chunks: Array[String]

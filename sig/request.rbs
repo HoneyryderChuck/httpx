@@ -39,6 +39,8 @@ module HTTPX
 
     def interests: () -> (:r | :w)
 
+    def can_buffer? : () -> bool
+
     def merge_headers: (_Each[[String, headers_value]]) -> void
 
     def scheme: () -> String
