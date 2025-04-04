@@ -107,6 +107,15 @@ module HTTPX
       end
     end
 
+    # :nocov:
+    def inspect
+      "#<#{self.class}:#{object_id} " \
+        "@max_connections_per_origin=#{@max_connections_per_origin} " \
+        "@pool_timeout=#{@pool_timeout} " \
+        "@connections=#{@connections.size}>"
+    end
+    # :nocov:
+
     private
 
     def acquire_connection(uri, options)

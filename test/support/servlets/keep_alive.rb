@@ -29,7 +29,7 @@ class KeepAliveServer < TestServer
   end
 end
 
-class KeepAlivePongServer < TestHTTP2Server
+class KeepAlivePongThenGoawayServer < TestHTTP2Server
   attr_reader :pings, :pongs
 
   def initialize

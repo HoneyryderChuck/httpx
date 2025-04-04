@@ -475,6 +475,7 @@ module HTTPX
           pl.configure(self, &block) if pl.respond_to?(:configure)
 
           @default_options.freeze
+          set_temporary_name("#{superclass}/#{pl}") if respond_to?(:set_temporary_name) # ruby 3.4 only
         elsif options
           # this can happen when two plugins are loaded, an one of them calls the other under the hood,
           # albeit changing some default.

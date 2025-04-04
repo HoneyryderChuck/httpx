@@ -40,11 +40,11 @@ module HTTPX
 
         def initialize: (Enumerable[[Symbol | string, multipart_nested_value]] multipart_data) -> untyped
 
-        def header_part: (string key, String content_type, String? filename) -> StringIO
+        def header_part: (String key, String content_type, String? filename) -> StringIO
 
-        def read_chunks: (String buffer, ?int? length) -> void
+        def read_chunks: (String buffer, ?Integer? length) -> void
 
-        def read_from_part: (?int? max_length) -> String?
+        def read_from_part: (?Integer? max_length) -> String?
       end
 
       class Decoder
@@ -60,6 +60,7 @@ module HTTPX
         @parts: Hash[String, untyped]
         @boundary: String
         @intermediate_boundary: String
+        @current: String?
 
         def call: (Response response, *untyped) -> Hash[String, untyped]
 

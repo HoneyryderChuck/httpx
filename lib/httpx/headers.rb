@@ -11,20 +11,32 @@ module HTTPX
     end
 
     def initialize(headers = nil)
+      if headers.nil? || headers.empty?
+        @headers = headers.to_h
+        return
+      end
+
       @headers = {}
-      return unless headers
 
       headers.each do |field, value|
-        array_value(value).each do |v|
-          add(downcased(field), v)
+        field = downcased(field)
+
+        value = array_value(value)
+
+        current = @headers[field]
+
+        if current.nil?
+          @headers[field] = value
+        else
+          current.concat(value)
         end
       end
     end
 
     # cloned initialization
-    def initialize_clone(orig)
+    def initialize_clone(orig, **kwargs)
       super
-      @headers = orig.instance_variable_get(:@headers).clone
+      @headers = orig.instance_variable_get(:@headers).clone(**kwargs)
     end
 
     # dupped initialization
@@ -119,6 +131,10 @@ module HTTPX
       other == to_hash
     end
 
+    def empty?
+      @headers.empty?
+    end
+
     # the headers store in Hash format
     def to_hash
       Hash[to_a]
@@ -137,7 +153,8 @@ module HTTPX
 
     # :nocov:
     def inspect
-      to_hash.inspect
+      "#<#{self.class}:#{object_id} " \
+        "#{to_hash.inspect}>"
     end
     # :nocov:
 
@@ -160,12 +177,7 @@ module HTTPX
     private
 
     def array_value(value)
-      case value
-      when Array
-        value.map { |val| String(val).strip }
-      else
-        [String(value).strip]
-      end
+      Array(value)
     end
 
     def downcased(field)

@@ -23,7 +23,7 @@ module HTTPX
 
       def reset!
         @state = :idle
-        @headers.clear
+        @headers = {}
         @content_length = nil
         @_has_trailers = nil
       end

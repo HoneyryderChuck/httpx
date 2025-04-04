@@ -71,7 +71,7 @@ module HTTPX
 
     # :nocov:
     def inspect
-      "#<StreamResponse:#{object_id}>"
+      "#<#{self.class}:#{object_id}>"
     end
     # :nocov:
 

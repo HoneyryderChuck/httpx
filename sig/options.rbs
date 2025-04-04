@@ -25,7 +25,7 @@ module HTTPX
     attr_reader uri: URI?
 
     # headers
-    attr_reader headers: Headers?
+    attr_reader headers: headers?
 
     # timeout
     attr_reader timeout: timeout

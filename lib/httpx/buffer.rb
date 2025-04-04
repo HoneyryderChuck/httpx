@@ -14,8 +14,6 @@ module HTTPX
   class Buffer
     extend Forwardable
 
-    def_delegator :@buffer, :<<
-
     def_delegator :@buffer, :to_s
 
     def_delegator :@buffer, :to_str
@@ -30,9 +28,22 @@ module HTTPX
 
     attr_reader :limit
 
-    def initialize(limit)
-      @buffer = "".b
-      @limit = limit
+    if RUBY_VERSION >= "3.4.0"
+      def initialize(limit)
+        @buffer = String.new("", encoding: Encoding::BINARY, capacity: limit)
+        @limit = limit
+      end
+
+      def <<(chunk)
+        @buffer.append_as_bytes(chunk)
+      end
+    else
+      def initialize(limit)
+        @buffer = "".b
+        @limit = limit
+      end
+
+      def_delegator :@buffer, :<<
     end
 
     def full?
