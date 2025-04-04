@@ -140,6 +140,8 @@ module HTTPX
           if cache_control
             return false if cache_control.include?("no-cache")
 
+            return true if cache_control.include?("immutable")
+
             # check age: max-age
             max_age = cache_control.find { |directive| directive.start_with?("s-maxage") }
 
