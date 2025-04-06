@@ -43,8 +43,6 @@ module HTTPX
 
     def content_type: () -> ContentType
 
-    def finish!: () -> void
-
     def complete?: () -> bool
 
     def json: (?JSON::options opts) -> untyped
