@@ -4,29 +4,31 @@ module HTTPX
       CACHEABLE_VERBS: Array[verb]
       CACHEABLE_STATUS_CODES: Array[Integer]
 
-      def self?.cacheable_response?: (::HTTPX::ErrorResponse | (Response & ResponseMethods) response) -> bool
+      def self?.cacheable_response?: (::HTTPX::ErrorResponse | cacheResponse response) -> bool
       def self?.cached_response?: (response response) -> bool
 
       class Store
-        @store: Hash[String, Array[Response]]
+        @store: Hash[String, Array[cacheResponse]]
 
         @store_mutex: Thread::Mutex
 
-        def lookup: (Request request) -> Response?
+        def lookup: (cacheRequest request) -> cacheResponse?
 
-        def cached?: (Request request) -> boolish
+        def cached?: (cacheRequest request) -> boolish
 
-        def cache: (Request request, Response response) -> void
+        def cache: (cacheRequest request, cacheResponse response) -> void
 
-        def prepare: (Request request) -> void
+        def prepare: (cacheRequest request) -> void
 
         private
 
-        def match_by_vary?: (Request request, Response response) -> bool
+        def match_by_vary?: (cacheRequest request, cacheResponse response) -> bool
 
-        def _get: (Request request) -> Array[Response]?
+        def _get: (cacheRequest request) -> Array[cacheResponse]?
 
-        def _set: (Request request, Response response) -> void
+        def _set: (cacheRequest request, cacheResponse response) -> Array[cacheResponse]
+
+        def _memset: (cacheRequest request, *cacheResponse response) -> Array[cacheResponse]
       end
 
       module InstanceMethods
@@ -34,10 +36,12 @@ module HTTPX
 
         def clear_response_cache: () -> void
 
-        def cacheable_request?: (Request & RequestMethods request) -> bool
+        def cacheable_request?: (cacheRequest request) -> bool
       end
 
       module RequestMethods
+        attr_accessor cached_response: cacheResponse?
+
         @response_cache_key: String
 
         def response_cache_key: () -> String
@@ -52,7 +56,7 @@ module HTTPX
 
         def mark_as_cached!: () -> void
 
-        def copy_from_cached: (Response other) -> void
+        def copy_from_cached!: () -> void
 
         def fresh?: () -> bool
 
@@ -66,6 +70,11 @@ module HTTPX
 
         def date: () -> Time
       end
+
+
+      type cacheRequest = Request & RequestMethods
+
+      type cacheResponse = Response & ResponseMethods
     end
 
     type sessionResponseCache = Session & ResponseCache::InstanceMethods

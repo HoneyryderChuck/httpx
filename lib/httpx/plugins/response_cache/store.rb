@@ -17,7 +17,13 @@ module HTTPX::Plugins
 
         return unless responses
 
-        responses.find(&method(:match_by_vary?).curry(2)[request])
+        response = responses.find(&method(:match_by_vary?).curry(2)[request])
+
+        return unless response
+
+        response.body.rewind
+
+        response
       end
 
       def cached?(request)
@@ -42,6 +48,8 @@ module HTTPX::Plugins
           request.emit(:response, cached_response)
           return
         end
+
+        request.cached_response = cached_response
 
         if !request.headers.key?("if-modified-since") && (last_modified = cached_response.headers["last-modified"])
           request.headers.add("if-modified-since", last_modified)
@@ -84,14 +92,24 @@ module HTTPX::Plugins
       end
 
       def _set(request, response)
-        @store_mutex.synchronize do
-          responses = (@store[request.response_cache_key] ||= [])
+        _memset(request, response)
+      end
 
-          responses.reject! do |res|
-            res.body.closed? || match_by_vary?(request, res)
+      def _memset(request, *responses)
+        @store_mutex.synchronize do
+          responses_store = (@store[request.response_cache_key] ||= [])
+
+          cached_response = request.cached_response
+
+          responses_store.reject! do |res|
+            res == cached_response || res.body.closed? || match_by_vary?(request, res)
           end
 
-          responses << response
+          responses.each do |response|
+            responses_store << response
+          end
+
+          responses_store
         end
       end
     end

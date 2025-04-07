@@ -83,10 +83,8 @@ module HTTPX
 
           if ResponseCache.cached_response?(response)
             log { "returning cached response for #{request.uri}" }
-            cached_response = @options.response_cache_store.lookup(request)
 
-            response.copy_from_cached(cached_response)
-
+            response.copy_from_cached!
           else
             @options.response_cache_store.cache(request, response) unless response.cached?
           end
@@ -103,6 +101,13 @@ module HTTPX
       end
 
       module RequestMethods
+        attr_accessor :cached_response
+
+        def initialize(*)
+          super
+          @cached_response = nil
+        end
+
         def cacheable_verb?
           CACHEABLE_VERBS.include?(@verb)
         end
@@ -126,11 +131,15 @@ module HTTPX
           @cached = true
         end
 
-        def copy_from_cached(other)
-          # 304 responses do not have content-type, which are needed for decoding.
-          @headers = @headers.class.new(other.headers.merge(@headers))
+        def copy_from_cached!
+          cached_response = @request.cached_response
 
-          @body = other.body.dup
+          return unless cached_response
+
+          # 304 responses do not have content-type, which are needed for decoding.
+          @headers = @headers.class.new(cached_response.headers.merge(@headers))
+
+          @body = cached_response.body.dup
 
           @body.rewind
         end
