@@ -11,6 +11,9 @@ module HTTPX
     # Array of encodings contained in the response "content-encoding" header.
     attr_reader :encodings
 
+    attr_reader :buffer
+    protected :buffer
+
     # initialized with the corresponding HTTPX::Response +response+ and HTTPX::Options +options+.
     def initialize(response, options)
       @response = response
@@ -148,13 +151,12 @@ module HTTPX
     end
 
     def ==(other)
-      object_id == other.object_id || begin
-        if other.respond_to?(:read)
-          _with_same_buffer_pos { FileUtils.compare_stream(@buffer, other) }
-        else
-          to_s == other.to_s
-        end
-      end
+      super || case other
+               when Response::Body
+                 @buffer == other.buffer
+               else
+                 @buffer = other
+               end
     end
 
     # :nocov:
@@ -224,19 +226,6 @@ module HTTPX
       end
 
       @state = nextstate
-    end
-
-    def _with_same_buffer_pos # :nodoc:
-      return yield unless @buffer && @buffer.respond_to?(:pos)
-
-      # @type ivar @buffer: StringIO | Tempfile
-      current_pos = @buffer.pos
-      @buffer.rewind
-      begin
-        yield
-      ensure
-        @buffer.pos = current_pos
-      end
     end
 
     class << self
