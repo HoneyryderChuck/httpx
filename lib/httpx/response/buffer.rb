@@ -7,6 +7,9 @@ require "tempfile"
 module HTTPX
   # wraps and delegates to an internal buffer, which can be a StringIO or a Tempfile.
   class Response::Buffer < SimpleDelegator
+    attr_reader :buffer
+    protected :buffer
+
     # initializes buffer with the +threshold_size+ over which the payload gets buffer to a tempfile,
     # the initial +bytesize+, and the +encoding+.
     def initialize(threshold_size:, bytesize: 0, encoding: Encoding::BINARY)
@@ -20,7 +23,14 @@ module HTTPX
     def initialize_dup(other)
       super
 
-      @buffer = other.instance_variable_get(:@buffer).dup
+      # create new descriptor in READ-ONLY mode
+      @buffer =
+        case other.buffer
+        when StringIO
+          StringIO.new(other.buffer.string, mode: File::RDONLY)
+        else
+          other.buffer.class.new(other.buffer.path, encoding: Encoding::BINARY, mode: File::RDONLY)
+        end
     end
 
     # size in bytes of the buffered content.
@@ -46,7 +56,7 @@ module HTTPX
         end
       when Tempfile
         rewind
-        content = _with_same_buffer_pos { @buffer.read }
+        content = @buffer.read
         begin
           content.force_encoding(@encoding)
         rescue ArgumentError # ex: unknown encoding name - utf
@@ -59,6 +69,30 @@ module HTTPX
     def close
       @buffer.close
       @buffer.unlink if @buffer.respond_to?(:unlink)
+    end
+
+    def ==(other)
+      super || begin
+        return false unless other.is_a?(Response::Buffer)
+
+        if @buffer.nil?
+          other.buffer.nil?
+        elsif @buffer.respond_to?(:read) &&
+              other.respond_to?(:read)
+          buffer_pos = @buffer.pos
+          other_pos = other.buffer.pos
+          @buffer.rewind
+          other.buffer.rewind
+          begin
+            FileUtils.compare_stream(@buffer, other.buffer)
+          ensure
+            @buffer.pos = buffer_pos
+            other.buffer.pos = other_pos
+          end
+        else
+          to_s == other.to_s
+        end
+      end
     end
 
     private
@@ -81,16 +115,6 @@ module HTTPX
       end
 
       __setobj__(@buffer)
-    end
-
-    def _with_same_buffer_pos # :nodoc:
-      current_pos = @buffer.pos
-      @buffer.rewind
-      begin
-        yield
-      ensure
-        @buffer.pos = current_pos
-      end
     end
   end
 end
