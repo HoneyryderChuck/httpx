@@ -45,21 +45,21 @@ module Requests
         uncached = cache_client.get(cache_control_uri)
         verify_status(uncached, 200)
         assert cache_client.connection_count == 1, "a request should have been made"
-        assert(store.values.any? { |r| r.include?(uncached) })
+        assert store.value?(uncached)
 
         cached = cache_client.get(cache_control_uri)
         verify_status(cached, 200)
         assert cache_client.connection_count == 1, "no request should have been performed"
         assert uncached.body == cached.body, "bodies should have the same value"
         assert !uncached.body.eql?(cached.body), "bodies should have different references"
-        assert(store.values.any? { |r| r.include?(uncached) })
+        assert store.value?(uncached)
 
         sleep(2)
         after_expired = cache_client.get(cache_control_uri)
         verify_status(after_expired, 200)
         assert cache_client.connection_count == 2, "a conditional request should have been made"
-        assert(store.values.none? { |r| r.include?(uncached) })
-        assert(store.values.any? { |r| r.include?(after_expired) })
+        assert !store.value?(uncached)
+        assert store.value?(after_expired)
       end
     end
   end
