@@ -13,13 +13,9 @@ module HTTPX::Plugins
       end
 
       def lookup(request)
-        responses = _get(request)
+        response = _get(request)
 
-        return unless responses
-
-        response = responses.find(&method(:match_by_vary?).curry(2)[request])
-
-        return unless response
+        return unless response && match_by_vary?(request, response)
 
         response.body.rewind
 
@@ -69,47 +65,36 @@ module HTTPX::Plugins
 
         original_request = response.instance_variable_get(:@request)
 
-        return request.headers.same_headers?(original_request.headers) if vary == %w[*]
+        if vary == %w[*]
+          request.options.supported_vary_headers.each do |field|
+            return false unless request.headers[field] == original_request.headers[field]
+          end
 
-        vary.all? do |cache_field|
-          cache_field.downcase!
-          !original_request.headers.key?(cache_field) || request.headers[cache_field] == original_request.headers[cache_field]
+          return true
+        end
+
+        vary.all? do |field|
+          !original_request.headers.key?(field) || request.headers[field] == original_request.headers[field]
         end
       end
 
       def _get(request)
         @store_mutex.synchronize do
-          responses = @store[request.response_cache_key]
-
-          return unless responses
-
-          responses.reject! do |res|
-            res.body.closed?
-          end
-
-          responses
+          @store[request.response_cache_key]
         end
       end
 
       def _set(request, response)
-        _memset(request, response)
-      end
-
-      def _memset(request, *responses)
         @store_mutex.synchronize do
-          responses_store = (@store[request.response_cache_key] ||= [])
+          cached_response = @store[request.response_cache_key]
 
-          cached_response = request.cached_response
+          if cached_response
+            return if cached_response == request.cached_response
 
-          responses_store.reject! do |res|
-            res == cached_response || res.body.closed? || match_by_vary?(request, res)
+            cached_response.close
           end
 
-          responses.each do |response|
-            responses_store << response
-          end
-
-          responses_store
+          @store[request.response_cache_key] = response
         end
       end
     end

@@ -3,12 +3,19 @@ module HTTPX
     module ResponseCache
       CACHEABLE_VERBS: Array[verb]
       CACHEABLE_STATUS_CODES: Array[Integer]
+      SUPPORTED_VARY_HEADERS: Array[String]
 
       def self?.cacheable_response?: (::HTTPX::ErrorResponse | cacheResponse response) -> bool
       def self?.cached_response?: (response response) -> bool
 
+      interface _ResponseCacheOptions
+        def response_cache_store: () -> Store
+
+        def supported_vary_headers: () -> Array[String]
+      end
+
       class Store
-        @store: Hash[String, Array[cacheResponse]]
+        @store: Hash[String, cacheResponse]
 
         @store_mutex: Thread::Mutex
 
@@ -24,11 +31,9 @@ module HTTPX
 
         def match_by_vary?: (cacheRequest request, cacheResponse response) -> bool
 
-        def _get: (cacheRequest request) -> Array[cacheResponse]?
+        def _get: (cacheRequest request) -> cacheResponse?
 
-        def _set: (cacheRequest request, cacheResponse response) -> Array[cacheResponse]
-
-        def _memset: (cacheRequest request, *cacheResponse response) -> Array[cacheResponse]
+        def _set: (cacheRequest request, cacheResponse response) -> void
       end
 
       module InstanceMethods
@@ -71,6 +76,8 @@ module HTTPX
         def date: () -> Time
       end
 
+
+      type cacheOptions = Options & _ResponseCacheOptions
 
       type cacheRequest = Request & RequestMethods
 

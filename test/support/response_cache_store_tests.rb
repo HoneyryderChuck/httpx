@@ -11,12 +11,13 @@ module ResponseCacheStoreTests
     assert cached_response.body == response.body
     assert store.cached?(request)
 
-    request2 = make_request("GET", "http://example.com/", headers: { "accept" => "text/plain" })
+    request2 = make_request("GET", "http://example.com/")
     cached_response2 = store.lookup(request2)
+    assert cached_response2
     assert cached_response2.headers == response.headers
     assert cached_response2.body == response.body
 
-    request3 = make_request("POST", "http://example.com/", headers: { "accept" => "text/plain" })
+    request3 = make_request("POST", "http://example.com/")
     assert store.lookup(request3).nil?
   end
 
@@ -124,25 +125,10 @@ module ResponseCacheStoreTests
     store.prepare(request3)
     assert request3.cached_response == response
     assert request3.headers.key?("if-none-match")
-    request4 = make_request("GET", "http://example.com/", headers: { "accept" => "text/plain", "user-agent" => "Linux Bowser" })
+    request4 = make_request("GET", "http://example.com/", headers: { "accept" => "text/plain", "accept-language" => "en" })
     store.prepare(request4)
     assert request4.cached_response.nil?
     assert !request4.headers.key?("if-none-match")
-  end
-
-  def test_internal_store_set
-    internal_store = store.instance_variable_get(:@store)
-
-    request = make_request("GET", "http://example.com/")
-    response = cached_response(request)
-    assert internal_store[request.response_cache_key].size == 1
-    assert internal_store[request.response_cache_key].include?(response)
-    response1 = cached_response(request)
-    assert internal_store[request.response_cache_key].size == 1
-    assert internal_store[request.response_cache_key].include?(response1)
-    response2 = cached_response(request, extra_headers: { "content-encoding" => "gzip" })
-    assert internal_store[request.response_cache_key].size == 1
-    assert internal_store[request.response_cache_key].include?(response2)
   end
 
   private
@@ -179,9 +165,9 @@ module ResponseCacheStoreTests
     @store ||= Plugins::ResponseCache::FileStore.new
   end
 
-  def cached_response(request, status: 200, extra_headers: {})
+  def cached_response(request, status: 200, extra_headers: {}, body: "test")
     response = response_class.new(request, status, "2.0", { "date" => Time.now.httpdate, "etag" => "ETAG" }.merge(extra_headers))
-    # response.body.write("test")
+    response.body.write(body)
     store.cache(request, response)
     response
   end

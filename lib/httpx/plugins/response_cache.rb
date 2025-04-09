@@ -10,6 +10,7 @@ module HTTPX
     module ResponseCache
       CACHEABLE_VERBS = %w[GET HEAD].freeze
       CACHEABLE_STATUS_CODES = [200, 203, 206, 300, 301, 410].freeze
+      SUPPORTED_VARY_HEADERS = %w[accept accept-encoding accept-language cookie origin].sort.freeze
       private_constant :CACHEABLE_VERBS
       private_constant :CACHEABLE_STATUS_CODES
 
@@ -42,7 +43,10 @@ module HTTPX
         end
 
         def extra_options(options)
-          options.merge(response_cache_store: Store.new)
+          options.merge(
+            supported_vary_headers: SUPPORTED_VARY_HEADERS,
+            response_cache_store: Store.new,
+          )
         end
       end
 
@@ -51,6 +55,10 @@ module HTTPX
           raise TypeError, "must be an instance of #{Store}" unless value.is_a?(Store)
 
           value
+        end
+
+        def option_supported_vary_headers(value)
+          Array(value).sort
         end
       end
 
@@ -108,12 +116,26 @@ module HTTPX
           @cached_response = nil
         end
 
+        def merge_headers(*)
+          super
+          @response_cache_key = nil
+        end
+
         def cacheable_verb?
           CACHEABLE_VERBS.include?(@verb)
         end
 
         def response_cache_key
-          @response_cache_key ||= Digest::SHA1.hexdigest("httpx-response-cache-#{@verb}-#{@uri}")
+          @response_cache_key ||= begin
+            keys = [@verb, @uri]
+
+            @options.supported_vary_headers.each do |field|
+              value = @headers[field]
+
+              keys << value if value
+            end
+            Digest::SHA1.hexdigest("httpx-response-cache-#{keys.join("-")}")
+          end
         end
       end
 
@@ -193,7 +215,7 @@ module HTTPX
           @vary = begin
             return unless @headers.key?("vary")
 
-            @headers["vary"].split(/ *, */)
+            @headers["vary"].split(/ *, */).map(&:downcase)
           end
         end
 
