@@ -35,6 +35,33 @@ module Requests
         assert uncached.body == cached.body
       end
 
+      def test_plugin_response_cache_do_not_cache_on_error_status
+        cache_client = HTTPX.plugin(SessionWithPool).plugin(:response_cache)
+
+        store = cache_client.instance_variable_get(:@options).response_cache_store.instance_variable_get(:@store)
+
+        response_404 = cache_client.get(build_uri("/status/404"))
+        verify_status(response_404, 404)
+        assert !store.value?(response_404)
+
+        response_410 = cache_client.get(build_uri("/status/410"))
+        verify_status(response_410, 410)
+        assert store.value?(response_410)
+      end
+
+      def test_plugin_response_cache_do_not_store_on_no_store_header
+        return if origin.start_with?("https")
+
+        start_test_servlet(ResponseCacheServer) do |server|
+          cache_client = HTTPX.plugin(:response_cache)
+          store = cache_client.instance_variable_get(:@options).response_cache_store.instance_variable_get(:@store)
+
+          response = cache_client.get("#{server.origin}/no-store")
+          verify_status(response, 200)
+          assert store.empty?, "request should not have been cached with no-store header"
+        end
+      end
+
       def test_plugin_response_cache_return_cached_while_fresh
         cache_client = HTTPX.plugin(SessionWithPool).plugin(:response_cache)
 

@@ -14,26 +14,12 @@ module HTTPX
         def supported_vary_headers: () -> Array[String]
       end
 
-      class Store
-        @store: Hash[String, cacheResponse]
+      interface _ResponseCacheStore
+        def get: (cacheRequest request) -> cacheResponse?
 
-        @store_mutex: Thread::Mutex
+        def set: (cacheRequest request, cacheResponse response) -> void
 
-        def lookup: (cacheRequest request) -> cacheResponse?
-
-        def cached?: (cacheRequest request) -> boolish
-
-        def cache: (cacheRequest request, cacheResponse response) -> void
-
-        def prepare: (cacheRequest request) -> void
-
-        private
-
-        def match_by_vary?: (cacheRequest request, cacheResponse response) -> bool
-
-        def _get: (cacheRequest request) -> cacheResponse?
-
-        def _set: (cacheRequest request, cacheResponse response) -> void
+        def clear: () -> void
       end
 
       module InstanceMethods
@@ -41,7 +27,13 @@ module HTTPX
 
         def clear_response_cache: () -> void
 
+        private
+
+        def prepare_cache: (cacheRequest request) -> void
+
         def cacheable_request?: (cacheRequest request) -> bool
+
+        def match_by_vary?: (cacheRequest request, cacheResponse response) -> bool
       end
 
       module RequestMethods

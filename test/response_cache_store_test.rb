@@ -29,7 +29,7 @@ class ResponseCacheStoreTest < Minitest::Test
 
   private
 
-  def store
-    @store ||= Plugins::ResponseCache::Store.new
+  def store_class
+    Plugins::ResponseCache::Store
   end
 end

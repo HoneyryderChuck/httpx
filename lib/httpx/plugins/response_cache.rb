@@ -17,6 +17,7 @@ module HTTPX
       class << self
         def load_dependencies(*)
           require_relative "response_cache/store"
+          require_relative "response_cache/file_store"
         end
 
         def cacheable_response?(response)
@@ -71,7 +72,7 @@ module HTTPX
           request = super
           return request unless cacheable_request?(request)
 
-          @options.response_cache_store.prepare(request)
+          prepare_cache(request)
 
           request
         end
@@ -93,11 +94,37 @@ module HTTPX
             log { "returning cached response for #{request.uri}" }
 
             response.copy_from_cached!
-          else
-            @options.response_cache_store.cache(request, response) unless response.cached?
+          elsif request.cacheable_verb? && ResponseCache.cacheable_response?(response)
+            request.options.response_cache_store.set(request, response) unless response.cached?
           end
 
           response
+        end
+
+        def prepare_cache(request)
+          cached_response = request.options.response_cache_store.get(request)
+
+          return unless cached_response && match_by_vary?(request, cached_response)
+
+          cached_response.body.rewind
+
+          if cached_response.fresh?
+            cached_response = cached_response.dup
+            cached_response.mark_as_cached!
+            request.response = cached_response
+            request.emit(:response, cached_response)
+            return
+          end
+
+          request.cached_response = cached_response
+
+          if !request.headers.key?("if-modified-since") && (last_modified = cached_response.headers["last-modified"])
+            request.headers.add("if-modified-since", last_modified)
+          end
+
+          if !request.headers.key?("if-none-match") && (etag = cached_response.headers["etag"]) # rubocop:disable Style/GuardClause
+            request.headers.add("if-none-match", etag)
+          end
         end
 
         def cacheable_request?(request)
@@ -105,6 +132,26 @@ module HTTPX
             (
               !request.headers.key?("cache-control") || !request.headers.get("cache-control").include?("no-store")
             )
+        end
+
+        def match_by_vary?(request, response)
+          vary = response.vary
+
+          return true unless vary
+
+          original_request = response.instance_variable_get(:@request)
+
+          if vary == %w[*]
+            request.options.supported_vary_headers.each do |field|
+              return false unless request.headers[field] == original_request.headers[field]
+            end
+
+            return true
+          end
+
+          vary.all? do |field|
+            !original_request.headers.key?(field) || request.headers[field] == original_request.headers[field]
+          end
         end
       end
 
