@@ -1,11 +1,10 @@
 # frozen_string_literal: true
 
 require "pathname"
-require_relative "store"
 
 module HTTPX::Plugins
   module ResponseCache
-    class FileStore < Store
+    class FileStore
       CRLF = HTTPX::Connection::HTTP1::CRLF
 
       attr_reader :dir
@@ -20,9 +19,7 @@ module HTTPX::Plugins
         FileUtils.rm_rf(@dir)
       end
 
-      private
-
-      def _get(request)
+      def get(request)
         path = file_path(request)
 
         return unless File.exist?(path)
@@ -34,7 +31,7 @@ module HTTPX::Plugins
         end
       end
 
-      def _set(request, response)
+      def set(request, response)
         path = file_path(request)
 
         file_exists = File.exist?(path)
@@ -74,6 +71,8 @@ module HTTPX::Plugins
         end
       end
 
+      private
+
       def file_path(request)
         @dir.join(request.response_cache_key)
       end
@@ -101,7 +100,6 @@ module HTTPX::Plugins
         ::IO.copy_stream(f, response.body)
 
         response
-      rescue Errno::ENOENT
       end
     end
   end

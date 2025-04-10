@@ -6,34 +6,19 @@ module ResponseCacheStoreTests
     request = make_request("GET", "http://example.com/")
     response = cached_response(request)
 
-    cached_response = store.lookup(request)
+    cached_response = store.get(request)
     assert cached_response.headers == response.headers
     assert cached_response.body == response.body
-    assert store.cached?(request)
+    assert store.get(request)
 
     request2 = make_request("GET", "http://example.com/")
-    cached_response2 = store.lookup(request2)
+    cached_response2 = store.get(request2)
     assert cached_response2
     assert cached_response2.headers == response.headers
     assert cached_response2.body == response.body
 
     request3 = make_request("POST", "http://example.com/")
-    assert store.lookup(request3).nil?
-  end
-
-  def test_store_error_status
-    request = make_request("GET", "http://example.com/")
-    _response = cached_response(request, status: 404)
-    assert !store.cached?(request)
-
-    _response = cached_response(request, status: 410)
-    assert store.cached?(request)
-  end
-
-  def test_store_no_store
-    request = make_request("GET", "http://example.com/")
-    _response = cached_response(request, extra_headers: { "cache-control" => "private, no-store" })
-    assert !store.cached?(request)
+    assert store.get(request3).nil?
   end
 
   def test_store_prepare_maxage
@@ -41,7 +26,7 @@ module ResponseCacheStoreTests
     response = cached_response(request, extra_headers: { "cache-control" => "max-age=2" })
     assert request.response.nil?
 
-    store.prepare(request)
+    prepare(request)
     assert request.response
     assert request.response.headers == response.headers
     assert request.response.body == response.body
@@ -50,7 +35,7 @@ module ResponseCacheStoreTests
     request.instance_variable_set(:@response, nil)
     sleep(3)
 
-    store.prepare(request)
+    prepare(request)
     assert request.cached_response
     assert request.cached_response.headers == response.headers
     assert request.cached_response.body == response.body
@@ -58,7 +43,7 @@ module ResponseCacheStoreTests
 
     request2 = make_request("GET", "http://example2.com/")
     _response2 = cached_response(request2, extra_headers: { "cache-control" => "no-cache, max-age=2" })
-    store.prepare(request2)
+    prepare(request2)
     assert request2.response.nil?
   end
 
@@ -67,7 +52,7 @@ module ResponseCacheStoreTests
     response = cached_response(request, extra_headers: { "expires" => (Time.now + 2).httpdate })
     assert request.response.nil?
 
-    store.prepare(request)
+    prepare(request)
     assert request.response
     assert request.response.headers == response.headers
     assert request.response.body == response.body
@@ -76,7 +61,7 @@ module ResponseCacheStoreTests
     request.instance_variable_set(:@response, nil)
     sleep(3)
 
-    store.prepare(request)
+    prepare(request)
     assert request.cached_response
     assert request.cached_response.headers == response.headers
     assert request.cached_response.body == response.body
@@ -84,19 +69,19 @@ module ResponseCacheStoreTests
 
     request2 = make_request("GET", "http://example2.com/")
     _response2 = cached_response(request2, extra_headers: { "cache-control" => "no-cache", "expires" => (Time.now + 2).httpdate })
-    store.prepare(request2)
+    prepare(request2)
     assert request2.response.nil?
 
     request_invalid_expires = make_request("GET", "http://example3.com/")
     _invalid_expires_response = cached_response(request_invalid_expires, extra_headers: { "expires" => "smthsmth" })
-    store.prepare(request_invalid_expires)
+    prepare(request_invalid_expires)
     assert request_invalid_expires.response.nil?
   end
 
   def test_store_prepare_invalid_date
     request_invalid_age = make_request("GET", "http://example4.com/")
     response_invalid_age = cached_response(request_invalid_age, extra_headers: { "cache-control" => "max-age=2", "date" => "smthsmth" })
-    store.prepare(request_invalid_age)
+    prepare(request_invalid_age)
     assert request_invalid_age.response
     assert request_invalid_age.response.headers == response_invalid_age.headers
     assert request_invalid_age.response.body == response_invalid_age.body
@@ -107,17 +92,17 @@ module ResponseCacheStoreTests
     response = cached_response(request, extra_headers: { "vary" => "Accept" })
 
     request2 = make_request("GET", "http://example.com/", headers: { "accept" => "text/html" })
-    store.prepare(request2)
+    prepare(request2)
     assert !request2.headers.key?("if-none-match")
     assert request2.cached_response.nil?
     request3 = make_request("GET", "http://example.com/", headers: { "accept" => "text/plain" })
-    store.prepare(request3)
+    prepare(request3)
     assert request3.cached_response
     assert request3.cached_response.headers == response.headers
     assert request3.cached_response.body == response.body
     assert request3.headers.key?("if-none-match")
     request4 = make_request("GET", "http://example.com/", headers: { "accept" => "text/plain", "user-agent" => "Linux Bowser" })
-    store.prepare(request4)
+    prepare(request4)
     assert request4.cached_response
     assert request4.cached_response.headers == response.headers
     assert request4.cached_response.body == response.body
@@ -129,17 +114,17 @@ module ResponseCacheStoreTests
     response = cached_response(request, extra_headers: { "vary" => "*" })
 
     request2 = make_request("GET", "http://example.com/", headers: { "accept" => "text/html" })
-    store.prepare(request2)
+    prepare(request2)
     assert request.cached_response.nil?
     assert !request2.headers.key?("if-none-match")
     request3 = make_request("GET", "http://example.com/", headers: { "accept" => "text/plain" })
-    store.prepare(request3)
+    prepare(request3)
     assert request3.cached_response
     assert request3.cached_response.headers == response.headers
     assert request3.cached_response.body == response.body
     assert request3.headers.key?("if-none-match")
     request4 = make_request("GET", "http://example.com/", headers: { "accept" => "text/plain", "accept-language" => "en" })
-    store.prepare(request4)
+    prepare(request4)
     assert request4.cached_response.nil?
     assert !request4.headers.key?("if-none-match")
   end
@@ -175,7 +160,7 @@ module ResponseCacheStoreTests
   end
 
   def store_class
-    Plugins::ResponseCache::Store
+    raise NotImplementedError, "must define a `store_class` method"
   end
 
   def store
@@ -185,7 +170,11 @@ module ResponseCacheStoreTests
   def cached_response(request, status: 200, extra_headers: {}, body: "test")
     response = response_class.new(request, status, "2.0", { "date" => Time.now.httpdate, "etag" => "ETAG" }.merge(extra_headers))
     response.body.write(body)
-    store.cache(request, response)
+    store.set(request, response)
     response
+  end
+
+  def prepare(request)
+    response_cache_session.send(:prepare_cache, request)
   end
 end
