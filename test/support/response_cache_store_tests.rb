@@ -42,6 +42,7 @@ module ResponseCacheStoreTests
     assert request.response.nil?
 
     store.prepare(request)
+    assert request.response
     assert request.response.headers == response.headers
     assert request.response.body == response.body
     assert request.cached_response.nil?
@@ -50,7 +51,9 @@ module ResponseCacheStoreTests
     sleep(3)
 
     store.prepare(request)
-    assert request.cached_response == response
+    assert request.cached_response
+    assert request.cached_response.headers == response.headers
+    assert request.cached_response.body == response.body
     assert request.response.nil?
 
     request2 = make_request("GET", "http://example2.com/")
@@ -65,6 +68,7 @@ module ResponseCacheStoreTests
     assert request.response.nil?
 
     store.prepare(request)
+    assert request.response
     assert request.response.headers == response.headers
     assert request.response.body == response.body
     assert request.cached_response.nil?
@@ -73,7 +77,9 @@ module ResponseCacheStoreTests
     sleep(3)
 
     store.prepare(request)
-    assert request.cached_response == response
+    assert request.cached_response
+    assert request.cached_response.headers == response.headers
+    assert request.cached_response.body == response.body
     assert request.response.nil?
 
     request2 = make_request("GET", "http://example2.com/")
@@ -91,6 +97,7 @@ module ResponseCacheStoreTests
     request_invalid_age = make_request("GET", "http://example4.com/")
     response_invalid_age = cached_response(request_invalid_age, extra_headers: { "cache-control" => "max-age=2", "date" => "smthsmth" })
     store.prepare(request_invalid_age)
+    assert request_invalid_age.response
     assert request_invalid_age.response.headers == response_invalid_age.headers
     assert request_invalid_age.response.body == response_invalid_age.body
   end
@@ -105,11 +112,15 @@ module ResponseCacheStoreTests
     assert request2.cached_response.nil?
     request3 = make_request("GET", "http://example.com/", headers: { "accept" => "text/plain" })
     store.prepare(request3)
-    assert request3.cached_response == response
+    assert request3.cached_response
+    assert request3.cached_response.headers == response.headers
+    assert request3.cached_response.body == response.body
     assert request3.headers.key?("if-none-match")
     request4 = make_request("GET", "http://example.com/", headers: { "accept" => "text/plain", "user-agent" => "Linux Bowser" })
     store.prepare(request4)
-    assert request4.cached_response == response
+    assert request4.cached_response
+    assert request4.cached_response.headers == response.headers
+    assert request4.cached_response.body == response.body
     assert request4.headers.key?("if-none-match")
   end
 
@@ -123,7 +134,9 @@ module ResponseCacheStoreTests
     assert !request2.headers.key?("if-none-match")
     request3 = make_request("GET", "http://example.com/", headers: { "accept" => "text/plain" })
     store.prepare(request3)
-    assert request3.cached_response == response
+    assert request3.cached_response
+    assert request3.cached_response.headers == response.headers
+    assert request3.cached_response.body == response.body
     assert request3.headers.key?("if-none-match")
     request4 = make_request("GET", "http://example.com/", headers: { "accept" => "text/plain", "accept-language" => "en" })
     store.prepare(request4)
@@ -134,7 +147,7 @@ module ResponseCacheStoreTests
   private
 
   def teardown
-    store.clear if @store
+    response_cache_session.clear_response_cache
   end
 
   def request_class
@@ -154,15 +167,19 @@ module ResponseCacheStoreTests
   end
 
   def response_cache_session
-    @response_cache_session ||= HTTPX.plugin(:response_cache)
+    @response_cache_session ||= HTTPX.plugin(:response_cache, response_cache_store: store_class.new)
   end
 
   def make_request(meth, uri, *args)
     response_cache_session.build_request(meth, uri, *args)
   end
 
+  def store_class
+    Plugins::ResponseCache::Store
+  end
+
   def store
-    @store ||= Plugins::ResponseCache::FileStore.new
+    response_cache_session.class.default_options.response_cache_store
   end
 
   def cached_response(request, status: 200, extra_headers: {}, body: "test")
