@@ -44,16 +44,21 @@ module HTTPX
         def extra_options(options)
           options.merge(
             supported_vary_headers: SUPPORTED_VARY_HEADERS,
-            response_cache_store: Store.new,
+            response_cache_store: :store,
           )
         end
       end
 
       module OptionsMethods
         def option_response_cache_store(value)
-          raise TypeError, "must be an instance of #{Store}" unless value.is_a?(Store)
-
-          value
+          case value
+          when :store
+            Store.new
+          when :file_store
+            FileStore.new
+          else
+            value
+          end
         end
 
         def option_supported_vary_headers(value)
