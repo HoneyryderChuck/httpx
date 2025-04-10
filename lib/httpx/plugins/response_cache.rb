@@ -34,9 +34,7 @@ module HTTPX
             # directive prohibits caching. However, a cache that does not support
             # the Range and Content-Range headers MUST NOT cache 206 (Partial
             # Content) responses.
-            response.status != 206 && (
-            response.headers.key?("etag") || response.headers.key?("last-modified") || response.fresh?
-          )
+            response.status != 206
         end
 
         def cached_response?(response)
