@@ -26,14 +26,24 @@ module Requests
         retry_persistent_session = HTTPX.plugin(:persistent).plugin(:retries, max_retries: 4)
         options = retry_persistent_session.send(:default_options)
         assert options.max_retries == 4
-        assert options.retry_change_requests
         assert options.persistent
 
         persistent_retry_session = HTTPX.plugin(:retries, max_retries: 4).plugin(:persistent)
         options = persistent_retry_session.send(:default_options)
         assert options.max_retries == 4
-        assert options.retry_change_requests
         assert options.persistent
+      end
+
+      def test_plugin_persistent_does_not_retry_change_requests
+        check_error = ->(response) { response.is_a?(HTTPX::ErrorResponse) || response.status == 405 }
+        persistent_session = HTTPX
+                             .plugin(RequestInspector)
+                             .plugin(:persistent, retry_on: check_error) # because CI
+                             .with(timeout: { request_timeout: 3 })
+
+        response = persistent_session.post(build_uri("/delay/10"), body: ["a" * 1024])
+        assert check_error[response]
+        assert persistent_session.calls.zero?, "expect request to be built 0 times (was #{persistent_session.calls})"
       end
 
       def test_persistent_retry_http2_goaway

@@ -246,7 +246,7 @@ class FaradayTest < Minitest::Test
     }
     session = nil
     faraday_conn = faraday_connection(request: { read_timeout: 2 }) do |http|
-      session = http.with(max_retries: 1, retry_on: check_error)
+      session = http.with(max_retries: 1, retry_on: check_error, retry_change_requests: true)
     end
     adapter_handler = faraday_conn.builder.handlers.last
     faraday_conn.builder.insert_before adapter_handler, Faraday::Multipart::Middleware

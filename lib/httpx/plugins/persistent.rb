@@ -24,7 +24,7 @@ module HTTPX
         else
           1
         end
-        klass.plugin(:retries, max_retries: max_retries, retry_change_requests: true)
+        klass.plugin(:retries, max_retries: max_retries)
       end
 
       def self.extra_options(options)
@@ -33,6 +33,10 @@ module HTTPX
 
       module InstanceMethods
         private
+
+        def repeatable_request?(request, _)
+          super || request.ping?
+        end
 
         def get_current_selector
           super(&nil) || begin
