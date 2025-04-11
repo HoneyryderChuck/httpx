@@ -7,7 +7,7 @@ class ResponseCacheFileStoreTest < Minitest::Test
   include ResponseCacheStoreTests
 
   def test_internal_store_set
-    request = make_request("GET", "http://example.com/")
+    request = make_request("GET", "http://store-set/")
     assert !File.exist?(store.dir.join(request.response_cache_key))
     cached_response(request)
     assert File.exist?(store.dir.join(request.response_cache_key))
@@ -17,5 +17,17 @@ class ResponseCacheFileStoreTest < Minitest::Test
 
   def store_class
     HTTPX::Plugins::ResponseCache::FileStore
+  end
+
+  def store
+    super.tap do |st|
+      st.singleton_class.attr_writer :dir
+    end
+  end
+
+  def setup
+    tmpdir = Pathname.new(Dir.tmpdir).join(SecureRandom.alphanumeric)
+    FileUtils.mkdir_p(tmpdir)
+    store.dir = tmpdir
   end
 end
