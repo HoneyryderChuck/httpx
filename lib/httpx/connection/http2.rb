@@ -152,7 +152,7 @@ module HTTPX
 
     def ping
       ping = SecureRandom.gen_random(8)
-      @connection.ping(ping)
+      @connection.ping(ping.dup)
     ensure
       @pings << ping
     end

@@ -18,13 +18,25 @@ module HTTPX
     # https://gitlab.com/os85/httpx/wikis/Persistent
     #
     module Persistent
+      # subset of retryable errors which are safe to retry when reconnecting
+      RECONNECTABLE_ERRORS = [
+        IOError,
+        EOFError,
+        Errno::ECONNRESET,
+        Errno::ECONNABORTED,
+        Errno::EPIPE,
+        Errno::EINVAL,
+        Errno::ETIMEDOUT,
+        ConnectionError,
+      ].freeze
+
       def self.load_dependencies(klass)
         max_retries = if klass.default_options.respond_to?(:max_retries)
           [klass.default_options.max_retries, 1].max
         else
           1
         end
-        klass.plugin(:retries, max_retries: max_retries, retry_change_requests: true)
+        klass.plugin(:retries, max_retries: max_retries)
       end
 
       def self.extra_options(options)
@@ -33,6 +45,20 @@ module HTTPX
 
       module InstanceMethods
         private
+
+        def repeatable_request?(request, _)
+          super || begin
+            return false unless request.ping?
+
+            response = request.response
+
+            return false unless response && response.is_a?(ErrorResponse)
+
+            error = response.error
+
+            RECONNECTABLE_ERRORS.any? { |klass| error.is_a?(klass) }
+          end
+        end
 
         def get_current_selector
           super(&nil) || begin

@@ -26,14 +26,45 @@ module Requests
         retry_persistent_session = HTTPX.plugin(:persistent).plugin(:retries, max_retries: 4)
         options = retry_persistent_session.send(:default_options)
         assert options.max_retries == 4
-        assert options.retry_change_requests
         assert options.persistent
 
         persistent_retry_session = HTTPX.plugin(:retries, max_retries: 4).plugin(:persistent)
         options = persistent_retry_session.send(:default_options)
         assert options.max_retries == 4
-        assert options.retry_change_requests
         assert options.persistent
+      end
+
+      def test_plugin_persistent_does_not_retry_change_requests_on_timeouts
+        check_error = ->(response) { response.is_a?(HTTPX::ErrorResponse) || response.status == 405 }
+        persistent_session = HTTPX
+                             .plugin(RequestInspector)
+                             .plugin(:persistent, retry_on: check_error) # because CI
+                             .with(timeout: { request_timeout: 3 })
+
+        response = persistent_session.post(build_uri("/delay/10"), body: ["a" * 1024])
+        assert check_error[response]
+        assert persistent_session.calls.zero?, "expect request to be built 0 times (was #{persistent_session.calls})"
+      end
+
+      def test_plugin_persistent_does_not_retry_change_requests_on_keep_alive_interval_timeouts
+        start_test_servlet(KeepAlivePongThenTimeoutSocketServer) do |server|
+          check_error = ->(response) { response.is_a?(HTTPX::ErrorResponse) || response.status == 405 }
+          persistent_session = HTTPX
+                               .plugin(RequestInspector)
+                               .plugin(:persistent, retry_on: check_error)
+                               .with(
+                                 ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE },
+                                 timeout: { keep_alive_timeout: 1, request_timeout: 2 }
+                               )
+
+          response = persistent_session.post(server.origin, body: "test")
+          verify_status(response, 200)
+          assert persistent_session.calls.zero?, "expect request to be built 0 times (was #{persistent_session.calls})"
+          sleep(2)
+          response = persistent_session.post(server.origin, body: "test")
+          assert check_error[response]
+          assert persistent_session.calls == 1, "expect request to be built 1 time (was #{persistent_session.calls})"
+        end
       end
 
       def test_persistent_retry_http2_goaway

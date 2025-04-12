@@ -31,11 +31,11 @@ module HTTPX
 
         def fetch_response: (retriesRequest request, Selector selector, retriesOptions options) -> (retriesResponse | ErrorResponse)?
 
-        def __repeatable_request?: (retriesRequest request, retriesOptions options) -> boolish
+        def repeatable_request?: (retriesRequest request, retriesOptions options) -> boolish
 
-        def __retryable_error?: (_Exception error) -> bool
+        def retryable_error?: (_Exception error) -> bool
 
-        def __try_partial_retry: (retriesRequest request, (retriesResponse | ErrorResponse) response) -> void
+        def try_partial_retry: (retriesRequest request, (retriesResponse | ErrorResponse) response) -> void
 
       end
 

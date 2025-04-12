@@ -88,6 +88,7 @@ module HTTPX
       end
 
       module InstanceMethods
+        # returns a `:retries` plugin enabled session with +n+ maximum retries per request setting.
         def max_retries(n)
           with(max_retries: n)
         end
@@ -99,16 +100,16 @@ module HTTPX
 
           if response &&
              request.retries.positive? &&
-             __repeatable_request?(request, options) &&
+             repeatable_request?(request, options) &&
              (
                (
-                 response.is_a?(ErrorResponse) && __retryable_error?(response.error)
+                 response.is_a?(ErrorResponse) && retryable_error?(response.error)
                ) ||
                (
                  options.retry_on && options.retry_on.call(response)
                )
              )
-            __try_partial_retry(request, response)
+            try_partial_retry(request, response)
             log { "failed to get response, #{request.retries} tries to go..." }
             request.retries -= 1 unless request.ping? # do not exhaust retries on connection liveness probes
             request.transition(:idle)
@@ -143,11 +144,13 @@ module HTTPX
           response
         end
 
-        def __repeatable_request?(request, options)
+        # returns whether +request+ can be retried.
+        def repeatable_request?(request, options)
           IDEMPOTENT_METHODS.include?(request.verb) || options.retry_change_requests
         end
 
-        def __retryable_error?(ex)
+        # returns whether the +ex+ exception happend for a retriable request.
+        def retryable_error?(ex)
           RETRYABLE_ERRORS.any? { |klass| ex.is_a?(klass) }
         end
 
@@ -156,11 +159,11 @@ module HTTPX
         end
 
         #
-        # Atttempt to set the request to perform a partial range request.
+        # Attempt to set the request to perform a partial range request.
         # This happens if the peer server accepts byte-range requests, and
         # the last response contains some body payload.
         #
-        def __try_partial_retry(request, response)
+        def try_partial_retry(request, response)
           response = response.response if response.is_a?(ErrorResponse)
 
           return unless response
@@ -181,10 +184,13 @@ module HTTPX
       end
 
       module RequestMethods
+        # number of retries left.
         attr_accessor :retries
 
+        # a response partially received before.
         attr_writer :partial_response
 
+        # initializes the request instance, sets the number of retries for the request.
         def initialize(*args)
           super
           @retries = @options.max_retries
