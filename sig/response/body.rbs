@@ -7,14 +7,15 @@ module HTTPX
     attr_reader encoding: Encoding
     attr_reader encodings: Array[String]
 
+    attr_reader buffer: Response::Buffer?
+
     @response: Response
     @headers: Headers
     @options: Options
     @state: :idle | :memory | :buffer | :closed
     @window_size: Integer
     @length: Integer
-    @buffer: StringIO | Tempfile | nil
-    @reader: StringIO | Tempfile | nil
+    @reader: Response::Buffer?
     @inflaters: Array[Transcoder::_Inflater]
 
     def initialize: (Response, Options) -> void
@@ -47,7 +48,5 @@ module HTTPX
     def decode_chunk: (String chunk) -> String
 
     def transition: (Symbol nextstate) -> void
-
-    def _with_same_buffer_pos: [A] () { () -> A } -> A
   end
 end

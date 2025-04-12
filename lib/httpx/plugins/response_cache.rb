@@ -10,12 +10,14 @@ module HTTPX
     module ResponseCache
       CACHEABLE_VERBS = %w[GET HEAD].freeze
       CACHEABLE_STATUS_CODES = [200, 203, 206, 300, 301, 410].freeze
+      SUPPORTED_VARY_HEADERS = %w[accept accept-encoding accept-language cookie origin].sort.freeze
       private_constant :CACHEABLE_VERBS
       private_constant :CACHEABLE_STATUS_CODES
 
       class << self
         def load_dependencies(*)
           require_relative "response_cache/store"
+          require_relative "response_cache/file_store"
         end
 
         def cacheable_response?(response)
@@ -32,9 +34,7 @@ module HTTPX
             # directive prohibits caching. However, a cache that does not support
             # the Range and Content-Range headers MUST NOT cache 206 (Partial
             # Content) responses.
-            response.status != 206 && (
-            response.headers.key?("etag") || response.headers.key?("last-modified") || response.fresh?
-          )
+            response.status != 206
         end
 
         def cached_response?(response)
@@ -42,15 +42,27 @@ module HTTPX
         end
 
         def extra_options(options)
-          options.merge(response_cache_store: Store.new)
+          options.merge(
+            supported_vary_headers: SUPPORTED_VARY_HEADERS,
+            response_cache_store: :store,
+          )
         end
       end
 
       module OptionsMethods
         def option_response_cache_store(value)
-          raise TypeError, "must be an instance of #{Store}" unless value.is_a?(Store)
+          case value
+          when :store
+            Store.new
+          when :file_store
+            FileStore.new
+          else
+            value
+          end
+        end
 
-          value
+        def option_supported_vary_headers(value)
+          Array(value).sort
         end
       end
 
@@ -63,12 +75,18 @@ module HTTPX
           request = super
           return request unless cacheable_request?(request)
 
-          @options.response_cache_store.prepare(request)
+          prepare_cache(request)
 
           request
         end
 
         private
+
+        def send_request(request, *)
+          return request if request.response
+
+          super
+        end
 
         def fetch_response(request, *)
           response = super
@@ -77,15 +95,39 @@ module HTTPX
 
           if ResponseCache.cached_response?(response)
             log { "returning cached response for #{request.uri}" }
-            cached_response = @options.response_cache_store.lookup(request)
 
-            response.copy_from_cached(cached_response)
-
-          else
-            @options.response_cache_store.cache(request, response)
+            response.copy_from_cached!
+          elsif request.cacheable_verb? && ResponseCache.cacheable_response?(response)
+            request.options.response_cache_store.set(request, response) unless response.cached?
           end
 
           response
+        end
+
+        def prepare_cache(request)
+          cached_response = request.options.response_cache_store.get(request)
+
+          return unless cached_response && match_by_vary?(request, cached_response)
+
+          cached_response.body.rewind
+
+          if cached_response.fresh?
+            cached_response = cached_response.dup
+            cached_response.mark_as_cached!
+            request.response = cached_response
+            request.emit(:response, cached_response)
+            return
+          end
+
+          request.cached_response = cached_response
+
+          if !request.headers.key?("if-modified-since") && (last_modified = cached_response.headers["last-modified"])
+            request.headers.add("if-modified-since", last_modified)
+          end
+
+          if !request.headers.key?("if-none-match") && (etag = cached_response.headers["etag"]) # rubocop:disable Style/GuardClause
+            request.headers.add("if-none-match", etag)
+          end
         end
 
         def cacheable_request?(request)
@@ -94,24 +136,82 @@ module HTTPX
               !request.headers.key?("cache-control") || !request.headers.get("cache-control").include?("no-store")
             )
         end
+
+        def match_by_vary?(request, response)
+          vary = response.vary
+
+          return true unless vary
+
+          original_request = response.instance_variable_get(:@request)
+
+          if vary == %w[*]
+            request.options.supported_vary_headers.each do |field|
+              return false unless request.headers[field] == original_request.headers[field]
+            end
+
+            return true
+          end
+
+          vary.all? do |field|
+            !original_request.headers.key?(field) || request.headers[field] == original_request.headers[field]
+          end
+        end
       end
 
       module RequestMethods
+        attr_accessor :cached_response
+
+        def initialize(*)
+          super
+          @cached_response = nil
+        end
+
+        def merge_headers(*)
+          super
+          @response_cache_key = nil
+        end
+
         def cacheable_verb?
           CACHEABLE_VERBS.include?(@verb)
         end
 
         def response_cache_key
-          @response_cache_key ||= Digest::SHA1.hexdigest("httpx-response-cache-#{@verb}-#{@uri}")
+          @response_cache_key ||= begin
+            keys = [@verb, @uri]
+
+            @options.supported_vary_headers.each do |field|
+              value = @headers[field]
+
+              keys << value if value
+            end
+            Digest::SHA1.hexdigest("httpx-response-cache-#{keys.join("-")}")
+          end
         end
       end
 
       module ResponseMethods
-        def copy_from_cached(other)
-          # 304 responses do not have content-type, which are needed for decoding.
-          @headers = @headers.class.new(other.headers.merge(@headers))
+        def initialize(*)
+          super
+          @cached = false
+        end
 
-          @body = other.body.dup
+        def cached?
+          @cached
+        end
+
+        def mark_as_cached!
+          @cached = true
+        end
+
+        def copy_from_cached!
+          cached_response = @request.cached_response
+
+          return unless cached_response
+
+          # 304 responses do not have content-type, which are needed for decoding.
+          @headers = @headers.class.new(cached_response.headers.merge(@headers))
+
+          @body = cached_response.body.dup
 
           @body.rewind
         end
@@ -120,6 +220,8 @@ module HTTPX
         def fresh?
           if cache_control
             return false if cache_control.include?("no-cache")
+
+            return true if cache_control.include?("immutable")
 
             # check age: max-age
             max_age = cache_control.find { |directive| directive.start_with?("s-maxage") }
@@ -138,13 +240,13 @@ module HTTPX
             begin
               expires = Time.httpdate(@headers["expires"])
             rescue ArgumentError
-              return true
+              return false
             end
 
             return (expires - Time.now).to_i.positive?
           end
 
-          true
+          false
         end
 
         def cache_control
@@ -163,7 +265,7 @@ module HTTPX
           @vary = begin
             return unless @headers.key?("vary")
 
-            @headers["vary"].split(/ *, */)
+            @headers["vary"].split(/ *, */).map(&:downcase)
           end
         end
 
