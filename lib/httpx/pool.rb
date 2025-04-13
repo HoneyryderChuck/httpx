@@ -16,7 +16,6 @@ module HTTPX
     # :max_connections:: the maximum number of connections held in the pool.
     # :max_connections_per_origin :: the maximum number of connections held in the pool pointing to a given origin.
     # :pool_timeout :: the number of seconds to wait for a connection to a given origin (before raising HTTPX::PoolTimeoutError)
-    # :close_on_fork :: whether the pool is automatically closed on fork (only available in ruby 3.1 or higher)
     #
     def initialize(options)
       @max_connections = options.fetch(:max_connections, Float::INFINITY)
