@@ -120,10 +120,7 @@ module HTTPX
       @ns_index += 1
       nameserver = @nameserver
       if nameserver && @ns_index < nameserver.size
-        log do
-          "resolver #{FAMILY_TYPES[@record_type]}: " \
-            "failed resolving on nameserver #{@nameserver[@ns_index - 1]} (#{e.message})"
-        end
+        log { "resolver #{FAMILY_TYPES[@record_type]}: failed resolving on nameserver #{@nameserver[@ns_index - 1]} (#{e.message})" }
         transition(:idle)
         @timeouts.clear
         retry
@@ -158,9 +155,7 @@ module HTTPX
       timeouts = @timeouts[h]
 
       if !timeouts.empty?
-        log do
-          "resolver #{FAMILY_TYPES[@record_type]}: timeout after #{interval}s, retry (with #{timeouts.first}s) #{h}..."
-        end
+        log { "resolver #{FAMILY_TYPES[@record_type]}: timeout after #{interval}s, retry (with #{timeouts.first}s) #{h}..." }
         # must downgrade to tcp AND retry on same host as last
         downgrade_socket
         resolve(connection, h)
@@ -388,10 +383,9 @@ module HTTPX
 
       if hostname.nil?
         hostname = connection.peer.host
-        log do
-          "resolver #{FAMILY_TYPES[@record_type]}: " \
-            "resolve IDN #{connection.peer.non_ascii_hostname} as #{hostname}"
-        end if connection.peer.non_ascii_hostname
+        if connection.peer.non_ascii_hostname
+          log { "resolver #{FAMILY_TYPES[@record_type]}: resolve IDN #{connection.peer.non_ascii_hostname} as #{hostname}" }
+        end
 
         hostname = generate_candidates(hostname).each do |name|
           @queries[name] = connection
