@@ -1,0 +1,13 @@
+module HTTPX
+  module Plugins
+    module ResponseCache
+      class Store
+        @store: Hash[String, cacheResponse]
+
+        @store_mutex: Thread::Mutex
+
+        include _ResponseCacheStore
+      end
+    end
+  end
+end
