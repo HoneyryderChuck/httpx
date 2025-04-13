@@ -115,8 +115,7 @@ class HTTPSTest < Minitest::Test
   # HTTP/2-specific tests
 
   {
-    # TODO: turn this on when CI does keep-alive on HTTP/1.1
-    # http1: { uri: "https://httpbin.org/get", ssl: { alpn_protocols: %w[http/1.1] }, max_concurrent_requests: 1 },
+    http1: { uri: "https://httpbin.org/get", ssl: { alpn_protocols: %w[http/1.1] } },
     http2: {},
   }.each do |proto, proto_options|
     define_method :"test_multiple_get_max_requests_#{proto}" do
