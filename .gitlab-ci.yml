@@ -111,7 +111,7 @@ regression tests:
   variables:
     BUNDLE_WITHOUT: lint:assorted
     CI: 1
-    COVERAGE_KEY: "$RUBY_ENGINE-$RUBY_VERSION-regression-tests"
+    COVERAGE_KEY: "ruby-3.4-regression-tests"
   artifacts:
     paths:
       - coverage/

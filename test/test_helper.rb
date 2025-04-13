@@ -4,8 +4,8 @@ GC.auto_compact = true if !defined?(MimeMagic) && GC.respond_to?(:auto_compact=)
 
 if ENV.key?("CI")
   require "simplecov"
-  SimpleCov.command_name "#{RUBY_ENGINE}-#{RUBY_VERSION}"
   coverage_key = ENV.fetch("COVERAGE_KEY", "#{RUBY_ENGINE}-#{RUBY_VERSION}")
+  SimpleCov.command_name coverage_key
   SimpleCov.coverage_dir "coverage/#{coverage_key}"
 end
 
