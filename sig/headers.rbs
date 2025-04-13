@@ -22,8 +22,6 @@ module HTTPX
 
     def merge: (_Each[[String, headers_value]] other) -> Headers
 
-    def same_headers?: (untyped headers) -> bool
-
     def empty?: () -> bool
 
     def to_a: () -> Array[[String, String]]
