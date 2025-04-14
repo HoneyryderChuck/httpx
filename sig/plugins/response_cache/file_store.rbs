@@ -1,0 +1,19 @@
+module HTTPX
+  module Plugins
+    module ResponseCache
+      class FileStore
+        @dir: Pathname
+
+        include _ResponseCacheStore
+
+        def initialize: (?path dir) -> void
+
+        private
+
+        def file_path: (cacheRequest request) -> Pathname
+
+        def read_from_file: (cacheRequest request, File f) -> cacheResponse?
+      end
+    end
+  end
+end

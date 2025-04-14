@@ -5,6 +5,13 @@ require "securerandom"
 module Requests
   module Plugins
     module ResponseCache
+      def test_plugin_response_cache_options
+        cache_client = HTTPX.plugin(:response_cache, response_cache_store: :store)
+        assert cache_client.class.default_options.response_cache_store.is_a?(HTTPX::Plugins::ResponseCache::Store)
+        cache_client = HTTPX.plugin(:response_cache, response_cache_store: :file_store)
+        assert cache_client.class.default_options.response_cache_store.is_a?(HTTPX::Plugins::ResponseCache::FileStore)
+      end
+
       def test_plugin_response_cache_etag
         cache_client = HTTPX.plugin(:response_cache)
 
