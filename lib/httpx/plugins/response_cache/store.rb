@@ -2,6 +2,7 @@
 
 module HTTPX::Plugins
   module ResponseCache
+    # Implementation of a thread-safe in-memory cache store.
     class Store
       def initialize
         @store = {}
