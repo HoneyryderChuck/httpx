@@ -24,6 +24,7 @@ module HTTPX
       end
 
       class Signal
+        @closed: bool
         @pipe_read: ::IO
         @pipe_write: ::IO
 
