@@ -9,7 +9,7 @@ gem "rake", "~> 13.0"
 
 group :test do
   if RUBY_VERSION >= "3.2.0"
-    gem "datadog", "~> 2.0"
+    gem "datadog", "~> 2.0", platform: :mri
   else
     gem "ddtrace"
   end
@@ -49,6 +49,8 @@ group :test do
     gem "brotli"
     gem "ed25519"
     gem "net-ssh-gateway"
+    # https://github.com/TwP/logging/issues/247
+    gem "syslog" if RUBY_VERSION >= "3.3.0"
   end
 
   platform :jruby do
@@ -62,17 +64,17 @@ group :test do
   gem "oga"
 
   gem "webrick" if RUBY_VERSION >= "3.0.0"
-  # https://github.com/TwP/logging/issues/247
-  gem "syslog" if RUBY_VERSION >= "3.3.0"
   # https://github.com/ffi/ffi/issues/1103
   # ruby 2.7 only, it seems
   gem "ffi", "< 1.17.0" if Gem::VERSION < "3.3.22"
 end
 
 group :lint do
-  gem "rubocop", "~> 1.59.0"
-  gem "rubocop-md"
-  gem "rubocop-performance", "~> 1.19.0"
+  platform :mri do
+    gem "rubocop", "~> 1.59.0"
+    gem "rubocop-md"
+    gem "rubocop-performance", "~> 1.19.0"
+  end
 end
 
 group :coverage do
