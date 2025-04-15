@@ -6,7 +6,8 @@ module HTTPX
       SUPPORTED_VARY_HEADERS: Array[String]
 
       def self?.cacheable_response?: (::HTTPX::ErrorResponse | cacheResponse response) -> bool
-      def self?.cached_response?: (response response) -> bool
+
+      def self?.not_modified?: (response response) -> bool
 
       interface _ResponseCacheOptions
         def response_cache_store: () -> Store

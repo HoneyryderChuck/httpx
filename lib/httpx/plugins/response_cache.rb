@@ -37,7 +37,7 @@ module HTTPX
             response.status != 206
         end
 
-        def cached_response?(response)
+        def not_modified?(response)
           response.is_a?(Response) && response.status == 304
         end
 
@@ -93,7 +93,7 @@ module HTTPX
 
           return unless response
 
-          if ResponseCache.cached_response?(response)
+          if ResponseCache.not_modified?(response)
             log { "returning cached response for #{request.uri}" }
 
             response.copy_from_cached!
