@@ -42,7 +42,9 @@ module HTTPX
         end
       end
     rescue StandardError => e
-      emit_error(e)
+      each_connection do |c|
+        c.emit(:error, e)
+      end
     rescue Exception # rubocop:disable Lint/RescueException
       each_connection do |conn|
         conn.force_reset
@@ -77,9 +79,10 @@ module HTTPX
       return enum_for(__method__) unless block
 
       @selectables.each do |c|
-        if c.is_a?(Resolver::Resolver)
+        case c
+        when Resolver::Resolver
           c.each_connection(&block)
-        else
+        when Connection
           yield c
         end
       end
@@ -204,14 +207,6 @@ module HTTPX
       end
 
       connection_interval
-    end
-
-    def emit_error(e)
-      @selectables.each do |c|
-        next if c.is_a?(Resolver::Resolver)
-
-        c.emit(:error, e)
-      end
     end
   end
 end
