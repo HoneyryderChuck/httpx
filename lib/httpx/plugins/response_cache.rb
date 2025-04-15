@@ -20,6 +20,8 @@ module HTTPX
           require_relative "response_cache/file_store"
         end
 
+        # whether the +response+ can be stored in the response cache.
+        # (i.e. has a cacheable body, does not contain directives prohibiting storage, etc...)
         def cacheable_response?(response)
           response.is_a?(Response) &&
             (
@@ -37,6 +39,7 @@ module HTTPX
             response.status != 206
         end
 
+        # whether the +response+
         def not_modified?(response)
           response.is_a?(Response) && response.status == 304
         end
@@ -49,6 +52,20 @@ module HTTPX
         end
       end
 
+      # adds support for the following options:
+      #
+      # :supported_vary_headers :: array of header values that will be considered for a "vary" header based cache validation
+      #                            (defaults to {SUPPORTED_VARY_HEADERS}).
+      # :response_cache_store :: object where cached responses are fetch from or stored in; defaults to <tt>:store</tt> (in-memory
+      #                          cache), can be set to <tt>:file_store</tt> (file system cache store) as well, or any object which
+      #                          abides by the Cache Store Interface
+      #
+      # The Cache Store Interface requires implementation of the following methods:
+      #
+      # * +#get(request) -> response or nil+
+      # * +#set(request, response) -> void+
+      # * +#clear() -> void+)
+      #
       module OptionsMethods
         def option_response_cache_store(value)
           case value
@@ -67,6 +84,7 @@ module HTTPX
       end
 
       module InstanceMethods
+        # wipes out all cached responses from the cache store.
         def clear_response_cache
           @options.response_cache_store.clear
         end
@@ -104,6 +122,8 @@ module HTTPX
           response
         end
 
+        # will either assign a still-fresh cached response to +request+, or set up its HTTP
+        # cache invalidation headers in case it's not fresh anymore.
         def prepare_cache(request)
           cached_response = request.options.response_cache_store.get(request)
 
@@ -137,6 +157,8 @@ module HTTPX
             )
         end
 
+        # whether the +response+ complies with the directives set by the +request+ "vary" header
+        # (true when none is available).
         def match_by_vary?(request, response)
           vary = response.vary
 
@@ -159,6 +181,7 @@ module HTTPX
       end
 
       module RequestMethods
+        # points to a previously cached Response corresponding to this request.
         attr_accessor :cached_response
 
         def initialize(*)
@@ -171,10 +194,12 @@ module HTTPX
           @response_cache_key = nil
         end
 
+        # returns whether this request is cacheable as per HTTP caching rules.
         def cacheable_verb?
           CACHEABLE_VERBS.include?(@verb)
         end
 
+        # returns a unique cache key as a String identifying this request
         def response_cache_key
           @response_cache_key ||= begin
             keys = [@verb, @uri]
@@ -195,14 +220,17 @@ module HTTPX
           @cached = false
         end
 
+        # whether this Response was duplicated from a previously {RequestMethods#cached_response}.
         def cached?
           @cached
         end
 
+        # sets this Response as being duplicated from a previously cached response.
         def mark_as_cached!
           @cached = true
         end
 
+        # eager-copies the response headers and body from {RequestMethods#cached_response}.
         def copy_from_cached!
           cached_response = @request.cached_response
 
@@ -217,6 +245,8 @@ module HTTPX
         end
 
         # A response is fresh if its age has not yet exceeded its freshness lifetime.
+        # other (#cache_control} directives may influence the outcome, as per the rules
+        # from the {rfc}[https://www.rfc-editor.org/rfc/rfc7234]
         def fresh?
           if cache_control
             return false if cache_control.include?("no-cache")
@@ -249,6 +279,7 @@ module HTTPX
           false
         end
 
+        # returns the "cache-control" directives as an Array of String(s).
         def cache_control
           return @cache_control if defined?(@cache_control)
 
@@ -259,6 +290,7 @@ module HTTPX
           end
         end
 
+        # returns the "vary" header value as an Array of (String) headers.
         def vary
           return @vary if defined?(@vary)
 
@@ -271,12 +303,15 @@ module HTTPX
 
         private
 
+        # returns the value of the "age" header as an Integer (time since epoch).
+        # if no "age" of header exists, it returns the number of seconds since {#date}.
         def age
           return @headers["age"].to_i if @headers.key?("age")
 
           (Time.now - date).to_i
         end
 
+        # returns the value of the "date" header as a Time object
         def date
           @date ||= Time.httpdate(@headers["date"])
         rescue NoMethodError, ArgumentError

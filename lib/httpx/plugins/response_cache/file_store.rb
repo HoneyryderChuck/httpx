@@ -4,6 +4,11 @@ require "pathname"
 
 module HTTPX::Plugins
   module ResponseCache
+    # Implementation of a file system based cache store.
+    #
+    # It stores cached responses in a file under a directory pointed by the +dir+
+    # variable (defaults to the default temp directory from the OS), in a custom
+    # format (similar but different from HTTP/1.1 request/response framing).
     class FileStore
       CRLF = HTTPX::Connection::HTTP1::CRLF
 
