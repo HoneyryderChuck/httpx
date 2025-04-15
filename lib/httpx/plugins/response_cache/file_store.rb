@@ -59,6 +59,15 @@ module HTTPX::Plugins
               f.rewind
             end
           end
+          # cache the request headers
+          f << request.verb << CRLF
+          f << request.uri << CRLF
+
+          request.headers.each do |field, value|
+            f << field << ":" << value << CRLF
+          end
+
+          f << CRLF
 
           # cache the response
           f << response.status << CRLF
@@ -86,10 +95,11 @@ module HTTPX::Plugins
         # if it's an empty file
         return if f.eof?
 
-        status = f.readline.delete_suffix!(CRLF)
-        version = f.readline.delete_suffix!(CRLF)
+        # read request data
+        verb = f.readline.delete_suffix!(CRLF)
+        uri = f.readline.delete_suffix!(CRLF)
 
-        headers = {}
+        request_headers = {}
         while (line = f.readline) != CRLF
           line.delete_suffix!(CRLF)
           sep_index = line.index(":")
@@ -97,10 +107,28 @@ module HTTPX::Plugins
           field = line.byteslice(0..(sep_index - 1))
           value = line.byteslice((sep_index + 1)..-1)
 
-          headers[field] = value
+          request_headers[field] = value
         end
 
-        response = request.options.response_class.new(request, status, version, headers)
+        status = f.readline.delete_suffix!(CRLF)
+        version = f.readline.delete_suffix!(CRLF)
+
+        response_headers = {}
+        while (line = f.readline) != CRLF
+          line.delete_suffix!(CRLF)
+          sep_index = line.index(":")
+
+          field = line.byteslice(0..(sep_index - 1))
+          value = line.byteslice((sep_index + 1)..-1)
+
+          response_headers[field] = value
+        end
+
+        original_request = request.options.request_class.new(verb, uri, request.options)
+        original_request.merge_headers(request_headers)
+
+        response = request.options.response_class.new(request, status, version, response_headers)
+        response.original_request = original_request
 
         ::IO.copy_stream(f, response.body)
 
