@@ -67,10 +67,15 @@ lint rubocop wiki:
   script:
     - bundle exec rubocop httpx.wiki --config .rubocop-wiki.yml
 
-test jruby:
+test jruby 9:
   <<: *test_settings
   script:
     ./spec.sh jruby 9.0.0.0
+  allow_failure: true
+test jruby 10:
+  <<: *test_settings
+  script:
+    ./spec.sh jruby 10
   allow_failure: true
 test ruby 2/7:
   <<: *test_settings
