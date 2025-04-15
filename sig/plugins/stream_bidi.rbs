@@ -1,30 +1,63 @@
 module HTTPX
   module Plugins
-    class HTTP2Bidi < Connection::HTTP2
-    end
-
     module StreamBidi
       def self.load_dependencies: (singleton(Session)) -> void
 
       def self.extra_options: (Options) -> (Options)
 
+      class HTTP2Bidi < Connection::HTTP2
+        @lock: Thread::Mutex
+
+        private
+
+        def handle_stream: (::HTTP2::Stream stream, Request & RequestMethods request) -> void
+
+        def end_stream?: (Request & RequestMethods request, String? next_chunk) -> void
+      end
+
+      class BidiBuffer < Buffer
+        @parent_thread: Thread
+        @oob_mutex: Thread::Mutex
+        @oob_buffer: String
+
+        def rebuffer: () -> void
+      end
+
+      class Signal
+        @pipe_read: ::IO
+        @pipe_write: ::IO
+
+        include _Selectable
+
+        def wakeup: () -> void
+
+        def mergeable?: () -> bool
+
+        def terminate: () -> void
+      end
 
       module InstanceMethods
+        @signal: Signal
       end
 
       module RequestMethods
         attr_accessor headers_sent: bool
 
         @closed: bool
+        @mutex: Thread::Mutex
+
+        def closed?: () -> bool
       end
 
       module RequestBodyMethods
       end
 
       module ConnectionMethods
+        @write_buffer: BidiBuffer
+
         private
 
-        def parser_type: (String protocol) -> (singleton(HTTP1) | singleton(HTTP2) | singleton(HTTP2Bidi))
+        def parser_type: (String protocol) -> (singleton(Connection::HTTP1) | singleton(Connection::HTTP2) | singleton(HTTP2Bidi))
       end
 
     end
