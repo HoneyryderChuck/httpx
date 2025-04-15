@@ -164,7 +164,7 @@ module HTTPX
 
           return true unless vary
 
-          original_request = response.instance_variable_get(:@request)
+          original_request = response.original_request
 
           if vary == %w[*]
             request.options.supported_vary_headers.each do |field|
@@ -215,9 +215,16 @@ module HTTPX
       end
 
       module ResponseMethods
+        attr_writer :original_request
+
         def initialize(*)
           super
           @cached = false
+        end
+
+        # a copy of the request this response was originally cached from
+        def original_request
+          @original_request || @request
         end
 
         # whether this Response was duplicated from a previously {RequestMethods#cached_response}.
