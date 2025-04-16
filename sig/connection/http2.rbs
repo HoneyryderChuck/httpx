@@ -27,8 +27,6 @@ module HTTPX
 
     def <<: (string) -> void
 
-    def can_buffer_more_requests?: () -> bool
-
     def send: (Request request, ?bool head) -> bool
 
     def consume: () -> void
@@ -44,6 +42,8 @@ module HTTPX
     private
 
     def initialize: (Buffer buffer, Options options) -> untyped
+
+    def can_buffer_more_requests?: () -> bool
 
     def send_pending: () -> void
 
