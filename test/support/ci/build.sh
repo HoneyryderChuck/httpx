@@ -35,10 +35,28 @@ export EHOSTUNREACH_HOST=$EHOSTUNREACH_HOST
 
 export PATH=$GEM_HOME/bin:$BUNDLE_PATH/gems/bin:$PATH
 mkdir -p "$GEM_HOME" && chmod 777 "$GEM_HOME"
+
+# TEMP: install ruby-openssl from branch
+if [[ "$RUBY_ENGINE" = "ruby" ]] && [[ ${RUBY_VERSION:0:1} = "3" ]]; then
+  apt-get install -y git
+  cd /
+  git clone https://github.com/rhenium/ruby-openssl.git
+  cd ruby-openssl
+  git checkout -b ky/ssl-ruby-io origin/ky/ssl-ruby-io
+  git show --pretty=format:"%h" --no-patch
+  bundle install
+  bundle exec rake compile
+fi
+
 cd /home
 
 if [[ "$RUBY_ENGINE" = "truffleruby" ]]; then
   gem install bundler -v="2.1.4" --no-doc --conservative
+fi
+
+# TEMP: point openssl to local install
+if [[ "$RUBY_ENGINE" = "ruby" ]] && [[ ${RUBY_VERSION:0:1} = "3" ]]; then
+  bundle add openssl --path=/ruby-openssl
 fi
 
 bundle install
