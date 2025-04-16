@@ -13,8 +13,13 @@ module Datadog::Tracing
 
       TYPE_OUTBOUND = Datadog::Tracing::Metadata::Ext::HTTP::TYPE_OUTBOUND
 
-      TAG_PEER_SERVICE = Datadog::Tracing::Metadata::Ext::TAG_PEER_SERVICE
+      TAG_BASE_SERVICE = Datadog::Tracing::Contrib::Ext::Metadata::TAG_BASE_SERVICE
+      TAG_PEER_HOSTNAME = Datadog::Tracing::Metadata::Ext::TAG_PEER_HOSTNAME
 
+      TAG_KIND = Datadog::Tracing::Metadata::Ext::TAG_KIND
+      TAG_CLIENT = Datadog::Tracing::Metadata::Ext::SpanKind::TAG_CLIENT
+      TAG_COMPONENT = Datadog::Tracing::Metadata::Ext::TAG_COMPONENT
+      TAG_OPERATION = Datadog::Tracing::Metadata::Ext::TAG_OPERATION
       TAG_URL = Datadog::Tracing::Metadata::Ext::HTTP::TAG_URL
       TAG_METHOD = Datadog::Tracing::Metadata::Ext::HTTP::TAG_METHOD
       TAG_TARGET_HOST = Datadog::Tracing::Metadata::Ext::NET::TAG_TARGET_HOST
@@ -81,6 +86,10 @@ module Datadog::Tracing
               span.set_tag(TAG_STATUS_CODE, response.status.to_s)
 
               span.set_error(::HTTPX::HTTPError.new(response)) if response.status >= 400 && response.status <= 599
+
+              span.set_tags(
+                Datadog.configuration.tracing.header_tags.response_tags(response.headers.to_h)
+              )
             end
 
             span.finish
@@ -97,7 +106,13 @@ module Datadog::Tracing
 
             span.resource = verb
 
-            # Add additional request specific tags to the span.
+            # Tag original global service name if not used
+            span.set_tag(TAG_BASE_SERVICE, Datadog.configuration.service) if span.service != Datadog.configuration.service
+
+            span.set_tag(TAG_KIND, TAG_CLIENT)
+
+            span.set_tag(TAG_COMPONENT, "httpx")
+            span.set_tag(TAG_OPERATION, "request")
 
             span.set_tag(TAG_URL, request.path)
             span.set_tag(TAG_METHOD, verb)
@@ -105,8 +120,10 @@ module Datadog::Tracing
             span.set_tag(TAG_TARGET_HOST, uri.host)
             span.set_tag(TAG_TARGET_PORT, uri.port)
 
+            span.set_tag(TAG_PEER_HOSTNAME, uri.host)
+
             # Tag as an external peer service
-            span.set_tag(TAG_PEER_SERVICE, span.service)
+            # span.set_tag(TAG_PEER_SERVICE, span.service)
 
             if config[:distributed_tracing]
               propagate_trace_http(
@@ -119,6 +136,10 @@ module Datadog::Tracing
             if Contrib::Analytics.enabled?(config[:analytics_enabled])
               Contrib::Analytics.set_sample_rate(span, config[:analytics_sample_rate])
             end
+
+            span.set_tags(
+              Datadog.configuration.tracing.header_tags.request_tags(request.headers.to_h)
+            )
 
             span
           rescue StandardError => e
