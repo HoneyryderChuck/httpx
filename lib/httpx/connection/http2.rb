@@ -98,12 +98,6 @@ module HTTPX
       @connection << data
     end
 
-    def can_buffer_more_requests?
-      (@handshake_completed || !@wait_for_handshake) &&
-        @streams.size < @max_concurrent_requests &&
-        @streams.size < @max_requests
-    end
-
     def send(request, head = false)
       unless can_buffer_more_requests?
         head ? @pending.unshift(request) : @pending << request
@@ -158,6 +152,12 @@ module HTTPX
     end
 
     private
+
+    def can_buffer_more_requests?
+      (@handshake_completed || !@wait_for_handshake) &&
+        @streams.size < @max_concurrent_requests &&
+        @streams.size < @max_requests
+    end
 
     def send_pending
       while (request = @pending.shift)
