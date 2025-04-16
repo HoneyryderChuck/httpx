@@ -44,6 +44,11 @@ install_gems() {
     gem install bundler -v="2.1.4" --no-doc --conservative
   fi
 
+  # TEMP: point openssl to local install
+  if [[ "$RUBY_ENGINE" = "ruby" ]] && [[ ${RUBY_VERSION:0:1} = "3" ]]; then
+    bundle add openssl --git=https://github.com/rhenium/ruby-openssl.git --branch=ky/ssl-ruby-io
+  fi
+
   bundle install
 }
 
