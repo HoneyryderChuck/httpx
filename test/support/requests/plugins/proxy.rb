@@ -45,7 +45,7 @@ module Requests
           conn = session.connections.first
           assert conn.io.is_a?(HTTPX::SSL)
         end
-      end
+      end if RUBY_VERSION >= "3.0.0"
 
       def test_plugin_http_no_proxy
         return unless origin.start_with?("http://")
