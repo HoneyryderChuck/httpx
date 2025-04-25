@@ -226,7 +226,7 @@ module HTTPX
       return @query if defined?(@query)
 
       query = []
-      if (q = @query_params)
+      if (q = @query_params) && !q.empty?
         query << Transcoder::Form.encode(q)
       end
       query << @uri.query if @uri.query
