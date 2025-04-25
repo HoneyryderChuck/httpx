@@ -205,7 +205,7 @@ class HTTPSTest < Minitest::Test
     start_test_servlet(SettingsTimeoutServer) do |server|
       test_server = server
       uri = "#{server.origin}/"
-      http = HTTPX.plugin(SessionWithPool).with(timeout: { settings_timeout: 3 }, ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE })
+      http = HTTPX.plugin(SessionWithPool).with(timeout: { settings_timeout: 1 }, ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE })
       response = http.get(uri)
       verify_error_response(response, HTTPX::SettingsTimeoutError)
     end
