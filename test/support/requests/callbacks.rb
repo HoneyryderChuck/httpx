@@ -62,6 +62,22 @@ module Requests
       assert error == response.error
     end
 
+    def test_callbacks_request_error_allow_reraise_in_bock
+      URI(build_uri("/get"))
+      err_type = Class.new(StandardError)
+
+      ex = assert_raises(err_type) do
+        http = HTTPX.plugin(:callbacks).on_request_error do |_, err|
+          raise err_type, err.message
+        end
+        # unavailable_host = URI(origin("localhost"))
+        # unavailable_host.port = next_available_port
+        # http.get(unavailable_host.to_s)
+        http.get("http://unknownhost")
+      end
+      assert ex.message == "name or service not known"
+    end
+
     def test_callbacks_request
       uri = URI(build_uri("/post"))
       started = completed = false
