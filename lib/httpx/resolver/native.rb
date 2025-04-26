@@ -46,6 +46,10 @@ module HTTPX
       transition(:closed)
     end
 
+    def terminate
+      emit(:close, self)
+    end
+
     def closed?
       @state == :closed
     end

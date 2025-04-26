@@ -8,6 +8,13 @@ module HTTPX
     # https://gitlab.com/os85/httpx/-/wikis/Events
     #
     module Callbacks
+      CALLBACKS = %i[
+        connection_opened connection_closed
+        request_error
+        request_started request_body_chunk request_completed
+        response_started response_body_chunk response_completed
+      ].freeze
+
       # connection closed user-space errors happen after errors can be surfaced to requests,
       # so they need to pierce through the scheduler, which is only possible by simulating an
       # interrupt.
@@ -16,12 +23,7 @@ module HTTPX
       module InstanceMethods
         include HTTPX::Callbacks
 
-        %i[
-          connection_opened connection_closed
-          request_error
-          request_started request_body_chunk request_completed
-          response_started response_body_chunk response_completed
-        ].each do |meth|
+        CALLBACKS.each do |meth|
           class_eval(<<-MOD, __FILE__, __LINE__ + 1)
             def on_#{meth}(&blk)   # def on_connection_opened(&blk)
               on(:#{meth}, &blk)   #   on(:connection_opened, &blk)
@@ -31,6 +33,17 @@ module HTTPX
         end
 
         private
+
+        def branch(options, &blk)
+          super(options).tap do |sess|
+            CALLBACKS.each do |cb|
+              next unless callbacks_for?(cb)
+
+              sess.callbacks(cb).concat(callbacks(cb))
+            end
+            sess.wrap(&blk) if blk
+          end
+        end
 
         def do_init_connection(connection, selector)
           super
