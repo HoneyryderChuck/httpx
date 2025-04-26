@@ -49,7 +49,7 @@ module ResponseCacheStoreTests
 
   def test_store_prepare_expires
     request = make_request("GET", "http://prepare-expires/")
-    response = cached_response(request, extra_headers: { "expires" => (Time.now + 2).httpdate })
+    response = cached_response(request, extra_headers: { "expires" => (Time.now + 5).httpdate })
     assert request.response.nil?
 
     prepare(request)
@@ -59,7 +59,7 @@ module ResponseCacheStoreTests
     assert request.cached_response.nil?
 
     request.instance_variable_set(:@response, nil)
-    sleep(3)
+    sleep(6)
 
     prepare(request)
     assert request.cached_response

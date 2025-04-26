@@ -12,6 +12,15 @@ module Requests
         verify_uploaded(body, "url", build_uri("/#{meth}?q=this+is+a+test"))
       end
 
+      define_method :"test_#{meth}_query_params_empty" do
+        uri = build_uri("/#{meth}")
+        response = HTTPX.send(meth, "#{uri}?foo=bar", params: {})
+        verify_status(response, 200)
+        body = json_body(response)
+        verify_uploaded(body, "args", "foo" => "bar")
+        verify_uploaded(body, "url", build_uri("/#{meth}?foo=bar"))
+      end
+
       define_method :"test_#{meth}_query_nested_params" do
         uri = build_uri("/#{meth}")
         response = HTTPX.send(meth, uri, params: { "q" => { "a" => "z" }, "a" => %w[1 2], "b" => [] })
