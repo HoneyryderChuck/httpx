@@ -98,6 +98,17 @@ module Requests
       assert chunks.positive?
     end
 
+    def test_callbacks_keeps_callbacks_when_building_new_sessions
+      http = HTTPX.plugin(:callbacks).on_request_started { puts "test" }
+      http.singleton_class.class_eval do
+        public :callbacks_for?
+      end
+
+      assert http.callbacks_for?(:request_started)
+      http = http.with(headers: { a: 1 })
+      assert http.callbacks_for?(:request_started)
+    end
+
     %i[
       connection_opened connection_closed
       request_started request_completed
