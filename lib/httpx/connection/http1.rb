@@ -119,7 +119,7 @@ module HTTPX
                                                      @parser.http_version.join("."),
                                                      headers)
       log(color: :yellow) { "-> HEADLINE: #{response.status} HTTP/#{@parser.http_version.join(".")}" }
-      log(color: :yellow) { response.headers.each.map { |f, v| "-> HEADER: #{f}: #{v}" }.join("\n") }
+      log(color: :yellow) { response.headers.each.map { |f, v| "-> HEADER: #{f}: #{log_redact(v)}" }.join("\n") }
 
       @request.response = response
       on_complete if response.finished?
@@ -131,7 +131,7 @@ module HTTPX
       response = @request.response
       log(level: 2) { "trailer headers received" }
 
-      log(color: :yellow) { h.each.map { |f, v| "-> HEADER: #{f}: #{v.join(", ")}" }.join("\n") }
+      log(color: :yellow) { h.each.map { |f, v| "-> HEADER: #{f}: #{log_redact(v.join(", "))}" }.join("\n") }
       response.merge_headers(h)
     end
 
@@ -141,7 +141,7 @@ module HTTPX
       return unless request
 
       log(color: :green) { "-> DATA: #{chunk.bytesize} bytes..." }
-      log(level: 2, color: :green) { "-> #{chunk.inspect}" }
+      log(level: 2, color: :green) { "-> #{log_redact(chunk.inspect)}" }
       response = request.response
 
       response << chunk
@@ -361,7 +361,7 @@ module HTTPX
 
       while (chunk = request.drain_body)
         log(color: :green) { "<- DATA: #{chunk.bytesize} bytes..." }
-        log(level: 2, color: :green) { "<- #{chunk.inspect}" }
+        log(level: 2, color: :green) { "<- #{log_redact(chunk.inspect)}" }
         @buffer << chunk
         throw(:buffer_full, request) if @buffer.full?
       end
@@ -381,9 +381,9 @@ module HTTPX
 
     def join_headers2(headers)
       headers.each do |field, value|
-        buffer = "#{capitalized(field)}: #{value}#{CRLF}"
-        log(color: :yellow) { "<- HEADER: #{buffer.chomp}" }
-        @buffer << buffer
+        field = capitalized(field)
+        log(color: :yellow) { "<- HEADER: #{[field, log_redact(value)].join(": ")}" }
+        @buffer << "#{field}: #{value}#{CRLF}"
       end
     end
 
