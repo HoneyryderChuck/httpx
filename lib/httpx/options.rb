@@ -181,41 +181,6 @@ module HTTPX
       Array(value).map(&:to_s)
     end
 
-    def option_max_concurrent_requests(value)
-      raise TypeError, ":max_concurrent_requests must be positive" unless value.positive?
-
-      value
-    end
-
-    def option_max_requests(value)
-      raise TypeError, ":max_requests must be positive" unless value.positive?
-
-      value
-    end
-
-    def option_window_size(value)
-      value = Integer(value)
-
-      raise TypeError, ":window_size must be positive" unless value.positive?
-
-      value
-    end
-
-    def option_buffer_size(value)
-      value = Integer(value)
-
-      raise TypeError, ":buffer_size must be positive" unless value.positive?
-
-      value
-    end
-
-    def option_body_threshold_size(value)
-      bytes = Integer(value)
-      raise TypeError, ":body_threshold_size must be positive" unless bytes.positive?
-
-      bytes
-    end
-
     def option_transport(value)
       transport = value.to_s
       raise TypeError, "#{transport} is an unsupported transport type" unless %w[unix].include?(transport)
