@@ -39,6 +39,7 @@ module HTTPX
       :max_requests => Float::INFINITY,
       :debug => nil,
       :debug_level => (ENV["HTTPX_DEBUG"] || 1).to_i,
+      :debug_redact => ENV.key?("HTTPX_DEBUG_REDACT"),
       :ssl => EMPTY_HASH,
       :http2_settings => { settings_enable_push: 0 }.freeze,
       :fallback_protocol => "http/1.1",
@@ -101,6 +102,7 @@ module HTTPX
     #
     # :debug :: an object which log messages are written to (must respond to <tt><<</tt>)
     # :debug_level :: the log level of messages (can be 1, 2, or 3).
+    # :debug_redact :: whether header/body payload should be redacted (defaults to <tt>false</tt>).
     # :ssl :: a hash of options which can be set as params of OpenSSL::SSL::SSLContext (see HTTPX::IO::SSL)
     # :http2_settings :: a hash of options to be passed to a HTTP2::Connection (ex: <tt>{ max_concurrent_streams: 2 }</tt>)
     # :fallback_protocol :: version of HTTP protocol to use by default in the absence of protocol negotiation

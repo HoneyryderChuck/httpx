@@ -98,6 +98,7 @@ class OptionsTest < Minitest::Test
       :max_requests => Float::INFINITY,
       :debug => nil,
       :debug_level => 1,
+      :debug_redact => false,
       :buffer_size => 16_384,
       :window_size => 16_384,
       :body_threshold_size => 114_688,

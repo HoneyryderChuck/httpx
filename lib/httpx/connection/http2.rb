@@ -224,12 +224,12 @@ module HTTPX
       extra_headers = set_protocol_headers(request)
 
       if request.headers.key?("host")
-        log { "forbidden \"host\" header found (#{request.headers["host"]}), will use it as authority..." }
+        log { "forbidden \"host\" header found (#{log_redact(request.headers["host"])}), will use it as authority..." }
         extra_headers[":authority"] = request.headers["host"]
       end
 
       log(level: 1, color: :yellow) do
-        request.headers.merge(extra_headers).each.map { |k, v| "#{stream.id}: -> HEADER: #{k}: #{v}" }.join("\n")
+        request.headers.merge(extra_headers).each.map { |k, v| "#{stream.id}: -> HEADER: #{k}: #{log_redact(v)}" }.join("\n")
       end
       stream.headers(request.headers.each(extra_headers), end_stream: request.body.empty?)
     end
@@ -241,7 +241,7 @@ module HTTPX
       end
 
       log(level: 1, color: :yellow) do
-        request.trailers.each.map { |k, v| "#{stream.id}: -> HEADER: #{k}: #{v}" }.join("\n")
+        request.trailers.each.map { |k, v| "#{stream.id}: -> HEADER: #{k}: #{log_redact(v)}" }.join("\n")
       end
       stream.headers(request.trailers.each, end_stream: true)
     end
@@ -269,7 +269,7 @@ module HTTPX
 
     def send_chunk(request, stream, chunk, next_chunk)
       log(level: 1, color: :green) { "#{stream.id}: -> DATA: #{chunk.bytesize} bytes..." }
-      log(level: 2, color: :green) { "#{stream.id}: -> #{chunk.inspect}" }
+      log(level: 2, color: :green) { "#{stream.id}: -> #{log_redact(chunk.inspect)}" }
       stream.data(chunk, end_stream: end_stream?(request, next_chunk))
     end
 
@@ -290,7 +290,7 @@ module HTTPX
       end
 
       log(color: :yellow) do
-        h.map { |k, v| "#{stream.id}: <- HEADER: #{k}: #{v}" }.join("\n")
+        h.map { |k, v| "#{stream.id}: <- HEADER: #{k}: #{log_redact(v)}" }.join("\n")
       end
       _, status = h.shift
       headers = request.options.headers_class.new(h)
@@ -303,14 +303,14 @@ module HTTPX
 
     def on_stream_trailers(stream, response, h)
       log(color: :yellow) do
-        h.map { |k, v| "#{stream.id}: <- HEADER: #{k}: #{v}" }.join("\n")
+        h.map { |k, v| "#{stream.id}: <- HEADER: #{k}: #{log_redact(v)}" }.join("\n")
       end
       response.merge_headers(h)
     end
 
     def on_stream_data(stream, request, data)
       log(level: 1, color: :green) { "#{stream.id}: <- DATA: #{data.bytesize} bytes..." }
-      log(level: 2, color: :green) { "#{stream.id}: <- #{data.inspect}" }
+      log(level: 2, color: :green) { "#{stream.id}: <- #{log_redact(data.inspect)}" }
       request.response << data
     end
 
@@ -398,8 +398,15 @@ module HTTPX
     def on_frame_sent(frame)
       log(level: 2) { "#{frame[:stream]}: frame was sent!" }
       log(level: 2, color: :blue) do
-        payload = frame
-        payload = payload.merge(payload: frame[:payload].bytesize) if frame[:type] == :data
+        payload =
+          case frame[:type]
+          when :data
+            frame.merge(payload: frame[:payload].bytesize)
+          when :headers
+            frame.merge(payload: log_redact(frame[:payload]))
+          else
+            frame
+          end
         "#{frame[:stream]}: #{payload}"
       end
     end
@@ -407,15 +414,22 @@ module HTTPX
     def on_frame_received(frame)
       log(level: 2) { "#{frame[:stream]}: frame was received!" }
       log(level: 2, color: :magenta) do
-        payload = frame
-        payload = payload.merge(payload: frame[:payload].bytesize) if frame[:type] == :data
+        payload =
+          case frame[:type]
+          when :data
+            frame.merge(payload: frame[:payload].bytesize)
+          when :headers
+            frame.merge(payload: log_redact(frame[:payload]))
+          else
+            frame
+          end
         "#{frame[:stream]}: #{payload}"
       end
     end
 
     def on_altsvc(origin, frame)
       log(level: 2) { "#{frame[:stream]}: altsvc frame was received" }
-      log(level: 2) { "#{frame[:stream]}: #{frame.inspect}" }
+      log(level: 2) { "#{frame[:stream]}: #{log_redact(frame.inspect)}" }
       alt_origin = URI.parse("#{frame[:proto]}://#{frame[:host]}:#{frame[:port]}")
       params = { "ma" => frame[:max_age] }
       emit(:altsvc, origin, alt_origin, origin, params)

@@ -15,7 +15,13 @@ module HTTPX
 
     USE_DEBUG_LOG = ENV.key?("HTTPX_DEBUG")
 
-    def log(level: @options.debug_level, color: nil, debug_level: @options.debug_level, debug: @options.debug, &msg)
+    def log(
+      level: @options.debug_level,
+      color: nil,
+      debug_level: @options.debug_level,
+      debug: @options.debug,
+      &msg
+    )
       return unless debug_level >= level
 
       debug_stream = debug || ($stderr if USE_DEBUG_LOG)
@@ -36,6 +42,12 @@ module HTTPX
 
     def log_exception(ex, level: @options.debug_level, color: nil, debug_level: @options.debug_level, debug: @options.debug)
       log(level: level, color: color, debug_level: debug_level, debug: debug) { ex.full_message }
+    end
+
+    def log_redact(text, should_redact = @options.debug_redact)
+      return text.to_s unless should_redact
+
+      "[REDACTED]"
     end
   end
 end
