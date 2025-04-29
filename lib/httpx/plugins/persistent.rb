@@ -60,6 +60,15 @@ module HTTPX
           end
         end
 
+        def retryable_error?(ex)
+          super &&
+            # under the persistent plugin rules, requests are only retried for connection related errors,
+            # which do not include request timeout related errors. This only gets overriden if the end user
+            # manually changed +:max_retries+ to something else, which means it is aware of the
+            # consequences.
+            (!ex.is_a?(RequestTimeoutError) || @options.max_retries != 1)
+        end
+
         def get_current_selector
           super(&nil) || begin
             return unless block_given?

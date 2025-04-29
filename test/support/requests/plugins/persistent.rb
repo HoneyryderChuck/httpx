@@ -34,6 +34,21 @@ module Requests
         assert options.persistent
       end
 
+      def test_plugin_persistent_does_not_retry_timeout_requests
+        before_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)
+        persistent_session = HTTPX
+                             .plugin(RequestInspector)
+                             .plugin(:persistent)
+                             .with(timeout: { request_timeout: 3 })
+        retries_response = persistent_session.get(build_uri("/delay/10"))
+        after_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)
+        total_time = after_time - before_time
+
+        verify_error_response(retries_response, HTTPX::RequestTimeoutError)
+        assert persistent_session.calls.zero?, "expect request to not be resent (was #{persistent_session.calls})"
+        verify_execution_delta(3, total_time, 1)
+      end
+
       def test_plugin_persistent_does_not_retry_change_requests_on_timeouts
         check_error = ->(response) { response.is_a?(HTTPX::ErrorResponse) || response.status == 405 }
         persistent_session = HTTPX
