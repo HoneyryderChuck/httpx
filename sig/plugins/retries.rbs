@@ -3,6 +3,7 @@ module HTTPX
     module Retries
       MAX_RETRIES: Integer
       IDEMPOTENT_METHODS: Array[String]
+      RECONNECTABLE_ERRORS: Array[singleton(StandardError)]
       RETRYABLE_ERRORS: Array[singleton(StandardError)]
       DEFAULT_JITTER: ^(Numeric) -> Numeric
 
