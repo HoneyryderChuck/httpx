@@ -17,7 +17,9 @@ module HTTPX
       # TODO: pass max_retries in a configure/load block
 
       IDEMPOTENT_METHODS = %w[GET OPTIONS HEAD PUT DELETE].freeze
-      RETRYABLE_ERRORS = [
+
+      # subset of retryable errors which are safe to retry when reconnecting
+      RECONNECTABLE_ERRORS = [
         IOError,
         EOFError,
         Errno::ECONNRESET,
@@ -25,12 +27,15 @@ module HTTPX
         Errno::EPIPE,
         Errno::EINVAL,
         Errno::ETIMEDOUT,
-        Parser::Error,
-        TLSError,
-        TimeoutError,
         ConnectionError,
-        Connection::HTTP2::GoawayError,
+        TLSError,
+        Connection::HTTP2::Error,
       ].freeze
+
+      RETRYABLE_ERRORS = (RECONNECTABLE_ERRORS + [
+        Parser::Error,
+        TimeoutError,
+      ]).freeze
       DEFAULT_JITTER = ->(interval) { interval * ((rand + 1) * 0.5) }
 
       if ENV.key?("HTTPX_NO_JITTER")
