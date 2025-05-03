@@ -126,6 +126,9 @@ module HTTPX
           @closed ? :closed : :open
         end
 
+        # noop
+        def log(**); end
+
         def to_io
           @pipe_read.to_io
         end
