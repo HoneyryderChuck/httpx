@@ -402,7 +402,7 @@ module HTTPX
           case frame[:type]
           when :data
             frame.merge(payload: frame[:payload].bytesize)
-          when :headers
+          when :headers, :ping
             frame.merge(payload: log_redact(frame[:payload]))
           else
             frame
@@ -418,7 +418,7 @@ module HTTPX
           case frame[:type]
           when :data
             frame.merge(payload: frame[:payload].bytesize)
-          when :headers
+          when :headers, :ping
             frame.merge(payload: log_redact(frame[:payload]))
           else
             frame
