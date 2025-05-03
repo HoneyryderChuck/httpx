@@ -35,7 +35,12 @@ module HTTPX
         end
 
         begin
-          select(timeout, &:call)
+          select(timeout) do |c|
+            c.log(level: 2) { "[#{c.state}] selected#{" after #{timeout} secs" unless timeout.nil?}..." }
+
+            c.call
+          end
+
           @timers.fire
         rescue TimeoutError => e
           @timers.fire(e)
@@ -136,6 +141,8 @@ module HTTPX
       @selectables.delete_if do |io|
         interests = io.interests
 
+        io.log(level: 2) { "[#{io.state}] registering for select (#{interests})#{" for #{interval} seconds" unless interval.nil?}" }
+
         (r ||= []) << io if READABLE.include?(interests)
         (w ||= []) << io if WRITABLE.include?(interests)
 
@@ -171,6 +178,8 @@ module HTTPX
       return unless io
 
       interests = io.interests
+
+      io.log(level: 2) { "[#{io.state}] registering for select (#{interests})#{" for #{interval} seconds" unless interval.nil?}" }
 
       result = case interests
                when :r then io.to_io.wait_readable(interval)

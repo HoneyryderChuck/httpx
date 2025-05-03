@@ -119,6 +119,9 @@ module HTTPX
           @pipe_read, @pipe_write = ::IO.pipe
         end
 
+        # noop
+        def log(**); end
+
         def state; end
 
         def to_io
