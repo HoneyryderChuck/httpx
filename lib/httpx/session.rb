@@ -174,10 +174,14 @@ module HTTPX
     # returns the HTTPX::Connection through which the +request+ should be sent through.
     def find_connection(request_uri, selector, options)
       if (connection = selector.find_connection(request_uri, options))
+        connection.idling if connection.state == :closed
+        connection.log(level: 2) { "found connection##{connection.object_id}(#{connection.state}) in selector##{selector.object_id}" }
         return connection
       end
 
       connection = @pool.checkout_connection(request_uri, options)
+
+      connection.log(level: 2) { "found connection##{connection.object_id}(#{connection.state}) in pool##{@pool.object_id}" }
 
       case connection.state
       when :idle
@@ -360,15 +364,12 @@ module HTTPX
 
       return select_connection(connection, selector) unless found_connection
 
-      if found_connection.open?
-        coalesce_connections(found_connection, connection, selector, from_pool)
-      else
-        found_connection.once(:open) do
-          next unless found_connection.current_session == self
-
-          coalesce_connections(found_connection, connection, selector, from_pool)
-        end
+      connection.log(level: 2) do
+        "try coalescing from #{from_pool ? "pool##{@pool.object_id}" : "selector##{selector.object_id}"} " \
+          "(conn##{found_connection.object_id}[#{found_connection.origin}])"
       end
+
+      coalesce_connections(found_connection, connection, selector, from_pool)
     end
 
     def on_resolver_close(resolver, selector)
@@ -394,14 +395,16 @@ module HTTPX
     # (it is known via +from_pool+), then it adds its to the +selector+.
     def coalesce_connections(conn1, conn2, selector, from_pool)
       unless conn1.coalescable?(conn2)
+        conn2.log(level: 2) { "not coalescing with conn##{conn1.object_id}[#{conn1.origin}])" }
         select_connection(conn2, selector)
         @pool.checkin_connection(conn1) if from_pool
         return false
       end
 
+      conn2.log(level: 2) { "coalescing with conn##{conn1.object_id}[#{conn1.origin}])" }
       conn2.coalesce!(conn1)
       select_connection(conn1, selector) if from_pool
-      deselect_connection(conn2, selector)
+      conn2.disconnect
       true
     end
 
