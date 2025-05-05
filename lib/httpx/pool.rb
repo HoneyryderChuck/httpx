@@ -100,10 +100,7 @@ module HTTPX
         idx = @connections.find_index do |ch|
           ch != connection && ch.mergeable?(connection)
         end
-        if idx
-          @connections_counter -= 1
-          @connections.delete_at(idx)
-        end
+        @connections.delete_at(idx) if idx
       end
     end
 
@@ -153,7 +150,6 @@ module HTTPX
 
       return unless idx
 
-      @connections_counter += 1
       @connections.delete_at(idx)
     end
 
