@@ -64,6 +64,8 @@ module HTTPX
 
     def mergeable?: (Connection connection) -> bool
 
+    def coalesce!: (instance connection) -> void
+
     def coalescable?: (Connection connection) -> bool
 
     def create_idle: (?Hash[Symbol, untyped] options) -> instance
@@ -103,8 +105,6 @@ module HTTPX
     def open?: () -> bool
 
     def handle_socket_timeout: (Numeric interval) -> void
-
-    def coalesced_connection=: (instance connection) -> void
 
     def sibling=: (instance? connection) -> void
 
