@@ -399,7 +399,7 @@ module HTTPX
         return false
       end
 
-      conn2.coalesced_connection = conn1
+      conn2.coalesce!(conn1)
       select_connection(conn1, selector) if from_pool
       deselect_connection(conn2, selector)
       true
