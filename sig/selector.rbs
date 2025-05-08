@@ -9,6 +9,8 @@ module HTTPX
     def interests: () -> io_interests?
 
     def timeout: () -> Numeric?
+
+    def handle_socket_timeout: (Numeric interval) -> void
   end
 
   class Selector

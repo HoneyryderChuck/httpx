@@ -26,14 +26,13 @@ module HTTPX
       use_get: false,
     }.freeze
 
-    def_delegators :@resolver_connection, :state, :connecting?, :to_io, :call, :close, :terminate, :inflight?
+    def_delegators :@resolver_connection, :state, :connecting?, :to_io, :call, :close, :terminate, :inflight?, :handle_socket_timeout
 
     def initialize(_, options)
       super
       @resolver_options = DEFAULTS.merge(@options.resolver_options)
       @queries = {}
       @requests = {}
-      @connections = []
       @uri = URI(@resolver_options[:uri])
       @uri_addresses = nil
       @resolver = Resolv::DNS.new

@@ -34,7 +34,6 @@ module HTTPX
       @search = Array(@resolver_options[:search]).map { |srch| srch.scan(/[^.]+/) }
       @_timeouts = Array(@resolver_options[:timeouts])
       @timeouts = Hash.new { |timeouts, host| timeouts[host] = @_timeouts.dup }
-      @connections = []
       @name = nil
       @queries = {}
       @read_buffer = "".b

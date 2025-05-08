@@ -155,6 +155,9 @@ module HTTPX
           @pipe_read.close
           @closed = true
         end
+
+        # noop (the owner connection will take of it)
+        def handle_socket_timeout(interval); end
       end
 
       class << self
