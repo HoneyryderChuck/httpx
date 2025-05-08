@@ -504,7 +504,7 @@ module HTTPX
         end
 
         while (connection = @connections.shift)
-          emit_resolve_error(connection, host, error)
+          emit_resolve_error(connection, connection.peer.host, error)
         end
       end
     end
