@@ -20,6 +20,7 @@ module HTTPX
 
 
     attr_reader type: io_type
+    attr_reader io: TCP | SSL | UNIX | nil
     attr_reader origin: http_uri
     attr_reader origins: Array[String]
     attr_reader state: Symbol
@@ -39,7 +40,6 @@ module HTTPX
     @keep_alive_timeout: Numeric?
     @timeout: Numeric?
     @current_timeout: Numeric?
-    @io: TCP | SSL | UNIX
     @parser: Object & _Parser
     @connected_at: Float
     @response_received_at: Float

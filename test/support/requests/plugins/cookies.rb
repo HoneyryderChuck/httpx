@@ -130,7 +130,7 @@ module Requests
       end
 
       def cookies_set_uri(cookies)
-        build_uri("/cookies/set?#{URI.encode_www_form(cookies)}")
+        URI(build_uri("/cookies/set?#{URI.encode_www_form(cookies)}"))
       end
 
       def verify_cookies(jar, cookies)

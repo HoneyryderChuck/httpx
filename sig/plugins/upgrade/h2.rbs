@@ -1,0 +1,9 @@
+module HTTPX
+  module Plugins
+    module H2
+      module ConnectionMethods
+        def upgrade_to_h2: () -> void
+      end
+    end
+  end
+end

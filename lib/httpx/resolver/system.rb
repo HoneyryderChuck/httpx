@@ -3,6 +3,15 @@
 require "resolv"
 
 module HTTPX
+  # Implementation of a synchronous name resolver which relies on the system resolver,
+  # which is lib'c getaddrinfo function (abstracted in ruby via Addrinfo.getaddrinfo).
+  #
+  # Its main advantage is relying on the reference implementation for name resolution
+  # across most/all OSs which deploy ruby (it's what TCPSocket also uses), its main
+  # disadvantage is the inability to set timeouts / check socket for readiness events,
+  # hence why it relies on using the Timeout module, which poses a lot of problems for
+  # the selector loop, specially when network is unstable.
+  #
   class Resolver::System < Resolver::Resolver
     using URIExtensions
 
@@ -23,7 +32,7 @@ module HTTPX
     attr_reader :state
 
     def initialize(options)
-      super(nil, options)
+      super(0, options)
       @resolver_options = @options.resolver_options
       resolv_options = @resolver_options.dup
       timeouts = resolv_options.delete(:timeouts) || Resolver::RESOLVE_TIMEOUT
@@ -137,19 +146,22 @@ module HTTPX
         case event
         when DONE
           *pair, addrs = @pipe_mutex.synchronize { @ips.pop }
-          @queries.delete(pair)
-          _, connection = pair
-          @connections.delete(connection)
+          if pair
+            @queries.delete(pair)
+            family, connection = pair
+            @connections.delete(connection)
 
-          family, connection = pair
-          catch(:coalesced) { emit_addresses(connection, family, addrs) }
+            catch(:coalesced) { emit_addresses(connection, family, addrs) }
+          end
         when ERROR
           *pair, error = @pipe_mutex.synchronize { @ips.pop }
-          @queries.delete(pair)
-          @connections.delete(connection)
+          if pair && error
+            @queries.delete(pair)
+            @connections.delete(connection)
 
-          _, connection = pair
-          emit_resolve_error(connection, connection.peer.host, error)
+            _, connection = pair
+            emit_resolve_error(connection, connection.peer.host, error)
+          end
         end
       end
 

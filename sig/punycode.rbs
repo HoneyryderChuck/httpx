@@ -1,0 +1,5 @@
+module HTTPX
+  module Punycode
+    def self?.encode_hostname: (String) -> String
+  end
+end

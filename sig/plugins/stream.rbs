@@ -16,6 +16,9 @@ module HTTPX
         def stream: () -> StreamResponse?
       end
 
+      module ResponseBodyMethods
+        @stream: StreamResponse?
+      end
     end
 
     type sessionStream = Session & Stream::InstanceMethods

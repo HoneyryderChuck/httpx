@@ -13,6 +13,9 @@ module HTTPX
 
       def self.extra_options: (Options) -> (Options & _UpgradeOptions)
 
+      module InstanceMethods
+      end
+
       module ConnectionMethods
         attr_reader upgrade_protocol: String?
         attr_reader hijacked: boolish
@@ -20,5 +23,7 @@ module HTTPX
         def hijack_io: () -> void
       end
     end
+
+    type sessionUpgrade = Session & Upgrade::InstanceMethods
   end
 end

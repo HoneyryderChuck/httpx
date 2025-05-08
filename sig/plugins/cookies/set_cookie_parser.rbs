@@ -1,0 +1,22 @@
+module HTTPX
+  module Plugins::Cookies
+    module SetCookieParser
+      RE_WSP: Regexp
+
+      RE_NAME: Regexp
+
+      RE_BAD_CHAR: Regexp
+
+      RE_COOKIE_COMMA: Regexp
+
+      def self?.call: (String set_cookie) { (String name, String value, cookie_attributes attrs) -> void } -> void
+
+      def self?.scan_dquoted: (StringScanner scanner) -> String
+
+      def self?.scan_value: (StringScanner scanner, ?bool comma_as_separator) -> String
+
+      def self?.scan_name_value: (StringScanner scanner, ?bool comma_as_separator) -> [String?, String?]
+
+    end
+  end
+end

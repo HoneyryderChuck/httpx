@@ -110,6 +110,6 @@ class CookieJarTest < Minitest::Test
   private
 
   def jar_cookies_uri(path = "/cookies", scheme: "http")
-    "#{scheme}://example.com#{path}"
+    URI("#{scheme}://example.com#{path}")
   end
 end

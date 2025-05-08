@@ -59,8 +59,6 @@ module HTTPX
 
         return @cookies.each(&blk) unless uri
 
-        uri = URI(uri)
-
         now = Time.now
         tpath = uri.path
 

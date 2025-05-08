@@ -2,22 +2,26 @@ module HTTPX
   type ipaddr = IPAddr | String
 
   module Resolver
-    RESOLVE_TIMEOUT: Array[Integer]
-
-    @lookup_mutex: Thread::Mutex
-
     type dns_resource = singleton(Resolv::DNS::Resource)
 
     type dns_result = { "name" => String, "TTL" => Numeric, "alias" => String }
                     | { "name" => String, "TTL" => Numeric, "data" => String }
 
+    RESOLVE_TIMEOUT: Array[Integer]
+
+    self.@lookup_mutex: Thread::Mutex
+    self.@lookups: Hash[String, Array[dns_result]]
+    self.@identifier_mutex: Thread::Mutex
+    self.@identifier: Integer
+    self.@system_resolver: Resolv::Hosts
+
     type dns_decoding_response = [:ok, Array[dns_result]] | [:decode_error, Resolv::DNS::DecodeError] | [:dns_error, Integer] | Symbol
 
-    def nolookup_resolve: (String hostname) -> Array[IPAddr]
+    def self?.nolookup_resolve: (String hostname) -> Array[IPAddr]?
 
-    def ip_resolve: (String hostname) -> Array[IPAddr]?
+    def self?.ip_resolve: (String hostname) -> Array[IPAddr]?
 
-    def system_resolve: (String hostname) -> Array[IPAddr]?
+    def self?.system_resolve: (String hostname) -> Array[IPAddr]?
 
     def self?.resolver_for: (:native resolver_type) -> singleton(Native) |
                             (:system resolver_type) -> singleton(System) |

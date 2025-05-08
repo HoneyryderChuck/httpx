@@ -21,8 +21,9 @@ module HTTPX
               | (:cookies, ?options) -> Plugins::sessionCookies
               | (:expect, ?options) -> Session
               | (:follow_redirects, ?options) -> Plugins::sessionFollowRedirects
-              | (:upgrade, ?options) -> Session
-              | (:h2c, ?options) -> Session
+              | (:upgrade, ?options) -> Plugins::sessionUpgrade
+              | (:h2c, ?options) -> Plugins::sessionUpgrade
+              | (:h2, ?options) -> Plugins::sessionUpgrade
               | (:persistent, ?options) -> Plugins::sessionPersistent
               | (:proxy, ?options) -> (Plugins::sessionProxy & Plugins::httpProxy)
               | (:push_promise, ?options) -> Plugins::sessionPushPromise
