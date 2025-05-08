@@ -36,6 +36,7 @@ module HTTPX
       @family = family
       @record_type = RECORD_TYPES[family]
       @options = options
+      @connections = []
 
       set_resolver_callbacks
     end

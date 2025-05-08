@@ -30,7 +30,6 @@ module HTTPX
       @_timeouts = Array(timeouts)
       @timeouts = Hash.new { |tims, host| tims[host] = @_timeouts.dup }
       resolv_options.delete(:cache)
-      @connections = []
       @queries = []
       @ips = []
       @pipe_mutex = Thread::Mutex.new
@@ -100,7 +99,14 @@ module HTTPX
     def handle_socket_timeout(interval)
       error = HTTPX::ResolveTimeoutError.new(interval, "timed out while waiting on select")
       error.set_backtrace(caller)
-      on_error(error)
+      @queries.each do |host, connection|
+        @connections.delete(connection)
+        emit_resolve_error(connection, host, error)
+      end
+
+      while (connection = @connections.shift)
+        emit_resolve_error(connection, connection.peer.host, error)
+      end
     end
 
     private
