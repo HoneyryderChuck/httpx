@@ -11,8 +11,8 @@ module HTTPX
     MAX_CONCURRENT_REQUESTS = ::HTTP2::DEFAULT_MAX_CONCURRENT_STREAMS
 
     class Error < Error
-      def initialize(id, code)
-        super("stream #{id} closed with error: #{code}")
+      def initialize(id, error)
+        super("stream #{id} closed with error: #{error}")
       end
     end
 

@@ -16,6 +16,8 @@ module HTTPX
     @drains: Hash[Request, String]
     @pings: Array[String]
     @buffer: Buffer
+    @handshake_completed: bool
+    @wait_for_handshake: bool
 
     def interests: () -> io_interests?
 
@@ -96,12 +98,15 @@ module HTTPX
     def on_pong: (string ping) -> void
 
     class Error < ::HTTPX::Error
+      def initialize: (Integer id, Symbol | StandardError error) -> void
     end
 
     class GoawayError < Error
+      def initialize: () -> void
     end
 
     class PingError < Error
+      def initialize: () -> void
     end
   end
 end

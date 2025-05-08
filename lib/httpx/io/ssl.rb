@@ -9,7 +9,8 @@ module HTTPX
     # rubocop:disable Style/MutableConstant
     TLS_OPTIONS = { alpn_protocols: %w[h2 http/1.1].freeze }
     # https://github.com/jruby/jruby-openssl/issues/284
-    TLS_OPTIONS[:verify_hostname] = true if RUBY_ENGINE == "jruby"
+    # TODO: remove when dropping support for jruby-openssl < 0.15.4
+    TLS_OPTIONS[:verify_hostname] = true if RUBY_ENGINE == "jruby" && JOpenSSL::VERSION < "0.15.4"
     # rubocop:enable Style/MutableConstant
     TLS_OPTIONS.freeze
 

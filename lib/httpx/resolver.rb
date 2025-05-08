@@ -92,8 +92,8 @@ module HTTPX
       end
 
       ips = entries.flat_map do |address|
-        if address.key?("alias")
-          lookup(address["alias"], lookups, ttl)
+        if (als = address["alias"])
+          lookup(als, lookups, ttl)
         else
           IPAddr.new(address["data"])
         end

@@ -4,6 +4,9 @@ require "resolv"
 require "ipaddr"
 
 module HTTPX
+  # Base class for all internal internet name resolvers. It handles basic blocks
+  # from the Selectable API.
+  #
   class Resolver::Resolver
     include Callbacks
     include Loggable

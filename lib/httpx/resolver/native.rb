@@ -4,6 +4,9 @@ require "forwardable"
 require "resolv"
 
 module HTTPX
+  # Implements a pure ruby name resolver, which abides by the Selectable API.
+  # It delegates DNS payload encoding/decoding to the +resolv+ stlid gem.
+  #
   class Resolver::Native < Resolver::Resolver
     extend Forwardable
     using URIExtensions

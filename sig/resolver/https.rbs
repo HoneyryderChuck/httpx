@@ -1,6 +1,8 @@
 module HTTPX
   module Resolver
     class HTTPS < Resolver
+      extend Forwardable
+
       NAMESERVER: String
 
       DEFAULTS: Hash[Symbol, untyped]
@@ -9,6 +11,7 @@ module HTTPX
       attr_reader family: ip_family
 
       @options: Options
+      @queries: Hash[String, Connection]
       @requests: Hash[Request, String]
       @connections: Array[Connection]
       @uri: http_uri
