@@ -259,6 +259,7 @@ module HTTPX
       end
       nil
     rescue StandardError => e
+      @write_buffer.clear
       emit(:error, e)
       raise e
     end
