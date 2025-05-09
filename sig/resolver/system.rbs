@@ -24,8 +24,6 @@ module HTTPX
 
       def consume: () -> void
 
-      def resolve: (?Connection connection) -> void
-
       def async_resolve: (Connection connection, String hostname, String scheme) -> void
 
       def __addrinfo_resolve: (String host, String scheme) -> Array[Addrinfo]

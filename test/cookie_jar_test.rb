@@ -47,17 +47,17 @@ class CookieJarTest < Minitest::Test
     domain_jar = HTTPX::Plugins::Cookies::Jar.new
     domain_jar.parse(%(a=b; Path=/; Domain=.google.com))
     assert domain_jar[jar_cookies_uri].empty?
-    assert !domain_jar["http://www.google.com/"].empty?
+    assert !domain_jar[URI("http://www.google.com/")].empty?
 
     ipv4_domain_jar = HTTPX::Plugins::Cookies::Jar.new
     ipv4_domain_jar.parse(%(a=b; Path=/; Domain=137.1.0.12))
-    assert ipv4_domain_jar["http://www.google.com/"].empty?
-    assert !ipv4_domain_jar["http://137.1.0.12/"].empty?
+    assert ipv4_domain_jar[URI("http://www.google.com/")].empty?
+    assert !ipv4_domain_jar[URI("http://137.1.0.12/")].empty?
 
     ipv6_domain_jar = HTTPX::Plugins::Cookies::Jar.new
     ipv6_domain_jar.parse(%(a=b; Path=/; Domain=[fe80::1]))
-    assert ipv6_domain_jar["http://www.google.com/"].empty?
-    assert !ipv6_domain_jar["http://[fe80::1]/"].empty?
+    assert ipv6_domain_jar[URI("http://www.google.com/")].empty?
+    assert !ipv6_domain_jar[URI("http://[fe80::1]/")].empty?
 
     # Test duplicate
     dup_jar = HTTPX::Plugins::Cookies::Jar.new

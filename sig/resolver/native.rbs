@@ -55,8 +55,6 @@ module HTTPX
 
       def parse: (String) -> void
 
-      def resolve: (?Connection connection, ?String hostname) -> void
-
       def generate_candidates: (String) -> Array[String]
 
       def build_socket: () -> (UDP | TCP)

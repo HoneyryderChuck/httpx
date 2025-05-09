@@ -170,11 +170,16 @@ module HTTPX
       resolve
     end
 
-    def resolve(connection = @connections.first)
+    def resolve(connection = nil, hostname = nil)
+      @connections.shift until @connections.empty? || @connections.first.state != :closed
+
+      connection ||= @connections.first
+
       raise Error, "no URI to resolve" unless connection
+
       return unless @queries.empty?
 
-      hostname = connection.peer.host
+      hostname ||= connection.peer.host
       scheme = connection.origin.scheme
       log do
         "resolver: resolve IDN #{connection.peer.non_ascii_hostname} as #{hostname}"
