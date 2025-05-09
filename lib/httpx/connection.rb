@@ -45,13 +45,14 @@ module HTTPX
 
     attr_writer :current_selector
 
-    attr_accessor :current_session, :family
+    attr_accessor :current_session, :family, :ticks
 
     protected :sibling
 
     def initialize(uri, options)
       @current_session = @current_selector = @sibling = @coalesced_connection = nil
       @exhausted = @cloned = @main_sibling = false
+      @ticks = 0
 
       @options = Options.new(options)
       @type = initialize_type(uri, @options)
@@ -435,6 +436,7 @@ module HTTPX
           loop do
             siz = @io.read(@window_size, @read_buffer)
             log(level: 3, color: :cyan) { "IO READ: #{siz} bytes... (wsize: #{@window_size}, rbuffer: #{@read_buffer.bytesize})" }
+            @ticks = 0
             unless siz
               @write_buffer.clear
 
@@ -479,6 +481,7 @@ module HTTPX
 
             begin
               siz = @io.write(@write_buffer)
+              @ticks = 0
             rescue Errno::EPIPE
               # this can happen if we still have bytes in the buffer to send to the server, but
               # the server wants to respond immediately with some message, or an error. An example is
@@ -690,6 +693,7 @@ module HTTPX
         return if @state == :closed
 
         @io.connect
+        @ticks = 0
         close_sibling if @io.state == :connected
 
         return unless @io.connected?

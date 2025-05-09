@@ -36,7 +36,12 @@ module HTTPX
 
         begin
           select(timeout) do |c|
-            c.log(level: 2) { "[#{c.state}] selected#{" after #{timeout} secs" unless timeout.nil?}..." }
+            c.ticks += 1
+            if c.ticks < 5
+              c.log(level: 2) { "[#{c.state}] selected#{" after #{timeout} secs" unless timeout.nil?}..." }
+            elsif c.ticks == 5
+              c.log(level: 2) { "[#{c.state}] most likely stuck in a busy loop..." }
+            end
 
             c.call
           end
@@ -141,7 +146,15 @@ module HTTPX
       @selectables.delete_if do |io|
         interests = io.interests
 
-        io.log(level: 2) { "[#{io.state}] registering for select (#{interests})#{" for #{interval} seconds" unless interval.nil?}" }
+        if io.ticks < 5
+          io.log(level: 2) do
+            "[#{io.state}] registering for select (#{interests})#{" for #{interval} seconds" unless interval.nil?}"
+          end
+        elsif io.ticks == 5
+          io.log(level: 2) do
+            "[#{io.state}] most likely stuck in a busy loop"
+          end
+        end
 
         (r ||= []) << io if READABLE.include?(interests)
         (w ||= []) << io if WRITABLE.include?(interests)
@@ -179,7 +192,11 @@ module HTTPX
 
       interests = io.interests
 
-      io.log(level: 2) { "[#{io.state}] registering for select (#{interests})#{" for #{interval} seconds" unless interval.nil?}" }
+      if io.ticks < 5
+        io.log(level: 2) { "[#{io.state}] registering for select (#{interests})#{" for #{interval} seconds" unless interval.nil?}" }
+      elsif io.ticks == 5
+        io.log(level: 2) { "[#{io.state}] most likely stuck in a busy loop..:" }
+      end
 
       result = case interests
                when :r then io.to_io.wait_readable(interval)

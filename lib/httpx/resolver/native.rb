@@ -201,6 +201,7 @@ module HTTPX
         wsize = @large_packet.capacity if @large_packet
 
         siz = @io.read(wsize, @read_buffer)
+        @ticks = 0
 
         unless siz
           ex = EOFError.new("descriptor closed")
@@ -250,6 +251,7 @@ module HTTPX
         return if @write_buffer.empty?
 
         siz = @io.write(@write_buffer)
+        @ticks = 0
 
         unless siz
           ex = EOFError.new("descriptor closed")
@@ -467,6 +469,7 @@ module HTTPX
         @io ||= build_socket
 
         @io.connect
+        @ticks = 0
         return unless @io.connected?
 
         resolve if @queries.empty? && !@connections.empty?

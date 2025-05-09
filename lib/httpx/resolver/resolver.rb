@@ -30,9 +30,10 @@ module HTTPX
 
     attr_writer :current_selector, :current_session
 
-    attr_accessor :multi
+    attr_accessor :multi, :ticks
 
     def initialize(family, options)
+      @ticks = 0
       @family = family
       @record_type = RECORD_TYPES[family]
       @options = options

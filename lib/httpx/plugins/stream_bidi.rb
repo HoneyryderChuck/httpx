@@ -115,7 +115,10 @@ module HTTPX
       # buffered data to write. It abides by the Selectable API, which allows it to be
       # registered in the selector alongside actual HTTP-based Connection objects.
       class Signal
+        attr_accessor :ticks
+
         def initialize
+          @ticks = 0
           @pipe_read, @pipe_write = ::IO.pipe
         end
 
