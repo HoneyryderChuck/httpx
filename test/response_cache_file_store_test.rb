@@ -15,6 +15,13 @@ class ResponseCacheFileStoreTest < Minitest::Test
     assert File.exist?(store.dir.join(request.response_cache_key))
   end
 
+  def test_finished
+    request = make_request("GET", "http://store-cache/")
+    cached_response(request)
+    response = store.get(request)
+    assert response.finished?
+  end
+
   private
 
   def store_class
