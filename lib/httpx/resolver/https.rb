@@ -78,7 +78,11 @@ module HTTPX
 
     private
 
-    def resolve(connection = @connections.first, hostname = nil)
+    def resolve(connection = nil, hostname = nil)
+      @connections.shift until @connections.empty? || @connections.first.state != :closed
+
+      connection ||= @connections.first
+
       return unless connection
 
       hostname ||= @queries.key(connection)

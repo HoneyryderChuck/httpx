@@ -29,8 +29,6 @@ module HTTPX
 
       def resolver_connection: () -> Connection
 
-      def resolve: (?Connection connection, ?String? hostname) -> void
-
       def on_response: (Request, response) -> void
 
       def parse: (Request request, Response response) -> void
