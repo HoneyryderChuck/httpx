@@ -2,7 +2,6 @@
 
 require "resolv"
 require "uri"
-require "cgi"
 require "forwardable"
 require "httpx/base64"
 

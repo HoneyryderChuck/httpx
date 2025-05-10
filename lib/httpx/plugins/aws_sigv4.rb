@@ -158,6 +158,7 @@ module HTTPX
         def load_dependencies(*)
           require "set"
           require "digest/sha2"
+          require "cgi/escape"
         end
 
         def configure(klass)
