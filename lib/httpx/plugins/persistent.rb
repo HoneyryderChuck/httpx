@@ -36,8 +36,6 @@ module HTTPX
 
         def repeatable_request?(request, _)
           super || begin
-            return false unless request.ping?
-
             response = request.response
 
             return false unless response && response.is_a?(ErrorResponse)
