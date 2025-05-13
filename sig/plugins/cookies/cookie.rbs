@@ -1,7 +1,5 @@
 module HTTPX
   module Plugins::Cookies
-    type cookie_attributes = Hash[Symbol | String, top]
-
     class Cookie
       include Comparable
 
@@ -33,7 +31,7 @@ module HTTPX
       def cookie_value: () -> String
       alias to_s cookie_value
 
-      def valid_for_uri?: (uri) -> bool
+      def valid_for_uri?: (http_uri uri) -> bool
 
       def self.new: (Cookie) -> instance
                     | (cookie_attributes) -> instance

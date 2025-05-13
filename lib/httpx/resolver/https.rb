@@ -6,6 +6,10 @@ require "forwardable"
 require "httpx/base64"
 
 module HTTPX
+  # Implementation of a DoH name resolver (https://www.youtube.com/watch?v=unMXvnY2FNM).
+  # It wraps an HTTPX::Connection object which integrates with the main session in the
+  # same manner as other performed HTTP requests.
+  #
   class Resolver::HTTPS < Resolver::Resolver
     extend Forwardable
     using URIExtensions
@@ -26,14 +30,13 @@ module HTTPX
       use_get: false,
     }.freeze
 
-    def_delegators :@resolver_connection, :state, :connecting?, :to_io, :call, :close, :terminate, :inflight?
+    def_delegators :@resolver_connection, :state, :connecting?, :to_io, :call, :close, :terminate, :inflight?, :handle_socket_timeout
 
     def initialize(_, options)
       super
       @resolver_options = DEFAULTS.merge(@options.resolver_options)
       @queries = {}
       @requests = {}
-      @connections = []
       @uri = URI(@resolver_options[:uri])
       @uri_addresses = nil
       @resolver = Resolv::DNS.new
@@ -74,7 +77,11 @@ module HTTPX
 
     private
 
-    def resolve(connection = @connections.first, hostname = nil)
+    def resolve(connection = nil, hostname = nil)
+      @connections.shift until @connections.empty? || @connections.first.state != :closed
+
+      connection ||= @connections.first
+
       return unless connection
 
       hostname ||= @queries.key(connection)

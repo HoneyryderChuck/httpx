@@ -16,6 +16,7 @@ module HTTPX
       @search: Array[String]
       @_timeouts: Array[Numeric]
       @timeouts: Hash[String, Array[Numeric]]
+      @queries: Hash[String, Connection]
       @connections: Array[Connection]
       @read_buffer: String
       @write_buffer: Buffer
@@ -53,8 +54,6 @@ module HTTPX
       def dwrite: () -> void
 
       def parse: (String) -> void
-
-      def resolve: (?Connection connection, ?String hostname) -> void
 
       def generate_candidates: (String) -> Array[String]
 

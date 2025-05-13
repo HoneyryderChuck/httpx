@@ -4,6 +4,9 @@ require "forwardable"
 require "resolv"
 
 module HTTPX
+  # Implements a pure ruby name resolver, which abides by the Selectable API.
+  # It delegates DNS payload encoding/decoding to the +resolv+ stlid gem.
+  #
   class Resolver::Native < Resolver::Resolver
     extend Forwardable
     using URIExtensions
@@ -34,7 +37,6 @@ module HTTPX
       @search = Array(@resolver_options[:search]).map { |srch| srch.scan(/[^.]+/) }
       @_timeouts = Array(@resolver_options[:timeouts])
       @timeouts = Hash.new { |timeouts, host| timeouts[host] = @_timeouts.dup }
-      @connections = []
       @name = nil
       @queries = {}
       @read_buffer = "".b
@@ -505,7 +507,7 @@ module HTTPX
         end
 
         while (connection = @connections.shift)
-          emit_resolve_error(connection, host, error)
+          emit_resolve_error(connection, connection.peer.host, error)
         end
       end
     end

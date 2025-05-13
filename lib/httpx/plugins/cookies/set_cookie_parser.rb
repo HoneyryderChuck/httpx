@@ -83,7 +83,7 @@ module HTTPX
           scanner.skip(RE_WSP)
 
           name, value = scan_name_value(scanner, true)
-          value = nil if name.empty?
+          value = nil if name && name.empty?
 
           attrs = {}
 
@@ -98,15 +98,18 @@ module HTTPX
 
               aname, avalue = scan_name_value(scanner, true)
 
-              next if aname.empty? || value.nil?
+              next if (aname.nil? || aname.empty?) || value.nil?
 
               aname.downcase!
 
               case aname
               when "expires"
+                next unless avalue
+
                 # RFC 6265 5.2.1
-                (avalue &&= Time.parse(avalue)) || next
+                (avalue = Time.parse(avalue)) || next
               when "max-age"
+                next unless avalue
                 # RFC 6265 5.2.2
                 next unless /\A-?\d+\z/.match?(avalue)
 
@@ -119,7 +122,7 @@ module HTTPX
                 # RFC 6265 5.2.4
                 # A relative path must be ignored rather than normalizing it
                 # to "/".
-                next unless avalue.start_with?("/")
+                next unless avalue && avalue.start_with?("/")
               when "secure", "httponly"
                 # RFC 6265 5.2.5, 5.2.6
                 avalue = true

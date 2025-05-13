@@ -49,6 +49,10 @@ module HTTPX
 
       def self.extra_options: (Options) -> (Options & _ProxyOptions)
 
+      module ConnectionMethods
+        @proxy_uri: generic_uri
+      end
+
       module InstanceMethods
         @__proxy_uris: Array[generic_uri]
 

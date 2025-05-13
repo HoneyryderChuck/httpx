@@ -2,16 +2,33 @@ module HTTPX
   module Resolver
     class System < Resolver
       RESOLV_ERRORS: Array[singleton(StandardError)] # ResolvError
+      DONE: 1
+      ERROR: 2
 
       @resolver: Resolv::DNS
+      @_timeouts: Array[Numeric]
+      @timeouts: Hash[String, Array[Numeric]]
+      @queries: Array[[ip_family, Connection]]
+      @ips: Array[[ip_family, Connection, (Array[Addrinfo] | StandardError)]]
+      @pipe_mutex: Thread::Mutex
+      @pipe_read: ::IO
+      @pipe_write: ::IO
 
-      attr_reader family: nil
+      attr_reader state: Symbol
 
       def <<: (Connection) -> void
 
       private
 
-      def initialize: (options options) -> void
+      def transition: (Symbol nextstate) -> void
+
+      def consume: () -> void
+
+      def async_resolve: (Connection connection, String hostname, String scheme) -> void
+
+      def __addrinfo_resolve: (String host, String scheme) -> Array[Addrinfo]
+
+      def initialize: (Options options) -> void
     end
   end
 end

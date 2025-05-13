@@ -4,7 +4,11 @@ module HTTPX
       include Callbacks
       include Loggable
 
-      RECORD_TYPES: Hash[Integer, singleton(Resolv::DNS::Resource)]
+      include _Selectable
+
+      RECORD_TYPES: Hash[ip_family, singleton(Resolv::DNS::Resource)]
+
+      FAMILY_TYPES: Hash[singleton(Resolv::DNS::Resource), String]
 
       attr_reader family: ip_family
 
@@ -18,8 +22,8 @@ module HTTPX
 
       @record_type: singleton(Resolv::DNS::Resource)
       @resolver_options: Hash[Symbol, untyped]
-      @queries: Hash[String, Connection]
       @system_resolver: Resolv::Hosts
+      @connections: Array[Connection]
 
       def close: () -> void
 
@@ -33,11 +37,15 @@ module HTTPX
 
       def emit_addresses: (Connection connection, ip_family family, Array[IPAddr], ?bool early_resolve) -> void
 
+      def self.multi?: () -> bool
+
       private
+
+      def resolve: (?Connection connection, ?String hostname) -> void
 
       def emit_resolved_connection: (Connection connection, Array[IPAddr] addresses, bool early_resolve) -> void
 
-      def initialize: (ip_family? family, Options options) -> void
+      def initialize: (ip_family family, Options options) -> void
 
       def early_resolve: (Connection connection, ?hostname: String) -> bool
 

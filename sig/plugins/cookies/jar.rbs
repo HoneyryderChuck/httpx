@@ -11,12 +11,12 @@ module HTTPX
 
       def add: (Cookie name, ?String path) -> void
 
-      def []: (uri) -> Array[Cookie]
+      def []: (http_uri) -> Array[Cookie]
 
-      def each: (?uri?) { (Cookie) -> void } -> void
-              | (?uri?) -> Enumerable[Cookie]
+      def each: (?http_uri?) { (Cookie) -> void } -> void
+              | (?http_uri?) -> Enumerable[Cookie]
 
-      def merge: (_Each[cookie] cookies) -> instance
+      def merge: (_Each[cookie] cookies) -> self
 
       private
 

@@ -147,13 +147,18 @@ module HTTPX
     end
 
     def freeze
-      super
       @origin.freeze
       @base_path.freeze
       @timeout.freeze
       @headers.freeze
       @addresses.freeze
       @supported_compression_formats.freeze
+      @ssl.freeze
+      @http2_settings.freeze
+      @pool_options.freeze
+      @resolver_options.freeze
+      @ip_families.freeze
+      super
     end
 
     def option_origin(value)
@@ -226,17 +231,42 @@ module HTTPX
       Array(value)
     end
 
+    # number options
     %i[
-      ssl http2_settings
+      max_concurrent_requests max_requests window_size buffer_size
+      body_threshold_size debug_level
+    ].each do |option|
+      class_eval(<<-OUT, __FILE__, __LINE__ + 1)
+        # converts +v+ into an Integer before setting the +#{option}+ option.
+        def option_#{option}(value)                                             # def option_max_requests(v)
+          value = Integer(value) unless value.infinite?
+          raise TypeError, ":#{option} must be positive" unless value.positive? # raise TypeError, ":max_requests must be positive" unless value.positive?
+
+          value
+        end
+      OUT
+    end
+
+    # hashable options
+    %i[ssl http2_settings resolver_options pool_options].each do |option|
+      class_eval(<<-OUT, __FILE__, __LINE__ + 1)
+        # converts +v+ into an Hash before setting the +#{option}+ option.
+        def option_#{option}(value) # def option_ssl(v)
+          Hash[value]
+        end
+      OUT
+    end
+
+    %i[
       request_class response_class headers_class request_body_class
       response_body_class connection_class options_class
       pool_class pool_options
-      io fallback_protocol debug debug_level resolver_class resolver_options
+      io fallback_protocol debug resolver_class
       compress_request_body decompress_response_body
       persistent close_on_fork
     ].each do |method_name|
       class_eval(<<-OUT, __FILE__, __LINE__ + 1)
-        # sets +v+ as the value of #{method_name}
+        # sets +v+ as the value of the +#{method_name}+ option
         def option_#{method_name}(v); v; end # def option_smth(v); v; end
       OUT
     end

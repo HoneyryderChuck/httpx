@@ -3,6 +3,15 @@
 require "resolv"
 
 module HTTPX
+  # Implementation of a synchronous name resolver which relies on the system resolver,
+  # which is lib'c getaddrinfo function (abstracted in ruby via Addrinfo.getaddrinfo).
+  #
+  # Its main advantage is relying on the reference implementation for name resolution
+  # across most/all OSs which deploy ruby (it's what TCPSocket also uses), its main
+  # disadvantage is the inability to set timeouts / check socket for readiness events,
+  # hence why it relies on using the Timeout module, which poses a lot of problems for
+  # the selector loop, specially when network is unstable.
+  #
   class Resolver::System < Resolver::Resolver
     using URIExtensions
 
@@ -23,14 +32,13 @@ module HTTPX
     attr_reader :state
 
     def initialize(options)
-      super(nil, options)
+      super(0, options)
       @resolver_options = @options.resolver_options
       resolv_options = @resolver_options.dup
       timeouts = resolv_options.delete(:timeouts) || Resolver::RESOLVE_TIMEOUT
       @_timeouts = Array(timeouts)
       @timeouts = Hash.new { |tims, host| tims[host] = @_timeouts.dup }
       resolv_options.delete(:cache)
-      @connections = []
       @queries = []
       @ips = []
       @pipe_mutex = Thread::Mutex.new
@@ -100,7 +108,14 @@ module HTTPX
     def handle_socket_timeout(interval)
       error = HTTPX::ResolveTimeoutError.new(interval, "timed out while waiting on select")
       error.set_backtrace(caller)
-      on_error(error)
+      @queries.each do |host, connection|
+        @connections.delete(connection)
+        emit_resolve_error(connection, host, error)
+      end
+
+      while (connection = @connections.shift)
+        emit_resolve_error(connection, connection.peer.host, error)
+      end
     end
 
     private
@@ -131,19 +146,22 @@ module HTTPX
         case event
         when DONE
           *pair, addrs = @pipe_mutex.synchronize { @ips.pop }
-          @queries.delete(pair)
-          _, connection = pair
-          @connections.delete(connection)
+          if pair
+            @queries.delete(pair)
+            family, connection = pair
+            @connections.delete(connection)
 
-          family, connection = pair
-          catch(:coalesced) { emit_addresses(connection, family, addrs) }
+            catch(:coalesced) { emit_addresses(connection, family, addrs) }
+          end
         when ERROR
           *pair, error = @pipe_mutex.synchronize { @ips.pop }
-          @queries.delete(pair)
-          @connections.delete(connection)
+          if pair && error
+            @queries.delete(pair)
+            @connections.delete(connection)
 
-          _, connection = pair
-          emit_resolve_error(connection, connection.peer.host, error)
+            _, connection = pair
+            emit_resolve_error(connection, connection.peer.host, error)
+          end
         end
       end
 
@@ -152,11 +170,16 @@ module HTTPX
       resolve
     end
 
-    def resolve(connection = @connections.first)
+    def resolve(connection = nil, hostname = nil)
+      @connections.shift until @connections.empty? || @connections.first.state != :closed
+
+      connection ||= @connections.first
+
       raise Error, "no URI to resolve" unless connection
+
       return unless @queries.empty?
 
-      hostname = connection.peer.host
+      hostname ||= connection.peer.host
       scheme = connection.origin.scheme
       log do
         "resolver: resolve IDN #{connection.peer.non_ascii_hostname} as #{hostname}"

@@ -13,6 +13,7 @@ module HTTPX
     KEEP_ALIVE_TIMEOUT: Integer
     SETTINGS_TIMEOUT: Integer
     CLOSE_HANDSHAKE_TIMEOUT: Integer
+    SET_TEMPORARY_NAME: ^(Module mod, ?Symbol pl) -> void
     DEFAULT_OPTIONS: Hash[Symbol, untyped]
     REQUEST_BODY_IVARS: Array[Symbol]
 
@@ -88,6 +89,8 @@ module HTTPX
     attr_reader request_body_class: singleton(Request::Body)
 
     attr_reader response_body_class: singleton(Response::Body)
+
+    attr_reader options_class: singleton(Options)
 
     attr_reader resolver_class: Symbol | Class
 

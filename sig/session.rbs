@@ -96,5 +96,5 @@ module HTTPX
     end
   end
 
-  OriginalSession: singleton(Session)
+  S: singleton(Session)
 end

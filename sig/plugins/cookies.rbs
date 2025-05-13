@@ -1,6 +1,8 @@
 module HTTPX
   module Plugins
     module Cookies
+      type cookie_attributes = Hash[Symbol | String, top]
+
       type jar = Jar | _Each[Jar::cookie]
 
       interface _CookieOptions

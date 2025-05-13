@@ -16,6 +16,9 @@ module HTTPX
           def __http_on_connect: (top, Response) ->  void
         end
 
+        module ProxyParser
+        end
+
         class ConnectRequest < Request
           def initialize: (generic_uri uri, Options options) -> void
         end
