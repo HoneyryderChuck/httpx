@@ -147,13 +147,18 @@ module HTTPX
     end
 
     def freeze
-      super
       @origin.freeze
       @base_path.freeze
       @timeout.freeze
       @headers.freeze
       @addresses.freeze
       @supported_compression_formats.freeze
+      @ssl.freeze
+      @http2_settings.freeze
+      @pool_options.freeze
+      @resolver_options.freeze
+      @ip_families.freeze
+      super
     end
 
     def option_origin(value)
