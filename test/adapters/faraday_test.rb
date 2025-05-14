@@ -256,6 +256,7 @@ class FaradayTest < Minitest::Test
       }
     end
     verify_status(response, 405)
+    assert request, "`:retry_on` callback was never called"
     assert request.retries.zero?, "expect request to have exhausted retries"
   end
 

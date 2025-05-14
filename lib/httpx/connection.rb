@@ -152,6 +152,14 @@ module HTTPX
       ) && @options == connection.options
     end
 
+    # coalesces +self+ into +connection+.
+    def coalesce!(connection)
+      @coalesced_connection = connection
+
+      close_sibling
+      connection.merge(self)
+    end
+
     # coalescable connections need to be mergeable!
     # but internally, #mergeable? is called before #coalescable?
     def coalescable?(connection)
@@ -251,6 +259,7 @@ module HTTPX
       end
       nil
     rescue StandardError => e
+      @write_buffer.clear
       emit(:error, e)
       raise e
     end
@@ -339,13 +348,6 @@ module HTTPX
       error = OperationTimeoutError.new(interval, "timed out while waiting on select")
       error.set_backtrace(caller)
       on_error(error)
-    end
-
-    def coalesced_connection=(connection)
-      @coalesced_connection = connection
-
-      close_sibling
-      connection.merge(self)
     end
 
     def sibling=(connection)
