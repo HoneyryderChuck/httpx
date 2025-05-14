@@ -271,7 +271,13 @@ module HTTPX
     end
 
     def terminate
-      @connected_at = nil if @state == :closed
+      case @state
+      when :idle
+        purge_after_closed
+        emit(:terminate)
+      when :closed
+        @connected_at = nil
+      end
 
       close
     end
