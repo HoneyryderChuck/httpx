@@ -227,7 +227,7 @@ module HTTPX
     %i[
       request_class response_class headers_class request_body_class
       response_body_class connection_class options_class
-      pool_class pool_options
+      pool_class
       io fallback_protocol debug debug_redact resolver_class
       compress_request_body decompress_response_body
       persistent close_on_fork
