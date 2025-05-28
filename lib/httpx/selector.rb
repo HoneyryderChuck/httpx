@@ -63,7 +63,10 @@ module HTTPX
       # array may change during iteration
       selectables = @selectables.reject(&:inflight?)
 
-      selectables.each(&:terminate)
+      selectables.delete_if do |sel|
+        sel.terminate
+        sel.state == :closed
+      end
 
       until selectables.empty?
         next_tick

@@ -553,6 +553,10 @@ module HTTPX
       return unless @state == :inactive
 
       transition(:active)
+      # mark request as ping, as this inactive connection may have been
+      # closed by the server, and we don't want that to influence retry
+      # bookkeeping.
+      request.ping!
     end
 
     def build_parser(protocol = @io.protocol)
