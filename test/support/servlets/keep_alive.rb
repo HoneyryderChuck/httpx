@@ -33,20 +33,20 @@ class KeepAlivePongThenGoawayServer < TestHTTP2Server
   attr_reader :pings, :pongs
 
   def initialize(**)
-    @sent = false
-    super
+    @sent = Hash.new(false)
+    super()
   end
 
   private
 
   def handle_stream(conn, stream)
     # responds once, then closes the connection
-    if @sent
+    if @sent[conn]
       conn.goaway
-      @sent = false
+      @sent[conn] = false
     else
       super
-      @sent = true
+      @sent[conn] = true
     end
   end
 end
