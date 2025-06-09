@@ -23,7 +23,7 @@ end
 class TestHTTP2Server
   attr_reader :origin
 
-  def initialize(tls: true)
+  def initialize(tls: true, alpn_protocols: %w[h2])
     @port = 0
     @host = "localhost"
 
@@ -44,12 +44,12 @@ class TestHTTP2Server
       ctx.key = OpenSSL::PKey.read(File.read(File.join(certs_dir, "server.key")))
 
       ctx.ssl_version = :TLSv1_2
-      ctx.alpn_protocols = ["h2"]
+      ctx.alpn_protocols = alpn_protocols
 
       ctx.alpn_select_cb = lambda do |protocols|
-        raise "Protocol h2 is required" unless protocols.include?("h2")
+        raise "Protocol h2 is required" if (alpn_protocols & protocols).empty?
 
-        "h2"
+        protocols.first
       end
 
       @server = OpenSSL::SSL::SSLServer.new(@server, ctx)
@@ -125,7 +125,7 @@ class TestHTTP2Server
         close_socket(sock)
         return
       else
-        @conns[sock] << data
+        buffer_to_socket(sock, data)
 
         if sock.closed?
           purge_socket(sock)
@@ -137,6 +137,10 @@ class TestHTTP2Server
     puts "#{e.class} exception: #{e.message} - closing socket."
     puts e.backtrace
     close_socket(sock)
+  end
+
+  def buffer_to_socket(sock, data)
+    @conns[sock] << data
   end
 
   def handle_stream(_conn, stream)

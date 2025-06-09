@@ -6,28 +6,30 @@ module Requests
       def test_plugin_upgrade_h2
         return unless origin.start_with?("https://")
 
-        http = HTTPX.plugin(SessionWithPool)
+        start_test_servlet(H2Upgrade, alpn_protocols: %w[http/1.1 h2]) do |server|
+          http = HTTPX.plugin(SessionWithPool)
 
-        http = http.with(ssl: { alpn_protocols: %w[http/1.1] }) # disable alpn negotiation
+          http = http.with(ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE, alpn_protocols: %w[http/1.1] }) # disable alpn negotiation
 
-        http.plugin(:upgrade).wrap do |session|
-          uri = build_uri("/", "https://stadtschreiber.ruhr")
+          http.plugin(:upgrade).wrap do |session|
+            uri = "#{server.origin}/"
 
-          request = session.build_request("GET", uri)
-          request2 = session.build_request("GET", uri)
+            request = session.build_request("GET", uri)
+            request2 = session.build_request("GET", uri)
 
-          response = session.request(request)
-          verify_status(response, 200)
-          assert response.version == "1.1", "first request should be in HTTP/1.1"
-          response.close
-          # verifies that first request was used to upgrade the connection
-          verify_header(response.headers, "upgrade", "h2,h2c")
-          response2 = session.request(request2)
-          verify_status(response2, 200)
-          assert response2.version == "2.0", "second request should already be in HTTP/2"
-          response2.close
+            response = session.request(request)
+            verify_status(response, 200)
+            assert response.version == "1.1", "first request should be in HTTP/1.1"
+            response.close
+            # verifies that first request was used to upgrade the connection
+            verify_header(response.headers, "upgrade", "h2")
+            response2 = session.request(request2)
+            verify_status(response2, 200)
+            assert response2.version == "2.0", "second request should already be in HTTP/2"
+            response2.close
+          end
         end
-      end
+      end unless RUBY_ENGINE == "jruby"
 
       def test_plugin_upgrade_websockets
         return unless origin.start_with?("http://")
