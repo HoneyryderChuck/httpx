@@ -13,10 +13,10 @@ module Datadog::Tracing
 
       TYPE_OUTBOUND = Datadog::Tracing::Metadata::Ext::HTTP::TYPE_OUTBOUND
 
-      if Gem::Version.new(DATADOG_VERSION::STRING) < Gem::Version.new("1.13.0")
-        TAG_BASE_SERVICE = Datadog::Tracing::Metadata::Ext::TAG_PEER_SERVICE
+      TAG_BASE_SERVICE = if Gem::Version.new(DATADOG_VERSION::STRING) < Gem::Version.new("1.15.0")
+        "_dd.base_service"
       else
-        TAG_BASE_SERVICE = Datadog::Tracing::Contrib::Ext::Metadata::TAG_BASE_SERVICE
+        Datadog::Tracing::Contrib::Ext::Metadata::TAG_BASE_SERVICE
       end
       TAG_PEER_HOSTNAME = Datadog::Tracing::Metadata::Ext::TAG_PEER_HOSTNAME
 
