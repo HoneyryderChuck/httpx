@@ -13,7 +13,11 @@ module Datadog::Tracing
 
       TYPE_OUTBOUND = Datadog::Tracing::Metadata::Ext::HTTP::TYPE_OUTBOUND
 
-      TAG_BASE_SERVICE = Datadog::Tracing::Contrib::Ext::Metadata::TAG_BASE_SERVICE
+      if Gem::Version.new(DATADOG_VERSION::STRING) < Gem::Version.new("1.13.0")
+        TAG_BASE_SERVICE = Datadog::Tracing::Metadata::Ext::TAG_PEER_SERVICE
+      else
+        TAG_BASE_SERVICE = Datadog::Tracing::Contrib::Ext::Metadata::TAG_BASE_SERVICE
+      end
       TAG_PEER_HOSTNAME = Datadog::Tracing::Metadata::Ext::TAG_PEER_HOSTNAME
 
       TAG_KIND = Datadog::Tracing::Metadata::Ext::TAG_KIND
@@ -89,7 +93,7 @@ module Datadog::Tracing
 
               span.set_tags(
                 Datadog.configuration.tracing.header_tags.response_tags(response.headers.to_h)
-              )
+              ) if Datadog.configuration.tracing.respond_to?(:header_tags)
             end
 
             span.finish
@@ -139,7 +143,7 @@ module Datadog::Tracing
 
             span.set_tags(
               Datadog.configuration.tracing.header_tags.request_tags(request.headers.to_h)
-            )
+            ) if Datadog.configuration.tracing.respond_to?(:header_tags)
 
             span
           rescue StandardError => e
