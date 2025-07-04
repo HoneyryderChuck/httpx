@@ -47,8 +47,6 @@ module HTTPX
 
     attr_accessor :current_session, :family
 
-    protected :sibling
-
     def initialize(uri, options)
       @current_session = @current_selector = @sibling = @coalesced_connection = nil
       @exhausted = @cloned = @main_sibling = false

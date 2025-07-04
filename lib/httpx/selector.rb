@@ -146,6 +146,19 @@ module HTTPX
 
         io.log(level: 2) { "[#{io.state}] registering for select (#{interests})#{" for #{interval} seconds" unless interval.nil?}" }
 
+        if interests.nil?
+          io.log(level: 2) do
+            "[origin: #{io.origin}, " \
+              "state:#{io.state}, " \
+              "io-proto:#{io.io.protocol}, " \
+              "pending:#{io.pending.size}, " \
+              "parser?:#{!!io.instance_variable_get(:@parser)}, " \
+              "coalesced?:#{!!io.instance_variable_get(:@coalesced_connection)}, " \
+              "sibling?:#{io.sibling}] " \
+              "has no interest"
+          end
+        end
+
         (r ||= []) << io if READABLE.include?(interests)
         (w ||= []) << io if WRITABLE.include?(interests)
 
