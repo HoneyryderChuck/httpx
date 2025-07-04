@@ -146,6 +146,35 @@ module HTTPX
 
         io.log(level: 2) { "[#{io.state}] registering for select (#{interests})#{" for #{interval} seconds" unless interval.nil?}" }
 
+        if interests.nil?
+          parser = io.instance_variable_get(:@parser)
+
+          io.log(level: 2) do
+            "[origin: #{io.origin}, " \
+              "state:#{io.state}, " \
+              "io-proto:#{io.io.protocol}, " \
+              "pending:#{io.pending.size}, " \
+              "parser?:#{parser&.object_id}, " \
+              "coalesced?:#{!!io.instance_variable_get(:@coalesced_connection)}, " \
+              "sibling?:#{io.sibling}] " \
+              "has no interest"
+          end
+          if parser
+            pings = Array(parser.instance_variable_get(:@pings))
+            streams = parser.respond_to?(:streams) ? parser.streams : {}
+
+            io.log(level: 2) do
+              "[http2-conn-state: #{parser.instance_variable_get(:@connection)&.state}, " \
+                "pending:#{parser.pending.size}, " \
+                "handshake-completed?: #{parser.instance_variable_get(:@handshake_completed)}, " \
+                "buffer-empty?: #{io.empty?}, " \
+                "last-in-progress-stream: #{streams.keys.max} (#{streams.size}), " \
+                "pings: #{pings.last} (#{pings.size})" \
+                "] #{parser.class}##{parser.object_id} has no interest"
+            end
+          end
+        end
+
         (r ||= []) << io if READABLE.include?(interests)
         (w ||= []) << io if WRITABLE.include?(interests)
 
