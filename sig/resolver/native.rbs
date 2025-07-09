@@ -23,6 +23,7 @@ module HTTPX
       @large_packet: Buffer?
       @io: UDP | TCP
       @name: String?
+      @timer: Timers::Timer?
 
       attr_reader state: Symbol
 

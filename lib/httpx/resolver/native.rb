@@ -42,6 +42,7 @@ module HTTPX
       @read_buffer = "".b
       @write_buffer = Buffer.new(@resolver_options[:packet_size])
       @state = :idle
+      @timer = nil
     end
 
     def close
@@ -152,6 +153,8 @@ module HTTPX
 
       @timer = @current_selector.after(timeout) do
         next unless @connections.include?(connection)
+
+        @timer = nil
 
         do_retry(h, connection, timeout)
       end
@@ -270,6 +273,8 @@ module HTTPX
     def parse(buffer)
       @timer.cancel
 
+      @timer = nil
+
       code, result = Resolver.decode_dns_answer(buffer)
 
       case code
@@ -383,7 +388,8 @@ module HTTPX
 
       raise Error, "no URI to resolve" unless connection
 
-      return unless @write_buffer.empty?
+      # do not buffer query if previous is still in the buffer or awaiting reply/retry
+      return unless @write_buffer.empty? && @timer.nil?
 
       hostname ||= @queries.key(connection)
 
