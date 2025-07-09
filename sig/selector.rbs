@@ -14,14 +14,20 @@ module HTTPX
   end
 
   class Selector
-    include _Each[_Selectable]
+    type selectable = Resolver::Resolver | Connection | (Object & _Selectable)
 
-    READABLE: Array[Symbol]
-    WRITABLE: Array[Symbol]
+    type io_select_selectable = (selectable | Array[selectable])?
+
+    include _Each[selectable]
+
+    extend Forwardable
+
+    READABLE: Array[io_interests]
+    WRITABLE: Array[io_interests]
 
     @timers: Timers
 
-    @selectables: Array[_Selectable]
+    @selectables: Array[selectable]
     @is_timer_interval: bool
 
     def next_tick: () -> void
@@ -39,19 +45,19 @@ module HTTPX
 
     def empty?: () -> bool
 
-    def register: (_Selectable io) -> void
+    def register: (selectable io) -> void
 
-    def deregister: (_Selectable io) -> _Selectable?
+    def deregister: (selectable io) -> selectable?
 
     private
 
     def initialize: () -> void
 
-    def select: (Numeric? interval) { (_Selectable) -> void } -> void
+    def select: (Numeric? interval) { (selectable) -> void } -> void
 
-    def select_many: (Numeric? interval) { (_Selectable) -> void } -> void
+    def select_many: (io_select_selectable r, io_select_selectable w, Numeric? interval) { (selectable) -> void } -> void
 
-    def select_one: (Numeric? interval) { (_Selectable) -> void } -> void
+    def select_one: (selectable io, io_interests interests, Numeric? interval) { (selectable) -> void } -> void
 
     def next_timeout: () -> Numeric?
   end
