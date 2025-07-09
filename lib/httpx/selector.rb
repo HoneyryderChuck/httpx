@@ -123,24 +123,18 @@ module HTTPX
     private
 
     def select(interval, &block)
+      has_no_selectables = @selectables.empty?
       # do not cause an infinite loop here.
       #
       # this may happen if timeout calculation actually triggered an error which causes
       # the connections to be reaped (such as the total timeout error) before #select
       # gets called.
-      return if interval.nil? && @selectables.empty?
+      return if interval.nil? && has_no_selectables
 
-      return select_one(interval, &block) if @selectables.size == 1
-
-      select_many(interval, &block)
-    end
-
-    def select_many(interval, &block)
+      # @type var r: (selectable | Array[selectable])?
+      # @type var w: (selectable | Array[selectable])?
       r, w = nil
 
-      # first, we group IOs based on interest type. On call to #interests however,
-      # things might already happen, and new IOs might be registered, so we might
-      # have to start all over again. We do this until we group all selectables
       @selectables.delete_if do |io|
         interests = io.interests
 
@@ -175,15 +169,58 @@ module HTTPX
           end
         end
 
-        (r ||= []) << io if READABLE.include?(interests)
-        (w ||= []) << io if WRITABLE.include?(interests)
+        if READABLE.include?(interests)
+          r = r.nil? ? io : (Array(r) << io)
+        end
+
+        if WRITABLE.include?(interests)
+          w = w.nil? ? io : (Array(w) << io)
+        end
 
         io.state == :closed
       end
 
-      # TODO: what to do if there are no selectables?
+      case r
+      when Array
+        case w
+        when Array, nil
+          select_many(r, w, interval, &block)
+        else
+          select_many(r, Array(w), interval, &block)
+        end
 
-      readers, writers = IO.select(r, w, nil, interval)
+      when nil
+        case w
+        when Array
+          select_many(r, w, interval, &block)
+        when nil
+          return unless interval && has_no_selectables
+
+          # no selectables
+          # TODO: replace with sleep?
+          select_many(r, w, interval, &block)
+        else
+          select_one(w, :w, interval, &block)
+        end
+
+      else
+        case w
+        when Array
+          select_many(Array(r), w, interval, &block)
+        when nil
+          select_one(r, :r, interval, &block)
+        else
+          if r == w
+            select_one(r, :rw, interval, &block)
+          else
+            select_many(Array(r), Array(w), interval, &block)
+          end
+        end
+      end
+    end
+
+    def select_many(r, w, interval, &block)
+      readers, writers = ::IO.select(r, w, nil, interval)
 
       if readers.nil? && writers.nil? && interval
         [*r, *w].each { |io| io.handle_socket_timeout(interval) }
@@ -204,32 +241,20 @@ module HTTPX
       end
     end
 
-    def select_one(interval)
-      io = @selectables.first
-
-      return unless io
-
-      interests = io.interests
-
-      io.log(level: 2) { "[#{io.state}] registering for select (#{interests})#{" for #{interval} seconds" unless interval.nil?}" }
-
-      result = case interests
-               when :r then io.to_io.wait_readable(interval)
-               when :w then io.to_io.wait_writable(interval)
-               when :rw then io.to_io.wait(interval, :read_write)
-               when nil then return
-      end
+    def select_one(io, interests, interval)
+      result =
+        case interests
+        when :r then io.to_io.wait_readable(interval)
+        when :w then io.to_io.wait_writable(interval)
+        when :rw then io.to_io.wait(interval, :read_write)
+        end
 
       unless result || interval.nil?
         io.handle_socket_timeout(interval) unless @is_timer_interval
         return
       end
-      # raise TimeoutError.new(interval, "timed out while waiting on select")
 
       yield io
-      # rescue IOError, SystemCallError
-      #   @selectables.reject!(&:closed?)
-      #   raise unless @selectables.empty?
     end
 
     def next_timeout

@@ -2,6 +2,11 @@ module HTTPX
   class UDP
     include Loggable
 
+    @host: String
+    @port: Integer
+    @io: UDPSocket
+    @options: Options
+
     def initialize: (String ip, Integer port, Options options) -> void
 
     def to_io: () -> ::IO
@@ -13,7 +18,7 @@ module HTTPX
     # :nocov:
     def close: () -> void
 
-    def read: (Integer size, ?(Buffer | String) buffer) -> Integer?
+    def read: (Integer size, String buffer) -> Integer?
 
     def write: (Buffer buffer) -> Integer?
   end
