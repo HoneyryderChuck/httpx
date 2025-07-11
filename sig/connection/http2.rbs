@@ -18,6 +18,7 @@ module HTTPX
     @buffer: Buffer
     @handshake_completed: bool
     @wait_for_handshake: bool
+    @contexts: Hash[Fiber, Array[Request]]
 
     def interests: () -> io_interests?
 

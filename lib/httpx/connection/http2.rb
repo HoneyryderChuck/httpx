@@ -35,7 +35,8 @@ module HTTPX
       @settings = @options.http2_settings
       @pending = []
       @streams = {}
-      @drains  = {}
+      @contexts = Hash.new { |hs, k| hs[k] = Set.new }
+      @drains = {}
       @pings = []
       @buffer = buffer
       @handshake_completed = false
@@ -109,6 +110,8 @@ module HTTPX
     end
 
     def send(request, head = false)
+      @contexts[request.context] << request
+
       unless can_buffer_more_requests?
         head ? @pending.unshift(request) : @pending << request
         return false
@@ -341,6 +344,7 @@ module HTTPX
         when :http_1_1_required
           emit(:error, request, error)
         else
+          @contexts[request.context].delete(request)
           ex = Error.new(stream.id, error)
           ex.set_backtrace(caller)
           response = ErrorResponse.new(request, ex)
@@ -348,6 +352,8 @@ module HTTPX
           emit(:response, request, response)
         end
       else
+        @contexts[request.context].delete(request)
+
         response = request.response
         if response && response.is_a?(Response) && response.status == 421
           emit(:error, request, :http_1_1_required)
@@ -384,6 +390,7 @@ module HTTPX
         case error
         when :http_1_1_required
           while (request = @pending.shift)
+            @contexts[request.context].delete(request)
             emit(:error, request, error)
           end
         when :no_error
