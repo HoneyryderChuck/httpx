@@ -213,7 +213,14 @@ module HTTPX
         case interests
         when :r then io.to_io.wait_readable(interval)
         when :w then io.to_io.wait_writable(interval)
-        when :rw then io.to_io.wait(interval, :read_write)
+        when :rw
+          if IO.const_defined?(:READABLE)
+            io.to_io.wait(IO::READABLE | IO::WRITABLE, interval)
+          elsif interval
+            io.to_io.wait(interval, :read_write)
+          else
+            io.to_io.wait(:read_write)
+          end
         end
 
       unless result || interval.nil?
