@@ -232,9 +232,6 @@ module HTTPX
         return @io.interests if connecting?
       end
 
-      # if the write buffer is full, we drain it
-      return :w unless @write_buffer.empty?
-
       return @parser.interests if @parser
 
       nil
