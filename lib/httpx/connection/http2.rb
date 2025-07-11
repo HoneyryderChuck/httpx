@@ -52,9 +52,6 @@ module HTTPX
     end
 
     def interests
-      # waiting for WINDOW_UPDATE frames
-      return :r if @buffer.full?
-
       if @connection.state == :closed
         return unless @handshake_completed
 
@@ -67,6 +64,19 @@ module HTTPX
         return @buffer.empty? ? :r : :rw
       end
 
+      unless @contexts.key?(Fiber.current)
+        return :w unless @pings.empty?
+
+        return
+      end
+
+      unless @connection.send_buffer.empty?
+        return :rw unless @buffer.empty?
+
+        # waiting for WINDOW_UPDATE frames
+        return :r
+      end
+
       return :w if !@pending.empty? && can_buffer_more_requests?
 
       return :w unless @drains.empty?
@@ -74,10 +84,10 @@ module HTTPX
       if @buffer.empty?
         return if @streams.empty? && @pings.empty?
 
-        return :r
+        :r
+      else
+        :w
       end
-
-      :rw
     end
 
     def close
