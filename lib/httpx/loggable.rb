@@ -34,7 +34,7 @@ module HTTPX
         klass = klass.superclass
       end
 
-      message = +"(pid:#{Process.pid}, " \
+      message = +"#{Time.now} - (pid:#{Process.pid}, " \
                  "tid:#{Thread.current.object_id}, " \
                  "fid:#{Fiber.current.object_id}, " \
                  "self:#{class_name}##{object_id}) "
