@@ -38,6 +38,11 @@ module HTTPX
           select(timeout) do |c|
             c.log(level: 2) { "[#{c.state}] selected#{" after #{timeout} secs" unless timeout.nil?}..." }
 
+            if c.state == :inactive
+              c.log(level: 2) { "inactive when selected!" }
+              log_selectable(c)
+            end
+
             c.call
           end
 
@@ -140,34 +145,7 @@ module HTTPX
 
         io.log(level: 2) { "[#{io.state}] registering for select (#{interests})#{" for #{interval} seconds" unless interval.nil?}" }
 
-        if interests.nil?
-          parser = io.instance_variable_get(:@parser)
-
-          io.log(level: 2) do
-            "[origin: #{io.origin}, " \
-              "state:#{io.state}, " \
-              "io-proto:#{io.io.protocol}, " \
-              "pending:#{io.pending.size}, " \
-              "parser?:#{parser&.object_id}, " \
-              "coalesced?:#{!!io.instance_variable_get(:@coalesced_connection)}, " \
-              "sibling?:#{io.sibling}] " \
-              "has no interest"
-          end
-          if parser
-            pings = Array(parser.instance_variable_get(:@pings))
-            streams = parser.respond_to?(:streams) ? parser.streams : {}
-
-            io.log(level: 2) do
-              "[http2-conn-state: #{parser.instance_variable_get(:@connection)&.state}, " \
-                "pending:#{parser.pending.size}, " \
-                "handshake-completed?: #{parser.instance_variable_get(:@handshake_completed)}, " \
-                "buffer-empty?: #{io.empty?}, " \
-                "last-in-progress-stream: #{streams.keys.max} (#{streams.size}), " \
-                "pings: #{pings.last} (#{pings.size})" \
-                "] #{parser.class}##{parser.object_id} has no interest"
-            end
-          end
-        end
+        log_selectable(io) if interests.nil?
 
         if READABLE.include?(interests)
           r = r.nil? ? io : (Array(r) << io)
@@ -276,6 +254,52 @@ module HTTPX
       end
 
       connection_interval
+    end
+
+    def log_selectable(io)
+      case io
+      when Resolver::Native
+        queries = io.instance_variable_get(:@queries)
+
+        io.log(level: 2) do
+          "[state:#{io.state}, " \
+            "family:#{io.family}, " \
+            "query:#{queries.keys}, " \
+            "pending?:#{!io.empty?}, " \
+            "contexts:#{queries.values.flat_map(&:pending).map(&:context).map(&:object_id)}, " \
+            "has no interest"
+        end
+      when Connection
+        parser = io.instance_variable_get(:@parser)
+
+        io.log(level: 2) do
+          "[origin: #{io.origin}, " \
+            "state:#{io.state}, " \
+            "io-proto:#{io.io.protocol}, " \
+            "pending:#{io.pending.size}, " \
+            "in-flight:#{io.instance_variable_get(:@inflight)}, " \
+            "parser?:#{parser&.object_id}, " \
+            "coalesced?:#{!!io.instance_variable_get(:@coalesced_connection)}, " \
+            "sibling?:#{io.sibling}] " \
+            "has no interest"
+        end
+        if parser
+          pings = Array(parser.instance_variable_get(:@pings))
+          requests = parser.respond_to?(:requests) ? parser.requests : []
+          streams = parser.respond_to?(:streams) ? parser.streams : {}
+
+          io.log(level: 2) do
+            "[http2-conn-state: #{parser.instance_variable_get(:@connection)&.state}, " \
+              "pending:#{parser.pending.size}, " \
+              "requests:#{[requests.size, streams.size].max}}, " \
+              "handshake-completed?: #{parser.instance_variable_get(:@handshake_completed)}, " \
+              "buffer-empty?: #{io.empty?}, " \
+              "last-in-progress-stream: #{streams.values.map(&:id).max} (#{streams.size}), " \
+              "pings: #{pings.last.inspect} (#{pings.size})" \
+              "] #{parser.class}##{parser.object_id} has no interest"
+          end
+        end
+      end
     end
   end
 end
