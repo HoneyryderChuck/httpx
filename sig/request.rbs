@@ -17,6 +17,8 @@ module HTTPX
     attr_reader drain_error: StandardError?
     attr_reader active_timeouts: Array[Symbol]
 
+    attr_reader context: Fiber
+
     attr_accessor peer_address: ipaddr?
 
     attr_writer persistent: bool
@@ -29,6 +31,10 @@ module HTTPX
     @drainer: Enumerator[String, void]?
 
     def initialize: (Symbol | String verb, generic_uri uri, Options options, ?request_params params) -> untyped
+
+    def set_context!: () -> void
+
+    def current_context?: () -> bool
 
     def ping?: () -> bool
 

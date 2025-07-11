@@ -105,11 +105,13 @@ module HTTPX
     private
 
     def calculate_interests
-      return :w unless @write_buffer.empty?
+      return if @queries.empty?
 
-      return :r unless @queries.empty?
+      return unless @queries.values.any?(&:current_context?) || @connections.any?(&:current_context?)
 
-      nil
+      return :r if @write_buffer.empty?
+
+      :w
     end
 
     def consume

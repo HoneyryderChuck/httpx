@@ -76,6 +76,8 @@ module HTTPX
 
     def connecting?: () -> bool
 
+    def current_context?: () -> bool
+
     def io_connected?: () -> bool
 
     def inflight?: () -> boolish

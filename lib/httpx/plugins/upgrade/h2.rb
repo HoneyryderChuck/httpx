@@ -22,6 +22,16 @@ module HTTPX
       module ConnectionMethods
         using URIExtensions
 
+        def interests
+          return super unless connecting? && @parser
+
+          connect
+
+          return @io.interests if connecting?
+
+          super
+        end
+
         def upgrade_to_h2
           prev_parser = @parser
 
