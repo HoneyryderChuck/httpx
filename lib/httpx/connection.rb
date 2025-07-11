@@ -372,8 +372,6 @@ module HTTPX
     end
 
     def handle_connect_error(error)
-      @connect_error = error
-
       return handle_error(error) unless @sibling && @sibling.connecting?
 
       @sibling.merge(self)
