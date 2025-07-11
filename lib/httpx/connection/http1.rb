@@ -31,14 +31,9 @@ module HTTPX
     end
 
     def interests
-      # this means we're processing incoming response already
-      return :r if @request
+      request = @request || @requests.first
 
-      return if @requests.empty?
-
-      request = @requests.first
-
-      return unless request
+      return unless request && request.current_context?
 
       return :w if request.interests == :w || !@buffer.empty?
 
