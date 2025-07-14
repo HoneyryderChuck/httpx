@@ -36,4 +36,5 @@ class Bug_0_22_2_Test < Minitest::Test
     assert connection_ipv4.family == Socket::AF_INET
     assert connection_ipv6.family == Socket::AF_INET6
   end
-end if HTTPX::Session.default_options.ip_families.size > 1
+  # TODO: remove this once gitlab docker allows TCP connectivity alongside DNS
+end unless ENV.key?("CI")

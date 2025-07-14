@@ -32,6 +32,8 @@ module HTTPX
 
     def self?.cached_lookup_set: (String hostname, ip_family family, Array[dns_result] addresses) -> void
 
+    def self?.cached_lookup_evict: (String hostname, ipaddr ip) -> void
+
     def self?.lookup: (String hostname, Hash[String, Array[dns_result]] lookups, Numeric ttl) -> Array[IPAddr]?
 
     def self?.generate_id: () -> Integer

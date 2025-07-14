@@ -6,7 +6,7 @@ require "support/http_helpers"
 class Bug_1_1_1_Test < Minitest::Test
   include HTTPHelpers
 
-  def test_conection_callbacks_fire_setup_once
+  def test_connection_callbacks_fire_setup_once
     uri = build_uri("/get")
 
     connected = 0
