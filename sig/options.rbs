@@ -2,6 +2,8 @@ module HTTPX
   class Options
     # include _ToHash
 
+    attr_reader self.options_names: Array[Symbol]
+
     BUFFER_SIZE: Integer
     WINDOW_SIZE: Integer
     MAX_BODY_THRESHOLD_SIZE: Integer
