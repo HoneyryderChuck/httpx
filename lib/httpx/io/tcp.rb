@@ -75,9 +75,18 @@ module HTTPX
         @io = build_socket
       end
       try_connect
+    rescue Errno::EHOSTUNREACH,
+           Errno::ENETUNREACH => e
+      raise e if @ip_index <= 0
+
+      log { "failed connecting to #{@ip} (#{e.message}), evict from cache and trying next..." }
+      Resolver.cached_lookup_evict(@hostname, @ip)
+
+      @ip_index -= 1
+      @io = build_socket
+      retry
     rescue Errno::ECONNREFUSED,
            Errno::EADDRNOTAVAIL,
-           Errno::EHOSTUNREACH,
            SocketError,
            IOError => e
       raise e if @ip_index <= 0

@@ -50,7 +50,11 @@ module HTTPX
     protected :sibling
 
     def initialize(uri, options)
-      @current_session = @current_selector = @sibling = @coalesced_connection = nil
+      @current_session = @current_selector =
+        @parser = @sibling = @coalesced_connection =
+                    @io = @ssl_session = @timeout =
+                            @connected_at = @response_received_at = nil
+
       @exhausted = @cloned = @main_sibling = false
 
       @options = Options.new(options)
@@ -61,6 +65,8 @@ module HTTPX
       @read_buffer = Buffer.new(@options.buffer_size)
       @write_buffer = Buffer.new(@options.buffer_size)
       @pending = []
+      @inflight = 0
+      @keep_alive_timeout = @options.timeout[:keep_alive_timeout]
 
       on(:error, &method(:on_error))
       if @options.io
@@ -97,9 +103,6 @@ module HTTPX
       on(:altsvc) do |alt_origin, origin, alt_params|
         build_altsvc_connection(alt_origin, origin, alt_params)
       end
-
-      @inflight = 0
-      @keep_alive_timeout = @options.timeout[:keep_alive_timeout]
 
       self.addresses = @options.addresses if @options.addresses
     end
@@ -369,8 +372,6 @@ module HTTPX
     end
 
     def handle_connect_error(error)
-      @connect_error = error
-
       return handle_error(error) unless @sibling && @sibling.connecting?
 
       @sibling.merge(self)

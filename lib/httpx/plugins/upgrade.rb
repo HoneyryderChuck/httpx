@@ -65,6 +65,12 @@ module HTTPX
       module ConnectionMethods
         attr_reader :upgrade_protocol, :hijacked
 
+        def initialize(*)
+          super
+
+          @upgrade_protocol = nil
+        end
+
         def hijack_io
           @hijacked = true
 

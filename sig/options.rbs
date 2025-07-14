@@ -2,6 +2,8 @@ module HTTPX
   class Options
     # include _ToHash
 
+    attr_reader self.options_names: Array[Symbol]
+
     BUFFER_SIZE: Integer
     WINDOW_SIZE: Integer
     MAX_BODY_THRESHOLD_SIZE: Integer
@@ -139,8 +141,6 @@ module HTTPX
     REQUEST_IVARS: Array[Symbol]
 
     def initialize: (?options options) -> void
-
-    def do_initialize: (?options options) -> void
 
     def access_option: (Hash[Symbol, untyped] | Object | nil obj, Symbol k, Hash[Symbol, Symbol]? ivar_map) -> untyped
   end

@@ -229,7 +229,7 @@ module HTTPX
       end
 
       log(level: 1, color: :yellow) do
-        request.headers.merge(extra_headers).each.map { |k, v| "#{stream.id}: -> HEADER: #{k}: #{log_redact(v)}" }.join("\n")
+        "\n#{request.headers.merge(extra_headers).each.map { |k, v| "#{stream.id}: -> HEADER: #{k}: #{log_redact(v)}" }.join("\n")}"
       end
       stream.headers(request.headers.each(extra_headers), end_stream: request.body.empty?)
     end

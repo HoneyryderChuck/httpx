@@ -83,6 +83,18 @@ module HTTPX
       end
     end
 
+    def cached_lookup_evict(hostname, ip)
+      ip = ip.to_s
+
+      lookup_synchronize do |lookups|
+        entries = lookups[hostname]
+
+        return unless entries
+
+        lookups.delete_if { |entry| entry["data"] == ip }
+      end
+    end
+
     # do not use directly!
     def lookup(hostname, lookups, ttl)
       return unless lookups.key?(hostname)

@@ -11,7 +11,7 @@ class Bug_1_1_0_Test < Minitest::Test
   include HTTPHelpers
 
   def test_read_timeout_firing_too_soon_before_select
-    timeout = { read_timeout: 1 }
+    timeout = { read_timeout: 2 }
 
     uri = build_uri("/get")
 

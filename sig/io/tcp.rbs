@@ -14,11 +14,17 @@ module HTTPX
 
     alias host ip
 
+    @io: Socket
+
     @hostname: String
 
     @options: Options
 
     @fallback_protocol: String
+
+    @keep_open: bool
+
+    @ip_index: Integer
 
     # TODO: lift when https://github.com/ruby/rbs/issues/1497 fixed
     def initialize: (URI::Generic origin, Array[ipaddr]? addresses, Options options) ?{ (instance) -> void } -> void
