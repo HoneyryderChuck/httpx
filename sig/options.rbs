@@ -140,8 +140,6 @@ module HTTPX
 
     def initialize: (?options options) -> void
 
-    def do_initialize: (?options options) -> void
-
     def access_option: (Hash[Symbol, untyped] | Object | nil obj, Symbol k, Hash[Symbol, Symbol]? ivar_map) -> untyped
   end
 

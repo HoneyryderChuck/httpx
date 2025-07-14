@@ -144,7 +144,16 @@ module HTTPX
     #
     # This list of options are enhanced with each loaded plugin, see the plugin docs for details.
     def initialize(options = {})
-      do_initialize(options)
+      defaults = DEFAULT_OPTIONS.merge(options)
+      defaults.each do |k, v|
+        next if v.nil?
+
+        option_method_name = :"option_#{k}"
+        raise Error, "unknown option: #{k}" unless respond_to?(option_method_name)
+
+        value = __send__(option_method_name, v)
+        instance_variable_set(:"@#{k}", value)
+      end
       freeze
     end
 
@@ -349,19 +358,6 @@ module HTTPX
     end
 
     private
-
-    def do_initialize(options = {})
-      defaults = DEFAULT_OPTIONS.merge(options)
-      defaults.each do |k, v|
-        next if v.nil?
-
-        option_method_name = :"option_#{k}"
-        raise Error, "unknown option: #{k}" unless respond_to?(option_method_name)
-
-        value = __send__(option_method_name, v)
-        instance_variable_set(:"@#{k}", value)
-      end
-    end
 
     def access_option(obj, k, ivar_map)
       case obj
