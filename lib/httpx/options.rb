@@ -15,17 +15,6 @@ module HTTPX
     CONNECT_TIMEOUT = READ_TIMEOUT = WRITE_TIMEOUT = 60
     REQUEST_TIMEOUT = OPERATION_TIMEOUT = nil
 
-    @options_names = []
-
-    class << self
-      attr_reader :options_names
-
-      def inherited(klass)
-        super
-        klass.instance_variable_set(:@options_names, @options_names.dup)
-      end
-    end
-
     # https://github.com/ruby/resolv/blob/095f1c003f6073730500f02acbdbc55f83d70987/lib/resolv.rb#L408
     ip_address_families = begin
       list = Socket.ip_address_list
@@ -98,11 +87,6 @@ module HTTPX
         super
       end
 
-      def freeze
-        super
-        @options_names.freeze
-      end
-
       def method_added(meth)
         super
 
@@ -111,8 +95,6 @@ module HTTPX
         optname = Regexp.last_match(1).to_sym
 
         attr_reader(optname)
-
-        @options_names << optname
       end
     end
 
@@ -163,12 +145,8 @@ module HTTPX
     # This list of options are enhanced with each loaded plugin, see the plugin docs for details.
     def initialize(options = {})
       defaults = DEFAULT_OPTIONS.merge(options)
-
       defaults.each do |k, v|
-        if v.nil?
-          instance_variable_set(:"@#{k}", v)
-          next
-        end
+        next if v.nil?
 
         option_method_name = :"option_#{k}"
         raise Error, "unknown option: #{k}" unless respond_to?(option_method_name)
@@ -176,13 +154,6 @@ module HTTPX
         value = __send__(option_method_name, v)
         instance_variable_set(:"@#{k}", value)
       end
-
-      self.class.options_names.each do |other_ivar|
-        next if defaults.key?(other_ivar)
-
-        instance_variable_set(:"@#{other_ivar}", nil)
-      end
-
       freeze
     end
 
@@ -335,11 +306,7 @@ module HTTPX
 
     def to_hash
       instance_variables.each_with_object({}) do |ivar, hs|
-        val = instance_variable_get(ivar)
-
-        next if val.nil?
-
-        hs[ivar[1..-1].to_sym] = val
+        hs[ivar[1..-1].to_sym] = instance_variable_get(ivar)
       end
     end
 
