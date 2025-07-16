@@ -3,6 +3,7 @@ module HTTPX
   end
 
   class ProxySSL < SSL
+    attr_reader proxy_io: TCP | SSL
   end
 
   module Plugins

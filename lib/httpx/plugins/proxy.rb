@@ -292,13 +292,21 @@ module HTTPX
           end
           super
         end
+
+        def purge_after_closed
+          super
+          @io = @io.proxy_io if @io.respond_to?(:proxy_io)
+        end
       end
     end
     register_plugin :proxy, Proxy
   end
 
   class ProxySSL < SSL
+    attr_reader :proxy_io
+
     def initialize(tcp, request_uri, options)
+      @proxy_io = tcp
       @io = tcp.to_io
       super(request_uri, tcp.addresses, options)
       @hostname = request_uri.host

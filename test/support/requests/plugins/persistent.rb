@@ -99,6 +99,30 @@ module Requests
           http.close
         end
       end unless RUBY_ENGINE == "jruby"
+
+      def test_persistent_proxy_retry_http2_goaway
+        return unless origin.start_with?("https")
+
+        start_test_servlet(KeepAlivePongThenGoawayServer) do |server|
+          start_test_servlet(ProxyServer) do |proxy|
+            http = HTTPX.plugin(SessionWithPool)
+                        .plugin(RequestInspector)
+                        .plugin(:persistent) # implicit max_retries == 1
+                        .plugin(:proxy)
+                        .with(
+                          proxy: { uri: proxy.origin },
+                          ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE }
+                        )
+            uri = "#{server.origin}/"
+            response = http.get(uri)
+            verify_status(response, 200)
+            response = http.get(uri)
+            verify_status(response, 200)
+            assert http.calls == 2, "expect request to be built 2 times (was #{http.calls})"
+            http.close
+          end
+        end
+      end unless RUBY_ENGINE == "jruby"
     end
   end
 end
