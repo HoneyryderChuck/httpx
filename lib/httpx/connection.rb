@@ -749,6 +749,7 @@ module HTTPX
         # activate
         @current_session.select_connection(self, @current_selector)
       end
+      log(level: 3) { "#{@state} -> #{nextstate}" }
       @state = nextstate
     end
 
