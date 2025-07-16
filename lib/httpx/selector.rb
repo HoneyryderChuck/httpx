@@ -143,6 +143,10 @@ module HTTPX
       @selectables.delete_if do |io|
         interests = io.interests
 
+        is_closed = io.state == :closed
+
+        next(is_closed) if is_closed
+
         io.log(level: 2) { "[#{io.state}] registering for select (#{interests})#{" for #{interval} seconds" unless interval.nil?}" }
 
         log_selectable(io) if interests.nil?
@@ -155,7 +159,7 @@ module HTTPX
           w = w.nil? ? io : (Array(w) << io)
         end
 
-        io.state == :closed
+        is_closed
       end
 
       case r
