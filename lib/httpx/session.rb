@@ -136,6 +136,9 @@ module HTTPX
     alias_method :select_resolver, :select_connection
 
     def deselect_connection(connection, selector, cloned = false)
+      connection.log(level: 2) do
+        "deregistering connection##{connection.object_id}(#{connection.state}) from selector##{selector.object_id}"
+      end
       selector.deregister(connection)
 
       # when connections coalesce
@@ -145,14 +148,19 @@ module HTTPX
 
       return if @closing && connection.state == :closed
 
+      connection.log(level: 2) { "check-in connection##{connection.object_id}(#{connection.state}) in pool##{@pool.object_id}" }
       @pool.checkin_connection(connection)
     end
 
     def deselect_resolver(resolver, selector)
+      resolver.log(level: 2) do
+        "deregistering resolver##{resolver.object_id}(#{resolver.state}) from selector##{selector.object_id}"
+      end
       selector.deregister(resolver)
 
       return if @closing && resolver.closed?
 
+      resolver.log(level: 2) { "check-in resolver##{resolver.object_id}(#{resolver.state}) in pool##{@pool.object_id}" }
       @pool.checkin_resolver(resolver)
     end
 
@@ -221,7 +229,11 @@ module HTTPX
     def fetch_response(request, _selector, _options)
       response = request.response
 
-      response if response && response.finished?
+      return unless response && response.finished?
+
+      log(level: 2) { "response fetched" }
+
+      response
     end
 
     # sends the +request+ to the corresponding HTTPX::Connection
@@ -382,13 +394,15 @@ module HTTPX
     end
 
     def find_resolver_for(connection, selector)
-      resolver = selector.find_resolver(connection.options)
-
-      unless resolver
-        resolver = @pool.checkout_resolver(connection.options)
-        resolver.current_session = self
-        resolver.current_selector = selector
+      if (resolver = selector.find_resolver(connection.options))
+        resolver.log(level: 2) { "found resolver##{connection.object_id}(#{connection.state}) in selector##{selector.object_id}" }
+        return resolver
       end
+
+      resolver = @pool.checkout_resolver(connection.options)
+      resolver.log(level: 2) { "found resolver##{connection.object_id}(#{connection.state}) in pool##{@pool.object_id}" }
+      resolver.current_session = self
+      resolver.current_selector = selector
 
       resolver
     end
@@ -399,7 +413,10 @@ module HTTPX
       unless conn1.coalescable?(conn2)
         conn2.log(level: 2) { "not coalescing with conn##{conn1.object_id}[#{conn1.origin}])" }
         select_connection(conn2, selector)
-        @pool.checkin_connection(conn1) if from_pool
+        if from_pool
+          conn1.log(level: 2) { "check-in connection##{conn1.object_id}(#{conn1.state}) in pool##{@pool.object_id}" }
+          @pool.checkin_connection(conn1)
+        end
         return false
       end
 

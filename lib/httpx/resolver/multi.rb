@@ -35,6 +35,10 @@ module HTTPX
       @resolvers.each { |r| r.__send__(__method__, s) }
     end
 
+    def log(*args, **kwargs, &blk)
+      @resolvers.each { |r| r.__send__(__method__, *args, **kwargs, &blk) }
+    end
+
     def closed?
       @resolvers.all?(&:closed?)
     end
