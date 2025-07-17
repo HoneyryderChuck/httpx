@@ -4,7 +4,7 @@ require "resolv"
 require "ipaddr"
 
 module HTTPX
-  class Socks4Error < HTTPProxyError; end
+  class Socks4Error < ProxyError; end
 
   module Plugins
     module Proxy

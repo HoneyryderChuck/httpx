@@ -1,5 +1,5 @@
 module HTTPX
-  class HTTPProxyError < ConnectionError
+  class ProxyError < ConnectionError
   end
 
   class ProxySSL < SSL
@@ -12,7 +12,9 @@ module HTTPX
     end
 
     module Proxy
-      Error: singleton(HTTPProxyError)
+      class ProxyConnectionError < ProxyError
+      end
+
       PROXY_ERRORS: Array[singleton(StandardError)]
 
       class Parameters

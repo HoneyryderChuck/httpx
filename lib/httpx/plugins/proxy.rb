@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module HTTPX
-  class HTTPProxyError < ConnectionError; end
+  class ProxyError < ConnectionError; end
 
   module Plugins
     #
@@ -15,7 +15,8 @@ module HTTPX
     # https://gitlab.com/os85/httpx/wikis/Proxy
     #
     module Proxy
-      Error = HTTPProxyError
+      class ProxyConnectionError < ProxyError; end
+
       PROXY_ERRORS = [TimeoutError, IOError, SystemCallError, Error].freeze
 
       class << self
@@ -27,6 +28,12 @@ module HTTPX
 
         def extra_options(options)
           options.merge(supported_proxy_protocols: [])
+        end
+
+        def subplugins
+          {
+            retries: ProxyRetries,
+          }
         end
       end
 
@@ -160,9 +167,9 @@ module HTTPX
 
           next_proxy = proxy.uri
 
-          raise Error, "Failed to connect to proxy" unless next_proxy
+          raise ProxyError, "Failed to connect to proxy" unless next_proxy
 
-          raise Error,
+          raise ProxyError,
                 "#{next_proxy.scheme}: unsupported proxy protocol" unless options.supported_proxy_protocols.include?(next_proxy.scheme)
 
           if (no_proxy = proxy.no_proxy)
@@ -179,20 +186,28 @@ module HTTPX
         private
 
         def fetch_response(request, selector, options)
-          response = super
+          response = request.response # in case it goes wrong later
 
-          if response.is_a?(ErrorResponse) && proxy_error?(request, response, options)
-            options.proxy.shift
+          begin
+            response = super
 
-            # return last error response if no more proxies to try
-            return response if options.proxy.uri.nil?
+            if response.is_a?(ErrorResponse) && proxy_error?(request, response, options)
+              options.proxy.shift
 
-            log { "failed connecting to proxy, trying next..." }
-            request.transition(:idle)
-            send_request(request, selector, options)
-            return
+              # return last error response if no more proxies to try
+              return response if options.proxy.uri.nil?
+
+              log { "failed connecting to proxy, trying next..." }
+              request.transition(:idle)
+              send_request(request, selector, options)
+              return
+            end
+            response
+          rescue ProxyError
+            # may happen if coupled with retries, and there are no more proxies to try, in which case
+            # it'll end up here
+            response
           end
-          response
         end
 
         def proxy_error?(_request, response, options)
@@ -211,7 +226,7 @@ module HTTPX
             proxy_uri = URI(options.proxy.uri)
 
             error.message.end_with?(proxy_uri.to_s)
-          when *PROXY_ERRORS
+          when ProxyConnectionError
             # timeout errors connecting to proxy
             true
           else
@@ -251,6 +266,14 @@ module HTTPX
           when :connecting
             consume
           end
+        rescue *PROXY_ERRORS => e
+          if connecting?
+            error = ProxyConnectionError.new(e.message)
+            error.set_backtrace(e.backtrace)
+            raise error
+          end
+
+          raise e
         end
 
         def reset
@@ -296,6 +319,14 @@ module HTTPX
         def purge_after_closed
           super
           @io = @io.proxy_io if @io.respond_to?(:proxy_io)
+        end
+      end
+
+      module ProxyRetries
+        module InstanceMethods
+          def retryable_error?(ex)
+            super || ex.is_a?(ProxyConnectionError)
+          end
         end
       end
     end
