@@ -58,6 +58,8 @@ module HTTPX
       if @connection.state == :closed
         return unless @handshake_completed
 
+        return if @buffer.empty?
+
         return :w
       end
 
