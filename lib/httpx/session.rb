@@ -315,8 +315,7 @@ module HTTPX
 
     # returns the array of HTTPX::Response objects corresponding to the array of HTTPX::Request +requests+.
     def receive_requests(requests, selector)
-      # @type var responses: Array[response]
-      responses = []
+      responses = [] # : Array[response]
 
       # guarantee ordered responses
       loop do
@@ -338,12 +337,30 @@ module HTTPX
         # handshake error, and the error responses have already been emitted, but there was no
         # opportunity to traverse the requests, hence we're returning only a fraction of the errors
         # we were supposed to. This effectively fetches the existing responses and return them.
-        while (request = requests.shift)
-          response = fetch_response(request, selector, request.options)
-          request.emit(:complete, response) if response
-          responses << response
+        exit_from_loop = true
+
+        requests_to_remove = [] # : Array[Request]
+
+        requests.each do |req|
+          response = fetch_response(req, selector, request.options)
+
+          if exit_from_loop && response
+            req.emit(:complete, response)
+            responses << response
+            requests_to_remove << req
+          else
+            # fetch_response may resend requests. when that happens, we need to go back to the initial
+            # loop and process the selector. we still do a pass-through on the remainder of requests, so
+            # that every request that need to be resent, is resent.
+            exit_from_loop = false
+
+            raise Error, "something went wrong, responses not found and requests not resent" if selector.empty?
+          end
         end
-        break
+
+        break if exit_from_loop
+
+        requests -= requests_to_remove
       end
       responses
     end
