@@ -33,7 +33,9 @@ module HTTPX
     def interests
       request = @request || @requests.first
 
-      return unless request && request.current_context?
+      return unless request
+
+      return unless request.current_context? || @pending.any?(&:current_context?)
 
       return :w if request.interests == :w || !@buffer.empty?
 
