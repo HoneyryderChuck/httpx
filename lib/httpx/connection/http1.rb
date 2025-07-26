@@ -31,7 +31,7 @@ module HTTPX
     end
 
     def interests
-      if (request = @request || @requests.first
+      request = @request || @requests.first
 
       return unless request
 
