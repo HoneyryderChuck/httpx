@@ -50,15 +50,6 @@ module HTTPX
         end
       end
 
-      module NativeResolverMethods
-        def transition(nextstate)
-          state = @state
-          val = super
-          meter_elapsed_time("Resolver::Native: #{state} -> #{nextstate}")
-          val
-        end
-      end
-
       module InstanceMethods
         def self.included(klass)
           klass.prepend TrackTimeMethods
@@ -69,13 +60,6 @@ module HTTPX
           meter_elapsed_time("Session: initializing...")
           super
           meter_elapsed_time("Session: initialized!!!")
-          resolver_type = @options.resolver_class
-          resolver_type = Resolver.resolver_for(resolver_type)
-          return unless resolver_type <= Resolver::Native
-
-          resolver_type.prepend TrackTimeMethods
-          resolver_type.prepend NativeResolverMethods
-          @options = @options.merge(resolver_class: resolver_type)
         end
 
         def close(*)
@@ -104,44 +88,11 @@ module HTTPX
         end
       end
 
-      module RequestMethods
-        def self.included(klass)
-          klass.prepend Loggable
-          klass.prepend TrackTimeMethods
-          super
-        end
-
-        def transition(nextstate)
-          prev_state = @state
-          super
-          meter_elapsed_time("Request##{object_id}[#{@verb} #{@uri}: #{prev_state}] -> #{@state}") if prev_state != @state
-        end
-      end
-
-      module ConnectionMethods
-        def self.included(klass)
-          klass.prepend TrackTimeMethods
-          super
-        end
-
-        def handle_transition(nextstate)
-          state = @state
-          super
-          meter_elapsed_time("Connection##{object_id}[#{@origin}]: #{state} -> #{nextstate}") if nextstate == @state
-        end
-      end
-
       module PoolMethods
         def self.included(klass)
           klass.prepend Loggable
           klass.prepend TrackTimeMethods
           super
-        end
-
-        def checkout_connection(request_uri, options)
-          super.tap do |connection|
-            meter_elapsed_time("Pool##{object_id}: checked out connection for Connection##{connection.object_id}[#{connection.origin}]}")
-          end
         end
 
         def checkin_connection(connection)

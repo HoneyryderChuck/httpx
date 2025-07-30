@@ -1,8 +1,9 @@
 module HTTPX
-  class HTTPProxyError < ConnectionError
+  class ProxyError < ConnectionError
   end
 
   class ProxySSL < SSL
+    attr_reader proxy_io: TCP | SSL
   end
 
   module Plugins
@@ -11,7 +12,9 @@ module HTTPX
     end
 
     module Proxy
-      Error: singleton(HTTPProxyError)
+      class ProxyConnectionError < ProxyError
+      end
+
       PROXY_ERRORS: Array[singleton(StandardError)]
 
       class Parameters

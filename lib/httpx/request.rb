@@ -8,6 +8,7 @@ module HTTPX
   # as well as maintaining the state machine which manages streaming the request onto the wire.
   class Request
     extend Forwardable
+    include Loggable
     include Callbacks
     using URIExtensions
 
@@ -293,6 +294,7 @@ module HTTPX
         return if @state == :expect
 
       end
+      log(level: 3) { "#{@state}] -> #{nextstate}" }
       @state = nextstate
       emit(@state, self)
       nil

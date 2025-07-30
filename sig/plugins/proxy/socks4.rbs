@@ -1,5 +1,5 @@
 module HTTPX
-  class Socks4Error < HTTPProxyError
+  class Socks4Error < ProxyError
   end
 
   module Plugins

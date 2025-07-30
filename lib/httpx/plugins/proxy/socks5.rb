@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module HTTPX
-  class Socks5Error < HTTPProxyError; end
+  class Socks5Error < ProxyError; end
 
   module Plugins
     module Proxy

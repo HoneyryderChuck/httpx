@@ -480,6 +480,7 @@ module HTTPX
         @write_buffer.clear
         @read_buffer.clear
       end
+      log(level: 3) { "#{@state} -> #{nextstate}" }
       @state = nextstate
     rescue Errno::ECONNREFUSED,
            Errno::EADDRNOTAVAIL,
