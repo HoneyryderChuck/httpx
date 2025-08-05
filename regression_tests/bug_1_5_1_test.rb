@@ -40,6 +40,34 @@ class Bug_1_5_1_Test < Minitest::Test
     end
   end
 
+  def test_persistent_connection_http1_should_use_buffered_requests_to_switch_context_too
+    http = HTTPX.plugin(:persistent, ssl: { alpn_protocols: %w[http/1.1] })
+    url = build_uri("/get")
+
+    Thread.start do
+      Thread.current.abort_on_exception = true
+      scheduler = Scheduler.new
+      Fiber.set_scheduler scheduler
+
+      5.times do
+        Fiber.schedule do
+          3.times do
+            res = http.get(url)
+            verify_status(res, 200)
+          end
+        end
+      end
+    end.join
+  ensure
+    http.close
+  end
+
+  private
+
+  def scheme
+    "https://"
+  end
+
   class Scheduler
     def initialize(fiber = Fiber.current)
       @fiber = fiber
