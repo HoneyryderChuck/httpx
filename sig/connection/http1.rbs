@@ -54,6 +54,8 @@ module HTTPX
 
     def ping: () -> void
 
+    def waiting_for_ping?: () -> bool
+
     def timeout: () -> Numeric?
 
     private

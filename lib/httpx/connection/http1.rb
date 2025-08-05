@@ -226,6 +226,10 @@ module HTTPX
       emit(:exhausted)
     end
 
+    def waiting_for_ping?
+      false
+    end
+
     private
 
     def manage_connection(request, response)
