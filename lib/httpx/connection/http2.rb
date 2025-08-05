@@ -166,6 +166,10 @@ module HTTPX
       @pings << ping
     end
 
+    def waiting_for_ping?
+      @pings.any?
+    end
+
     private
 
     def can_buffer_more_requests?

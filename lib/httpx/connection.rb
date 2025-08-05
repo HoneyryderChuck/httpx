@@ -720,7 +720,7 @@ module HTTPX
         return unless @state == :open
 
         # do not deactivate connection in use
-        return if @inflight.positive?
+        return if @inflight.positive? || @parser.waiting_for_ping?
       when :closing
         return unless @state == :idle || @state == :open
 

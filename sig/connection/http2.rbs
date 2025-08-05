@@ -38,6 +38,8 @@ module HTTPX
 
     def ping: () -> void
 
+    def waiting_for_ping?: () -> bool
+
     alias reset init_connection
 
     def timeout: () -> Numeric?
