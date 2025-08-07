@@ -31,7 +31,7 @@ module HTTPX
 
     def add_addresses: (Array[ipaddr] addrs) -> void
 
-    def to_io: () -> ::IO
+    def to_io: () -> IO
 
     def protocol: () -> String
 

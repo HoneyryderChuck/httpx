@@ -11,8 +11,8 @@ module HTTPX
       @queries: Array[[ip_family, Connection]]
       @ips: Array[[ip_family, Connection, (Array[Addrinfo] | StandardError)]]
       @pipe_mutex: Thread::Mutex
-      @pipe_read: ::IO
-      @pipe_write: ::IO
+      @pipe_read: IO
+      @pipe_write: IO
 
       attr_reader state: Symbol
 

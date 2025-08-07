@@ -48,7 +48,7 @@ module HTTPX
       transition(:connected)
     rescue Errno::EINPROGRESS,
            Errno::EALREADY,
-           ::IO::WaitReadable
+           IO::WaitReadable
     end
 
     def expired?

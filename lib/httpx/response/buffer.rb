@@ -110,7 +110,7 @@ module HTTPX
 
       if aux
         aux.rewind
-        ::IO.copy_stream(aux, @buffer)
+        IO.copy_stream(aux, @buffer)
         aux.close
       end
 

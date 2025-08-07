@@ -119,7 +119,7 @@ module HTTPX
       class Signal
         def initialize
           @closed = false
-          @pipe_read, @pipe_write = ::IO.pipe
+          @pipe_read, @pipe_write = IO.pipe
         end
 
         def state

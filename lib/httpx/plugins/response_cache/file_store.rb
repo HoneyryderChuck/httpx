@@ -81,7 +81,7 @@ module HTTPX::Plugins
 
           response.body.rewind
 
-          ::IO.copy_stream(response.body, f)
+          IO.copy_stream(response.body, f)
         end
       end
 
@@ -131,7 +131,7 @@ module HTTPX::Plugins
         response.original_request = original_request
         response.finish!
 
-        ::IO.copy_stream(f, response.body)
+        IO.copy_stream(f, response.body)
 
         response
       end

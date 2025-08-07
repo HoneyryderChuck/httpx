@@ -90,7 +90,7 @@ module HTTPX
       module MimeTypeDetector
         DEFAULT_MIMETYPE: String
 
-        def self?.call: (::IO | Tempfile file, String filename) -> String?
+        def self?.call: (IO | Tempfile file, String filename) -> String?
       end
     end
   end

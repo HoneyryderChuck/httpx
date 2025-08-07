@@ -136,7 +136,7 @@ module HTTPX
       if dest.respond_to?(:path) && @buffer.respond_to?(:path)
         FileUtils.mv(@buffer.path, dest.path)
       else
-        ::IO.copy_stream(@buffer, dest)
+        IO.copy_stream(@buffer, dest)
       end
     end
 

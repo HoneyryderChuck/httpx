@@ -56,7 +56,7 @@ module HTTPX
           block.call(chunk)
         end
         # TODO: use copy_stream once bug is resolved: https://bugs.ruby-lang.org/issues/21131
-        # ::IO.copy_stream(body, ProcIO.new(block))
+        # IO.copy_stream(body, ProcIO.new(block))
       elsif body.respond_to?(:each)
         body.each(&block)
       else

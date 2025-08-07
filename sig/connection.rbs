@@ -82,7 +82,7 @@ module HTTPX
 
     def interests: () -> io_interests?
 
-    def to_io: () -> ::IO
+    def to_io: () -> IO
 
     def call: () -> void
 

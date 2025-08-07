@@ -44,7 +44,7 @@ module HTTPX
 
           Open3.popen3(*%w[file --mime-type --brief -]) do |stdin, stdout, stderr, thread|
             begin
-              ::IO.copy_stream(file, stdin.binmode)
+              IO.copy_stream(file, stdin.binmode)
             rescue Errno::EPIPE
             end
             file.rewind

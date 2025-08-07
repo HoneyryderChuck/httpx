@@ -63,7 +63,7 @@ module HTTPX
         buffer = Response::Buffer.new(
           threshold_size: Options::MAX_BODY_THRESHOLD_SIZE
         )
-        ::IO.copy_stream(self, buffer)
+        IO.copy_stream(self, buffer)
 
         buffer.rewind if buffer.respond_to?(:rewind)
 

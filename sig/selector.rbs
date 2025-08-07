@@ -2,7 +2,7 @@ module HTTPX
   interface _Selectable
     def state: () -> Symbol
 
-    def to_io: () -> ::IO
+    def to_io: () -> IO
 
     def call: () -> void
 

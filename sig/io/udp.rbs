@@ -4,7 +4,7 @@ module HTTPX
 
     def initialize: (String ip, Integer port, Options options) -> void
 
-    def to_io: () -> ::IO
+    def to_io: () -> IO
 
     def connect: () -> void
 

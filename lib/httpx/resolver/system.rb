@@ -127,7 +127,7 @@ module HTTPX
       when :open
         return unless @state == :idle
 
-        @pipe_read, @pipe_write = ::IO.pipe
+        @pipe_read, @pipe_write = IO.pipe
       when :closed
         return unless @state == :open
 
