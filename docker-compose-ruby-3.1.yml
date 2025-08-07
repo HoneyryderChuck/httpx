@@ -9,7 +9,7 @@ services:
       - doh
 
   doh:
-    image: registry.gitlab.com/os85/httpx/nghttp2:1
+    image: registry.gitlab.com/os85/httpx/nghttp2:3
     depends_on:
       - doh-proxy
     entrypoint:
