@@ -326,7 +326,7 @@ module HTTPX
         return responses unless request
 
         catch(:coalesced) { selector.next_tick } until (response = fetch_response(request, selector, request.options))
-        request.emit(:complete, response)
+        request.complete!(response)
 
         responses << response
         requests.shift
@@ -347,7 +347,7 @@ module HTTPX
           response = fetch_response(req, selector, request.options)
 
           if exit_from_loop && response
-            req.emit(:complete, response)
+            req.complete!(response)
             responses << response
             requests_to_remove << req
           else

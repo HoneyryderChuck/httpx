@@ -122,6 +122,11 @@ module HTTPX
       @context == Fiber.current
     end
 
+    def complete!(response = @response)
+      @context = nil
+      emit(:complete, response)
+    end
+
     # whether request has been buffered with a ping
     def ping?
       @ping
