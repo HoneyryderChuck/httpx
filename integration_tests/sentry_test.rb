@@ -133,7 +133,7 @@ class SentryTest < Minitest::Test
 
     Sentry.init do |config|
       config.traces_sample_rate = 1.0
-      config.logger = mock_logger
+      config.sdk_logger = mock_logger
       config.dsn = DUMMY_DSN
       config.transport.transport_class = Sentry::DummyTransport
       config.background_worker_threads = 0
