@@ -115,11 +115,11 @@ class HTTPSTest < Minitest::Test
   # HTTP/2-specific tests
 
   {
-    http1: { uri: "https://httpbin.org/get", ssl: { alpn_protocols: %w[http/1.1] } },
+    http1: { uri: "https://aws:4566", ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE, alpn_protocols: %w[http/1.1] } },
     http2: {},
   }.each do |proto, proto_options|
     define_method :"test_multiple_get_max_requests_#{proto}" do
-      uri = proto_options.delete(:uri) || URI(build_uri("/get"))
+      uri = proto_options.delete(:uri) || URI(build_uri("/"))
       options = { max_requests: 2, **proto_options }
 
       HTTPX.plugin(SessionWithPool).with(options).wrap do |http|
