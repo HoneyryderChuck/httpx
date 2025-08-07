@@ -1,6 +1,6 @@
 services:
   httpx:
-    image: ghcr.io/graalvm/truffleruby-community:latest
+    image: ghcr.io/graalvm/truffleruby-community:25.0.0-ol9
     entrypoint:
       - bash
       - /home/test/support/ci/build.sh
