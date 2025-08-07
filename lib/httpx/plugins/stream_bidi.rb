@@ -127,7 +127,7 @@ module HTTPX
         end
 
         # noop
-        def log(**); end
+        def log(**, &_); end
 
         def to_io
           @pipe_read.to_io
