@@ -5,7 +5,7 @@ module Requests
     module Brotli
       def test_brotli
         session = HTTPX.plugin(:brotli)
-        response = session.get("http://httpbin.org/brotli")
+        response = session.get("http://nghttp2.org/httpbin/brotli")
         verify_status(response, 200)
         body = json_body(response)
         assert body["brotli"], "response should be deflated"

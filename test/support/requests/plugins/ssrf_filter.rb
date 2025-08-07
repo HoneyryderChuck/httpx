@@ -4,7 +4,7 @@ module Requests
   module Plugins
     module SsrfFilter
       def test_plugin_ssrf_filter_allows
-        uri = "#{scheme}httpbin.org"
+        uri = "#{scheme}nghttp2.org"
 
         session = HTTPX.plugin(:ssrf_filter)
         response = session.get(uri)
