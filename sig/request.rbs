@@ -36,6 +36,8 @@ module HTTPX
 
     def current_context?: () -> bool
 
+    def complete!: (?response response) -> void
+
     def ping?: () -> bool
 
     def ping!: () -> void
