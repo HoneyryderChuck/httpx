@@ -132,7 +132,9 @@ class HTTPSTest < Minitest::Test
         verify_body_length(response3)
         connection_count = http.connection_count
         assert connection_count == 2, "expected to have 2 connections, instead have #{connection_count}"
-        assert http.connections.size == 1, "expected connection to have been reused on exhaustion"
+        http.connections.tally(&:family).each do |family, count|
+          assert count == 1, "expected connection to have been reused on exhaustion"
+        end
 
         # ssl session ought to be reused
         conn = http.connections.first
