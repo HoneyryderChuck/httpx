@@ -24,9 +24,12 @@ class OptionsTest < Minitest::Test
 
   def test_options_headers
     opt1 = Options.new
-    assert opt1.headers.to_a.empty?, "headers should be empty"
-    opt2 = Options.new(:headers => { "accept" => "*/*" })
-    assert opt2.headers.to_a == [%w[accept */*]], "headers are unexpected"
+    assert opt1.headers["user-agent"].start_with?("httpx"), "should set default user-agent"
+    assert opt1.headers["accept"], "should set default accet"
+    assert opt1.headers.to_a.include?(%w[accept */*]), "accept headers are unexpected"
+    opt2 = Options.new(:headers => { "user-agent" => nil })
+    assert opt2.headers["user-agent"] == "", "should remove default user-agent"
+    assert opt2.headers.to_a.include?(%w[accept */*]), "accept headers are unexpected"
   end
 
   def test_options_headers_with_instance

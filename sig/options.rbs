@@ -17,6 +17,7 @@ module HTTPX
 
     DEFAULT_OPTIONS: Hash[Symbol, untyped]
     REQUEST_BODY_IVARS: Array[Symbol]
+    USER_AGENT: String
 
     type timeout_type = :connect_timeout | :settings_timeout | :close_handshake_timeout | :operation_timeout | :keep_alive_timeout | :read_timeout | :write_timeout | :request_timeout
     type timeout = Hash[timeout_type, Numeric?]
@@ -145,6 +146,8 @@ module HTTPX
     private
 
     def initialize: (?options options) -> void
+
+    def do_initialize: (?options options) -> void
 
     def access_option: (Hash[Symbol, untyped] | Object | nil obj, Symbol k, Hash[Symbol, Symbol]? ivar_map) -> untyped
 
