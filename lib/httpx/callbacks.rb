@@ -20,7 +20,7 @@ module HTTPX
     end
 
     def callbacks_for?(type)
-      @callbacks.key?(type) && @callbacks[type].any?
+      @callbacks && @callbacks.key?(type) && @callbacks[type].any?
     end
 
     protected

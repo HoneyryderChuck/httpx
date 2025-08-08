@@ -136,5 +136,10 @@ module Requests
         end
       end
     end
+
+    def test_callbacks_can_compose_with
+      http = HTTPX.plugin(:callbacks).with(persistent: true)
+      assert http.instance_variable_get(:@persistent)
+    end
   end
 end
