@@ -14,9 +14,6 @@ module HTTPX
 
     ALLOWED_URI_SCHEMES = %w[https http].freeze
 
-    # default value used for "user-agent" header, when not overridden.
-    USER_AGENT = "httpx.rb/#{VERSION}".freeze # rubocop:disable Style/RedundantFreeze
-
     # the upcased string HTTP verb for this request.
     attr_reader :verb
 
@@ -74,16 +71,6 @@ module HTTPX
 
       @headers = options.headers.dup
       merge_headers(params.delete(:headers)) if params.key?(:headers)
-
-      @headers["user-agent"] ||= USER_AGENT
-      @headers["accept"]     ||= "*/*"
-
-      # forego compression in the Range request case
-      if @headers.key?("range")
-        @headers.delete("accept-encoding")
-      else
-        @headers["accept-encoding"] ||= options.supported_compression_formats
-      end
 
       @query_params = params.delete(:params) if params.key?(:params)
 
@@ -166,6 +153,9 @@ module HTTPX
     # merges +h+ into the instance of HTTPX::Headers of the request.
     def merge_headers(h)
       @headers = @headers.merge(h)
+      return unless @headers.key?("range")
+
+      @headers.delete("accept-encoding")
     end
 
     # the URI scheme of the request +uri+.

@@ -107,6 +107,18 @@ module Requests
       end
     end
 
+    def test_compression_ignore_encoding_on_range
+      uri = build_uri("/get")
+      response = HTTPX.get(uri)
+      verify_status(response, 200)
+      body = json_body(response)
+      assert body["headers"].key?("Accept-Encoding")
+
+      response = HTTPX.get(uri, headers: { "range" => "bytes=100-200" })
+      body = json_body(response)
+      assert !body["headers"].key?("Accept-Encoding")
+    end
+
     private
 
     def inflate_test_data(string)

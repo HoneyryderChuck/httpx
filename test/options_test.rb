@@ -24,9 +24,12 @@ class OptionsTest < Minitest::Test
 
   def test_options_headers
     opt1 = Options.new
-    assert opt1.headers.to_a.empty?, "headers should be empty"
-    opt2 = Options.new(:headers => { "accept" => "*/*" })
-    assert opt2.headers.to_a == [%w[accept */*]], "headers are unexpected"
+    assert opt1.headers["user-agent"].start_with?("httpx"), "should set default user-agent"
+    assert opt1.headers["accept"], "should set default accet"
+    assert opt1.headers.to_a.include?(%w[accept */*]), "accept headers are unexpected"
+    opt2 = Options.new(:headers => { "user-agent" => nil })
+    assert opt2.headers["user-agent"] == "", "should remove default user-agent"
+    assert opt2.headers.to_a.include?(%w[accept */*]), "accept headers are unexpected"
   end
 
   def test_options_headers_with_instance
@@ -118,7 +121,13 @@ class OptionsTest < Minitest::Test
       :supported_compression_formats => %w[gzip deflate],
       :compress_request_body => true,
       :decompress_response_body => true,
-      :headers => { "accept" => "xml", "foo" => "foo", "bar" => "bar" },
+      :headers => {
+        "accept" => "xml",
+        "foo" => "foo",
+        "bar" => "bar",
+        "user-agent" => "httpx.rb/#{HTTPX::VERSION}",
+        "accept-encoding" => "gzip, deflate",
+      },
       :max_concurrent_requests => nil,
       :request_class => bar.request_class,
       :response_class => bar.response_class,
