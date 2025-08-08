@@ -8,7 +8,7 @@ module HTTPX
     def once: (Symbol) { (*untyped) -> void } -> ^(*untyped) -> void
     def emit: (Symbol, *untyped) -> void
 
-    def callbacks_for?: (Symbol) -> bool
+    def callbacks_for?: (Symbol) -> boolish
     def callbacks: () -> Hash[Symbol, Array[_Callable]]
                   | (Symbol) -> Array[_Callable]
   end
