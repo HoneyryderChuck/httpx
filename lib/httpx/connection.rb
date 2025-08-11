@@ -388,8 +388,7 @@ module HTTPX
       return unless @current_session && @current_selector
 
       emit(:close)
-      @current_session = nil
-      @current_selector = nil
+      @current_session = @current_selector = nil
     end
 
     # :nocov:

@@ -11,8 +11,7 @@ module HTTPX
     attr_reader :resolvers, :options
 
     def initialize(resolver_type, options)
-      @current_selector = nil
-      @current_session = nil
+      @current_selector = @current_session = nil
       @options = options
       @resolver_options = @options.resolver_options
 
