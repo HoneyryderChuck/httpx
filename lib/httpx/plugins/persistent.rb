@@ -36,6 +36,23 @@ module HTTPX
       end
 
       module InstanceMethods
+        def close(*)
+          super
+
+          # traverse other threads and unlink respective selector
+          # WARNING: this is not thread safe, make sure that the session isn't being
+          # used anymore, or all non-main threads are stopped.
+          Thread.list.each do |th|
+            store = thread_selector_store(th)
+
+            next unless store && store.key?(self)
+
+            selector = store.delete(self)
+
+            selector_close(selector)
+          end
+        end
+
         private
 
         def repeatable_request?(request, _)

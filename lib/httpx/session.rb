@@ -71,12 +71,8 @@ module HTTPX
 
         select_connection(connection, selector)
       end
-      begin
-        @closing = true
-        selector.terminate
-      ensure
-        @closing = false
-      end
+
+      selector_close(selector)
     end
 
     # performs one, or multple requests; it accepts:
@@ -211,6 +207,15 @@ module HTTPX
     end
 
     private
+
+    def selector_close(selector)
+      begin
+        @closing = true
+        selector.terminate
+      ensure
+        @closing = false
+      end
+    end
 
     # tries deactivating connections in the +selector+, deregistering the ones that have been deactivated.
     def deactivate(selector)
@@ -460,11 +465,16 @@ module HTTPX
 
     def selector_store
       th_current = Thread.current
-      th_current.thread_variable_get(:httpx_persistent_selector_store) || begin
+
+      thread_selector_store(th_current) || begin
         {}.compare_by_identity.tap do |store|
           th_current.thread_variable_set(:httpx_persistent_selector_store, store)
         end
       end
+    end
+
+    def thread_selector_store(th)
+      th.thread_variable_get(:httpx_persistent_selector_store)
     end
 
     @default_options = Options.new
