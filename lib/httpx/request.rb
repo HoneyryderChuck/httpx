@@ -106,7 +106,7 @@ module HTTPX
       raise UnsupportedSchemeError, "#{@uri}: #{@uri.scheme}: unsupported URI scheme" unless ALLOWED_URI_SCHEMES.include?(@uri.scheme)
 
       @state = :idle
-      @response = @peer_address = @context = nil
+      @response = @peer_address = @context = @informational_status = nil
       @ping = false
       @persistent = @options.persistent
       @active_timeouts = []
