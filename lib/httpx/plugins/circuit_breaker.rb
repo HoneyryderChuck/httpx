@@ -105,6 +105,8 @@ module HTTPX
       # :circuit_breaker_half_open_drip_rate :: the rate of requests a circuit allows to be performed when in an half-open state
       #                                         (defaults to <tt>1</tt>).
       module OptionsMethods
+        private
+
         def option_circuit_breaker_max_attempts(value)
           attempts = Integer(value)
           raise TypeError, ":circuit_breaker_max_attempts must be positive" unless attempts.positive?

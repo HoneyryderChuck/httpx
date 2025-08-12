@@ -24,19 +24,9 @@ class ResponseCacheFileStoreTest < Minitest::Test
 
   private
 
-  def store_class
-    HTTPX::Plugins::ResponseCache::FileStore
-  end
-
-  def store
-    super.tap do |st|
-      st.singleton_class.attr_writer :dir
-    end
-  end
-
-  def setup
+  def init_store
     tmpdir = Pathname.new(Dir.tmpdir).join(SecureRandom.alphanumeric)
     FileUtils.mkdir_p(tmpdir)
-    store.dir = tmpdir
+    HTTPX::Plugins::ResponseCache::FileStore.new(tmpdir)
   end
 end

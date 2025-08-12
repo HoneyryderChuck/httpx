@@ -76,6 +76,8 @@ module HTTPX
       #
       # :aws_profile :: AWS account profile to retrieve credentials from.
       module OptionsMethods
+        private
+
         def option_aws_profile(value)
           String(value)
         end

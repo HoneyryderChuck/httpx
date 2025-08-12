@@ -98,6 +98,8 @@ module HTTPX
       end
 
       module OptionsMethods
+        private
+
         def option_oauth_session(value)
           case value
           when Hash

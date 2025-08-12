@@ -26,6 +26,8 @@ module HTTPX
       #                    before retrying without the Expect header (defaults to <tt>2</tt>).
       # :expect_threshold_size :: min threshold (in bytes) of the request payload to enable the 100-continue negotiation on.
       module OptionsMethods
+        private
+
         def option_expect_timeout(value)
           seconds = Float(value)
           raise TypeError, ":expect_timeout must be positive" unless seconds.positive?

@@ -11,8 +11,9 @@ module HTTPX
     options = proxy_session.class.default_options.to_hash
     original_verbosity = $VERBOSE
     $VERBOSE = nil
-    const_set(:Options, proxy_session.class.default_options.options_class)
-    options[:options_class] = Class.new(options[:options_class])
+    new_options_class = proxy_session.class.default_options.options_class.dup
+    const_set(:Options, new_options_class)
+    options[:options_class] = Class.new(new_options_class).freeze
     options.freeze
     Options.send(:const_set, :DEFAULT_OPTIONS, options)
     Session.instance_variable_set(:@default_options, Options.new(options))

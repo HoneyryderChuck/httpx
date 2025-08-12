@@ -13,6 +13,8 @@ module HTTPX
         end
 
         module OptionsMethods
+          private
+
           def option_proxy(value)
             Hash[value]
           end
