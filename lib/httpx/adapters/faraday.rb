@@ -132,9 +132,11 @@ module Faraday
           def response=(response)
             super
 
-            return if response.is_a?(::HTTPX::ErrorResponse)
+            return unless @response
 
-            response.body.on_data = @response_on_data
+            return if @response.is_a?(::HTTPX::ErrorResponse)
+
+            @response.body.on_data = @response_on_data
           end
         end
 

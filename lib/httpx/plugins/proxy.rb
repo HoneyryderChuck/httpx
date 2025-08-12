@@ -220,10 +220,10 @@ module HTTPX
           when NativeResolveError
             proxy_uri = URI(options.proxy.uri)
 
-            peer = error.connection.peer
+            unresolved_host = error.host
 
             # failed resolving proxy domain
-            peer.host == proxy_uri.host && peer.port == proxy_uri.port
+            unresolved_host == proxy_uri.host
           when ResolveError
             proxy_uri = URI(options.proxy.uri)
 
