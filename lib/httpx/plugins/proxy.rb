@@ -142,6 +142,8 @@ module HTTPX
       # :proxy :: proxy options defining *:uri*, *:username*, *:password* or
       #           *:scheme* (i.e. <tt>{ uri: "http://proxy" }</tt>)
       module OptionsMethods
+        private
+
         def option_proxy(value)
           value.is_a?(Parameters) ? value : Parameters.new(**Hash[value])
         end

@@ -57,6 +57,8 @@ module HTTPX
       # :retry_on :: callable which alternatively defines a different rule for when a response is to be retried
       #              (i.e. <tt>->(res) { ... }</tt>).
       module OptionsMethods
+        private
+
         def option_retry_after(value)
           # return early if callable
           unless value.respond_to?(:call)

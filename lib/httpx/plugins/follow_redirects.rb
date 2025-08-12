@@ -34,6 +34,8 @@ module HTTPX
       #                                 (defaults to <tt>false</tt>).
       # :redirect_on :: optional callback which receives the redirect location and can halt the redirect chain if it returns <tt>false</tt>.
       module OptionsMethods
+        private
+
         def option_max_redirects(value)
           num = Integer(value)
           raise TypeError, ":max_redirects must be positive" if num.negative?

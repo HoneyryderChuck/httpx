@@ -24,6 +24,8 @@ module HTTPX
       #
       # :digest :: instance of HTTPX::Plugins::Authentication::Digest, used to authenticate requests in the session.
       module OptionsMethods
+        private
+
         def option_digest(value)
           raise TypeError, ":digest must be a #{Authentication::Digest}" unless value.is_a?(Authentication::Digest)
 

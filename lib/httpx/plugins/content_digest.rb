@@ -43,6 +43,8 @@ module HTTPX
       # :validate_content_digest :: whether a <tt>Content-Digest</tt> header in the response should be validated;
       #                             can also be a callable object (i.e. <tt>->(res) { ... }</tt>, defaults to <tt>false</tt>)
       module OptionsMethods
+        private
+
         def option_content_digest_algorithm(value)
           raise TypeError, ":content_digest_algorithm must be one of 'sha-256', 'sha-512'" unless SUPPORTED_ALGORITHMS.key?(value)
 

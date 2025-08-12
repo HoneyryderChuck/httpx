@@ -170,6 +170,8 @@ module HTTPX
       #
       # :sigv4_signer :: instance of HTTPX::Plugins::AWSSigV4 used to sign requests.
       module OptionsMethods
+        private
+
         def option_sigv4_signer(value)
           value.is_a?(Signer) ? value : Signer.new(value)
         end

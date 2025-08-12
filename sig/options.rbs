@@ -14,6 +14,7 @@ module HTTPX
     SETTINGS_TIMEOUT: Integer
     CLOSE_HANDSHAKE_TIMEOUT: Integer
     SET_TEMPORARY_NAME: ^(Module mod, ?Symbol pl) -> void
+
     DEFAULT_OPTIONS: Hash[Symbol, untyped]
     REQUEST_BODY_IVARS: Array[Symbol]
 
@@ -21,6 +22,8 @@ module HTTPX
     type timeout = Hash[timeout_type, Numeric?]
 
     def self.new: (?options) -> instance
+
+    attr_reader self.options_names: Array[Symbol]
 
     # headers
     attr_reader uri: URI?
@@ -69,11 +72,6 @@ module HTTPX
 
     # base_path
     attr_reader base_path: String?
-
-    # ssl
-
-    # http2_settings
-
 
     # classes
     attr_reader resolver_native_class: singleton(Resolver::Native)
@@ -145,8 +143,6 @@ module HTTPX
     def extend_with_plugin_classes: (Module pl) -> void
 
     private
-
-    REQUEST_IVARS: Array[Symbol]
 
     def initialize: (?options options) -> void
 

@@ -17,6 +17,8 @@ module HTTPX
       end
 
       module OptionsMethods
+        private
+
         def option_ntlm(value)
           raise TypeError, ":ntlm must be a #{Authentication::Ntlm}" unless value.is_a?(Authentication::Ntlm)
 
