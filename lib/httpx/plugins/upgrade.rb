@@ -20,6 +20,8 @@ module HTTPX
       end
 
       module OptionsMethods
+        private
+
         def option_upgrade_handlers(value)
           raise TypeError, ":upgrade_handlers must be a Hash" unless value.is_a?(Hash)
 

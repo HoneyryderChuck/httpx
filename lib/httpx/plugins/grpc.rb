@@ -70,6 +70,8 @@ module HTTPX
       end
 
       module OptionsMethods
+        private
+
         def option_grpc_service(value)
           String(value)
         end

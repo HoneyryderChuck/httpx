@@ -74,6 +74,8 @@ module HTTPX
       #
       # :cookies :: cookie jar for the session (can be a Hash, an Array, an instance of HTTPX::Plugins::Cookies::CookieJar)
       module OptionsMethods
+        private
+
         def option_headers(*)
           value = super
 
@@ -89,8 +91,6 @@ module HTTPX
 
           jar
         end
-
-        private
 
         def merge_cookie_in_jar(cookies, jar)
           cookies.each do |ck|

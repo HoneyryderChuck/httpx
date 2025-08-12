@@ -91,6 +91,8 @@ module HTTPX
       #
       # :allowed_schemes :: list of URI schemes allowed (defaults to <tt>["https", "http"]</tt>)
       module OptionsMethods
+        private
+
         def option_allowed_schemes(value)
           Array(value)
         end
