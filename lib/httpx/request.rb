@@ -177,17 +177,23 @@ module HTTPX
     def response=(response)
       return unless response
 
-      if response.is_a?(Response) && response.status < 200
-        # deal with informational responses
+      case response
+      when Response
+        if response.status < 200
+          # deal with informational responses
 
-        if response.status == 100 && @headers.key?("expect")
-          @informational_status = response.status
-          return
+          if response.status == 100 && @headers.key?("expect")
+            @informational_status = response.status
+            return
+          end
+
+          # 103 Early Hints advertises resources in document to browsers.
+          # not very relevant for an HTTP client, discard.
+          return if response.status >= 103
+
         end
-
-        # 103 Early Hints advertises resources in document to browsers.
-        # not very relevant for an HTTP client, discard.
-        return if response.status >= 103
+      when ErrorResponse
+        response.error.connection = nil if response.error.respond_to?(:connection=)
       end
 
       @response = response
