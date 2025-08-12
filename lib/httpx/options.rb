@@ -333,7 +333,7 @@ module HTTPX
       class_eval(<<-OUT, __FILE__, __LINE__ + 1)
         # converts +v+ into an Integer before setting the +#{option}+ option.
         def option_#{option}(value)                                             # def option_max_requests(v)
-          value = Integer(value) unless value.infinite?
+          value = Integer(value) unless value.respond_to?(:infinite?) && value.infinite?
           raise TypeError, ":#{option} must be positive" unless value.positive? # raise TypeError, ":max_requests must be positive" unless value.positive?
 
           value
@@ -354,8 +354,8 @@ module HTTPX
     %i[
       request_class response_class headers_class request_body_class
       response_body_class connection_class options_class
-      pool_class
-      io fallback_protocol debug debug_redact resolver_class
+      pool_class resolver_class
+      io fallback_protocol debug debug_redact
       compress_request_body decompress_response_body
       persistent close_on_fork
     ].each do |method_name|
@@ -409,11 +409,11 @@ module HTTPX
       end
     end
 
-    SET_TEMPORARY_NAME = ->(mod, pl = nil) do
-      if mod.respond_to?(:set_temporary_name) # ruby 3.4 only
-        name = mod.name || "#{mod.superclass.name}(plugin)"
+    SET_TEMPORARY_NAME = ->(klass, pl = nil) do
+      if klass.respond_to?(:set_temporary_name) # ruby 3.4 only
+        name = klass.name || "#{klass.superclass.name}(plugin)"
         name = "#{name}/#{pl}" if pl
-        mod.set_temporary_name(name)
+        klass.set_temporary_name(name)
       end
     end
 
