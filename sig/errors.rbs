@@ -51,6 +51,8 @@ module HTTPX
   class HTTPError < Error
     attr_reader response: Response
 
+    def status: () -> Integer
+
     private
 
     def initialize: (Response response) -> void
