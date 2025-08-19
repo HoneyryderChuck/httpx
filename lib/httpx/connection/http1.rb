@@ -31,14 +31,11 @@ module HTTPX
     end
 
     def interests
-      # this means we're processing incoming response already
-      return :r if @request
-
-      return if @requests.empty?
-
-      request = @requests.first
+      request = @request || @requests.first
 
       return unless request
+
+      return unless request.current_context? || @requests.any?(&:current_context?) || @pending.any?(&:current_context?)
 
       return :w if request.interests == :w || !@buffer.empty?
 
@@ -227,6 +224,10 @@ module HTTPX
       reset
       emit(:reset)
       emit(:exhausted)
+    end
+
+    def waiting_for_ping?
+      false
     end
 
     private

@@ -27,6 +27,8 @@ module HTTPX
 
       class H2CParser < Connection::HTTP2
         def upgrade(request, response)
+          @contexts[request.context] << request
+
           # skip checks, it is assumed that this is the first
           # request in the connection
           stream = @connection.upgrade

@@ -205,6 +205,12 @@ module HTTPX
       end
     end
 
+    def current_context?
+      @pending.any?(&:current_context?) || (
+        @sibling && @sibling.pending.any?(&:current_context?)
+      )
+    end
+
     def io_connected?
       return @coalesced_connection.io_connected? if @coalesced_connection
 
@@ -227,13 +233,12 @@ module HTTPX
     def interests
       # connecting
       if connecting?
+        return unless @pending.any?(&:current_context?)
+
         connect
 
         return @io.interests if connecting?
       end
-
-      # if the write buffer is full, we drain it
-      return :w unless @write_buffer.empty?
 
       return @parser.interests if @parser
 
@@ -383,8 +388,7 @@ module HTTPX
       return unless @current_session && @current_selector
 
       emit(:close)
-      @current_session = nil
-      @current_selector = nil
+      @current_session = @current_selector = nil
     end
 
     # :nocov:
@@ -715,7 +719,7 @@ module HTTPX
         return unless @state == :open
 
         # do not deactivate connection in use
-        return if @inflight.positive?
+        return if @inflight.positive? || @parser.waiting_for_ping?
       when :closing
         return unless @state == :idle || @state == :open
 

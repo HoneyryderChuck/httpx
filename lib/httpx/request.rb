@@ -48,6 +48,9 @@ module HTTPX
 
     attr_reader :active_timeouts
 
+    # the execution context (fiber) this request was sent on.
+    attr_reader :context
+
     # will be +true+ when request body has been completely flushed.
     def_delegator :@body, :empty?
 
@@ -103,11 +106,25 @@ module HTTPX
       raise UnsupportedSchemeError, "#{@uri}: #{@uri.scheme}: unsupported URI scheme" unless ALLOWED_URI_SCHEMES.include?(@uri.scheme)
 
       @state = :idle
-      @response = nil
-      @peer_address = nil
+      @response = @peer_address = @context = nil
       @ping = false
       @persistent = @options.persistent
       @active_timeouts = []
+    end
+
+    # sets the execution context for this request. the default is the current fiber.
+    def set_context!
+      @context ||= Fiber.current # rubocop:disable Naming/MemoizedInstanceVariableName
+    end
+
+    # checks whether the current execution context is the one where the request was created.
+    def current_context?
+      @context == Fiber.current
+    end
+
+    def complete!(response = @response)
+      @context = nil
+      emit(:complete, response)
     end
 
     # whether request has been buffered with a ping
