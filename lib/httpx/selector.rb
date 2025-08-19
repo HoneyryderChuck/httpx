@@ -217,14 +217,7 @@ module HTTPX
         case interests
         when :r then io.to_io.wait_readable(interval)
         when :w then io.to_io.wait_writable(interval)
-        when :rw
-          if IO.const_defined?(:READABLE)
-            io.to_io.wait(IO::READABLE | IO::WRITABLE, interval)
-          elsif interval
-            io.to_io.wait(interval, :read_write)
-          else
-            io.to_io.wait(:read_write)
-          end
+        when :rw then rw_wait(io, interval)
         end
 
       unless result || interval.nil?
@@ -251,6 +244,24 @@ module HTTPX
       end
 
       connection_interval
+    end
+
+    if RUBY_ENGINE == "jruby"
+      def rw_wait(io, interval)
+        io.to_io.wait(interval, :read_write)
+      end
+    elsif IO.const_defined?(:READABLE)
+      def rw_wait(io, interval)
+        io.to_io.wait(IO::READABLE | IO::WRITABLE, interval)
+      end
+    else
+      def rw_wait(io, interval)
+        if interval
+          io.to_io.wait(interval, :read_write)
+        else
+          io.to_io.wait(:read_write)
+        end
+      end
     end
   end
 end
