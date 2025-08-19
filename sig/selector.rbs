@@ -60,6 +60,8 @@ module HTTPX
     def select_one: (selectable io, io_interests interests, Numeric? interval) { (selectable) -> void } -> void
 
     def next_timeout: () -> Numeric?
+
+    def rw_wait: (io_select_selectable IO, Numeric? interval) -> io_select_selectable?
   end
 
   type io_interests = :r | :w | :rw
