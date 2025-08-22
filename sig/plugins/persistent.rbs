@@ -9,6 +9,6 @@ module HTTPX
       end
     end
 
-    type sessionPersistent = Session & FiberSelector::InstanceMethods & Persistent::InstanceMethods
+    type sessionPersistent = sessionFiberSelector & Persistent::InstanceMethods
   end
 end

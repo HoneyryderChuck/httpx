@@ -238,8 +238,6 @@ module HTTPX
 
     # sends the +request+ to the corresponding HTTPX::Connection
     def send_request(request, selector, options = request.options)
-      request.set_context!
-
       error = begin
         catch(:resolve_error) do
           connection = find_connection(request.uri, selector, options)
