@@ -51,18 +51,21 @@ module HTTPX
             # this takes precedence over per-origin
             @max_connections_cond.wait(@connection_mtx, @pool_timeout)
 
-            acquire_connection(uri, options) || begin
-              if @connections_counter == @max_connections
-                # if no matching usable connection was found, the pool will make room and drop a closed connection. if none is found,
-                # this means that all of them are persistent or being used, so raise a timeout error.
-                conn = @connections.find { |c| c.state == :closed }
-
-                raise PoolTimeoutError.new(@pool_timeout,
-                                           "Timed out after #{@pool_timeout} seconds while waiting for a connection") unless conn
-
-                drop_connection(conn)
-              end
+            if (conn = acquire_connection(uri, options))
+              return conn
             end
+
+            if @connections_counter == @max_connections
+              # if no matching usable connection was found, the pool will make room and drop a closed connection. if none is found,
+              # this means that all of them are persistent or being used, so raise a timeout error.
+              conn = @connections.find { |c| c.state == :closed }
+
+              raise PoolTimeoutError.new(@pool_timeout,
+                                         "Timed out after #{@pool_timeout} seconds while waiting for a connection") unless conn
+
+              drop_connection(conn)
+            end
+
           end
 
           if @origin_counters[uri.origin] == @max_connections_per_origin
