@@ -202,12 +202,6 @@ module HTTPX
       end
     end
 
-    def current_context?
-      @pending.any?(&:current_context?) || (
-        @sibling && @sibling.pending.any?(&:current_context?)
-      )
-    end
-
     def io_connected?
       return @coalesced_connection.io_connected? if @coalesced_connection
 
@@ -230,8 +224,6 @@ module HTTPX
     def interests
       # connecting
       if connecting?
-        return unless @pending.any?(&:current_context?)
-
         connect
 
         return @io.interests if connecting?

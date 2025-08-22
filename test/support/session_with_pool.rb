@@ -17,7 +17,7 @@ module SessionWithPool
     end
 
     def resolver
-      resolver_type = HTTPX::Resolver.resolver_for(@options.resolver_class)
+      resolver_type = HTTPX::Resolver.resolver_for(@options.resolver_class, @options)
 
       resolver = @pool.resolvers[resolver_type].first
 

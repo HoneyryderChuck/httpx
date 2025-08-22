@@ -115,7 +115,7 @@ module HTTPX
 
     def checkout_resolver(options)
       resolver_type = options.resolver_class
-      resolver_type = Resolver.resolver_for(resolver_type)
+      resolver_type = Resolver.resolver_for(resolver_type, options)
 
       @resolver_mtx.synchronize do
         resolvers = @resolvers[resolver_type]
