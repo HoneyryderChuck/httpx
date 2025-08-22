@@ -12,7 +12,7 @@ module HTTPX
     attr_writer ssl_session: OpenSSL::SSL::Session?
 
     # TODO: lift when https://github.com/ruby/rbs/issues/1497 fixed
-    # def initialize: (URI::Generic origin, Array[ipaddr]? addresses, options options) ?{ (self) -> void } -> void
+    # def initialize: (URI::Generic origin, Array[Resolver::Entry]? addresses, options options) ?{ (self) -> void } -> void
 
     def session_new_cb: { (OpenSSL::SSL::Session sess) -> void } -> void
     def can_verify_peer?: () -> bool

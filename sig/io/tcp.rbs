@@ -2,11 +2,11 @@ module HTTPX
   class TCP
     include Loggable
 
-    attr_reader ip: ipaddr?
+    attr_reader ip: Resolver::Entry?
 
     attr_reader port: Integer
 
-    attr_reader addresses: Array[ipaddr]
+    attr_reader addresses: Array[Resolver::Entry]
 
     attr_reader state: Symbol
 
@@ -27,9 +27,9 @@ module HTTPX
     @ip_index: Integer
 
     # TODO: lift when https://github.com/ruby/rbs/issues/1497 fixed
-    def initialize: (URI::Generic origin, Array[ipaddr]? addresses, Options options) ?{ (instance) -> void } -> void
+    def initialize: (URI::Generic origin, Array[Resolver::Entry]? addresses, Options options) ?{ (instance) -> void } -> void
 
-    def add_addresses: (Array[ipaddr] addrs) -> void
+    def add_addresses: (Array[Resolver::Entry] addrs) -> void
 
     def to_io: () -> IO
 

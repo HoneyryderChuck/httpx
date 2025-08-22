@@ -1,0 +1,10 @@
+module HTTPX::Resolver
+  class Entry
+    @address: IPAddr
+    @expires_in: Numeric
+
+    def initialize: (ipaddr address, ?Numeric expires_in) -> void
+
+    def expired?: () -> bool
+  end
+end
