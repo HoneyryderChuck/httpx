@@ -76,6 +76,12 @@ module HTTPX
 
 
     # classes
+    attr_reader resolver_native_class: singleton(Resolver::Native)
+
+    attr_reader resolver_system_class: singleton(Resolver::System)
+
+    attr_reader resolver_https_class: singleton(Resolver::HTTPS)
+
     attr_reader http1_class: singleton(Connection::HTTP1)
 
     attr_reader http2_class: singleton(Connection::HTTP2)
