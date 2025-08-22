@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
 require "resolv"
-require "ipaddr"
 
 module HTTPX
   module Resolver
     RESOLVE_TIMEOUT = [2, 3].freeze
 
+    require "httpx/resolver/entry"
     require "httpx/resolver/resolver"
     require "httpx/resolver/system"
     require "httpx/resolver/native"
@@ -39,16 +39,19 @@ module HTTPX
       ip_resolve(hostname) || cached_lookup(hostname) || system_resolve(hostname)
     end
 
+    # tries to convert +hostname+ into an IPAddr, returns <tt>nil</tt> otherwise.
     def ip_resolve(hostname)
-      [IPAddr.new(hostname)]
+      [Entry.new(hostname)]
     rescue ArgumentError
     end
 
+    # matches +hostname+ to entries in the hosts file, returns <tt>nil</nil> if none is
+    # found, or there is no hosts file.
     def system_resolve(hostname)
       ips = @system_resolver.getaddresses(hostname)
       return if ips.empty?
 
-      ips.map { |ip| IPAddr.new(ip) }
+      ips.map { |ip| Entry.new(ip) }
     rescue IOError
     end
 
@@ -108,7 +111,7 @@ module HTTPX
         if (als = address["alias"])
           lookup(als, lookups, ttl)
         else
-          IPAddr.new(address["data"])
+          Entry.new(address["data"], address["TTL"])
         end
       end.compact
 

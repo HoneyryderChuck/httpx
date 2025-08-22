@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "resolv"
-require "ipaddr"
 
 module HTTPX
   # Base class for all internal internet name resolvers. It handles basic blocks
@@ -69,9 +68,7 @@ module HTTPX
     end
 
     def emit_addresses(connection, family, addresses, early_resolve = false)
-      addresses.map! do |address|
-        address.is_a?(IPAddr) ? address : IPAddr.new(address.to_s)
-      end
+      addresses.map! { |address| address.is_a?(Resolver::Entry) ? address : Resolver::Entry.new(address) }
 
       # double emission check, but allow early resolution to work
       return if !early_resolve && connection.addresses && !addresses.intersect?(connection.addresses)

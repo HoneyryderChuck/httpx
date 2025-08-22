@@ -50,11 +50,11 @@ module HTTPX
     @main_sibling: bool
 
 
-    def addresses: () -> Array[ipaddr]?
+    def addresses: () -> Array[Resolver::Entry]?
 
     def peer: () -> URI::Generic
 
-    def addresses=: (Array[ipaddr] addresses) -> void
+    def addresses=: (Array[Resolver::Entry] addresses) -> void
 
     def send: (Request request) -> void
 
@@ -140,7 +140,7 @@ module HTTPX
 
     def build_altsvc_connection: (URI::Generic alt_origin, String origin, Hash[String, String] alt_params) -> void
 
-    def build_socket: (?Array[ipaddr]? addrs) -> (TCP | SSL | UNIX)
+    def build_socket: (?Array[Resolver::Entry]? addrs) -> (TCP | SSL | UNIX)
 
     def on_error: (HTTPX::TimeoutError | Error | StandardError error, ?Request? request) -> void
 

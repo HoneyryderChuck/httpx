@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "resolv"
-require "ipaddr"
 
 module HTTPX
   class TCP
@@ -30,7 +29,8 @@ module HTTPX
         end
         raise Error, "Given IO objects do not match the request authority" unless @io
 
-        _, _, _, @ip = @io.addr
+        _, _, _, ip = @io.addr
+        @ip = Resolver::Entry(ip)
         @addresses << @ip
         @keep_open = true
         @state = :connected
@@ -46,8 +46,6 @@ module HTTPX
 
     def add_addresses(addrs)
       return if addrs.empty?
-
-      addrs = addrs.map { |addr| addr.is_a?(IPAddr) ? addr : IPAddr.new(addr) }
 
       ip_index = @ip_index || (@addresses.size - 1)
       if addrs.first.ipv6?

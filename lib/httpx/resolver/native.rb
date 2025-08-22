@@ -450,7 +450,7 @@ module HTTPX
       when :tcp
         log { "resolver #{FAMILY_TYPES[@record_type]}: server: tcp://#{ip}:#{port}..." }
         origin = URI("tcp://#{ip}:#{port}")
-        TCP.new(origin, [ip], @options)
+        TCP.new(origin, [Resolver::Entry.new(ip)], @options)
       end
     end
 

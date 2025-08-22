@@ -53,7 +53,7 @@ module HTTPX
     attr_reader transport: io_type | nil
 
     # addresses
-    attr_reader addresses: Array[ipaddr]?
+    attr_reader addresses: Array[Resolver::Entry]?
 
     # supported_compression_formats
     attr_reader supported_compression_formats: Array[String]

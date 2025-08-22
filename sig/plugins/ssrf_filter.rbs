@@ -8,7 +8,7 @@ module HTTPX
 
       IPV6_BLACKLIST: Array[[IPAddr, IPAddr]]
 
-      def self?.unsafe_ip_address?: (IPAddr) -> bool
+      def self?.unsafe_ip_address?: (Resolver::Entry ipaddr) -> bool
 
       interface _Options
         def allowed_schemes: () -> Array[String]
