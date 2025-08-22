@@ -89,7 +89,7 @@ module ProxyHelper
   end
 
   def fetch_http_proxies
-    Net::HTTP.get_response(URI("https://www.sslproxies.org/")).body
+    Net::HTTP.get_response(URI("https://free-proxy-list.net/ssl-proxy.html")).body
   end
 
   def parse_socks_proxies
@@ -97,6 +97,6 @@ module ProxyHelper
   end
 
   def fetch_socks_proxies
-    Net::HTTP.get_response(URI("https://www.socks-proxy.net/")).body
+    Net::HTTP.get_response(URI("https://free-proxy-list.net/socks-proxy.html")).body
   end
 end
