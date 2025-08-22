@@ -40,7 +40,7 @@ module HTTPX
             @inflight -= prev_parser.requests.size
           end
 
-          @parser = Connection::HTTP2.new(@write_buffer, @options)
+          @parser = @options.http2_class.new(@write_buffer, @options)
           set_parser_callbacks(@parser)
           @upgrade_protocol = "h2"
 

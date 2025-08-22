@@ -7,7 +7,11 @@ module HTTPX
       def self.configure: (singleton(Session)) -> void
       def self.call: (Connection, Request, response) -> void
 
-      class H2CParser < Connection::HTTP2
+      interface _H2COptions
+        def h2c_class: () -> (singleton(Connection::HTTP2) & H2CParser)
+      end
+
+      module H2CParser
         def upgrade: (Request, Response) -> void
       end
 

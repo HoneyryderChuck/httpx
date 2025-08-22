@@ -126,6 +126,8 @@ class OptionsTest < Minitest::Test
       :request_body_class => bar.request_body_class,
       :response_body_class => bar.response_body_class,
       :connection_class => bar.connection_class,
+      :http1_class => bar.http1_class,
+      :http2_class => bar.http2_class,
       :options_class => bar.options_class,
       :pool_class => bar.pool_class,
       :pool_options => bar.pool_options,

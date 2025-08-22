@@ -76,6 +76,10 @@ module HTTPX
 
 
     # classes
+    attr_reader http1_class: singleton(Connection::HTTP1)
+
+    attr_reader http2_class: singleton(Connection::HTTP2)
+
     attr_reader connection_class: singleton(Connection)
 
     attr_reader pool_class: singleton(Pool)
