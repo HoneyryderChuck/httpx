@@ -2,6 +2,8 @@
 
 require "httpx/selector"
 require "httpx/connection"
+require "httpx/connection/http2"
+require "httpx/connection/http1"
 require "httpx/resolver"
 
 module HTTPX

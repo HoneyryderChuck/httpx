@@ -34,9 +34,6 @@ module HTTPX
 
     using URIExtensions
 
-    require "httpx/connection/http2"
-    require "httpx/connection/http1"
-
     def_delegator :@io, :closed?
 
     def_delegator :@write_buffer, :empty?
@@ -953,8 +950,8 @@ module HTTPX
 
     def parser_type(protocol)
       case protocol
-      when "h2" then HTTP2
-      when "http/1.1" then HTTP1
+      when "h2" then @options.http2_class
+      when "http/1.1" then @options.http1_class
       else
         raise Error, "unsupported protocol (##{protocol})"
       end
