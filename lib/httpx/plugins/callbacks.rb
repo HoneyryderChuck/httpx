@@ -32,6 +32,18 @@ module HTTPX
           MOD
         end
 
+        def plugin(*args, &blk)
+          super(*args).tap do |sess|
+            CALLBACKS.each do |cb|
+              next unless callbacks_for?(cb)
+
+              sess.callbacks(cb).concat(callbacks(cb))
+            end
+
+            sess.wrap(&blk) if blk
+          end
+        end
+
         private
 
         def branch(options, &blk)
