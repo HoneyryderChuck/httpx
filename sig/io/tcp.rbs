@@ -31,6 +31,8 @@ module HTTPX
 
     def add_addresses: (Array[Resolver::Entry] addrs) -> void
 
+    def addresses?: () -> bool
+
     def to_io: () -> IO
 
     def protocol: () -> String

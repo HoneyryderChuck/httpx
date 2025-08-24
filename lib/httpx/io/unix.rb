@@ -51,6 +51,11 @@ module HTTPX
            IO::WaitReadable
     end
 
+    # the path is always explicitly passed, so no point in resolving.
+    def addresses?
+      true
+    end
+
     def expired?
       false
     end

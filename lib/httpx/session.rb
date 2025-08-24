@@ -370,7 +370,7 @@ module HTTPX
     end
 
     def resolve_connection(connection, selector)
-      if connection.addresses || connection.open?
+      if connection.addresses? || connection.open?
         #
         # there are two cases in which we want to activate initialization of
         # connection immediately:

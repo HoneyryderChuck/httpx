@@ -30,7 +30,7 @@ module HTTPX
         raise Error, "Given IO objects do not match the request authority" unless @io
 
         _, _, _, ip = @io.addr
-        @ip = Resolver::Entry(ip)
+        @ip = Resolver::Entry.new(ip)
         @addresses << @ip
         @keep_open = true
         @state = :connected
@@ -55,6 +55,13 @@ module HTTPX
         @addresses.unshift(*addrs)
         @ip_index += addrs.size if @ip_index
       end
+    end
+
+    # eliminates expired entries and returns whether there are still any left.
+    def addresses?
+      @addresses.delete_if(&:expired?)
+
+      @addresses.any?
     end
 
     def to_io
@@ -165,7 +172,7 @@ module HTTPX
       # do not mess with external sockets
       return false if @options.io
 
-      return true unless @addresses
+      return true if @addresses.empty?
 
       resolver_addresses = Resolver.nolookup_resolve(@hostname)
 

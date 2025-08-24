@@ -122,6 +122,10 @@ module HTTPX
       @io && @io.addresses
     end
 
+    def addresses?
+      @io && @io.addresses?
+    end
+
     def match?(uri, options)
       return false if !used? && (@state == :closing || @state == :closed)
 
