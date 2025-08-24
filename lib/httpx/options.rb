@@ -271,11 +271,12 @@ module HTTPX
     def merge(other)
       ivar_map = nil
       other_ivars = case other
-                    when Hash
+                    when Options
+                      other.instance_variables
+                    else
+                      other = Hash[other] unless other.is_a?(Hash)
                       ivar_map = other.keys.to_h { |k| [:"@#{k}", k] }
                       ivar_map.keys
-                    else
-                      other.instance_variables
       end
 
       return self if other_ivars.empty?
