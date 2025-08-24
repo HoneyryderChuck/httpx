@@ -60,7 +60,7 @@ module WebMock
           connection.once(:unmock_connection) do
             next unless connection.current_session == self
 
-            unless connection.addresses
+            unless connection.addresses?
               # reset Happy Eyeballs, fail early
               connection.sibling = nil
 

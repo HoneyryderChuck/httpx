@@ -57,6 +57,13 @@ module HTTPX
       end
     end
 
+    # eliminates expired entries and returns whether there are still any left.
+    def addresses?
+      @addresses.delete_if(&:expired?)
+
+      @addresses.any?
+    end
+
     def to_io
       @io.to_io
     end
@@ -165,7 +172,7 @@ module HTTPX
       # do not mess with external sockets
       return false if @options.io
 
-      return true unless @addresses
+      return true if @addresses.empty?
 
       resolver_addresses = Resolver.nolookup_resolve(@hostname)
 

@@ -58,6 +58,8 @@ module HTTPX
 
     def send: (Request request) -> void
 
+    def addresses?: () -> bool
+
     def match?: (URI::Generic uri, Options options) -> bool
 
     def expired?: () -> boolish
