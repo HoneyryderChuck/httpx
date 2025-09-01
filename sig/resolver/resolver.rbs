@@ -29,8 +29,6 @@ module HTTPX
 
       def force_close: (*untyped args) -> void
 
-      def closed?: () -> bool
-
       def empty?: () -> bool
 
       def each_connection: () { (Connection connection) -> void } -> void

@@ -93,6 +93,8 @@ module HTTPX
 
     def terminate: () -> void
 
+    def closed?: () -> bool
+
     def close: () -> void
 
     def force_close: (?bool delete_pending) -> void

@@ -240,6 +240,14 @@ module HTTPX
       raise e
     end
 
+    def closed?
+      if @io
+        @io.closed?
+      else
+        @state == :closed
+      end
+    end
+
     def close
       transition(:active) if @state == :inactive
 
