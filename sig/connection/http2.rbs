@@ -18,7 +18,6 @@ module HTTPX
     @buffer: Buffer
     @handshake_completed: bool
     @wait_for_handshake: bool
-    @contexts: Hash[Fiber, Set[Request]]
 
     def interests: () -> io_interests?
 
@@ -100,9 +99,7 @@ module HTTPX
 
     def on_pong: (string ping) -> void
 
-    def add_to_context: (Request request) -> void
-
-    def clear_from_context: (Request request) -> void
+    def teardown: (?Request? request) -> void
 
     class Error < ::HTTPX::Error
       def initialize: (Integer id, Symbol | StandardError error) -> void

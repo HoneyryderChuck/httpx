@@ -23,10 +23,7 @@ module HTTPX
 
     def self?.system_resolve: (String hostname) -> Array[IPAddr]?
 
-    def self?.resolver_for: (:native resolver_type) -> singleton(Native) |
-                            (:system resolver_type) -> singleton(System) |
-                            (:https resolver_type) -> singleton(HTTPS) |
-                            [U] (U resolver_type) -> U
+    def self?.resolver_for: (Symbol | singleton(Resolver) resolver_type, Options options) -> singleton(Resolver)
 
     def self?.cached_lookup: (String hostname) -> Array[IPAddr]?
 

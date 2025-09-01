@@ -82,8 +82,6 @@ module HTTPX
     def interests
       return if @queries.empty?
 
-      return unless @queries.any? { |_, conn| conn.current_context? }
-
       :r
     end
 

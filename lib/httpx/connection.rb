@@ -34,9 +34,6 @@ module HTTPX
 
     using URIExtensions
 
-    require "httpx/connection/http2"
-    require "httpx/connection/http1"
-
     def_delegator :@io, :closed?
 
     def_delegator :@write_buffer, :empty?
@@ -205,12 +202,6 @@ module HTTPX
       end
     end
 
-    def current_context?
-      @pending.any?(&:current_context?) || (
-        @sibling && @sibling.pending.any?(&:current_context?)
-      )
-    end
-
     def io_connected?
       return @coalesced_connection.io_connected? if @coalesced_connection
 
@@ -233,8 +224,6 @@ module HTTPX
     def interests
       # connecting
       if connecting?
-        return unless @pending.any?(&:current_context?)
-
         connect
 
         return @io.interests if connecting?
@@ -953,8 +942,8 @@ module HTTPX
 
     def parser_type(protocol)
       case protocol
-      when "h2" then HTTP2
-      when "http/1.1" then HTTP1
+      when "h2" then @options.http2_class
+      when "http/1.1" then @options.http1_class
       else
         raise Error, "unsupported protocol (##{protocol})"
       end

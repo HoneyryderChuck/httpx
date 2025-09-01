@@ -59,6 +59,8 @@ module HTTPX
       resolve(connection)
     end
 
+    # This is already indirectly monitored bt the HTTP connection. In order to skip
+    # monitoring, this method returns <tt>true</tt>.
     def closed?
       true
     end
@@ -105,7 +107,6 @@ module HTTPX
         request.on(:response, &method(:on_response).curry(2)[request])
         request.on(:promise, &method(:on_promise))
         @requests[request] = hostname
-        request.set_context!
         resolver_connection.send(request)
         @connections << connection
       rescue ResolveError, Resolv::DNS::EncodeError => e

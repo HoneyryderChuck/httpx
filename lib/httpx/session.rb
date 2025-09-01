@@ -212,10 +212,14 @@ module HTTPX
 
     private
 
+    # tries deactivating connections in the +selector+, deregistering the ones that have been deactivated.
     def deactivate(selector)
-      selector.each_connection do |connection|
-        connection.deactivate
-        deselect_connection(connection, selector) if connection.state == :inactive
+      selector.each_connection.select do |c|
+        c.deactivate
+
+        c.state == :inactive
+      end.each do |c| # rubocop:disable Style/MultilineBlockChain
+        deselect_connection(c, selector)
       end
     end
 
@@ -238,8 +242,6 @@ module HTTPX
 
     # sends the +request+ to the corresponding HTTPX::Connection
     def send_request(request, selector, options = request.options)
-      request.set_context!
-
       error = begin
         catch(:resolve_error) do
           connection = find_connection(request.uri, selector, options)

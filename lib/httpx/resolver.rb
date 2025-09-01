@@ -22,16 +22,17 @@ module HTTPX
 
     module_function
 
-    def resolver_for(resolver_type)
+    def resolver_for(resolver_type, options)
       case resolver_type
-      when :native then Native
-      when :system then System
-      when :https then HTTPS
-      else
-        return resolver_type if resolver_type.is_a?(Class) && resolver_type < Resolver
+      when Symbol
+        meth = :"resolver_#{resolver_type}_class"
 
-        raise Error, "unsupported resolver type (#{resolver_type})"
+        return options.__send__(meth) if options.respond_to?(meth)
+      when Class
+        return resolver_type if resolver_type < Resolver
       end
+
+      raise Error, "unsupported resolver type (#{resolver_type})"
     end
 
     def nolookup_resolve(hostname)

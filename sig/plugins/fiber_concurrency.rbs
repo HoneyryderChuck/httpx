@@ -1,0 +1,51 @@
+module HTTPX
+  module Plugins
+    module FiberConcurrency
+      module InstanceMethods
+      end
+
+      module RequestMethods
+        attr_reader context: Fiber?
+
+        def set_context!: () -> void
+
+        def current_context?: () -> bool
+      end
+
+      module ConnectionMethods
+
+        def current_context?: () -> bool
+
+        def send: (request request) -> void
+      end
+
+      module HTTP1Methods
+      end
+
+      module HTTP2Methods
+        @contexts: Hash[Fiber, Set[Request]]
+
+        private
+
+        def add_to_context: (request request) -> void
+
+        def clear_from_context: (request request) -> void
+      end
+
+      module NativeResolverMethods
+      end
+
+      module SystemResolverMethods
+      end
+
+      module FiberConcurrencyH2C
+        module HTTP2Methods
+        end
+      end
+
+      type request = Request & RequestMethods
+    end
+
+    type sessionFiberConcurrency = Session & FiberConcurrency::InstanceMethods
+  end
+end

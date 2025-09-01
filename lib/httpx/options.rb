@@ -67,6 +67,11 @@ module HTTPX
       :response_body_class => Class.new(Response::Body, &SET_TEMPORARY_NAME),
       :pool_class => Class.new(Pool, &SET_TEMPORARY_NAME),
       :connection_class => Class.new(Connection, &SET_TEMPORARY_NAME),
+      :http1_class => Class.new(Connection::HTTP1, &SET_TEMPORARY_NAME),
+      :http2_class => Class.new(Connection::HTTP2, &SET_TEMPORARY_NAME),
+      :resolver_native_class => Class.new(Resolver::Native, &SET_TEMPORARY_NAME),
+      :resolver_system_class => Class.new(Resolver::System, &SET_TEMPORARY_NAME),
+      :resolver_https_class => Class.new(Resolver::HTTPS, &SET_TEMPORARY_NAME),
       :options_class => Class.new(self, &SET_TEMPORARY_NAME),
       :transport => nil,
       :addresses => nil,
@@ -123,6 +128,11 @@ module HTTPX
     # :request_body_class :: class used to instantiate a request body
     # :response_body_class :: class used to instantiate a response body
     # :connection_class :: class used to instantiate connections
+    # :http1_class :: class used to manage HTTP1 sessions
+    # :http2_class :: class used to imanage HTTP2 sessions
+    # :resolver_native_class :: class used to resolve names using pure ruby DNS implementation
+    # :resolver_system_class :: class used to resolve names using system-based (getaddrinfo) name resolution
+    # :resolver_https_class :: class used to resolve names using DoH
     # :pool_class :: class used to instantiate the session connection pool
     # :options_class :: class used to instantiate options
     # :transport :: type of transport to use (set to "unix" for UNIX sockets)
@@ -235,8 +245,8 @@ module HTTPX
 
     %i[
       request_class response_class headers_class request_body_class
-      response_body_class connection_class options_class
-      pool_class
+      response_body_class connection_class http1_class http2_class
+      resolver_native_class resolver_system_class resolver_https_class options_class pool_class
       io fallback_protocol debug debug_redact resolver_class
       compress_request_body decompress_response_body
       persistent close_on_fork
@@ -351,6 +361,31 @@ module HTTPX
         @connection_class = @connection_class.dup
         SET_TEMPORARY_NAME[@connection_class, pl]
         @connection_class.__send__(:include, pl::ConnectionMethods)
+      end
+      if defined?(pl::HTTP1Methods)
+        @http1_class = @http1_class.dup
+        SET_TEMPORARY_NAME[@http1_class, pl]
+        @http1_class.__send__(:include, pl::HTTP1Methods)
+      end
+      if defined?(pl::HTTP2Methods)
+        @http2_class = @http2_class.dup
+        SET_TEMPORARY_NAME[@http2_class, pl]
+        @http2_class.__send__(:include, pl::HTTP2Methods)
+      end
+      if defined?(pl::ResolverNativeMethods)
+        @resolver_native_class = @resolver_native_class.dup
+        SET_TEMPORARY_NAME[@resolver_native_class, pl]
+        @resolver_native_class.__send__(:include, pl::ResolverNativeMethods)
+      end
+      if defined?(pl::ResolverSystemMethods)
+        @resolver_system_class = @resolver_system_class.dup
+        SET_TEMPORARY_NAME[@resolver_system_class, pl]
+        @resolver_system_class.__send__(:include, pl::ResolverSystemMethods)
+      end
+      if defined?(pl::ResolverHTTPSMethods)
+        @resolver_https_class = @resolver_https_class.dup
+        SET_TEMPORARY_NAME[@resolver_https_class, pl]
+        @resolver_https_class.__send__(:include, pl::ResolverHTTPSMethods)
       end
       return unless defined?(pl::OptionsMethods)
 

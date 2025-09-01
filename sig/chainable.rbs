@@ -24,6 +24,7 @@ module HTTPX
               | (:upgrade, ?options) -> Plugins::sessionUpgrade
               | (:h2c, ?options) -> Plugins::sessionUpgrade
               | (:h2, ?options) -> Plugins::sessionUpgrade
+              | (:fiber_concurrency, ?options) -> Plugins::sessionFiberConcurrency
               | (:persistent, ?options) -> Plugins::sessionPersistent
               | (:proxy, ?options) -> (Plugins::sessionProxy & Plugins::httpProxy)
               | (:push_promise, ?options) -> Plugins::sessionPushPromise

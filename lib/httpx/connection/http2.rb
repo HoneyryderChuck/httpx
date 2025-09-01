@@ -35,7 +35,6 @@ module HTTPX
       @settings = @options.http2_settings
       @pending = []
       @streams = {}
-      @contexts = Hash.new { |hs, k| hs[k] = Set.new }
       @drains = {}
       @pings = []
       @buffer = buffer
@@ -63,12 +62,6 @@ module HTTPX
 
       unless @connection.state == :connected && @handshake_completed
         return @buffer.empty? ? :r : :rw
-      end
-
-      unless @contexts.key?(Fiber.current)
-        return :w unless @pings.empty?
-
-        return
       end
 
       unless @connection.send_buffer.empty?
@@ -112,8 +105,6 @@ module HTTPX
     end
 
     def send(request, head = false)
-      add_to_context(request)
-
       unless can_buffer_more_requests?
         head ? @pending.unshift(request) : @pending << request
         return false
@@ -342,9 +333,7 @@ module HTTPX
       return if error == :stream_closed && !@streams.key?(request)
 
       log(level: 2) { "#{stream.id}: closing stream" }
-      @drains.delete(request)
-      @streams.delete(request)
-      clear_from_context(request)
+      teardown(request)
 
       if error
         case error
@@ -394,15 +383,12 @@ module HTTPX
         case error
         when :http_1_1_required
           while (request = @pending.shift)
-            clear_from_context(request)
             emit(:error, request, error)
           end
         when :no_error
           ex = GoawayError.new
           @pending.unshift(*@streams.keys)
-          @drains.clear
-          @streams.clear
-          @contexts.clear
+          teardown
         else
           ex = Error.new(0, error)
         end
@@ -471,16 +457,14 @@ module HTTPX
       emit(:pong)
     end
 
-    def add_to_context(request)
-      @contexts[request.context] << request
-    end
-
-    def clear_from_context(request)
-      requests = @contexts[request.context]
-
-      requests.delete(request)
-
-      @contexts.delete(request.context) if requests.empty?
+    def teardown(request = nil)
+      if request
+        @drains.delete(request)
+        @streams.delete(request)
+      else
+        @drains.clear
+        @streams.clear
+      end
     end
   end
 end

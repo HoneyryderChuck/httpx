@@ -18,13 +18,17 @@ module HTTPX
     # https://gitlab.com/os85/httpx/wikis/Persistent
     #
     module Persistent
-      def self.load_dependencies(klass)
-        max_retries = if klass.default_options.respond_to?(:max_retries)
-          [klass.default_options.max_retries, 1].max
-        else
-          1
+      class << self
+        def load_dependencies(klass)
+          klass.plugin(:fiber_concurrency)
+
+          max_retries = if klass.default_options.respond_to?(:max_retries)
+            [klass.default_options.max_retries, 1].max
+          else
+            1
+          end
+          klass.plugin(:retries, max_retries: max_retries)
         end
-        klass.plugin(:retries, max_retries: max_retries)
       end
 
       def self.extra_options(options)
@@ -53,18 +57,6 @@ module HTTPX
             # manually changed +:max_retries+ to something else, which means it is aware of the
             # consequences.
             (!ex.is_a?(RequestTimeoutError) || @options.max_retries != 1)
-        end
-
-        def get_current_selector
-          super(&nil) || begin
-            return unless block_given?
-
-            default = yield
-
-            set_current_selector(default)
-
-            default
-          end
         end
       end
     end

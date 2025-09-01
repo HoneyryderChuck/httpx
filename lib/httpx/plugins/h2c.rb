@@ -21,26 +21,17 @@ module HTTPX
         end
 
         def extra_options(options)
-          options.merge(max_concurrent_requests: 1, upgrade_handlers: options.upgrade_handlers.merge("h2c" => self))
+          options.merge(
+            h2c_class: Class.new(options.http2_class) { include(H2CParser) },
+            max_concurrent_requests: 1,
+            upgrade_handlers: options.upgrade_handlers.merge("h2c" => self),
+          )
         end
       end
 
-      class H2CParser < Connection::HTTP2
-        def upgrade(request, response)
-          @contexts[request.context] << request
-
-          # skip checks, it is assumed that this is the first
-          # request in the connection
-          stream = @connection.upgrade
-
-          # on_settings
-          handle_stream(stream, request)
-          @streams[request] = stream
-
-          # clean up data left behind in the buffer, if the server started
-          # sending frames
-          data = response.read
-          @connection << data
+      module OptionsMethods
+        def option_h2c_class(value)
+          value
         end
       end
 
@@ -84,7 +75,7 @@ module HTTPX
             @inflight -= prev_parser.requests.size
           end
 
-          @parser = H2CParser.new(@write_buffer, @options)
+          @parser = request.options.h2c_class.new(@write_buffer, @options)
           set_parser_callbacks(@parser)
           @inflight += 1
           @parser.upgrade(request, response)
@@ -111,6 +102,23 @@ module HTTPX
           request.once(:response) do
             parser.max_concurrent_requests = max_concurrent_requests
           end
+        end
+      end
+
+      module H2CParser
+        def upgrade(request, response)
+          # skip checks, it is assumed that this is the first
+          # request in the connection
+          stream = @connection.upgrade
+
+          # on_settings
+          handle_stream(stream, request)
+          @streams[request] = stream
+
+          # clean up data left behind in the buffer, if the server started
+          # sending frames
+          data = response.read
+          @connection << data
         end
       end
     end
