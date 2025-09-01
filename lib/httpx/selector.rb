@@ -3,6 +3,21 @@
 require "io/wait"
 
 module HTTPX
+  #
+  # Implements the selector loop, where it registers and monitors "Selectable" objects.
+  #
+  # A Selectable object is an object which can calculate the **interests** (<tt>:r</tt>, <tt>:w</tt> or <tt>:rw</tt>,
+  # respectively "read", "write" or "read-write") it wants to monitor for, and returns (via <tt>to_io</tt> method) an
+  # IO object which can be passed to functions such as IO.select . More exhaustively, a Selectable **must** implement
+  # the following methods:
+  #
+  # state :: returns the state as a Symbol, must return <tt>:closed</tt> when disposed of resources.
+  # to_io :: returns the IO object.
+  # call :: gets called when the IO is ready.
+  # interests :: returns the current interests to monitor for, as described above.
+  # timeout :: returns nil or an integer, representing how long to wait for interests.
+  # handle_socket_timeout(Numeric) :: called when waiting for interest times out.
+  #
   class Selector
     extend Forwardable
 

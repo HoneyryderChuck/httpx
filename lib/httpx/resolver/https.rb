@@ -59,6 +59,8 @@ module HTTPX
       resolve(connection)
     end
 
+    # This is already indirectly monitored bt the HTTP connection. In order to skip
+    # monitoring, this method returns <tt>true</tt>.
     def closed?
       true
     end
