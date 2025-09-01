@@ -488,6 +488,8 @@ module HTTPX
         label = pl
         # raise Error, "Cannot add a plugin to a frozen config" if frozen?
         pl = Plugins.load_plugin(pl) if pl.is_a?(Symbol)
+        raise ArgumentError, "Invalid plugin type: #{pl.class.inspect}" unless pl.is_a?(Module)
+
         if !@plugins.include?(pl)
           @plugins << pl
           pl.load_dependencies(self, &block) if pl.respond_to?(:load_dependencies)

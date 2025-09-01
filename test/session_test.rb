@@ -46,6 +46,18 @@ class SessionTest < Minitest::Test
     body = response.body
     assert body.respond_to?(:foo), "response body methods haven't been added"
     assert body.foo == "response-body-foo", "response body method is unexpected"
+
+    # set default options via .plugin
+    klient_class2 = Class.new(HTTPX::Session)
+    klient_class2.plugin(TestPlugin, foo: "options-foo-2")
+    session2 = klient_class2.new
+    assert session2.options.foo == "options-foo-2", ":foo option was not overridden"
+
+    return if defined?(RBS)
+
+    # break if receiving something else
+    assert_raises(ArgumentError) { klient_class2.plugin(TestPlugin, :smth) }
+    assert_raises(ArgumentError) { klient_class2.plugin([TestPlugin, TestPlugin]) }
   end
 
   def test_session_subplugin
