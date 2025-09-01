@@ -2,15 +2,16 @@
 
 module HTTPX
   module Plugins
-    # This plugin makes a session reuse the same selector in a given thread.
+    # This plugin makes a session reuse the same selector across all fibers in a given thread.
     #
-    # This selector is common to all fibers in the same thread, which makes it friendly with
-    # fiber scheduler implementations such as `async`.
+    # This enables integration with fiber scheduler implementations such as [async](https://github.com/async).
     #
-    module FiberSelector
+    # # https://gitlab.com/os85/httpx/wikis/FiberConcurrency
+    #
+    module FiberConcurrency
       def self.subplugins
         {
-          h2c: FiberSelectorH2C,
+          h2c: FiberConcurrencyH2C,
         }
       end
 
@@ -178,7 +179,7 @@ module HTTPX
         end
       end
 
-      module FiberSelectorH2C
+      module FiberConcurrencyH2C
         module HTTP2Methods
           def upgrade(request, *)
             @contexts[request.context] << request
@@ -188,5 +189,7 @@ module HTTPX
         end
       end
     end
+
+    register_plugin :fiber_concurrency, FiberConcurrency
   end
 end

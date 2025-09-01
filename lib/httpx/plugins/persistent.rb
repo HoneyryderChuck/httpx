@@ -20,8 +20,7 @@ module HTTPX
     module Persistent
       class << self
         def load_dependencies(klass)
-          require_relative "fiber_selector"
-          klass.plugin(FiberSelector)
+          klass.plugin(:fiber_concurrency)
 
           max_retries = if klass.default_options.respond_to?(:max_retries)
             [klass.default_options.max_retries, 1].max

@@ -1,6 +1,6 @@
 module HTTPX
   module Plugins
-    module FiberSelector
+    module FiberConcurrency
       module InstanceMethods
       end
 
@@ -38,7 +38,7 @@ module HTTPX
       module SystemResolverMethods
       end
 
-      module FiberSelectorH2C
+      module FiberConcurrencyH2C
         module HTTP2Methods
         end
       end
@@ -46,6 +46,6 @@ module HTTPX
       type request = Request & RequestMethods
     end
 
-    type sessionFiberSelector = Session & FiberSelector::InstanceMethods
+    type sessionFiberConcurrency = Session & FiberConcurrency::InstanceMethods
   end
 end
