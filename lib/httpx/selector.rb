@@ -11,9 +11,9 @@ module HTTPX
   # IO object which can be passed to functions such as IO.select . More exhaustively, a Selectable **must** implement
   # the following methods:
   #
-  # state :: returns the state as a Symbol, must return <tt>:closed</tt> when disposed of resources.
+  # closed? :: when true, it means that IO object can't be monitored.
   # to_io :: returns the IO object.
-  # call :: gets called when the IO is ready.
+  # call :: gets called when the IO object is ready.
   # interests :: returns the current interests to monitor for, as described above.
   # timeout :: returns nil or an integer, representing how long to wait for interests.
   # handle_socket_timeout(Numeric) :: called when waiting for interest times out.
@@ -80,7 +80,7 @@ module HTTPX
 
       selectables.delete_if do |sel|
         sel.terminate
-        sel.state == :closed
+        sel.closed?
       end
 
       until selectables.empty?
@@ -153,7 +153,7 @@ module HTTPX
       @selectables.delete_if do |io|
         interests = io.interests
 
-        is_closed = io.state == :closed
+        is_closed = io.closed?
 
         next(is_closed) if is_closed
 

@@ -34,8 +34,6 @@ module HTTPX
 
     using URIExtensions
 
-    def_delegator :@io, :closed?
-
     def_delegator :@write_buffer, :empty?
 
     attr_reader :type, :io, :origin, :origins, :state, :pending, :options, :ssl_session, :sibling
@@ -259,6 +257,14 @@ module HTTPX
       @write_buffer.clear
       emit(:error, e)
       raise e
+    end
+
+    def closed?
+      if @io
+        @io.closed?
+      else
+        @state == :closed
+      end
     end
 
     def close
