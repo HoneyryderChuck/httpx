@@ -48,11 +48,7 @@ module HTTPX
       end
 
       def encode(form)
-        if multipart?(form)
-          Multipart::Encoder.new(form)
-        else
-          Encoder.new(form)
-        end
+        Encoder.new(form)
       end
 
       def decode(response)
@@ -65,14 +61,6 @@ module HTTPX
           Multipart::Decoder.new(response)
         else
           raise Error, "invalid form mime type (#{content_type})"
-        end
-      end
-
-      def multipart?(data)
-        data.any? do |_, v|
-          Multipart::MULTIPART_VALUE_COND.call(v) ||
-            (v.respond_to?(:to_ary) && v.to_ary.any?(&Multipart::MULTIPART_VALUE_COND)) ||
-            (v.respond_to?(:to_hash) && v.to_hash.any? { |_, e| Multipart::MULTIPART_VALUE_COND.call(e) })
         end
       end
     end
