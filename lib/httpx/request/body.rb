@@ -127,8 +127,13 @@ module HTTPX
           # @type var body: bodyIO
           Transcoder::Body.encode(body)
         elsif (form = params.delete(:form))
-          # @type var form: Transcoder::urlencoded_input
-          Transcoder::Form.encode(form)
+          if Transcoder::Multipart.multipart?(form)
+            # @type var form: Transcoder::multipart_input
+            Transcoder::Multipart.encode(form)
+          else
+            # @type var form: Transcoder::urlencoded_input
+            Transcoder::Form.encode(form)
+          end
         elsif (json = params.delete(:json))
           # @type var body: _ToJson
           Transcoder::JSON.encode(json)

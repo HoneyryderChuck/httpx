@@ -1,5 +1,5 @@
 module HTTPX
-  type ipaddr = IPAddr | String
+  type ipaddr = String | IPAddr | Resolv::IPv4 | Resolver::Entry
 
   module Resolver
     type dns_resource = singleton(Resolv::DNS::Resource)
@@ -17,21 +17,21 @@ module HTTPX
 
     type dns_decoding_response = [:ok, Array[dns_result]] | [:decode_error, Resolv::DNS::DecodeError] | [:dns_error, Integer] | Symbol
 
-    def self?.nolookup_resolve: (String hostname) -> Array[IPAddr]?
+    def self?.nolookup_resolve: (String hostname) -> Array[Entry]?
 
-    def self?.ip_resolve: (String hostname) -> Array[IPAddr]?
+    def self?.ip_resolve: (String hostname) -> Array[Entry]?
 
-    def self?.system_resolve: (String hostname) -> Array[IPAddr]?
+    def self?.system_resolve: (String hostname) -> Array[Entry]?
 
     def self?.resolver_for: (Symbol | singleton(Resolver) resolver_type, Options options) -> singleton(Resolver)
 
-    def self?.cached_lookup: (String hostname) -> Array[IPAddr]?
+    def self?.cached_lookup: (String hostname) -> Array[Entry]?
 
     def self?.cached_lookup_set: (String hostname, ip_family family, Array[dns_result] addresses) -> void
 
-    def self?.cached_lookup_evict: (String hostname, ipaddr ip) -> void
+    def self?.cached_lookup_evict: (String hostname, _ToS ip) -> void
 
-    def self?.lookup: (String hostname, Hash[String, Array[dns_result]] lookups, Numeric ttl) -> Array[IPAddr]?
+    def self?.lookup: (String hostname, Hash[String, Array[dns_result]] lookups, Numeric ttl) -> Array[Entry]?
 
     def self?.generate_id: () -> Integer
 

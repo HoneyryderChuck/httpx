@@ -210,7 +210,7 @@ module HTTPX
     end
 
     def option_addresses(value)
-      Array(value)
+      Array(value).map { |entry| Resolver::Entry.convert(entry) }
     end
 
     def option_ip_families(value)

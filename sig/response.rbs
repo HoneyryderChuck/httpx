@@ -35,7 +35,7 @@ module HTTPX
 
     def uri: () -> URI::Generic
 
-    def peer_address: () -> ipaddr?
+    def peer_address: () -> (String | IPAddr)?
 
     def merge_headers: (_Each[[String, headers_value]]) -> void
 
@@ -90,7 +90,7 @@ module HTTPX
 
     def uri: () -> URI::Generic
 
-    def peer_address: () -> ipaddr?
+    def peer_address: () -> (String | IPAddr)?
 
     def close: () -> void
 

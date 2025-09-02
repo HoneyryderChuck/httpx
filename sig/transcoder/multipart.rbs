@@ -16,6 +16,12 @@ module HTTPX
 
       type multipart_nested_value = multipart_value | _ToAry[multipart_value] | _ToHash[string, multipart_value]
 
+      type multipart_input = Enumerable[[_ToS, Multipart::multipart_nested_value]]
+
+      def self?.encode: (multipart_input form_data) -> Multipart::Encoder
+
+      def self?.multipart?: (form_nested_value | multipart_nested_value form_data) -> bool
+
       class Encoder
         @boundary: String
         @part_index: Integer
@@ -36,9 +42,9 @@ module HTTPX
 
         private
 
-        def to_parts: (Enumerable[[Symbol | string, multipart_nested_value]] multipart_data) -> Array[_Reader]
+        def to_parts: (multipart_input multipart_data) -> Array[_Reader]
 
-        def initialize: (Enumerable[[Symbol | string, multipart_nested_value]] multipart_data) -> untyped
+        def initialize: (multipart_input multipart_data) -> untyped
 
         def header_part: (String key, String content_type, String? filename) -> StringIO
 

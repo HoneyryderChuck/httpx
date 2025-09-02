@@ -129,8 +129,6 @@ module HTTPX
         end
 
         def addresses=(addrs)
-          addrs = addrs.map { |addr| addr.is_a?(IPAddr) ? addr : IPAddr.new(addr) }
-
           addrs.reject!(&SsrfFilter.method(:unsafe_ip_address?))
 
           raise ServerSideRequestForgeryError, "#{@origin.host} has no public IP addresses" if addrs.empty?
