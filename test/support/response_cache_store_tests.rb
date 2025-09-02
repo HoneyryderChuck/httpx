@@ -152,15 +152,15 @@ module ResponseCacheStoreTests
   end
 
   def response_cache_session
-    @response_cache_session ||= HTTPX.plugin(:response_cache, response_cache_store: store_class.new)
+    @response_cache_session ||= HTTPX.plugin(:response_cache, response_cache_store: init_store)
   end
 
   def make_request(meth, uri, *args)
     response_cache_session.build_request(meth, uri, *args)
   end
 
-  def store_class
-    raise NotImplementedError, "must define a `store_class` method"
+  def init_store
+    raise NotImplementedError, "must define a `init_store` method returning the cache store to use"
   end
 
   def store

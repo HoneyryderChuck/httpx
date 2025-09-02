@@ -40,6 +40,8 @@ module HTTPX
     def initialize: (?options) { (self) -> void } -> void
                   | (?options) -> void
 
+    def selector_close: (Selector close) -> void
+
     def deactivate: (Selector selector) -> void
 
     def on_promise: (untyped, untyped) -> void
@@ -80,6 +82,8 @@ module HTTPX
     def set_current_selector: (Selector? selector) -> void
 
     def selector_store: () -> Hash[instance, Selector]
+
+    def thread_selector_store: (Thread th) -> Hash[instance, Selector]?
 
     attr_reader self.default_options: Options
     self.@plugins: Array[Module]

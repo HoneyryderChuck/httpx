@@ -13,7 +13,8 @@ module HTTPX
     KEEP_ALIVE_TIMEOUT: Integer
     SETTINGS_TIMEOUT: Integer
     CLOSE_HANDSHAKE_TIMEOUT: Integer
-    SET_TEMPORARY_NAME: ^(Module mod, ?Symbol pl) -> void
+    SET_TEMPORARY_NAME: ^(Class klass, ?Symbol pl) -> void
+
     DEFAULT_OPTIONS: Hash[Symbol, untyped]
     REQUEST_BODY_IVARS: Array[Symbol]
 
@@ -21,6 +22,8 @@ module HTTPX
     type timeout = Hash[timeout_type, Numeric?]
 
     def self.new: (?options) -> instance
+
+    attr_reader self.options_names: Array[Symbol]
 
     # headers
     attr_reader uri: URI?
@@ -70,11 +73,6 @@ module HTTPX
     # base_path
     attr_reader base_path: String?
 
-    # ssl
-
-    # http2_settings
-
-
     # classes
     attr_reader resolver_native_class: singleton(Resolver::Native)
 
@@ -102,7 +100,7 @@ module HTTPX
 
     attr_reader options_class: singleton(Options)
 
-    attr_reader resolver_class: Symbol | Class
+    attr_reader resolver_class: Symbol | singleton(Resolver::Resolver)
 
     attr_reader ssl: Hash[Symbol, untyped]
 
@@ -146,11 +144,58 @@ module HTTPX
 
     private
 
-    REQUEST_IVARS: Array[Symbol]
-
     def initialize: (?options options) -> void
 
     def access_option: (Hash[Symbol, untyped] | Object | nil obj, Symbol k, Hash[Symbol, Symbol]? ivar_map) -> untyped
+
+    # integer
+    def option_max_concurrent_requests: (Numeric value) -> Numeric
+    def option_max_requests: (Numeric value) -> Numeric
+    def option_window_size: (Numeric value) -> Numeric
+    def option_buffer_size: (Numeric value) -> Numeric
+    def option_body_threshold_size: (Numeric value) -> Numeric
+    def option_debug_level: (Numeric value) -> Numeric
+
+    # to hash
+    def option_ssl: (_ToHash[Symbol, untyped] value) -> Hash[Symbol, untyped]
+    def option_http2_settings: (_ToHash[Symbol, untyped] value) -> Hash[Symbol, untyped]
+    def option_resolver_options: (_ToHash[Symbol, untyped] value) -> Hash[Symbol, untyped]
+    def option_pool_options: (_ToHash[Symbol, untyped] value) -> Hash[Symbol, untyped]
+
+    # no transform
+    def option_request_class: (singleton(Request) value) -> singleton(Request)
+    def option_response_class: (singleton(Response) value) -> singleton(Response)
+    def option_headers_class: (singleton(Headers) value) -> singleton(Headers)
+    def option_request_body_class: (singleton(Request::Body) value) -> singleton(Request::Body)
+    def option_response_body_class: (singleton(Response::Body) value) -> singleton(Response::Body)
+    def option_connection_class: (singleton(Connection) value) -> singleton(Connection)
+    def option_options_class: (singleton(Options) value) -> singleton(Options)
+    def option_pool_class: (singleton(Pool) value) -> singleton(Pool)
+    def option_resolver_class: (Symbol | singleton(Resolver::Resolver) value) -> (Symbol | singleton(Resolver::Resolver))
+    def option_io: (io_option value) -> io_option
+    def option_fallback_protocol: (String value) -> String
+    def option_debug: (_IOLogger value) -> _IOLogger
+    def option_debug_redact: (bool value) -> bool
+    def option_compress_request_body: (bool value) -> bool
+    def option_decompress_response_body: (bool value) -> bool
+    def option_persistent: (bool value) -> bool
+    def option_close_on_fork: (bool value) -> bool
+
+    def option_origin: (http_uri | String value) -> http_uri
+
+    def option_base_path: (_ToStr value) -> String
+
+    def option_headers: (headers_input | Headers value) -> Headers
+
+    def option_timeout: (_ToHash[timeout_type, Numeric?]) -> timeout
+
+    def option_supported_compression_formats: (_ToS | _ToAry[_ToS] value) -> Array[String]
+
+    def option_transport: (_ToS value) -> String
+
+    def option_addresses: (ipaddr | _ToAry[ipaddr] value) -> Array[ipaddr]
+
+    def option_ip_families: (Integer | _ToAry[Integer] value) -> Array[Integer]
   end
 
   type options = Options | Hash[Symbol, untyped]

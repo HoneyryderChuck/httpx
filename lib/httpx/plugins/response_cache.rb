@@ -67,6 +67,8 @@ module HTTPX
       # * +#clear() -> void+)
       #
       module OptionsMethods
+        private
+
         def option_response_cache_store(value)
           case value
           when :store

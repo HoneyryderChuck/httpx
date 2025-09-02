@@ -68,16 +68,7 @@ module Datadog::Tracing
             end
 
             request.on(:response) do |response|
-              unless span
-                next unless response.is_a?(::HTTPX::ErrorResponse) && response.error.respond_to?(:connection)
-
-                # handles the case when the +error+ happened during name resolution, which means
-                # that the tracing start point hasn't been triggered yet; in such cases, the approximate
-                # initial resolving time is collected from the connection, and used as span start time,
-                # and the tracing object in inserted before the on response callback is called.
-                span = initialize_span(request, response.error.connection.init_time)
-
-              end
+              span = initialize_span(request, request.init_time) if !span && request.init_time
 
               finish(response, span)
             end
@@ -189,13 +180,28 @@ module Datadog::Tracing
         end
 
         module RequestMethods
+          attr_reader :init_time
+
           # intercepts request initialization to inject the tracing logic.
           def initialize(*)
             super
 
+            @init_time = nil
+
             return unless Datadog::Tracing.enabled?
 
             RequestTracer.call(self)
+          end
+
+          def response=(response)
+            if response.is_a?(::HTTPX::ErrorResponse) && response.error.respond_to?(:connection)
+              # handles the case when the +error+ happened during name resolution, which means
+              # that the tracing start point hasn't been triggered yet; in such cases, the approximate
+              # initial resolving time is collected from the connection, and used as span start time,
+              # and the tracing object in inserted before the on response callback is called.
+              @init_time = response.error.connection.init_time
+            end
+            super
           end
         end
 

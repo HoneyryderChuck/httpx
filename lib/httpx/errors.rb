@@ -77,7 +77,9 @@ module HTTPX
   # Error raised when there was an error while resolving a domain to an IP
   # using a HTTPX::Resolver::Native resolver.
   class NativeResolveError < ResolveError
-    attr_reader :connection, :host
+    attr_reader :host
+
+    attr_accessor :connection
 
     # initializes the exception with the +connection+ it refers to, the +host+ domain
     # which failed to resolve, and the error +message+.

@@ -51,13 +51,15 @@ module HTTPX
   class HTTPError < Error
     attr_reader response: Response
 
+    def status: () -> Integer
+
     private
 
     def initialize: (Response response) -> void
   end
 
   class NativeResolveError < ResolveError
-    attr_reader connection: Connection
+    attr_accessor connection: Connection?
     attr_reader host: String
 
     private

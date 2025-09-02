@@ -71,12 +71,8 @@ module HTTPX
 
         select_connection(connection, selector)
       end
-      begin
-        @closing = true
-        selector.terminate
-      ensure
-        @closing = false
-      end
+
+      selector_close(selector)
     end
 
     # performs one, or multple requests; it accepts:
@@ -211,6 +207,15 @@ module HTTPX
     end
 
     private
+
+    def selector_close(selector)
+      begin
+        @closing = true
+        selector.terminate
+      ensure
+        @closing = false
+      end
+    end
 
     # tries deactivating connections in the +selector+, deregistering the ones that have been deactivated.
     def deactivate(selector)
@@ -460,11 +465,16 @@ module HTTPX
 
     def selector_store
       th_current = Thread.current
-      th_current.thread_variable_get(:httpx_persistent_selector_store) || begin
+
+      thread_selector_store(th_current) || begin
         {}.compare_by_identity.tap do |store|
           th_current.thread_variable_set(:httpx_persistent_selector_store, store)
         end
       end
+    end
+
+    def thread_selector_store(th)
+      th.thread_variable_get(:httpx_persistent_selector_store)
     end
 
     @default_options = Options.new
@@ -503,9 +513,13 @@ module HTTPX
 
           opts = @default_options
           opts.extend_with_plugin_classes(pl)
-          if defined?(pl::OptionsMethods)
 
-            (pl::OptionsMethods.instance_methods - Object.instance_methods).each do |meth|
+          if defined?(pl::OptionsMethods)
+            # when a class gets dup'ed, the #initialize_dup callbacks isn't triggered.
+            # moreover, and because #method_added does not get triggered on mixin include,
+            # the callback is also forcefully manually called here.
+            opts.options_class.instance_variable_set(:@options_names, opts.options_class.options_names.dup)
+            (pl::OptionsMethods.instance_methods + pl::OptionsMethods.private_instance_methods - Object.instance_methods).each do |meth|
               opts.options_class.method_added(meth)
             end
             @default_options = opts.options_class.new(opts)

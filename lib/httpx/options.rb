@@ -15,75 +15,16 @@ module HTTPX
     CONNECT_TIMEOUT = READ_TIMEOUT = WRITE_TIMEOUT = 60
     REQUEST_TIMEOUT = OPERATION_TIMEOUT = nil
 
-    # https://github.com/ruby/resolv/blob/095f1c003f6073730500f02acbdbc55f83d70987/lib/resolv.rb#L408
-    ip_address_families = begin
-      list = Socket.ip_address_list
-      if list.any? { |a| a.ipv6? && !a.ipv6_loopback? && !a.ipv6_linklocal? }
-        [Socket::AF_INET6, Socket::AF_INET]
-      else
-        [Socket::AF_INET]
-      end
-    rescue NotImplementedError
-      [Socket::AF_INET]
-    end.freeze
-
-    SET_TEMPORARY_NAME = ->(mod, pl = nil) do
-      if mod.respond_to?(:set_temporary_name) # ruby 3.4 only
-        name = mod.name || "#{mod.superclass.name}(plugin)"
-        name = "#{name}/#{pl}" if pl
-        mod.set_temporary_name(name)
-      end
-    end
-
-    DEFAULT_OPTIONS = {
-      :max_requests => Float::INFINITY,
-      :debug => nil,
-      :debug_level => (ENV["HTTPX_DEBUG"] || 1).to_i,
-      :debug_redact => ENV.key?("HTTPX_DEBUG_REDACT"),
-      :ssl => EMPTY_HASH,
-      :http2_settings => { settings_enable_push: 0 }.freeze,
-      :fallback_protocol => "http/1.1",
-      :supported_compression_formats => %w[gzip deflate],
-      :decompress_response_body => true,
-      :compress_request_body => true,
-      :timeout => {
-        connect_timeout: CONNECT_TIMEOUT,
-        settings_timeout: SETTINGS_TIMEOUT,
-        close_handshake_timeout: CLOSE_HANDSHAKE_TIMEOUT,
-        operation_timeout: OPERATION_TIMEOUT,
-        keep_alive_timeout: KEEP_ALIVE_TIMEOUT,
-        read_timeout: READ_TIMEOUT,
-        write_timeout: WRITE_TIMEOUT,
-        request_timeout: REQUEST_TIMEOUT,
-      },
-      :headers_class => Class.new(Headers, &SET_TEMPORARY_NAME),
-      :headers => {},
-      :window_size => WINDOW_SIZE,
-      :buffer_size => BUFFER_SIZE,
-      :body_threshold_size => MAX_BODY_THRESHOLD_SIZE,
-      :request_class => Class.new(Request, &SET_TEMPORARY_NAME),
-      :response_class => Class.new(Response, &SET_TEMPORARY_NAME),
-      :request_body_class => Class.new(Request::Body, &SET_TEMPORARY_NAME),
-      :response_body_class => Class.new(Response::Body, &SET_TEMPORARY_NAME),
-      :pool_class => Class.new(Pool, &SET_TEMPORARY_NAME),
-      :connection_class => Class.new(Connection, &SET_TEMPORARY_NAME),
-      :http1_class => Class.new(Connection::HTTP1, &SET_TEMPORARY_NAME),
-      :http2_class => Class.new(Connection::HTTP2, &SET_TEMPORARY_NAME),
-      :resolver_native_class => Class.new(Resolver::Native, &SET_TEMPORARY_NAME),
-      :resolver_system_class => Class.new(Resolver::System, &SET_TEMPORARY_NAME),
-      :resolver_https_class => Class.new(Resolver::HTTPS, &SET_TEMPORARY_NAME),
-      :options_class => Class.new(self, &SET_TEMPORARY_NAME),
-      :transport => nil,
-      :addresses => nil,
-      :persistent => false,
-      :resolver_class => (ENV["HTTPX_RESOLVER"] || :native).to_sym,
-      :resolver_options => { cache: true }.freeze,
-      :pool_options => EMPTY_HASH,
-      :ip_families => ip_address_families,
-      :close_on_fork => false,
-    }.freeze
+    @options_names = []
 
     class << self
+      attr_reader :options_names
+
+      def inherited(klass)
+        super
+        klass.instance_variable_set(:@options_names, @options_names.dup)
+      end
+
       def new(options = {})
         # let enhanced options go through
         return options if self == Options && options.class < self
@@ -92,14 +33,34 @@ module HTTPX
         super
       end
 
+      def freeze
+        @options_names.freeze
+        super
+      end
+
       def method_added(meth)
         super
 
         return unless meth =~ /^option_(.+)$/
 
-        optname = Regexp.last_match(1).to_sym
+        optname = Regexp.last_match(1)
+
+        if optname =~ /^(.+[^_])_+with/
+          # ignore alias method chain generated methods.
+          # this is the case with RBS runtime tests.
+          # it relies on the "_with/_without" separator, which is the most used convention,
+          # however it shouldn't be used in practice in httpx given the plugin architecture
+          # as the main extension API.
+          orig_name = Regexp.last_match(1)
+
+          return if @options_names.include?(orig_name.to_sym)
+        end
+
+        optname = optname.to_sym
 
         attr_reader(optname)
+
+        @options_names << optname unless @options_names.include?(optname)
       end
     end
 
@@ -153,94 +114,39 @@ module HTTPX
     #                   it only works if the session is persistent (and ruby 3.1 or higher is used).
     #
     # This list of options are enhanced with each loaded plugin, see the plugin docs for details.
-    def initialize(options = {})
-      defaults = DEFAULT_OPTIONS.merge(options)
-      defaults.each do |k, v|
-        next if v.nil?
+    def initialize(options = EMPTY_HASH)
+      options_names = self.class.options_names
 
-        option_method_name = :"option_#{k}"
-        raise Error, "unknown option: #{k}" unless respond_to?(option_method_name)
+      defaults =
+        case options
+        when Options
+          unknown_options = options.class.options_names - options_names
 
-        value = __send__(option_method_name, v)
+          raise Error, "unknown option: #{unknown_options.first}" unless unknown_options.empty?
+
+          DEFAULT_OPTIONS.merge(options)
+        else
+          options.each_key do |k|
+            raise Error, "unknown option: #{k}" unless options_names.include?(k)
+          end
+
+          options.empty? ? DEFAULT_OPTIONS : DEFAULT_OPTIONS.merge(options)
+        end
+
+      options_names.each do |k|
+        v = defaults[k]
+
+        if v.nil?
+          instance_variable_set(:"@#{k}", v)
+
+          next
+        end
+
+        value = __send__(:"option_#{k}", v)
         instance_variable_set(:"@#{k}", value)
       end
+
       freeze
-    end
-
-    def freeze
-      @origin.freeze
-      @base_path.freeze
-      @timeout.freeze
-      @headers.freeze
-      @addresses.freeze
-      @supported_compression_formats.freeze
-      @ssl.freeze
-      @http2_settings.freeze
-      @pool_options.freeze
-      @resolver_options.freeze
-      @ip_families.freeze
-      super
-    end
-
-    def option_origin(value)
-      URI(value)
-    end
-
-    def option_base_path(value)
-      String(value)
-    end
-
-    def option_headers(value)
-      headers_class.new(value)
-    end
-
-    def option_timeout(value)
-      Hash[value]
-    end
-
-    def option_supported_compression_formats(value)
-      Array(value).map(&:to_s)
-    end
-
-    def option_transport(value)
-      transport = value.to_s
-      raise TypeError, "#{transport} is an unsupported transport type" unless %w[unix].include?(transport)
-
-      transport
-    end
-
-    def option_addresses(value)
-      Array(value).map { |entry| Resolver::Entry.convert(entry) }
-    end
-
-    def option_ip_families(value)
-      Array(value)
-    end
-
-    # number options
-    %i[
-      max_concurrent_requests max_requests window_size buffer_size
-      body_threshold_size debug_level
-    ].each do |option|
-      class_eval(<<-OUT, __FILE__, __LINE__ + 1)
-        # converts +v+ into an Integer before setting the +#{option}+ option.
-        def option_#{option}(value)                                             # def option_max_requests(v)
-          value = Integer(value) unless value.infinite?
-          raise TypeError, ":#{option} must be positive" unless value.positive? # raise TypeError, ":max_requests must be positive" unless value.positive?
-
-          value
-        end
-      OUT
-    end
-
-    # hashable options
-    %i[ssl http2_settings resolver_options pool_options].each do |option|
-      class_eval(<<-OUT, __FILE__, __LINE__ + 1)
-        # converts +v+ into an Hash before setting the +#{option}+ option.
-        def option_#{option}(value) # def option_ssl(v)
-          Hash[value]
-        end
-      OUT
     end
 
     %i[
@@ -255,6 +161,13 @@ module HTTPX
         # sets +v+ as the value of the +#{method_name}+ option
         def option_#{method_name}(v); v; end # def option_smth(v); v; end
       OUT
+    end
+
+    def freeze
+      self.class.options_names.each do |ivar|
+        instance_variable_get(:"@#{ivar}").freeze
+      end
+      super
     end
 
     REQUEST_BODY_IVARS = %i[@headers].freeze
@@ -317,83 +230,178 @@ module HTTPX
 
     def to_hash
       instance_variables.each_with_object({}) do |ivar, hs|
-        hs[ivar[1..-1].to_sym] = instance_variable_get(ivar)
+        val = instance_variable_get(ivar)
+
+        next if val.nil?
+
+        hs[ivar[1..-1].to_sym] = val
       end
     end
 
     def extend_with_plugin_classes(pl)
+      # extend request class
       if defined?(pl::RequestMethods) || defined?(pl::RequestClassMethods)
         @request_class = @request_class.dup
         SET_TEMPORARY_NAME[@request_class, pl]
         @request_class.__send__(:include, pl::RequestMethods) if defined?(pl::RequestMethods)
         @request_class.extend(pl::RequestClassMethods) if defined?(pl::RequestClassMethods)
       end
+      # extend response class
       if defined?(pl::ResponseMethods) || defined?(pl::ResponseClassMethods)
         @response_class = @response_class.dup
         SET_TEMPORARY_NAME[@response_class, pl]
         @response_class.__send__(:include, pl::ResponseMethods) if defined?(pl::ResponseMethods)
         @response_class.extend(pl::ResponseClassMethods) if defined?(pl::ResponseClassMethods)
       end
+      # extend headers class
       if defined?(pl::HeadersMethods) || defined?(pl::HeadersClassMethods)
         @headers_class = @headers_class.dup
         SET_TEMPORARY_NAME[@headers_class, pl]
         @headers_class.__send__(:include, pl::HeadersMethods) if defined?(pl::HeadersMethods)
         @headers_class.extend(pl::HeadersClassMethods) if defined?(pl::HeadersClassMethods)
       end
+      # extend request body class
       if defined?(pl::RequestBodyMethods) || defined?(pl::RequestBodyClassMethods)
         @request_body_class = @request_body_class.dup
         SET_TEMPORARY_NAME[@request_body_class, pl]
         @request_body_class.__send__(:include, pl::RequestBodyMethods) if defined?(pl::RequestBodyMethods)
         @request_body_class.extend(pl::RequestBodyClassMethods) if defined?(pl::RequestBodyClassMethods)
       end
+      # extend response body class
       if defined?(pl::ResponseBodyMethods) || defined?(pl::ResponseBodyClassMethods)
         @response_body_class = @response_body_class.dup
         SET_TEMPORARY_NAME[@response_body_class, pl]
         @response_body_class.__send__(:include, pl::ResponseBodyMethods) if defined?(pl::ResponseBodyMethods)
         @response_body_class.extend(pl::ResponseBodyClassMethods) if defined?(pl::ResponseBodyClassMethods)
       end
+      # extend connection pool class
       if defined?(pl::PoolMethods)
         @pool_class = @pool_class.dup
         SET_TEMPORARY_NAME[@pool_class, pl]
         @pool_class.__send__(:include, pl::PoolMethods)
       end
+      # extend connection class
       if defined?(pl::ConnectionMethods)
         @connection_class = @connection_class.dup
         SET_TEMPORARY_NAME[@connection_class, pl]
         @connection_class.__send__(:include, pl::ConnectionMethods)
       end
+      # extend http1 class
       if defined?(pl::HTTP1Methods)
         @http1_class = @http1_class.dup
         SET_TEMPORARY_NAME[@http1_class, pl]
         @http1_class.__send__(:include, pl::HTTP1Methods)
       end
+      # extend http2 class
       if defined?(pl::HTTP2Methods)
         @http2_class = @http2_class.dup
         SET_TEMPORARY_NAME[@http2_class, pl]
         @http2_class.__send__(:include, pl::HTTP2Methods)
       end
+      # extend native resolver class
       if defined?(pl::ResolverNativeMethods)
         @resolver_native_class = @resolver_native_class.dup
         SET_TEMPORARY_NAME[@resolver_native_class, pl]
         @resolver_native_class.__send__(:include, pl::ResolverNativeMethods)
       end
+      # extend system resolver class
       if defined?(pl::ResolverSystemMethods)
         @resolver_system_class = @resolver_system_class.dup
         SET_TEMPORARY_NAME[@resolver_system_class, pl]
         @resolver_system_class.__send__(:include, pl::ResolverSystemMethods)
       end
+      # extend https resolver class
       if defined?(pl::ResolverHTTPSMethods)
         @resolver_https_class = @resolver_https_class.dup
         SET_TEMPORARY_NAME[@resolver_https_class, pl]
         @resolver_https_class.__send__(:include, pl::ResolverHTTPSMethods)
       end
+
       return unless defined?(pl::OptionsMethods)
 
+      # extend option class
+      # works around lack of initialize_dup callback
       @options_class = @options_class.dup
+      # (self.class.options_names)
       @options_class.__send__(:include, pl::OptionsMethods)
     end
 
     private
+
+    # number options
+    %i[
+      max_concurrent_requests max_requests window_size buffer_size
+      body_threshold_size debug_level
+    ].each do |option|
+      class_eval(<<-OUT, __FILE__, __LINE__ + 1)
+        # converts +v+ into an Integer before setting the +#{option}+ option.
+        def option_#{option}(value)                                             # def option_max_requests(v)
+          value = Integer(value) unless value.respond_to?(:infinite?) && value.infinite?
+          raise TypeError, ":#{option} must be positive" unless value.positive? # raise TypeError, ":max_requests must be positive" unless value.positive?
+
+          value
+        end
+      OUT
+    end
+
+    # hashable options
+    %i[ssl http2_settings resolver_options pool_options].each do |option|
+      class_eval(<<-OUT, __FILE__, __LINE__ + 1)
+        # converts +v+ into an Hash before setting the +#{option}+ option.
+        def option_#{option}(value) # def option_ssl(v)
+          Hash[value]
+        end
+      OUT
+    end
+
+    %i[
+      request_class response_class headers_class request_body_class
+      response_body_class connection_class options_class
+      pool_class resolver_class
+      io fallback_protocol debug debug_redact
+      compress_request_body decompress_response_body
+      persistent close_on_fork
+    ].each do |method_name|
+      class_eval(<<-OUT, __FILE__, __LINE__ + 1)
+        # sets +v+ as the value of the +#{method_name}+ option
+        def option_#{method_name}(v); v; end # def option_smth(v); v; end
+      OUT
+    end
+
+    def option_origin(value)
+      URI(value)
+    end
+
+    def option_base_path(value)
+      String(value)
+    end
+
+    def option_headers(value)
+      headers_class.new(value)
+    end
+
+    def option_timeout(value)
+      Hash[value]
+    end
+
+    def option_supported_compression_formats(value)
+      Array(value).map(&:to_s)
+    end
+
+    def option_transport(value)
+      transport = value.to_s
+      raise TypeError, "#{transport} is an unsupported transport type" unless %w[unix].include?(transport)
+
+      transport
+    end
+
+    def option_addresses(value)
+      Array(value).map { |entry| Resolver::Entry.convert(entry) }
+    end
+
+    def option_ip_families(value)
+      Array(value)
+    end
 
     def access_option(obj, k, ivar_map)
       case obj
@@ -403,5 +411,73 @@ module HTTPX
         obj.instance_variable_get(k)
       end
     end
+
+    SET_TEMPORARY_NAME = ->(klass, pl = nil) do
+      if klass.respond_to?(:set_temporary_name) # ruby 3.4 only
+        name = klass.name || "#{klass.superclass.name}(plugin)"
+        name = "#{name}/#{pl}" if pl
+        klass.set_temporary_name(name)
+      end
+    end
+
+    # https://github.com/ruby/resolv/blob/095f1c003f6073730500f02acbdbc55f83d70987/lib/resolv.rb#L408
+    ip_address_families = begin
+      list = Socket.ip_address_list
+      if list.any? { |a| a.ipv6? && !a.ipv6_loopback? && !a.ipv6_linklocal? }
+        [Socket::AF_INET6, Socket::AF_INET]
+      else
+        [Socket::AF_INET]
+      end
+    rescue NotImplementedError
+      [Socket::AF_INET]
+    end.freeze
+
+    DEFAULT_OPTIONS = {
+      :max_requests => Float::INFINITY,
+      :debug => nil,
+      :debug_level => (ENV["HTTPX_DEBUG"] || 1).to_i,
+      :debug_redact => ENV.key?("HTTPX_DEBUG_REDACT"),
+      :ssl => EMPTY_HASH,
+      :http2_settings => { settings_enable_push: 0 }.freeze,
+      :fallback_protocol => "http/1.1",
+      :supported_compression_formats => %w[gzip deflate],
+      :decompress_response_body => true,
+      :compress_request_body => true,
+      :timeout => {
+        connect_timeout: CONNECT_TIMEOUT,
+        settings_timeout: SETTINGS_TIMEOUT,
+        close_handshake_timeout: CLOSE_HANDSHAKE_TIMEOUT,
+        operation_timeout: OPERATION_TIMEOUT,
+        keep_alive_timeout: KEEP_ALIVE_TIMEOUT,
+        read_timeout: READ_TIMEOUT,
+        write_timeout: WRITE_TIMEOUT,
+        request_timeout: REQUEST_TIMEOUT,
+      }.freeze,
+      :headers_class => Class.new(Headers, &SET_TEMPORARY_NAME),
+      :headers => EMPTY_HASH,
+      :window_size => WINDOW_SIZE,
+      :buffer_size => BUFFER_SIZE,
+      :body_threshold_size => MAX_BODY_THRESHOLD_SIZE,
+      :request_class => Class.new(Request, &SET_TEMPORARY_NAME),
+      :response_class => Class.new(Response, &SET_TEMPORARY_NAME),
+      :request_body_class => Class.new(Request::Body, &SET_TEMPORARY_NAME),
+      :response_body_class => Class.new(Response::Body, &SET_TEMPORARY_NAME),
+      :pool_class => Class.new(Pool, &SET_TEMPORARY_NAME),
+      :connection_class => Class.new(Connection, &SET_TEMPORARY_NAME),
+      :http1_class => Class.new(Connection::HTTP1, &SET_TEMPORARY_NAME),
+      :http2_class => Class.new(Connection::HTTP2, &SET_TEMPORARY_NAME),
+      :resolver_native_class => Class.new(Resolver::Native, &SET_TEMPORARY_NAME),
+      :resolver_system_class => Class.new(Resolver::System, &SET_TEMPORARY_NAME),
+      :resolver_https_class => Class.new(Resolver::HTTPS, &SET_TEMPORARY_NAME),
+      :options_class => Class.new(self, &SET_TEMPORARY_NAME),
+      :transport => nil,
+      :addresses => nil,
+      :persistent => false,
+      :resolver_class => (ENV["HTTPX_RESOLVER"] || :native).to_sym,
+      :resolver_options => { cache: true }.freeze,
+      :pool_options => EMPTY_HASH,
+      :ip_families => ip_address_families,
+      :close_on_fork => false,
+    }.freeze
   end
 end

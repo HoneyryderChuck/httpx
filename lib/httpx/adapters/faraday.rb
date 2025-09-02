@@ -7,9 +7,14 @@ require "faraday"
 module Faraday
   class Adapter
     class HTTPX < Faraday::Adapter
+      def initialize(app = nil, opts = {}, &block)
+        @connection = @bind = nil
+        super(app, opts, &block)
+      end
+
       module RequestMixin
         def build_connection(env)
-          return @connection if defined?(@connection)
+          return @connection if @connection
 
           @connection = ::HTTPX.plugin(:persistent).plugin(ReasonPlugin)
           @connection = @connection.with(@connection_options) unless @connection_options.empty?
@@ -54,6 +59,8 @@ module Faraday
                Errno::EPIPE,
                ::HTTPX::ConnectionError => e
           raise Faraday::ConnectionFailed, e
+        rescue ::HTTPX::TimeoutError => e
+          raise Faraday::TimeoutError, e
         end
 
         def build_request(env)
@@ -125,9 +132,11 @@ module Faraday
           def response=(response)
             super
 
-            return if response.is_a?(::HTTPX::ErrorResponse)
+            return unless @response
 
-            response.body.on_data = @response_on_data
+            return if @response.is_a?(::HTTPX::ErrorResponse)
+
+            @response.body.on_data = @response_on_data
           end
         end
 
@@ -218,9 +227,9 @@ module Faraday
               handler.on_complete.call(handler.env) if handler.on_complete
             end
           end
-        rescue ::HTTPX::TimeoutError => e
-          raise Faraday::TimeoutError, e
         end
+
+        private
 
         # from Faraday::Adapter#connection
         def connection(env)
@@ -229,8 +238,6 @@ module Faraday
 
           yield conn
         end
-
-        private
 
         # from Faraday::Adapter#request_timeout
         def request_timeout(type, options)
@@ -284,8 +291,6 @@ module Faraday
           response.raise_for_status unless response.is_a?(::HTTPX::Response)
           response
         end
-      rescue ::HTTPX::TimeoutError => e
-        raise Faraday::TimeoutError, e
       end
 
       def parallel?(env)
