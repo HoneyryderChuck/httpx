@@ -114,21 +114,24 @@ module HTTPX
     #                   it only works if the session is persistent (and ruby 3.1 or higher is used).
     #
     # This list of options are enhanced with each loaded plugin, see the plugin docs for details.
-    def initialize(options = {})
+    def initialize(options = EMPTY_HASH)
       options_names = self.class.options_names
 
-      case options
-      when Options
-        unknown_options = options.class.options_names - options_names
+      defaults =
+        case options
+        when Options
+          unknown_options = options.class.options_names - options_names
 
-        raise Error, "unknown option: #{unknown_options.first}" unless unknown_options.empty?
-      else
-        options.each_key do |k|
-          raise Error, "unknown option: #{k}" unless options_names.include?(k)
+          raise Error, "unknown option: #{unknown_options.first}" unless unknown_options.empty?
+
+          DEFAULT_OPTIONS.merge(options)
+        else
+          options.each_key do |k|
+            raise Error, "unknown option: #{k}" unless options_names.include?(k)
+          end
+
+          options.empty? ? DEFAULT_OPTIONS : DEFAULT_OPTIONS.merge(options)
         end
-      end
-
-      defaults = DEFAULT_OPTIONS.merge(options)
 
       options_names.each do |k|
         v = defaults[k]
