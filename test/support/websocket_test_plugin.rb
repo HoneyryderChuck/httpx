@@ -62,7 +62,7 @@ end
 class WSCLient
   extend Forwardable
 
-  def_delegator :@driver, :headers, :close
+  def_delegator :@driver, :headers
 
   attr_reader :messages
 
@@ -98,6 +98,10 @@ class WSCLient
 
   def write(data)
     @io.write(data)
+  end
+
+  def close
+    @driver.close
   end
 
   def finalize(_event)

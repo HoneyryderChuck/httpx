@@ -22,7 +22,6 @@ module HTTPX
 
       @record_type: singleton(Resolv::DNS::Resource)
       @resolver_options: Hash[Symbol, untyped]
-      @system_resolver: Resolv::Hosts
       @connections: Array[Connection]
 
       def close: () -> void

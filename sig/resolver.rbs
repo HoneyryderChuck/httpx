@@ -13,7 +13,7 @@ module HTTPX
     self.@lookups: Hash[String, Array[dns_result]]
     self.@identifier_mutex: Thread::Mutex
     self.@identifier: Integer
-    self.@system_resolver: Resolv::Hosts
+    self.@hosts_resolver: Resolv::Hosts
 
     type dns_decoding_response = [:ok, Array[dns_result]] | [:decode_error, Resolv::DNS::DecodeError] | [:dns_error, Integer] | Symbol
 
@@ -21,7 +21,7 @@ module HTTPX
 
     def self?.ip_resolve: (String hostname) -> Array[Entry]?
 
-    def self?.system_resolve: (String hostname) -> Array[Entry]?
+    def self?.hosts_resolve: (String hostname) -> Array[Entry]?
 
     def self?.resolver_for: (Symbol | singleton(Resolver) resolver_type, Options options) -> singleton(Resolver)
 
