@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative "support/http_helpers"
+require_relative "test_helper"
 
 class HTTPXAwsSigv4Test < Minitest::Test
   include ResponseHelpers
