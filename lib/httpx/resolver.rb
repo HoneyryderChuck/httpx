@@ -18,7 +18,7 @@ module HTTPX
 
     @identifier_mutex = Thread::Mutex.new
     @identifier = 1
-    @system_resolver = Resolv::Hosts.new
+    @hosts_resolver = Resolv::Hosts.new
 
     module_function
 
@@ -36,7 +36,7 @@ module HTTPX
     end
 
     def nolookup_resolve(hostname)
-      ip_resolve(hostname) || cached_lookup(hostname) || system_resolve(hostname)
+      ip_resolve(hostname) || cached_lookup(hostname) || hosts_resolve(hostname)
     end
 
     # tries to convert +hostname+ into an IPAddr, returns <tt>nil</tt> otherwise.
@@ -47,8 +47,8 @@ module HTTPX
 
     # matches +hostname+ to entries in the hosts file, returns <tt>nil</nil> if none is
     # found, or there is no hosts file.
-    def system_resolve(hostname)
-      ips = @system_resolver.getaddresses(hostname)
+    def hosts_resolve(hostname)
+      ips = @hosts_resolver.getaddresses(hostname)
       return if ips.empty?
 
       ips.map { |ip| Entry.new(ip) }
