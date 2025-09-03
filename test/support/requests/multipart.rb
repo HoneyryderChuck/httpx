@@ -122,7 +122,7 @@ module Requests
         # TODO: find out how to check the filename given.
       end
 
-      define_method :"test_multipart_nested_filename_#{meth}" do
+      define_method :"test_multipart_subnested_filename_#{meth}" do
         uri = build_uri("/#{meth}")
         response = HTTPX.send(meth, uri, form: { q: { image: File.new(fixture_file_path) } })
         verify_status(response, 200)
