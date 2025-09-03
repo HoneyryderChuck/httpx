@@ -47,6 +47,30 @@ class SessionTest < Minitest::Test
     assert body.respond_to?(:foo), "response body methods haven't been added"
     assert body.foo == "response-body-foo", "response body method is unexpected"
 
+    connection = session.connection(URI("https://example.com"))
+    assert connection.respond_to?(:foo), "connection methods haven't been added"
+    assert connection.foo == "conn-foo", "connection method is unexpected"
+
+    http1 = session.http1_connection
+    assert http1.respond_to?(:foo), "http1 methods haven't been added"
+    assert http1.foo == "http1-foo", "http1 connection method is unexpected"
+
+    http2 = session.http2_connection
+    assert http2.respond_to?(:foo), "http2 methods haven't been added"
+    assert http2.foo == "http2-foo", "http2 connection method is unexpected"
+
+    native = session.resolver(:native).resolvers.sample
+    assert native.respond_to?(:foo), "native resolver methods haven't been added"
+    assert native.foo == "resolver-native-foo", "native resolver method is unexpected"
+
+    system = session.resolver(:system)
+    assert system.respond_to?(:foo), "system resolver methods haven't been added"
+    assert system.foo == "resolver-system-foo", "system resolver method is unexpected"
+
+    https = session.resolver(:https).resolvers.sample
+    assert https.respond_to?(:foo), "https resolver methods haven't been added"
+    assert https.foo == "resolver-https-foo", "https resolver method is unexpected"
+
     # set default options via .plugin
     klient_class2 = Class.new(HTTPX::Session)
     klient_class2.plugin(TestPlugin, foo: "options-foo-2")
@@ -217,6 +241,22 @@ class SessionTest < Minitest::Test
       def response(*args)
         @options.response_class.new(*args)
       end
+
+      def connection(*args)
+        @pool.checkout_new_connection(*args, @options)
+      end
+
+      def http1_connection
+        @options.http1_class.new(HTTPX::Buffer.new(4), @options)
+      end
+
+      def http2_connection
+        @options.http2_class.new(HTTPX::Buffer.new(4), @options)
+      end
+
+      def resolver(type)
+        @pool.checkout_resolver(@options.merge(resolver_class: type))
+      end
     end
     self::RequestClassMethods = Module.new do
       def foo
@@ -266,6 +306,41 @@ class SessionTest < Minitest::Test
     self::HeadersMethods = Module.new do
       def foo
         self.class.foo
+      end
+    end
+    self::PoolMethods = Module.new do
+      def checkout_new_connection(*)
+        super
+      end
+    end
+    self::ConnectionMethods = Module.new do
+      def foo
+        "conn-foo"
+      end
+    end
+    self::HTTP1Methods = Module.new do
+      def foo
+        "http1-foo"
+      end
+    end
+    self::HTTP2Methods = Module.new do
+      def foo
+        "http2-foo"
+      end
+    end
+    self::ResolverNativeMethods = Module.new do
+      def foo
+        "resolver-native-foo"
+      end
+    end
+    self::ResolverSystemMethods = Module.new do
+      def foo
+        "resolver-system-foo"
+      end
+    end
+    self::ResolverHTTPSMethods = Module.new do
+      def foo
+        "resolver-https-foo"
       end
     end
     self::OptionsMethods = Module.new do
