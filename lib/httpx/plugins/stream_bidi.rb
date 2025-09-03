@@ -42,7 +42,7 @@ module HTTPX
         %i[join_headers join_trailers join_body].each do |lock_meth|
           class_eval(<<-METH, __FILE__, __LINE__ + 1)
             # lock.aware version of +#{lock_meth}+
-            def #{lock_meth}(*)                # def join_headers(*)
+            private def #{lock_meth}(*)                # private def join_headers(*)
               return super if @lock.owned?
 
               # small race condition between

@@ -321,7 +321,7 @@ module HTTPX
     ].each do |option|
       class_eval(<<-OUT, __FILE__, __LINE__ + 1)
         # converts +v+ into an Integer before setting the +#{option}+ option.
-        def option_#{option}(value)                                             # def option_max_requests(v)
+        private def option_#{option}(value)                                             # private def option_max_requests(v)
           value = Integer(value) unless value.respond_to?(:infinite?) && value.infinite?
           raise TypeError, ":#{option} must be positive" unless value.positive? # raise TypeError, ":max_requests must be positive" unless value.positive?
 
@@ -334,7 +334,7 @@ module HTTPX
     %i[ssl http2_settings resolver_options pool_options].each do |option|
       class_eval(<<-OUT, __FILE__, __LINE__ + 1)
         # converts +v+ into an Hash before setting the +#{option}+ option.
-        def option_#{option}(value) # def option_ssl(v)
+        private def option_#{option}(value) # def option_ssl(v)
           Hash[value]
         end
       OUT
@@ -350,7 +350,7 @@ module HTTPX
     ].each do |method_name|
       class_eval(<<-OUT, __FILE__, __LINE__ + 1)
         # sets +v+ as the value of the +#{method_name}+ option
-        def option_#{method_name}(v); v; end # def option_smth(v); v; end
+        private def option_#{method_name}(v); v; end # private def option_smth(v); v; end
       OUT
     end
 
