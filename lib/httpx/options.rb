@@ -149,20 +149,6 @@ module HTTPX
       freeze
     end
 
-    %i[
-      request_class response_class headers_class request_body_class
-      response_body_class connection_class http1_class http2_class
-      resolver_native_class resolver_system_class resolver_https_class options_class pool_class
-      io fallback_protocol debug debug_redact resolver_class
-      compress_request_body decompress_response_body
-      persistent close_on_fork
-    ].each do |method_name|
-      class_eval(<<-OUT, __FILE__, __LINE__ + 1)
-        # sets +v+ as the value of the +#{method_name}+ option
-        def option_#{method_name}(v); v; end # def option_smth(v); v; end
-      OUT
-    end
-
     def freeze
       self.class.options_names.each do |ivar|
         instance_variable_get(:"@#{ivar}").freeze
@@ -356,9 +342,9 @@ module HTTPX
 
     %i[
       request_class response_class headers_class request_body_class
-      response_body_class connection_class options_class
-      pool_class resolver_class
-      io fallback_protocol debug debug_redact
+      response_body_class connection_class http1_class http2_class
+      resolver_native_class resolver_system_class resolver_https_class options_class pool_class
+      io fallback_protocol debug debug_redact resolver_class
       compress_request_body decompress_response_body
       persistent close_on_fork
     ].each do |method_name|
