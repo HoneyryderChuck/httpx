@@ -157,6 +157,31 @@ class ResponseTest < Minitest::Test
     assert body.buffer.instance_variable_get(:@buffer).is_a?(Tempfile), "body should buffer to file after going over threshold"
   end
 
+  def test_response_body_dup
+    body = Response::Body.new(Response.new(request, 200, "2.0", {}), Options.new(body_threshold_size: 10))
+    body.extend(Module.new do
+      attr_reader :buffer
+    end)
+    assert body.buffer.nil?, "body should not buffer anything"
+    body.write("hello")
+    body_dup = body.dup
+    body_dup.extend(Module.new do
+      attr_reader :buffer
+    end)
+    assert body.buffer != body_dup.buffer
+    assert body_dup.buffer.instance_variable_get(:@buffer).is_a?(StringIO), "body should buffer to memory"
+    assert body_dup.buffer.instance_variable_get(:@buffer).string == "hello", "body should contain original content"
+
+    body.write(" world")
+    body_dup = body.dup
+    body_dup.extend(Module.new do
+      attr_reader :buffer
+    end)
+    assert body.buffer != body_dup.buffer
+    assert body.buffer.instance_variable_get(:@buffer).is_a?(Tempfile), "body should buffer to file after going over threshold"
+    assert File.read(body_dup.buffer.instance_variable_get(:@buffer)) == "hello world", "body should contain original content"
+  end
+
   def test_response_body_filename
     body = Response::Body.new(Response.new(request, 200, "2.0", {}), Options.new)
     assert body.filename.nil?

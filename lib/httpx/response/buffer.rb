@@ -29,7 +29,9 @@ module HTTPX
         when StringIO
           StringIO.new(other.buffer.string, mode: File::RDONLY)
         else
-          other.buffer.class.new(other.buffer.path, encoding: Encoding::BINARY, mode: File::RDONLY)
+          other.buffer.class.new(other.buffer.path, encoding: Encoding::BINARY, mode: File::RDONLY).tap do |temp|
+            FileUtils.copy_file(other.buffer.path, temp.path)
+          end
         end
     end
 
@@ -75,22 +77,15 @@ module HTTPX
       super || begin
         return false unless other.is_a?(Response::Buffer)
 
-        if @buffer.nil?
-          other.buffer.nil?
-        elsif @buffer.respond_to?(:read) &&
-              other.respond_to?(:read)
-          buffer_pos = @buffer.pos
-          other_pos = other.buffer.pos
-          @buffer.rewind
-          other.buffer.rewind
-          begin
-            FileUtils.compare_stream(@buffer, other.buffer)
-          ensure
-            @buffer.pos = buffer_pos
-            other.buffer.pos = other_pos
-          end
-        else
-          to_s == other.to_s
+        buffer_pos = @buffer.pos
+        other_pos = other.buffer.pos
+        @buffer.rewind
+        other.buffer.rewind
+        begin
+          FileUtils.compare_stream(@buffer, other.buffer)
+        ensure
+          @buffer.pos = buffer_pos
+          other.buffer.pos = other_pos
         end
       end
     end
