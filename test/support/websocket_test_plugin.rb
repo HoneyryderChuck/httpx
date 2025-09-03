@@ -100,10 +100,6 @@ class WSCLient
     @io.write(data)
   end
 
-  def close
-    @driver.close
-  end
-
   def finalize(_event)
     @closed = true
   end
