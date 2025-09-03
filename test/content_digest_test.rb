@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative "support/http_helpers"
+require_relative "test_helper"
 
 class HTTPXContentDigestTest < Minitest::Test
   def test_plugin_content_digest_default_request
