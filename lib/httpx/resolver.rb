@@ -63,10 +63,6 @@ module HTTPX
     end
 
     def cached_lookup_set(hostname, family, entries)
-      now = Utils.now
-      entries.each do |entry|
-        entry["TTL"] += now
-      end
       lookup_synchronize do |lookups|
         case family
         when Socket::AF_INET6
@@ -145,19 +141,20 @@ module HTTPX
 
       addresses = []
 
+      now = Utils.now
       message.each_answer do |question, _, value|
         case value
         when Resolv::DNS::Resource::IN::CNAME
           addresses << {
             "name" => question.to_s,
-            "TTL" => value.ttl,
+            "TTL" => (now + value.ttl),
             "alias" => value.name.to_s,
           }
         when Resolv::DNS::Resource::IN::A,
              Resolv::DNS::Resource::IN::AAAA
           addresses << {
             "name" => question.to_s,
-            "TTL" => value.ttl,
+            "TTL" => (now + value.ttl),
             "data" => value.address.to_s,
           }
         end
