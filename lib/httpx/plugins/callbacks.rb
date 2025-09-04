@@ -97,7 +97,7 @@ module HTTPX
             end
           end
           request.on(:response) do |res|
-            emit_or_callback_error(:response_completed, request, res)
+            emit_or_callback_error(:response_completed, request, res) if res.is_a?(Response)
           end
         end
 
