@@ -139,12 +139,6 @@ module HTTPX
       ) && @options == options
     end
 
-    def expired?
-      return false unless @io
-
-      @io.expired?
-    end
-
     def mergeable?(connection)
       return false if @state == :closing || @state == :closed || !@io
 

@@ -19,6 +19,7 @@ module HTTPX
     def initialize(_, _, options)
       super
 
+      @ssl_session = nil
       ctx_options = TLS_OPTIONS.merge(options.ssl)
       @sni_hostname = ctx_options.delete(:hostname) || @hostname
 
@@ -82,10 +83,6 @@ module HTTPX
 
     def connected?
       @state == :negotiated
-    end
-
-    def expired?
-      super || ssl_session_expired?
     end
 
     def ssl_session_expired?

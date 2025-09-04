@@ -19,7 +19,6 @@ module HTTPX
 
     def connect: () -> void
 
-    def expired?: () -> bool
     private
 
     def build_socket: () -> Socket

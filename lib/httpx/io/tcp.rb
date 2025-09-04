@@ -174,17 +174,6 @@ module HTTPX
       @state == :idle || @state == :closed
     end
 
-    def expired?
-      # do not mess with external sockets
-      return false if @options.io
-
-      return true if @addresses.empty?
-
-      resolver_addresses = Resolver.nolookup_resolve(@hostname)
-
-      (Array(resolver_addresses) & @addresses).empty?
-    end
-
     # :nocov:
     def inspect
       "#<#{self.class}:#{object_id} " \

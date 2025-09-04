@@ -56,10 +56,6 @@ module HTTPX
       true
     end
 
-    def expired?
-      false
-    end
-
     # :nocov:
     def inspect
       "#<#{self.class}:#{object_id} @path=#{@path}) @state=#{@state})>"

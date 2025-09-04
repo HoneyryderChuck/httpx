@@ -62,8 +62,6 @@ module HTTPX
 
     def match?: (URI::Generic uri, Options options) -> bool
 
-    def expired?: () -> boolish
-
     def mergeable?: (Connection connection) -> bool
 
     def coalesce!: (instance connection) -> void
