@@ -59,7 +59,13 @@ module HTTPX
 
     # eliminates expired entries and returns whether there are still any left.
     def addresses?
+      prev_addr_size = @addresses.size
+
       @addresses.delete_if(&:expired?)
+
+      unless (decr = prev_addr_size - @addresses.size).zero?
+        @ip_index = @addresses.size - decr
+      end
 
       @addresses.any?
     end

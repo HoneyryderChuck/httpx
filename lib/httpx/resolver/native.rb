@@ -375,7 +375,9 @@ module HTTPX
           @timeouts.delete(connection.peer.host)
           @connections.delete(connection)
           Resolver.cached_lookup_set(connection.peer.host, @family, addresses) if @resolver_options[:cache]
-          catch(:coalesced) { emit_addresses(connection, @family, addresses.map { |addr| addr["data"] }) }
+          catch(:coalesced) do
+            emit_addresses(connection, @family, addresses.map { |a| Resolver::Entry.new(a["data"], a["TTL"]) })
+          end
         end
       end
       close_or_resolve
