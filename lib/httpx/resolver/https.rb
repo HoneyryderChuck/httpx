@@ -204,7 +204,7 @@ module HTTPX
           @queries.delete_if { |_, conn| connection == conn }
 
           Resolver.cached_lookup_set(hostname, @family, addresses) if @resolver_options[:cache]
-          catch(:coalesced) { emit_addresses(connection, @family, addresses.map { |addr| addr["data"] }) }
+          catch(:coalesced) { emit_addresses(connection, @family, addresses.map { |a| Resolver::Entry.new(a["data"], a["TTL"]) }) }
         end
       end
       return if @connections.empty?
