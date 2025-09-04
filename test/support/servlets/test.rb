@@ -184,12 +184,13 @@ end
 class TestDNSResolver
   attr_reader :queries, :answers
 
-  def initialize(port = next_available_port, socket_type = :udp)
+  def initialize(port = next_available_port, socket_type = :udp, ttl: 120)
     @port = port
     @can_log = ENV.key?("HTTPX_DEBUG")
     @queries = 0
     @answers = 0
     @socket_type = socket_type
+    @ttl = ttl
   end
 
   def nameserver
@@ -264,7 +265,7 @@ class TestDNSResolver
     section << "\x00\x01".b
 
     # TTL in seconds
-    section << [120].pack("N").b
+    section << [@ttl].pack("N").b
 
     # Calculate RDATA - we need its length in advance
     rdata = if cname

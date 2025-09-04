@@ -304,6 +304,34 @@ module Requests
             end
           end
         end
+
+        define_method :"test_resolver_#{resolver_type}_ttl_expired" do
+          start_test_servlet(TestDNSResolver, ttl: 2) do |short_ttl_dns_server|
+            nameservers = [short_ttl_dns_server.nameserver]
+
+            resolver_opts = options.merge(nameserver: nameservers)
+
+            session = HTTPX.plugin(SessionWithPool)
+
+            2.times do
+              uri = URI(build_uri("/get"))
+              response = session.head(uri, resolver_class: resolver_type, resolver_options: resolver_opts)
+              verify_status(response, 200)
+              response.close
+            end
+
+            # expire ttl
+            sleep 2
+            uri = URI(build_uri("/get"))
+            response = session.head(uri, resolver_class: resolver_type, resolver_options: resolver_opts)
+            verify_status(response, 200)
+            response.close
+
+            num_answers = short_ttl_dns_server.answers
+            assert num_answers == 2, "should have only answered 2 times for DNS queries, instead is #{num_answers}"
+          end
+        end
+
       end
     end
   end
