@@ -71,7 +71,8 @@ module HTTPX
       addresses.map! { |address| address.is_a?(Resolver::Entry) ? address : Resolver::Entry.new(address) }
 
       # double emission check, but allow early resolution to work
-      return if !early_resolve && connection.addresses && !addresses.intersect?(connection.addresses)
+      conn_addrs = connection.addresses
+      return if !early_resolve && conn_addrs && (!conn_addrs.empty? && !addresses.intersect?(!conn_addrs))
 
       log do
         "resolver #{FAMILY_TYPES[RECORD_TYPES[family]]}: " \
