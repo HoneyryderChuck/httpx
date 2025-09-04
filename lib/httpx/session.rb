@@ -198,7 +198,12 @@ module HTTPX
         end
       when :closing, :closed
         connection.idling
-        select_connection(connection, selector)
+        if connection.addresses?
+          select_connection(connection, selector)
+        else
+          # if addresses expired, resolve again
+          resolve_connection(connection, selector)
+        end
       else
         pin_connection(connection, selector)
       end
