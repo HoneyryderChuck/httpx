@@ -306,7 +306,7 @@ module Requests
         end
 
         define_method :"test_resolver_#{resolver_type}_ttl_expired" do
-          start_test_servlet(TestDNSResolver, ttl: 2) do |short_ttl_dns_server|
+          start_test_servlet(TestDNSResolver, ttl: 4) do |short_ttl_dns_server|
             nameservers = [short_ttl_dns_server.nameserver]
 
             resolver_opts = options.merge(nameserver: nameservers)
@@ -315,15 +315,15 @@ module Requests
 
             2.times do
               uri = URI(build_uri("/get"))
-              response = session.head(uri, resolver_class: resolver_type, resolver_options: resolver_opts)
+              response = session.head(uri, resolver_class: resolver_type, resolver_options: resolver_opts, debug_level: 2, debug: $stderr)
               verify_status(response, 200)
               response.close
             end
 
             # expire ttl
-            sleep 2
+            sleep 4
             uri = URI(build_uri("/get"))
-            response = session.head(uri, resolver_class: resolver_type, resolver_options: resolver_opts)
+            response = session.head(uri, resolver_class: resolver_type, resolver_options: resolver_opts, debug_level: 2, debug: $stderr)
             verify_status(response, 200)
             response.close
 
