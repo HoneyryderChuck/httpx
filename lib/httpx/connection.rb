@@ -49,8 +49,8 @@ module HTTPX
     def initialize(uri, options)
       @current_session = @current_selector =
         @parser = @sibling = @coalesced_connection =
-                    @io = @ssl_session = @timeout =
-                            @connected_at = @response_received_at = nil
+                    @family = @io = @ssl_session = @timeout =
+                                      @connected_at = @response_received_at = nil
 
       @exhausted = @cloned = @main_sibling = false
 
