@@ -56,8 +56,8 @@ module HTTPX
         @addresses = [*@addresses[0, ip_index], *addrs, *@addresses[ip_index..-1]]
       else
         @addresses.unshift(*addrs)
-        @ip_index += addrs.size if @ip_index
       end
+      @ip_index += addrs.size
     end
 
     # eliminates expired entries and returns whether there are still any left.
