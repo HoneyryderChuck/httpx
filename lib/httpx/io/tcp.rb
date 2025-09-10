@@ -14,7 +14,10 @@ module HTTPX
 
     def initialize(origin, addresses, options)
       @state = :idle
+      @keep_open = false
       @addresses = []
+      @ip_index = -1
+      @ip = nil
       @hostname = origin.host
       @options = options
       @fallback_protocol = @options.fallback_protocol
