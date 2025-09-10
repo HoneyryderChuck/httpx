@@ -91,29 +91,33 @@ module HTTPX
       try_connect
     rescue Errno::EHOSTUNREACH,
            Errno::ENETUNREACH => e
-      raise e if @ip_index <= 0
+      @ip_index -= 1
+
+      raise e if @ip_index.negative?
 
       log { "failed connecting to #{@ip} (#{e.message}), evict from cache and trying next..." }
       Resolver.cached_lookup_evict(@hostname, @ip)
 
-      @ip_index -= 1
       @io = build_socket
       retry
     rescue Errno::ECONNREFUSED,
            Errno::EADDRNOTAVAIL,
            SocketError,
            IOError => e
-      raise e if @ip_index <= 0
+      @ip_index -= 1
+
+      raise e if @ip_index.negative?
 
       log { "failed connecting to #{@ip} (#{e.message}), trying next..." }
-      @ip_index -= 1
       @io = build_socket
       retry
     rescue Errno::ETIMEDOUT => e
-      raise ConnectTimeoutError.new(@options.timeout[:connect_timeout], e.message) if @ip_index <= 0
+      @ip_index -= 1
+
+      raise ConnectTimeoutError.new(@options.timeout[:connect_timeout], e.message) if @ip_index.negative?
 
       log { "failed connecting to #{@ip} (#{e.message}), trying next..." }
-      @ip_index -= 1
+
       @io = build_socket
       retry
     end
