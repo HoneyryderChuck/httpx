@@ -44,7 +44,7 @@ module HTTPX
 
     attr_accessor :current_session, :family
 
-    protected :sibling
+    protected :ssl_session, :sibling
 
     def initialize(uri, options)
       @current_session = @current_selector =
@@ -177,7 +177,7 @@ module HTTPX
 
     def merge(connection)
       @origins |= connection.instance_variable_get(:@origins)
-      if connection.ssl_session
+      if @ssl_session.nil? && connection.ssl_session
         @ssl_session = connection.ssl_session
         @io.session_new_cb do |sess|
           @ssl_session = sess
