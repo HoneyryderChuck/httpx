@@ -151,6 +151,14 @@ module HTTPX
 
     def freeze
       self.class.options_names.each do |ivar|
+        # avoid freezing debug option, as when it's set, it's usually an
+        # object which cannot be frozen, like stderr or stdout. It's a
+        # documented exception then, and still does not defeat the purpose
+        # here, which is to make option objects shareable across ractors,
+        # and in most cases debug should be nil, or one of the objects
+        # which will eventually be shareable, like STDOUT or STDERR.
+        next if ivar == :debug
+
         instance_variable_get(:"@#{ivar}").freeze
       end
       super
