@@ -82,6 +82,17 @@ module HTTPX
     def connect
       return unless closed?
 
+      if @addresses.empty?
+        # an idle connection trying to connect with no available addresses is a connection
+        # out of the initial context which is back to the DNS resolution loop. This may
+        # happen in a fiber-aware context where a connection reconnects with expired addresses,
+        # and context is passed back to a fiber on the same connection while waiting for the
+        # DNS answer.
+        log { "tried connecting while resolving, skipping..." }
+
+        return
+      end
+
       if !@io || @io.closed?
         transition(:idle)
         @io = build_socket
