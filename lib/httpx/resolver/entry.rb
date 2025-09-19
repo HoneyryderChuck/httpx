@@ -5,6 +5,8 @@ require "ipaddr"
 module HTTPX
   module Resolver
     class Entry < SimpleDelegator
+      include Comparable
+
       attr_reader :address
 
       def self.convert(address)
@@ -24,6 +26,14 @@ module HTTPX
 
       def expired?
         @expires_in < Utils.now
+      end
+
+      def <=>(other)
+        if @address.ipv6?
+          other.address.ipv6? ? 0 : 1
+        else
+          other.address.ipv6? ? -1 : 0
+        end
       end
     end
   end
