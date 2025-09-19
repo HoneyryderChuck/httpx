@@ -106,7 +106,7 @@ module HTTPX
     end
 
     class GoawayError < Error
-      def initialize: () -> void
+      def initialize: (?Symbol code) -> void
     end
 
     class PingError < Error

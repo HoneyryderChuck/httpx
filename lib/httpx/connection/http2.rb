@@ -23,8 +23,8 @@ module HTTPX
     end
 
     class GoawayError < Error
-      def initialize
-        super(0, :no_error)
+      def initialize(code = :no_error)
+        super(0, code)
       end
     end
 
@@ -385,12 +385,10 @@ module HTTPX
           while (request = @pending.shift)
             emit(:error, request, error)
           end
-        when :no_error
-          ex = GoawayError.new
+        else
+          ex = GoawayError.new(error)
           @pending.unshift(*@streams.keys)
           teardown
-        else
-          ex = Error.new(0, error)
         end
 
         if ex
