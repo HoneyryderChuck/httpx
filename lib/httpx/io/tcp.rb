@@ -14,7 +14,10 @@ module HTTPX
 
     def initialize(origin, addresses, options)
       @state = :idle
+      @keep_open = false
       @addresses = []
+      @ip_index = -1
+      @ip = nil
       @hostname = origin.host
       @options = options
       @fallback_protocol = @options.fallback_protocol
@@ -53,8 +56,8 @@ module HTTPX
         @addresses = [*@addresses[0, ip_index], *addrs, *@addresses[ip_index..-1]]
       else
         @addresses.unshift(*addrs)
-        @ip_index += addrs.size if @ip_index
       end
+      @ip_index += addrs.size
     end
 
     # eliminates expired entries and returns whether there are still any left.
@@ -63,9 +66,7 @@ module HTTPX
 
       @addresses.delete_if(&:expired?)
 
-      unless (decr = prev_addr_size - @addresses.size).zero?
-        @ip_index = @addresses.size - decr
-      end
+      @ip_index = @addresses.size - 1 if prev_addr_size != @addresses.size
 
       @addresses.any?
     end
@@ -81,6 +82,17 @@ module HTTPX
     def connect
       return unless closed?
 
+      if @addresses.empty?
+        # an idle connection trying to connect with no available addresses is a connection
+        # out of the initial context which is back to the DNS resolution loop. This may
+        # happen in a fiber-aware context where a connection reconnects with expired addresses,
+        # and context is passed back to a fiber on the same connection while waiting for the
+        # DNS answer.
+        log { "tried connecting while resolving, skipping..." }
+
+        return
+      end
+
       if !@io || @io.closed?
         transition(:idle)
         @io = build_socket
@@ -88,29 +100,33 @@ module HTTPX
       try_connect
     rescue Errno::EHOSTUNREACH,
            Errno::ENETUNREACH => e
-      raise e if @ip_index <= 0
+      @ip_index -= 1
+
+      raise e if @ip_index.negative?
 
       log { "failed connecting to #{@ip} (#{e.message}), evict from cache and trying next..." }
       Resolver.cached_lookup_evict(@hostname, @ip)
 
-      @ip_index -= 1
       @io = build_socket
       retry
     rescue Errno::ECONNREFUSED,
            Errno::EADDRNOTAVAIL,
            SocketError,
            IOError => e
-      raise e if @ip_index <= 0
+      @ip_index -= 1
+
+      raise e if @ip_index.negative?
 
       log { "failed connecting to #{@ip} (#{e.message}), trying next..." }
-      @ip_index -= 1
       @io = build_socket
       retry
     rescue Errno::ETIMEDOUT => e
-      raise ConnectTimeoutError.new(@options.timeout[:connect_timeout], e.message) if @ip_index <= 0
+      @ip_index -= 1
+
+      raise ConnectTimeoutError.new(@options.timeout[:connect_timeout], e.message) if @ip_index.negative?
 
       log { "failed connecting to #{@ip} (#{e.message}), trying next..." }
-      @ip_index -= 1
+
       @io = build_socket
       retry
     end
