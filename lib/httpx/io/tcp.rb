@@ -64,7 +64,13 @@ module HTTPX
     def addresses?
       prev_addr_size = @addresses.size
 
-      @addresses.delete_if(&:expired?).sort!
+      @addresses.delete_if(&:expired?).sort! do |addr1, addr2|
+        if addr1.ipv6?
+          addr2.ipv6? ? 0 : 1
+        else
+          addr2.ipv6? ? -1 : 0
+        end
+      end
 
       @ip_index = @addresses.size - 1 if prev_addr_size != @addresses.size
 
