@@ -27,6 +27,8 @@ module HTTPX
 
         attr_reader scope: Array[String]?
 
+        attr_reader audience: String?
+
         def initialize: (issuer: uri, client_id: String, client_secret: String, ?access_token: String?, ?refresh_token: String?, ?scope: (Array[String] | String)?, ?token_endpoint: String?, ?response_type: String?, ?grant_type: String?, ?token_endpoint_auth_method: ::String) -> void
 
         def token_endpoint: () -> String

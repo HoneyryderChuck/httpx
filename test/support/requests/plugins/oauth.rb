@@ -9,13 +9,15 @@ module Requests
           opts = HTTPX.plugin(:oauth).oauth_auth(
             issuer: server.origin,
             client_id: "CLIENT_ID", client_secret: "SECRET",
-            scope: "all"
+            scope: "all",
+            audience: "audience"
           ).instance_variable_get(:@options)
 
           assert opts.oauth_session.grant_type == "client_credentials"
           assert opts.oauth_session.token_endpoint.to_s == "#{server.origin}/token"
           assert opts.oauth_session.token_endpoint_auth_method == "client_secret_basic"
           assert opts.oauth_session.scope == %w[all]
+          assert opts.oauth_session.audience == 'audience'
 
           # from options, pointing to refresh
           opts = HTTPX.plugin(:oauth).oauth_auth(
