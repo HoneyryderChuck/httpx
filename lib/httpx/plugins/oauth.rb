@@ -127,7 +127,7 @@ module HTTPX
           grant_type = oauth_session.grant_type
 
           headers = {}
-          form_post = { "grant_type" => grant_type, "scope" => Array(oauth_session.scope).join(" ") }.reverse_merge(oauth_session.token_endpoint_form_post).compact
+          form_post = oauth_session.token_endpoint_form_post.merge({ "grant_type" => grant_type, "scope" => Array(oauth_session.scope).join(" ") }).compact
 
           # auth
           case oauth_session.token_endpoint_auth_method
