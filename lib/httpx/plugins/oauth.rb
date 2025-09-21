@@ -16,7 +16,7 @@ module HTTPX
       SUPPORTED_AUTH_METHODS = %w[client_secret_basic client_secret_post].freeze
 
       class OAuthSession
-        attr_reader :grant_type, :client_id, :client_secret, :access_token, :refresh_token, :scope
+        attr_reader :grant_type, :client_id, :client_secret, :access_token, :refresh_token, :scope, :audience
 
         def initialize(
           issuer:,
@@ -25,6 +25,7 @@ module HTTPX
           access_token: nil,
           refresh_token: nil,
           scope: nil,
+          audience: nil,
           token_endpoint: nil,
           response_type: nil,
           grant_type: nil,
@@ -41,6 +42,7 @@ module HTTPX
                    when Array
                      scope
           end
+          @audience = audience
           @access_token = access_token
           @refresh_token = refresh_token
           @token_endpoint_auth_method = String(token_endpoint_auth_method) if token_endpoint_auth_method
@@ -125,7 +127,11 @@ module HTTPX
           grant_type = oauth_session.grant_type
 
           headers = {}
-          form_post = { "grant_type" => grant_type, "scope" => Array(oauth_session.scope).join(" ") }.compact
+          form_post = {
+            "grant_type" => grant_type,
+            "scope" => Array(oauth_session.scope).join(" "),
+            "audience" => oauth_session.audience,
+          }.compact
 
           # auth
           case oauth_session.token_endpoint_auth_method

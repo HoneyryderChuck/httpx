@@ -26,20 +26,30 @@ class OAuthProviderServer < TestServer
       end
 
       res["content-type"] = "application/json"
+
+      token = +""
+
       case body["grant_type"]
       when "client_credentials"
-        if user == "CLIENT_ID" && pass == "SECRET"
-          res.body = JSON.dump({ "access_token" => "CLIENT-CREDS-AUTH", "expires_in" => 3600, "token_type" => "bearer" })
-          nil
+        token << "CLIENT-CREDS-AUTH" if user == "CLIENT_ID" && pass == "SECRET"
+
+        if (aud = body["audience"])
+          token << "-" << aud
         end
+
+        res.body = JSON.dump({ "access_token" => token, "expires_in" => 3600, "token_type" => "bearer" })
       when "refresh_token"
-        if user == "CLIENT_ID" && pass == "SECRET" && body["refresh_token"] == "REFRESH_TOKEN"
-          res.body = JSON.dump({ "access_token" => "REFRESH-TOKEN-AUTH", "expires_in" => 3600, "token_type" => "bearer" })
-          nil
+        token << "REFRESH-TOKEN-AUTH" if user == "CLIENT_ID" && pass == "SECRET" && body["refresh_token"] == "REFRESH_TOKEN"
+
+        if (aud = body["audience"])
+          token << "-" << aud
         end
-      else
-        raise "unsupported"
+
       end
+
+      raise "unsupported" if token.empty?
+
+      res.body = JSON.dump({ "access_token" => token, "expires_in" => 3600, "token_type" => "bearer" })
     end
   end
 
