@@ -69,8 +69,12 @@ module HTTPX
       addresses = @resolver_options[:cache] && (connection.addresses || HTTPX::Resolver.nolookup_resolve(hostname))
       return false unless addresses
 
+      ip_families = connection.options.ip_families || Resolver.supported_ip_families
+
       resolved = false
       addresses.group_by(&:family).sort { |(f1, _), (f2, _)| f2 <=> f1 }.each do |family, addrs|
+        next unless ip_families.include?(family)
+
         # try to match the resolver by family. However, there are cases where that's not possible, as when
         # the system does not have IPv6 connectivity, but it does support IPv6 via loopback/link-local.
         resolver = @resolvers.find { |r| r.family == family } || @resolvers.first
@@ -87,7 +91,11 @@ module HTTPX
     end
 
     def lazy_resolve(connection)
+      ip_families = connection.options.ip_families || Resolver.supported_ip_families
+
       @resolvers.each do |resolver|
+        next unless ip_families.include?(resolver.family)
+
         resolver << @current_session.try_clone_connection(connection, @current_selector, resolver.family)
         next if resolver.empty?
 
