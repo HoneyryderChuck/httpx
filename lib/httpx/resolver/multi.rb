@@ -15,7 +15,9 @@ module HTTPX
       @options = options
       @resolver_options = @options.resolver_options
 
-      @resolvers = options.ip_families.map do |ip_family|
+      ip_families = options.ip_families || Resolver.supported_ip_families
+
+      @resolvers = ip_families.map do |ip_family|
         resolver = resolver_type.new(ip_family, options)
         resolver.multi = self
         resolver

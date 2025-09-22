@@ -187,7 +187,9 @@ module HTTPX
 
       transition(:open)
 
-      connection.options.ip_families.each do |family|
+      ip_families = connection.options.ip_families || Resolver.supported_ip_families
+
+      ip_families.each do |family|
         @queries << [family, connection]
       end
       async_resolve(connection, hostname, scheme)
@@ -195,7 +197,7 @@ module HTTPX
     end
 
     def async_resolve(connection, hostname, scheme)
-      families = connection.options.ip_families
+      families = connection.options.ip_families || Resolver.supported_ip_families
       log { "resolver: query for #{hostname}" }
       timeouts = @timeouts[connection.peer.host]
       resolve_timeout = timeouts.first

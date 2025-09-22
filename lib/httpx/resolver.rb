@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "socket"
 require "resolv"
 
 module HTTPX
@@ -21,6 +22,20 @@ module HTTPX
     @hosts_resolver = Resolv::Hosts.new
 
     module_function
+
+    def supported_ip_families
+      @supported_ip_families ||= begin
+        # https://github.com/ruby/resolv/blob/095f1c003f6073730500f02acbdbc55f83d70987/lib/resolv.rb#L408
+        list = Socket.ip_address_list
+        if list.any? { |a| a.ipv6? && !a.ipv6_loopback? && !a.ipv6_linklocal? }
+          [Socket::AF_INET6, Socket::AF_INET]
+        else
+          [Socket::AF_INET]
+        end
+      rescue NotImplementedError
+        [Socket::AF_INET]
+      end.freeze
+    end
 
     def resolver_for(resolver_type, options)
       case resolver_type

@@ -130,7 +130,7 @@ module HTTPX
     attr_reader pool_options: pool_options
 
     # ip_families
-    attr_reader ip_families: Array[ip_family]
+    attr_reader ip_families: Array[ip_family]?
 
     def ==: (Options other) -> bool
 
@@ -195,7 +195,7 @@ module HTTPX
 
     def option_addresses: (ipaddr | _ToAry[ipaddr] value) -> Array[ipaddr]
 
-    def option_ip_families: (Integer | _ToAry[Integer] value) -> Array[Integer]
+    def option_ip_families: (ip_family | _ToAry[ip_family] value) -> Array[ip_family]
   end
 
   type options = Options | Hash[Symbol, untyped]

@@ -79,12 +79,18 @@ module HTTPX
           "answer #{connection.peer.host}: #{addresses.inspect} (early resolve: #{early_resolve})"
       end
 
-      if !early_resolve && # do not apply resolution delay for non-dns name resolution
-         @current_selector && # just in case...
-         family == Socket::AF_INET && # resolution delay only applies to IPv4
-         !connection.io && # connection already has addresses and initiated/ended handshake
-         connection.options.ip_families.size > 1 && # no need to delay if not supporting dual stack IP
-         addresses.first.to_s != connection.peer.host.to_s # connection URL host is already the IP (early resolve included perhaps?)
+      # do not apply resolution delay for non-dns name resolution
+      if !early_resolve &&
+         # just in case...
+         @current_selector &&
+         # resolution delay only applies to IPv4
+         family == Socket::AF_INET &&
+         # connection already has addresses and initiated/ended handshake
+         !connection.io &&
+         # no need to delay if not supporting dual stack / multi-homed IP
+         (connection.options.ip_families || Resolver.supported_ip_families).size > 1 &&
+         # connection URL host is already the IP (early resolve included perhaps?)
+         addresses.first.to_s != connection.peer.host.to_s
         log { "resolver #{FAMILY_TYPES[RECORD_TYPES[family]]}: applying resolution delay..." }
 
         @current_selector.after(0.05) do
