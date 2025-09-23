@@ -23,6 +23,8 @@ module HTTPX
 
     def self?.hosts_resolve: (String hostname) -> Array[Entry]?
 
+    def self?.supported_ip_families: () -> Array[ip_family]
+
     def self?.resolver_for: (Symbol | singleton(Resolver) resolver_type, Options options) -> singleton(Resolver)
 
     def self?.cached_lookup: (String hostname) -> Array[Entry]?

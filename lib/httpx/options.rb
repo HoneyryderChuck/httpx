@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "socket"
-
 module HTTPX
   # Contains a set of options which are passed and shared across from session to its requests or
   # responses.
@@ -414,18 +412,6 @@ module HTTPX
       end
     end
 
-    # https://github.com/ruby/resolv/blob/095f1c003f6073730500f02acbdbc55f83d70987/lib/resolv.rb#L408
-    ip_address_families = begin
-      list = Socket.ip_address_list
-      if list.any? { |a| a.ipv6? && !a.ipv6_loopback? && !a.ipv6_linklocal? }
-        [Socket::AF_INET6, Socket::AF_INET]
-      else
-        [Socket::AF_INET]
-      end
-    rescue NotImplementedError
-      [Socket::AF_INET]
-    end.freeze
-
     DEFAULT_OPTIONS = {
       :max_requests => Float::INFINITY,
       :debug => nil,
@@ -470,7 +456,7 @@ module HTTPX
       :resolver_class => (ENV["HTTPX_RESOLVER"] || :native).to_sym,
       :resolver_options => { cache: true }.freeze,
       :pool_options => EMPTY_HASH,
-      :ip_families => ip_address_families,
+      :ip_families => nil,
       :close_on_fork => false,
     }.freeze
   end
