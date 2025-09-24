@@ -243,6 +243,10 @@ module HTTPX
       case @state
       when :idle
         connect
+
+        # when opening the tcp or ssl socket fails
+        return if @state == :closed
+
         consume
       when :closed
         return
