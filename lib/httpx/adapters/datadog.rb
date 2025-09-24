@@ -180,7 +180,7 @@ module Datadog::Tracing
         end
 
         module RequestMethods
-          attr_reader :init_time
+          attr_accessor :init_time
 
           # intercepts request initialization to inject the tracing logic.
           def initialize(*)
@@ -193,25 +193,29 @@ module Datadog::Tracing
             RequestTracer.call(self)
           end
 
-          def response=(response)
-            if response.is_a?(::HTTPX::ErrorResponse) && response.error.respond_to?(:connection)
-              # handles the case when the +error+ happened during name resolution, which means
-              # that the tracing start point hasn't been triggered yet; in such cases, the approximate
-              # initial resolving time is collected from the connection, and used as span start time,
-              # and the tracing object in inserted before the on response callback is called.
-              @init_time = response.error.connection.init_time
-            end
+          def response=(*)
+            # init_time should be set when it's send to a connection.
+            # However, there are situations where connection initialization fails.
+            # Example is the :ssrf_filter plugin, which raises an error on
+            # initialize if the host is an IP which matches against the known set.
+            # in such cases, we'll just set here right here.
+            @init_time ||= ::Datadog::Core::Utils::Time.now.utc
+
             super
           end
         end
 
         module ConnectionMethods
-          attr_reader :init_time
-
           def initialize(*)
             super
 
             @init_time = ::Datadog::Core::Utils::Time.now.utc
+          end
+
+          def send(request)
+            request.init_time ||= @init_time
+
+            super
           end
         end
       end
