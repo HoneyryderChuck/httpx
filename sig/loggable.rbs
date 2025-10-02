@@ -12,6 +12,10 @@ module HTTPX
 
     def log_exception: (Exception error, ?level: Integer, ?color: Symbol, ?debug_level: Integer, ?debug: _IOLogger?) -> void
 
-    def log_redact: (_ToS text, ?bool should_redact) -> String
+    def log_redact_headers: (_ToS text) -> String
+
+    def log_redact_body: (_ToS text) -> String
+
+    def log_redact: (_ToS text, bool should_redact) -> String
   end
 end

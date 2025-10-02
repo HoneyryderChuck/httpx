@@ -73,6 +73,39 @@ class HTTPTest < Minitest::Test
     assert log_output.include?("HEADLINE: 200 HTTP/1.1")
     assert log_output.include?("HEADER: content-type: [REDACTED]")
     assert log_output.include?("HEADER: content-length: [REDACTED]")
+    assert log_output.include?("-> [REDACTED]"), "data should be redacted"
+
+    # headers only
+    log = StringIO.new
+    response = HTTPX.plugin(SessionWithPool).get(uri, debug: log, debug_level: 3, debug_redact: :headers)
+    verify_status(response, 200)
+    log_output = log.string
+    # assert request headers
+    assert log_output.include?("HEADLINE: \"GET #{uri.path} HTTP/1.1\"")
+    assert log_output.include?("HEADER: Accept: [REDACTED]")
+    assert log_output.include?("HEADER: Host: [REDACTED]")
+    assert log_output.include?("HEADER: Connection: [REDACTED]")
+    # assert response headers
+    assert log_output.include?("HEADLINE: 200 HTTP/1.1")
+    assert log_output.include?("HEADER: content-type: [REDACTED]")
+    assert log_output.include?("HEADER: content-length: [REDACTED]")
+    assert !log_output.include?("-> [REDACTED]"), "data should not be redacted"
+
+    # body only
+    log = StringIO.new
+    response = HTTPX.plugin(SessionWithPool).get(uri, debug: log, debug_level: 3, debug_redact: :body)
+    verify_status(response, 200)
+    log_output = log.string
+    # assert request headers
+    assert log_output.include?("HEADLINE: \"GET #{uri.path} HTTP/1.1\"")
+    assert !log_output.include?("HEADER: Accept: [REDACTED]")
+    assert !log_output.include?("HEADER: Host: [REDACTED]")
+    assert !log_output.include?("HEADER: Connection: [REDACTED]")
+    # assert response headers
+    assert log_output.include?("HEADLINE: 200 HTTP/1.1")
+    assert !log_output.include?("HEADER: content-type: [REDACTED]")
+    assert !log_output.include?("HEADER: content-length: [REDACTED]")
+    assert log_output.include?("-> [REDACTED]"), "data should be redacted"
   end
 
   def test_debug_with_and_without_color_codes
