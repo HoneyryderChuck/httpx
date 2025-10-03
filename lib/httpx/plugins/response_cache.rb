@@ -118,7 +118,10 @@ module HTTPX
 
             response.copy_from_cached!
           elsif request.cacheable_verb? && ResponseCache.cacheable_response?(response)
-            request.options.response_cache_store.set(request, response) unless response.cached?
+            unless response.cached?
+              log { "caching response for #{request.uri}..." }
+              request.options.response_cache_store.set(request, response)
+            end
           end
 
           response
