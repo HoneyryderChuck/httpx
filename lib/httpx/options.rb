@@ -13,6 +13,9 @@ module HTTPX
     CONNECT_TIMEOUT = READ_TIMEOUT = WRITE_TIMEOUT = 60
     REQUEST_TIMEOUT = OPERATION_TIMEOUT = nil
 
+    # default value used for "user-agent" header, when not overridden.
+    USER_AGENT = "httpx.rb/#{VERSION}".freeze # rubocop:disable Style/RedundantFreeze
+
     @options_names = []
 
     class << self
@@ -144,6 +147,7 @@ module HTTPX
         instance_variable_set(:"@#{k}", value)
       end
 
+      do_initialize
       freeze
     end
 
@@ -369,6 +373,8 @@ module HTTPX
     end
 
     def option_headers(value)
+      value = value.dup if value.frozen?
+
       headers_class.new(value)
     end
 
@@ -393,6 +399,20 @@ module HTTPX
 
     def option_ip_families(value)
       Array(value)
+    end
+
+    # called after all options are initialized
+    def do_initialize
+      hs = @headers
+
+      # initialized default request headers
+      hs["user-agent"] = USER_AGENT unless hs.key?("user-agent")
+      hs["accept"] = "*/*" unless hs.key?("accept")
+      if hs.key?("range")
+        hs.delete("accept-encoding")
+      else
+        hs["accept-encoding"] = supported_compression_formats unless hs.key?("accept-encoding")
+      end
     end
 
     def access_option(obj, k, ivar_map)
