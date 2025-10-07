@@ -206,7 +206,12 @@ module Requests
 
       def test_plugin_socks4_proxy_ip
         proxy = URI(socks4_proxy.first)
+
+        # doing this bit of song and dance due to URI's CVE "fix" from 1.0.4
+        # https://github.com/ruby/uri/issues/184
+        user, _ = proxy.userinfo
         proxy.host = Resolv.getaddress(proxy.host)
+        proxy.user = user
 
         session = HTTPX.plugin(:proxy).plugin(ProxyResponseDetector).with_proxy(uri: [proxy])
         uri = build_uri("/get")

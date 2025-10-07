@@ -28,8 +28,7 @@ module HTTPX
         begin
           chunk = @body.next
           if outbuf
-            outbuf.clear.force_encoding(Encoding::BINARY)
-            outbuf << chunk
+            outbuf.replace(chunk)
           else
             outbuf = chunk
           end
