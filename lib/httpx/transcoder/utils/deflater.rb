@@ -31,8 +31,7 @@ module HTTPX
         return unless compressed_chunk
 
         if outbuf
-          outbuf.clear.force_encoding(Encoding::BINARY)
-          outbuf << compressed_chunk
+          outbuf.replace(compressed_chunk)
         else
           compressed_chunk
         end
