@@ -21,6 +21,7 @@ module HTTPX
 
     type timeout_type = :connect_timeout | :settings_timeout | :close_handshake_timeout | :operation_timeout | :keep_alive_timeout | :read_timeout | :write_timeout | :request_timeout
     type timeout = Hash[timeout_type, Numeric?]
+    type redact_value = :headers | :body | bool
 
     def self.new: (?options) -> instance
 
@@ -178,7 +179,7 @@ module HTTPX
     def option_io: (io_option value) -> io_option
     def option_fallback_protocol: (String value) -> String
     def option_debug: (_IOLogger value) -> _IOLogger
-    def option_debug_redact: (bool value) -> bool
+    def option_debug_redact: (redact_value value) -> redact_value
     def option_compress_request_body: (bool value) -> bool
     def option_decompress_response_body: (bool value) -> bool
     def option_persistent: (bool value) -> bool

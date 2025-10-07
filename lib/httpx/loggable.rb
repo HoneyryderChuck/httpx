@@ -47,7 +47,17 @@ module HTTPX
       log(level: level, color: color, debug_level: debug_level, debug: debug) { ex.full_message }
     end
 
-    def log_redact(text, should_redact = @options.debug_redact)
+    def log_redact_headers(text)
+      log_redact(text, @options.debug_redact == :headers)
+    end
+
+    def log_redact_body(text)
+      log_redact(text, @options.debug_redact == :body)
+    end
+
+    def log_redact(text, should_redact)
+      should_redact ||= @options.debug_redact == true
+
       return text.to_s unless should_redact
 
       "[REDACTED]"
