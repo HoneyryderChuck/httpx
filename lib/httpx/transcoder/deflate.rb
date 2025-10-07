@@ -10,15 +10,20 @@ module HTTPX
         def deflate(chunk)
           @deflater ||= Zlib::Deflate.new
 
-          if chunk.nil?
-            unless @deflater.closed?
-              last = @deflater.finish
-              @deflater.close
-              last.empty? ? nil : last
-            end
-          else
-            @deflater.deflate(chunk)
+          unless chunk.nil?
+            chunk = @deflater.deflate(chunk)
+
+            # deflate call may return nil, while still
+            # retaining the last chunk in the deflater.
+            return chunk unless chunk.empty?
           end
+
+          return if @deflater.closed?
+
+          last = @deflater.finish
+          @deflater.close
+
+          last unless last.empty?
         end
       end
 
