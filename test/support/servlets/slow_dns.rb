@@ -6,11 +6,11 @@ require_relative "test"
 # from https://gist.github.com/peterc/1425383
 
 class SlowDNSServer < TestDNSResolver
-  def initialize(timeout, *args, hostname: nil, als: nil)
+  def initialize(timeout, *args, hostname: nil, als: nil, **kwargs)
     @timeout = timeout
     @hostname = hostname
     @alias = als
-    super(*args)
+    super(*args, **kwargs)
   end
 
   private
