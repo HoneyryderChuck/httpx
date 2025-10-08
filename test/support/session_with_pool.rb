@@ -47,4 +47,23 @@ module SessionWithPool
       parser.on(:pong) { emit(:pong) }
     end
   end
+
+  module ResolverNativeMethods
+    attr_reader :tries
+
+    def initialize(*)
+      super
+      @tries = Hash.new(0)
+    end
+
+    private
+
+    def resolve(*)
+      super
+
+      return unless @name
+
+      @tries[@name] += 1
+    end
+  end
 end

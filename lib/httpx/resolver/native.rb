@@ -93,11 +93,11 @@ module HTTPX
     end
 
     def timeout
-      return if @connections.empty?
+      return unless @name
 
       @start_timeout = Utils.now
-      hosts = @queries.keys
-      @timeouts.values_at(*hosts).reject(&:empty?).map(&:first).min
+
+      @timeouts[@name].first
     end
 
     def handle_socket_timeout(interval); end
@@ -154,7 +154,7 @@ module HTTPX
       @timer = @current_selector.after(timeout) do
         next unless @connections.include?(connection)
 
-        @timer = nil
+        @timer = @name = nil
 
         do_retry(h, connection, timeout)
       end
@@ -273,7 +273,7 @@ module HTTPX
     def parse(buffer)
       @timer.cancel
 
-      @timer = nil
+      @timer = @name = nil
 
       code, result = Resolver.decode_dns_answer(buffer)
 
