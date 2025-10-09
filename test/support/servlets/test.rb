@@ -235,14 +235,22 @@ class TestDNSResolver
     response << question_section(query)
     response << answer_section(ip)
     response
+  rescue Resolv::ResolvError
+    # nxdomain error
+    response = response_header(query, 3)
+    response << question_section(query)
+    response
   end
 
   def resolve(domain)
     Resolv.getaddress(domain)
   end
 
-  def response_header(query)
-    "#{query[0, 2]}\x81\x00#{query[4, 2] * 2}\x00\x00\x00\x00".b
+  def response_header(query, rccode = 0)
+    rc = [rccode].pack("C")
+    qdcount = "\x00\x01".b
+    ancount = rccode.positive? ? "\x00\x00".b : "\x00\x01".b
+    "#{query[0, 2]}\x81#{rc}#{qdcount}#{ancount}\x00\x00\x00\x00".b
   end
 
   def question_section(query)
@@ -256,10 +264,18 @@ class TestDNSResolver
   end
 
   def answer_section(ip)
-    cname = ip =~ /[a-z]/
+    begin
+      ip = IPAddr.new(ip)
+    rescue IPAddr::InvalidAddressError
+      cname = ip
+    end
 
     # Set response type accordingly
-    section = (cname ? "\x00\x05".b : "\x00\x01".b)
+    section = if cname
+      "\x00\x05".b
+    else
+      ip.ipv6? ? "\x00\x1C".b : "\x00\x01".b
+    end
 
     # Set response class (IN)
     section << "\x00\x01".b
@@ -272,7 +288,7 @@ class TestDNSResolver
       ip.split(".").map { |a| a.length.chr + a }.join << "\x00"
     else
       # Append IP address as four 8 bit unsigned bytes
-      ip.split(".").map(&:to_i).pack("C*")
+      ip.hton
     end
 
     # RDATA is 4 bytes
