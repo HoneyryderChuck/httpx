@@ -158,6 +158,10 @@ module HTTPX
       connection.merge(self)
     end
 
+    def coalesced?
+      @coalesced_connection
+    end
+
     # coalescable connections need to be mergeable!
     # but internally, #mergeable? is called before #coalescable?
     def coalescable?(connection)

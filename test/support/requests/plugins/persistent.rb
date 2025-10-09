@@ -82,6 +82,39 @@ module Requests
         end
       end
 
+      def test_plugin_persistent_coalescing
+        coalesced_origin = "https://#{ENV["HTTPBIN_COALESCING_HOST"]}"
+        http = HTTPX.plugin(SessionWithPool).plugin(:persistent)
+
+        response1 = http.get(origin)
+        verify_status(response1, 200)
+        response2 = http.get(coalesced_origin)
+        verify_status(response2, 200)
+        # introspection time
+        connections = http.connections
+        assert connections.size == 2
+        origins = connections.map(&:origins)
+        assert origins.any? { |orgs| orgs.sort == [origin, coalesced_origin].sort },
+               "connections for #{[origin, coalesced_origin]} didn't coalesce (expected connection with both origins (#{origins}))"
+
+        assert http.pool.connections.size == 1, "coalesced connection should have been dropped"
+        assert http.pool.connections_counter == 1, "coalesced connection should not have been accounted for in the pool"
+
+        unsafe_origin = URI(origin)
+        unsafe_origin.scheme = "http"
+        response3 = http.get(unsafe_origin)
+        verify_status(response3, 200)
+
+        # introspection time
+        connections = http.connections
+        assert connections.size == 3
+        origins = connections.map(&:origins)
+        refute origins.any?([origin]),
+               "connection coalesced inexpectedly (expected connection with both origins (#{origins}))"
+
+        http.close
+      end if ENV.key?("HTTPBIN_COALESCING_HOST")
+
       def test_persistent_retry_http2_goaway
         return unless origin.start_with?("https")
 

@@ -67,9 +67,12 @@ class HTTPSTest < Minitest::Test
       verify_status(response2, 200)
       # introspection time
       connections = http.connections
+      assert connections.size == 2
       origins = connections.map(&:origins)
       assert origins.any? { |orgs| orgs.sort == [origin, coalesced_origin].sort },
              "connections for #{[origin, coalesced_origin]} didn't coalesce (expected connection with both origins (#{origins}))"
+
+      assert http.pool.connections_counter == 1, "coalesced connection should not have been accounted for in the pool"
 
       unsafe_origin = URI(origin)
       unsafe_origin.scheme = "http"
@@ -78,6 +81,7 @@ class HTTPSTest < Minitest::Test
 
       # introspection time
       connections = http.connections
+      assert connections.size == 3
       origins = connections.map(&:origins)
       refute origins.any?([origin]),
              "connection coalesced inexpectedly (expected connection with both origins (#{origins}))"

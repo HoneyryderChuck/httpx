@@ -112,6 +112,13 @@ module HTTPX
       return if connection.options.io
 
       @connection_mtx.synchronize do
+        if connection.coalesced? || connection.state == :idle
+          # when connections coalesce
+          drop_connection(connection)
+
+          return
+        end
+
         @connections << connection
 
         @max_connections_cond.signal
