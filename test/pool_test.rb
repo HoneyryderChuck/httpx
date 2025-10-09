@@ -25,7 +25,8 @@ class PoolTest < Minitest::Test
       uri = i.odd? ? URI(build_uri("/")) : URI(build_uri("/", "#{scheme}another2"))
 
       Thread.start do
-        HTTPX.with(pool_options: { max_connections: 2, pool_timeout: 30 }) do |http|
+        HTTPX.with(debug: $stderr, debug_level: 2)
+             .with(pool_options: { max_connections: 2, pool_timeout: 30 }) do |http|
           http.instance_variable_set(:@pool, pool)
           response = http.get(uri)
           mtx.synchronize { responses << response }
