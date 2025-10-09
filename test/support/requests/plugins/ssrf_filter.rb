@@ -35,8 +35,8 @@ module Requests
 
       def test_plugin_ssrf_filter_dns_answer_spoof
         dns_spoof_resolver = Class.new(TestDNSResolver) do
-          def resolve(_)
-            "255.255.255.255"
+          def resolve(_, family)
+            family == 1 ? ["255.255.255.255"] : []
           end
         end
         start_test_servlet(dns_spoof_resolver) do |spoof_dns|

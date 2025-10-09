@@ -229,11 +229,12 @@ class TestDNSResolver
 
   def dns_response(query)
     domain = extract_domain(query)
-    ip = resolve(domain)
+    typevalue = extract_family(query)
+    ips = resolve(domain, typevalue)
 
     response = response_header(query)
     response << question_section(query)
-    response << answer_section(ip)
+    response << answer_section(ips)
     response
   rescue Resolv::ResolvError
     # nxdomain error
@@ -242,8 +243,24 @@ class TestDNSResolver
     response
   end
 
-  def resolve(domain)
-    Resolv.getaddress(domain)
+  def resolve(domain, typevalue)
+    Resolv.getaddresses(domain).filter_map do |address|
+      begin
+        ip = IPAddr.new(address)
+
+        address if case typevalue
+                   when 1
+                     ip.ipv4?
+                   when 28
+                     ip.ipv6?
+                   else
+                     false
+                   end
+      rescue IPAddr::AddressFamilyError
+        # CNAME
+        address
+      end
+    end
   end
 
   def response_header(query, rccode = 0)
@@ -263,55 +280,65 @@ class TestDNSResolver
     section
   end
 
-  def answer_section(ip)
-    begin
-      ip = IPAddr.new(ip)
-    rescue IPAddr::InvalidAddressError
-      cname = ip
+  def answer_section(ips)
+    section = "".b
+
+    ips.each do |ip|
+      begin
+        ip = IPAddr.new(ip)
+      rescue IPAddr::InvalidAddressError
+        cname = ip
+      end
+
+      # Set response type accordingly
+      section = if cname
+        "\x00\x05".b
+      else
+        ip.ipv6? ? "\x00\x1C".b : "\x00\x01".b
+      end
+
+      # Set response class (IN)
+      section << "\x00\x01".b
+
+      # TTL in seconds
+      section << [@ttl].pack("N").b
+
+      # Calculate RDATA - we need its length in advance
+      rdata = if cname
+        ip.split(".").map { |a| a.length.chr + a }.join << "\x00"
+      else
+        # Append IP address as four 8 bit unsigned bytes
+        ip.hton
+      end
+
+      # RDATA is 4 bytes
+      section << [rdata.length].pack("n").b
+      section << rdata.b
     end
-
-    # Set response type accordingly
-    section = if cname
-      "\x00\x05".b
-    else
-      ip.ipv6? ? "\x00\x1C".b : "\x00\x01".b
-    end
-
-    # Set response class (IN)
-    section << "\x00\x01".b
-
-    # TTL in seconds
-    section << [@ttl].pack("N").b
-
-    # Calculate RDATA - we need its length in advance
-    rdata = if cname
-      ip.split(".").map { |a| a.length.chr + a }.join << "\x00"
-    else
-      # Append IP address as four 8 bit unsigned bytes
-      ip.hton
-    end
-
-    # RDATA is 4 bytes
-    section << [rdata.length].pack("n").b
-    section << rdata.b
     section
   end
 
-  def extract_domain(data)
+  def extract_family(query)
+    section = query[12..-1].b
+    flags = section[-4..-1].b
+    flags.unpack1("n")
+  end
+
+  def extract_domain(query)
     domain = +""
 
     # Check "Opcode" of question header for valid question
-    if (data[2].ord & 120).zero?
+    if (query[2].ord & 120).zero?
       # Read QNAME section of question section
       # DNS header section is 12 bytes long, so data starts at offset 12
 
       idx = 12
-      len = data[idx].ord
+      len = query[idx].ord
       # Strings are rendered as a byte containing length, then text.. repeat until length of 0
       until len.zero?
-        domain << "#{data[idx + 1, len]}."
+        domain << "#{query[idx + 1, len]}."
         idx += len + 1
-        len = data[idx].ord
+        len = query[idx].ord
       end
     end
     domain

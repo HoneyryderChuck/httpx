@@ -25,7 +25,7 @@ class SlowDNSServer < TestDNSResolver
     super
   end
 
-  def resolve(domain)
+  def resolve(domain, *)
     if domain == "#{@hostname}."
       @alias
     else
