@@ -66,6 +66,8 @@ module HTTPX
 
     def coalesce!: (instance connection) -> void
 
+    def coalesced?: () -> boolish
+
     def coalescable?: (Connection connection) -> bool
 
     def create_idle: (?Hash[Symbol, untyped] options) -> instance

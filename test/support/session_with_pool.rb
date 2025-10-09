@@ -2,7 +2,7 @@
 
 module SessionWithPool
   module PoolMethods
-    attr_reader :resolvers
+    attr_reader :resolvers, :connections, :connections_counter
   end
 
   module InstanceMethods

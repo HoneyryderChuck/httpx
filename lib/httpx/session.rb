@@ -453,6 +453,8 @@ module HTTPX
       conn2.coalesce!(conn1)
       select_connection(conn1, selector) if from_pool
       conn2.disconnect
+      conn2.log(level: 2) { "check-in coalesced connection##{conn2.object_id}(#{conn2.state}) in pool##{@pool.object_id}" }
+      @pool.checkin_connection(conn2)
       true
     end
 
