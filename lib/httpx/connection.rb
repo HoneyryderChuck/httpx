@@ -933,6 +933,17 @@ module HTTPX
 
     def set_request_timeout(label, request, timeout, start_event, finish_events, &callback)
       request.set_timeout_callback(start_event) do
+        unless @current_selector
+          raise Error, "request has been resend to an out-of-session connection, and this " \
+                       "should never happen!!! Please report this error! " \
+                       "(state:#{@state}, " \
+                       "parser?:#{!!@parser}, " \
+                       "bytes in write buffer?:#{!@write_buffer.empty?}, " \
+                       "cloned?:#{@cloned}, " \
+                       "sibling?:#{!!@sibling}, " \
+                       "coalesced?:#{coalesced?})"
+        end
+
         timer = @current_selector.after(timeout, callback)
         request.active_timeouts << label
 
