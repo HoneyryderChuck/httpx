@@ -51,32 +51,53 @@ module HTTPX
         acquire_connection(uri, options) || begin
           if @connections_counter == @max_connections
             # this takes precedence over per-origin
-            @max_connections_cond.wait(@connection_mtx, @pool_timeout)
 
-            if (conn = acquire_connection(uri, options))
-              return conn
-            end
+            expires_at = Utils.now + @pool_timeout
 
-            if @connections_counter == @max_connections
-              # if no matching usable connection was found, the pool will make room and drop a closed connection. if none is found,
-              # this means that all of them are persistent or being used, so raise a timeout error.
-              conn = @connections.find { |c| c.state == :closed }
+            loop do
+              @max_connections_cond.wait(@connection_mtx, @pool_timeout)
+
+              if (conn = acquire_connection(uri, options))
+                return conn
+              end
+
+              # if one can afford to create a new connection, do it
+              break unless @connections_counter == @max_connections
+
+              # if no matching usable connection was found, the pool will make room and drop a closed connection.
+              if (conn = @connections.find { |c| c.state == :closed })
+                drop_connection(conn)
+                break
+              end
+
+              # happens when a condition was signalled, but another thread snatched the available connection before
+              # context was passed back here.
+              next if Utils.now < expires_at
 
               raise PoolTimeoutError.new(@pool_timeout,
-                                         "Timed out after #{@pool_timeout} seconds while waiting for a connection") unless conn
-
-              drop_connection(conn)
+                                         "Timed out after #{@pool_timeout} seconds while waiting for a connection")
             end
 
           end
 
           if @origin_counters[uri.origin] == @max_connections_per_origin
 
-            @origin_conds[uri.origin].wait(@connection_mtx, @pool_timeout)
+            expires_at = Utils.now + @pool_timeout
 
-            return acquire_connection(uri, options) ||
-                   raise(PoolTimeoutError.new(@pool_timeout,
-                                              "Timed out after #{@pool_timeout} seconds while waiting for a connection to #{uri.origin}"))
+            loop do
+              @origin_conds[uri.origin].wait(@connection_mtx, @pool_timeout)
+
+              if (conn = acquire_connection(uri, options))
+                return conn
+              end
+
+              # happens when a condition was signalled, but another thread snatched the available connection before
+              # context was passed back here.
+              next if Utils.now < expires_at
+
+              raise(PoolTimeoutError.new(@pool_timeout,
+                                         "Timed out after #{@pool_timeout} seconds while waiting for a connection to #{uri.origin}"))
+            end
           end
 
           @connections_counter += 1
@@ -140,6 +161,7 @@ module HTTPX
     # :nocov:
     def inspect
       "#<#{self.class}:#{object_id} " \
+        "@max_connections=#{@max_connections} " \
         "@max_connections_per_origin=#{@max_connections_per_origin} " \
         "@pool_timeout=#{@pool_timeout} " \
         "@connections=#{@connections.size}>"
