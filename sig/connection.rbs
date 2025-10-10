@@ -46,6 +46,7 @@ module HTTPX
     @exhausted: bool
     @cloned: bool
     @coalesced_connection: instance?
+    @altsvc_connection: instance?
     @sibling: instance?
     @main_sibling: bool
 
