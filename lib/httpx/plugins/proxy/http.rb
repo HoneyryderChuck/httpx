@@ -76,11 +76,32 @@ module HTTPX
                   if parser.empty?
                     reset
                   else
+                    current_session = @current_session
+                    current_selector = @current_selector
+
+                    initial_state = @state
+
                     transition(:closing)
                     transition(:closed)
 
-                    parser.reset if @parser
-                    transition(:idle)
+                    # keep parser state around due to proxy auth protocol;
+                    # intermediate authenticated request is already inside
+                    # the parser
+                    parser = nil
+                    if initial_state == :connecting
+                      parser = @parser
+                      @parser.reset
+                    end
+
+                    idling
+
+                    @parser = parser
+
+                    # these may have been nullified if there were no pending
+                    # requests in the queue, but a connection about to connect
+                    # must always be bound to the session.
+                    @current_session ||= current_session
+                    @current_selector ||= current_selector
                     transition(:connecting)
                   end
                 end
