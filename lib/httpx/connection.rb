@@ -48,9 +48,9 @@ module HTTPX
 
     def initialize(uri, options)
       @current_session = @current_selector =
-        @parser = @sibling = @coalesced_connection =
-                    @family = @io = @ssl_session = @timeout =
-                                      @connected_at = @response_received_at = nil
+        @parser = @sibling = @coalesced_connection = @altsvc_connection =
+                               @family = @io = @ssl_session = @timeout =
+                                                 @connected_at = @response_received_at = nil
 
       @exhausted = @cloned = @main_sibling = false
 
@@ -84,10 +84,6 @@ module HTTPX
         next unless @current_session
 
         @current_session.deselect_connection(self, @current_selector, @cloned)
-      end
-
-      on(:altsvc) do |alt_origin, origin, alt_params|
-        build_altsvc_connection(alt_origin, origin, alt_params)
       end
 
       self.addresses = @options.addresses if @options.addresses
@@ -410,7 +406,11 @@ module HTTPX
           # * the number of pending requests
           # * whether the write buffer has bytes (i.e. for close handshake)
           if @pending.empty? && @inflight.zero? && @write_buffer.empty?
-            log(level: 3) { "NO MORE REQUESTS..." }
+            log(level: 3) { "NO MORE REQUESTS..." } if @parser && @parser.pending.any?
+
+            # terminate if an altsvc connection has been established
+            terminate if @altsvc_connection
+
             return
           end
 
@@ -455,7 +455,14 @@ module HTTPX
             break if @state == :closing || @state == :closed
 
             # exit #consume altogether if all outstanding requests have been dealt with
-            return if @pending.empty? && @inflight.zero?
+            if @pending.empty? && @inflight.zero? && @write_buffer.empty? # rubocop:disable Style/Next
+              log(level: 3) { "NO MORE REQUESTS..." } if @parser && @parser.pending.any?
+
+              # terminate if an altsvc connection has been established
+              terminate if @altsvc_connection
+
+              return
+            end
           end unless ((ints = interests).nil? || ints == :w || @state == :closing) && !epiped
 
           #
@@ -557,7 +564,7 @@ module HTTPX
     def set_parser_callbacks(parser)
       parser.on(:response) do |request, response|
         AltSvc.emit(request, response) do |alt_origin, origin, alt_params|
-          emit(:altsvc, alt_origin, origin, alt_params)
+          build_altsvc_connection(alt_origin, origin, alt_params)
         end
         @response_received_at = Utils.now
         @inflight -= 1
@@ -565,7 +572,7 @@ module HTTPX
         request.emit(:response, response)
       end
       parser.on(:altsvc) do |alt_origin, origin, alt_params|
-        emit(:altsvc, alt_origin, origin, alt_params)
+        build_altsvc_connection(alt_origin, origin, alt_params)
       end
 
       parser.on(:pong, &method(:send_pending))
@@ -791,6 +798,8 @@ module HTTPX
 
     # returns an HTTPX::Connection for the negotiated Alternative Service (or none).
     def build_altsvc_connection(alt_origin, origin, alt_params)
+      return if @altsvc_connection
+
       # do not allow security downgrades on altsvc negotiation
       return if @origin.scheme == "https" && alt_origin.scheme != "https"
 
@@ -808,10 +817,11 @@ module HTTPX
 
       connection.extend(AltSvc::ConnectionMixin) unless connection.is_a?(AltSvc::ConnectionMixin)
 
-      log(level: 1) { "#{origin} alt-svc: #{alt_origin}" }
+      @altsvc_connection = connection
+
+      log(level: 1) { "#{origin}: alt-svc connection##{connection.object_id} established to #{alt_origin}" }
 
       connection.merge(self)
-      terminate
     rescue UnsupportedSchemeError
       altsvc["noop"] = true
       nil
