@@ -85,17 +85,6 @@ module HTTPX
 
         @current_session.deselect_connection(self, @current_selector, @cloned)
       end
-      on(:terminate) do
-        next if @exhausted # it'll reset
-
-        current_session = @current_session
-        current_selector = @current_selector
-
-        # may be called after ":close" above, so after the connection has been checked back in.
-        next unless current_session && current_selector
-
-        current_session.deselect_connection(self, current_selector)
-      end
 
       on(:altsvc) do |alt_origin, origin, alt_params|
         build_altsvc_connection(alt_origin, origin, alt_params)
@@ -277,7 +266,7 @@ module HTTPX
       case @state
       when :idle
         purge_after_closed
-        emit(:terminate)
+        unlink
       when :closed
         @connected_at = nil
       end
@@ -613,7 +602,7 @@ module HTTPX
       parser.on(:close) do |force|
         if force
           reset
-          emit(:terminate)
+          unlink
         end
       end
       parser.on(:close_handshake) do
@@ -772,6 +761,19 @@ module HTTPX
       @io.close if @io
       @read_buffer.clear
       @timeout = nil
+    end
+
+    # disconnects from the current session it's attached to
+    def unlink
+      return if @exhausted # it'll reset
+
+      current_session = @current_session
+      current_selector = @current_selector
+
+      # may be called after ":close" above, so after the connection has been checked back in.
+      return unless current_session && current_selector
+
+      current_session.deselect_connection(self, current_selector)
     end
 
     def initialize_type(uri, options)
