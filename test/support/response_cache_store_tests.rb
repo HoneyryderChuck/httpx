@@ -19,6 +19,9 @@ module ResponseCacheStoreTests
 
     request3 = make_request("POST", "http://store-cache/")
     assert store.get(request3).nil?
+
+    request4 = make_request("GET", "http://store-cache/", params: { "foo" => "bar" })
+    assert store.get(request4).nil?
   end
 
   def test_store_prepare_maxage
