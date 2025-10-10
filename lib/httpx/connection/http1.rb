@@ -44,7 +44,7 @@ module HTTPX
       @max_requests = @options.max_requests || MAX_REQUESTS
       @parser.reset!
       @handshake_completed = false
-      @pending.concat(@requests) unless @requests.empty?
+      @pending.unshift(*@requests) unless @requests.empty?
     end
 
     def close
@@ -182,7 +182,7 @@ module HTTPX
       end
 
       if exhausted?
-        @pending.concat(@requests)
+        @pending.unshift(*@requests)
         @requests.clear
 
         emit(:exhausted)
@@ -236,7 +236,7 @@ module HTTPX
       when /keep-alive/i
         if @handshake_completed
           if @max_requests.zero?
-            @pending.concat(@requests)
+            @pending.unshift(*@requests)
             @requests.clear
             emit(:exhausted)
           end
