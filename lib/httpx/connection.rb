@@ -586,7 +586,7 @@ module HTTPX
         current_selector = @current_selector
         begin
           parser.close
-          @pending.concat(parser.pending)
+          @pending.unshift(*parser.pending)
         ensure
           @current_session = current_session
           @current_selector = current_selector
@@ -616,7 +616,7 @@ module HTTPX
         consume
       end
       parser.on(:reset) do
-        @pending.concat(parser.pending) unless parser.empty?
+        @pending.unshift(*parser.pending) unless parser.empty?
         current_session = @current_session
         current_selector = @current_selector
         reset
