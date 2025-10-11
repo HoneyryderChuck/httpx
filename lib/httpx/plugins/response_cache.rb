@@ -207,7 +207,7 @@ module HTTPX
         # returns a unique cache key as a String identifying this request
         def response_cache_key
           @response_cache_key ||= begin
-            keys = [@verb, @uri, (Transcoder::Form.encode(@query_params) if @query_params && !@query_params.empty?)]
+            keys = [@verb, @uri.merge(path)]
 
             @options.supported_vary_headers.each do |field|
               value = @headers[field]
