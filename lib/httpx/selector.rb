@@ -51,7 +51,7 @@ module HTTPX
 
         begin
           select(timeout) do |c|
-            c.log(level: 2) { "[#{c.state}] selected#{" after #{timeout} secs" unless timeout.nil?}..." }
+            c.log(level: 2) { "[#{c.state}] selected from selector##{object_id} #{" after #{timeout} secs" unless timeout.nil?}..." }
 
             c.call
           end
@@ -157,7 +157,9 @@ module HTTPX
 
         next(is_closed) if is_closed
 
-        io.log(level: 2) { "[#{io.state}] registering for select (#{interests})#{" for #{interval} seconds" unless interval.nil?}" }
+        io.log(level: 2) do
+          "[#{io.state}] registering in selector##{object_id} for select (#{interests})#{" for #{interval} seconds" unless interval.nil?}"
+        end
 
         if READABLE.include?(interests)
           r = r.nil? ? io : (Array(r) << io)
