@@ -75,17 +75,6 @@ module HTTPX
       else
         transition(:idle)
       end
-      on(:close) do
-        next if @exhausted # it'll reset
-
-        # may be called after ":close" above, so after the connection has been checked back in.
-        # next unless @current_session
-
-        next unless @current_session
-
-        @current_session.deselect_connection(self, @current_selector, @cloned)
-      end
-
       self.addresses = @options.addresses if @options.addresses
     end
 
@@ -365,10 +354,13 @@ module HTTPX
     end
 
     def disconnect
-      return unless @current_session && @current_selector
+      return unless (current_session = @current_session) && (current_selector = @current_selector)
 
-      emit(:close)
       @current_session = @current_selector = nil
+
+      return if @exhausted # it'll reset
+
+      current_session.deselect_connection(self, current_selector, @cloned)
     end
 
     # :nocov:
