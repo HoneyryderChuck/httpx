@@ -387,12 +387,11 @@ module HTTPX
           end
         else
           ex = GoawayError.new(error)
+          ex.set_backtrace(caller)
+
           @pending.unshift(*@streams.keys)
           teardown
-        end
 
-        if ex
-          ex.set_backtrace(caller)
           handle_error(ex)
         end
       end
