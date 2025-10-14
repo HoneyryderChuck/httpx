@@ -89,7 +89,7 @@ module HTTPX
         @connection.goaway
         emit(:timeout, @options.timeout[:close_handshake_timeout])
       end
-      emit(:close, true)
+      emit(:close)
     end
 
     def empty?
@@ -397,7 +397,7 @@ module HTTPX
       end
       return unless is_connection_closed && @streams.empty?
 
-      emit(:close, is_connection_closed)
+      emit(:close) if is_connection_closed
     end
 
     def on_frame_sent(frame)

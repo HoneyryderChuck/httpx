@@ -599,11 +599,9 @@ module HTTPX
       parser.on(:origin) do |origin|
         @origins |= [origin]
       end
-      parser.on(:close) do |force|
-        if force
-          reset
-          unlink
-        end
+      parser.on(:close) do
+        reset
+        disconnect
       end
       parser.on(:close_handshake) do
         consume

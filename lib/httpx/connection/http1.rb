@@ -49,7 +49,7 @@ module HTTPX
 
     def close
       reset
-      emit(:close, true)
+      emit(:close)
     end
 
     def exhausted?

@@ -64,13 +64,11 @@ module HTTPX
                 parser = @parser
                 parser.extend(ProxyParser)
                 parser.on(:response, &method(:__http_on_connect))
-                parser.on(:close) do |force|
+                parser.on(:close) do
                   next unless @parser
 
-                  if force
-                    reset
-                    disconnect
-                  end
+                  reset
+                  disconnect
                 end
                 parser.on(:reset) do
                   if parser.empty?
