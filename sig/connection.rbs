@@ -133,6 +133,8 @@ module HTTPX
 
     def send_request_to_parser: (Request request) -> void
 
+    def enqueue_pending_requests_from_parser: (HTTP1 | HTTP2 parser) -> void
+
     def build_parser: (?String protocol) -> (Object & _Parser)
 
     def set_parser_callbacks: (HTTP1 | HTTP2 parser) -> void

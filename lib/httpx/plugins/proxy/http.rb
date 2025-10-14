@@ -74,18 +74,21 @@ module HTTPX
                   if parser.empty?
                     reset
                   else
-                    current_session = @current_session
-                    current_selector = @current_selector
+                    enqueue_pending_requests_from_parser(parser)
 
                     initial_state = @state
 
-                    transition(:closing)
-                    transition(:closed)
+                    reset
 
+                    if @pending.empty?
+                      @parser = nil
+                      next
+                    end
                     # keep parser state around due to proxy auth protocol;
                     # intermediate authenticated request is already inside
                     # the parser
                     parser = nil
+
                     if initial_state == :connecting
                       parser = @parser
                       @parser.reset
@@ -95,11 +98,6 @@ module HTTPX
 
                     @parser = parser
 
-                    # these may have been nullified if there were no pending
-                    # requests in the queue, but a connection about to connect
-                    # must always be bound to the session.
-                    @current_session ||= current_session
-                    @current_selector ||= current_selector
                     transition(:connecting)
                   end
                 end
