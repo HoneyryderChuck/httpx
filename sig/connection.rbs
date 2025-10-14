@@ -111,8 +111,6 @@ module HTTPX
 
     def sibling=: (instance? connection) -> void
 
-    def unlink: () -> void
-
     def handle_connect_error: (StandardError error) -> void
 
     def disconnect: () -> void

@@ -126,6 +126,8 @@ module HTTPX
         private
 
         def disconnect
+          return if @exhausted
+
           return unless @current_session && @current_selector
 
           emit(:callback_connection_closed)
