@@ -251,7 +251,7 @@ module HTTPX
       case @state
       when :idle
         purge_after_closed
-        unlink
+        disconnect
       when :closed
         @connected_at = nil
       end
@@ -353,12 +353,13 @@ module HTTPX
       force_reset(true)
     end
 
+    # disconnects from the current session it's attached to
     def disconnect
+      return if @exhausted # it'll reset
+
       return unless (current_session = @current_session) && (current_selector = @current_selector)
 
       @current_session = @current_selector = nil
-
-      return if @exhausted # it'll reset
 
       current_session.deselect_connection(self, current_selector, @cloned)
     end
@@ -760,19 +761,6 @@ module HTTPX
       @io.close if @io
       @read_buffer.clear
       @timeout = nil
-    end
-
-    # disconnects from the current session it's attached to
-    def unlink
-      return if @exhausted # it'll reset
-
-      current_session = @current_session
-      current_selector = @current_selector
-
-      # may be called after ":close" above, so after the connection has been checked back in.
-      return unless current_session && current_selector
-
-      current_session.deselect_connection(self, current_selector)
     end
 
     def initialize_type(uri, options)

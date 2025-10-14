@@ -69,7 +69,7 @@ module HTTPX
 
                   if force
                     reset
-                    unlink
+                    disconnect
                   end
                 end
                 parser.on(:reset) do

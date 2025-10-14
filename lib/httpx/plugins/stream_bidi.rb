@@ -193,6 +193,9 @@ module HTTPX
 
         def deselect_connection(connection, *)
           super
+
+          return if @current_session # nothing happened
+
           connection.signal = nil
         end
       end
