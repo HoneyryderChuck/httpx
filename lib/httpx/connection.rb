@@ -548,6 +548,17 @@ module HTTPX
       request.ping!
     end
 
+    def enqueue_pending_requests_from_parser(parser)
+      parser_pending_requests = parser.pending
+
+      return if parser_pending_requests.empty?
+
+      # the connection will be reused, so parser requests must come
+      # back to the pending list before the parser is reset.
+      @inflight -= parser_pending_requests.size
+      @pending.unshift(*parser_pending_requests)
+    end
+
     def build_parser(protocol = @io.protocol)
       parser = parser_type(protocol).new(@write_buffer, @options)
       set_parser_callbacks(parser)
@@ -574,27 +585,13 @@ module HTTPX
         request.emit(:promise, parser, stream)
       end
       parser.on(:exhausted) do
-        @exhausted = true
-        current_session = @current_session
-        current_selector = @current_selector
-        begin
-          parser.close
-          @pending.unshift(*parser.pending)
-        ensure
-          @current_session = current_session
-          @current_selector = current_selector
-        end
+        enqueue_pending_requests_from_parser(parser)
 
-        case @state
-        when :closed
-          idling
-          @exhausted = false
-        when :closing
-          once(:closed) do
-            idling
-            @exhausted = false
-          end
-        end
+        @exhausted = true
+        parser.close
+
+        idling
+        @exhausted = false
       end
       parser.on(:origin) do |origin|
         @origins |= [origin]
@@ -607,15 +604,12 @@ module HTTPX
         consume
       end
       parser.on(:reset) do
-        @pending.unshift(*parser.pending) unless parser.empty?
-        current_session = @current_session
-        current_selector = @current_selector
+        enqueue_pending_requests_from_parser(parser)
+
         reset
-        unless @pending.empty?
-          idling
-          @current_session = current_session
-          @current_selector = current_selector
-        end
+        # :reset event only fired in http/1.1, so this guarantees
+        # that the connection will be closed here.
+        idling unless @pending.empty?
       end
       parser.on(:current_timeout) do
         @current_timeout = @timeout = parser.timeout
