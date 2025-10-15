@@ -108,7 +108,13 @@ module HTTPX
 
       @start_timeout = Utils.now
 
-      @timeouts[@name].first
+      timeouts = @timeouts[@name]
+
+      return if timeouts.empty?
+
+      log(level: 2) { "resolver #{FAMILY_TYPES[@record_type]}: next timeout #{timeouts.first} secs... (#{timeouts.size - 1} left)" }
+
+      timeouts.first
     end
 
     def handle_socket_timeout(interval); end
