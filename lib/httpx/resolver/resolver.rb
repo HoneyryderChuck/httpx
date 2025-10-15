@@ -55,6 +55,12 @@ module HTTPX
 
     alias_method :terminate, :close
 
+    def force_close(*args)
+      while (connection = @connections.shift)
+        connection.force_close(*args)
+      end
+    end
+
     def closed?
       true
     end
