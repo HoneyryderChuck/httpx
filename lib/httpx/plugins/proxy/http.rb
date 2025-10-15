@@ -47,6 +47,17 @@ module HTTPX
             super || @state == :connecting || @state == :connected
           end
 
+          def force_close(*)
+            if @state == :connecting
+              # proxy connect related requests should not be reenqueed
+              @parser.reset!
+              @inflight -= @parser.pending.size
+              @parser.pending.clear
+            end
+
+            super
+          end
+
           private
 
           def handle_transition(nextstate)

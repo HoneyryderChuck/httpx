@@ -93,6 +93,8 @@ module HTTPX
 
     def close: () -> void
 
+    def force_close: (?bool delete_pending) -> void
+
     def force_reset: (?bool cloned) -> void
 
     def reset: () -> void

@@ -258,6 +258,22 @@ module HTTPX
       close
     end
 
+    # bypasses state machine rules while setting the connection in the
+    # :closed state.
+    def force_close(delete_pending = false)
+      if delete_pending
+        @pending.clear
+      elsif (parser = @parser)
+        enqueue_pending_requests_from_parser(parser)
+      end
+      return if @state == :closed
+
+      @state = :closed
+      @write_buffer.clear
+      purge_after_closed
+      disconnect
+    end
+
     # bypasses the state machine to force closing of connections still connecting.
     # **only** used for Happy Eyeballs v2.
     def force_reset(cloned = false)
@@ -676,16 +692,12 @@ module HTTPX
       error = ConnectionError.new(e.message)
       error.set_backtrace(e.backtrace)
       handle_connect_error(error) if connecting?
-      @state = :closed
-      purge_after_closed
-      disconnect
+      force_close
     rescue TLSError, ::HTTP2::Error::ProtocolError, ::HTTP2::Error::HandshakeError => e
       # connect errors, exit gracefully
       handle_error(e)
       handle_connect_error(e) if connecting?
-      @state = :closed
-      purge_after_closed
-      disconnect
+      force_close
     end
 
     def handle_transition(nextstate)

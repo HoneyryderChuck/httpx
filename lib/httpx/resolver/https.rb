@@ -52,7 +52,7 @@ module HTTPX
       if @uri_addresses.empty?
         ex = ResolveError.new("Can't resolve DNS server #{@uri.host}")
         ex.set_backtrace(caller)
-        connection.force_reset
+        connection.force_close
         throw(:resolve_error, ex)
       end
 
