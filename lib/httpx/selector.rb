@@ -61,17 +61,6 @@ module HTTPX
           @timers.fire(e)
         end
       end
-    rescue StandardError => e
-      each_connection do |c|
-        c.emit(:error, e)
-      end
-    rescue Exception # rubocop:disable Lint/RescueException
-      each_connection do |conn|
-        conn.force_reset
-        conn.disconnect
-      end
-
-      raise
     end
 
     def terminate
@@ -208,7 +197,21 @@ module HTTPX
     end
 
     def select_many(r, w, interval, &block)
-      readers, writers = ::IO.select(r, w, nil, interval)
+      begin
+        readers, writers = ::IO.select(r, w, nil, interval)
+      rescue StandardError => e
+        (Array(r) + Array(w)).each do |c|
+          handle_selectable_error(c, e)
+        end
+
+        return
+      rescue Exception => e # rubocop:disable Lint/RescueException
+        (Array(r) + Array(w)).each do |sel|
+          sel.force_close(true)
+        end
+
+        raise e
+      end
 
       if readers.nil? && writers.nil? && interval
         [*r, *w].each { |io| io.handle_socket_timeout(interval) }
@@ -230,12 +233,22 @@ module HTTPX
     end
 
     def select_one(io, interests, interval)
-      result =
-        case interests
-        when :r then io.to_io.wait_readable(interval)
-        when :w then io.to_io.wait_writable(interval)
-        when :rw then rw_wait(io, interval)
-        end
+      begin
+        result =
+          case interests
+          when :r then io.to_io.wait_readable(interval)
+          when :w then io.to_io.wait_writable(interval)
+          when :rw then rw_wait(io, interval)
+          end
+      rescue StandardError => e
+        handle_selectable_error(io, e)
+
+        return
+      rescue Exception => e # rubocop:disable Lint/RescueException
+        io.force_close(true)
+
+        raise e
+      end
 
       unless result || interval.nil?
         io.handle_socket_timeout(interval) unless @is_timer_interval
@@ -243,6 +256,15 @@ module HTTPX
       end
 
       yield io
+    end
+
+    def handle_selectable_error(sel, error)
+      case sel
+      when Resolver::Resolver
+        sel.handle_error(error)
+      when Connection
+        sel.on_error(error)
+      end
     end
 
     def next_timeout

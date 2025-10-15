@@ -237,6 +237,8 @@ module HTTPX
     rescue StandardError => e
       @write_buffer.clear
       on_error(e)
+    rescue Exception => e # rubocop:disable Lint/RescueException
+      force_close(true)
       raise e
     end
 

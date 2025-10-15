@@ -30,7 +30,8 @@ module HTTPX
       use_get: false,
     }.freeze
 
-    def_delegators :@resolver_connection, :state, :connecting?, :to_io, :call, :close, :terminate, :inflight?, :handle_socket_timeout
+    def_delegators :@resolver_connection, :state, :connecting?, :to_io, :call, :close, :force_close,
+                   :terminate, :inflight?, :handle_socket_timeout
 
     def initialize(_, options)
       super

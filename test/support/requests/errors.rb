@@ -67,6 +67,9 @@ module Requests
         verify_error_response(response, "done with it")
         assert http.connections.size == 1
         assert http.connections.first.state == :closed
+        selector = http.get_current_selector
+        assert selector
+        assert selector.empty?, "there should be no conn being selected after error was raised"
       end
     end
   end

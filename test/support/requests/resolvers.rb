@@ -189,15 +189,26 @@ module Requests
 
         # this test mocks a DNS server invalid messages back
         define_method :"test_resolver_#{resolver_type}_decoding_error" do
-          session = HTTPX.plugin(SessionWithPool)
-          uri = URI(build_uri("/get"))
-          resolver_class = Class.new(HTTPX::Resolver::Native) do
-            def parse(buffer)
-              super(buffer[0..-2])
+          HTTPX.plugin(SessionWithPool).wrap do |session|
+            uri = URI(build_uri("/get"))
+            before_connections = nil
+            resolver_class = Class.new(HTTPX::Resolver::Native) do
+              attr_reader :connections
+
+              define_method :parse do |buffer|
+                before_connections = @connections.size
+                super(buffer[0..-2])
+              end
             end
+            response = session.head(uri, resolver_class: resolver_class, resolver_options: options.merge(record_types: %w[]))
+            verify_error_response(response, HTTPX::NativeResolveError)
+            assert session.resolvers.size == 1
+            resolver = session.resolvers.first
+            resolver = resolver.resolvers.first # because it's a multi
+            assert resolver.state == :closed
+            assert before_connections == 1, "resolver should have been resolving one connection"
+            assert resolver.connections.empty?, "resolver should not hold connections at this point anymore"
           end
-          response = session.head(uri, resolver_class: resolver_class, resolver_options: options.merge(record_types: %w[]))
-          verify_error_response(response, HTTPX::NativeResolveError)
         end
 
         # this test mocks a DNS server breaking the socket with Errno::EHOSTUNREACH

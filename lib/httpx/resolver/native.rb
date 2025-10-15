@@ -49,6 +49,17 @@ module HTTPX
       transition(:closed)
     end
 
+    def force_close(*)
+      @timer.cancel if @timer
+      @timer = @name = nil
+      @queries.clear
+      @timeouts.clear
+      close
+      super
+    ensure
+      terminate
+    end
+
     def terminate
       emit(:close, self)
     end

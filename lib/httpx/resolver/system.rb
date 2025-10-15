@@ -63,6 +63,14 @@ module HTTPX
       transition(:closed)
     end
 
+    def force_close(*)
+      close
+      @queries.clear
+      @timeouts.clear
+      @ips.clear
+      super
+    end
+
     def closed?
       @state == :closed
     end
