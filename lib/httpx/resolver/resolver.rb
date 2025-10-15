@@ -163,7 +163,7 @@ module HTTPX
     def emit_connection_error(connection, error)
       return connection.handle_connect_error(error) if connection.connecting?
 
-      connection.emit(:error, error)
+      connection.on_error(error)
     end
 
     def close_resolver(resolver)
