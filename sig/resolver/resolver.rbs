@@ -36,6 +36,8 @@ module HTTPX
 
       def emit_addresses: (Connection connection, ip_family family, Array[ipaddr], ?bool early_resolve) -> void
 
+      def handle_error: (ResolveError | StandardError) -> void
+
       def self.multi?: () -> bool
 
       private
