@@ -104,6 +104,18 @@ module HTTPX
       end
     end
 
+    def handle_error(error)
+      if error.respond_to?(:connection) &&
+         error.respond_to?(:host)
+        @connections.delete(error.connection)
+        emit_resolve_error(error.connection, error.host, error)
+      else
+        while (connection = @connections.shift)
+          emit_resolve_error(connection, connection.peer.host, error)
+        end
+      end
+    end
+
     private
 
     def emit_resolved_connection(connection, addresses, early_resolve)

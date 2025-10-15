@@ -102,6 +102,19 @@ module HTTPX
 
     def handle_socket_timeout(interval); end
 
+    def handle_error(error)
+      if error.respond_to?(:connection) &&
+         error.respond_to?(:host)
+        reset_hostname(error.host, connection: error.connection)
+      else
+        @queries.each do |host, connection|
+          reset_hostname(host, connection: connection)
+        end
+      end
+
+      super
+    end
+
     private
 
     def calculate_interests
@@ -500,25 +513,6 @@ module HTTPX
       # treat them as resolve errors.
       handle_error(e)
       emit(:close, self)
-    end
-
-    def handle_error(error)
-      if error.respond_to?(:connection) &&
-         error.respond_to?(:host)
-        reset_hostname(error.host, connection: error.connection)
-        @connections.delete(error.connection)
-        emit_resolve_error(error.connection, error.host, error)
-      else
-        @queries.each do |host, connection|
-          reset_hostname(host, connection: connection)
-          @connections.delete(connection)
-          emit_resolve_error(connection, host, error)
-        end
-
-        while (connection = @connections.shift)
-          emit_resolve_error(connection, connection.peer.host, error)
-        end
-      end
     end
 
     def reset_hostname(hostname, connection: @queries.delete(hostname), reset_candidates: true)
