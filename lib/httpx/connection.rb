@@ -65,7 +65,6 @@ module HTTPX
       @inflight = 0
       @keep_alive_timeout = @options.timeout[:keep_alive_timeout]
 
-      on(:error, &method(:on_error))
       if @options.io
         # if there's an already open IO, get its
         # peer address, and force-initiate the parser
@@ -209,7 +208,7 @@ module HTTPX
 
       nil
     rescue StandardError => e
-      emit(:error, e)
+      on_error(e)
       nil
     end
 
@@ -237,7 +236,7 @@ module HTTPX
       nil
     rescue StandardError => e
       @write_buffer.clear
-      emit(:error, e)
+      on_error(e)
       raise e
     end
 
@@ -362,6 +361,24 @@ module HTTPX
       @current_session = @current_selector = nil
 
       current_session.deselect_connection(self, current_selector, @cloned)
+    end
+
+    def on_error(error, request = nil)
+      if error.is_a?(OperationTimeoutError)
+
+        # inactive connections do not contribute to the select loop, therefore
+        # they should not fail due to such errors.
+        return if @state == :inactive
+
+        if @timeout
+          @timeout -= error.timeout
+          return unless @timeout <= 0
+        end
+
+        error = error.to_connection_error if connecting?
+      end
+      handle_error(error, request)
+      reset
     end
 
     # :nocov:
@@ -821,24 +838,6 @@ module HTTPX
       else
         raise Error, "unsupported transport (#{@type})"
       end
-    end
-
-    def on_error(error, request = nil)
-      if error.is_a?(OperationTimeoutError)
-
-        # inactive connections do not contribute to the select loop, therefore
-        # they should not fail due to such errors.
-        return if @state == :inactive
-
-        if @timeout
-          @timeout -= error.timeout
-          return unless @timeout <= 0
-        end
-
-        error = error.to_connection_error if connecting?
-      end
-      handle_error(error, request)
-      reset
     end
 
     def handle_error(error, request = nil)

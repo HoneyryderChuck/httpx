@@ -115,6 +115,8 @@ module HTTPX
 
     def disconnect: () -> void
 
+    def on_error: (HTTPX::TimeoutError | Error | StandardError error, ?Request? request) -> void
+
     private
 
     def initialize: (http_uri uri, Options options) -> void
@@ -146,8 +148,6 @@ module HTTPX
     def build_altsvc_connection: (URI::Generic alt_origin, String origin, Hash[String, String] alt_params) -> void
 
     def build_socket: (?Array[Resolver::Entry]? addrs) -> (TCP | SSL | UNIX)
-
-    def on_error: (HTTPX::TimeoutError | Error | StandardError error, ?Request? request) -> void
 
     def handle_error: (StandardError error, ?Request? request) -> void
 
