@@ -343,6 +343,52 @@ module Requests
           end
         end
 
+        define_method :"test_resolver_#{resolver_type}_candidate" do
+          uri = URI(build_uri("/get"))
+
+          only_to_candidate = Class.new(TestDNSResolver) do
+            define_method :dns_response do |query|
+              domain = extract_domain(query)
+
+              return unless domain == "#{uri.hostname}.local." # last condidate
+
+              super(query)
+            end
+
+            def resolve(domain, typevalue)
+              super(domain.delete_suffix(".local."), typevalue)
+            end
+          end
+
+          start_test_servlet(only_to_candidate) do |slow_dns_server|
+            dns_config = {
+              nameserver: [slow_dns_server.nameserver],
+              timeouts: [1, 2],
+              dots: 1,
+              search: "local",
+            }
+            resolver_opts = options.merge(dns_config)
+
+            HTTPX.plugin(SessionWithPool).wrap do |session|
+              response = session.get(uri, resolver_class: resolver_type, resolver_options: options.merge(resolver_opts))
+
+              verify_status(response, 200)
+              assert session.resolvers.size == 1
+              resolver = session.resolvers.first
+              resolver = resolver.resolvers.first # because it's a multi
+              assert resolver.state == :closed
+
+              tries = resolver.tries
+              assert tries.keys.size == 2
+              assert tries.key?(uri.hostname)
+              assert tries[uri.hostname] == 2, "should have tried canonical 2 times"
+              assert tries.key?("#{uri.hostname}.local")
+              assert tries["#{uri.hostname}.local"] == 1, "should have succeeded search domain at the first time"
+
+              assert resolver.timeouts.empty?, "should have cleaned up all candidate timeouts"
+            end
+          end
+        end
       end
     end
   end

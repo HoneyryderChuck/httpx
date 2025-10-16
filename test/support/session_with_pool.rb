@@ -60,7 +60,7 @@ module SessionWithPool
   end
 
   module ResolverNativeMethods
-    attr_reader :tries
+    attr_reader :timeouts, :tries
 
     def initialize(*)
       super
