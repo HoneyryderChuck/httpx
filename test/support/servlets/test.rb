@@ -201,7 +201,10 @@ class TestDNSResolver
     if @socket_type == :udp
       Socket.udp_server_loop(@port) do |query, src|
         @queries += 1
-        src.reply(dns_response(query))
+        answer = dns_response(query)
+        next unless answer
+
+        src.reply(answer)
         @answers += 1
       end
     elsif @socket_type == :tcp
@@ -214,6 +217,7 @@ class TestDNSResolver
             query << sock.readpartial(size - query.size) while query.size < size
             @queries += 1
             answer = dns_response(query)
+            next unless answer
 
             answer.prepend([answer.size].pack("n"))
             sock.write(answer)
