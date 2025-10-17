@@ -24,6 +24,21 @@ module ResponseCacheStoreTests
     assert store.get(request4).nil?
   end
 
+  def test_store_cache_compressed
+    body = "a" * 8012
+    gzip_body = Zlib.gzip(body)
+    request = make_request("GET", "http://store-gzip/", headers: { "accept-encoding" => "gzip" })
+    response = cached_response(
+      request,
+      extra_headers: { "content-encoding" => "gzip", "content-length" => gzip_body.size.to_s },
+      body: gzip_body
+    )
+    cached_response = store.get(request)
+    assert cached_response.headers == response.headers
+    assert cached_response.body == body
+    assert store.get(request)
+  end
+
   def test_store_prepare_maxage
     request = make_request("GET", "http://prepare-maxage/")
     response = cached_response(request, extra_headers: { "cache-control" => "max-age=2" })

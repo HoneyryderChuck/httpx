@@ -130,6 +130,7 @@ module HTTPX::Plugins
         response = request.options.response_class.new(request, status, version, response_headers)
         response.original_request = original_request
         response.finish!
+        response.mark_as_cached!
 
         IO.copy_stream(f, response.body)
 

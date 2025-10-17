@@ -330,6 +330,14 @@ module HTTPX
           Time.now
         end
       end
+
+      module ResponseBodyMethods
+        def decode_chunk(chunk)
+          return chunk if @response.cached?
+
+          super
+        end
+      end
     end
     register_plugin :response_cache, ResponseCache
   end
