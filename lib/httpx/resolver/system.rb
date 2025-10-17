@@ -56,7 +56,7 @@ module HTTPX
     end
 
     def empty?
-      true
+      @connections.empty?
     end
 
     def close
@@ -109,15 +109,16 @@ module HTTPX
       timeouts.first
     end
 
-    def <<(connection)
+    def lazy_resolve(connection)
       @connections << connection
       resolve
+
+      return if empty?
+
+      @current_session.select_resolver(self, @current_selector)
     end
 
-    def early_resolve(connection, **)
-      self << connection
-      true
-    end
+    def early_resolve(connection, **); end
 
     def handle_socket_timeout(interval)
       error = HTTPX::ResolveTimeoutError.new(interval, "timed out while waiting on select")
@@ -154,34 +155,38 @@ module HTTPX
     def consume
       return if @connections.empty?
 
-      if @pipe_read.wait_readable
-        event = @pipe_read.getbyte
+      event = @pipe_read.read_nonblock(1, exception: false)
 
-        case event
-        when DONE
-          *pair, addrs = @pipe_mutex.synchronize { @ips.pop }
-          if pair
-            @queries.delete(pair)
-            family, connection = pair
-            @connections.delete(connection)
+      return if event == :wait_readable
 
-            catch(:coalesced) { emit_addresses(connection, family, addrs) }
-          end
-        when ERROR
-          *pair, error = @pipe_mutex.synchronize { @ips.pop }
-          if pair && error
-            @queries.delete(pair)
-            @connections.delete(connection)
+      raise ResolveError, "socket pipe closed unexpectedly" if event.nil?
 
-            _, connection = pair
-            emit_resolve_error(connection, connection.peer.host, error)
-          end
+      case event.unpack1("C")
+      when DONE
+        *pair, addrs = @pipe_mutex.synchronize { @ips.pop }
+        if pair
+          @queries.delete(pair)
+          family, connection = pair
+          @connections.delete(connection)
+
+          catch(:coalesced) { emit_addresses(connection, family, addrs) }
+        end
+      when ERROR
+        *pair, error = @pipe_mutex.synchronize { @ips.pop }
+        if pair && error
+          @queries.delete(pair)
+          _, connection = pair
+          @connections.delete(connection)
+
+          emit_resolve_error(connection, connection.peer.host, error)
         end
       end
 
       return emit(:close, self) if @connections.empty?
 
       resolve
+    rescue StandardError => e
+      on_error(e)
     end
 
     def resolve(connection = nil, hostname = nil)
@@ -259,11 +264,5 @@ module HTTPX
     def __addrinfo_resolve(host, scheme)
       Addrinfo.getaddrinfo(host, scheme, Socket::AF_UNSPEC, Socket::SOCK_STREAM)
     end
-
-    def emit_connection_error(_, error)
-      throw(:resolve_error, error)
-    end
-
-    def close_resolver(resolver); end
   end
 end

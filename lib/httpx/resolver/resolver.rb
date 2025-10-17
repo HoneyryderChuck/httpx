@@ -78,7 +78,7 @@ module HTTPX
 
       # double emission check, but allow early resolution to work
       conn_addrs = connection.addresses
-      return if !early_resolve && conn_addrs && (!conn_addrs.empty? && !addresses.intersect?(!conn_addrs))
+      return if !early_resolve && conn_addrs && (!conn_addrs.empty? && !addresses.intersect?(conn_addrs))
 
       log do
         "resolver #{FAMILY_TYPES[RECORD_TYPES[family]]}: " \
@@ -127,6 +127,20 @@ module HTTPX
       emit(:close, self)
     end
 
+    def early_resolve(connection, hostname: connection.peer.host)
+      addresses = @resolver_options[:cache] && (connection.addresses || HTTPX::Resolver.nolookup_resolve(hostname))
+
+      return false unless addresses
+
+      addresses = addresses.select { |addr| addr.family == @family }
+
+      return false if addresses.empty?
+
+      emit_addresses(connection, @family, addresses, true)
+
+      true
+    end
+
     private
 
     def emit_resolved_connection(connection, addresses, early_resolve)
@@ -144,20 +158,6 @@ module HTTPX
           emit(:error, connection, e)
         end
       end
-    end
-
-    def early_resolve(connection, hostname: connection.peer.host)
-      addresses = @resolver_options[:cache] && (connection.addresses || HTTPX::Resolver.nolookup_resolve(hostname))
-
-      return false unless addresses
-
-      addresses = addresses.select { |addr| addr.family == @family }
-
-      return false if addresses.empty?
-
-      emit_addresses(connection, @family, addresses, true)
-
-      true
     end
 
     def emit_resolve_error(connection, hostname = connection.peer.host, ex = nil)

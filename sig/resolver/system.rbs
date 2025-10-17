@@ -16,7 +16,7 @@ module HTTPX
 
       attr_reader state: Symbol
 
-      def <<: (Connection) -> void
+      def lazy_resolve: (Connection connection) -> void
 
       private
 
