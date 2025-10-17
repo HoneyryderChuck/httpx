@@ -131,7 +131,16 @@ module HTTPX::Plugins
         response.original_request = original_request
         response.finish!
 
-        IO.copy_stream(f, response.body)
+        # the cached body is already inflated, so temporarily remove the inflaters
+        inflaters = response.body.instance_variable_get(:@inflaters)
+        response.body.instance_variable_set(:@inflaters, [])
+
+        begin
+          IO.copy_stream(f, response.body)
+        ensure
+          # add the inflaters back after copying the file to the response body
+          response.body.instance_variable_set(:@inflaters, inflaters)
+        end
 
         response
       end

@@ -24,6 +24,14 @@ module ResponseCacheStoreTests
     assert store.get(request4).nil?
   end
 
+  def test_store_compression
+    response = response_cache_session.get("https://nghttp2.org/httpbin/gzip")
+    response2 = response_cache_session.get("https://nghttp2.org/httpbin/gzip")
+
+    assert response2
+    assert response2.body == response.body
+  end
+
   def test_store_prepare_maxage
     request = make_request("GET", "http://prepare-maxage/")
     response = cached_response(request, extra_headers: { "cache-control" => "max-age=2" })
