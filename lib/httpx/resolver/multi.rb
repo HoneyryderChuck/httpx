@@ -92,9 +92,12 @@ module HTTPX
 
     def lazy_resolve(connection)
       @resolvers.each do |resolver|
-        resolver << @current_session.try_clone_connection(connection, @current_selector, resolver.family)
+        conn_to_resolve = @current_session.try_clone_connection(connection, @current_selector, resolver.family)
+        resolver << conn_to_resolve
+
         next if resolver.empty?
 
+        @current_session.pin(conn_to_resolve, @current_selector)
         @current_session.select_resolver(resolver, @current_selector)
       end
     end

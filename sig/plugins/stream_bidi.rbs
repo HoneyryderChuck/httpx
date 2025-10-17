@@ -24,6 +24,8 @@ module HTTPX
       end
 
       class Signal
+        attr_reader error: Exception?
+
         @closed: bool
         @pipe_read: IO
         @pipe_write: IO
