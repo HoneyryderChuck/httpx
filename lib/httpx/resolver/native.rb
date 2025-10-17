@@ -528,8 +528,7 @@ module HTTPX
            ConnectTimeoutError => e
       # these errors may happen during TCP handshake
       # treat them as resolve errors.
-      handle_error(e)
-      emit(:close, self)
+      on_error(e)
     end
 
     def reset_hostname(hostname, connection: @queries.delete(hostname), reset_candidates: true)

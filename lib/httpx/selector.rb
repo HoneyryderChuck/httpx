@@ -200,8 +200,8 @@ module HTTPX
       begin
         readers, writers = ::IO.select(r, w, nil, interval)
       rescue StandardError => e
-        (Array(r) + Array(w)).each do |c|
-          handle_selectable_error(c, e)
+        (Array(r) + Array(w)).each do |sel|
+          sel.on_error(e)
         end
 
         return
@@ -241,7 +241,7 @@ module HTTPX
           when :rw then rw_wait(io, interval)
           end
       rescue StandardError => e
-        handle_selectable_error(io, e)
+        io.on_error(e)
 
         return
       rescue Exception => e # rubocop:disable Lint/RescueException
@@ -256,15 +256,6 @@ module HTTPX
       end
 
       yield io
-    end
-
-    def handle_selectable_error(sel, error)
-      case sel
-      when Resolver::Resolver
-        sel.handle_error(error)
-      when Connection
-        sel.on_error(error)
-      end
     end
 
     def next_timeout

@@ -122,6 +122,11 @@ module HTTPX
       end
     end
 
+    def on_error(error)
+      handle_error(error)
+      emit(:close, self)
+    end
+
     private
 
     def emit_resolved_connection(connection, addresses, early_resolve)

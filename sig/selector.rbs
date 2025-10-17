@@ -11,6 +11,8 @@ module HTTPX
     def timeout: () -> Numeric?
 
     def handle_socket_timeout: (Numeric interval) -> void
+
+    def on_error: (StandardError) -> void
   end
 
   class Selector
