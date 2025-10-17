@@ -236,15 +236,13 @@ class TestDNSResolver
     typevalue = extract_family(query)
     ips = resolve(domain, typevalue)
 
-    response = response_header(query)
-    response << question_section(query)
-    response << answer_section(ips)
-    response
+    response_header(query).force_encoding(Encoding::BINARY) <<
+      question_section(query).force_encoding(Encoding::BINARY) <<
+      answer_section(ips).force_encoding(Encoding::BINARY)
   rescue Resolv::ResolvError
     # nxdomain error
-    response = response_header(query, 3)
-    response << question_section(query)
-    response
+    response_header(query, 3).force_encoding(Encoding::BINARY) <<
+      question_section(query).force_encoding(Encoding::BINARY)
   end
 
   def resolve(domain, typevalue)

@@ -29,7 +29,7 @@ module HTTPX
 
     def deselect_connection: (Connection connection, Selector selector, ?bool cloned) -> void
 
-    def select_resolver: (Resolver::Native | Resolver::HTTPS resolver, Selector selector) -> void
+    def select_resolver: (Resolver::Resolver resolver, Selector selector) -> void
 
     def deselect_resolver: (Resolver::Resolver resolver, Selector selector) -> void
 

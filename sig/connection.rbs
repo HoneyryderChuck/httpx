@@ -79,7 +79,7 @@ module HTTPX
 
     def connecting?: () -> bool
 
-    def io_connected?: () -> bool
+    def io_connected?: () -> boolish
 
     def inflight?: () -> boolish
 
