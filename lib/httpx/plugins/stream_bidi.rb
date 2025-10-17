@@ -16,7 +16,7 @@ module HTTPX
       # The streams keeps send DATA frames while there's data; when they're ain't,
       # the stream is kept open; it must be explicitly closed by the end user.
       #
-      class HTTP2Bidi < Connection::HTTP2
+      module HTTP2Methods
         def initialize(*)
           super
           @lock = Thread::Mutex.new
@@ -310,12 +310,6 @@ module HTTPX
         end
 
         private
-
-        def parser_type(protocol)
-          return HTTP2Bidi if protocol == "h2"
-
-          super
-        end
 
         def set_parser_callbacks(parser)
           super
