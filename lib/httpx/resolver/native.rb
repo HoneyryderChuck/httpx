@@ -148,7 +148,6 @@ module HTTPX
 
         break unless calculate_interests == :w
 
-        # do_retry
         dwrite
 
         break unless calculate_interests == :r
@@ -208,8 +207,6 @@ module HTTPX
         @timeouts.clear
         resolve(connection, h)
       else
-
-        @timeouts.delete(h)
         reset_hostname(h, reset_candidates: false)
 
         unless @queries.empty?

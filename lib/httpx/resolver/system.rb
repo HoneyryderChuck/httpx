@@ -94,8 +94,6 @@ module HTTPX
     end
 
     def timeout
-      return unless @queries.empty?
-
       _, connection = @queries.first
 
       return unless connection
@@ -123,14 +121,15 @@ module HTTPX
     def handle_socket_timeout(interval)
       error = HTTPX::ResolveTimeoutError.new(interval, "timed out while waiting on select")
       error.set_backtrace(caller)
-      @queries.each do |host, connection|
-        @connections.delete(connection)
-        emit_resolve_error(connection, host, error)
+      @queries.each do |_, connection| # rubocop:disable Style/HashEachMethods
+        emit_resolve_error(connection, connection.peer.host, error) if @connections.delete(connection)
       end
 
       while (connection = @connections.shift)
         emit_resolve_error(connection, connection.peer.host, error)
       end
+
+      close_or_resolve
     end
 
     private
@@ -258,6 +257,17 @@ module HTTPX
             end
           end
         end
+      end
+    end
+
+    def close_or_resolve
+      # drop already closed connections
+      @connections.shift until @connections.empty? || @connections.first.state != :closed
+
+      if (@connections - @queries.map(&:last)).empty?
+        emit(:close, self)
+      else
+        resolve
       end
     end
 

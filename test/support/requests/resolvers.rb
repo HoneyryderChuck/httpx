@@ -2,6 +2,27 @@
 
 module Requests
   module Resolvers
+    ResolverTimeoutPlugin = Module.new do
+      self::ResolverHTTPSMethods = Module.new do
+        def resolver_connection
+          super.tap do |conn|
+            def conn.interests
+              return super unless @state == :open
+
+              :r
+            end
+          end
+        end
+      end
+      self::ResolverSystemMethods = Module.new do
+        def consume
+          sleep(0.1)
+          @pipe_read.read_nonblock(1, exception: false) # drain
+          super
+        end
+      end
+    end
+
     {
       native: { cache: false },
       system: { cache: false },
@@ -33,6 +54,24 @@ module Requests
         assert !response.is_a?(HTTPX::ErrorResponse), "response was an error (#{response})"
         assert response.status < 500, "unexpected HTTP error (#{response})"
         response.close
+      end
+
+      define_method :"test_resolver_#{resolver_type}_timeout" do
+        start_test_servlet(SlowDNSServer, 12) do |slow_dns_server|
+          resolver_opts = options.merge(nameserver: [slow_dns_server.nameserver], timeouts: [1, 2])
+
+          HTTPX.plugin(ResolverTimeoutPlugin).plugin(SessionWithPool).wrap do |session|
+            uri = build_uri("/get")
+
+            before_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)
+            response = session.get(uri, resolver_class: resolver_type, resolver_options: options.merge(resolver_opts))
+            after_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)
+            total_time = after_time - before_time
+
+            verify_error_response(response, HTTPX::ResolveTimeoutError)
+            assert_in_delta 2 + 1, total_time, 12, "request didn't take as expected to retry dns queries (#{total_time} secs)"
+          end
+        end
       end
 
       case resolver_type
@@ -119,24 +158,6 @@ module Requests
               assert !addresses.nil?
               addr = addresses.first
               assert addr["name"] != uri.host
-            end
-          end
-        end
-
-        define_method :"test_resolver_#{resolver_type}_timeout" do
-          start_test_servlet(SlowDNSServer, 12) do |slow_dns_server|
-            resolver_opts = options.merge(nameserver: [slow_dns_server.nameserver], timeouts: [1, 2])
-
-            HTTPX.plugin(SessionWithPool).wrap do |session|
-              uri = build_uri("/get")
-
-              before_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)
-              response = session.get(uri, resolver_class: resolver_type, resolver_options: options.merge(resolver_opts))
-              after_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)
-              total_time = after_time - before_time
-
-              verify_error_response(response, HTTPX::ResolveTimeoutError)
-              assert_in_delta 2 + 1, total_time, 12, "request didn't take as expected to retry dns queries (#{total_time} secs)"
             end
           end
         end

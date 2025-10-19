@@ -637,7 +637,7 @@ module HTTPX
         disconnect
       end
       parser.on(:close_handshake) do
-        consume
+        consume unless @state == :closed
       end
       parser.on(:reset) do
         enqueue_pending_requests_from_parser(parser)
@@ -856,7 +856,7 @@ module HTTPX
     end
 
     def handle_error(error, request = nil)
-      parser.handle_error(error, request) if @parser && parser.respond_to?(:handle_error)
+      parser.handle_error(error, request) if @parser && @parser.respond_to?(:handle_error)
       while (req = @pending.shift)
         next if request && req == request
 

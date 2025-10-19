@@ -16,6 +16,8 @@ module HTTPX
 
       attr_reader state: Symbol
 
+      def initialize: (Options options) -> void
+
       def lazy_resolve: (Connection connection) -> void
 
       private
@@ -28,7 +30,7 @@ module HTTPX
 
       def __addrinfo_resolve: (String host, String scheme) -> Array[Addrinfo]
 
-      def initialize: (Options options) -> void
+      def close_or_resolve: () -> void
     end
   end
 end
