@@ -6,8 +6,6 @@ require "resolv"
 module HTTPX
   class Resolver::Multi
     include Callbacks
-    using ArrayExtensions::FilterMap
-
     attr_reader :resolvers, :options
 
     def initialize(resolver_type, options)
@@ -50,10 +48,6 @@ module HTTPX
 
     def inflight?
       @resolvers.any(&:inflight?)
-    end
-
-    def timeout
-      @resolvers.filter_map(&:timeout).min
     end
 
     def close

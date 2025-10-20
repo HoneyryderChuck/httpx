@@ -18,8 +18,6 @@ module HTTPX
 
       def empty?: () -> bool
 
-      def timeout: () -> Numeric?
-
       def close: () -> void
 
       def connections: () -> Array[Connection]
