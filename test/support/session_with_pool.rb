@@ -74,7 +74,7 @@ module SessionWithPool
 
       return unless @name
 
-      @tries[@name] += 1
+      @tries[@name.delete_suffix(".")] += 1
     end
   end
 end

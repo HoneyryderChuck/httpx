@@ -458,13 +458,14 @@ module HTTPX
     def generate_candidates(name)
       return [name] if name.end_with?(".")
 
-      candidates = []
       name_parts = name.scan(/[^.]+/)
-      candidates = [name] if @ndots <= name_parts.size - 1
-      candidates.concat(@search.map { |domain| [*name_parts, *domain].join(".") })
+      candidates = @search.map { |domain| [*name_parts, *domain].join(".") }
       fname = "#{name}."
-      candidates << fname unless candidates.include?(fname)
-
+      if @ndots <= name_parts.size - 1
+        candidates.unshift(fname)
+      else
+        candidates << fname
+      end
       candidates
     end
 
