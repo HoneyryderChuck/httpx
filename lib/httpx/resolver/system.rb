@@ -258,6 +258,7 @@ module HTTPX
           end
         end
       end
+      Thread.pass
     end
 
     def close_or_resolve

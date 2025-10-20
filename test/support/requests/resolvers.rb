@@ -29,7 +29,7 @@ module Requests
         # this forces the system resolver to timeout by cleaning the pipe signal
         # telling the main thread that there's a response.
         def consume
-          sleep(0.1)
+          sleep(0.5)
           @pipe_read.read_nonblock(1, exception: false) # drain
           super
         end
