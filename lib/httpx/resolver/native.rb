@@ -49,6 +49,17 @@ module HTTPX
       transition(:closed)
     end
 
+    def force_close(*)
+      @timer.cancel if @timer
+      @timer = @name = nil
+      @queries.clear
+      @timeouts.clear
+      close
+      super
+    ensure
+      terminate
+    end
+
     def terminate
       emit(:close, self)
     end
@@ -84,7 +95,7 @@ module HTTPX
       if @nameserver.nil?
         ex = ResolveError.new("No available nameserver")
         ex.set_backtrace(caller)
-        connection.force_reset
+        connection.force_close
         throw(:resolve_error, ex)
       else
         @connections << connection
@@ -93,14 +104,33 @@ module HTTPX
     end
 
     def timeout
-      return if @connections.empty?
+      return unless @name
 
       @start_timeout = Utils.now
-      hosts = @queries.keys
-      @timeouts.values_at(*hosts).reject(&:empty?).map(&:first).min
+
+      timeouts = @timeouts[@name]
+
+      return if timeouts.empty?
+
+      log(level: 2) { "resolver #{FAMILY_TYPES[@record_type]}: next timeout #{timeouts.first} secs... (#{timeouts.size - 1} left)" }
+
+      timeouts.first
     end
 
     def handle_socket_timeout(interval); end
+
+    def handle_error(error)
+      if error.respond_to?(:connection) &&
+         error.respond_to?(:host)
+        reset_hostname(error.host, connection: error.connection)
+      else
+        @queries.each do |host, connection|
+          reset_hostname(host, connection: connection)
+        end
+      end
+
+      super
+    end
 
     private
 
@@ -118,7 +148,6 @@ module HTTPX
 
         break unless calculate_interests == :w
 
-        # do_retry
         dwrite
 
         break unless calculate_interests == :r
@@ -154,7 +183,7 @@ module HTTPX
       @timer = @current_selector.after(timeout) do
         next unless @connections.include?(connection)
 
-        @timer = nil
+        @timer = @name = nil
 
         do_retry(h, connection, timeout)
       end
@@ -178,8 +207,6 @@ module HTTPX
         @timeouts.clear
         resolve(connection, h)
       else
-
-        @timeouts.delete(h)
         reset_hostname(h, reset_candidates: false)
 
         unless @queries.empty?
@@ -273,7 +300,7 @@ module HTTPX
     def parse(buffer)
       @timer.cancel
 
-      @timer = nil
+      @timer = @name = nil
 
       code, result = Resolver.decode_dns_answer(buffer)
 
@@ -431,13 +458,14 @@ module HTTPX
     def generate_candidates(name)
       return [name] if name.end_with?(".")
 
-      candidates = []
       name_parts = name.scan(/[^.]+/)
-      candidates = [name] if @ndots <= name_parts.size - 1
-      candidates.concat(@search.map { |domain| [*name_parts, *domain].join(".") })
+      candidates = @search.map { |domain| [*name_parts, *domain].join(".") }
       fname = "#{name}."
-      candidates << fname unless candidates.include?(fname)
-
+      if @ndots <= name_parts.size - 1
+        candidates.unshift(fname)
+      else
+        candidates << fname
+      end
       candidates
     end
 
@@ -498,27 +526,7 @@ module HTTPX
            ConnectTimeoutError => e
       # these errors may happen during TCP handshake
       # treat them as resolve errors.
-      handle_error(e)
-      emit(:close, self)
-    end
-
-    def handle_error(error)
-      if error.respond_to?(:connection) &&
-         error.respond_to?(:host)
-        reset_hostname(error.host, connection: error.connection)
-        @connections.delete(error.connection)
-        emit_resolve_error(error.connection, error.host, error)
-      else
-        @queries.each do |host, connection|
-          reset_hostname(host, connection: connection)
-          @connections.delete(connection)
-          emit_resolve_error(connection, host, error)
-        end
-
-        while (connection = @connections.shift)
-          emit_resolve_error(connection, connection.peer.host, error)
-        end
-      end
+      on_error(e)
     end
 
     def reset_hostname(hostname, connection: @queries.delete(hostname), reset_candidates: true)

@@ -16,7 +16,7 @@ module HTTPX
       # The streams keeps send DATA frames while there's data; when they're ain't,
       # the stream is kept open; it must be explicitly closed by the end user.
       #
-      class HTTP2Bidi < Connection::HTTP2
+      module HTTP2Methods
         def initialize(*)
           super
           @lock = Thread::Mutex.new
@@ -117,8 +117,11 @@ module HTTPX
       # which allows it to be registered in the selector alongside actual HTTP-based
       # HTTPX::Connection objects.
       class Signal
+        attr_reader :error
+
         def initialize
           @closed = false
+          @error = nil
           @pipe_read, @pipe_write = IO.pipe
         end
 
@@ -159,6 +162,11 @@ module HTTPX
           @closed = true
         end
 
+        def on_error(error)
+          @error = error
+          terminate
+        end
+
         # noop (the owner connection will take of it)
         def handle_socket_timeout(interval); end
       end
@@ -193,6 +201,7 @@ module HTTPX
 
         def deselect_connection(connection, *)
           super
+
           connection.signal = nil
         end
       end
@@ -294,13 +303,13 @@ module HTTPX
           super
         end
 
-        private
+        def call
+          return super unless (error = @signal.error)
 
-        def parser_type(protocol)
-          return HTTP2Bidi if protocol == "h2"
-
-          super
+          on_error(error)
         end
+
+        private
 
         def set_parser_callbacks(parser)
           super

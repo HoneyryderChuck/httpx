@@ -64,7 +64,7 @@ module HTTPX
 
             emit_or_callback_error(:connection_opened, connection.origin, connection.io.socket)
           end
-          connection.on(:close) do
+          connection.on(:callback_connection_closed) do
             next unless connection.current_session == self
 
             emit_or_callback_error(:connection_closed, connection.origin) if connection.used?
@@ -119,6 +119,20 @@ module HTTPX
           super
         rescue CallbackError => e
           raise e.cause
+        end
+      end
+
+      module ConnectionMethods
+        private
+
+        def disconnect
+          return if @exhausted
+
+          return unless @current_session && @current_selector
+
+          emit(:callback_connection_closed)
+
+          super
         end
       end
     end

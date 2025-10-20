@@ -15,6 +15,8 @@ module HTTPX
     @wrapped: bool
     @closing: bool
 
+    type resolver = Resolver::Multi | Resolver::Resolver
+
     def wrap: () { (instance) -> void } -> void
 
     def close: (?Selector selector) -> void
@@ -23,11 +25,11 @@ module HTTPX
 
     def select_connection: (Connection connection, Selector selector) -> void
 
-    def pin_connection: (Resolver::Resolver | Connection connection, Selector selector) -> void
+    def pin: (resolver | Connection conn_or_resolver, Selector selector) -> void
 
     def deselect_connection: (Connection connection, Selector selector, ?bool cloned) -> void
 
-    def select_resolver: (Resolver::Native | Resolver::HTTPS resolver, Selector selector) -> void
+    def select_resolver: (Resolver::Resolver resolver, Selector selector) -> void
 
     def deselect_resolver: (Resolver::Resolver resolver, Selector selector) -> void
 
@@ -72,7 +74,7 @@ module HTTPX
 
     def on_resolver_close: (Resolver::Resolver resolver, Selector selector) -> void
 
-    def find_resolver_for: (Connection connection, Selector selector) -> (Resolver::Multi | Resolver::Resolver)
+    def find_resolver_for: (Connection connection, Selector selector) -> resolver
 
     def coalesce_connections: (Connection conn1, Connection conn2, Selector selector, bool from_pool) -> bool
 

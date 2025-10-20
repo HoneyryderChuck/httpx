@@ -55,6 +55,12 @@ module HTTPX
 
     alias_method :terminate, :close
 
+    def force_close(*args)
+      while (connection = @connections.shift)
+        connection.force_close(*args)
+      end
+    end
+
     def closed?
       true
     end
@@ -72,7 +78,7 @@ module HTTPX
 
       # double emission check, but allow early resolution to work
       conn_addrs = connection.addresses
-      return if !early_resolve && conn_addrs && (!conn_addrs.empty? && !addresses.intersect?(!conn_addrs))
+      return if !early_resolve && conn_addrs && (!conn_addrs.empty? && !addresses.intersect?(conn_addrs))
 
       log do
         "resolver #{FAMILY_TYPES[RECORD_TYPES[family]]}: " \
@@ -104,23 +110,21 @@ module HTTPX
       end
     end
 
-    private
-
-    def emit_resolved_connection(connection, addresses, early_resolve)
-      begin
-        connection.addresses = addresses
-
-        return if connection.state == :closed
-
-        emit(:resolve, connection)
-      rescue StandardError => e
-        if early_resolve
-          connection.force_reset
-          throw(:resolve_error, e)
-        else
-          emit(:error, connection, e)
+    def handle_error(error)
+      if error.respond_to?(:connection) &&
+         error.respond_to?(:host)
+        @connections.delete(error.connection)
+        emit_resolve_error(error.connection, error.host, error)
+      else
+        while (connection = @connections.shift)
+          emit_resolve_error(connection, connection.peer.host, error)
         end
       end
+    end
+
+    def on_error(error)
+      handle_error(error)
+      emit(:close, self)
     end
 
     def early_resolve(connection, hostname: connection.peer.host)
@@ -135,6 +139,25 @@ module HTTPX
       emit_addresses(connection, @family, addresses, true)
 
       true
+    end
+
+    private
+
+    def emit_resolved_connection(connection, addresses, early_resolve)
+      begin
+        connection.addresses = addresses
+
+        return if connection.state == :closed
+
+        emit(:resolve, connection)
+      rescue StandardError => e
+        if early_resolve
+          connection.force_close
+          throw(:resolve_error, e)
+        else
+          emit(:error, connection, e)
+        end
+      end
     end
 
     def emit_resolve_error(connection, hostname = connection.peer.host, ex = nil)
@@ -163,7 +186,7 @@ module HTTPX
     def emit_connection_error(connection, error)
       return connection.handle_connect_error(error) if connection.connecting?
 
-      connection.emit(:error, error)
+      connection.on_error(error)
     end
 
     def close_resolver(resolver)

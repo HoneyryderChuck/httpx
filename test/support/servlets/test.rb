@@ -201,7 +201,10 @@ class TestDNSResolver
     if @socket_type == :udp
       Socket.udp_server_loop(@port) do |query, src|
         @queries += 1
-        src.reply(dns_response(query))
+        answer = dns_response(query)
+        next unless answer
+
+        src.reply(answer)
         @answers += 1
       end
     elsif @socket_type == :tcp
@@ -214,6 +217,7 @@ class TestDNSResolver
             query << sock.readpartial(size - query.size) while query.size < size
             @queries += 1
             answer = dns_response(query)
+            next unless answer
 
             answer.prepend([answer.size].pack("n"))
             sock.write(answer)
@@ -229,20 +233,43 @@ class TestDNSResolver
 
   def dns_response(query)
     domain = extract_domain(query)
-    ip = resolve(domain)
+    typevalue = extract_family(query)
+    ips = resolve(domain, typevalue)
 
-    response = response_header(query)
-    response << question_section(query)
-    response << answer_section(ip)
-    response
+    response_header(query).force_encoding(Encoding::BINARY) <<
+      question_section(query).force_encoding(Encoding::BINARY) <<
+      answer_section(ips).force_encoding(Encoding::BINARY)
+  rescue Resolv::ResolvError
+    # nxdomain error
+    response_header(query, 3).force_encoding(Encoding::BINARY) <<
+      question_section(query).force_encoding(Encoding::BINARY)
   end
 
-  def resolve(domain)
-    Resolv.getaddress(domain)
+  def resolve(domain, typevalue)
+    Resolv.getaddresses(domain).filter_map do |address|
+      begin
+        ip = IPAddr.new(address)
+
+        address if case typevalue
+                   when 1
+                     ip.ipv4?
+                   when 28
+                     ip.ipv6?
+                   else
+                     false
+                   end
+      rescue IPAddr::AddressFamilyError
+        # CNAME
+        address
+      end
+    end
   end
 
-  def response_header(query)
-    "#{query[0, 2]}\x81\x00#{query[4, 2] * 2}\x00\x00\x00\x00".b
+  def response_header(query, rccode = 0)
+    rc = [rccode].pack("C")
+    qdcount = "\x00\x01".b
+    ancount = rccode.positive? ? "\x00\x00".b : "\x00\x01".b
+    "#{query[0, 2]}\x81#{rc}#{qdcount}#{ancount}\x00\x00\x00\x00".b
   end
 
   def question_section(query)
@@ -255,47 +282,65 @@ class TestDNSResolver
     section
   end
 
-  def answer_section(ip)
-    cname = ip =~ /[a-z]/
+  def answer_section(ips)
+    section = "".b
 
-    # Set response type accordingly
-    section = (cname ? "\x00\x05".b : "\x00\x01".b)
+    ips.each do |ip|
+      begin
+        ip = IPAddr.new(ip)
+      rescue IPAddr::InvalidAddressError
+        cname = ip
+      end
 
-    # Set response class (IN)
-    section << "\x00\x01".b
+      # Set response type accordingly
+      section = if cname
+        "\x00\x05".b
+      else
+        ip.ipv6? ? "\x00\x1C".b : "\x00\x01".b
+      end
 
-    # TTL in seconds
-    section << [@ttl].pack("N").b
+      # Set response class (IN)
+      section << "\x00\x01".b
 
-    # Calculate RDATA - we need its length in advance
-    rdata = if cname
-      ip.split(".").map { |a| a.length.chr + a }.join << "\x00"
-    else
-      # Append IP address as four 8 bit unsigned bytes
-      ip.split(".").map(&:to_i).pack("C*")
+      # TTL in seconds
+      section << [@ttl].pack("N").b
+
+      # Calculate RDATA - we need its length in advance
+      rdata = if cname
+        ip.split(".").map { |a| a.length.chr + a }.join << "\x00"
+      else
+        # Append IP address as four 8 bit unsigned bytes
+        ip.hton
+      end
+
+      # RDATA is 4 bytes
+      section << [rdata.length].pack("n").b
+      section << rdata.b
     end
-
-    # RDATA is 4 bytes
-    section << [rdata.length].pack("n").b
-    section << rdata.b
     section
   end
 
-  def extract_domain(data)
+  def extract_family(query)
+    section = query[12..-1].b
+    flags = section[-4..-1].b
+    flags.unpack1("n")
+  end
+
+  def extract_domain(query)
     domain = +""
 
     # Check "Opcode" of question header for valid question
-    if (data[2].ord & 120).zero?
+    if (query[2].ord & 120).zero?
       # Read QNAME section of question section
       # DNS header section is 12 bytes long, so data starts at offset 12
 
       idx = 12
-      len = data[idx].ord
+      len = query[idx].ord
       # Strings are rendered as a byte containing length, then text.. repeat until length of 0
       until len.zero?
-        domain << "#{data[idx + 1, len]}."
+        domain << "#{query[idx + 1, len]}."
         idx += len + 1
-        len = data[idx].ord
+        len = query[idx].ord
       end
     end
     domain

@@ -33,6 +33,9 @@ AllCops:
 Metrics/ClassLength:
   Enabled: false
 
+Metrics/ModuleLength:
+  Enabled: false
+
 Metrics/MethodLength:
   Max: 200
 

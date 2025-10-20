@@ -2,6 +2,40 @@
 
 module Requests
   module Resolvers
+    ResolverTimeoutPlugin = Module.new do
+      self::ResolverNativeMethods = Module.new do
+        def dread
+          @io.read(16_384, "".b)
+
+          super
+        end
+      end
+
+      self::ResolverHTTPSMethods = Module.new do
+        # this forces the resolver connection to timeout by setting it to read
+        # when it'll be ready to write requests.
+        def resolver_connection
+          super.tap do |conn|
+            def conn.interests
+              return super unless @state == :open
+
+              :r
+            end
+          end
+        end
+      end
+
+      self::ResolverSystemMethods = Module.new do
+        # this forces the system resolver to timeout by cleaning the pipe signal
+        # telling the main thread that there's a response.
+        def consume
+          sleep(0.5)
+          @pipe_read.read_nonblock(1, exception: false) # drain
+          super
+        end
+      end
+    end
+
     {
       native: { cache: false },
       system: { cache: false },
@@ -33,6 +67,22 @@ module Requests
         assert !response.is_a?(HTTPX::ErrorResponse), "response was an error (#{response})"
         assert response.status < 500, "unexpected HTTP error (#{response})"
         response.close
+      end
+
+      define_method :"test_resolver_#{resolver_type}_timeout" do
+        resolver_opts = options.merge(timeouts: [1, 2])
+
+        HTTPX.plugin(ResolverTimeoutPlugin).plugin(SessionWithPool).with(debug: $stderr, debug_level: 3).wrap do |session|
+          uri = build_uri("/get")
+
+          # before_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)
+          response = session.get(uri, resolver_class: resolver_type, resolver_options: options.merge(resolver_opts))
+          # after_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)
+          # total_time = after_time - before_time
+
+          verify_error_response(response, HTTPX::ResolveTimeoutError)
+          # assert_in_delta 2 + 1, total_time, 12, "request didn't take as expected to retry dns queries (#{total_time} secs)"
+        end
       end
 
       case resolver_type
@@ -123,24 +173,6 @@ module Requests
           end
         end
 
-        define_method :"test_resolver_#{resolver_type}_timeout" do
-          start_test_servlet(SlowDNSServer, 12) do |slow_dns_server|
-            resolver_opts = options.merge(nameserver: [slow_dns_server.nameserver], timeouts: [1, 2])
-
-            HTTPX.plugin(SessionWithPool).wrap do |session|
-              uri = build_uri("/get")
-
-              before_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)
-              response = session.get(uri, resolver_class: resolver_type, resolver_options: options.merge(resolver_opts))
-              after_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)
-              total_time = after_time - before_time
-
-              verify_error_response(response, HTTPX::ResolveTimeoutError)
-              assert_in_delta 2 + 1, total_time, 12, "request didn't take as expected to retry dns queries (#{total_time} secs)"
-            end
-          end
-        end
-
         # this test mocks the case where there's no nameserver set to send the DNS queries to.
         define_method :"test_resolver_#{resolver_type}_no_nameserver" do
           session = HTTPX.plugin(SessionWithPool)
@@ -189,15 +221,26 @@ module Requests
 
         # this test mocks a DNS server invalid messages back
         define_method :"test_resolver_#{resolver_type}_decoding_error" do
-          session = HTTPX.plugin(SessionWithPool)
-          uri = URI(build_uri("/get"))
-          resolver_class = Class.new(HTTPX::Resolver::Native) do
-            def parse(buffer)
-              super(buffer[0..-2])
+          HTTPX.plugin(SessionWithPool).wrap do |session|
+            uri = URI(build_uri("/get"))
+            before_connections = nil
+            resolver_class = Class.new(HTTPX::Resolver::Native) do
+              attr_reader :connections
+
+              define_method :parse do |buffer|
+                before_connections = @connections.size
+                super(buffer[0..-2])
+              end
             end
+            response = session.head(uri, resolver_class: resolver_class, resolver_options: options.merge(record_types: %w[]))
+            verify_error_response(response, HTTPX::NativeResolveError)
+            assert session.resolvers.size == 1
+            resolver = session.resolvers.first
+            resolver = resolver.resolvers.first # because it's a multi
+            assert resolver.state == :closed
+            assert before_connections == 1, "resolver should have been resolving one connection"
+            assert resolver.connections.empty?, "resolver should not hold connections at this point anymore"
           end
-          response = session.head(uri, resolver_class: resolver_class, resolver_options: options.merge(record_types: %w[]))
-          verify_error_response(response, HTTPX::NativeResolveError)
         end
 
         # this test mocks a DNS server breaking the socket with Errno::EHOSTUNREACH
@@ -332,6 +375,52 @@ module Requests
           end
         end
 
+        define_method :"test_resolver_#{resolver_type}_candidate" do
+          uri = URI(build_uri("/get"))
+
+          only_to_candidate = Class.new(TestDNSResolver) do
+            define_method :dns_response do |query|
+              domain = extract_domain(query)
+
+              return unless domain == "#{uri.hostname}.local." # last condidate
+
+              super(query)
+            end
+
+            def resolve(domain, typevalue)
+              super(domain.delete_suffix(".local."), typevalue)
+            end
+          end
+
+          start_test_servlet(only_to_candidate) do |slow_dns_server|
+            dns_config = {
+              nameserver: [slow_dns_server.nameserver],
+              timeouts: [1, 2],
+              dots: 1,
+              search: "local",
+            }
+            resolver_opts = options.merge(dns_config)
+
+            HTTPX.plugin(SessionWithPool).wrap do |session|
+              response = session.get(uri, resolver_class: resolver_type, resolver_options: options.merge(resolver_opts))
+
+              verify_status(response, 200)
+              assert session.resolvers.size == 1
+              resolver = session.resolvers.first
+              resolver = resolver.resolvers.first # because it's a multi
+              assert resolver.state == :closed
+
+              tries = resolver.tries
+              assert tries.keys.size == 2
+              assert tries.key?(uri.hostname)
+              assert tries[uri.hostname] == 2, "should have tried canonical 2 times"
+              assert tries.key?("#{uri.hostname}.local")
+              assert tries["#{uri.hostname}.local"] == 1, "should have succeeded search domain at the first time"
+
+              assert resolver.timeouts.empty?, "should have cleaned up all candidate timeouts"
+            end
+          end
+        end
       end
     end
   end

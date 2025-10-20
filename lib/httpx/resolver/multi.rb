@@ -28,16 +28,16 @@ module HTTPX
 
     def current_selector=(s)
       @current_selector = s
-      @resolvers.each { |r| r.__send__(__method__, s) }
+      @resolvers.each { |r| r.current_selector = s }
     end
 
     def current_session=(s)
       @current_session = s
-      @resolvers.each { |r| r.__send__(__method__, s) }
+      @resolvers.each { |r| r.current_session = s }
     end
 
     def log(*args, **kwargs, &blk)
-      @resolvers.each { |r| r.__send__(__method__, *args, **kwargs, &blk) }
+      @resolvers.each { |r| r.log(*args, **kwargs, &blk) }
     end
 
     def closed?
@@ -92,9 +92,12 @@ module HTTPX
 
     def lazy_resolve(connection)
       @resolvers.each do |resolver|
-        resolver << @current_session.try_clone_connection(connection, @current_selector, resolver.family)
+        conn_to_resolve = @current_session.try_clone_connection(connection, @current_selector, resolver.family)
+        resolver << conn_to_resolve
+
         next if resolver.empty?
 
+        @current_session.pin(conn_to_resolve, @current_selector)
         @current_session.select_resolver(resolver, @current_selector)
       end
     end

@@ -120,13 +120,13 @@ module HTTPX
     end
 
     def select_connection(connection, selector)
-      pin_connection(connection, selector)
+      pin(connection, selector)
       selector.register(connection)
     end
 
-    def pin_connection(connection, selector)
-      connection.current_session = self
-      connection.current_selector = selector
+    def pin(conn_or_resolver, selector)
+      conn_or_resolver.current_session = self
+      conn_or_resolver.current_selector = selector
     end
 
     alias_method :select_resolver, :select_connection
@@ -194,7 +194,7 @@ module HTTPX
         if options.io
           select_connection(connection, selector)
         else
-          pin_connection(connection, selector)
+          pin(connection, selector)
         end
       when :closing, :closed
         connection.idling
@@ -205,7 +205,7 @@ module HTTPX
           resolve_connection(connection, selector)
         end
       else
-        pin_connection(connection, selector)
+        pin(connection, selector)
       end
 
       connection
@@ -430,8 +430,7 @@ module HTTPX
 
       resolver = @pool.checkout_resolver(connection.options)
       resolver.log(level: 2) { "found resolver##{connection.object_id}(#{connection.state}) in pool##{@pool.object_id}" }
-      resolver.current_session = self
-      resolver.current_selector = selector
+      pin(resolver, selector)
 
       resolver
     end
@@ -453,6 +452,8 @@ module HTTPX
       conn2.coalesce!(conn1)
       select_connection(conn1, selector) if from_pool
       conn2.disconnect
+      conn2.log(level: 2) { "check-in coalesced connection##{conn2.object_id}(#{conn2.state}) in pool##{@pool.object_id}" }
+      @pool.checkin_connection(conn2)
       true
     end
 

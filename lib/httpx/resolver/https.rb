@@ -30,7 +30,8 @@ module HTTPX
       use_get: false,
     }.freeze
 
-    def_delegators :@resolver_connection, :state, :connecting?, :to_io, :call, :close, :terminate, :inflight?, :handle_socket_timeout
+    def_delegators :@resolver_connection, :state, :connecting?, :to_io, :call, :close,
+                   :terminate, :inflight?, :handle_socket_timeout
 
     def initialize(_, options)
       super
@@ -52,7 +53,7 @@ module HTTPX
       if @uri_addresses.empty?
         ex = ResolveError.new("Can't resolve DNS server #{@uri.host}")
         ex.set_backtrace(caller)
-        connection.force_reset
+        connection.force_close
         throw(:resolve_error, ex)
       end
 
@@ -71,10 +72,15 @@ module HTTPX
 
     def resolver_connection
       # TODO: leaks connection object into the pool
-      @resolver_connection ||= @current_session.find_connection(@uri, @current_selector,
-                                                                @options.merge(ssl: { alpn_protocols: %w[h2] })).tap do |conn|
-        emit_addresses(conn, @family, @uri_addresses) unless conn.addresses
-      end
+      @resolver_connection ||=
+        @current_session.find_connection(
+          @uri,
+          @current_selector,
+          @options.merge(resolver_class: :system, ssl: { alpn_protocols: %w[h2] })
+        ).tap do |conn|
+          emit_addresses(conn, @family, @uri_addresses) unless conn.addresses
+          conn.on(:force_closed, &method(:force_close))
+        end
     end
 
     private

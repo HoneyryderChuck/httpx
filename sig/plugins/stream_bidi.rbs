@@ -5,7 +5,7 @@ module HTTPX
 
       def self.extra_options: (Options) -> (Options)
 
-      class HTTP2Bidi < Connection::HTTP2
+      module HTTP2Methods
         @lock: Thread::Mutex
 
         private
@@ -24,6 +24,8 @@ module HTTPX
       end
 
       class Signal
+        attr_reader error: Exception?
+
         @closed: bool
         @pipe_read: IO
         @pipe_write: IO
@@ -55,10 +57,6 @@ module HTTPX
 
       module ConnectionMethods
         @write_buffer: BidiBuffer
-
-        private
-
-        def parser_type: (String protocol) -> (singleton(Connection::HTTP1) | singleton(Connection::HTTP2) | singleton(HTTP2Bidi))
       end
 
     end

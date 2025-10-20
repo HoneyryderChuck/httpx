@@ -47,6 +47,17 @@ module HTTPX
             super || @state == :connecting || @state == :connected
           end
 
+          def force_close(*)
+            if @state == :connecting
+              # proxy connect related requests should not be reenqueed
+              @parser.reset!
+              @inflight -= @parser.pending.size
+              @parser.pending.clear
+            end
+
+            super
+          end
+
           private
 
           def handle_transition(nextstate)
@@ -64,23 +75,40 @@ module HTTPX
                 parser = @parser
                 parser.extend(ProxyParser)
                 parser.on(:response, &method(:__http_on_connect))
-                parser.on(:close) do |force|
+                parser.on(:close) do
                   next unless @parser
 
-                  if force
-                    reset
-                    emit(:terminate)
-                  end
+                  reset
+                  disconnect
                 end
                 parser.on(:reset) do
                   if parser.empty?
                     reset
                   else
-                    transition(:closing)
-                    transition(:closed)
+                    enqueue_pending_requests_from_parser(parser)
 
-                    parser.reset if @parser
-                    transition(:idle)
+                    initial_state = @state
+
+                    reset
+
+                    if @pending.empty?
+                      @parser = nil
+                      next
+                    end
+                    # keep parser state around due to proxy auth protocol;
+                    # intermediate authenticated request is already inside
+                    # the parser
+                    parser = nil
+
+                    if initial_state == :connecting
+                      parser = @parser
+                      @parser.reset
+                    end
+
+                    idling
+
+                    @parser = parser
+
                     transition(:connecting)
                   end
                 end

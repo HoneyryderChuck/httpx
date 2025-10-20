@@ -28,6 +28,8 @@ module HTTPX
 
       alias terminate close
 
+      def force_close: (*untyped args) -> void
+
       def closed?: () -> bool
 
       def empty?: () -> bool
@@ -36,7 +38,11 @@ module HTTPX
 
       def emit_addresses: (Connection connection, ip_family family, Array[ipaddr], ?bool early_resolve) -> void
 
+      def handle_error: (ResolveError | StandardError) -> void
+
       def self.multi?: () -> bool
+
+      def early_resolve: (Connection connection, ?hostname: String) -> bool
 
       private
 
@@ -45,8 +51,6 @@ module HTTPX
       def emit_resolved_connection: (Connection connection, Array[ipaddr] addresses, bool early_resolve) -> void
 
       def initialize: (ip_family family, Options options) -> void
-
-      def early_resolve: (Connection connection, ?hostname: String) -> bool
 
       def set_resolver_callbacks: () -> void
 

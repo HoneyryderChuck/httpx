@@ -46,6 +46,7 @@ module HTTPX
     @exhausted: bool
     @cloned: bool
     @coalesced_connection: instance?
+    @altsvc_connection: instance?
     @sibling: instance?
     @main_sibling: bool
 
@@ -66,6 +67,8 @@ module HTTPX
 
     def coalesce!: (instance connection) -> void
 
+    def coalesced?: () -> boolish
+
     def coalescable?: (Connection connection) -> bool
 
     def create_idle: (?Hash[Symbol, untyped] options) -> instance
@@ -76,7 +79,7 @@ module HTTPX
 
     def connecting?: () -> bool
 
-    def io_connected?: () -> bool
+    def io_connected?: () -> boolish
 
     def inflight?: () -> boolish
 
@@ -89,6 +92,8 @@ module HTTPX
     def terminate: () -> void
 
     def close: () -> void
+
+    def force_close: (?bool delete_pending) -> void
 
     def force_reset: (?bool cloned) -> void
 
@@ -112,6 +117,8 @@ module HTTPX
 
     def disconnect: () -> void
 
+    def on_error: (HTTPX::TimeoutError | Error | StandardError error, ?Request? request) -> void
+
     private
 
     def initialize: (http_uri uri, Options options) -> void
@@ -130,6 +137,8 @@ module HTTPX
 
     def send_request_to_parser: (Request request) -> void
 
+    def enqueue_pending_requests_from_parser: (HTTP1 | HTTP2 parser) -> void
+
     def build_parser: (?String protocol) -> (Object & _Parser)
 
     def set_parser_callbacks: (HTTP1 | HTTP2 parser) -> void
@@ -141,8 +150,6 @@ module HTTPX
     def build_altsvc_connection: (URI::Generic alt_origin, String origin, Hash[String, String] alt_params) -> void
 
     def build_socket: (?Array[Resolver::Entry]? addrs) -> (TCP | SSL | UNIX)
-
-    def on_error: (HTTPX::TimeoutError | Error | StandardError error, ?Request? request) -> void
 
     def handle_error: (StandardError error, ?Request? request) -> void
 

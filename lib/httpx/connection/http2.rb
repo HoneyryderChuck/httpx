@@ -89,7 +89,7 @@ module HTTPX
         @connection.goaway
         emit(:timeout, @options.timeout[:close_handshake_timeout])
       end
-      emit(:close, true)
+      emit(:close)
     end
 
     def empty?
@@ -387,18 +387,17 @@ module HTTPX
           end
         else
           ex = GoawayError.new(error)
+          ex.set_backtrace(caller)
+
           @pending.unshift(*@streams.keys)
           teardown
-        end
 
-        if ex
-          ex.set_backtrace(caller)
           handle_error(ex)
         end
       end
       return unless is_connection_closed && @streams.empty?
 
-      emit(:close, is_connection_closed)
+      emit(:close) if is_connection_closed
     end
 
     def on_frame_sent(frame)

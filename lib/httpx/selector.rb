@@ -51,7 +51,7 @@ module HTTPX
 
         begin
           select(timeout) do |c|
-            c.log(level: 2) { "[#{c.state}] selected#{" after #{timeout} secs" unless timeout.nil?}..." }
+            c.log(level: 2) { "[#{c.state}] selected from selector##{object_id} #{" after #{timeout} secs" unless timeout.nil?}..." }
 
             c.call
           end
@@ -61,17 +61,6 @@ module HTTPX
           @timers.fire(e)
         end
       end
-    rescue StandardError => e
-      each_connection do |c|
-        c.emit(:error, e)
-      end
-    rescue Exception # rubocop:disable Lint/RescueException
-      each_connection do |conn|
-        conn.force_reset
-        conn.disconnect
-      end
-
-      raise
     end
 
     def terminate
@@ -157,7 +146,9 @@ module HTTPX
 
         next(is_closed) if is_closed
 
-        io.log(level: 2) { "[#{io.state}] registering for select (#{interests})#{" for #{interval} seconds" unless interval.nil?}" }
+        io.log(level: 2) do
+          "[#{io.state}] registering in selector##{object_id} for select (#{interests})#{" for #{interval} seconds" unless interval.nil?}"
+        end
 
         if READABLE.include?(interests)
           r = r.nil? ? io : (Array(r) << io)
@@ -206,7 +197,21 @@ module HTTPX
     end
 
     def select_many(r, w, interval, &block)
-      readers, writers = ::IO.select(r, w, nil, interval)
+      begin
+        readers, writers = ::IO.select(r, w, nil, interval)
+      rescue StandardError => e
+        (Array(r) + Array(w)).each do |sel|
+          sel.on_error(e)
+        end
+
+        return
+      rescue Exception => e # rubocop:disable Lint/RescueException
+        (Array(r) + Array(w)).each do |sel|
+          sel.force_close(true)
+        end
+
+        raise e
+      end
 
       if readers.nil? && writers.nil? && interval
         [*r, *w].each { |io| io.handle_socket_timeout(interval) }
@@ -228,12 +233,22 @@ module HTTPX
     end
 
     def select_one(io, interests, interval)
-      result =
-        case interests
-        when :r then io.to_io.wait_readable(interval)
-        when :w then io.to_io.wait_writable(interval)
-        when :rw then rw_wait(io, interval)
-        end
+      begin
+        result =
+          case interests
+          when :r then io.to_io.wait_readable(interval)
+          when :w then io.to_io.wait_writable(interval)
+          when :rw then rw_wait(io, interval)
+          end
+      rescue StandardError => e
+        io.on_error(e)
+
+        return
+      rescue Exception => e # rubocop:disable Lint/RescueException
+        io.force_close(true)
+
+        raise e
+      end
 
       unless result || interval.nil?
         io.handle_socket_timeout(interval) unless @is_timer_interval

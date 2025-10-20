@@ -48,9 +48,9 @@ module HTTPX
 
     def initialize(uri, options)
       @current_session = @current_selector =
-        @parser = @sibling = @coalesced_connection =
-                    @family = @io = @ssl_session = @timeout =
-                                      @connected_at = @response_received_at = nil
+        @parser = @sibling = @coalesced_connection = @altsvc_connection =
+                               @family = @io = @ssl_session = @timeout =
+                                                 @connected_at = @response_received_at = nil
 
       @exhausted = @cloned = @main_sibling = false
 
@@ -65,7 +65,6 @@ module HTTPX
       @inflight = 0
       @keep_alive_timeout = @options.timeout[:keep_alive_timeout]
 
-      on(:error, &method(:on_error))
       if @options.io
         # if there's an already open IO, get its
         # peer address, and force-initiate the parser
@@ -75,32 +74,6 @@ module HTTPX
       else
         transition(:idle)
       end
-      on(:close) do
-        next if @exhausted # it'll reset
-
-        # may be called after ":close" above, so after the connection has been checked back in.
-        # next unless @current_session
-
-        next unless @current_session
-
-        @current_session.deselect_connection(self, @current_selector, @cloned)
-      end
-      on(:terminate) do
-        next if @exhausted # it'll reset
-
-        current_session = @current_session
-        current_selector = @current_selector
-
-        # may be called after ":close" above, so after the connection has been checked back in.
-        next unless current_session && current_selector
-
-        current_session.deselect_connection(self, current_selector)
-      end
-
-      on(:altsvc) do |alt_origin, origin, alt_params|
-        build_altsvc_connection(alt_origin, origin, alt_params)
-      end
-
       self.addresses = @options.addresses if @options.addresses
     end
 
@@ -156,6 +129,10 @@ module HTTPX
 
       close_sibling
       connection.merge(self)
+    end
+
+    def coalesced?
+      @coalesced_connection
     end
 
     # coalescable connections need to be mergeable!
@@ -231,7 +208,7 @@ module HTTPX
 
       nil
     rescue StandardError => e
-      emit(:error, e)
+      on_error(e)
       nil
     end
 
@@ -259,7 +236,9 @@ module HTTPX
       nil
     rescue StandardError => e
       @write_buffer.clear
-      emit(:error, e)
+      on_error(e)
+    rescue Exception => e # rubocop:disable Lint/RescueException
+      force_close(true)
       raise e
     end
 
@@ -273,12 +252,29 @@ module HTTPX
       case @state
       when :idle
         purge_after_closed
-        emit(:terminate)
+        disconnect
       when :closed
         @connected_at = nil
       end
 
       close
+    end
+
+    # bypasses state machine rules while setting the connection in the
+    # :closed state.
+    def force_close(delete_pending = false)
+      if delete_pending
+        @pending.clear
+      elsif (parser = @parser)
+        enqueue_pending_requests_from_parser(parser)
+      end
+      return if @state == :closed
+
+      @state = :closed
+      @write_buffer.clear
+      purge_after_closed
+      disconnect
+      emit(:force_closed, delete_pending)
     end
 
     # bypasses the state machine to force closing of connections still connecting.
@@ -368,18 +364,40 @@ module HTTPX
     end
 
     def handle_connect_error(error)
-      return handle_error(error) unless @sibling && @sibling.connecting?
+      return on_error(error) unless @sibling && @sibling.connecting?
 
       @sibling.merge(self)
 
       force_reset(true)
     end
 
+    # disconnects from the current session it's attached to
     def disconnect
-      return unless @current_session && @current_selector
+      return if @exhausted # it'll reset
 
-      emit(:close)
+      return unless (current_session = @current_session) && (current_selector = @current_selector)
+
       @current_session = @current_selector = nil
+
+      current_session.deselect_connection(self, current_selector, @cloned)
+    end
+
+    def on_error(error, request = nil)
+      if error.is_a?(OperationTimeoutError)
+
+        # inactive connections do not contribute to the select loop, therefore
+        # they should not fail due to such errors.
+        return if @state == :inactive
+
+        if @timeout
+          @timeout -= error.timeout
+          return unless @timeout <= 0
+        end
+
+        error = error.to_connection_error if connecting?
+      end
+      handle_error(error, request)
+      reset
     end
 
     # :nocov:
@@ -417,7 +435,11 @@ module HTTPX
           # * the number of pending requests
           # * whether the write buffer has bytes (i.e. for close handshake)
           if @pending.empty? && @inflight.zero? && @write_buffer.empty?
-            log(level: 3) { "NO MORE REQUESTS..." }
+            log(level: 3) { "NO MORE REQUESTS..." } if @parser && @parser.pending.any?
+
+            # terminate if an altsvc connection has been established
+            terminate if @altsvc_connection
+
             return
           end
 
@@ -462,7 +484,14 @@ module HTTPX
             break if @state == :closing || @state == :closed
 
             # exit #consume altogether if all outstanding requests have been dealt with
-            return if @pending.empty? && @inflight.zero?
+            if @pending.empty? && @inflight.zero? && @write_buffer.empty? # rubocop:disable Style/Next
+              log(level: 3) { "NO MORE REQUESTS..." } if @parser && @parser.pending.any?
+
+              # terminate if an altsvc connection has been established
+              terminate if @altsvc_connection
+
+              return
+            end
           end unless ((ints = interests).nil? || ints == :w || @state == :closing) && !epiped
 
           #
@@ -555,6 +584,17 @@ module HTTPX
       request.ping!
     end
 
+    def enqueue_pending_requests_from_parser(parser)
+      parser_pending_requests = parser.pending
+
+      return if parser_pending_requests.empty?
+
+      # the connection will be reused, so parser requests must come
+      # back to the pending list before the parser is reset.
+      @inflight -= parser_pending_requests.size
+      @pending.unshift(*parser_pending_requests)
+    end
+
     def build_parser(protocol = @io.protocol)
       parser = parser_type(protocol).new(@write_buffer, @options)
       set_parser_callbacks(parser)
@@ -564,7 +604,7 @@ module HTTPX
     def set_parser_callbacks(parser)
       parser.on(:response) do |request, response|
         AltSvc.emit(request, response) do |alt_origin, origin, alt_params|
-          emit(:altsvc, alt_origin, origin, alt_params)
+          build_altsvc_connection(alt_origin, origin, alt_params)
         end
         @response_received_at = Utils.now
         @inflight -= 1
@@ -572,7 +612,7 @@ module HTTPX
         request.emit(:response, response)
       end
       parser.on(:altsvc) do |alt_origin, origin, alt_params|
-        emit(:altsvc, alt_origin, origin, alt_params)
+        build_altsvc_connection(alt_origin, origin, alt_params)
       end
 
       parser.on(:pong, &method(:send_pending))
@@ -581,50 +621,31 @@ module HTTPX
         request.emit(:promise, parser, stream)
       end
       parser.on(:exhausted) do
-        @exhausted = true
-        current_session = @current_session
-        current_selector = @current_selector
-        begin
-          parser.close
-          @pending.concat(parser.pending)
-        ensure
-          @current_session = current_session
-          @current_selector = current_selector
-        end
+        enqueue_pending_requests_from_parser(parser)
 
-        case @state
-        when :closed
-          idling
-          @exhausted = false
-        when :closing
-          once(:closed) do
-            idling
-            @exhausted = false
-          end
-        end
+        @exhausted = true
+        parser.close
+
+        idling
+        @exhausted = false
       end
       parser.on(:origin) do |origin|
         @origins |= [origin]
       end
-      parser.on(:close) do |force|
-        if force
-          reset
-          emit(:terminate)
-        end
+      parser.on(:close) do
+        reset
+        disconnect
       end
       parser.on(:close_handshake) do
-        consume
+        consume unless @state == :closed
       end
       parser.on(:reset) do
-        @pending.concat(parser.pending) unless parser.empty?
-        current_session = @current_session
-        current_selector = @current_selector
+        enqueue_pending_requests_from_parser(parser)
+
         reset
-        unless @pending.empty?
-          idling
-          @current_session = current_session
-          @current_selector = current_selector
-        end
+        # :reset event only fired in http/1.1, so this guarantees
+        # that the connection will be closed here.
+        idling unless @pending.empty?
       end
       parser.on(:current_timeout) do
         @current_timeout = @timeout = parser.timeout
@@ -674,16 +695,12 @@ module HTTPX
       error = ConnectionError.new(e.message)
       error.set_backtrace(e.backtrace)
       handle_connect_error(error) if connecting?
-      @state = :closed
-      purge_after_closed
-      disconnect
+      force_close
     rescue TLSError, ::HTTP2::Error::ProtocolError, ::HTTP2::Error::HandshakeError => e
       # connect errors, exit gracefully
       handle_error(e)
       handle_connect_error(e) if connecting?
-      @state = :closed
-      purge_after_closed
-      disconnect
+      force_close
     end
 
     def handle_transition(nextstate)
@@ -785,6 +802,8 @@ module HTTPX
 
     # returns an HTTPX::Connection for the negotiated Alternative Service (or none).
     def build_altsvc_connection(alt_origin, origin, alt_params)
+      return if @altsvc_connection
+
       # do not allow security downgrades on altsvc negotiation
       return if @origin.scheme == "https" && alt_origin.scheme != "https"
 
@@ -802,10 +821,11 @@ module HTTPX
 
       connection.extend(AltSvc::ConnectionMixin) unless connection.is_a?(AltSvc::ConnectionMixin)
 
-      log(level: 1) { "#{origin} alt-svc: #{alt_origin}" }
+      @altsvc_connection = connection
+
+      log(level: 1) { "#{origin}: alt-svc connection##{connection.object_id} established to #{alt_origin}" }
 
       connection.merge(self)
-      terminate
     rescue UnsupportedSchemeError
       altsvc["noop"] = true
       nil
@@ -835,26 +855,8 @@ module HTTPX
       end
     end
 
-    def on_error(error, request = nil)
-      if error.is_a?(OperationTimeoutError)
-
-        # inactive connections do not contribute to the select loop, therefore
-        # they should not fail due to such errors.
-        return if @state == :inactive
-
-        if @timeout
-          @timeout -= error.timeout
-          return unless @timeout <= 0
-        end
-
-        error = error.to_connection_error if connecting?
-      end
-      handle_error(error, request)
-      reset
-    end
-
     def handle_error(error, request = nil)
-      parser.handle_error(error, request) if @parser && parser.respond_to?(:handle_error)
+      parser.handle_error(error, request) if @parser && @parser.respond_to?(:handle_error)
       while (req = @pending.shift)
         next if request && req == request
 
@@ -929,6 +931,17 @@ module HTTPX
 
     def set_request_timeout(label, request, timeout, start_event, finish_events, &callback)
       request.set_timeout_callback(start_event) do
+        unless @current_selector
+          raise Error, "request has been resend to an out-of-session connection, and this " \
+                       "should never happen!!! Please report this error! " \
+                       "(state:#{@state}, " \
+                       "parser?:#{!!@parser}, " \
+                       "bytes in write buffer?:#{!@write_buffer.empty?}, " \
+                       "cloned?:#{@cloned}, " \
+                       "sibling?:#{!!@sibling}, " \
+                       "coalesced?:#{coalesced?})"
+        end
+
         timer = @current_selector.after(timeout, callback)
         request.active_timeouts << label
 

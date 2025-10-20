@@ -31,6 +31,9 @@ module HTTPX
 
         def emit_or_callback_error: (*untyped) -> void
       end
+
+      module ConnectionMethods
+      end
     end
 
     type sessionCallbacks = Session & Callbacks::InstanceMethods
