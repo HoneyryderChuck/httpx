@@ -14,10 +14,6 @@ module HTTPX
 
       def current_session=: (Session s) -> void
 
-      def close: () -> void
-
-      def connections: () -> Array[Connection]
-
       def early_resolve: (Connection connection) -> bool
 
       def lazy_resolve: (Connection connection) -> void

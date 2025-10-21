@@ -5,7 +5,6 @@ require "resolv"
 
 module HTTPX
   class Resolver::Multi
-    include Callbacks
     attr_reader :resolvers, :options
 
     def initialize(resolver_type, options)
@@ -36,18 +35,6 @@ module HTTPX
 
     def log(*args, **kwargs, &blk)
       @resolvers.each { |r| r.log(*args, **kwargs, &blk) }
-    end
-
-    def inflight?
-      @resolvers.any(&:inflight?)
-    end
-
-    def close
-      @resolvers.each(&:close)
-    end
-
-    def connections
-      @resolvers.filter_map { |r| r.resolver_connection if r.respond_to?(:resolver_connection) }
     end
 
     def early_resolve(connection)
