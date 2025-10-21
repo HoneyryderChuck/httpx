@@ -8,7 +8,6 @@ require "httpx/resolver"
 
 module HTTPX
   class Pool
-    using ArrayExtensions::FilterMap
     using URIExtensions
 
     POOL_TIMEOUT = 5

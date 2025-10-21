@@ -4,20 +4,6 @@ require "uri"
 
 module HTTPX
   module ArrayExtensions
-    module FilterMap
-      refine Array do
-        # Ruby 2.7 backport
-        def filter_map
-          return to_enum(:filter_map) unless block_given?
-
-          each_with_object([]) do |item, res|
-            processed = yield(item)
-            res << processed if processed
-          end
-        end
-      end unless Array.method_defined?(:filter_map)
-    end
-
     module Intersect
       refine Array do
         # Ruby 3.1 backport
