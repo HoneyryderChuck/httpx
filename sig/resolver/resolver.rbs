@@ -1,7 +1,6 @@
 module HTTPX
   module Resolver
     class Resolver
-      include Callbacks
       include Loggable
 
       include _Selectable
@@ -26,7 +25,7 @@ module HTTPX
 
       def close: () -> void
 
-      alias terminate close
+      def terminate: () -> void
 
       def force_close: (*untyped args) -> void
 
@@ -52,13 +51,9 @@ module HTTPX
 
       def initialize: (ip_family family, Options options) -> void
 
-      def set_resolver_callbacks: () -> void
-
       def resolve_connection: (Connection connection) -> void
 
       def emit_connection_error: (Connection connection, StandardError error) -> void
-
-      def close_resolver: (Resolver resolver) -> void
 
       def emit_resolve_error: (Connection connection, ?String hostname, ?StandardError) -> void
 

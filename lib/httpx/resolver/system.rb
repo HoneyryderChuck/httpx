@@ -181,7 +181,7 @@ module HTTPX
         end
       end
 
-      return emit(:close, self) if @connections.empty?
+      return disconnect if @connections.empty?
 
       resolve
     rescue StandardError => e
@@ -266,7 +266,7 @@ module HTTPX
       @connections.shift until @connections.empty? || @connections.first.state != :closed
 
       if (@connections - @queries.map(&:last)).empty?
-        emit(:close, self)
+        disconnect
       else
         resolve
       end

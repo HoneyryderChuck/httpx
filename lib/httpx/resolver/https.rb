@@ -66,10 +66,6 @@ module HTTPX
       true
     end
 
-    def empty?
-      true
-    end
-
     def resolver_connection
       # TODO: leaks connection object into the pool
       @resolver_connection ||=

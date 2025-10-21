@@ -72,7 +72,7 @@ module Requests
       define_method :"test_resolver_#{resolver_type}_timeout" do
         resolver_opts = options.merge(timeouts: [1, 2])
 
-        HTTPX.plugin(ResolverTimeoutPlugin).plugin(SessionWithPool).with(debug: $stderr, debug_level: 3).wrap do |session|
+        HTTPX.plugin(ResolverTimeoutPlugin).plugin(SessionWithPool).wrap do |session|
           uri = build_uri("/get")
 
           # before_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)

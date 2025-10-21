@@ -415,13 +415,6 @@ module HTTPX
       coalesce_connections(found_connection, connection, selector, from_pool)
     end
 
-    def on_resolver_close(resolver, selector)
-      return if resolver.closed?
-
-      deselect_resolver(resolver, selector)
-      resolver.close unless resolver.closed?
-    end
-
     def find_resolver_for(connection, selector)
       if (resolver = selector.find_resolver(connection.options))
         resolver.log(level: 2) { "found resolver##{connection.object_id}(#{connection.state}) in selector##{selector.object_id}" }

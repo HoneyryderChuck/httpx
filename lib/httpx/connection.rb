@@ -34,8 +34,6 @@ module HTTPX
 
     using URIExtensions
 
-    def_delegator :@io, :closed?
-
     def_delegator :@write_buffer, :empty?
 
     attr_reader :type, :io, :origin, :origins, :state, :pending, :options, :ssl_session, :sibling

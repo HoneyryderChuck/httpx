@@ -5,9 +5,6 @@ require "resolv"
 
 module HTTPX
   class Resolver::Multi
-    include Callbacks
-    using ArrayExtensions::FilterMap
-
     attr_reader :resolvers, :options
 
     def initialize(resolver_type, options)
@@ -44,26 +41,6 @@ module HTTPX
       @resolvers.all?(&:closed?)
     end
 
-    def empty?
-      @resolvers.all?(&:empty?)
-    end
-
-    def inflight?
-      @resolvers.any(&:inflight?)
-    end
-
-    def timeout
-      @resolvers.filter_map(&:timeout).min
-    end
-
-    def close
-      @resolvers.each(&:close)
-    end
-
-    def connections
-      @resolvers.filter_map { |r| r.resolver_connection if r.respond_to?(:resolver_connection) }
-    end
-
     def early_resolve(connection)
       hostname = connection.peer.host
       addresses = @resolver_options[:cache] && (connection.addresses || HTTPX::Resolver.nolookup_resolve(hostname))
@@ -97,6 +74,7 @@ module HTTPX
 
         next if resolver.empty?
 
+        # both the resolver and the connection it's resolving must be pineed to the session
         @current_session.pin(conn_to_resolve, @current_selector)
         @current_session.select_resolver(resolver, @current_selector)
       end
