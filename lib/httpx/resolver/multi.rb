@@ -38,10 +38,6 @@ module HTTPX
       @resolvers.each { |r| r.log(*args, **kwargs, &blk) }
     end
 
-    def closed?
-      @resolvers.all?(&:closed?)
-    end
-
     def empty?
       @resolvers.all?(&:empty?)
     end

@@ -61,7 +61,7 @@ module HTTPX
     end
 
     def terminate
-      emit(:close, self)
+      disconnect
     end
 
     def closed?
@@ -162,7 +162,7 @@ module HTTPX
         retry
       else
         handle_error(e)
-        emit(:close, self)
+        disconnect
       end
     rescue NativeResolveError => e
       handle_error(e)
@@ -546,7 +546,7 @@ module HTTPX
       @connections.shift until @connections.empty? || @connections.first.state != :closed
 
       if (@connections - @queries.values).empty?
-        emit(:close, self)
+        disconnect
       else
         resolve
       end

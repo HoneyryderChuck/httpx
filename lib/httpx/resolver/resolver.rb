@@ -7,7 +7,6 @@ module HTTPX
   # from the Selectable API.
   #
   class Resolver::Resolver
-    include Callbacks
     include Loggable
 
     using ArrayExtensions::Intersect
@@ -39,8 +38,6 @@ module HTTPX
       @record_type = RECORD_TYPES[family]
       @options = options
       @connections = []
-
-      set_resolver_callbacks
     end
 
     def each_connection(&block)
@@ -124,7 +121,7 @@ module HTTPX
 
     def on_error(error)
       handle_error(error)
-      emit(:close, self)
+      disconnect
     end
 
     def early_resolve(connection, hostname: connection.peer.host)
@@ -149,13 +146,13 @@ module HTTPX
 
         return if connection.state == :closed
 
-        emit(:resolve, connection)
+        resolve_connection(connection)
       rescue StandardError => e
         if early_resolve
           connection.force_close
           throw(:resolve_error, e)
         else
-          emit(:error, connection, e)
+          emit_connection_error(connection, e)
         end
       end
     end
@@ -173,12 +170,6 @@ module HTTPX
       error
     end
 
-    def set_resolver_callbacks
-      on(:resolve, &method(:resolve_connection))
-      on(:error, &method(:emit_connection_error))
-      on(:close, &method(:close_resolver))
-    end
-
     def resolve_connection(connection)
       @current_session.__send__(:on_resolver_connection, connection, @current_selector)
     end
@@ -189,8 +180,11 @@ module HTTPX
       connection.on_error(error)
     end
 
-    def close_resolver(resolver)
-      @current_session.__send__(:on_resolver_close, resolver, @current_selector)
+    def disconnect
+      return if closed?
+
+      @current_session.deselect_resolver(self, @current_selector)
+      close unless closed?
     end
   end
 end

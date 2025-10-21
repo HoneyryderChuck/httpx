@@ -14,8 +14,6 @@ module HTTPX
 
       def current_session=: (Session s) -> void
 
-      def closed?: () -> bool
-
       def empty?: () -> bool
 
       def close: () -> void

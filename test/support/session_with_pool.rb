@@ -53,6 +53,10 @@ module SessionWithPool
   module ConnectionMethods
     attr_reader :origins
 
+    def closed?
+      @io.closed?
+    end
+
     def set_parser_callbacks(parser)
       super
       parser.on(:pong) { emit(:pong) }
