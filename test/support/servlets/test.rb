@@ -246,18 +246,16 @@ class TestDNSResolver
   end
 
   def resolve(domain, typevalue)
-    Resolv.getaddresses(domain).filter_map do |address|
+    Resolv.getaddresses(domain).map do |address|
       begin
         ip = IPAddr.new(address)
 
-        address if case typevalue
-                   when 1
-                     ip.ipv4?
-                   when 28
-                     ip.ipv6?
-                   else
-                     false
-                   end
+        case typevalue
+        when 1 # IPv4
+          ip
+        when 28 # IPv6
+          ip.ipv6? ? ip : ip.ipv4_mapped
+        end
       rescue IPAddr::AddressFamilyError
         # CNAME
         address
@@ -290,7 +288,7 @@ class TestDNSResolver
         ip = IPAddr.new(ip)
       rescue IPAddr::InvalidAddressError
         cname = ip
-      end
+      end unless ip.is_a?(IPAddr)
 
       # Set response type accordingly
       section = if cname
