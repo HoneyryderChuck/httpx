@@ -38,10 +38,6 @@ module HTTPX
       @resolvers.each { |r| r.log(*args, **kwargs, &blk) }
     end
 
-    def empty?
-      @resolvers.all?(&:empty?)
-    end
-
     def inflight?
       @resolvers.any(&:inflight?)
     end

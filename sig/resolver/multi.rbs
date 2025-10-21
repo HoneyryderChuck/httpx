@@ -14,8 +14,6 @@ module HTTPX
 
       def current_session=: (Session s) -> void
 
-      def empty?: () -> bool
-
       def close: () -> void
 
       def connections: () -> Array[Connection]
