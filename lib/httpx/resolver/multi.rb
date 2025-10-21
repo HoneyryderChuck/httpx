@@ -37,6 +37,10 @@ module HTTPX
       @resolvers.each { |r| r.log(*args, **kwargs, &blk) }
     end
 
+    def closed?
+      @resolvers.all?(&:closed?)
+    end
+
     def early_resolve(connection)
       hostname = connection.peer.host
       addresses = @resolver_options[:cache] && (connection.addresses || HTTPX::Resolver.nolookup_resolve(hostname))
@@ -70,6 +74,7 @@ module HTTPX
 
         next if resolver.empty?
 
+        # both the resolver and the connection it's resolving must be pineed to the session
         @current_session.pin(conn_to_resolve, @current_selector)
         @current_session.select_resolver(resolver, @current_selector)
       end

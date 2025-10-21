@@ -8,11 +8,12 @@ module HTTPX
       @current_selector: Selector?
       @current_session: Session?
       @resolver_options: Hash[Symbol, untyped]
-      # @errors: Hash[Symbol, untyped]
 
       def current_selector=: (Selector s) -> void
 
       def current_session=: (Session s) -> void
+
+      def closed?: () -> bool
 
       def early_resolve: (Connection connection) -> bool
 

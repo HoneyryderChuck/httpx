@@ -155,10 +155,16 @@ module HTTPX
     end
 
     def checkin_resolver(resolver)
-      @resolver_mtx.synchronize do
-        resolvers = @resolvers[resolver.class]
+      resolver_class = resolver.class
 
-        resolver = resolver.multi
+      resolver = resolver.multi
+
+      # a multi requires all sub-resolvers being closed in order to be
+      # correctly checked back in.
+      return unless resolver.closed?
+
+      @resolver_mtx.synchronize do
+        resolvers = @resolvers[resolver_class]
 
         resolvers << resolver unless resolvers.include?(resolver)
       end
