@@ -32,7 +32,7 @@ module HTTPX::Plugins
 
         return unless config.propagate_traces && config.trace_propagation_targets.any? { |target| url.match?(target) }
 
-        trace = ::Sentry.get_current_client.generate_sentry_trace(sentry_span)
+        trace = sentry_span.to_sentry_trace
         request.headers[::Sentry::SENTRY_TRACE_HEADER_NAME] = trace if trace
       end
 
