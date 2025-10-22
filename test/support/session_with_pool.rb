@@ -18,9 +18,7 @@ module SessionWithPool
     end
 
     def resolver
-      resolver_type = HTTPX::Resolver.resolver_for(@options.resolver_class, @options)
-
-      resolver = @pool.resolvers[resolver_type].first
+      resolver = @resolvers.first
 
       resolver = resolver.resolvers[0] if resolver.is_a?(HTTPX::Resolver::Multi)
 
@@ -51,7 +49,7 @@ module SessionWithPool
   end
 
   module ConnectionMethods
-    attr_reader :origins
+    attr_reader :origins, :main_sibling, :sibling
 
     def closed?
       @io.closed?

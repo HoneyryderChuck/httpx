@@ -1,10 +1,7 @@
 # frozen_string_literal: true
 
-require "webrick"
-require "webrick/httpproxy"
 require "test_helper"
 require "support/http_helpers"
-require "support/proxy_helper"
 require "support/minitest_extensions"
 
 class Bug_1_1_0_Test < Minitest::Test

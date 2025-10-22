@@ -2,6 +2,8 @@
 
 module Requests
   module Resolvers
+    using HTTPX::URIExtensions
+
     ResolverTimeoutPlugin = Module.new do
       self::ResolverNativeMethods = Module.new do
         def dread
@@ -82,6 +84,38 @@ module Requests
 
           verify_error_response(response, HTTPX::ResolveTimeoutError)
           # assert_in_delta 2 + 1, total_time, 12, "request didn't take as expected to retry dns queries (#{total_time} secs)"
+        end
+      end
+
+      define_method :"test_resolver_#{resolver_type}_happy_eyeballs" do
+        skip if resolver_type == :system # still no way to pass the nameserver to getaddrinfo via ruby
+
+        uri = URI(build_uri("/get"))
+        start_test_servlet(TestDNSResolver) do |dns_server|
+          resolver_opts = options.merge(
+            nameserver: [dns_server.nameserver],
+          )
+
+          HTTPX.plugin(SessionWithPool)
+               .with(ip_families: [Socket::AF_INET6, Socket::AF_INET]) do |session|
+            response = session.get(uri, resolver_class: resolver_type, resolver_options: options.merge(resolver_opts))
+
+            verify_status(response, 200)
+            conns = session.connections
+
+            if resolver_type == :https
+              assert conns.size == 3
+              resolver_uri = URI(resolver_opts[:uri])
+              conns.reject! { |c| c.origin.to_s == resolver_uri.origin }
+            else
+              assert conns.size == 2
+            end
+
+            assert(conns.all? { |c| c.origin.to_s == uri.origin })
+            assert(conns.one? { |c| c.family == Socket::AF_INET6 })
+            assert(conns.one? { |c| c.family == Socket::AF_INET })
+            assert(conns.one?(&:main_sibling))
+          end
         end
       end
 
