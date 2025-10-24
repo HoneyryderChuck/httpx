@@ -140,9 +140,6 @@ module HTTPX
       end
       selector.deregister(connection)
 
-      # when connections coalesce
-      return if connection.state == :idle
-
       return if cloned
 
       return if @closing && connection.state == :closed
@@ -392,6 +389,7 @@ module HTTPX
 
       resolver = find_resolver_for(connection, selector)
 
+      pin(connection, selector)
       resolver.early_resolve(connection) || resolver.lazy_resolve(connection)
     end
 
@@ -445,8 +443,6 @@ module HTTPX
       select_connection(conn1, selector) if from_pool
       conn2.coalesce!(conn1)
       conn2.disconnect
-      conn2.log(level: 2) { "check-in coalesced connection##{conn2.object_id}(#{conn2.state}) in pool##{@pool.object_id}" }
-      @pool.checkin_connection(conn2)
       true
     end
 
