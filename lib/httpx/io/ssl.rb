@@ -98,11 +98,11 @@ module HTTPX
       end
 
       unless @io.is_a?(OpenSSL::SSL::SSLSocket)
-        if (hostname_is_ip = (@ip == @sni_hostname))
+        if (hostname_is_ip = (@ip == @sni_hostname)) && @ctx.verify_hostname
           # IPv6 address would be "[::1]", must turn to "0000:0000:0000:0000:0000:0000:0000:0001" for cert SAN check
           @sni_hostname = @ip.to_string
           # IP addresses in SNI is not valid per RFC 6066, section 3.
-          @ctx.verify_hostname = false unless @ctx.frozen?
+          @ctx.verify_hostname = false
         end
 
         @io = OpenSSL::SSL::SSLSocket.new(@io, @ctx)
