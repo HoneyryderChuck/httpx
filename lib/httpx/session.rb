@@ -227,13 +227,7 @@ module HTTPX
 
     # tries deactivating connections in the +selector+, deregistering the ones that have been deactivated.
     def deactivate(selector)
-      selector.each_connection.select do |c|
-        c.deactivate
-
-        c.state == :inactive
-      end.each do |c| # rubocop:disable Style/MultilineBlockChain
-        deselect_connection(c, selector)
-      end
+      selector.each_connection.each(&:deactivate)
     end
 
     # callback executed when an HTTP/2 promise frame has been received.
