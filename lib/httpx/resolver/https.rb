@@ -107,6 +107,7 @@ module HTTPX
         @connections << connection
       rescue ResolveError, Resolv::DNS::EncodeError => e
         reset_hostname(hostname)
+        throw(:resolve_error, e) if connection.pending.empty?
         emit_resolve_error(connection, connection.peer.host, e)
       end
     end
