@@ -49,7 +49,7 @@ module SessionWithPool
   end
 
   module ConnectionMethods
-    attr_reader :origins, :main_sibling, :sibling
+    attr_reader :origins, :main_sibling, :sibling, :current_session, :current_selector
 
     def closed?
       @io.closed?
