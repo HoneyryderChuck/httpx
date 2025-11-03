@@ -121,6 +121,9 @@ module HTTPX
 
     def select_connection(connection, selector)
       pin(connection, selector)
+      connection.log(level: 2) do
+        "registering into selector##{selector.object_id}"
+      end
       selector.register(connection)
     end
 
@@ -224,13 +227,7 @@ module HTTPX
 
     # tries deactivating connections in the +selector+, deregistering the ones that have been deactivated.
     def deactivate(selector)
-      selector.each_connection.select do |c|
-        c.deactivate
-
-        c.state == :inactive
-      end.each do |c| # rubocop:disable Style/MultilineBlockChain
-        deselect_connection(c, selector)
-      end
+      selector.each_connection.each(&:deactivate)
     end
 
     # callback executed when an HTTP/2 promise frame has been received.
@@ -402,6 +399,9 @@ module HTTPX
       from_pool = false
       found_connection = selector.find_mergeable_connection(connection) || begin
         from_pool = true
+        connection.log(level: 2) do
+          "try finding a mergeable connection in pool##{@pool.object_id}"
+        end
         @pool.checkout_mergeable_connection(connection)
       end
 
@@ -409,7 +409,7 @@ module HTTPX
 
       connection.log(level: 2) do
         "try coalescing from #{from_pool ? "pool##{@pool.object_id}" : "selector##{selector.object_id}"} " \
-          "(conn##{found_connection.object_id}[#{found_connection.origin}])"
+          "(connection##{found_connection.object_id}[#{found_connection.origin}])"
       end
 
       coalesce_connections(found_connection, connection, selector, from_pool)
@@ -441,9 +441,9 @@ module HTTPX
         return false
       end
 
-      conn2.log(level: 2) { "coalescing with conn##{conn1.object_id}[#{conn1.origin}])" }
-      conn2.coalesce!(conn1)
+      conn2.log(level: 2) { "coalescing with connection##{conn1.object_id}[#{conn1.origin}])" }
       select_connection(conn1, selector) if from_pool
+      conn2.coalesce!(conn1)
       conn2.disconnect
       conn2.log(level: 2) { "check-in coalesced connection##{conn2.object_id}(#{conn2.state}) in pool##{@pool.object_id}" }
       @pool.checkin_connection(conn2)

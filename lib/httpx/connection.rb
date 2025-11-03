@@ -726,6 +726,8 @@ module HTTPX
 
         # do not deactivate connection in use
         return if @inflight.positive? || @parser.waiting_for_ping?
+
+        disconnect
       when :closing
         return unless @state == :idle || @state == :open
 
