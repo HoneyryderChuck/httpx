@@ -16,6 +16,7 @@ class HTTPSTest < Minitest::Test
   include Callbacks
   include Errors if RUBY_ENGINE == "ruby"
   include Resolvers if ENV.key?("HTTPX_RESOLVER_URI")
+  include Coalescing if ENV.key?("HTTPBIN_COALESCING_HOST")
   # TODO: uncomment as soon as nghttpx supports altsvc for HTTP/2
   # include AltSvc if ENV.key?("HTTPBIN_ALTSVC_HOST")
 
@@ -57,36 +58,6 @@ class HTTPSTest < Minitest::Test
       assert conn2.io.instance_variable_get(:@io).session_reused?
     end
   end unless RUBY_ENGINE == "jruby"
-
-  def test_connection_coalescing
-    coalesced_origin = "https://#{ENV["HTTPBIN_COALESCING_HOST"]}"
-    HTTPX.plugin(SessionWithPool).wrap do |http|
-      response1 = http.get(origin)
-      verify_status(response1, 200)
-      response2 = http.get(coalesced_origin)
-      verify_status(response2, 200)
-      # introspection time
-      connections = http.connections
-      assert connections.size == 2
-      origins = connections.map(&:origins)
-      assert origins.any? { |orgs| orgs.sort == [origin, coalesced_origin].sort },
-             "connections for #{[origin, coalesced_origin]} didn't coalesce (expected connection with both origins (#{origins}))"
-
-      assert http.pool.connections_counter == 1, "coalesced connection should not have been accounted for in the pool"
-
-      unsafe_origin = URI(origin)
-      unsafe_origin.scheme = "http"
-      response3 = http.get(unsafe_origin)
-      verify_status(response3, 200)
-
-      # introspection time
-      connections = http.connections
-      assert connections.size == 3
-      origins = connections.map(&:origins)
-      refute origins.any?([origin]),
-             "connection coalesced inexpectedly (expected connection with both origins (#{origins}))"
-    end
-  end if ENV.key?("HTTPBIN_COALESCING_HOST")
 
   def test_verbose_log
     log = StringIO.new
