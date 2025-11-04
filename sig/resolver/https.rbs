@@ -40,6 +40,8 @@ module HTTPX
       def decode_response_body: (Response) -> dns_decoding_response
 
       def reset_hostname: (String hostname, ?reset_candidates: bool) -> Connection?
+
+      def close_or_resolve: (?bool should_deactivate) -> void
     end
   end
 end

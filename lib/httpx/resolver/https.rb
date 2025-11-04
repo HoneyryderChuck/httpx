@@ -31,7 +31,7 @@ module HTTPX
     }.freeze
 
     def_delegators :@resolver_connection, :state, :connecting?, :to_io, :call, :close,
-                   :terminate, :inflight?, :handle_socket_timeout
+                   :closed?, :deactivate, :terminate, :inflight?, :handle_socket_timeout
 
     def initialize(_, options)
       super
@@ -107,7 +107,9 @@ module HTTPX
         @connections << connection
       rescue ResolveError, Resolv::DNS::EncodeError => e
         reset_hostname(hostname)
+        throw(:resolve_error, e) if connection.pending.empty?
         emit_resolve_error(connection, connection.peer.host, e)
+        close_or_resolve
       end
     end
 
@@ -117,6 +119,7 @@ module HTTPX
       hostname = @requests.delete(request)
       connection = reset_hostname(hostname)
       emit_resolve_error(connection, connection.peer.host, e)
+      close_or_resolve
     else
       # @type var response: HTTPX::Response
       parse(request, response)
@@ -143,6 +146,7 @@ module HTTPX
 
         unless @queries.value?(connection)
           emit_resolve_error(connection)
+          close_or_resolve
           return
         end
 
@@ -152,10 +156,12 @@ module HTTPX
         connection = reset_hostname(host)
 
         emit_resolve_error(connection)
+        close_or_resolve
       when :decode_error
         host = @requests.delete(request)
         connection = reset_hostname(host)
         emit_resolve_error(connection, connection.peer.host, result)
+        close_or_resolve
       end
     end
 
@@ -165,6 +171,7 @@ module HTTPX
         host = @requests.delete(request)
         connection = reset_hostname(host)
         emit_resolve_error(connection)
+        close_or_resolve
         return
 
       else
@@ -203,9 +210,7 @@ module HTTPX
           catch(:coalesced) { emit_addresses(connection, @family, addresses.map { |a| Resolver::Entry.new(a["data"], a["TTL"]) }) }
         end
       end
-      return if @connections.empty?
-
-      resolve
+      close_or_resolve(true)
     end
 
     def build_request(hostname)
@@ -247,6 +252,21 @@ module HTTPX
       @queries.delete_if { |h, _| candidates.include?(h) }
 
       connection
+    end
+
+    def close_or_resolve(should_deactivate = false)
+      # drop already closed connections
+      @connections.shift until @connections.empty? || @connections.first.state != :closed
+
+      if (@connections - @queries.values).empty?
+        if should_deactivate
+          deactivate
+        else
+          disconnect
+        end
+      else
+        resolve
+      end
     end
   end
 end

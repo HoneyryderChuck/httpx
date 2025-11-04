@@ -123,11 +123,16 @@ module Requests
       when :https
 
         define_method :"test_resolver_#{resolver_type}_get_request" do
-          session = HTTPX.plugin(SessionWithPool)
-          uri = build_uri("/get")
-          response = session.head(uri, resolver_class: resolver_type, resolver_options: options.merge(use_get: true))
-          verify_status(response, 200)
-          response.close
+          HTTPX.plugin(SessionWithPool).wrap do |http|
+            uri = build_uri("/get")
+            response = http.head(uri, resolver_class: resolver_type, resolver_options: options.merge(use_get: true))
+            verify_status(response, 200)
+            response.close
+            resolver_uri = URI(options[:uri])
+            resolver_conn = http.pool.connections.find { |c| c.origin.to_s == resolver_uri.origin }
+            assert resolver_conn, "https resolver connection should still be there"
+            assert resolver_conn.open?, "resolver connection should be kept around open"
+          end
         end
 
         define_method :"test_resolver_#{resolver_type}_unresolvable_servername" do
@@ -159,6 +164,49 @@ module Requests
           end
           response = session.head(uri, resolver_class: resolver_class, resolver_options: options.merge(record_types: %w[]))
           verify_error_response(response, HTTPX::ResolveError)
+        end
+
+        define_method :"test_resolver_#{resolver_type}_encoding_error" do
+          session = HTTPX.plugin(SessionWithPool)
+          uri = URI(build_uri("/get"))
+          resolver_class = Class.new(HTTPX::Resolver::HTTPS) do
+            def build_request(*)
+              raise Resolv::DNS::EncodeError, "ups"
+            end
+          end
+          assert_raises(Resolv::DNS::EncodeError) do
+            session.head(uri, resolver_class: resolver_class, resolver_options: options.merge(record_types: %w[]))
+          end
+        end
+
+        define_method :"test_resolver_#{resolver_type}_dns_error" do
+          session = HTTPX.plugin(SessionWithPool)
+          uri = URI(build_uri("/get"))
+          resolver_class = Class.new(HTTPX::Resolver::HTTPS) do
+            def decode_response_body(*)
+              [:dns_error, nil]
+            end
+          end
+          response = session.head(uri, resolver_class: resolver_class, resolver_options: options.merge(record_types: %w[]))
+          verify_error_response(response, HTTPX::ResolveError)
+          assert session.pool.connections.empty?
+        end
+
+        define_method :"test_resolver_#{resolver_type}_no_answers" do
+          HTTPX.plugin(SessionWithPool).wrap do |http|
+            uri = URI(build_uri("/get"))
+            resolver_class = Class.new(HTTPX::Resolver::HTTPS) do
+              def parse_addresses(_, request)
+                super([], request)
+              end
+            end
+            response = http.head(uri, resolver_class: resolver_class, resolver_options: options.merge(record_types: %w[]))
+            verify_error_response(response, HTTPX::ResolveError)
+            resolver_uri = URI(options[:uri])
+            resolver_conn = http.pool.connections.find { |c| c.origin.to_s == resolver_uri.origin }
+            assert resolver_conn, "https resolver connection should still be there"
+            assert resolver_conn.state == :closed, "resolver connection should have closed after error"
+          end
         end
       when :native
         define_method :"test_resolver_#{resolver_type}_tcp_request" do

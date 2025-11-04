@@ -58,6 +58,8 @@ module HTTPX
       def emit_resolve_error: (Connection connection, ?String hostname, ?StandardError) -> void
 
       def resolve_error: (String hostname, ?StandardError?) -> (ResolveError | ResolveTimeoutError)
+
+      def close_or_resolve: () -> void
     end
   end
 end
