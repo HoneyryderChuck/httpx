@@ -493,7 +493,6 @@ module HTTPX
       #
       def plugin(pl, options = nil, &block)
         label = pl
-        # raise Error, "Cannot add a plugin to a frozen config" if frozen?
         pl = Plugins.load_plugin(pl) if pl.is_a?(Symbol)
         raise ArgumentError, "Invalid plugin type: #{pl.class.inspect}" unless pl.is_a?(Module)
 
