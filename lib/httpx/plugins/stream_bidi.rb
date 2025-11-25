@@ -81,34 +81,77 @@ module HTTPX
         end
       end
 
-      # BidiBuffer is a Buffer which can be receive data from threads othr
-      # than the thread of the corresponding Connection/Session.
+      # BidiBuffer is a thread-safe Buffer which can receive data from any thread.
       #
-      # It synchronizes access to a secondary internal +@oob_buffer+, which periodically
-      # is reconciled to the main internal +@buffer+.
+      # It uses a dual-buffer strategy with mutex protection:
+      # - +@buffer+ is the main buffer, protected by +@buffer_mutex+
+      # - +@oob_buffer+ receives data when +@buffer_mutex+ is contended
+      #
+      # This allows non-blocking writes from any thread while maintaining thread safety.
       class BidiBuffer < Buffer
         def initialize(*)
           super
-          @parent_thread = Thread.current
+          @buffer_mutex = Thread::Mutex.new
           @oob_mutex = Thread::Mutex.new
           @oob_buffer = "".b
         end
 
-        # buffers the +chunk+ to be sent
+        # buffers the +chunk+ to be sent (thread-safe, non-blocking)
         def <<(chunk)
-          return super if Thread.current == @parent_thread
-
-          @oob_mutex.synchronize { @oob_buffer << chunk }
+          if @buffer_mutex.try_lock
+            begin
+              super
+            ensure
+              @buffer_mutex.unlock
+            end
+          else
+            # another thread holds the lock, use OOB buffer to avoid blocking
+            @oob_mutex.synchronize { @oob_buffer << chunk }
+          end
         end
 
-        # reconciles the main and secondary buffer (which receives data from other threads).
+        # reconciles the main and secondary buffer (thread-safe, callable from any thread).
         def rebuffer
-          raise Error, "can only rebuffer while waiting on a response" unless Thread.current == @parent_thread
+          @buffer_mutex.synchronize do
+            @oob_mutex.synchronize do
+              return if @oob_buffer.empty?
 
-          @oob_mutex.synchronize do
-            @buffer << @oob_buffer
-            @oob_buffer.clear
+              @buffer << @oob_buffer
+              @oob_buffer.clear
+            end
           end
+        end
+
+        def empty?
+          @buffer_mutex.synchronize { super }
+        end
+
+        def full?
+          @buffer_mutex.synchronize { super }
+        end
+
+        def bytesize
+          @buffer_mutex.synchronize { super }
+        end
+
+        def to_s
+          @buffer_mutex.synchronize { super }
+        end
+
+        def to_str
+          @buffer_mutex.synchronize { super }
+        end
+
+        def capacity
+          @buffer_mutex.synchronize { super }
+        end
+
+        def clear
+          @buffer_mutex.synchronize { super }
+        end
+
+        def shift!(fin)
+          @buffer_mutex.synchronize { super }
         end
       end
 

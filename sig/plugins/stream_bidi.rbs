@@ -16,11 +16,19 @@ module HTTPX
       end
 
       class BidiBuffer < Buffer
-        @parent_thread: Thread
+        @buffer_mutex: Thread::Mutex
         @oob_mutex: Thread::Mutex
         @oob_buffer: String
 
         def rebuffer: () -> void
+        def empty?: () -> bool
+        def full?: () -> bool
+        def bytesize: () -> Integer
+        def to_s: () -> String
+        def to_str: () -> String
+        def capacity: () -> Integer
+        def clear: () -> void
+        def shift!: (Integer fin) -> void
       end
 
       class Signal
