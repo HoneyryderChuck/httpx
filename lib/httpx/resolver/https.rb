@@ -98,19 +98,21 @@ module HTTPX
       end
       log { "resolver #{FAMILY_TYPES[@record_type]}: query for #{hostname}" }
 
-      begin
-        request = build_request(hostname)
-        request.on(:response, &method(:on_response).curry(2)[request])
-        request.on(:promise, &method(:on_promise))
-        @requests[request] = hostname
-        resolver_connection.send(request)
-        @connections << connection
-      rescue ResolveError, Resolv::DNS::EncodeError => e
-        reset_hostname(hostname)
-        throw(:resolve_error, e) if connection.pending.empty?
-        emit_resolve_error(connection, connection.peer.host, e)
-        close_or_resolve
-      end
+      send_request(hostname, connection)
+    end
+
+    def send_request(hostname, connection)
+      request = build_request(hostname)
+      request.on(:response, &method(:on_response).curry(2)[request])
+      request.on(:promise, &method(:on_promise))
+      @requests[request] = hostname
+      resolver_connection.send(request)
+      @connections << connection
+    rescue ResolveError, Resolv::DNS::EncodeError => e
+      reset_hostname(hostname)
+      throw(:resolve_error, e) if connection.pending.empty?
+      emit_resolve_error(connection, connection.peer.host, e)
+      close_or_resolve
     end
 
     def on_response(request, response)
@@ -122,6 +124,18 @@ module HTTPX
       close_or_resolve
     else
       # @type var response: HTTPX::Response
+      if response.status.between?(300, 399) && response.headers.key?("location")
+        hostname = @requests[request]
+        connection = @queries[hostname]
+        location_uri = URI(response.headers["location"])
+        location_uri = response.uri.merge(location_uri) if location_uri.relative?
+
+        # we assume that the DNS server URI changed permanently and move on
+        @uri = location_uri
+        send_request(hostname, connection)
+        return
+      end
+
       parse(request, response)
     ensure
       @requests.delete(request)
