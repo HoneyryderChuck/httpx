@@ -19,6 +19,7 @@ variables:
   variables:
     BUNDLE_WITHOUT: assorted
   stage: test
+  image: docker:latest
   services:
     - docker:dind
   before_script:
