@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "fiber" if RUBY_VERSION < "3.0.0"
+
 module HTTPX
   module Loggable
     COLORS = {

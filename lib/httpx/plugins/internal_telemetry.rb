@@ -45,7 +45,7 @@ module HTTPX
             debug_level: @options ? @options.debug_level : DEBUG_LEVEL,
             debug: nil
           ) do
-            "[ELAPSED TIME]: #{label}: #{elapsed} (ms)" << "\e[0m"
+            "[ELAPSED TIME]: #{label}: #{elapsed} (ms)\e[0m"
           end
         end
       end
