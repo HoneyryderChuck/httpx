@@ -97,6 +97,7 @@ module Requests
           )
 
           HTTPX.plugin(SessionWithPool)
+               .with(debug_level: 3, debug: $stderr)
                .with(ip_families: [Socket::AF_INET6, Socket::AF_INET]) do |session|
             response = session.get(uri, resolver_class: resolver_type, resolver_options: options.merge(resolver_opts))
 
