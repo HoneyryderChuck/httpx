@@ -80,6 +80,67 @@ module Requests
           assert chunks.size == 5, "all the lines should have been yielded"
         end
       end
+
+      def test_plugin_stream_bidi_reuse_persistent_connection_across_threads
+        start_test_servlet(Bidi, tls: false) do |server|
+          uri = "#{server.origin}/"
+
+          start_msg = "{\"message\":\"started\"}\n"
+          pong_msg = "{\"message\":\"pong\"}\n"
+
+          # Create persistent session (connection will be reused across threads)
+          session = HTTPX.plugin(:stream_bidi)
+
+          begin
+            # Thread A: First request (creates the connection)
+            thread_a_chunks = []
+            thread_a = Thread.start do
+              request = session.build_request(
+                "POST",
+                uri,
+                headers: { "content-type" => "application/x-ndjson" },
+                body: [start_msg]
+              )
+              response = session.request(request, stream: true)
+              response.each.each_with_index do |chunk, idx| # rubocop:disable Style/RedundantEach
+                if idx < 4
+                  request << pong_msg
+                else
+                  request.close
+                end
+                thread_a_chunks << chunk
+              end
+            end
+            thread_a.join
+
+            thread_b_chunks = []
+            thread_b = Thread.start do
+              request = session.build_request(
+                "POST",
+                uri,
+                headers: { "content-type" => "application/x-ndjson" },
+                body: [start_msg]
+              )
+              response = session.request(request, stream: true)
+              response.each.each_with_index do |chunk, idx| # rubocop:disable Style/RedundantEach
+                if idx < 4
+                  request << pong_msg
+                else
+                  request.close
+                end
+                thread_b_chunks << chunk
+              end
+            end
+            thread_b.join
+
+            # Both requests should succeed
+            assert thread_a_chunks.size == 5, "thread A should receive all chunks"
+            assert thread_b_chunks.size == 5, "thread B should receive all chunks"
+          ensure
+            session.close
+          end
+        end
+      end
     end
   end
 end

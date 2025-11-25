@@ -16,7 +16,7 @@ module HTTPX
       end
 
       class BidiBuffer < Buffer
-        @parent_thread: Thread
+        @buffer_mutex: Thread::Mutex
         @oob_mutex: Thread::Mutex
         @oob_buffer: String
 
@@ -34,7 +34,7 @@ module HTTPX
 
         def wakeup: () -> void
 
-        def mergeable?: () -> bool
+        def inflight?: () -> bool
 
         def terminate: () -> void
       end
