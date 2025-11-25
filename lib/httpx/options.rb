@@ -379,7 +379,20 @@ module HTTPX
     end
 
     def option_timeout(value)
-      Hash[value]
+      timeout_hash = Hash[value]
+
+      default_timeouts = DEFAULT_OPTIONS[:timeout]
+
+      # Validate keys and values
+      timeout_hash.each do |key, val|
+        raise TypeError, "invalid timeout: :#{key}" unless default_timeouts.key?(key)
+
+        next if val.nil?
+
+        raise TypeError, ":#{key} must be numeric" unless val.is_a?(Numeric)
+      end
+
+      timeout_hash
     end
 
     def option_supported_compression_formats(value)

@@ -43,6 +43,15 @@ class OptionsTest < Minitest::Test
     assert_equal "2", opts.headers["x-number"]
   end
 
+  def test_options_timeout_assignment
+    assert_equal 30, Options.new(timeout: { connect_timeout: 30 }).timeout[:connect_timeout]
+    assert_equal 30.5, Options.new(timeout: { connect_timeout: 30.5 }).timeout[:connect_timeout]
+    ex = assert_raises(TypeError) { Options.new(timeout: { connect_timeout: "30" }) }
+    assert_match(/:connect_timeout must be numeric/, ex.message)
+    ex = assert_raises(TypeError) { Options.new(timeout: { invalid_timeout: 30 }) }
+    assert_match(/invalid timeout: :invalid_timeout/, ex.message)
+  end
+
   def test_options_merge_hash
     opts = Options.new(fallback_protocol: "fat")
     merged_opts = opts.merge(fallback_protocol: "thin")
