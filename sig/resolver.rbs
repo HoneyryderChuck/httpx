@@ -8,12 +8,14 @@ module HTTPX
                     | { "name" => String, "TTL" => Numeric, "data" => String }
 
     RESOLVE_TIMEOUT: Array[Integer]
+    MAX_CACHE_SIZE: Integer
 
     self.@lookup_mutex: Thread::Mutex
     self.@lookups: Hash[String, Array[dns_result]]
     self.@identifier_mutex: Thread::Mutex
     self.@identifier: Integer
     self.@hosts_resolver: Resolv::Hosts
+    self.@hostnames: Array[String]
 
     type dns_decoding_response = [:ok, Array[dns_result]] | [:decode_error, Resolv::DNS::DecodeError] | [:retriable_error | :dns_error, Integer] | Symbol
 
@@ -41,7 +43,7 @@ module HTTPX
 
     def self?.decode_dns_answer: (String) -> dns_decoding_response
 
-    def self?.lookup_synchronize: [U] () { (Hash[String, Array[dns_result]] lookups) -> U } -> U
+    def self?.lookup_synchronize: [U] () { (Hash[String, Array[dns_result]] lookups, Array[String] hostnames) -> U } -> U
 
     def self?.id_synchronize: () { () -> void } -> void
   end

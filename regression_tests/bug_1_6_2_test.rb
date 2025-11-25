@@ -9,7 +9,7 @@ class Bug_1_6_2_Test < Minitest::Test
   def test_recover_well_from_multiple_timeouts_on_persistent
     # clear resolver cache
 
-    HTTPX::Resolver.lookup_synchronize(&:clear)
+    HTTPX::Resolver.lookup_synchronize { |lookups, _| lookups.clear }
 
     start_test_servlet(SlowDNSServer, 1, ttl: 2) do |slow_dns_server|
       session = HTTPX.plugin(SessionWithPool)

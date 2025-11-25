@@ -6,6 +6,7 @@ require "resolv"
 module HTTPX
   module Resolver
     RESOLVE_TIMEOUT = [2, 3].freeze
+    MAX_CACHE_SIZE = 512
 
     require "httpx/resolver/entry"
     require "httpx/resolver/resolver"
@@ -15,6 +16,7 @@ module HTTPX
     require "httpx/resolver/multi"
 
     @lookup_mutex = Thread::Mutex.new
+    @hostnames = []
     @lookups = Hash.new { |h, k| h[k] = [] }
 
     @identifier_mutex = Thread::Mutex.new
@@ -78,7 +80,14 @@ module HTTPX
     end
 
     def cached_lookup_set(hostname, family, entries)
-      lookup_synchronize do |lookups|
+      lookup_synchronize do |lookups, hostnames|
+        # lru cleanup
+        while lookups.size >= MAX_CACHE_SIZE
+          hs = hostnames.shift
+          lookups.delete(hs)
+        end
+        hostnames << hostname
+
         case family
         when Socket::AF_INET6
           lookups[hostname].concat(entries)
@@ -101,12 +110,17 @@ module HTTPX
     def cached_lookup_evict(hostname, ip)
       ip = ip.to_s
 
-      lookup_synchronize do |lookups|
+      lookup_synchronize do |lookups, hostnames|
         entries = lookups[hostname]
 
         return unless entries
 
         lookups.delete_if { |entry| entry["data"] == ip }
+
+        if lookups.empty?
+          lookups.delete(hostname)
+          hostnames.delete(hostname)
+        end
       end
     end
 
@@ -186,7 +200,7 @@ module HTTPX
     end
 
     def lookup_synchronize
-      @lookup_mutex.synchronize { yield(@lookups) }
+      @lookup_mutex.synchronize { yield(@lookups, @hostnames) }
     end
 
     def id_synchronize(&block)
