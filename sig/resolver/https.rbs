@@ -11,11 +11,14 @@ module HTTPX
       attr_reader family: ip_family
 
       @options: Options
+      @_timeouts: Array[Numeric]
+      @timeouts: Hash[String, Array[Numeric]]
       @queries: Hash[String, Connection]
       @requests: Hash[Request, String]
       @connections: Array[Connection]
       @uri: http_uri
       @uri_addresses: Array[String]?
+      @name: String?
       @resolver: Resolv::DNS
       @resolver_connection: Connection
 

@@ -38,10 +38,12 @@ module HTTPX
       @resolver_options = DEFAULTS.merge(@options.resolver_options)
       @queries = {}
       @requests = {}
+      @_timeouts = Array(@resolver_options[:timeouts])
+      @timeouts = Hash.new { |timeouts, host| timeouts[host] = @_timeouts.dup }
       @uri = URI(@resolver_options[:uri])
-      @uri_addresses = nil
+      @name = @uri_addresses = nil
       @resolver = Resolv::DNS.new
-      @resolver.timeouts = @resolver_options.fetch(:timeouts, Resolver::RESOLVE_TIMEOUT)
+      @resolver.timeouts = @_timeouts.empty? ? Resolver::RESOLVE_TIMEOUT : @_timeouts
       @resolver.lazy_initialize
     end
 
@@ -96,6 +98,9 @@ module HTTPX
       else
         @queries[hostname] = connection
       end
+
+      @name = hostname
+
       log { "resolver #{FAMILY_TYPES[@record_type]}: query for #{hostname}" }
 
       send_request(hostname, connection)
@@ -147,6 +152,10 @@ module HTTPX
     end
 
     def parse(request, response)
+      hostname = @name
+
+      @name = nil
+
       code, result = decode_response_body(response)
 
       case code
@@ -165,6 +174,23 @@ module HTTPX
         end
 
         resolve
+      when :retriable_error
+        timeouts = @timeouts[hostname]
+
+        unless timeouts.empty?
+          log { "resolver #{FAMILY_TYPES[@record_type]}: failed, but will retry..." }
+
+          connection = @queries[hostname]
+
+          resolve(connection, hostname)
+          return
+        end
+
+        host = @requests.delete(request)
+        connection = reset_hostname(host)
+
+        emit_resolve_error(connection)
+        close_or_resolve
       when :dns_error
         host = @requests.delete(request)
         connection = reset_hostname(host)
@@ -231,15 +257,18 @@ module HTTPX
       uri = @uri.dup
       rklass = @options.request_class
       payload = Resolver.encode_dns_query(hostname, type: @record_type)
+      timeouts = @timeouts[hostname]
+      request_timeout = timeouts.shift
+      options = @options.merge(timeout: { request_timeout: request_timeout })
 
       if @resolver_options[:use_get]
         params = URI.decode_www_form(uri.query.to_s)
         params << ["type", FAMILY_TYPES[@record_type]]
         params << ["dns", Base64.urlsafe_encode64(payload, padding: false)]
         uri.query = URI.encode_www_form(params)
-        request = rklass.new("GET", uri, @options)
+        request = rklass.new("GET", uri, options)
       else
-        request = rklass.new("POST", uri, @options, body: [payload])
+        request = rklass.new("POST", uri, options, body: [payload])
         request.headers["content-type"] = "application/dns-message"
       end
       request.headers["accept"] = "application/dns-message"
@@ -257,6 +286,7 @@ module HTTPX
     end
 
     def reset_hostname(hostname, reset_candidates: true)
+      @timeouts.delete(hostname)
       connection = @queries.delete(hostname)
 
       return connection unless connection && reset_candidates
@@ -264,6 +294,8 @@ module HTTPX
       # eliminate other candidates
       candidates = @queries.select { |_, conn| connection == conn }.keys
       @queries.delete_if { |h, _| candidates.include?(h) }
+      # reset timeouts
+      @timeouts.delete_if { |h, _| candidates.include?(h) }
 
       connection
     end
