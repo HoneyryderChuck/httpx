@@ -152,7 +152,14 @@ module HTTPX
 
       return :message_truncated if message.tc == 1
 
-      return :dns_error, message.rcode if message.rcode != Resolv::DNS::RCode::NoError
+      if message.rcode != Resolv::DNS::RCode::NoError
+        case message.rcode
+        when Resolv::DNS::RCode::ServFail
+          return :retriable_error, message.rcode
+        else
+          return :dns_error, message.rcode
+        end
+      end
 
       addresses = []
 

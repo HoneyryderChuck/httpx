@@ -15,7 +15,7 @@ module HTTPX
     self.@identifier: Integer
     self.@hosts_resolver: Resolv::Hosts
 
-    type dns_decoding_response = [:ok, Array[dns_result]] | [:decode_error, Resolv::DNS::DecodeError] | [:dns_error, Integer] | Symbol
+    type dns_decoding_response = [:ok, Array[dns_result]] | [:decode_error, Resolv::DNS::DecodeError] | [:retriable_error | :dns_error, Integer] | Symbol
 
     def self?.nolookup_resolve: (String hostname) -> Array[Entry]?
 
