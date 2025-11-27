@@ -246,12 +246,14 @@ class TestDNSResolver
   end
 
   def resolve(domain, typevalue)
-    Resolv.getaddresses(domain).map do |address|
+    Resolv.getaddresses(domain).filter_map do |address|
       begin
         ip = IPAddr.new(address)
 
         case typevalue
         when 1 # IPv4
+          next unless ip.ipv4?
+
           ip
         when 28 # IPv6
           ip.ipv6? ? ip : ip.ipv4_mapped
