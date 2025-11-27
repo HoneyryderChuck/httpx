@@ -74,8 +74,8 @@ module HTTPX
 
     def cached_lookup(hostname)
       now = Utils.now
-      lookup_synchronize do |lookups|
-        lookup(hostname, lookups, now)
+      lookup_synchronize do |lookups, hostnames|
+        lookup(hostname, lookups, hostnames, now)
       end
     end
 
@@ -125,16 +125,23 @@ module HTTPX
     end
 
     # do not use directly!
-    def lookup(hostname, lookups, ttl)
+    def lookup(hostname, lookups, hostnames, ttl)
       return unless lookups.key?(hostname)
 
-      entries = lookups[hostname] = lookups[hostname].select do |address|
-        address["TTL"] > ttl
+      entries = lookups[hostname]
+
+      entries.delete_if do |address|
+        address["TTL"] < ttl
+      end
+
+      if entries.empty?
+        lookups.delete(hostname)
+        hostnames.delete(hostname)
       end
 
       ips = entries.flat_map do |address|
         if (als = address["alias"])
-          lookup(als, lookups, ttl)
+          lookup(als, lookups, hostnames, ttl)
         else
           Entry.new(address["data"], address["TTL"])
         end
