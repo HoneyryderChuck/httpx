@@ -305,6 +305,9 @@ module HTTPX
       @connections.shift until @connections.empty? || @connections.first.state != :closed
 
       if (@connections - @queries.values).empty?
+        # the same resolver connection may be serving different https resolvers (AAAA and A).
+        return if inflight?
+
         if should_deactivate
           deactivate
         else
