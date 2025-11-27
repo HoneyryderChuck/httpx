@@ -511,7 +511,7 @@ module Requests
           start_test_servlet(DNSServFailOnce) do |dns_server|
             resolver_opts = options.merge(
               nameserver: [dns_server.nameserver],
-              timeouts: [1, 2]
+              timeouts: [1, 1, 2] # more than 2 in case one of the writes fail
             )
 
             session = HTTPX.plugin(SessionWithPool).with(ip_families: [Socket::AF_INET])
