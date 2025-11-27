@@ -1,4 +1,3 @@
-version: '3'
 services:
   httpx:
     image: ghcr.io/graalvm/truffleruby-community:latest

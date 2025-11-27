@@ -1,4 +1,3 @@
-version: '3'
 services:
   httpx:
     image: jruby:9.4

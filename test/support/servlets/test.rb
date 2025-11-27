@@ -236,22 +236,28 @@ class TestDNSResolver
     typevalue = extract_family(query)
     ips = resolve(domain, typevalue)
 
-    response_header(query).force_encoding(Encoding::BINARY) <<
+    response_header(query, ancount: ips.size).force_encoding(Encoding::BINARY) <<
       question_section(query).force_encoding(Encoding::BINARY) <<
       answer_section(ips).force_encoding(Encoding::BINARY)
   rescue Resolv::ResolvError
     # nxdomain error
-    response_header(query, 3).force_encoding(Encoding::BINARY) <<
+    dns_error_response(query, 3)
+  end
+
+  def dns_error_response(query, code)
+    response_header(query, rcode: code).force_encoding(Encoding::BINARY) <<
       question_section(query).force_encoding(Encoding::BINARY)
   end
 
   def resolve(domain, typevalue)
-    Resolv.getaddresses(domain).map do |address|
+    Resolv.getaddresses(domain).filter_map do |address|
       begin
         ip = IPAddr.new(address)
 
         case typevalue
         when 1 # IPv4
+          next unless ip.ipv4?
+
           ip
         when 28 # IPv6
           ip.ipv6? ? ip : ip.ipv4_mapped
@@ -263,10 +269,10 @@ class TestDNSResolver
     end
   end
 
-  def response_header(query, rccode = 0)
-    rc = [rccode].pack("C")
+  def response_header(query, rcode: 0, ancount: rcode.positive? ? 0 : 1)
+    rc = [rcode].pack("C")
     qdcount = "\x00\x01".b
-    ancount = rccode.positive? ? "\x00\x00".b : "\x00\x01".b
+    ancount = [ancount].pack("n")
     "#{query[0, 2]}\x81#{rc}#{qdcount}#{ancount}\x00\x00\x00\x00".b
   end
 

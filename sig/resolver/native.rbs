@@ -64,6 +64,8 @@ module HTTPX
 
       def transition: (Symbol nextstate) -> void
 
+      def reset_query: () -> void
+
       def reset_hostname: (String hostname, ?connection: Connection, ?reset_candidates: bool) -> void
 
       def close_or_resolve: () -> void

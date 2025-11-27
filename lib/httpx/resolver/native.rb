@@ -298,16 +298,14 @@ module HTTPX
     end
 
     def parse(buffer)
-      @timer.cancel
-
-      @timer = @name = nil
-
       code, result = Resolver.decode_dns_answer(buffer)
 
       case code
       when :ok
+        reset_query
         parse_addresses(result)
       when :no_domain_found
+        reset_query
         # Indicates no such domain was found.
         hostname, connection = @queries.first
         reset_hostname(hostname, reset_candidates: false)
@@ -324,6 +322,7 @@ module HTTPX
           close_or_resolve
         end
       when :message_truncated
+        reset_query
         # TODO: what to do if it's already tcp??
         return if @socket_type == :tcp
 
@@ -332,13 +331,29 @@ module HTTPX
         hostname, _ = @queries.first
         reset_hostname(hostname)
         transition(:closed)
+      when :retriable_error
+        if @name && @timer
+          log { "resolver #{FAMILY_TYPES[@record_type]}: failed, but will retry..." }
+          return
+        end
+        # retry now!
+        # connection = @queries[@name].shift
+        # @timer.fire
+        reset_query
+        hostname, connection = @queries.first
+        reset_hostname(hostname)
+        @connections.delete(connection)
+        ex = NativeResolveError.new(connection, connection.peer.host, "unknown DNS error (error code #{result})")
+        raise ex
       when :dns_error
+        reset_query
         hostname, connection = @queries.first
         reset_hostname(hostname)
         @connections.delete(connection)
         ex = NativeResolveError.new(connection, connection.peer.host, "unknown DNS error (error code #{result})")
         raise ex
       when :decode_error
+        reset_query
         hostname, connection = @queries.first
         reset_hostname(hostname)
         @connections.delete(connection)
@@ -527,6 +542,12 @@ module HTTPX
       # these errors may happen during TCP handshake
       # treat them as resolve errors.
       on_error(e)
+    end
+
+    def reset_query
+      @timer.cancel
+
+      @timer = @name = nil
     end
 
     def reset_hostname(hostname, connection: @queries.delete(hostname), reset_candidates: true)
