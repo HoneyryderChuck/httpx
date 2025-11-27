@@ -7,7 +7,7 @@ require_relative "test"
 class DNSErrorServer < TestDNSResolver
   private
 
-  def response_header(query)
-    "#{query[0, 2]}\x81\x02#{query[4, 2]}\x00\x00\x00\x00\x00\x00".b
+  def dns_response(query)
+    dns_error_response(query, 4)
   end
 end

@@ -8,7 +8,7 @@ require_relative "test"
 class DNSNoAddress < TestDNSResolver
   private
 
-  def response_header(query)
-    "#{query[0, 2]}\x81\x00#{query[4, 2]}\x00\x00\x00\x00\x00\x00".b
+  def resolve(*)
+    []
   end
 end

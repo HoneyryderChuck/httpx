@@ -10,17 +10,17 @@ class DNSServFailOnce < TestDNSResolver
 
   def initialize(*, **)
     super
-    @failed = false
+    @failed = Hash.new(false)
   end
 
   private
 
   def dns_response(query)
-    return super if @failed
+    domain = extract_domain(query)
+    return super if @failed[domain]
 
-    @failed = true
+    @failed[domain] = true
 
-    response_header(query, 2).force_encoding(Encoding::BINARY) <<
-      question_section(query).force_encoding(Encoding::BINARY)
+    dns_error_response(query, 2)
   end
 end
