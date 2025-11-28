@@ -199,6 +199,10 @@ module HTTPX
 
         def timeout; end
 
+        def inflight?
+          false
+        end
+
         def terminate
           @pipe_write.close
           @pipe_read.close

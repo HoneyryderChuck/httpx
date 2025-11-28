@@ -21,14 +21,6 @@ module HTTPX
         @oob_buffer: String
 
         def rebuffer: () -> void
-        def empty?: () -> bool
-        def full?: () -> bool
-        def bytesize: () -> Integer
-        def to_s: () -> String
-        def to_str: () -> String
-        def capacity: () -> Integer
-        def clear: () -> void
-        def shift!: (Integer fin) -> void
       end
 
       class Signal
@@ -42,7 +34,7 @@ module HTTPX
 
         def wakeup: () -> void
 
-        def mergeable?: () -> bool
+        def inflight?: () -> bool
 
         def terminate: () -> void
       end
