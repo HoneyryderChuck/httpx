@@ -122,7 +122,26 @@ module HTTPX
     #
     module Stream
       def self.extra_options(options)
-        options.merge(timeout: { read_timeout: Float::INFINITY, operation_timeout: 60 })
+        options.merge(
+          timeout: { read_timeout: Float::INFINITY, operation_timeout: 60 },
+          stream_response_class: Class.new(StreamResponse, &Options::SET_TEMPORARY_NAME).freeze
+        )
+      end
+
+      module OptionsMethods
+        def option_stream_response_class(value)
+          value
+        end
+
+        def extend_with_plugin_classes(pl)
+          return super unless defined?(pl::StreamResponseMethods)
+
+          @stream_response_class = @stream_response_class.dup
+          Options::SET_TEMPORARY_NAME[@stream_response_class, pl]
+          @stream_response_class.__send__(:include, pl::StreamResponseMethods) if defined?(pl::StreamResponseMethods)
+
+          super
+        end
       end
 
       module InstanceMethods
@@ -134,7 +153,7 @@ module HTTPX
 
           request = requests.first
 
-          StreamResponse.new(request, self)
+          @options.stream_response_class.new(request, self)
         end
       end
 
