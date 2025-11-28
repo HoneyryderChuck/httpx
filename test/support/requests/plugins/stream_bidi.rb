@@ -83,60 +83,56 @@ module Requests
           pong_msg = "{\"message\":\"pong\"}\n"
 
           # Create persistent session (connection will be reused across threads)
-          session = HTTPX.plugin(:stream_bidi).with(persistent: true)
+          session = HTTPX.plugin(:stream_bidi)
 
-          # Thread A: First request (creates the connection)
-          thread_a_chunks = nil
-          thread_a = Thread.start do
-            request = session.build_request(
-              "POST",
-              uri,
-              headers: { "content-type" => "application/x-ndjson" },
-              body: [start_msg]
-            )
-            response = session.request(request, stream: true)
-            chunks = []
-            response.each.each_with_index do |chunk, idx| # rubocop:disable Style/RedundantEach
-              if idx < 4
-                request << pong_msg
-              else
-                request.close
+          begin
+            # Thread A: First request (creates the connection)
+            thread_a_chunks = []
+            thread_a = Thread.start do
+              request = session.build_request(
+                "POST",
+                uri,
+                headers: { "content-type" => "application/x-ndjson" },
+                body: [start_msg]
+              )
+              response = session.request(request, stream: true)
+              response.each.each_with_index do |chunk, idx| # rubocop:disable Style/RedundantEach
+                if idx < 4
+                  request << pong_msg
+                else
+                  request.close
+                end
+                thread_a_chunks << chunk
               end
-              chunks << chunk
             end
-            thread_a_chunks = chunks
-          end
-          thread_a.join
+            thread_a.join
 
-          # Thread B: Second request (reuses connection from different thread)
-          # This would fail with "can only rebuffer while waiting on a response" before the fix
-          thread_b_chunks = nil
-          thread_b = Thread.start do
-            request = session.build_request(
-              "POST",
-              uri,
-              headers: { "content-type" => "application/x-ndjson" },
-              body: [start_msg]
-            )
-            response = session.request(request, stream: true)
-            chunks = []
-            response.each.each_with_index do |chunk, idx| # rubocop:disable Style/RedundantEach
-              if idx < 4
-                request << pong_msg
-              else
-                request.close
+            thread_b_chunks = []
+            thread_b = Thread.start do
+              request = session.build_request(
+                "POST",
+                uri,
+                headers: { "content-type" => "application/x-ndjson" },
+                body: [start_msg]
+              )
+              response = session.request(request, stream: true)
+              response.each.each_with_index do |chunk, idx| # rubocop:disable Style/RedundantEach
+                if idx < 4
+                  request << pong_msg
+                else
+                  request.close
+                end
+                thread_b_chunks << chunk
               end
-              chunks << chunk
             end
-            thread_b_chunks = chunks
+            thread_b.join
+
+            # Both requests should succeed
+            assert thread_a_chunks.size == 5, "thread A should receive all chunks"
+            assert thread_b_chunks.size == 5, "thread B should receive all chunks"
+          ensure
+            session.close
           end
-          thread_b.join
-
-          # Both requests should succeed
-          assert thread_a_chunks.size == 5, "thread A should receive all chunks"
-          assert thread_b_chunks.size == 5, "thread B should receive all chunks"
-
-          session.close
         end
       end
     end
