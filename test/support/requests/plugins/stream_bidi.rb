@@ -8,6 +8,12 @@ module Requests
     # https://gitlab.com/os85/httpx/wikis/Stream-Bidi
     #
     module StreamBidi
+      # https://github.com/HoneyryderChuck/httpx/issues/114
+      def test_plugin_stream_bidi_persistent_session_close
+        session = HTTPX.with(persistent: true).plugin(:stream_bidi)
+        session.close # should not raise NoMethodError: undefined method `inflight?' for Signal
+      end
+
       def test_plugin_stream_bidi_each
         start_test_servlet(Bidi, tls: false) do |server|
           uri = "#{server.origin}/"
