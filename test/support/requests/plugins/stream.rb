@@ -104,6 +104,53 @@ module Requests
         payload = response.each.to_a.join
         assert payload.lines.size == 3, "all the lines should have been yielded"
       end
+
+      def test_plugin_stream_fiber_concurrency_close_stream_before_request_starts
+        skip unless scheme == "https://"
+
+        start_test_servlet(SettingsTimeoutServer) do |server|
+          delay_uri = "#{server.origin}/"
+          session = HTTPX.plugin(:fiber_concurrency)
+                         .plugin(:stream)
+                         .with(ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE })
+
+          err = Class.new(StandardError)
+
+          Thread.start do
+            Thread.current.abort_on_exception = true
+            scheduler = TestFiberScheduler.new
+            Fiber.set_scheduler scheduler
+
+            err = Class.new(StandardError)
+
+            stream_response = nil
+            req_fiber = Fiber.schedule do
+              begin
+                stream_response = session.get(delay_uri, stream: true)
+                stream_response.raise_for_status
+              rescue err
+                stream_response.close
+              end
+            end
+
+            Fiber.schedule do
+              sleep 1
+
+              assert stream_response
+              request = stream_response.request
+              assert request.state == :idle
+              assert request.response.nil?
+              stream_response.close
+              assert request.state == :idle
+              assert request.response.nil?
+              req_fiber.raise(err)
+            rescue FiberError
+              nil
+            end
+          end.join
+          assert true
+        end
+      end if Fiber.respond_to?(:set_scheduler)
     end
   end
 end
