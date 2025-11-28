@@ -12,6 +12,7 @@ module HTTPX
       def self.subplugins
         {
           h2c: FiberConcurrencyH2C,
+          stream: FiberConcurrencyStream,
         }
       end
 
@@ -183,6 +184,20 @@ module HTTPX
         module HTTP2Methods
           def upgrade(request, *)
             @contexts[request.context] << request
+
+            super
+          end
+        end
+      end
+
+      module FiberConcurrencyStream
+        module StreamResponseMethods
+          def close
+            unless @request.current_context?
+              @request.close
+
+              return
+            end
 
             super
           end

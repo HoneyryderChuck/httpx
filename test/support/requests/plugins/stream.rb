@@ -104,6 +104,64 @@ module Requests
         payload = response.each.to_a.join
         assert payload.lines.size == 3, "all the lines should have been yielded"
       end
+
+      def test_plugin_stream_fiber_concurrency_close_stream_before_request_starts
+        skip unless scheme == "https://"
+
+        start_test_servlet(SettingsTimeoutServer) do |server|
+          delay_uri = "#{server.origin}/"
+          session = HTTPX.plugin(:fiber_concurrency)
+                         .plugin(:stream)
+                         .with(ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE })
+
+          err = Class.new(StandardError)
+
+          Thread.start do
+            Thread.current.report_on_exception = true
+            scheduler = TestFiberScheduler.new
+            Fiber.set_scheduler scheduler
+
+            err = Class.new(StandardError)
+
+            stream_response = error = nil
+            req_fiber = Fiber.schedule do
+              begin
+                stream_response = session.get(delay_uri, timeout: { settings_timeout: 20 }, stream: true)
+                stream_response.raise_for_status
+              rescue HTTPX::Error => e
+                error = e
+                stream_response.close
+              end
+            end
+
+            Fiber.schedule do
+              sleep 1
+
+              # sometimes, in CI, it takes quite long for this thread to be prioritized
+              # back, to the point where settings timeout expires before we have a chance
+              # to inspect
+              skip "request already timed out" if error.is_a?(HTTPX::SettingsTimeoutError)
+
+              assert stream_response
+              request = stream_response.request
+              assert request.state == :idle
+              assert request.response.nil?
+              stream_response.close
+              assert request.state == :idle
+              assert request.response.nil?
+              begin
+                req_fiber.raise(err) unless req_fiber.alive?
+              rescue FiberError
+                # this may happen if this thread takes too long being picked up by the scheduler, and the request timeout
+                # triggers and reactivates the request fiber, at which point we won't be able to raise an error on it, as
+                # one can't wait an error on a resuming fiber.
+                nil
+              end
+            end
+          end.join
+          assert true
+        end
+      end if Fiber.respond_to?(:set_scheduler)
     end
   end
 end
