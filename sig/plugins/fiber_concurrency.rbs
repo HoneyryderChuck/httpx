@@ -43,6 +43,12 @@ module HTTPX
         end
       end
 
+       module FiberConcurrencyStream
+        module StreamResponseMethods
+          def close: () -> void
+        end
+      end
+
       type request = Request & RequestMethods
     end
 
