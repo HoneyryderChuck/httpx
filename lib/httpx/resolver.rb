@@ -115,9 +115,9 @@ module HTTPX
 
         return unless entries
 
-        lookups.delete_if { |entry| entry["data"] == ip }
+        entries.delete_if { |entry| entry["data"] == ip }
 
-        if lookups.empty?
+        if entries.empty?
           lookups.delete(hostname)
           hostnames.delete(hostname)
         end
