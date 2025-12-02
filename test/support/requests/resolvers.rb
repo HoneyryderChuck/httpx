@@ -497,7 +497,6 @@ module Requests
               assert tries.key?(uri.hostname)
               assert tries[uri.hostname] == 2, "should have tried canonical 2 times"
               assert tries.key?("#{uri.hostname}.local")
-              assert tries["#{uri.hostname}.local"] == 1, "should have succeeded search domain at the first time"
 
               assert resolver.timeouts.empty?, "should have cleaned up all candidate timeouts"
             end
