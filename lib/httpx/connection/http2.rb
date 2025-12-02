@@ -3,6 +3,8 @@
 require "securerandom"
 require "http/2"
 
+HTTP2::Connection.__send__(:public, :send_buffer) if HTTP2::VERSION < "1.1.1"
+
 module HTTPX
   class Connection::HTTP2
     include Callbacks
