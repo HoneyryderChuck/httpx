@@ -270,15 +270,15 @@ class TestDNSResolver
   end
 
   def response_header(query, rcode: 0, ancount: rcode.positive? ? 0 : 1)
-    rc = [rcode].pack("C")
+    rc = [rcode].pack("C").b
     qdcount = "\x00\x01".b
-    ancount = [ancount].pack("n")
-    "#{query[0, 2]}\x81#{rc}#{qdcount}#{ancount}\x00\x00\x00\x00".b
+    ancount = [ancount].pack("n").b
+    "#{query.byteslice(0, 2)}\x81#{rc}#{qdcount}#{ancount}\x00\x00\x00\x00".b
   end
 
   def question_section(query)
     # Append original question section
-    section = query[12..-1].b
+    section = query.byteslice(12..-1).b
 
     # Use pointer to refer to domain name in question section
     section << "\xc0\x0c".b
@@ -325,26 +325,28 @@ class TestDNSResolver
   end
 
   def extract_family(query)
-    section = query[12..-1].b
-    flags = section[-4..-1].b
+    section = query.byteslice(12..-1).b
+    flags = section.byteslice(-4..-1).b
     flags.unpack1("n")
   end
 
   def extract_domain(query)
     domain = +""
 
+    bquery = query.bytes
+
     # Check "Opcode" of question header for valid question
-    if (query[2].ord & 120).zero?
+    if (bquery[2] & 120).zero?
       # Read QNAME section of question section
       # DNS header section is 12 bytes long, so data starts at offset 12
 
       idx = 12
-      len = query[idx].ord
+      len = bquery[idx]
       # Strings are rendered as a byte containing length, then text.. repeat until length of 0
       until len.zero?
-        domain << "#{query[idx + 1, len]}."
+        domain << "#{query.byteslice(idx + 1, len)}."
         idx += len + 1
-        len = query[idx].ord
+        len = bquery[idx]
       end
     end
     domain
