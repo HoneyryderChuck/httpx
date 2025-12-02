@@ -216,7 +216,7 @@ class HTTPSTest < Minitest::Test
 
     start_test_servlet(ByIpCertServer) do |server|
       uri = "#{server.origin}/"
-      HTTPX.plugin(SessionWithPool).with(ssl: { cert_store: ca_store }) do |http|
+      HTTPX.plugin(SessionWithPool).with(debug: $stderr, debug_level: 3).with(ssl: { cert_store: ca_store }) do |http|
         response = http.get(uri)
         verify_status(response, 200)
       end
