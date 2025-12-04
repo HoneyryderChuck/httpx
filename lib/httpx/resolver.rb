@@ -95,13 +95,14 @@ module HTTPX
           lookups[hostname].unshift(*entries)
         end
         entries.each do |entry|
-          next unless entry["name"] != hostname
+          name = entry["name"]
+          next unless name != hostname
 
           case family
           when Socket::AF_INET6
-            lookups[entry["name"]] << entry
+            lookups[name] << entry
           when Socket::AF_INET
-            lookups[entry["name"]].unshift(entry)
+            lookups[name].unshift(entry)
           end
         end
       end
