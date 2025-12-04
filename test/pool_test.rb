@@ -8,19 +8,16 @@ class PoolTest < Minitest::Test
 
   using URIExtensions
 
+  class ExtPool < Pool
+    attr_reader :connections, :origin_counters, :connections_counter
+  end
+
   def test_pool_max_connections
     responses = []
     q = Queue.new
     mtx = Thread::Mutex.new
 
-    pool = Pool.new(max_connections: 2)
-    def pool.connections
-      @connections
-    end
-
-    def pool.connections_counter
-      @connections_counter
-    end
+    pool = ExtPool.new(max_connections: 2)
     ths = 3.times.map do |i|
       uri = i.odd? ? URI(build_uri("/")) : URI(build_uri("/", "#{scheme}another2"))
 
@@ -95,14 +92,7 @@ class PoolTest < Minitest::Test
     q = Queue.new
     mtx = Thread::Mutex.new
 
-    pool = Pool.new(max_connections_per_origin: 2)
-    def pool.connections
-      @connections
-    end
-
-    def pool.origin_counters
-      @origin_counters
-    end
+    pool = ExtPool.new(max_connections_per_origin: 2)
     ths = 3.times.map do |_i|
       Thread.start do
         HTTPX.with(pool_options: { max_connections_per_origin: 2, pool_timeout: 30 }) do |http|
