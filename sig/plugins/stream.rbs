@@ -1,11 +1,17 @@
 module HTTPX
   module Plugins
     module Stream
+      STREAM_REQUEST_OPTIONS: Hash[Symbol, untyped]
+
+      interface _StreamOptions
+        def stream: () -> boolish
+      end
+
       module InstanceMethods
         private
 
-        def request: (*Request, ?stream: bool, **untyped?) -> (response | Array[response] | StreamResponse)
-                   | (*untyped, ?stream: bool, **untyped?) -> (response | Array[response] | StreamResponse)
+        def request: (*Request, **untyped?) -> (response | Array[response] | StreamResponse)
+                   | (*untyped, **untyped?) -> (response | Array[response] | StreamResponse)
       end
 
       module RequestMethods
@@ -30,7 +36,7 @@ module HTTPX
     type streamRequest = Request & Plugins::Stream::RequestMethods
 
     attr_reader request: streamRequest
-    @options: Options
+    @options: Options & _StreamOptions
 
     @session: Plugins::sessionStream
     @response_enum: Enumerator[String]?

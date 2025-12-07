@@ -121,15 +121,25 @@ module HTTPX
     # https://gitlab.com/os85/httpx/wikis/Stream
     #
     module Stream
+      STREAM_REQUEST_OPTIONS = { timeout: { read_timeout: Float::INFINITY, operation_timeout: 60 }.freeze }.freeze
+
       def self.extra_options(options)
-        options.merge(timeout: { read_timeout: Float::INFINITY, operation_timeout: 60 })
+        options.merge(stream: false)
+      end
+
+      module OptionsMethods
+        def option_stream(val)
+          val
+        end
       end
 
       module InstanceMethods
-        def request(*args, stream: false, **options)
-          return super(*args, **options) unless stream
+        def request(*args, **options)
+          return super(*args, **options) unless options[:stream]
 
-          requests = args.first.is_a?(Request) ? args : build_requests(*args, options)
+          request_options = STREAM_REQUEST_OPTIONS.merge(options)
+
+          requests = args.first.is_a?(Request) ? args : build_requests(*args, request_options)
           raise Error, "only 1 response at a time is supported for streaming requests" unless requests.size == 1
 
           request = requests.first
