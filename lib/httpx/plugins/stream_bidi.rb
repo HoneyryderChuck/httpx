@@ -26,6 +26,8 @@ module HTTPX
           class_eval(<<-METH, __FILE__, __LINE__ + 1)
             # lock.aware version of +#{lock_meth}+
             def #{lock_meth}(*)                # def close(*)
+              return super unless @options.stream
+
               return super if @lock.owned?
 
               # small race condition between
@@ -43,6 +45,8 @@ module HTTPX
           class_eval(<<-METH, __FILE__, __LINE__ + 1)
             # lock.aware version of +#{lock_meth}+
             private def #{lock_meth}(*)                # private def join_headers(*)
+              return super unless @options.stream
+
               return super if @lock.owned?
 
               # small race condition between
@@ -55,6 +59,8 @@ module HTTPX
         end
 
         def handle_stream(stream, request)
+          return super unless @options.stream
+
           request.on(:body) do
             next unless request.headers_sent
 
@@ -67,6 +73,8 @@ module HTTPX
 
         # when there ain't more chunks, it makes the buffer as full.
         def send_chunk(request, stream, chunk, next_chunk)
+          return super unless @options.stream
+
           super
 
           return if next_chunk
@@ -77,6 +85,8 @@ module HTTPX
 
         # sets end-stream flag when the request is closed.
         def end_stream?(request, next_chunk)
+          return super unless @options.stream
+
           request.closed? && next_chunk.nil?
         end
       end
@@ -243,12 +253,16 @@ module HTTPX
         end
 
         def select_connection(connection, selector)
+          return super unless connection.options.stream
+
           super
           selector.register(@signal)
           connection.signal = @signal
         end
 
         def deselect_connection(connection, *)
+          return super unless connection.options.stream
+
           super
 
           connection.signal = nil
@@ -268,10 +282,14 @@ module HTTPX
         end
 
         def closed?
+          return super unless @options.stream
+
           @closed
         end
 
         def can_buffer?
+          return super unless @options.stream
+
           super && @state != :waiting_for_chunk
         end
 
@@ -279,6 +297,8 @@ module HTTPX
         # +:waiting_for_chunk+ state, which the request transitions to once payload
         # is buffered.
         def transition(nextstate)
+          return super unless @options.stream
+
           headers_sent = @headers_sent
 
           case nextstate
@@ -313,6 +333,8 @@ module HTTPX
         end
 
         def close
+          return super unless @options.stream
+
           @mutex.synchronize do
             return if @closed
 
@@ -327,10 +349,12 @@ module HTTPX
       module RequestBodyMethods
         def initialize(*, **)
           super
-          @headers.delete("content-length")
+          @headers.delete("content-length") if @options.stream
         end
 
         def empty?
+          return super unless @options.stream
+
           false
         end
       end
@@ -342,18 +366,23 @@ module HTTPX
 
         def initialize(*)
           super
+
+          return unless @options.stream
+
           @write_buffer = BidiBuffer.new(@options.buffer_size)
         end
 
         # rebuffers the +@write_buffer+ before calculating interests.
         def interests
+          return super unless @options.stream
+
           @write_buffer.rebuffer
 
           super
         end
 
         def call
-          return super unless (error = @signal.error)
+          return super unless @options.stream && (error = @signal.error)
 
           on_error(error)
         end
@@ -361,6 +390,8 @@ module HTTPX
         private
 
         def set_parser_callbacks(parser)
+          return super unless @options.stream
+
           super
           parser.on(:flush_buffer) do
             @signal.wakeup if @signal
