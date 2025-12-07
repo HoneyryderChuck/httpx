@@ -135,16 +135,35 @@ module HTTPX
 
       module InstanceMethods
         def request(*args, **options)
-          return super(*args, **options) unless options[:stream]
+          if args.first.is_a?(Request)
+            requests = args
 
-          request_options = STREAM_REQUEST_OPTIONS.merge(options)
+            request = requests.first
 
-          requests = args.first.is_a?(Request) ? args : build_requests(*args, request_options)
+            unless request.options.stream && !request.stream
+              if options[:stream]
+                warn "passing `stream: true` with a request obkect is not supported anymore. " \
+                     "You can instead build the request object with `stream :true`"
+              end
+              return super(*args, **options)
+            end
+          else
+            return super(*args, **options) unless options[:stream]
+
+            requests = build_requests(*args, options)
+
+            request = requests.first
+          end
+
           raise Error, "only 1 response at a time is supported for streaming requests" unless requests.size == 1
 
-          request = requests.first
-
           StreamResponse.new(request, self)
+        end
+
+        def build_request(verb, uri, params = EMPTY_HASH, options = @options)
+          return super unless params[:stream]
+
+          super(verb, uri, params, options.merge(STREAM_REQUEST_OPTIONS.merge(stream: true)))
         end
       end
 
