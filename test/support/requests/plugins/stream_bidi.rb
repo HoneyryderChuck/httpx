@@ -8,6 +8,13 @@ module Requests
     # https://gitlab.com/os85/httpx/wikis/Stream-Bidi
     #
     module StreamBidi
+      def test_plugin_stream_bidi
+        uri = build_uri("/get")
+        session = HTTPX.plugin(:stream_bidi)
+        response = session.get(uri)
+        verify_status(response, 200)
+      end
+
       # https://github.com/HoneyryderChuck/httpx/issues/114
       def test_plugin_stream_bidi_persistent_session_close
         session = HTTPX.with(persistent: true).plugin(:stream_bidi)
@@ -26,10 +33,11 @@ module Requests
             "POST",
             uri,
             headers: { "content-type" => "application/x-ndjson" },
-            body: [start_msg]
+            body: [start_msg],
+            stream: true
           )
 
-          response = session.request(request, stream: true)
+          response = session.request(request)
           chunks = []
           response.each.each_with_index do |chunk, idx| # rubocop:disable Style/RedundantEach
             if idx < 4
@@ -56,10 +64,11 @@ module Requests
             "POST",
             uri,
             headers: { "content-type" => "application/x-ndjson" },
-            body: [start_msg]
+            body: [start_msg],
+            stream: true
           )
 
-          response = session.request(request, stream: true)
+          response = session.request(request)
 
           th = Thread.start do
             4.times do
@@ -99,9 +108,10 @@ module Requests
                 "POST",
                 uri,
                 headers: { "content-type" => "application/x-ndjson" },
-                body: [start_msg]
+                body: [start_msg],
+                stream: true
               )
-              response = session.request(request, stream: true)
+              response = session.request(request)
               response.each.each_with_index do |chunk, idx| # rubocop:disable Style/RedundantEach
                 if idx < 4
                   request << pong_msg
@@ -119,9 +129,10 @@ module Requests
                 "POST",
                 uri,
                 headers: { "content-type" => "application/x-ndjson" },
-                body: [start_msg]
+                body: [start_msg],
+                stream: true
               )
-              response = session.request(request, stream: true)
+              response = session.request(request)
               response.each.each_with_index do |chunk, idx| # rubocop:disable Style/RedundantEach
                 if idx < 4
                   request << pong_msg

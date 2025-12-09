@@ -121,20 +121,49 @@ module HTTPX
     # https://gitlab.com/os85/httpx/wikis/Stream
     #
     module Stream
+      STREAM_REQUEST_OPTIONS = { timeout: { read_timeout: Float::INFINITY, operation_timeout: 60 }.freeze }.freeze
+
       def self.extra_options(options)
-        options.merge(timeout: { read_timeout: Float::INFINITY, operation_timeout: 60 })
+        options.merge(stream: false)
+      end
+
+      module OptionsMethods
+        def option_stream(val)
+          val
+        end
       end
 
       module InstanceMethods
-        def request(*args, stream: false, **options)
-          return super(*args, **options) unless stream
+        def request(*args, **options)
+          if args.first.is_a?(Request)
+            requests = args
 
-          requests = args.first.is_a?(Request) ? args : build_requests(*args, options)
+            request = requests.first
+
+            unless request.options.stream && !request.stream
+              if options[:stream]
+                warn "passing `stream: true` with a request obkect is not supported anymore. " \
+                     "You can instead build the request object with `stream :true`"
+              end
+              return super(*args, **options)
+            end
+          else
+            return super(*args, **options) unless options[:stream]
+
+            requests = build_requests(*args, options)
+
+            request = requests.first
+          end
+
           raise Error, "only 1 response at a time is supported for streaming requests" unless requests.size == 1
 
-          request = requests.first
-
           StreamResponse.new(request, self)
+        end
+
+        def build_request(verb, uri, params = EMPTY_HASH, options = @options)
+          return super unless params[:stream]
+
+          super(verb, uri, params, options.merge(STREAM_REQUEST_OPTIONS.merge(stream: true)))
         end
       end
 

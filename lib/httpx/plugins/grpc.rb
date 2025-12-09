@@ -249,7 +249,7 @@ module HTTPX
           call
         end
 
-        def build_grpc_request(rpc_method, input, deadline:, metadata: nil, **)
+        def build_grpc_request(rpc_method, input, deadline:, metadata: nil, **opts)
           uri = @options.origin.dup
           rpc_method = "/#{rpc_method}" unless rpc_method.start_with?("/")
           rpc_method = "/#{@options.grpc_service}#{rpc_method}" if @options.grpc_service
@@ -273,7 +273,7 @@ module HTTPX
 
           headers.merge!(@options.call_credentials.call.transform_keys(&:to_s)) if @options.call_credentials
 
-          build_request("POST", uri, headers: headers, body: input)
+          build_request("POST", uri, headers: headers, body: input, **opts)
         end
       end
     end
