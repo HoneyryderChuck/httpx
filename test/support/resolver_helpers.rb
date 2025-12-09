@@ -5,6 +5,47 @@ require "ipaddr"
 module ResolverHelpers
   include HTTPX
 
+  private
+
+  def stub_resolver
+    Resolver.lookup_synchronize do |lookups, hostnames|
+      old_mutex = Resolver.instance_variable_get(:@lookup_mutex)
+      old_lookups = lookups
+      old_hostnames = hostnames
+      mock_mutex = Class.new do
+        def initialize(m)
+          @m = m
+          @th = Thread.current
+          @fb = Fiber.current
+        end
+
+        def synchronize(&block)
+          return yield if Thread.current == @th && Fiber.current == @fb
+
+          @m.synchronize(&block)
+        end
+      end.new(old_mutex)
+
+      lookups = Hash.new { |h, k| h[k] = [] }
+      hostnames = []
+      begin
+        Resolver.instance_variable_set(:@lookup_mutex, mock_mutex)
+        Resolver.instance_variable_set(:@lookups, lookups)
+        Resolver.instance_variable_set(:@hostnames, hostnames)
+
+        yield(lookups, hostnames)
+      ensure
+        Resolver.instance_variable_set(:@hostnames, old_hostnames)
+        Resolver.instance_variable_set(:@lookups, old_lookups)
+        Resolver.instance_variable_set(:@lookup_mutex, old_mutex)
+      end
+    end
+  end
+end
+
+module ResolverApiHelpers
+  include HTTPX
+
   def test_resolver_api
     assert resolver.respond_to?(:<<)
     assert resolver.respond_to?(:closed?)

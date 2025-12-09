@@ -5,6 +5,7 @@ require "test_helper"
 
 class ResolverTest < Minitest::Test
   include HTTPX
+  include ResolverHelpers
 
   def test_cached_lookup_lru_semantics
     # this must be the only test using the cache!
@@ -35,43 +36,6 @@ class ResolverTest < Minitest::Test
       Resolver.cached_lookup_evict("example.189.com", "168.110.2.120")
       assert lookups.size == 510
       assert hostnames.size == 510
-    end
-  end
-
-  private
-
-  def stub_resolver
-    Resolver.lookup_synchronize do |lookups, hostnames|
-      old_mutex = Resolver.instance_variable_get(:@lookup_mutex)
-      old_lookups = lookups
-      old_hostnames = hostnames
-      mock_mutex = Class.new do
-        def initialize(m)
-          @m = m
-          @th = Thread.current
-          @fb = Fiber.current
-        end
-
-        def synchronize(&block)
-          return yield if Thread.current == @th && Fiber.current == @fb
-
-          @m.synchronize(&block)
-        end
-      end.new(old_mutex)
-
-      lookups = Hash.new { |h, k| h[k] = [] }
-      hostnames = []
-      begin
-        Resolver.instance_variable_set(:@lookup_mutex, mock_mutex)
-        Resolver.instance_variable_set(:@lookups, lookups)
-        Resolver.instance_variable_set(:@hostnames, hostnames)
-
-        yield(lookups, hostnames)
-      ensure
-        Resolver.instance_variable_set(:@hostnames, old_hostnames)
-        Resolver.instance_variable_set(:@lookups, old_lookups)
-        Resolver.instance_variable_set(:@lookup_mutex, old_mutex)
-      end
     end
   end
 end
