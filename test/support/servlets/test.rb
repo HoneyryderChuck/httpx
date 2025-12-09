@@ -59,6 +59,10 @@ class TestHTTP2Server
     end
   end
 
+  def empty?
+    @ios.empty?
+  end
+
   def shutdown
     @server.close
   end
