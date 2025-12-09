@@ -6,7 +6,7 @@ module HTTPX
     #
     # This enables integration with fiber scheduler implementations such as [async](https://github.com/async).
     #
-    # # https://gitlab.com/os85/httpx/wikis/FiberConcurrency
+    # # https://gitlab.com/os85/httpx/wikis/Fiber-Concurrency
     #
     module FiberConcurrency
       def self.subplugins

@@ -131,6 +131,10 @@ module HTTPX
         )
       end
 
+      # adds support for the following options:
+      #
+      # :stream :: whether the request to process should be handled as a stream (defaults to <tt>false</tt>).
+      # :stream_response_class :: Class used to build the stream response object.
       module OptionsMethods
         def option_stream(val)
           val
