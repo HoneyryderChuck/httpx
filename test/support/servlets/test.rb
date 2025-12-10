@@ -9,6 +9,8 @@ class TestServer < WEBrick::HTTPServer
       :Port => 0,
       :AccessLog => File.new(File::NULL),
       :Logger => Logger.new(File::NULL),
+      # stretching due to some timeouts observed in CI due to thread deprioritization
+      :RequestTimeout => 120,
     }.merge(options))
   end
 
