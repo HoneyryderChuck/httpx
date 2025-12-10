@@ -8,7 +8,7 @@ class Bug_1_6_2_Test < Minitest::Test
   include ResolverHelpers
 
   def test_recover_well_from_multiple_timeouts_on_persistent
-    start_test_servlet(SlowDNSServer, 1, ttl: 2) do |slow_dns_server|
+    start_test_servlet(SlowDNSServer, 1, ttl: 3) do |slow_dns_server|
       session = HTTPX.plugin(SessionWithPool)
                      .plugin(:persistent)
                      .with(resolver_options: { nameserver: [slow_dns_server.nameserver], timeouts: [1, 3] })
@@ -24,13 +24,14 @@ class Bug_1_6_2_Test < Minitest::Test
         response = session.get(uri)
         verify_status(response, 200)
         assert resolver.tries[uri.host] == 2,
-               "name was cached and valid, there should have been no resolution (tries: #{resolver.tries[uri.host]})"
+               "#{uri.host} was cached and valid, there should have been no resolution (tries: #{resolver.tries[uri.host]})"
 
-        sleep 3
+        sleep 4
 
         response = session.get(uri)
         verify_status(response, 200)
-        assert resolver.tries[uri.host] == 4, "ttl expired, should have resolved in DNS again (tries: #{resolver.tries[uri.host]})"
+        assert resolver.tries[uri.host] == 4,
+               "#{uri.host} cache ttl expired, should have resolved in DNS again (tries: #{resolver.tries[uri.host]})"
       end
     ensure
       session.close
