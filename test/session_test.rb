@@ -137,7 +137,15 @@ class SessionTest < Minitest::Test
   end
 
   def test_session_timeout_connect_timeout
-    server = TCPServer.new("127.0.0.1", CONNECT_TIMEOUT_PORT)
+    i = 3
+    begin
+      server = TCPServer.new("127.0.0.1", CONNECT_TIMEOUT_PORT)
+    rescue Errno::EADDRINUSE
+      retry unless (i -= 1).zero?
+
+      raise
+    end
+
     begin
       uri = build_uri("/", origin("127.0.0.1:#{CONNECT_TIMEOUT_PORT}"))
       session = HTTPX.with_timeout(connect_timeout: 0.5)
