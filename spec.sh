@@ -4,8 +4,8 @@ RUBY=$1
 VERSION=$2
 
 cleanup () {
-  docker-compose -p ci kill
-  docker-compose -p ci rm -f
+  docker compose -p ci kill
+  docker compose -p ci rm -f
 }
 
 trap cleanup exit
@@ -17,10 +17,9 @@ else
 fi
 
 free -m
-docker-compose -f docker-compose.yml ${extra} -p ci run httpx
+docker compose -f docker-compose.yml ${extra} -p ci run httpx
 
 #
 #
 # TEST_EXIT_CODE=`docker wait ci_httpx_1`
 # docker run --env PARALLEL=1 COVERAGE=1 httpx rake test
-

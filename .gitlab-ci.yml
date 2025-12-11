@@ -5,7 +5,7 @@ stages:
   - deploy
 
 image:
-  name: docker/compose:latest
+  name: docker:latest
 
 variables:
   # this variable enables caching within docker-in-docker
