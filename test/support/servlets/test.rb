@@ -9,6 +9,8 @@ class TestServer < WEBrick::HTTPServer
       :Port => 0,
       :AccessLog => File.new(File::NULL),
       :Logger => Logger.new(File::NULL),
+      # stretching due to some timeouts observed in CI due to thread deprioritization
+      :RequestTimeout => 120,
     }.merge(options))
   end
 
@@ -57,6 +59,10 @@ class TestHTTP2Server
     else
       @origin = "http://localhost:#{@server.addr[1]}"
     end
+  end
+
+  def empty?
+    @ios.empty?
   end
 
   def shutdown
@@ -270,10 +276,11 @@ class TestDNSResolver
   end
 
   def response_header(query, rcode: 0, ancount: rcode.positive? ? 0 : 1)
+    header = query.byteslice(0, 2).b
     rc = [rcode].pack("C").b
     qdcount = "\x00\x01".b
     ancount = [ancount].pack("n").b
-    "#{query.byteslice(0, 2)}\x81#{rc}#{qdcount}#{ancount}\x00\x00\x00\x00".b
+    "#{header}\x81#{rc}#{qdcount}#{ancount}\x00\x00\x00\x00".b
   end
 
   def question_section(query)

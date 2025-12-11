@@ -132,36 +132,12 @@ module HTTPX
           end
         end
 
-        def empty?
-          @buffer_mutex.synchronize { super }
-        end
-
-        def full?
-          @buffer_mutex.synchronize { super }
-        end
-
-        def bytesize
-          @buffer_mutex.synchronize { super }
-        end
-
-        def to_s
-          @buffer_mutex.synchronize { super }
-        end
-
-        def to_str
-          @buffer_mutex.synchronize { super }
-        end
-
-        def capacity
-          @buffer_mutex.synchronize { super }
-        end
-
-        def clear
-          @buffer_mutex.synchronize { super }
-        end
-
-        def shift!(fin)
-          @buffer_mutex.synchronize { super }
+        Buffer.instance_methods - Object.instance_methods - %i[<<].each do |meth|
+          class_eval(<<-MOD, __FILE__, __LINE__ + 1)
+            def #{meth}(*) # def empty?
+              @buffer_mutex.synchronize { super }
+            end
+          MOD
         end
       end
 

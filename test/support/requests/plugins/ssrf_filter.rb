@@ -41,7 +41,7 @@ module Requests
         end
         start_test_servlet(dns_spoof_resolver) do |spoof_dns|
           HTTPX.plugin(SessionWithPool).plugin(:ssrf_filter).wrap do |session|
-            response = session.get("https://wqwereasdsada.xyz", resolver_options: { nameserver: [spoof_dns.nameserver] })
+            response = session.get("https://wqwereasdsada.xyz", resolver_options: { nameserver: [spoof_dns.nameserver], cache: false })
             verify_error_response(response, "wqwereasdsada.xyz has no public IP addresses")
           end
         end

@@ -5,9 +5,13 @@ module HTTPX
 
       interface _StreamOptions
         def stream: () -> boolish
+
+        def retry_stream_response_class: () -> singleton(StreamResponse)
       end
 
       module InstanceMethods
+        @options: Options & _StreamOptions
+
         private
 
         def request: (*Request, **untyped?) -> (response | Array[response] | StreamResponse)

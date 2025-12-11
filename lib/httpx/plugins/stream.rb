@@ -124,12 +124,34 @@ module HTTPX
       STREAM_REQUEST_OPTIONS = { timeout: { read_timeout: Float::INFINITY, operation_timeout: 60 }.freeze }.freeze
 
       def self.extra_options(options)
-        options.merge(stream: false)
+        options.merge(
+          stream: false,
+          timeout: { read_timeout: Float::INFINITY, operation_timeout: 60 },
+          stream_response_class: Class.new(StreamResponse, &Options::SET_TEMPORARY_NAME).freeze
+        )
       end
 
+      # adds support for the following options:
+      #
+      # :stream :: whether the request to process should be handled as a stream (defaults to <tt>false</tt>).
+      # :stream_response_class :: Class used to build the stream response object.
       module OptionsMethods
         def option_stream(val)
           val
+        end
+
+        def option_stream_response_class(value)
+          value
+        end
+
+        def extend_with_plugin_classes(pl)
+          return super unless defined?(pl::StreamResponseMethods)
+
+          @stream_response_class = @stream_response_class.dup
+          Options::SET_TEMPORARY_NAME[@stream_response_class, pl]
+          @stream_response_class.__send__(:include, pl::StreamResponseMethods) if defined?(pl::StreamResponseMethods)
+
+          super
         end
       end
 
@@ -157,7 +179,7 @@ module HTTPX
 
           raise Error, "only 1 response at a time is supported for streaming requests" unless requests.size == 1
 
-          StreamResponse.new(request, self)
+          @options.stream_response_class.new(request, self)
         end
 
         def build_request(verb, uri, params = EMPTY_HASH, options = @options)

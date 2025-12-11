@@ -178,16 +178,17 @@ class HTTPSTest < Minitest::Test
   end
 
   def test_http2_client_sends_settings_timeout
-    test_server = nil
     start_test_servlet(SettingsTimeoutServer) do |server|
-      test_server = server
       uri = "#{server.origin}/"
       http = HTTPX.plugin(SessionWithPool).with(timeout: { settings_timeout: 1 }, ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE })
       response = http.get(uri)
       verify_error_response(response, HTTPX::SettingsTimeoutError)
+
+      Thread.pass
+      sleep(0.2) until server.empty?
+      last_frame = server.frames.last
+      assert last_frame[:error] == :settings_timeout, "expecting the last frame error to carry a settings timeout: (#{last_frame.inspect})"
     end
-    last_frame = test_server.frames.last
-    assert last_frame[:error] == :settings_timeout, "expecting the last frame error to carry a settings timeout: (#{last_frame.inspect})"
   end
 
   def test_http2_client_goaway_with_no_response

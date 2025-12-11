@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "fiber"
 require_relative "test_helper"
 
 class ResolverTest < Minitest::Test
@@ -11,7 +12,7 @@ class ResolverTest < Minitest::Test
     dns_entry = { "data" => "::2", "TTL" => now + 2, "name" => "test.com" }
     Resolver.cached_lookup_set("test.com", Socket::AF_INET6, [dns_entry])
     assert_ips ["::2"], Resolver.cached_lookup("test.com")
-    sleep 2
+    sleep 3
     assert_ips nil, Resolver.cached_lookup("test.com")
 
     now = Process.clock_gettime(Process::CLOCK_MONOTONIC)
