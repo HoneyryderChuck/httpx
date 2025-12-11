@@ -23,6 +23,10 @@ module HTTPX
       @errors = Hash.new { |hs, k| hs[k] = [] }
     end
 
+    def state
+      @resolvers.map(&:state).uniq.join(",")
+    end
+
     def current_selector=(s)
       @current_selector = s
       @resolvers.each { |r| r.current_selector = s }

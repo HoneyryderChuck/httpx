@@ -9,6 +9,8 @@ module HTTPX
       @current_session: Session?
       @resolver_options: Hash[Symbol, untyped]
 
+      def state: () -> String
+
       def current_selector=: (Selector s) -> void
 
       def current_session=: (Session s) -> void
