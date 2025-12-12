@@ -193,15 +193,19 @@ module HTTPX
     end
 
     def checkout_new_connection(uri, options)
-      options.connection_class.new(uri, options)
+      connection = options.connection_class.new(uri, options)
+      connection.log(level: 2) { "created connection##{connection.object_id} in pool##{object_id}" }
+      connection
     end
 
     def checkout_new_resolver(resolver_type, options)
-      if resolver_type.multi?
+      resolver = if resolver_type.multi?
         Resolver::Multi.new(resolver_type, options)
       else
         resolver_type.new(options)
       end
+      resolver.log(level: 2) { "created resolver##{resolver.object_id} in pool##{object_id}" }
+      resolver
     end
 
     # drops and returns the +connection+ from the connection pool; if +connection+ is <tt>nil</tt> (default),
