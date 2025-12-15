@@ -199,6 +199,12 @@ module HTTPX
     def select_many(r, w, interval, &block)
       begin
         readers, writers = ::IO.select(r, w, nil, interval)
+      rescue IOError => e
+        (Array(r) + Array(w)).each do |sel|
+          # TODO: is there a way to cheaply find the IO associated with the error?
+          sel.on_error(e)
+          sel.force_close(true)
+        end
       rescue StandardError => e
         (Array(r) + Array(w)).each do |sel|
           sel.on_error(e)
@@ -240,6 +246,9 @@ module HTTPX
           when :w then io.to_io.wait_writable(interval)
           when :rw then rw_wait(io, interval)
           end
+      rescue IOError => e
+        io.on_error(e)
+        io.force_close(true)
       rescue StandardError => e
         io.on_error(e)
 

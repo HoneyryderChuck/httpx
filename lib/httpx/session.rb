@@ -415,12 +415,12 @@ module HTTPX
 
     def find_resolver_for(connection, selector)
       if (resolver = selector.find_resolver(connection.options))
-        resolver.log(level: 2) { "found resolver##{connection.object_id}(#{connection.state}) in selector##{selector.object_id}" }
+        resolver.log(level: 2) { "found resolver##{resolver.object_id}(#{resolver.state}) in selector##{selector.object_id}" }
         return resolver
       end
 
       resolver = @pool.checkout_resolver(connection.options)
-      resolver.log(level: 2) { "found resolver##{connection.object_id}(#{connection.state}) in pool##{@pool.object_id}" }
+      resolver.log(level: 2) { "found resolver##{resolver.object_id}(#{resolver.state}) in pool##{@pool.object_id}" }
       pin(resolver, selector)
 
       resolver
