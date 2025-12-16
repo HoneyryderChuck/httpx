@@ -9,6 +9,8 @@ class WebmockTest < Minitest::Test
   include HTTPHelpers
 
   MOCK_URL_HTTP = "http://www.example.com"
+  MOCK_URL_HTTP_SAME_ORIGIN = "http://www.example.com/other"
+  MOCK_URL_HTTP_OTHER_ORIGIN = "http://www.example2.com"
   MOCK_URL_HTTP_EXCEPTION = "http://exception.example.com"
   MOCK_URL_HTTP_TIMEOUT = "http://timeout.example.com"
   MOCK_URL_HTTP_TIMEOUT_RETRIES = "http://timeout-x-times.example.com"
@@ -18,6 +20,8 @@ class WebmockTest < Minitest::Test
     WebMock.enable!
     WebMock.disable_net_connect!
     @stub_http = stub_http_request(:any, MOCK_URL_HTTP)
+    @stub_http_same_origin = stub_http_request(:any, MOCK_URL_HTTP_SAME_ORIGIN)
+    @stub_http_other_origin = stub_http_request(:any, MOCK_URL_HTTP_OTHER_ORIGIN)
 
     @exception_class = Class.new(StandardError)
     @stub_exception = stub_http_request(:any, MOCK_URL_HTTP_EXCEPTION).to_raise(@exception_class.new("exception message"))
@@ -90,6 +94,18 @@ class WebmockTest < Minitest::Test
     http_request(:get, "#{MOCK_URL_HTTP}/")
     assert_requested(@stub_http, times: 1)
     assert_requested(@stub_http)
+  end
+
+  def test_multi_same_origin_verification_that_expected_stub_occured
+    http_request(:get, "#{MOCK_URL_HTTP}/", MOCK_URL_HTTP_SAME_ORIGIN)
+    assert_requested(@stub_http)
+    assert_requested(@stub_http_same_origin)
+  end
+
+  def test_multi_other_origin_verification_that_expected_stub_occured
+    http_request(:get, "#{MOCK_URL_HTTP}/", "#{MOCK_URL_HTTP_OTHER_ORIGIN}/")
+    assert_requested(@stub_http)
+    assert_requested(@stub_http_other_origin)
   end
 
   def test_verification_that_expected_request_didnt_occur
