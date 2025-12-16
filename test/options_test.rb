@@ -30,6 +30,9 @@ class OptionsTest < Minitest::Test
     opt2 = Options.new(:headers => { "user-agent" => nil })
     assert opt2.headers["user-agent"] == "", "should remove default user-agent"
     assert opt2.headers.to_a.include?(%w[accept */*]), "accept headers are unexpected"
+    opt3 = Options.new(:headers => { "accept-encoding" => "text/plain", "range" => "100-" })
+    assert opt3.headers["range"] == "100-"
+    assert !opt3.headers.key?("accept-encoding")
   end
 
   def test_options_headers_with_instance
