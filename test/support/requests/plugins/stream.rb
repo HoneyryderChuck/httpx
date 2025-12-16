@@ -161,7 +161,7 @@ module Requests
           end.join
           assert true
         end
-      end if Fiber.respond_to?(:set_scheduler)
+      end if Fiber.respond_to?(:set_scheduler) && RUBY_VERSION >= "3.1.0"
     end
   end
 end
