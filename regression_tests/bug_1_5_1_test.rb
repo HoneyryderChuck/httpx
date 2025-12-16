@@ -5,6 +5,7 @@ require "support/http_helpers"
 
 class Bug_1_5_1_Test < Minitest::Test
   include HTTPHelpers
+  include FiberSchedulerTestHelpers
 
   def test_persistent_fiber_scheduler_skipping_dns_query_and_hanging
     urls = %w[
@@ -17,10 +18,7 @@ class Bug_1_5_1_Test < Minitest::Test
     ]
     http = HTTPX.plugin(:persistent)
 
-    responses = Thread.start do
-      scheduler = TestFiberScheduler.new
-      Fiber.set_scheduler scheduler
-
+    responses = with_test_fiber_scheduler do
       res = []
 
       urls.each do |url|
@@ -30,7 +28,7 @@ class Bug_1_5_1_Test < Minitest::Test
       end
 
       res
-    end.value
+    end
 
     assert responses.size == urls.size
 
@@ -43,11 +41,7 @@ class Bug_1_5_1_Test < Minitest::Test
     http = HTTPX.plugin(:persistent, ssl: { alpn_protocols: %w[http/1.1] })
     url = build_uri("/get")
 
-    Thread.start do
-      Thread.current.abort_on_exception = true
-      scheduler = TestFiberScheduler.new
-      Fiber.set_scheduler scheduler
-
+    with_test_fiber_scheduler do
       5.times do
         Fiber.schedule do
           3.times do
@@ -56,7 +50,7 @@ class Bug_1_5_1_Test < Minitest::Test
           end
         end
       end
-    end.join
+    end
   ensure
     http.close
   end

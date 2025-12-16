@@ -7,6 +7,7 @@ require "support/http_helpers"
 
 class WebmockTest < Minitest::Test
   include HTTPHelpers
+  include FiberSchedulerTestHelpers
 
   MOCK_URL_HTTP = "http://www.example.com"
   MOCK_URL_HTTP_SAME_ORIGIN = "http://www.example.com/other"
@@ -106,6 +107,21 @@ class WebmockTest < Minitest::Test
     http_request(:get, "#{MOCK_URL_HTTP}/", "#{MOCK_URL_HTTP_OTHER_ORIGIN}/")
     assert_requested(@stub_http)
     assert_requested(@stub_http_other_origin)
+  end
+
+  def test_multi_fiber_same_origin_verification_that_expected_stub_occured
+    http = HTTPX.plugin(:fiber_concurrency)
+
+    with_test_fiber_scheduler do
+      Fiber.schedule do
+        http.get("#{MOCK_URL_HTTP}/")
+      end
+      Fiber.schedule do
+        http.get(MOCK_URL_HTTP_OTHER_ORIGIN)
+      end
+      assert_requested(@stub_http)
+      assert_requested(@stub_http_other_origin)
+    end
   end
 
   def test_verification_that_expected_request_didnt_occur
