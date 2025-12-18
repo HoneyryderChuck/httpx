@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-ruby RUBY_VERSION
-
 source "https://rubygems.org"
 gemspec
 
-gem "rake", "~> 13.0"
+gem "rake", "~> 13"
+
+gem "rdoc" if RUBY_VERSION >= "4.0.0"
 
 group :test do
   if RUBY_VERSION >= "3.2.0"
