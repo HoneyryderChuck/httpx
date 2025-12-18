@@ -1,0 +1,22 @@
+services:
+  httpx:
+    image: ruby:4.0-rc
+    environment:
+      - HTTPBIN_COALESCING_HOST=another
+      - HTTPX_RESOLVER_URI=https://doh/dns-query
+    depends_on:
+      - doh
+
+  doh:
+    image: registry.gitlab.com/os85/httpx/nghttp2:3
+    depends_on:
+      - doh-proxy
+    entrypoint: /usr/local/bin/nghttpx
+    volumes:
+      - ./test/support/ci:/home
+    command: --conf /home/doh-nghttp.conf --no-ocsp --frontend '*,443'
+
+  doh-proxy:
+    image: publicarray/doh-proxy
+    environment:
+      - "UNBOUND_SERVICE_HOST=127.0.0.11"
