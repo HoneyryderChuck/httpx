@@ -47,7 +47,7 @@ module HTTPX
 
     # freezes the headers hash
     def freeze
-      @headers.freeze
+      @headers.each_value(&:freeze).freeze
       super
     end
 
