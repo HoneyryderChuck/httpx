@@ -3,6 +3,16 @@
 module ResponseHelpers
   private
 
+  if RUBY_ENGINE == "jruby" || RUBY_ENGINE == "truffleruby"
+    def can_run_ractor_tests?
+      false
+    end
+  else
+    def can_run_ractor_tests?
+      defined?(Ractor) && Ractor.respond_to?(:take)
+    end
+  end
+
   def verify_status(response, expect)
     raise response.error if response.is_a?(HTTPX::ErrorResponse)
 

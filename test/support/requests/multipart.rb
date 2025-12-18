@@ -39,6 +39,17 @@ module Requests
         body = json_body(response)
         verify_header(body["headers"], "Content-Type", "multipart/form-data")
         assert JSON.parse(body["form"]["metadata"], symbolize_names: true) == { a: 1 }
+
+        return unless can_run_ractor_tests?
+
+        response2 = Ractor.new(meth, uri) do |meth, uri|
+          HTTPX.send(meth, uri, form: { metadata: { content_type: "application/json", body: JSON.dump({ a: 1 }) } })
+        end.value
+
+        verify_status(response2, 200)
+        body2 = json_body(response2)
+        verify_header(body2["headers"], "Content-Type", "multipart/form-data")
+        assert JSON.parse(body2["form"]["metadata"], symbolize_names: true) == { a: 1 }
       end
 
       define_method :"test_multipart_nested_hash_#{meth}" do
@@ -66,6 +77,17 @@ module Requests
         body = json_body(response)
         verify_header(body["headers"], "Content-Type", "multipart/form-data")
         verify_uploaded_image(body, "image", "image/jpeg")
+
+        return unless can_run_ractor_tests?
+
+        response2 = Ractor.new(meth, uri) do |meth, uri|
+          HTTPX.send(meth, uri, form: { image: File.new(fixture_file_path) })
+        end.value
+
+        verify_status(response2, 200)
+        body2 = json_body(response2)
+        verify_header(body2["headers"], "Content-Type", "multipart/form-data")
+        verify_uploaded_image(body2, "image", "image/jpeg")
       end
 
       define_method :"test_multipart_file_repeated_#{meth}" do
@@ -133,12 +155,22 @@ module Requests
 
       define_method :"test_multipart_pathname_#{meth}" do
         uri = build_uri("/#{meth}")
-        file = Pathname.new(fixture_file_path)
-        response = HTTPX.send(meth, uri, form: { image: file })
+        response = HTTPX.send(meth, uri, form: { image: Pathname.new(fixture_file_path) })
         verify_status(response, 200)
         body = json_body(response)
         verify_header(body["headers"], "Content-Type", "multipart/form-data")
         verify_uploaded_image(body, "image", "image/jpeg")
+
+        return unless can_run_ractor_tests?
+
+        response2 = Ractor.new(meth, uri) do |meth, uri|
+          HTTPX.send(meth, uri, form: { image: Pathname.new(fixture_file_path) })
+        end.value
+
+        verify_status(response2, 200)
+        body2 = json_body(response2)
+        verify_header(body2["headers"], "Content-Type", "multipart/form-data")
+        verify_uploaded_image(body2, "image", "image/jpeg")
       end
 
       define_method :"test_multipart_nested_pathname_#{meth}" do

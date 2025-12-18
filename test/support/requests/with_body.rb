@@ -10,6 +10,17 @@ module Requests
         body = json_body(response)
         verify_uploaded(body, "args", "q" => "this is a test")
         verify_uploaded(body, "url", build_uri("/#{meth}?q=this+is+a+test"))
+
+        return unless can_run_ractor_tests?
+
+        response2 = Ractor.new(meth, uri) do |meth, uri|
+          HTTPX.send(meth, uri, params: { "q" => "this is a test" })
+        end.value
+
+        verify_status(response2, 200)
+        body2 = json_body(response2)
+        verify_uploaded(body2, "args", "q" => "this is a test")
+        verify_uploaded(body2, "url", build_uri("/#{meth}?q=this+is+a+test"))
       end
 
       define_method :"test_#{meth}_query_params_empty" do
@@ -37,6 +48,17 @@ module Requests
         body = json_body(response)
         verify_header(body["headers"], "Content-Type", "application/x-www-form-urlencoded")
         verify_uploaded(body, "form", "foo" => "bar")
+
+        return unless can_run_ractor_tests?
+
+        response2 = Ractor.new(meth, uri) do |meth, uri|
+          HTTPX.send(meth, uri, form: { "foo" => "bar" })
+        end.value
+
+        verify_status(response2, 200)
+        body2 = json_body(response2)
+        verify_header(body2["headers"], "Content-Type", "application/x-www-form-urlencoded")
+        verify_uploaded(body2, "form", "foo" => "bar")
       end
 
       define_method :"test_#{meth}_form_nested_params" do
@@ -66,6 +88,17 @@ module Requests
         body = json_body(response)
         verify_header(body["headers"], "Content-Type", "application/json")
         verify_uploaded(body, "json", "foo" => "bar")
+
+        return unless can_run_ractor_tests?
+
+        response2 = Ractor.new(meth, uri) do |meth, uri|
+          HTTPX.send(meth, uri, json: { "foo" => "bar" })
+        end.value
+
+        verify_status(response2, 200)
+        body2 = json_body(response2)
+        verify_header(body2["headers"], "Content-Type", "application/json")
+        verify_uploaded(body2, "json", "foo" => "bar")
       end
 
       define_method :"test_#{meth}_body_params" do
@@ -75,6 +108,17 @@ module Requests
         body = json_body(response)
         verify_header(body["headers"], "Content-Type", "application/octet-stream")
         verify_uploaded(body, "data", "data")
+
+        return unless can_run_ractor_tests?
+
+        response2 = Ractor.new(meth, uri) do |meth, uri|
+          HTTPX.send(meth, uri, body: "data")
+        end.value
+
+        verify_status(response2, 200)
+        body2 = json_body(response2)
+        verify_header(body2["headers"], "Content-Type", "application/octet-stream")
+        verify_uploaded(body2, "data", "data")
       end
 
       define_method :"test_#{meth}_body_ary_params" do
