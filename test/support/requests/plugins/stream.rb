@@ -3,6 +3,8 @@
 module Requests
   module Plugins
     module Stream
+      include FiberSchedulerTestHelpers
+
       def test_plugin_stream
         session = HTTPX.plugin(:stream)
 
@@ -116,11 +118,7 @@ module Requests
 
           err = Class.new(StandardError)
 
-          Thread.start do
-            Thread.current.report_on_exception = true
-            scheduler = TestFiberScheduler.new
-            Fiber.set_scheduler scheduler
-
+          with_test_fiber_scheduler do
             err = Class.new(StandardError)
 
             stream_response = error = nil
@@ -158,7 +156,8 @@ module Requests
                 nil
               end
             end
-          end.join
+          end
+
           assert true
         end
       end if Fiber.respond_to?(:set_scheduler) && RUBY_VERSION >= "3.1.0"
