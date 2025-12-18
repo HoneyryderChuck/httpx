@@ -5,6 +5,7 @@ require "resolv"
 
 module HTTPX
   module Resolver
+    extend self
     RESOLVE_TIMEOUT = [2, 3].freeze
     MAX_CACHE_SIZE = 512
 
@@ -23,20 +24,12 @@ module HTTPX
     @identifier = 1
     @hosts_resolver = Resolv::Hosts.new
 
-    module_function
-
     def supported_ip_families
-      @supported_ip_families ||= begin
-        # https://github.com/ruby/resolv/blob/095f1c003f6073730500f02acbdbc55f83d70987/lib/resolv.rb#L408
-        list = Socket.ip_address_list
-        if list.any? { |a| a.ipv6? && !a.ipv6_loopback? && !a.ipv6_linklocal? }
-          [Socket::AF_INET6, Socket::AF_INET]
-        else
-          [Socket::AF_INET]
-        end
-      rescue NotImplementedError
-        [Socket::AF_INET]
-      end.freeze
+      if in_ractor?
+        Ractor.store_if_absent(:httpx_supported_ip_families) { find_supported_ip_families }
+      else
+        @supported_ip_families ||= find_supported_ip_families
+      end
     end
 
     def resolver_for(resolver_type, options)
@@ -217,6 +210,8 @@ module HTTPX
       [:ok, addresses]
     end
 
+    private
+
     def lookup_synchronize
       if in_ractor?
         lookups = Ractor.store_if_absent(:httpx_resolver_lookups) { Hash.new { |h, k| h[k] = [] } }
@@ -231,9 +226,24 @@ module HTTPX
       @identifier_mutex.synchronize(&block)
     end
 
+    def find_supported_ip_families
+      list = Socket.ip_address_list
+
+      begin
+        if list.any? { |a| a.ipv6? && !a.ipv6_loopback? && !a.ipv6_linklocal? }
+          [Socket::AF_INET6, Socket::AF_INET]
+        else
+          [Socket::AF_INET]
+        end
+      rescue NotImplementedError
+        [Socket::AF_INET]
+      end.freeze
+    end
+
     if defined?(Ractor) &&
        # no ractor support for 3.0
        RUBY_VERSION >= "3.1.0"
+
       def in_ractor?
         Ractor.main != Ractor.current
       end

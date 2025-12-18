@@ -11,11 +11,12 @@ module HTTPX
     MAX_CACHE_SIZE: Integer
 
     self.@lookup_mutex: Thread::Mutex
+    self.@hostnames: Array[String]
     self.@lookups: Hash[String, Array[dns_result]]
     self.@identifier_mutex: Thread::Mutex
     self.@identifier: Integer
     self.@hosts_resolver: Resolv::Hosts
-    self.@hostnames: Array[String]
+    self.@supported_ip_families: Array[Integer]
 
     type dns_decoding_response = [:ok, Array[dns_result]] | [:decode_error, Resolv::DNS::DecodeError] | [:retriable_error | :dns_error, Integer] | Symbol
 
@@ -43,8 +44,14 @@ module HTTPX
 
     def self?.decode_dns_answer: (String) -> dns_decoding_response
 
+    private
+
     def self?.lookup_synchronize: [U] () { (Hash[String, Array[dns_result]] lookups, Array[String] hostnames) -> U } -> U
 
     def self?.id_synchronize: () { () -> void } -> void
+
+    def in_ractor?: () -> bool
+
+    def find_supported_ip_families: () -> Array[Integer]
   end
 end
