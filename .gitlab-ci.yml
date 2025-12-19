@@ -107,6 +107,11 @@ test ruby 3/4:
   <<: *yjit_matrix
   script:
     ./spec.sh ruby 3.4
+test ruby 4/0:
+  <<: *test_settings
+  <<: *yjit_matrix
+  script:
+    ./spec.sh ruby 4.0
 test truffleruby:
   <<: *test_settings
   script:

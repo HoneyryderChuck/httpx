@@ -11,6 +11,15 @@ module Requests
       response = HTTPX.get(uri)
       verify_status(response, 200)
       verify_body_length(response)
+
+      return unless can_run_ractor_tests?
+
+      response2 = Ractor.new(uri) do |uri|
+        HTTPX.get(uri)
+      end.value
+
+      verify_status(response2, 200)
+      verify_body_length(response2)
     end
 
     def test_http_get_option_origin

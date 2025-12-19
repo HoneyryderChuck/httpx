@@ -8,7 +8,7 @@ module ResolverHelpers
   private
 
   def stub_resolver
-    Resolver.lookup_synchronize do |lookups, hostnames|
+    Resolver.send(:lookup_synchronize) do |lookups, hostnames|
       old_mutex = Resolver.instance_variable_get(:@lookup_mutex)
       old_lookups = lookups
       old_hostnames = hostnames
