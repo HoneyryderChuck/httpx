@@ -138,7 +138,7 @@ module HTTPX
 
     def options_equals?: (Options other, ?Array[Symbol] ignore_ivars) -> bool
 
-    def merge: (_ToHash[Symbol, untyped] other) -> instance
+    def merge: (Object & _ToHash[Symbol, untyped] other) -> (instance | self)
 
     def to_hash: () -> Hash[Symbol, untyped]
 
