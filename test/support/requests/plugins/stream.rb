@@ -138,22 +138,23 @@ module Requests
               # sometimes, in CI, it takes quite long for this thread to be prioritized
               # back, to the point where settings timeout expires before we have a chance
               # to inspect
-              skip "request already timed out" if error.is_a?(HTTPX::SettingsTimeoutError)
+              unless error.is_a?(HTTPX::SettingsTimeoutError)
 
-              assert stream_response
-              request = stream_response.request
-              assert request.state == :idle
-              assert request.response.nil?
-              stream_response.close
-              assert request.state == :idle
-              assert request.response.nil?
-              begin
-                req_fiber.raise(err) unless req_fiber.alive?
-              rescue FiberError
-                # this may happen if this thread takes too long being picked up by the scheduler, and the request timeout
-                # triggers and reactivates the request fiber, at which point we won't be able to raise an error on it, as
-                # one can't wait an error on a resuming fiber.
-                nil
+                assert stream_response
+                request = stream_response.request
+                assert request.state == :idle
+                assert request.response.nil?
+                stream_response.close
+                assert request.state == :idle
+                assert request.response.nil?
+                begin
+                  req_fiber.raise(err) unless req_fiber.alive?
+                rescue FiberError
+                  # this may happen if this thread takes too long being picked up by the scheduler, and the request timeout
+                  # triggers and reactivates the request fiber, at which point we won't be able to raise an error on it, as
+                  # one can't wait an error on a resuming fiber.
+                  nil
+                end
               end
             end
           end
