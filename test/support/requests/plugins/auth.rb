@@ -3,6 +3,31 @@
 module Requests
   module Plugins
     module Authentication
+      def test_plugin_auth
+        get_uri = build_uri("/get")
+        session = HTTPX.plugin(:auth)
+
+        response = session.authorization("TOKEN").get(get_uri)
+        verify_status(response, 200)
+        body = json_body(response)
+        verify_header(body["headers"], "Authorization", "TOKEN")
+      end
+
+      def test_plugin_auth_with_block
+        get_uri = build_uri("/get")
+        session = HTTPX.plugin(:auth)
+
+        i = 0
+        response = session.authorization { "TOKEN#{i += 1}" }.get(get_uri)
+        verify_status(response, 200)
+        body = json_body(response)
+        verify_header(body["headers"], "Authorization", "TOKEN1")
+        response = session.authorization { "TOKEN#{i += 1}" }.get(get_uri)
+        verify_status(response, 200)
+        body = json_body(response)
+        verify_header(body["headers"], "Authorization", "TOKEN2")
+      end
+
       # Bearer Auth
 
       def test_plugin_bearer_auth

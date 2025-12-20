@@ -12,7 +12,7 @@ module HTTPX
     def with: (options) -> Session
             | (options) { (Session) -> void } -> void
 
-    def plugin: (:auth, ?options) -> Plugins::sessionAuthorization
+    def plugin: (:auth, ?options) -> Plugins::sessionAuth
               | (:basic_auth, ?options) -> Plugins::sessionBasicAuth
               | (:digest_auth, ?options) -> Plugins::sessionDigestAuth
               | (:ntlm_auth, ?options) -> Plugins::sessionNTLMAuth
