@@ -28,6 +28,21 @@ module Requests
         verify_header(body["headers"], "Authorization", "TOKEN2")
       end
 
+      def test_plugin_auth_regenerate_on_retry
+        uri = build_uri("/status/401")
+        i = 0
+        session = HTTPX.plugin(RequestInspector)
+                       .plugin(:retries, max_retries: 1, retry_on: ->(res) { res.status == 401 })
+                       .plugin(:auth, generate_token_on_retry: ->(res) { res.status == 401 })
+                       .authorization { "TOKEN#{i += 1}" }
+        response = session.get(uri)
+        verify_status(response, 401)
+        assert session.calls == 1, "expected two errors to have been sent"
+        req1, req2 = session.total_requests
+        assert req1.headers["authorization"] == "TOKEN1"
+        assert req2.headers["authorization"] == "TOKEN2"
+      end
+
       # Bearer Auth
 
       def test_plugin_bearer_auth

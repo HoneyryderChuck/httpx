@@ -8,18 +8,22 @@ module HTTPX
       end
 
       module InstanceMethods
+        @auth_header_value: String
+
         def authorization: (?string token, ?auth_header_type: string) ?{ (Request) -> string } -> instance
 
         def bearer_auth: (?string token) ?{ (Request) -> string } -> instance
-      end
 
-      module RequestMethods
         private
 
         def generate_auth_token: () -> String?
       end
 
+      module RequestMethods
         def authorize: (String auth_value) -> void
+      end
+
+      module AuthRetries
       end
     end
 

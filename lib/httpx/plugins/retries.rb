@@ -118,8 +118,7 @@ module HTTPX
              )
             try_partial_retry(request, response)
             log { "failed to get response, #{request.retries} tries to go..." }
-            request.retries -= 1 unless request.ping? # do not exhaust retries on connection liveness probes
-            request.transition(:idle)
+            prepare_to_retry(request, response)
 
             retry_after = options.retry_after
             retry_after = retry_after.call(request, response) if retry_after.respond_to?(:call)
@@ -163,6 +162,11 @@ module HTTPX
 
         def proxy_error?(request, response, _)
           super && !request.retries.positive?
+        end
+
+        def prepare_to_retry(request, _response)
+          request.retries -= 1 unless request.ping? # do not exhaust retries on connection liveness probes
+          request.transition(:idle)
         end
 
         #

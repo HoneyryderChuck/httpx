@@ -38,6 +38,7 @@ module HTTPX
 
         def try_partial_retry: (retriesRequest request, (retriesResponse | ErrorResponse) response) -> void
 
+        def prepare_to_retry: (Request & RequestMethods request, response response) -> void
       end
 
       module RequestMethods

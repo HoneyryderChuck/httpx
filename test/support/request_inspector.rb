@@ -2,22 +2,29 @@
 
 module RequestInspector
   module InstanceMethods
-    attr_reader :calls, :total_responses
+    attr_reader :calls, :total_requests, :total_responses
 
     def initialize(*args)
       super
       # we're comparing against max-retries + 1, because the calls increment will happen
       # also in the last call, where the request is not going to be retried.
       @calls = -1
+      @total_requests = []
       @total_responses = []
     end
 
     def reset
       @calls = -1
+      @total_requests.clear
       @total_responses.clear
     end
 
     private
+
+    def send_request(request, *)
+      @total_requests << request.dup
+      super
+    end
 
     def fetch_response(*)
       response = super
