@@ -90,10 +90,18 @@ module HTTPX
       raise UnsupportedSchemeError, "#{@uri}: #{@uri.scheme}: unsupported URI scheme" unless ALLOWED_URI_SCHEMES.include?(@uri.scheme)
 
       @state = :idle
-      @response = @peer_address = @context = @informational_status = nil
+      @response = @peer_address = @informational_status = nil
       @ping = false
       @persistent = @options.persistent
       @active_timeouts = []
+    end
+
+    # dupped initialization
+    def initialize_dup(orig)
+      super
+      @uri = orig.instance_variable_get(:@uri).dup
+      @headers = orig.instance_variable_get(:@headers).dup
+      @body = orig.instance_variable_get(:@body).dup
     end
 
     def complete!(response = @response)

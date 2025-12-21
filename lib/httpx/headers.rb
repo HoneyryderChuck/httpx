@@ -42,7 +42,7 @@ module HTTPX
     # dupped initialization
     def initialize_dup(orig)
       super
-      @headers = orig.instance_variable_get(:@headers).dup
+      @headers = orig.instance_variable_get(:@headers).transform_values(&:dup)
     end
 
     # freezes the headers hash
