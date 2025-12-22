@@ -4,9 +4,11 @@ module HTTPX
       class Digest
         Error: singleton(HTTPX::Error)
 
+
         @user: String
         @password: String
         @hashed: bool
+        @nonce: Integer
 
         def can_authenticate?: (String? authenticate) -> boolish
 
