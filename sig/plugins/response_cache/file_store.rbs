@@ -2,6 +2,8 @@ module HTTPX
   module Plugins
     module ResponseCache
       class FileStore
+        CRLF: String
+
         @dir: Pathname
 
         include _ResponseCacheStore
