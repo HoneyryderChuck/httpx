@@ -8,8 +8,6 @@ module HTTPX
     # https://gitlab.com/os85/httpx/wikis/Auth#digest-auth
     #
     module DigestAuth
-      DigestError = Class.new(Error)
-
       class << self
         def extra_options(options)
           options.merge(max_concurrent_requests: 1)

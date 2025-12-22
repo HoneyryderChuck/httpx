@@ -2,6 +2,8 @@ module HTTPX
   module Plugins
     module Authentication
       class Digest
+        Error: singleton(HTTPX::Error)
+
         @user: String
         @password: String
         @hashed: bool
@@ -19,6 +21,8 @@ module HTTPX
         def make_cnonce: () -> String
 
         def next_nonce: () -> Integer
+
+        def raise_format_error: () -> void
       end
     end
   end
