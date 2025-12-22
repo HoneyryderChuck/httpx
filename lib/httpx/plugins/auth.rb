@@ -37,6 +37,7 @@ module HTTPX
           super
 
           @auth_header_value = nil
+          @skip_auth_header_value = false
         end
 
         def authorization(token = nil, auth_header_type: nil, &blk)
@@ -47,9 +48,18 @@ module HTTPX
           authorization(token, auth_header_type: "Bearer", &blk)
         end
 
+        def skip_auth_header
+          @skip_auth_header_value = true
+          yield
+        ensure
+          @skip_auth_header_value = false
+        end
+
         private
 
         def send_request(request, *)
+          return super if @skip_auth_header_value
+
           @auth_header_value ||= generate_auth_token
 
           request.authorize(@auth_header_value) if @auth_header_value

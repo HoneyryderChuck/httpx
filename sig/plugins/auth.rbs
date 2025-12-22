@@ -9,10 +9,13 @@ module HTTPX
 
       module InstanceMethods
         @auth_header_value: String
+        @skip_auth_header_value: bool
 
         def authorization: (?string token, ?auth_header_type: string) ?{ (Request) -> string } -> instance
 
         def bearer_auth: (?string token) ?{ (Request) -> string } -> instance
+
+        def skip_auth_header: [T] { () -> T } -> T
 
         private
 
