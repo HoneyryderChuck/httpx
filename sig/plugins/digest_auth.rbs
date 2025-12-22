@@ -9,13 +9,13 @@ module HTTPX
 
       def self.extra_options: (Options) -> (Options & _DigestOptions)
 
-      def self.load_dependencies: (*untyped) -> void
+      def self.load_dependencies: (singleton(Session) klass) -> void
 
       module InstanceMethods
         def digest_auth: (string user, string password, ?hashed: bool) -> instance
       end
     end
 
-    type sessionDigestAuth = sessionAuthorization & DigestAuth::InstanceMethods
+    type sessionDigestAuth = sessionAuth & DigestAuth::InstanceMethods
   end
 end

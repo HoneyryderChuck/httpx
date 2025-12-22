@@ -7,8 +7,9 @@ module HTTPX
     #
     module NTLMAuth
       class << self
-        def load_dependencies(_klass)
+        def load_dependencies(klass)
           require_relative "auth/ntlm"
+          klass.plugin(:auth)
         end
 
         def extra_options(options)
@@ -38,14 +39,14 @@ module HTTPX
             ntlm = request.options.ntlm
 
             if ntlm
-              request.headers["authorization"] = ntlm.negotiate
+              request.authorize(ntlm.negotiate)
               probe_response = wrap { super(request).first }
 
               return probe_response unless probe_response.is_a?(Response)
 
               if probe_response.status == 401 && ntlm.can_authenticate?(probe_response.headers["www-authenticate"])
                 request.transition(:idle)
-                request.headers["authorization"] = ntlm.authenticate(request, probe_response.headers["www-authenticate"])
+                request.authorize(ntlm.authenticate(request, probe_response.headers["www-authenticate"]))
                 super(request)
               else
                 probe_response

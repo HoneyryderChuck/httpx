@@ -15,8 +15,9 @@ module HTTPX
           options.merge(max_concurrent_requests: 1)
         end
 
-        def load_dependencies(*)
+        def load_dependencies(klass)
           require_relative "auth/digest"
+          klass.plugin(:auth)
         end
       end
 
@@ -52,7 +53,7 @@ module HTTPX
 
             if probe_response.status == 401 && digest.can_authenticate?(probe_response.headers["www-authenticate"])
               request.transition(:idle)
-              request.headers["authorization"] = digest.authenticate(request, probe_response.headers["www-authenticate"])
+              request.authorize(digest.authenticate(request, probe_response.headers["www-authenticate"]))
               super(request)
             else
               probe_response
