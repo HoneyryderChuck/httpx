@@ -36,15 +36,33 @@ module HTTPX
         Parser::Error,
         TimeoutError,
       ]).freeze
-      DEFAULT_JITTER = ->(interval) { interval * ((rand + 1) * 0.5) }
 
-      if ENV.key?("HTTPX_NO_JITTER")
-        def self.extra_options(options)
-          options.merge(max_retries: MAX_RETRIES)
+      DEFAULT_JITTER = ->(interval) { interval * ((rand + 1) * 0.5) }.freeze
+
+      # list of supported backoff algorithms
+      BACKOFF_ALGORITHMS = %i[exponential_backoff polynomial_backoff].freeze
+
+      class << self
+        if ENV.key?("HTTPX_NO_JITTER")
+          def extra_options(options)
+            options.merge(max_retries: MAX_RETRIES)
+          end
+        else
+          def extra_options(options)
+            options.merge(max_retries: MAX_RETRIES, retry_jitter: DEFAULT_JITTER)
+          end
         end
-      else
-        def self.extra_options(options)
-          options.merge(max_retries: MAX_RETRIES, retry_jitter: DEFAULT_JITTER)
+
+        # returns the time to wait before resending +request+ as per the polynomial backoff retry strategy.
+        def retry_after_polynomial_backoff(request, _)
+          offset = request.options.max_retries - request.retries
+          2 * (offset - 1)
+        end
+
+        # returns the time to wait before resending +request+ as per the exponential backoff retry strategy.
+        def retry_after_exponential_backoff(request, _)
+          offset = request.options.max_retries - request.retries
+          (offset - 1) * 2
         end
       end
 
@@ -53,6 +71,7 @@ module HTTPX
       # :max_retries :: max number of times a request will be retried (defaults to <tt>3</tt>).
       # :retry_change_requests :: whether idempotent requests are retried (defaults to <tt>false</tt>).
       # :retry_after:: seconds after which a request is retried; can also be a callable object (i.e. <tt>->(req, res) { ... } </tt>)
+      #                or the name of a supported backoff algorithm (i.e. <tt>:exponential_backoff</tt>).
       # :retry_jitter :: number of seconds applied to *:retry_after* (must be a callable, i.e. <tt>->(retry_after) { ... } </tt>).
       # :retry_on :: callable which alternatively defines a different rule for when a response is to be retried
       #              (i.e. <tt>->(res) { ... }</tt>).
@@ -60,10 +79,26 @@ module HTTPX
         private
 
         def option_retry_after(value)
-          # return early if callable
-          unless value.respond_to?(:call)
-            value = Float(value)
-            raise TypeError, ":retry_after must be positive" unless value.positive?
+          if value.respond_to?(:call)
+            value1 = value
+            value1 = value1.method(:call) unless value1.respond_to?(:arity)
+
+            # allow ->(*) arity as well, which is < 0
+            raise TypeError, "`:retry_after` proc has invalid number of parameters" unless value1.arity.negative? || value1.arity.between?(
+              1, 2
+            )
+
+          else
+            case value
+            when Symbol
+              raise TypeError, "`retry_after`: `#{value}` is not a supported backoff algorithm" unless BACKOFF_ALGORITHMS.include?(value)
+
+              value = Retries.method(:"retry_after_#{value}")
+
+            else
+              value = Float(value)
+              raise TypeError, "`:retry_after` must be positive" unless value.positive?
+            end
           end
 
           value
@@ -112,9 +147,9 @@ module HTTPX
                (
                  response.is_a?(ErrorResponse) && retryable_error?(response.error)
                ) ||
-               (
-                 options.retry_on && options.retry_on.call(response)
-               )
+
+                 options.retry_on&.call(response)
+
              )
             try_partial_retry(request, response)
             log { "failed to get response, #{request.retries} tries to go..." }
