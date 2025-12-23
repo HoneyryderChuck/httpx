@@ -22,6 +22,8 @@ module HTTPX
 
       def self?.multipart_value?: (multipart_nested_value value) -> bool
 
+      def self?.normalize_keys: [U] (_ToS key, _ToAry[untyped] | _ToHash[_ToS, untyped] | untyped value, ?_KeyNormalizer transcoder) { (String, ?untyped) -> U } -> U
+
       class Encoder
         @boundary: String
         @part_index: Integer

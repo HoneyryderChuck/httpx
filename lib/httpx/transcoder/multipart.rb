@@ -24,6 +24,14 @@ module HTTPX::Transcoder
           (value.key?(:filename) || value.key?(:content_type)))
     end
 
+    def normalize_keys(key, value, transcoder = self, &block)
+      if multipart_value?(value)
+        block.call(key.to_s, value)
+      else
+        HTTPX::Transcoder.normalize_keys(key, value, transcoder, &block)
+      end
+    end
+
     def encode(form_data)
       Encoder.new(form_data)
     end
