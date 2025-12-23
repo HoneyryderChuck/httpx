@@ -39,6 +39,7 @@ module HTTPX
 
       module RequestMethods
         attr_accessor cached_response: cacheResponse?
+        attr_reader options: cacheOptions
 
         @response_cache_key: String
 

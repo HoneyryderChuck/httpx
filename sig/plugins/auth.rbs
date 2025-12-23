@@ -1,13 +1,35 @@
 module HTTPX
   module Plugins
-    module Authorization
-      module InstanceMethods
-        def authorization: (string token) -> instance
+    module Auth
+      interface _AuthOptions
+        def auth_header_value: () -> (String | ^(Request request) -> string)?
 
-        def bearer_auth: (string token) -> instance
+        def auth_header_type: () -> String?
+      end
+
+      module InstanceMethods
+        @auth_header_value: String
+        @skip_auth_header_value: bool
+
+        def authorization: (?string token, ?auth_header_type: string) ?{ (Request) -> string } -> instance
+
+        def bearer_auth: (?string token) ?{ (Request) -> string } -> instance
+
+        def skip_auth_header: [T] { () -> T } -> T
+
+        private
+
+        def generate_auth_token: () -> String?
+      end
+
+      module RequestMethods
+        def authorize: (String auth_value) -> void
+      end
+
+      module AuthRetries
       end
     end
 
-    type sessionAuthorization = Session & Authorization::InstanceMethods
+    type sessionAuth = Session & Auth::InstanceMethods
   end
 end

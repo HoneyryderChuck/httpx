@@ -15,19 +15,19 @@ module HTTPX
       SUPPORTED_AUTH_METHODS: ::Array[token_auth_method]
 
       class OAuthSession
-        attr_reader grant_type: grant_type
-
-        attr_reader client_id: String
-
-        attr_reader client_secret: String
-
         attr_reader access_token: String?
 
         attr_reader refresh_token: String?
 
-        attr_reader scope: Array[String]?
-
-        attr_reader audience: String?
+        @issuer: http_uri
+        @grant_type: grant_type
+        @client_id: String
+        @client_secret: String
+        @token_endpoint: http_uri?
+        @response_type: String?
+        @scope: Array[String]?
+        @audience: String?
+        @token_endpoint_auth_method: String?
 
         def initialize: (
           issuer: uri,
@@ -43,26 +43,55 @@ module HTTPX
           ?audience: ::String
         ) -> void
 
-        def token_endpoint: () -> String
+        def token_endpoint: () -> uri
 
-        def token_endpoint_auth_method: () -> token_auth_method
+        def token_endpoint_auth_method: () -> String
 
-        def load: (Session http) -> void
+        def reset!: () -> void
+
+        def fetch_access_token: (sessionOAuth http) -> String
 
         def merge: (instance | Hash[untyped, untyped] other) -> instance
+
+        private
+
+
+        def load: (sessionOAuth http) -> void
       end
 
-      interface _AwsSdkOptions
+      interface _OAuthOptions
         def oauth_session: () -> OAuthSession?
+
+        def oauth_options: () -> {
+          issuer: uri,
+          client_id: String,
+          client_secret: String,
+          ?access_token: String?,
+          ?refresh_token: String?,
+          ?scope: (Array[String] | String)?,
+          ?token_endpoint: String?,
+          ?response_type: String?,
+          ?grant_type: String?,
+          ?token_endpoint_auth_method: ::String,
+          ?audience: ::String
+        }?
       end
 
       module InstanceMethods
+        attr_reader oauth_session: OAuthSession
+        @options: Options & _OAuthOptions
+
         def oauth_auth: (**untyped args) -> instance
 
         def with_access_token: () -> instance
       end
+
+      module OAuthRetries
+        module InstanceMethods
+        end
+      end
     end
 
-    type sessionOAuth = Session & OAuth::InstanceMethods
+    type sessionOAuth = Session & Auth::InstanceMethods & OAuth::InstanceMethods
   end
 end

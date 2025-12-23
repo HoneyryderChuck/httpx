@@ -98,6 +98,36 @@ module Requests
         verify_execution_delta(3 + 2 + 1 + 3, total_time, 1)
       end
 
+      def test_plugin_retries_retry_after_exponential
+        before_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)
+        retries_session = HTTPX
+                          .plugin(RequestInspector)
+                          .plugin(:retries, retry_after: :exponential_backoff)
+                          .with(timeout: { request_timeout: 3 })
+                          .max_retries(2)
+        retries_response = retries_session.get(build_uri("/delay/10"))
+        after_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)
+        total_time = after_time - before_time
+
+        verify_error_response(retries_response, HTTPX::RequestTimeoutError)
+        verify_execution_delta(3 + 3 + 2 + 3 + 4, total_time, 1)
+      end
+
+      def test_plugin_retries_retry_after_polynomial
+        before_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)
+        retries_session = HTTPX
+                          .plugin(RequestInspector)
+                          .plugin(:retries, retry_after: :polynomial_backoff)
+                          .with(timeout: { request_timeout: 3 })
+                          .max_retries(2)
+        retries_response = retries_session.get(build_uri("/delay/10"))
+        after_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)
+        total_time = after_time - before_time
+
+        verify_error_response(retries_response, HTTPX::RequestTimeoutError)
+        verify_execution_delta(3 + 3 + 2 + 3 + 4, total_time, 1)
+      end
+
       def test_plugin_retries_retry_after_callable
         retries = 0
         exponential = ->(*) { (retries += 1) * 2 }

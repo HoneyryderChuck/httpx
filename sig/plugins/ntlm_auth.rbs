@@ -8,7 +8,7 @@ module HTTPX
 
       def self.extra_options: (Options) -> (Options & _NTLMOptions)
 
-      def self.load_dependencies: (*untyped) -> void
+      def self.load_dependencies: (singleton(Session) klass) -> void
 
       module InstanceMethods
         def ntlm_auth: (string user, string password, ?string? domain) -> instance
@@ -16,6 +16,6 @@ module HTTPX
 
     end
 
-    type sessionNTLMAuth = sessionAuthorization & NTLMAuth::InstanceMethods
+    type sessionNTLMAuth = sessionAuth & NTLMAuth::InstanceMethods
   end
 end

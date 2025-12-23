@@ -1,7 +1,7 @@
 module HTTPX
   module Chainable
-    def request: (*Request, **untyped) -> Array[response]
-               | (Request, **untyped) -> response
+    def request: (Request, **untyped) -> response
+               | (*Request, **untyped) -> Array[response]
                | (verb, uri | [uri], **untyped) -> response
                | (Array[[verb, uri] | [verb, uri, request_params]], **untyped) -> Array[response]
                | (verb, _Each[uri | [uri, request_params]], **untyped) -> Array[response]
@@ -12,7 +12,7 @@ module HTTPX
     def with: (options) -> Session
             | (options) { (Session) -> void } -> void
 
-    def plugin: (:auth, ?options) -> Plugins::sessionAuthorization
+    def plugin: (:auth, ?options) -> Plugins::sessionAuth
               | (:basic_auth, ?options) -> Plugins::sessionBasicAuth
               | (:digest_auth, ?options) -> Plugins::sessionDigestAuth
               | (:ntlm_auth, ?options) -> Plugins::sessionNTLMAuth

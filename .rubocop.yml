@@ -50,6 +50,9 @@ Naming/FileName:
     - Rakefile
     - Steepfile
 
+Layout/LeadingCommentSpace:
+  AllowRBSInlineAnnotation: true
+
 Layout/EndAlignment:
   EnforcedStyleAlignWith: variable
 

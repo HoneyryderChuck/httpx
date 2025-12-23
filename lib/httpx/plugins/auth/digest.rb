@@ -8,6 +8,8 @@ module HTTPX
   module Plugins
     module Authentication
       class Digest
+        Error = Class.new(Error)
+
         def initialize(user, password, hashed: false, **)
           @user = user
           @password = password
@@ -29,19 +31,53 @@ module HTTPX
           # discard first token, it's Digest
           auth_info = authenticate[/^(\w+) (.*)/, 2]
 
-          params = auth_info.split(/ *, */)
-                            .to_h { |val| val.split("=", 2) }
-                            .transform_values { |v| v.delete("\"") }
+          raise_format_error unless auth_info
+
+          s = StringScanner.new(auth_info)
+
+          params = {}
+          until s.eos?
+            k = s.scan_until(/=/)
+            raise_format_error unless k&.end_with?("=")
+
+            if s.peek(1) == "\""
+              s.skip("\"")
+              v = s.scan_until(/"/)
+              raise_format_error unless v&.end_with?("\"")
+
+              v = v[0..-2]
+              s.skip_until(/,/)
+            else
+              v = s.scan_until(/,|$/)
+
+              if v&.end_with?(",")
+                v = v[0..-2]
+              else
+                raise_format_error unless s.eos?
+              end
+
+              v = v[0..-2] if v&.end_with?(",")
+            end
+            params[k[0..-2]] = v
+            s.skip(/\s/)
+          end
+
           nonce = params["nonce"]
           nc = next_nonce
 
           # verify qop
           qop = params["qop"]
 
+          if qop
+            # some servers send multiple values wrapped in parentheses (i.e. "(qauth,)")
+            qop = qop[/\(?([^\)]+)\)?/, 1]
+            qop = qop.split(",").map { |s| s.delete_prefix("'").delete_suffix("'") }.delete_if(&:empty?).map.first
+          end
+
           if params["algorithm"] =~ /(.*?)(-sess)?$/
             alg = Regexp.last_match(1)
             algorithm = ::Digest.const_get(alg)
-            raise DigestError, "unknown algorithm \"#{alg}\"" unless algorithm
+            raise Error, "unknown algorithm \"#{alg}\"" unless algorithm
 
             sess = Regexp.last_match(2)
           else
@@ -95,6 +131,10 @@ module HTTPX
 
         def next_nonce
           @nonce += 1
+        end
+
+        def raise_format_error
+          raise Error, "unsupported digest header format"
         end
       end
     end

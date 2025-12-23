@@ -188,33 +188,38 @@ module HTTPX
     end
 
     def merge(other)
-      ivar_map = nil
-      other_ivars = case other
-                    when Options
-                      other.instance_variables
-                    else
-                      other = Hash[other] unless other.is_a?(Hash)
-                      ivar_map = other.keys.to_h { |k| [:"@#{k}", k] }
-                      ivar_map.keys
+      if (is_options = other.is_a?(Options))
+
+        opts_names = other.class.options_names
+
+        return self if opts_names.all? { |opt| public_send(opt) == other.public_send(opt) }
+
+        other_opts = opts_names
+      else
+        other_opts = other # : Hash[Symbol, untyped]
+        other_opts = Hash[other] unless other.is_a?(Hash)
+
+        return self if other_opts.empty?
+
+        return self if other_opts.all? { |opt, v| !respond_to?(opt) || public_send(opt) == v }
       end
-
-      return self if other_ivars.empty?
-
-      return self if other_ivars.all? { |ivar| instance_variable_get(ivar) == access_option(other, ivar, ivar_map) }
 
       opts = dup
 
-      other_ivars.each do |ivar|
-        v = access_option(other, ivar, ivar_map)
+      other_opts.each do |opt, v|
+        next unless respond_to?(opt)
+
+        v = other.public_send(opt) if is_options
+        ivar = :"@#{opt}"
 
         unless v
           opts.instance_variable_set(ivar, v)
           next
         end
 
-        v = opts.__send__(:"option_#{ivar[1..-1]}", v)
+        v = opts.__send__(:"option_#{opt}", v)
 
-        orig_v = instance_variable_get(ivar)
+        orig_v = public_send(opt)
 
         v = orig_v.merge(v) if orig_v.respond_to?(:merge) && v.respond_to?(:merge)
 

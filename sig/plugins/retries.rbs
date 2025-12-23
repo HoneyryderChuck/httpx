@@ -6,13 +6,18 @@ module HTTPX
       RECONNECTABLE_ERRORS: Array[singleton(StandardError)]
       RETRYABLE_ERRORS: Array[singleton(StandardError)]
       DEFAULT_JITTER: ^(Numeric) -> Numeric
+      BACKOFF_ALGORITHMS: Array[Symbol]
+
+      def self?.retry_after_polynomial_backoff: (retriesRequest request, response response) -> Numeric
+
+      def self?.retry_after_exponential_backoff: (retriesRequest request, response response) -> Numeric
 
       interface _RetryCallback
         def call: (response response) -> bool?
       end
 
       interface _RetriesOptions
-        def retry_after: () -> Numeric?
+        def retry_after: () -> (^(retriesRequest request, response response) -> Numeric | Numeric)?
 
         def retry_jitter: () -> ^(Numeric jitter) -> Numeric
 
@@ -38,10 +43,11 @@ module HTTPX
 
         def try_partial_retry: (retriesRequest request, (retriesResponse | ErrorResponse) response) -> void
 
+        def prepare_to_retry: (Request & RequestMethods request, response response) -> void
       end
 
       module RequestMethods
-        @options: Options & _RetriesOptions
+        attr_reader options: retriesOptions
 
         attr_accessor retries: Integer
 
