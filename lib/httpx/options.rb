@@ -498,6 +498,6 @@ module HTTPX
       :pool_options => EMPTY_HASH,
       :ip_families => nil,
       :close_on_fork => false,
-    }.freeze
+    }.each_value(&:freeze).freeze
   end
 end
