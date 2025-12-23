@@ -190,6 +190,8 @@ module HTTPX
     def merge(other)
       if (is_options = other.is_a?(Options))
 
+        return self if eql?(other)
+
         opts_names = other.class.options_names
 
         return self if opts_names.all? { |opt| public_send(opt) == other.public_send(opt) }
