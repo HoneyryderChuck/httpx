@@ -472,6 +472,7 @@ module HTTPX
       th.thread_variable_get(:httpx_persistent_selector_store)
     end
 
+    Options.freeze
     @default_options = Options.new
     @default_options.freeze
     @plugins = []
