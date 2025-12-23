@@ -254,7 +254,7 @@ module HTTPX
       module OAuthRetries
         class << self
           def extra_options(options)
-            options.merge(retry_on: method(:response_oauth_error), generate_token_on_retry: method(:response_oauth_error))
+            options.merge(retry_on: method(:response_oauth_error), generate_auth_value_on_retry: method(:response_oauth_error))
           end
 
           def response_oauth_error(res)
@@ -264,7 +264,9 @@ module HTTPX
 
         module InstanceMethods
           def prepare_to_retry(_request, response)
-            return super unless @oauth_session && @options.generate_token_on_retry && @options.generate_token_on_retry.call(response)
+            unless @oauth_session && @options.generate_auth_value_on_retry && @options.generate_auth_value_on_retry.call(response)
+              return super
+            end
 
             @oauth_session.reset!
 

@@ -33,7 +33,7 @@ module Requests
         i = 0
         session = HTTPX.plugin(RequestInspector)
                        .plugin(:retries, max_retries: 1, retry_on: ->(res) { res.status == 401 })
-                       .plugin(:auth, generate_token_on_retry: ->(res) { res.status == 401 })
+                       .plugin(:auth, generate_auth_value_on_retry: ->(res) { res.status == 401 })
                        .authorization { "TOKEN#{i += 1}" }
         response = session.get(uri)
         verify_status(response, 401)
