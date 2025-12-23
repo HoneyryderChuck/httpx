@@ -24,7 +24,6 @@ module HTTPX
         @client_id: String
         @client_secret: String
         @token_endpoint: http_uri?
-        @response_type: String?
         @scope: Array[String]?
         @audience: String?
         @token_endpoint_auth_method: String?
@@ -37,7 +36,6 @@ module HTTPX
           ?refresh_token: String?,
           ?scope: (Array[String] | String)?,
           ?token_endpoint: String?,
-          ?response_type: String?,
           ?grant_type: String?,
           ?token_endpoint_auth_method: ::String,
           ?audience: ::String

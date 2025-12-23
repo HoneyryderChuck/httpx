@@ -44,7 +44,6 @@ module HTTPX
           scope: nil,
           audience: nil,
           token_endpoint: nil,
-          response_type: nil,
           grant_type: nil,
           token_endpoint_auth_method: nil
         )
@@ -52,7 +51,6 @@ module HTTPX
           @client_id = client_id
           @client_secret = client_secret
           @token_endpoint = URI(token_endpoint) if token_endpoint
-          @response_type = response_type
           @scope = case scope
                    when String
                      scope.split
