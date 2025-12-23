@@ -229,6 +229,14 @@ module HTTPX
           with(oauth_options: args)
         end
 
+        # will eagerly negotiate new oauth tokens with the issuer
+        def refresh_oauth_tokens!
+          return unless @oauth_session
+
+          @oauth_session.reset!
+          @oauth_session.fetch_access_token(self)
+        end
+
         # TODO: deprecate
         def with_access_token
           warn "DEPRECATION WARNING: `#{__method__}` is deprecated. " \

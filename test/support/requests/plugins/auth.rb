@@ -28,6 +28,27 @@ module Requests
         verify_header(body["headers"], "Authorization", "TOKEN2")
       end
 
+      def test_plugin_auth_reset_auth_value
+        get_uri = build_uri("/get")
+        session = HTTPX.plugin(:auth)
+
+        i = 0
+        authed = session.authorization { "TOKEN#{i += 1}" }
+        2.times do
+          # proves that token is reused
+          response = authed.get(get_uri)
+          verify_status(response, 200)
+          body = json_body(response)
+          verify_header(body["headers"], "Authorization", "TOKEN1")
+        end
+        authed.reset_auth_value!
+        # proves that token is reused
+        response = authed.get(get_uri)
+        verify_status(response, 200)
+        body = json_body(response)
+        verify_header(body["headers"], "Authorization", "TOKEN2")
+      end
+
       def test_plugin_auth_regenerate_on_retry
         uri = build_uri("/status/401")
         i = 0

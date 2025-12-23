@@ -17,6 +17,8 @@ module HTTPX
 
         def skip_auth_header: [T] { () -> T } -> T
 
+        def reset_auth_value!: () -> void
+
         private
 
         def generate_auth_token: () -> String?

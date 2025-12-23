@@ -82,6 +82,8 @@ module HTTPX
         def oauth_auth: (**untyped args) -> instance
 
         def with_access_token: () -> instance
+
+        def refresh_oauth_tokens!: () -> void
       end
 
       module OAuthRetries
