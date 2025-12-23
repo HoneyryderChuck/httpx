@@ -138,6 +138,8 @@ module HTTPX
       else
         IO.copy_stream(@buffer, dest)
       end
+    ensure
+      close
     end
 
     # closes/cleans the buffer, resets everything
