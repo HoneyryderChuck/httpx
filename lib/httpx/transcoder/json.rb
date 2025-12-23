@@ -64,7 +64,7 @@ module HTTPX::Transcoder
     else
       require "json"
       def json_load(*args); ::JSON.parse(*args); end
-      def json_dump(*args); ::JSON.dump(*args); end
+      def json_dump(*args); ::JSON.generate(*args); end
     end
     # rubocop:enable Style/SingleLineMethods
   end

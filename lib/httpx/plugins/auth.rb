@@ -25,8 +25,8 @@ module HTTPX
           value
         end
 
-        def option_generate_token_on_retry(value)
-          raise TypeError, "`:generate_token_on_retry` must be a callable" unless value.respond_to?(:call)
+        def option_generate_auth_value_on_retry(value)
+          raise TypeError, "`:generate_auth_value_on_retry` must be a callable" unless value.respond_to?(:call)
 
           value
         end
@@ -53,6 +53,10 @@ module HTTPX
           yield
         ensure
           @skip_auth_header_value = false
+        end
+
+        def reset_auth_value!
+          @auth_header_value = nil
         end
 
         private
@@ -91,7 +95,7 @@ module HTTPX
           def prepare_to_retry(request, response)
             super
 
-            return unless @options.generate_token_on_retry && @options.generate_token_on_retry.call(response)
+            return unless @options.generate_auth_value_on_retry && @options.generate_auth_value_on_retry.call(response)
 
             request.headers.get("authorization").pop
             @auth_header_value = generate_auth_token

@@ -44,7 +44,6 @@ module HTTPX
           scope: nil,
           audience: nil,
           token_endpoint: nil,
-          response_type: nil,
           grant_type: nil,
           token_endpoint_auth_method: nil
         )
@@ -52,7 +51,6 @@ module HTTPX
           @client_id = client_id
           @client_secret = client_secret
           @token_endpoint = URI(token_endpoint) if token_endpoint
-          @response_type = response_type
           @scope = case scope
                    when String
                      scope.split
@@ -231,6 +229,14 @@ module HTTPX
           with(oauth_options: args)
         end
 
+        # will eagerly negotiate new oauth tokens with the issuer
+        def refresh_oauth_tokens!
+          return unless @oauth_session
+
+          @oauth_session.reset!
+          @oauth_session.fetch_access_token(self)
+        end
+
         # TODO: deprecate
         def with_access_token
           warn "DEPRECATION WARNING: `#{__method__}` is deprecated. " \
@@ -254,7 +260,7 @@ module HTTPX
       module OAuthRetries
         class << self
           def extra_options(options)
-            options.merge(retry_on: method(:response_oauth_error), generate_token_on_retry: method(:response_oauth_error))
+            options.merge(retry_on: method(:response_oauth_error), generate_auth_value_on_retry: method(:response_oauth_error))
           end
 
           def response_oauth_error(res)
@@ -264,7 +270,9 @@ module HTTPX
 
         module InstanceMethods
           def prepare_to_retry(_request, response)
-            return super unless @oauth_session && @options.generate_token_on_retry && @options.generate_token_on_retry.call(response)
+            unless @oauth_session && @options.generate_auth_value_on_retry && @options.generate_auth_value_on_retry.call(response)
+              return super
+            end
 
             @oauth_session.reset!
 

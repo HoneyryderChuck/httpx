@@ -9,7 +9,7 @@ module ResponseHelpers
     end
   else
     def can_run_ractor_tests?
-      defined?(Ractor) && Ractor.respond_to?(:take)
+      defined?(Ractor) && Ractor.method_defined?(:value)
     end
   end
 

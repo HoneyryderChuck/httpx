@@ -28,12 +28,33 @@ module Requests
         verify_header(body["headers"], "Authorization", "TOKEN2")
       end
 
+      def test_plugin_auth_reset_auth_value
+        get_uri = build_uri("/get")
+        session = HTTPX.plugin(:auth)
+
+        i = 0
+        authed = session.authorization { "TOKEN#{i += 1}" }
+        2.times do
+          # proves that token is reused
+          response = authed.get(get_uri)
+          verify_status(response, 200)
+          body = json_body(response)
+          verify_header(body["headers"], "Authorization", "TOKEN1")
+        end
+        authed.reset_auth_value!
+        # proves that token is reused
+        response = authed.get(get_uri)
+        verify_status(response, 200)
+        body = json_body(response)
+        verify_header(body["headers"], "Authorization", "TOKEN2")
+      end
+
       def test_plugin_auth_regenerate_on_retry
         uri = build_uri("/status/401")
         i = 0
         session = HTTPX.plugin(RequestInspector)
                        .plugin(:retries, max_retries: 1, retry_on: ->(res) { res.status == 401 })
-                       .plugin(:auth, generate_token_on_retry: ->(res) { res.status == 401 })
+                       .plugin(:auth, generate_auth_value_on_retry: ->(res) { res.status == 401 })
                        .authorization { "TOKEN#{i += 1}" }
         response = session.get(uri)
         verify_status(response, 401)

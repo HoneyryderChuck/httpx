@@ -8,8 +8,8 @@ module Requests
       response = HTTPX.get(uri, headers: { "accept" => "image/jpeg" })
       verify_status(response, 200)
       verify_header(response.headers, "content-type", "image/jpeg")
-      response.copy_to(file)
       verify_body_length(response)
+      response.copy_to(file)
       content_length = response.headers["content-length"].to_i
       assert file.size == content_length, "file should contain the content of response"
     ensure

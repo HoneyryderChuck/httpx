@@ -134,6 +134,21 @@ module Requests
         end
       end
 
+      def test_plugin_oauth_refresh_oauth_tokens
+        with_oauth_metadata do |server|
+          session = HTTPX.plugin(
+            :oauth, oauth_options: {
+              issuer: server.origin,
+              client_id: "CLIENT_ID", client_secret: "SECRET", scope: "all"
+            }
+          )
+          oauth_session = session.send(:oauth_session)
+          assert oauth_session.access_token.nil?
+          session.refresh_oauth_tokens!
+          assert !oauth_session.access_token.nil?
+        end
+      end
+
       def test_plugin_oauth_retries_refresh_token_on_retry
         with_oauth_metadata do |server|
           session = HTTPX.plugin(:retries).plugin(

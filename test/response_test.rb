@@ -109,6 +109,8 @@ class ResponseTest < Minitest::Test
     memory = StringIO.new
     body.copy_to(memory)
     assert memory.string == payload, "didn't copy all bytes (expected #{payload.bytesize}, was #{memory.size})"
+    assert body.closed?
+  ensure
     body.close
   end
 
@@ -116,10 +118,11 @@ class ResponseTest < Minitest::Test
     payload = "a" * 2048
     body = Response::Body.new(Response.new(request, 200, "2.0", {}), Options.new(body_threshold_size: 1024))
     body.write(payload)
-
     file = Tempfile.new("httpx-file-buffer")
     body.copy_to(file)
     assert File.read(file.path) == payload, "didn't copy all bytes (expected #{payload.bytesize}, was #{File.size(file.path)})"
+    assert body.closed?
+  ensure
     body.close
     file.unlink
   end
@@ -133,6 +136,8 @@ class ResponseTest < Minitest::Test
     assert body1.read(1) == "f"
     assert body1.read(1) == "o"
     assert body1.read(1) == "o"
+  ensure
+    body1.close
   end
 
   def test_response_body_each
@@ -143,6 +148,9 @@ class ResponseTest < Minitest::Test
     body2.write("foo")
     body2.write("bar")
     assert body2.each.to_a == %w[foobar], "must yield buffers"
+    assert body2.closed?
+  ensure
+    body2.close
   end
 
   def test_response_body_buffer
@@ -155,6 +163,8 @@ class ResponseTest < Minitest::Test
     assert body.buffer.instance_variable_get(:@buffer).is_a?(StringIO), "body should buffer to memory"
     body.write(" world")
     assert body.buffer.instance_variable_get(:@buffer).is_a?(Tempfile), "body should buffer to file after going over threshold"
+  ensure
+    body.close
   end
 
   def test_response_body_dup
@@ -180,6 +190,7 @@ class ResponseTest < Minitest::Test
     assert body.buffer != body_dup.buffer
     assert body.buffer.instance_variable_get(:@buffer).is_a?(Tempfile), "body should buffer to file after going over threshold"
     assert File.read(body_dup.buffer.instance_variable_get(:@buffer)) == "hello world", "body should contain original content"
+  ensure body.close
   end
 
   def test_response_body_filename

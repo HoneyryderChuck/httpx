@@ -53,7 +53,7 @@ module HTTPX
 
       def to_parts(form)
         params = form.each_with_object([]) do |(key, val), aux|
-          Transcoder.normalize_keys(key, val, MULTIPART_VALUE_COND) do |k, v|
+          Transcoder::Multipart.normalize_keys(key, val) do |k, v|
             next if v.nil?
 
             value, content_type, filename = Part.call(v)

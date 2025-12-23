@@ -46,7 +46,8 @@ module HTTPX
 
               if probe_response.status == 401 && ntlm.can_authenticate?(probe_response.headers["www-authenticate"])
                 request.transition(:idle)
-                request.authorize(ntlm.authenticate(request, probe_response.headers["www-authenticate"]))
+                request.headers.get("authorization").pop
+                request.authorize(ntlm.authenticate(request, probe_response.headers["www-authenticate"]).encode("utf-8"))
                 super(request)
               else
                 probe_response

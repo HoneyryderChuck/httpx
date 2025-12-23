@@ -34,7 +34,8 @@ module Requests
 
       define_method :"test_multipart_hash_#{meth}" do
         uri = build_uri("/#{meth}")
-        response = HTTPX.send(meth, uri, form: { metadata: { content_type: "application/json", body: JSON.dump({ a: 1 }) } })
+        req_body = JSON.dump({ a: 1 }).freeze
+        response = HTTPX.send(meth, uri, form: { metadata: { content_type: "application/json", body: req_body } })
         verify_status(response, 200)
         body = json_body(response)
         verify_header(body["headers"], "Content-Type", "multipart/form-data")
@@ -42,8 +43,8 @@ module Requests
 
         return unless can_run_ractor_tests?
 
-        response2 = Ractor.new(meth, uri) do |meth, uri|
-          HTTPX.send(meth, uri, form: { metadata: { content_type: "application/json", body: JSON.dump({ a: 1 }) } })
+        response2 = Ractor.new(meth, uri, req_body) do |meth, uri, req_body|
+          HTTPX.send(meth, uri, form: { metadata: { content_type: "application/json", body: req_body } })
         end.value
 
         verify_status(response2, 200)
@@ -72,7 +73,8 @@ module Requests
 
       define_method :"test_multipart_file_#{meth}" do
         uri = build_uri("/#{meth}")
-        response = HTTPX.send(meth, uri, form: { image: File.new(fixture_file_path) })
+        image_path = fixture_file_path
+        response = HTTPX.send(meth, uri, form: { image: File.new(image_path) })
         verify_status(response, 200)
         body = json_body(response)
         verify_header(body["headers"], "Content-Type", "multipart/form-data")
@@ -80,8 +82,8 @@ module Requests
 
         return unless can_run_ractor_tests?
 
-        response2 = Ractor.new(meth, uri) do |meth, uri|
-          HTTPX.send(meth, uri, form: { image: File.new(fixture_file_path) })
+        response2 = Ractor.new(meth, uri, image_path) do |meth, uri, image_path|
+          HTTPX.send(meth, uri, form: { image: File.new(image_path) })
         end.value
 
         verify_status(response2, 200)
@@ -155,7 +157,8 @@ module Requests
 
       define_method :"test_multipart_pathname_#{meth}" do
         uri = build_uri("/#{meth}")
-        response = HTTPX.send(meth, uri, form: { image: Pathname.new(fixture_file_path) })
+        image_path = fixture_file_path
+        response = HTTPX.send(meth, uri, form: { image: Pathname.new(image_path) })
         verify_status(response, 200)
         body = json_body(response)
         verify_header(body["headers"], "Content-Type", "multipart/form-data")
@@ -163,8 +166,8 @@ module Requests
 
         return unless can_run_ractor_tests?
 
-        response2 = Ractor.new(meth, uri) do |meth, uri|
-          HTTPX.send(meth, uri, form: { image: Pathname.new(fixture_file_path) })
+        response2 = Ractor.new(meth, uri, image_path) do |meth, uri, image_path|
+          HTTPX.send(meth, uri, form: { image: Pathname.new(image_path) })
         end.value
 
         verify_status(response2, 200)
