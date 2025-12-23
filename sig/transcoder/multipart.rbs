@@ -7,8 +7,6 @@ module HTTPX
         def read: (?int? length, ?string? output) -> String?
       end
 
-      MULTIPART_VALUE_COND: ^(_Reader | record_multipart_value value) -> bool
-
       type multipart_value = string | Pathname | File | Tempfile | _Reader
 
       type record_multipart_value = { content_type: String, filename: String, body: multipart_value } |
@@ -21,6 +19,8 @@ module HTTPX
       def self?.encode: (multipart_input form_data) -> Multipart::Encoder
 
       def self?.multipart?: (form_nested_value | multipart_nested_value form_data) -> bool
+
+      def self?.multipart_value?: (multipart_nested_value value) -> bool
 
       class Encoder
         @boundary: String
