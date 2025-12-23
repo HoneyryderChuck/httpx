@@ -55,7 +55,7 @@ module HTTPX
           @skip_auth_header_value = false
         end
 
-        def reset_auth_value!
+        def reset_auth_header_value!
           @auth_header_value = nil
         end
 

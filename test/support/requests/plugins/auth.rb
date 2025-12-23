@@ -41,7 +41,7 @@ module Requests
           body = json_body(response)
           verify_header(body["headers"], "Authorization", "TOKEN1")
         end
-        authed.reset_auth_value!
+        authed.reset_auth_header_value!
         # proves that token is reused
         response = authed.get(get_uri)
         verify_status(response, 200)
