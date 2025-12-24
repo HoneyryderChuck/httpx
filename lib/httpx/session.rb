@@ -436,14 +436,13 @@ module HTTPX
           conn1.log(level: 2) { "check-in connection##{conn1.object_id}(#{conn1.state}) in pool##{@pool.object_id}" }
           @pool.checkin_connection(conn1)
         end
-        return false
+        return
       end
 
       conn2.log(level: 2) { "coalescing with connection##{conn1.object_id}[#{conn1.origin}])" }
       select_connection(conn1, selector) if from_pool
       conn2.coalesce!(conn1)
       conn2.disconnect
-      true
     end
 
     def get_current_selector

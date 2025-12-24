@@ -5,9 +5,7 @@ class MisdirectedServer < TestHTTP2Server
 
   def initialize
     super
-    @server.ctx.alpn_select_cb = lambda do |protocols|
-      protocols.first
-    end
+    @server.ctx.alpn_select_cb = lambda(&:first)
   end
 
   private

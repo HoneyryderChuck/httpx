@@ -70,7 +70,7 @@ module HTTPX
 
           if qop
             # some servers send multiple values wrapped in parentheses (i.e. "(qauth,)")
-            qop = qop[/\(?([^\)]+)\)?/, 1]
+            qop = qop[/\(?([^)]+)\)?/, 1]
             qop = qop.split(",").map { |s| s.delete_prefix("'").delete_suffix("'") }.delete_if(&:empty?).map.first
           end
 

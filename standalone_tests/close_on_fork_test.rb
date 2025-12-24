@@ -17,10 +17,10 @@ class CloseOnForkTest < Minitest::Test
     verify_status(response, 200)
 
     assert http.connections.size == 1
-    assert http.connections.count { |c| c.state == :closed }.zero?, "should have no closed connections"
+    assert http.connections.none? { |c| c.state == :closed }, "should have no closed connections"
     HTTPX::Session.after_fork
     assert http.connections.size == 1
-    assert http.connections.count { |c| c.state == :closed } == 1, "should have a closed connection"
+    assert http.connections.one? { |c| c.state == :closed }, "should have a closed connection"
   end
 
   def test_close_on_fork_automatic_after_fork_callback
@@ -33,12 +33,12 @@ class CloseOnForkTest < Minitest::Test
     verify_status(response, 200)
 
     assert http.connections.size == 1
-    assert http.connections.count { |c| c.state == :closed }.zero?, "should have no closed connections"
+    assert http.connections.none? { |c| c.state == :closed }, "should have no closed connections"
     pid = fork do
-      assert http.connections.count { |c| c.state == :closed } == 1, "should have no closed connections"
+      assert http.connections.one? { |c| c.state == :closed }, "should have no closed connections"
       exit!(0)
     end
-    assert http.connections.count { |c| c.state == :closed }.zero?, "should have no closed connections"
+    assert http.connections.none? { |c| c.state == :closed }, "should have no closed connections"
     _, status = Process.waitpid2(pid)
     assert_predicate(status, :success?)
   end

@@ -94,7 +94,6 @@ module HTTPX
           region: AwsSdkAuthentication.region(@options.aws_profile),
           **options
         )
-
           aws_sigv4_authentication(
             credentials: credentials,
             region: region,

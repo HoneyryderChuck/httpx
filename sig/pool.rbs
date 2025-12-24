@@ -15,7 +15,7 @@ module HTTPX
     @options: Options
     @resolvers: Hash[Class, Array[resolver_manager]]
     @resolver_mtx: Thread::Mutex
-    @connections: Hash[String, Array[Connection]]
+    @connections: Array[Connection]
     @connection_mtx: Thread::Mutex
     @connections_counter: Integer
     @max_connections_cond: ConditionVariable

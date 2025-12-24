@@ -109,12 +109,12 @@ module FiberSchedulerTestHelpers
     def io_wait(io, events, duration)
       fiber = Fiber.current
 
-      unless (events & IO::READABLE).zero?
+      unless events.nobits?(IO::READABLE)
         @readable[io] << fiber
         readable = true
       end
 
-      unless (events & IO::WRITABLE).zero?
+      unless events.nobits?(IO::WRITABLE)
         @writable[io] << fiber
         writable = true
       end

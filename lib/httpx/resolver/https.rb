@@ -12,6 +12,7 @@ module HTTPX
   #
   class Resolver::HTTPS < Resolver::Resolver
     extend Forwardable
+
     using URIExtensions
 
     module DNSExtensions

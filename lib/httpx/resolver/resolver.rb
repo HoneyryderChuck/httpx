@@ -75,7 +75,7 @@ module HTTPX
 
       # double emission check, but allow early resolution to work
       conn_addrs = connection.addresses
-      return if !early_resolve && conn_addrs && (!conn_addrs.empty? && !addresses.intersect?(conn_addrs))
+      return if !early_resolve && conn_addrs && !conn_addrs.empty? && !addresses.intersect?(conn_addrs)
 
       log do
         "resolver #{FAMILY_TYPES[RECORD_TYPES[family]]}: " \
@@ -124,7 +124,7 @@ module HTTPX
       disconnect
     end
 
-    def early_resolve(connection, hostname: connection.peer.host)
+    def early_resolve(connection, hostname: connection.peer.host) # rubocop:disable Naming/PredicateMethod
       addresses = @resolver_options[:cache] && (connection.addresses || HTTPX::Resolver.nolookup_resolve(hostname))
 
       return false unless addresses

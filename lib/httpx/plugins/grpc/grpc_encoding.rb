@@ -48,7 +48,7 @@ module HTTPX
           until message.empty?
             compressed, size = message.unpack("CL>")
 
-            encoded_data = message.byteslice(5..size + 5 - 1)
+            encoded_data = message.byteslice(5..(size + 5 - 1))
 
             if compressed == 1
               grpc_encodings.reverse_each do |encoding|

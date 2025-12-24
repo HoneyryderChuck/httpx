@@ -36,7 +36,7 @@ class Bug_1_4_1_Test < Minitest::Test
       verify_status(response, 200) # should not raise EOFError
       conns2 = persistent_session.connections
       assert conns2.size == 2
-      assert conns2.count { |c| c.state == :closed } == 1, "one of them should have been closed"
+      assert conns2.one? { |c| c.state == :closed }, "one of them should have been closed"
     ensure
       persistent_session.close
     end

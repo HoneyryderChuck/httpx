@@ -52,6 +52,9 @@ module HTTPX
         attr_writer original_request: cacheRequest
 
         @cache: bool
+        @cache_control: Array[String]?
+        @vary: Array[String]?
+        @date: Time?
 
         def original_request: () -> cacheRequest?
 

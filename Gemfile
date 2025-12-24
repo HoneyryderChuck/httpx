@@ -71,9 +71,9 @@ end
 
 group :lint do
   platform :mri do
-    gem "rubocop", "~> 1.59.0"
+    gem "rubocop"
     gem "rubocop-md"
-    gem "rubocop-performance", "~> 1.19.0"
+    gem "rubocop-performance"
   end
 end
 

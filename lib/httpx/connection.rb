@@ -100,14 +100,13 @@ module HTTPX
     def match?(uri, options)
       return false if !used? && (@state == :closing || @state == :closed)
 
-      (
-        @origins.include?(uri.origin) &&
+      @origins.include?(uri.origin) &&
         # if there is more than one origin to match, it means that this connection
         # was the result of coalescing. To prevent blind trust in the case where the
         # origin came from an ORIGIN frame, we're going to verify the hostname with the
         # SSL certificate
-        (@origins.size == 1 || @origin == uri.origin || (@io.is_a?(SSL) && @io.verify_hostname(uri.host)))
-      ) && @options == options
+        (@origins.size == 1 || @origin == uri.origin || (@io.is_a?(SSL) && @io.verify_hostname(uri.host))) &&
+        @options == options
     end
 
     def mergeable?(connection)

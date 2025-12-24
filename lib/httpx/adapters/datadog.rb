@@ -80,7 +80,7 @@ module Datadog::Tracing
             else
               span.set_tag(TAG_STATUS_CODE, response.status.to_s)
 
-              span.set_error(::HTTPX::HTTPError.new(response)) if response.status >= 400 && response.status <= 599
+              span.set_error(::HTTPX::HTTPError.new(response)) if response.status.between?(400, 599)
 
               span.set_tags(
                 Datadog.configuration.tracing.header_tags.response_tags(response.headers.to_h)

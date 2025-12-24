@@ -16,7 +16,7 @@ module HTTPX
             mask_addr = @mask_addr
             raise "Invalid mask" if mask_addr.zero?
 
-            mask_addr >>= 1 while (mask_addr & 0x1).zero?
+            mask_addr >>= 1 while mask_addr.nobits?(0x1)
 
             length = 0
             while mask_addr & 0x1 == 0x1

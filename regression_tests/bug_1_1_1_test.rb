@@ -14,11 +14,11 @@ class Bug_1_1_1_Test < Minitest::Test
     HTTPX.on_connection_opened { |*| connected += 1 }
          .on_connection_closed { |*| connected -= 1 }
          .wrap do |session|
-      3.times.each do
-        response = session.get(uri)
-        verify_status(response, 200)
-        assert connected.zero?
-      end
+           3.times.each do
+             response = session.get(uri)
+             verify_status(response, 200)
+             assert connected.zero?
+           end
     end
   end
 

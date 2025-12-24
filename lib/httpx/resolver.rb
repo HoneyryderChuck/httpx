@@ -6,6 +6,7 @@ require "resolv"
 module HTTPX
   module Resolver
     extend self
+
     RESOLVE_TIMEOUT = [2, 3].freeze
     MAX_CACHE_SIZE = 512
 
@@ -152,7 +153,7 @@ module HTTPX
     def generate_id
       if in_ractor?
         identifier = Ractor.store_if_absent(:httpx_resolver_identifier) { -1 }
-        (Ractor.current[:httpx_resolver_identifier] = (identifier + 1) & 0xFFFF)
+        Ractor.current[:httpx_resolver_identifier] = (identifier + 1) & 0xFFFF
       else
         id_synchronize { @identifier = (@identifier + 1) & 0xFFFF }
       end

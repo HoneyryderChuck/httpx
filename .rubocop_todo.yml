@@ -39,3 +39,7 @@ Naming/AccessorMethodName:
 
 Performance/MethodObjectAsBlock:
   Enabled: false
+
+Naming/PredicateMethod:
+  Exclude:
+    - test/**/*.rb

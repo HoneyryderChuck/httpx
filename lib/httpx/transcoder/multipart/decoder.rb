@@ -60,7 +60,7 @@ module HTTPX
           when :idle
             raise Error, "payload does not start with boundary" unless @buffer.start_with?("#{@intermediate_boundary}#{CRLF}")
 
-            @buffer = @buffer.byteslice(@intermediate_boundary.bytesize + 2..-1)
+            @buffer = @buffer.byteslice((@intermediate_boundary.bytesize + 2)..-1)
 
             @state = :part_header
           when :part_header
@@ -70,7 +70,7 @@ module HTTPX
             return unless idx
 
             # @type var head: String
-            head = @buffer.byteslice(0..idx + 4 - 1)
+            head = @buffer.byteslice(0..(idx + 4 - 1))
 
             @buffer = @buffer.byteslice(head.bytesize..-1)
 
@@ -107,8 +107,8 @@ module HTTPX
             idx = @buffer.index(body_separator)
 
             if idx
-              payload = @buffer.byteslice(0..idx - 1)
-              @buffer = @buffer.byteslice(idx + body_separator.bytesize..-1)
+              payload = @buffer.byteslice(0..(idx - 1))
+              @buffer = @buffer.byteslice((idx + body_separator.bytesize)..-1)
               part << payload
               part.rewind if part.respond_to?(:rewind)
               @state = :parse_boundary

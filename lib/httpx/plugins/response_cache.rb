@@ -150,7 +150,7 @@ module HTTPX
             request.headers.add("if-modified-since", last_modified)
           end
 
-          if !request.headers.key?("if-none-match") && (etag = cached_response.headers["etag"]) # rubocop:disable Style/GuardClause
+          if !request.headers.key?("if-none-match") && (etag = cached_response.headers["etag"])
             request.headers.add("if-none-match", etag)
           end
         end
@@ -296,9 +296,7 @@ module HTTPX
           return @cache_control if defined?(@cache_control)
 
           @cache_control = begin
-            return unless @headers.key?("cache-control")
-
-            @headers["cache-control"].split(/ *, */)
+            @headers["cache-control"].split(/ *, */) if @headers.key?("cache-control")
           end
         end
 
@@ -307,9 +305,7 @@ module HTTPX
           return @vary if defined?(@vary)
 
           @vary = begin
-            return unless @headers.key?("vary")
-
-            @headers["vary"].split(/ *, */).map(&:downcase)
+            @headers["vary"].split(/ *, */).map(&:downcase) if @headers.key?("vary")
           end
         end
 

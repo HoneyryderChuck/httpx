@@ -10,6 +10,11 @@ module HTTPX
     MAX_REQUESTS = 200
     CRLF = "\r\n"
 
+    UPCASED = {
+      "www-authenticate" => "WWW-Authenticate",
+      "http2-settings" => "HTTP2-Settings",
+      "content-md5" => "Content-MD5",
+    }.freeze
     attr_reader :pending, :requests
 
     attr_accessor :max_concurrent_requests
@@ -385,12 +390,6 @@ module HTTPX
         @buffer << "#{field}: #{value}#{CRLF}"
       end
     end
-
-    UPCASED = {
-      "www-authenticate" => "WWW-Authenticate",
-      "http2-settings" => "HTTP2-Settings",
-      "content-md5" => "Content-MD5",
-    }.freeze
 
     def capitalized(field)
       UPCASED[field] || field.split("-").map(&:capitalize).join("-")

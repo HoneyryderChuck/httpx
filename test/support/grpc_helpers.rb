@@ -24,6 +24,7 @@ begin
   # a test service that checks the cert of its peer
   class TestService
     include GRPC::GenericService
+
     rpc :an_rpc, EchoMsg, EchoMsg
     rpc :a_cancellable_rpc, EchoMsg, EchoMsg
     rpc :a_client_streaming_rpc, stream(EchoMsg), EchoMsg

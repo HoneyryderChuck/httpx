@@ -6,6 +6,7 @@ module Requests
   module Plugins
     module Proxy
       include ProxyHelper
+
       using HTTPX::URIExtensions
 
       RESOLVER = Resolv::DNS.new

@@ -61,7 +61,7 @@ module HTTPX
 
     def addresses?: () -> boolish
 
-    def match?: (URI::Generic uri, Options options) -> bool
+    def match?: (http_uri uri, Options options) -> bool
 
     def mergeable?: (Connection connection) -> bool
 

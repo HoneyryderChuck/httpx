@@ -12,7 +12,7 @@ module HTTPX::Transcoder
       def initialize(body)
         body = body.open(File::RDONLY, encoding: Encoding::BINARY) if Object.const_defined?(:Pathname) && body.is_a?(Pathname)
         @body = body
-        super(body)
+        super
       end
 
       def bytesize

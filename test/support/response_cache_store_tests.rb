@@ -2,6 +2,7 @@
 
 module ResponseCacheStoreTests
   include HTTPX
+
   def test_store_cache
     request = make_request("GET", "http://store-cache/")
     response = cached_response(request)

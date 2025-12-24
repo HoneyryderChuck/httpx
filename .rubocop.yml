@@ -1,6 +1,6 @@
 inherit_from: .rubocop_todo.yml
 
-require:
+plugins:
   - rubocop-performance
   - rubocop-md
 
@@ -49,6 +49,7 @@ Naming/FileName:
     - Gemfile
     - Rakefile
     - Steepfile
+    - "**/*.md"
 
 Layout/LeadingCommentSpace:
   AllowRBSInlineAnnotation: true

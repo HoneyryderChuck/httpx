@@ -9,6 +9,7 @@ module HTTPX
   #
   class Resolver::Native < Resolver::Resolver
     extend Forwardable
+
     using URIExtensions
 
     DEFAULTS = {

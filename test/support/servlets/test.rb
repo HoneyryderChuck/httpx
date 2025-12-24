@@ -343,7 +343,7 @@ class TestDNSResolver
     bquery = query.bytes
 
     # Check "Opcode" of question header for valid question
-    if (bquery[2] & 120).zero?
+    if bquery[2].nobits?(120)
       # Read QNAME section of question section
       # DNS header section is 12 bytes long, so data starts at offset 12
 

@@ -26,7 +26,7 @@ class HTTPSTest < Minitest::Test
   include Plugins::FollowRedirects
   include Plugins::ContentDigest
   include Plugins::Cookies
-  include Plugins::PushPromise if OpenSSL::SSL::SSLContext.instance_methods.include?(:alpn_protocols)
+  include Plugins::PushPromise if OpenSSL::SSL::SSLContext.method_defined?(:alpn_protocols)
   include Plugins::Retries
   include Plugins::Expect
   include Plugins::RateLimiter

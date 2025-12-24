@@ -225,7 +225,7 @@ module HTTPX
         def close(selector = Selector.new)
           @signal.terminate
           selector.deregister(@signal)
-          super(selector)
+          super
         end
 
         def select_connection(connection, selector)

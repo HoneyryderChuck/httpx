@@ -8,6 +8,8 @@ module HTTPX
     module ConnectionMixin
       using URIExtensions
 
+      H2_ALTSVC_SCHEMES = %w[https h2].freeze
+
       def send(request)
         request.headers["alt-used"] = @origin.authority if @parser && !@write_buffer.full? && match_altsvcs?(request.uri)
 
@@ -46,7 +48,7 @@ module HTTPX
         uri.origin == other_uri.origin || begin
           case uri.scheme
           when "h2"
-            (other_uri.scheme == "https" || other_uri.scheme == "h2") &&
+            H2_ALTSVC_SCHEMES.include?(other_uri.scheme) &&
               uri.host == other_uri.host &&
               uri.port == other_uri.port
           else

@@ -18,11 +18,11 @@ module HTTPX
         def configure(klass)
           klass.plugin(:retries,
                        retry_change_requests: true,
-                       retry_on: method(:retry_on_rate_limited_response),
+                       retry_on: method(:retry_on_rate_limited_response?),
                        retry_after: method(:retry_after_rate_limit))
         end
 
-        def retry_on_rate_limited_response(response)
+        def retry_on_rate_limited_response?(response)
           return false unless response.is_a?(Response)
 
           status = response.status

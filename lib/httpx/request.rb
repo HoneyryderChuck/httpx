@@ -10,6 +10,7 @@ module HTTPX
     extend Forwardable
     include Loggable
     include Callbacks
+
     using URIExtensions
 
     ALLOWED_URI_SCHEMES = %w[https http].freeze

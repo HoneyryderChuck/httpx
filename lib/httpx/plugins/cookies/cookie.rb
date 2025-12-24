@@ -7,6 +7,7 @@ module HTTPX
     # Contains the single cookie info: name, value and attributes.
     class Cookie
       include Comparable
+
       # Maximum number of bytes per cookie (RFC 6265 6.1 requires 4096 at
       # least)
       MAX_LENGTH = 4096

@@ -111,22 +111,23 @@ module Requests
 
     def test_errors_native_resolver_error_mid_dns_query_io_wait
       uri = URI(build_uri("/get"))
-      HTTPX.plugin(SessionWithPool)
-           .plugin(SocketErrorPlugin)
-           .with(resolver_class: :native, resolver_options: { cache: false }) do |http|
-        response = http.get(uri)
-        verify_error_response(response, /socket error here/)
+      HTTPX
+        .plugin(SessionWithPool)
+        .plugin(SocketErrorPlugin)
+        .with(resolver_class: :native, resolver_options: { cache: false }) do |http|
+          response = http.get(uri)
+          verify_error_response(response, /socket error here/)
 
-        pool = http.pool
-        assert pool.connections_counter.nonzero?
-        assert pool.connections_counter == pool.connections.size
-        assert(pool.connections.all? { |conn| conn.state == :closed })
+          pool = http.pool
+          assert pool.connections_counter.nonzero?
+          assert pool.connections_counter == pool.connections.size
+          assert(pool.connections.all? { |conn| conn.state == :closed })
 
-        assert http.resolvers.size == 1
-        resolver = http.resolvers.first
-        resolver = resolver.resolvers.first # because it's a multi
-        assert resolver.state == :closed
-        assert resolver.connections.empty?
+          assert http.resolvers.size == 1
+          resolver = http.resolvers.first
+          resolver = resolver.resolvers.first # because it's a multi
+          assert resolver.state == :closed
+          assert resolver.connections.empty?
       end
     end
 
@@ -137,25 +138,26 @@ module Requests
       %i[native system https].each do |resolver_class|
         define_method :"test_errors_#{type}_#{resolver_class}_resolver_exception_mid_dns_query_io_wait" do
           uri = URI(build_uri("/get"))
-          HTTPX.plugin(SessionWithPool)
-               .plugin(SocketExceptionPlugin)
-               .with(resolver_class: resolver_class, resolver_options: { cache: false }, ip_families: ip_families) do |http|
-            assert_raises(SocketExceptionPlugin::SocketException) do
-              http.get(uri)
-            end
+          HTTPX
+            .plugin(SessionWithPool)
+            .plugin(SocketExceptionPlugin)
+            .with(resolver_class: resolver_class, resolver_options: { cache: false }, ip_families: ip_families) do |http|
+              assert_raises(SocketExceptionPlugin::SocketException) do
+                http.get(uri)
+              end
 
-            # some state is going to be corrupted in the face of an Exception,
-            # the only thing we care about is whether all used sockets are closed.
+              # some state is going to be corrupted in the face of an Exception,
+              # the only thing we care about is whether all used sockets are closed.
 
-            connections = http.connections
-            assert connections.size >= 1
-            assert(connections.all? { |conn| conn.state == :closed })
+              connections = http.connections
+              assert connections.size >= 1
+              assert(connections.all? { |conn| conn.state == :closed })
 
-            # https resolver will also need to resolve its resolver connection
-            assert http.resolvers.size == (resolver_class == :https ? 2 : 1)
-            resolver = http.resolvers.first
-            resolver = resolver.resolvers.first # because it's a multi
-            assert resolver.state == :closed
+              # https resolver will also need to resolve its resolver connection
+              assert http.resolvers.size == (resolver_class == :https ? 2 : 1)
+              resolver = http.resolvers.first
+              resolver = resolver.resolvers.first # because it's a multi
+              assert resolver.state == :closed
           end
         end
       end

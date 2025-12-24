@@ -15,6 +15,7 @@ require "support/minitest_extensions"
 
 class EnvProxyTest < Minitest::Test
   include HTTPHelpers
+
   using HTTPX::URIExtensions
 
   def test_plugin_http_no_proxy

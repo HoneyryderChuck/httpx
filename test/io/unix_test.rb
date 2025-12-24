@@ -53,8 +53,6 @@ class UnixTest < Minitest::Test
     end
   end
 
-  private
-
   RESPONSE_HEADER = <<-HTTP.lines.map { |x| x.strip.chomp }.join("\r\n") << ("\r\n" * 2)
     HTTP/1.1 200 OK
     Date: Mon, 27 Jul 2009 12:28:53 GMT
@@ -62,6 +60,8 @@ class UnixTest < Minitest::Test
     Content-Type: text/plain
     Connection: close
   HTTP
+
+  private
 
   def on_unix_server(sockname)
     path = File.join(Dir.tmpdir, "httpx-unix-#{sockname}.sock")

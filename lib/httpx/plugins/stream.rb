@@ -55,9 +55,9 @@ module HTTPX
         line << chunk
 
         while (idx = line.index("\n"))
-          yield line.byteslice(0..idx - 1)
+          yield line.byteslice(0..(idx - 1))
 
-          line = line.byteslice(idx + 1..-1)
+          line = line.byteslice((idx + 1)..-1)
         end
       end
 
@@ -167,10 +167,10 @@ module HTTPX
                 warn "passing `stream: true` with a request obkect is not supported anymore. " \
                      "You can instead build the request object with `stream :true`"
               end
-              return super(*args, **options)
+              return super
             end
           else
-            return super(*args, **options) unless options[:stream]
+            return super unless options[:stream]
 
             requests = build_requests(*args, options)
 

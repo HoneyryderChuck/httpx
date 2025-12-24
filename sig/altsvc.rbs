@@ -1,6 +1,7 @@
 module HTTPX
   module AltSvc
     module ConnectionMixin
+      H2_ALTSVC_SCHEMES: Array[String]
 
       def send: (Request request) -> void
 
@@ -11,6 +12,8 @@ module HTTPX
       def match_altsvcs?: (URI::Generic uri) -> bool
 
       def match_altsvc_options?: (URI::Generic uri, Options options) -> bool
+
+      def altsvc_match?: (http_uri uri, http_uri other_uri) -> bool
     end
 
     type altsvc_params = Hash[String, untyped]

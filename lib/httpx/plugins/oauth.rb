@@ -260,10 +260,13 @@ module HTTPX
       module OAuthRetries
         class << self
           def extra_options(options)
-            options.merge(retry_on: method(:response_oauth_error), generate_auth_value_on_retry: method(:response_oauth_error))
+            options.merge(
+              retry_on: method(:response_oauth_error?),
+              generate_auth_value_on_retry: method(:response_oauth_error?)
+            )
           end
 
-          def response_oauth_error(res)
+          def response_oauth_error?(res)
             res.is_a?(Response) && res.status == 401
           end
         end

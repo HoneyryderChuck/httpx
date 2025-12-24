@@ -55,7 +55,7 @@ module HTTPX
       def new(domain)
         return domain if domain.is_a?(self)
 
-        super(domain)
+        super
       end
 
       # Normalizes a _domain_ using the Punycode algorithm as necessary.

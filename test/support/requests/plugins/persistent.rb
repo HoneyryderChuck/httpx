@@ -10,16 +10,16 @@ module Requests
         response = non_persistent_session.get(uri)
         verify_status(response, 200)
         assert non_persistent_session.connections.size == 1, "should have been just 1"
-        assert non_persistent_session.connections.count(&:closed?) == 1, "should have been no open connections"
+        assert non_persistent_session.connections.one?(&:closed?), "should have been no open connections"
 
         persistent_session = non_persistent_session.plugin(:persistent)
         response = persistent_session.get(uri)
         verify_status(response, 200)
         assert persistent_session.connections.size == 1, "should have been just 1"
-        assert persistent_session.connections.count(&:closed?).zero?, "should have been open connections"
+        assert persistent_session.connections.none?(&:closed?), "should have been open connections"
 
         persistent_session.close
-        assert persistent_session.connections.count(&:closed?) == 1, "should have been no connections"
+        assert persistent_session.connections.one?(&:closed?), "should have been no connections"
       end
 
       def test_persistent_options

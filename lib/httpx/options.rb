@@ -444,6 +444,8 @@ module HTTPX
       end
     end
 
+    # rubocop:disable Lint/UselessConstantScoping
+    # these really need to be defined at the end of the class
     SET_TEMPORARY_NAME = ->(klass, pl = nil) do
       if klass.respond_to?(:set_temporary_name) # ruby 3.4 only
         name = klass.name || "#{klass.superclass.name}(plugin)"
@@ -499,5 +501,6 @@ module HTTPX
       :ip_families => nil,
       :close_on_fork => false,
     }.each_value(&:freeze).freeze
+    # rubocop:enable Lint/UselessConstantScoping
   end
 end

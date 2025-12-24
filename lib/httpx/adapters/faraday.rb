@@ -9,7 +9,7 @@ module Faraday
     class HTTPX < Faraday::Adapter
       def initialize(app = nil, opts = {}, &block)
         @connection = @bind = nil
-        super(app, opts, &block)
+        super
       end
 
       module RequestMixin
