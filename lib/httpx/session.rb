@@ -225,7 +225,7 @@ module HTTPX
 
     # tries deactivating connections in the +selector+, deregistering the ones that have been deactivated.
     def deactivate(selector)
-      selector.each_connection.each(&:deactivate)
+      selector.each_connection.to_a.each(&:deactivate)
     end
 
     # callback executed when an HTTP/2 promise frame has been received.
