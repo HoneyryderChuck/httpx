@@ -63,6 +63,7 @@ module HTTPX
     @header_value: String?
     @mime_type: String?
     @charset: String?
+    @initialized: bool
 
     def mime_type: () -> String?
 
@@ -71,6 +72,8 @@ module HTTPX
     private
 
     def initialize: (String? header_value) -> void
+
+    def load: () -> void
   end
 
   class ErrorResponse

@@ -211,16 +211,19 @@ module HTTPX
 
     def initialize(header_value)
       @header_value = header_value
+      @mime_type = @charset = nil
+      @initialized = false
     end
 
     # returns the mime type declared in the header.
     #
     #   ContentType.new("application/json; charset=utf-8").mime_type #=> "application/json"
     def mime_type
-      return @mime_type if defined?(@mime_type)
+      return @mime_type if @initialized
 
-      m = @header_value.to_s[MIME_TYPE_RE, 1]
-      m && @mime_type = m.strip.downcase
+      load
+
+      @mime_type
     end
 
     # returns the charset declared in the header.
@@ -228,10 +231,23 @@ module HTTPX
     #   ContentType.new("application/json; charset=utf-8").charset #=> "utf-8"
     #   ContentType.new("text/plain").charset #=> nil
     def charset
-      return @charset if defined?(@charset)
+      return @charset if @initialized
 
-      m = @header_value.to_s[CHARSET_RE, 1]
-      m && @charset = m.strip.delete('"')
+      load
+
+      @charset
+    end
+
+    private
+
+    def load
+      m = @header_value.to_s[MIME_TYPE_RE, 1]
+      m && @mime_type = m.strip.downcase
+
+      c = @header_value.to_s[CHARSET_RE, 1]
+      c && @charset = c.strip.delete('"')
+
+      @initialized = true
     end
   end
 
