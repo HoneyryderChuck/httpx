@@ -122,6 +122,12 @@ module HTTPX
 
         @max_connections_cond.signal
         @origin_conds[connection.origin.to_s].signal
+
+        # Observed situations where a session handling multiple requests in a loop
+        # across multiple threads checks the same connection in and out, while another
+        # thread which is waiting on the same connection never gets the chance to pick
+        # it up, because ruby's thread scheduler never switched on to it in the process.
+        Thread.pass
       end
     end
 
