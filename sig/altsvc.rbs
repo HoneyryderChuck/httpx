@@ -13,7 +13,7 @@ module HTTPX
 
       def match_altsvc_options?: (URI::Generic uri, Options options) -> bool
 
-      def altsvc_match?: (http_uri uri, http_uri other_uri) -> bool
+      def altsvc_match?: (uri uri, uri other_uri) -> bool
     end
 
     type altsvc_params = Hash[String, untyped]
