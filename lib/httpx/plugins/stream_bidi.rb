@@ -278,6 +278,8 @@ module HTTPX
           headers_sent = @headers_sent
 
           case nextstate
+          when :idle
+            headers_sent = false
           when :waiting_for_chunk
             return unless @state == :body
           when :body
