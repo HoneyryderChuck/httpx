@@ -275,6 +275,10 @@ module HTTPX
         def transition(nextstate)
           return super unless @options.stream
 
+          if nextstate == :idle
+            @headers_sent = false
+          end
+
           headers_sent = @headers_sent
 
           case nextstate
