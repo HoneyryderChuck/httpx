@@ -152,6 +152,42 @@ module Requests
           end
         end
       end
+
+      # https://github.com/HoneyryderChuck/httpx/issues/124
+      # Tests that bidirectional streaming requests don't crash on retry after connection failure.
+      # Without the fix, @headers_sent flag is not reset on retry, causing HTTP2::Error::InternalError.
+      def test_plugin_stream_bidi_retry_after_headers_sent
+        start_test_servlet(BidiFailOnce, tls: false) do |server|
+          uri = "#{server.origin}/"
+
+          start_msg = "{\"message\":\"started\"}\n"
+
+          # Use both stream_bidi and retries plugins
+          # retry_change_requests: true because POST is not idempotent
+          session = HTTPX.plugin(:stream_bidi)
+                         .plugin(:retries, retry_change_requests: true, max_retries: 2)
+
+          request = session.build_request(
+            "POST",
+            uri,
+            headers: { "content-type" => "application/x-ndjson" },
+            body: [start_msg],
+            stream: true
+          )
+
+          # Close the request immediately - we just want to test that
+          # the retry doesn't crash due to @headers_sent not being reset
+          request.close
+
+          response = session.request(request)
+
+          # If the bug exists (headers_sent not reset), this will raise
+          # HTTP2::Error::InternalError or cause a deadlock
+          # With the fix, the response should be a valid StreamResponse
+          refute response.is_a?(HTTPX::ErrorResponse), "expected successful response after retry, got #{response.class}: #{response.error if response.respond_to?(:error)}"
+          verify_status(response, 200)
+        end
+      end
     end
   end
 end
