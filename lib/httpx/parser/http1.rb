@@ -26,6 +26,7 @@ module HTTPX
         @headers = {}
         @content_length = nil
         @_has_trailers = nil
+        @buffer.clear
       end
 
       def upgrade?
