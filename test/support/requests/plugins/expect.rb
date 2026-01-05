@@ -65,7 +65,7 @@ module Requests
 
       def test_plugin_expect_100_form_params_417
         uri = build_uri("/status/417")
-        response = HTTPX.plugin(:expect).post(uri, form: { "foo" => "bar" })
+        response = HTTPX.plugin(:expect).post(uri, form: { "foo" => "bar" }, debug: STDERR, debug_level: 3)
 
         # we can't really test that the request would be successful without it, however we can
         # test whether the header has been removed from the request.

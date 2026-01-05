@@ -227,7 +227,7 @@ class HTTPSTest < Minitest::Test
   def test_https_request_with_ip_reconnect_succeeds
     start_test_servlet(ByIpCertServer) do |server|
       uri = "#{server.origin}/"
-      HTTPX.plugin(SessionWithPool).with(ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE }) do |http|
+      HTTPX.plugin(SessionWithPool).with(ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE }, debug: STDERR, debug_level: 3) do |http|
         2.times do
           response = http.get(uri)
           verify_status(response, 200)

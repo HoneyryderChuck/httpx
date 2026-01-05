@@ -22,7 +22,7 @@ class PoolTest < Minitest::Test
       uri = i.odd? ? URI(build_uri("/")) : URI(build_uri("/", "#{scheme}another2"))
 
       Thread.start do
-        HTTPX.with(pool_options: { max_connections: 2, pool_timeout: 30 }) do |http|
+        HTTPX.with(pool_options: { max_connections: 2, pool_timeout: 30 }, debug: STDERR, debug_level: 3) do |http|
           http.instance_variable_set(:@pool, pool)
           response = http.get(uri)
           mtx.synchronize { responses << response }
@@ -95,7 +95,7 @@ class PoolTest < Minitest::Test
     pool = ExtPool.new(max_connections_per_origin: 2)
     ths = 3.times.map do |_i|
       Thread.start do
-        HTTPX.with(pool_options: { max_connections_per_origin: 2, pool_timeout: 30 }) do |http|
+        HTTPX.with(pool_options: { max_connections_per_origin: 2, pool_timeout: 30 }, debug: STDERR, debug_level: 3) do |http|
           http.instance_variable_set(:@pool, pool)
           response = http.get(uri)
           mtx.synchronize { responses << response }
