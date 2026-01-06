@@ -111,7 +111,7 @@ services:
     environment:
       - DEBUG=True
     image: citizenstig/httpbin
-    command: gunicorn --bind=0.0.0.0:8000 --workers=6 --access-logfile - --error-logfile - --log-level debug --capture-output httpbin:app
+    command: gunicorn --bind=0.0.0.0:8000 --workers=12 --access-logfile - --error-logfile - --log-level debug --capture-output httpbin:app
 
   aws:
     image: localstack/localstack
