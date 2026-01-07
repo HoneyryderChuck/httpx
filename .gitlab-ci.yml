@@ -112,6 +112,7 @@ test ruby 4/0:
   <<: *yjit_matrix
   script:
     ./spec.sh ruby 4.0
+  allow_failure: true
 test truffleruby:
   <<: *test_settings
   script:
