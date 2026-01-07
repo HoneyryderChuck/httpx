@@ -16,6 +16,13 @@ module HTTPX
         }
       end
 
+      # adds support for the following options:
+      #
+      # :auth_header_value :: the token to use as a string, or a callable which returns a string when called.
+      # :auth_header_type :: the authentication type to use in the "authorization" header value (i.e. "Bearer", "Digest"...)
+      # :generate_auth_value_on_retry :: callable which returns whether the request should regenerate the auth_header_value
+      #                                  when the request is retried (this option will only work if the session also loads the
+      #                                  <tt>:retries</tt> plugin).
       module OptionsMethods
         def option_auth_header_value(value)
           value

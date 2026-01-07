@@ -180,6 +180,10 @@ module HTTPX
         end
       end
 
+      # adds support for the following options:
+      #
+      # :oauth_options :: an hash of options to be used during session management.
+      #                   check the parameters to initialize the OAuthSession class.
       module OptionsMethods
         private
 
