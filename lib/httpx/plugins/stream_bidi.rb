@@ -327,7 +327,17 @@ module HTTPX
       module RequestBodyMethods
         def initialize(*, **)
           super
-          @headers.delete("content-length") if @options.stream
+
+          return unless @options.stream
+
+          @headers.delete("content-length")
+
+          return unless @body
+
+          return if @body.is_a?(Transcoder::Body::Encoder)
+
+          raise Error, "bidirectional streams only allow the usage of the `:body` param to set request bodies." \
+                       "You must encode it yourself if you wish to do so."
         end
 
         def empty?

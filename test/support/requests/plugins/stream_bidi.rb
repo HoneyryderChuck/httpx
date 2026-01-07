@@ -15,6 +15,14 @@ module Requests
         verify_status(response, 200)
       end
 
+      def test_plugin_stream_bidi_does_not_support_non_body_request
+        uri = build_uri("/post")
+        session = HTTPX.plugin(:stream_bidi)
+        assert_raises(HTTPX::Error) do
+          session.build_request("POST", uri, json: { foo: "bar" }, stream: true)
+        end
+      end
+
       def test_plugin_stream_bidi_persistent_session_close
         session = HTTPX.with(persistent: true).plugin(:stream_bidi)
         session.close # should not raise NoMethodError: undefined method `inflight?' for Signal

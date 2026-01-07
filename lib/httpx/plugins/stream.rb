@@ -164,7 +164,7 @@ module HTTPX
 
             unless request.options.stream && !request.stream
               if options[:stream]
-                warn "passing `stream: true` with a request obkect is not supported anymore. " \
+                warn "passing `stream: true` with a request object is not supported anymore. " \
                      "You can instead build the request object with `stream :true`"
               end
               return super
