@@ -177,7 +177,7 @@ module HTTPX
 
     # returns the HTTPX::Connection through which the +request+ should be sent through.
     def find_connection(request_uri, selector, options)
-      log(level: 2) { "finding connection for ##{request_uri}..." }
+      log(level: 2) { "finding connection for #{request_uri}..." }
       if (connection = selector.find_connection(request_uri, options))
         connection.idling if connection.state == :closed
         connection.log(level: 2) { "found connection##{connection.object_id}(#{connection.state}) in selector##{selector.object_id}" }
