@@ -217,7 +217,7 @@ module HTTPX
 
           @stream.on_chunk(chunk.dup)
 
-          chunk.size
+          chunk.bytesize
         end
 
         private

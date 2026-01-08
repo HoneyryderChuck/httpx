@@ -59,13 +59,11 @@ module HTTPX
 
       chunk = decode_chunk(chunk)
 
-      size = chunk.bytesize
-      @length += size
       transition(:open)
       @buffer.write(chunk)
 
       @response.emit(:chunk_received, chunk)
-      size
+      chunk.bytesize
     end
 
     # reads a chunk from the payload (implementation of the IO reader protocol).
@@ -208,6 +206,8 @@ module HTTPX
       @inflaters.reverse_each do |inflater|
         chunk = inflater.call(chunk)
       end if @inflaters
+
+      @length += chunk.bytesize
 
       chunk
     end
