@@ -38,12 +38,15 @@ module WebMock
 
           return build_error_response(request, webmock_response.exception) if webmock_response.exception
 
-          request.options.response_class.new(request,
-                                             webmock_response.status[0],
-                                             "2.0",
-                                             webmock_response.headers).tap do |res|
-            res.mocked = true
-          end
+          request
+            .options
+            .response_class
+            .new(
+              request,
+              webmock_response.status[0],
+              "2.0",
+              webmock_response.headers
+            ).tap(&:mock!)
         end
 
         def build_error_response(request, exception)
@@ -72,17 +75,23 @@ module WebMock
       end
 
       module ResponseMethods
-        attr_accessor :mocked
-
         def initialize(*)
           super
           @mocked = false
+        end
+
+        def mock!
+          @mocked = true
+        end
+
+        def mocked?
+          @mocked
         end
       end
 
       module ResponseBodyMethods
         def decode_chunk(chunk)
-          return chunk if @response.mocked
+          return chunk if @response.mocked?
 
           super
         end
