@@ -724,7 +724,7 @@ module HTTPX
 
         disconnect
       when :closing
-        return unless @state == :idle || @state == :open
+        return unless connecting? || @state == :open
 
         unless @write_buffer.empty?
           # preset state before handshake, as error callbacks
