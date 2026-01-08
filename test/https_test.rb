@@ -89,6 +89,24 @@ class HTTPSTest < Minitest::Test
 
   # HTTP/2-specific tests
 
+  def test_http2_set_priority_params
+    skip if defined?(RBS) # test would fail because :foo not a valid kwarg anyway
+
+    uri = build_uri("/get")
+    HTTPX.plugin(SessionWithPool).with(fallback_protocol: "h2") do |http|
+      error_response = http.get(uri, http2_stream_options: { foo: "bar" })
+      verify_error_response(error_response, ArgumentError)
+      response = http.get(uri, http2_stream_options: { weight: 80 })
+      verify_status(response, 200)
+      assert http.connection_count == 1
+      conn = http.connections.first
+      assert conn.parser.is_a?(HTTPX::Connection::HTTP2)
+      request = response.request
+      stream = request.stream
+      assert stream.weight == 80
+    end
+  end
+
   {
     http1: { uri: "https://aws:4566", ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE, alpn_protocols: %w[http/1.1] } },
     http2: {},

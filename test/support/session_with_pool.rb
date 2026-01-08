@@ -61,6 +61,22 @@ module SessionWithPool
     end
   end
 
+  module RequestMethods
+    attr_accessor :stream # http2 stream
+  end
+
+  module ResponseMethods
+    attr_reader :request
+  end
+
+  module HTTP2Methods
+    def handle_stream(stream, request)
+      request.stream = stream
+
+      super
+    end
+  end
+
   module ResolverNativeMethods
     attr_reader :timeouts, :tries, :connections
 

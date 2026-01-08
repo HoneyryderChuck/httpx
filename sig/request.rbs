@@ -14,6 +14,7 @@ module HTTPX
     attr_reader state: Symbol
     attr_reader options: Options
     attr_reader response: response?
+    attr_reader http2_stream_options: { ?dependency: Integer, ?exclusive: bool, ?weight: Integer }
     attr_reader drain_error: StandardError?
     attr_reader active_timeouts: Array[Symbol]
 
