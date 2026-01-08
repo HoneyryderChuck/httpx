@@ -43,10 +43,6 @@ module HTTPX
         end
 
         module ConnectionMethods
-          def connecting?
-            super || @state == :connecting || @state == :connected
-          end
-
           def force_close(*)
             if @state == :connecting
               # proxy connect related requests should not be reenqueed
