@@ -39,6 +39,10 @@ module HTTPX
     # Exception raised during enumerable body writes.
     attr_reader :drain_error
 
+    # when this request is sent via HTTP/2, it'll use this hash of options to set the priority of the
+    # respective HTTP/2 frame.
+    attr_reader :http2_stream_options
+
     # The IP address from the peer server.
     attr_accessor :peer_address
 
@@ -64,6 +68,7 @@ module HTTPX
     # :form :: hash of array of key-values which will be form-urlencoded- or multipart-encoded in requests body payload.
     # :json :: hash of array of key-values which will be JSON-encoded in requests body payload.
     # :xml :: Nokogiri XML nodes which will be encoded in requests body payload.
+    # :http2_stream_options :: hash of options to be used to set the HTTP/2 priority by sending an initial PRIORITY frame.
     #
     # :body, :form, :json and :xml are all mutually exclusive, i.e. only one of them gets picked up.
     def initialize(verb, uri, options, params = EMPTY_HASH)
@@ -74,6 +79,8 @@ module HTTPX
       merge_headers(params.delete(:headers)) if params.key?(:headers)
 
       @query_params = params.delete(:params) if params.key?(:params)
+
+      @http2_stream_options = params.key?(:http2_stream_options) ? params.delete(:http2_stream_options) : EMPTY_HASH
 
       @body = options.request_body_class.new(@headers, options, **params)
 
