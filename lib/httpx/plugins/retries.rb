@@ -190,9 +190,9 @@ module HTTPX
           IDEMPOTENT_METHODS.include?(request.verb) || options.retry_change_requests
         end
 
-        # returns whether the +ex+ exception happend for a retriable request.
+        # returns whether the +ex+ exception happened for a retriable request.
         def retryable_error?(ex)
-          RETRYABLE_ERRORS.any? { |klass| ex.is_a?(klass) }
+          RETRYABLE_ERRORS.any? { |klass| ex.is_a?(klass) } && !ex.is_a?(TotalRequestTimeoutError)
         end
 
         def proxy_error?(request, response, _)
