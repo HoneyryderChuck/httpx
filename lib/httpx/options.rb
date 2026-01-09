@@ -11,9 +11,8 @@ module HTTPX
     SETTINGS_TIMEOUT = 10
     CLOSE_HANDSHAKE_TIMEOUT = 10
     CONNECT_TIMEOUT = READ_TIMEOUT = WRITE_TIMEOUT = 60
-    REQUEST_TIMEOUT = OPERATION_TIMEOUT = nil
+    REQUEST_TIMEOUT = OPERATION_TIMEOUT = TOTAL_REQUEST_TIMEOUT = nil
     RESOLVER_TYPES = %i[memory file].freeze
-
     # default value used for "user-agent" header, when not overridden.
     USER_AGENT = "httpx.rb/#{VERSION}".freeze # rubocop:disable Style/RedundantFreeze
 
@@ -79,8 +78,8 @@ module HTTPX
     # :decompress_response_body :: whether to auto-decompress response body (defaults to <tt>true</tt>).
     # :compress_request_body :: whether to auto-decompress response body (defaults to <tt>true</tt>)
     # :timeout :: hash of timeout configurations (supports <tt>:connect_timeout</tt>, <tt>:settings_timeout</tt>,
-    #             <tt>:operation_timeout</tt>, <tt>:keep_alive_timeout</tt>,  <tt>:read_timeout</tt>,  <tt>:write_timeout</tt>
-    #             and <tt>:request_timeout</tt>
+    #             <tt>:operation_timeout</tt>, <tt>:keep_alive_timeout</tt>,  <tt>:read_timeout</tt>,  <tt>:write_timeout</tt>,
+    #             <tt>:request_timeout</tt> and <tt>:total_request_timeout</tt>
     # :headers :: hash of HTTP headers (ex: <tt>{ "x-custom-foo" => "bar" }</tt>)
     # :window_size :: number of bytes to read from a socket
     # :buffer_size :: internal read and write buffer size in bytes
@@ -546,6 +545,7 @@ module HTTPX
         read_timeout: READ_TIMEOUT,
         write_timeout: WRITE_TIMEOUT,
         request_timeout: REQUEST_TIMEOUT,
+        total_request_timeout: TOTAL_REQUEST_TIMEOUT,
       }.freeze,
       :headers_class => Class.new(Headers, &SET_TEMPORARY_NAME),
       :headers => EMPTY_HASH,
