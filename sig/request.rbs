@@ -27,10 +27,13 @@ module HTTPX
     @informational_status: Integer?
     @query: String?
     @drainer: Enumerator[String, void]?
+    @started: bool
 
     def initialize: (Symbol | String verb, generic_uri uri, Options options, ?request_params params) -> untyped
 
     def complete!: (?response response) -> void
+
+    def started?: () -> bool
 
     def ping?: () -> bool
 
