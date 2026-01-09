@@ -141,6 +141,7 @@ class OptionsTest < Minitest::Test
         read_timeout: 60,
         write_timeout: 60,
         request_timeout: nil,
+        total_request_timeout: nil,
       },
       :ssl => { :foo => "bar" },
       :fallback_protocol => "http/1.1",

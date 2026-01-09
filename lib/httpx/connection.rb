@@ -875,6 +875,7 @@ module HTTPX
       set_request_write_timeout(request)
       set_request_read_timeout(request)
       set_request_request_timeout(request)
+      set_request_total_request_timeout(request)
     end
 
     def set_request_read_timeout(request)
@@ -925,6 +926,18 @@ module HTTPX
       error = error_type.new(request, request.response, read_timeout)
 
       on_error(error, request)
+    end
+
+    def set_request_total_request_timeout(request)
+      return if request.started?
+
+      total_request_timeout = request.total_request_timeout
+
+      return if total_request_timeout.nil? || total_request_timeout.infinite?
+
+      set_request_timeout(:total_request_timeout, request, total_request_timeout, :headers, :complete) do
+        read_timeout_callback(request, total_request_timeout, TotalRequestTimeoutError)
+      end
     end
 
     def set_request_timeout(label, request, timeout, start_event, finish_events, &callback)

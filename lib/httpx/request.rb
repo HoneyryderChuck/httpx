@@ -92,7 +92,7 @@ module HTTPX
 
       @state = :idle
       @response = @peer_address = @informational_status = nil
-      @ping = false
+      @ping = @started = false
       @persistent = @options.persistent
       @active_timeouts = []
     end
@@ -134,6 +134,11 @@ module HTTPX
       @options.timeout[:request_timeout]
     end
 
+    # the total request timeout defined for this request.
+    def total_request_timeout
+      @options.timeout[:total_request_timeout]
+    end
+
     def persistent?
       @persistent
     end
@@ -157,6 +162,10 @@ module HTTPX
 
     def can_buffer?
       @state != :done
+    end
+
+    def started?
+      @started
     end
 
     # merges +h+ into the instance of HTTPX::Headers of the request.
@@ -280,6 +289,7 @@ module HTTPX
       when :headers
         return unless @state == :idle
 
+        @started = true
       when :body
         return unless @state == :headers ||
                       @state == :expect

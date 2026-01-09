@@ -17,6 +17,16 @@ module Requests
         assert retries_session.calls == 3, "expect request to be built 3 times (was #{retries_session.calls})"
       end
 
+      def test_plugin_retries_total_request_timeout_across_attempts
+        uri = build_uri("/delay/10")
+        session = HTTPX.plugin(RequestInspector)
+                       .plugin(:retries, max_retries: 3)
+                       .with(timeout: { total_request_timeout: 8, read_timeout: 5 })
+        response = session.get(uri)
+        verify_error_response(response, HTTPX::TotalRequestTimeoutError)
+        assert session.total_responses.size == 2
+      end
+
       def test_plugin_retries_change_requests
         check_error = ->(response) { response.is_a?(HTTPX::ErrorResponse) || response.status == 405 }
         retries_session = HTTPX
