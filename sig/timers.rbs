@@ -16,7 +16,7 @@ module HTTPX
 
     private
 
-    def drop_elapsed!: (?Numeric elapsed_time) -> void
+    def drop_elapsed!: (Numeric elapsed_time) -> void
 
     class Interval
       include Comparable

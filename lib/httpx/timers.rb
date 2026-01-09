@@ -29,13 +29,15 @@ module HTTPX
     end
 
     def wait_interval
-      drop_elapsed!
-
       return if @intervals.empty?
+
+      first_interval = @intervals.first
+
+      drop_elapsed!(0) if first_interval.elapsed?(0)
 
       @next_interval_at = Utils.now
 
-      @intervals.first.interval
+      first_interval.interval
     end
 
     def fire(error = nil)
@@ -46,20 +48,12 @@ module HTTPX
 
       drop_elapsed!(elapsed_time)
 
-      @intervals = @intervals.drop_while { |interval| interval.elapse(elapsed_time) <= 0 }
-
       @next_interval_at = nil if @intervals.empty?
     end
 
     private
 
-    def drop_elapsed!(elapsed_time = 0)
-      # check first, if not elapsed, then return
-      first_interval = @intervals.first
-
-      return unless first_interval && first_interval.elapsed?(elapsed_time)
-
-      # TODO: would be nice to have a drop_while!
+    def drop_elapsed!(elapsed_time)
       @intervals = @intervals.drop_while { |interval| interval.elapse(elapsed_time) <= 0 }
     end
 
