@@ -6,6 +6,10 @@ module SessionWithMockResponse
       status
     end
 
+    def option_mock_tries(tries)
+      Integer(tries)
+    end
+
     def option_mock_headers(headers)
       headers
     end
@@ -18,7 +22,7 @@ module SessionWithMockResponse
   module InstanceMethods
     def initialize(*)
       super
-      @mock_responses_counter = 1
+      @mock_responses_counter = @options.mock_tries || 1
     end
 
     def set_request_callbacks(request)

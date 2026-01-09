@@ -181,6 +181,8 @@ module HTTPX
 
     def write_timeout_callback: (Request request, Numeric timeout) -> void
 
+    def set_request_total_request_timeout: (Request request) -> void
+
     def read_timeout_callback: (Request request, Numeric timeout, ?singleton(RequestTimeoutError) error_type) -> void
 
     def set_request_timeout: (Symbol label, Request request, Numeric timeout, Symbol start_event, Symbol | Array[Symbol] finish_events) { () -> void } -> void

@@ -62,6 +62,10 @@ module HTTPX
   # Error raised when there was a timeout while sending a request from the server.
   class WriteTimeoutError < RequestTimeoutError; end
 
+  # Error raised when a response couldn't be received for a request after multiple interactions.
+  # This error should not be retriable.
+  class TotalRequestTimeoutError < RequestTimeoutError; end
+
   # Error raised when there was a timeout while waiting for the HTTP/2 settings frame from the server.
   class SettingsTimeoutError < TimeoutError; end
 
