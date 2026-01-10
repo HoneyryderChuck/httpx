@@ -31,7 +31,7 @@ module HTTPX
       use_get: false,
     }.freeze
 
-    def_delegators :@resolver_connection, :state, :connecting?, :to_io, :call, :close,
+    def_delegators :@resolver_connection, :connecting?, :to_io, :call, :close,
                    :closed?, :deactivate, :terminate, :inflight?, :handle_socket_timeout
 
     def initialize(_, options)
@@ -46,6 +46,10 @@ module HTTPX
       @resolver = Resolv::DNS.new
       @resolver.timeouts = @_timeouts.empty? ? Resolver::RESOLVE_TIMEOUT : @_timeouts
       @resolver.lazy_initialize
+    end
+
+    def state
+      @resolver_connection ? @resolver_connection.state : :idle
     end
 
     def <<(connection)
