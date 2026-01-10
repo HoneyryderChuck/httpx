@@ -26,6 +26,25 @@ module HTTPX
 
       def <<: (Connection) -> void
 
+      # delegated to resolver connection
+      def connecting?: () -> bool
+
+      def to_io: () ->  IO
+
+      def call: () -> void
+
+      def close: () -> void
+
+      # def closed?: () -> bool
+
+      def deactivate: () -> void
+
+      def terminate: () -> void
+
+      def inflight?: () -> bool
+
+      def handle_socket_timeout: (Numeric interval) -> void
+
       private
 
       def initialize: (ip_family family, options options) -> void
