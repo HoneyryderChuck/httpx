@@ -127,13 +127,15 @@ module HTTPX
     private
 
     def select(interval, &block)
-      has_no_selectables = @selectables.empty?
       # do not cause an infinite loop here.
       #
       # this may happen if timeout calculation actually triggered an error which causes
       # the connections to be reaped (such as the total timeout error) before #select
       # gets called.
-      return if interval.nil? && has_no_selectables
+      if @selectables.empty?
+        sleep(interval) if interval
+        return
+      end
 
       # @type var r: (selectable | Array[selectable])?
       # @type var w: (selectable | Array[selectable])?
@@ -171,7 +173,7 @@ module HTTPX
         when Array
           select_many(r, w, interval, &block)
         when nil
-          return unless interval && has_no_selectables
+          return unless interval && @selectables.any?
 
           # no selectables
           # TODO: replace with sleep?
