@@ -37,9 +37,9 @@ module HTTPX
     @read_buffer: Buffer
     @write_buffer: Buffer
     @inflight: Integer
-    @keep_alive_timeout: Numeric?
-    @timeout: Numeric?
-    @current_timeout: Numeric?
+    @keep_alive_timeout: interval?
+    @timeout: interval?
+    @current_timeout: interval?
     @parser: Object & _Parser
     @connected_at: Float
     @response_received_at: Float
@@ -99,7 +99,7 @@ module HTTPX
 
     def reset: () -> void
 
-    def timeout: () -> Numeric?
+    def timeout: () -> interval?
 
     def idling: () -> void
 
@@ -109,7 +109,7 @@ module HTTPX
 
     def open?: () -> bool
 
-    def handle_socket_timeout: (Numeric interval) -> void
+    def handle_socket_timeout: (interval interval) -> void
 
     def sibling=: (instance? connection) -> void
 
@@ -167,11 +167,11 @@ module HTTPX
 
     def set_request_total_request_timeout: (Request request) -> void
 
-    def write_timeout_callback: (Request request, Numeric write_timeout) -> void
+    def write_timeout_callback: (Request request, interval write_timeout) -> void
 
-    def read_timeout_callback: (Request request, Numeric read_timeout, ?singleton(RequestTimeoutError) error_type) -> void
+    def read_timeout_callback: (Request request, interval read_timeout, ?singleton(RequestTimeoutError) error_type) -> void
 
-    def set_request_timeout: (Symbol label, Request request, Numeric timeout, Symbol start_event, Symbol | Array[Symbol] finish_events) { () -> void } -> void
+    def set_request_timeout: (Symbol label, Request request, interval timeout, Symbol start_event, Symbol | Array[Symbol] finish_events) { () -> void } -> void
 
     def parser_type: (String protocol) -> (singleton(HTTP1) | singleton(HTTP2))
   end

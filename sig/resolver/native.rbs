@@ -14,8 +14,8 @@ module HTTPX
       @ndots: Integer
       @start_timeout: Float?
       @search: Array[String]
-      @_timeouts: Array[Numeric]
-      @timeouts: Hash[String, Array[Numeric]]
+      @_timeouts: Array[interval]
+      @timeouts: Hash[String, Array[interval]]
       @queries: Hash[String, Connection]
       @connections: Array[Connection]
       @read_buffer: String
@@ -33,9 +33,9 @@ module HTTPX
 
       def <<: (Connection) -> void
 
-      def timeout: () -> Numeric?
+      def timeout: () -> interval?
 
-      def handle_socket_timeout: (Numeric interval) -> void
+      def handle_socket_timeout: (interval interval) -> void
 
       private
 
@@ -47,7 +47,7 @@ module HTTPX
 
       def schedule_retry: () -> void
 
-      def do_retry: (String host, Connection connection, Numeric interval) -> void
+      def do_retry: (String host, Connection connection, interval interval) -> void
 
       def dread: (Integer) -> void
                | () -> void

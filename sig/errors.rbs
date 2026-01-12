@@ -9,12 +9,12 @@ module HTTPX
   end
 
   class TimeoutError < Error
-    attr_reader timeout: Numeric
+    attr_reader timeout: interval
 
     def to_connection_error: () -> ConnectTimeoutError
     private
 
-    def initialize: (Numeric timeout, String message) -> untyped
+    def initialize: (interval timeout, String message) -> untyped
   end
 
   class PoolTimeoutError < TimeoutError
@@ -33,7 +33,7 @@ module HTTPX
     attr_reader request: Request
     attr_reader response: response?
 
-    def initialize: (Request request, response? response, Numeric timeout) -> void
+    def initialize: (Request request, response? response, interval timeout) -> void
   end
 
   class ReadTimeoutError < RequestTimeoutError

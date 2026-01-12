@@ -1,7 +1,7 @@
 module HTTPX
   module Resolver
     class Multi
-      attr_reader resolvers: Array[Native | HTTPS]
+      attr_reader resolvers: Array[HTTPX::Resolver::Resolver]
 
       attr_reader options: Options
 
@@ -20,6 +20,10 @@ module HTTPX
       def early_resolve: (Connection connection) -> bool
 
       def lazy_resolve: (Connection connection) -> void
+
+      private
+
+      def initialize: (resolver_type resolver_type, Options options) -> void
     end
   end
 end
