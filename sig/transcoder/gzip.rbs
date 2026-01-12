@@ -5,11 +5,12 @@ module HTTPX
       def self?.decode: (Response response, ?bytesize: Integer) -> Inflater
 
       class Deflater < Transcoder::Deflater
+        include _Writer
+
         @compressed_chunk: String
+        @deflater: Zlib::GzipWriter
 
         private
-
-        def write: (String chunk) -> void
 
         def compressed_chunk: () -> String
       end

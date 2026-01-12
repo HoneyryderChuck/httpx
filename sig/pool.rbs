@@ -1,7 +1,7 @@
 module HTTPX
   type pool_options = {
     max_connections_per_origin: Integer?,
-    pool_timeout: Numeric?
+    pool_timeout: interval?
   }
 
   class Pool
@@ -11,7 +11,7 @@ module HTTPX
 
     @max_connections: Integer
     @max_connections_per_origin: Integer
-    @pool_timeout: Numeric
+    @pool_timeout: interval
     @options: Options
     @resolvers: Hash[Class, Array[resolver_manager]]
     @resolver_mtx: Thread::Mutex
