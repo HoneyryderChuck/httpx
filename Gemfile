@@ -24,7 +24,7 @@ group :test do
   gem "websocket-driver"
 
   platform :mri do
-    gem "grpc" unless RUBY_VERSION >= "4.0.0"
+    gem "grpc"
     gem "logging"
     gem "marcel", require: false
     gem "mimemagic", require: false
