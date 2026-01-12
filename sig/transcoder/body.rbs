@@ -5,7 +5,7 @@ module HTTPX
       end
 
       class Encoder #  < SimpleDelegator
-        @raw: Object & bodyIO
+        @body: Object & bodyIO
 
         def bytesize: () -> (Integer | Float)
 

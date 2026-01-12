@@ -8,15 +8,18 @@ module HTTPX
 
     def interests: () -> io_interests?
 
-    def timeout: () -> Numeric?
+    def timeout: () -> interval?
 
-    def handle_socket_timeout: (Numeric interval) -> void
+    def handle_socket_timeout: (interval interval) -> void
 
     def on_error: (StandardError) -> void
+
+    def terminate: () -> void
   end
 
   class Selector
-    type selectable = Resolver::Resolver | Connection | (Object & _Selectable)
+
+    type selectable = Resolver::Resolver | Connection | (Object & _Loggable & _Selectable)
 
     type io_select_selectable = (selectable | Array[selectable])?
 
@@ -55,15 +58,15 @@ module HTTPX
 
     def initialize: () -> void
 
-    def select: (Numeric? interval) { (selectable) -> void } -> void
+    def select: (interval? interval) { (selectable) -> void } -> void
 
-    def select_many: (io_select_selectable r, io_select_selectable w, Numeric? interval) { (selectable) -> void } -> void
+    def select_many: (io_select_selectable r, io_select_selectable w, interval? interval) { (selectable) -> void } -> void
 
-    def select_one: (selectable io, io_interests interests, Numeric? interval) { (selectable) -> void } -> void
+    def select_one: (selectable io, io_interests interests, interval? interval) { (selectable) -> void } -> void
 
-    def next_timeout: () -> Numeric?
+    def next_timeout: () -> interval?
 
-    def rw_wait: (io_select_selectable IO, Numeric? interval) -> untyped?
+    def rw_wait: (io_select_selectable IO, interval? interval) -> untyped?
   end
 
   type io_interests = :r | :w | :rw

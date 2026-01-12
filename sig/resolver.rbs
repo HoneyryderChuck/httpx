@@ -1,7 +1,10 @@
 module HTTPX
   type ipaddr = String | IPAddr | Resolv::IPv4 | Resolver::Entry
 
+  type resolver_type = singleton(HTTPX::Resolver::Resolver)
+
   module Resolver
+
     type dns_resource = singleton(Resolv::DNS::Resource)
 
     type dns_result = { "name" => String, "TTL" => Numeric, "alias" => String }

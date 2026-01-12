@@ -2,6 +2,8 @@ module HTTPX
   class Options
     # include _ToHash
 
+    type maybe_unbounded = Integer | Float # because infinity
+
     BUFFER_SIZE: Integer
     WINDOW_SIZE: Integer
     MAX_BODY_THRESHOLD_SIZE: Integer
@@ -22,7 +24,7 @@ module HTTPX
     USER_AGENT: String
 
     type timeout_type = :connect_timeout | :settings_timeout | :close_handshake_timeout | :operation_timeout | :keep_alive_timeout | :read_timeout | :write_timeout | :total_request_timeout | :request_timeout
-    type timeout = Hash[timeout_type, Numeric?]
+    type timeout = Hash[timeout_type, interval?]
     type redact_value = :headers | :body | bool
     type resolver_cache_option = :memory | :file | (Object & Resolver::_Cache)
 
@@ -43,10 +45,10 @@ module HTTPX
     attr_reader http2_settings: Hash[Symbol, Integer | bool]
 
     # max_concurrent_requests
-    attr_reader max_concurrent_requests: Integer?
+    attr_reader max_concurrent_requests: maybe_unbounded?
 
     # max_requests
-    attr_reader max_requests: Numeric?
+    attr_reader max_requests: maybe_unbounded?
 
     # window_size
     attr_reader window_size: Integer
@@ -160,12 +162,12 @@ module HTTPX
     def access_option: (Hash[Symbol, untyped] | Object | nil obj, Symbol k, Hash[Symbol, Symbol]? ivar_map) -> untyped
 
     # integer
-    def option_max_concurrent_requests: (Numeric value) -> Numeric
-    def option_max_requests: (Numeric value) -> Numeric
-    def option_window_size: (Numeric value) -> Numeric
-    def option_buffer_size: (Numeric value) -> Numeric
-    def option_body_threshold_size: (Numeric value) -> Numeric
-    def option_debug_level: (Numeric value) -> Numeric
+    def option_max_concurrent_requests: (int value) -> maybe_unbounded
+    def option_max_requests: (int value) -> maybe_unbounded
+    def option_window_size: (int value) -> Integer
+    def option_buffer_size: (int value) -> Integer
+    def option_body_threshold_size: (int value) -> Integer
+    def option_debug_level: (int value) -> Integer
 
     # to hash
     def option_ssl: (_ToHash[Symbol, untyped] value) -> Hash[Symbol, untyped]
@@ -182,7 +184,7 @@ module HTTPX
     def option_connection_class: (singleton(Connection) value) -> singleton(Connection)
     def option_options_class: (singleton(Options) value) -> singleton(Options)
     def option_pool_class: (singleton(Pool) value) -> singleton(Pool)
-    def option_resolver_class: (Symbol | singleton(Resolver::Resolver) value) -> (Symbol | singleton(Resolver::Resolver))
+    def option_resolver_class: (Symbol | resolver_type value) -> (Symbol | resolver_type)
     def option_io: (io_option value) -> io_option
     def option_fallback_protocol: (String value) -> String
     def option_debug: (_IOLogger value) -> _IOLogger
@@ -200,7 +202,7 @@ module HTTPX
 
     def option_headers: (headers_input | Headers value) -> Headers
 
-    def option_timeout: (_ToHash[timeout_type, Numeric?]) -> timeout
+    def option_timeout: (_ToHash[timeout_type, interval?]) -> timeout
 
     def option_supported_compression_formats: (_ToS | _ToAry[_ToS] value) -> Array[String]
 

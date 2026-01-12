@@ -40,7 +40,7 @@ module HTTPX
     type streamRequest = Request & Plugins::Stream::RequestMethods
 
     attr_reader request: streamRequest
-    @options: Options & _StreamOptions
+    @options: Options & Plugins::Stream::_StreamOptions
 
     @session: Plugins::sessionStream
     @response_enum: Enumerator[String]?

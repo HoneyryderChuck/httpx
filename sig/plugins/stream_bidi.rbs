@@ -35,8 +35,6 @@ module HTTPX
         def wakeup: () -> void
 
         def inflight?: () -> bool
-
-        def terminate: () -> void
       end
 
       module InstanceMethods

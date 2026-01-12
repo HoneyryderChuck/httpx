@@ -6,7 +6,7 @@ module HTTPX
 
         def move: (String src, String dst) -> (Response | ErrorResponse)
 
-        def lock: (String path, ?timeout: Numeric) ?{ (Response response) -> void } -> (Response | ErrorResponse)
+        def lock: (String path, ?timeout: interval) ?{ (Response response) -> void } -> (Response | ErrorResponse)
 
         def unlock: (String path, String? lock_token) -> (Response | ErrorResponse)
 
