@@ -6,9 +6,9 @@ require "test_helper"
 class Expect417Test < Minitest::Test
   include HTTPHelpers
 
-  %w[http:// https://].each do |scheme|
+  %w[http https].each do |scheme|
     define_method :"test_plugin_expect_100_#{scheme}_form_params_417" do
-      uri = "#{scheme}#{httpbin}/status/417"
+      uri = "#{scheme}://#{httpbin}/status/417"
       response = HTTPX.plugin(:expect).post(uri, form: { "foo" => "bar" })
 
       # we can't really test that the request would be successful without it, however we can
