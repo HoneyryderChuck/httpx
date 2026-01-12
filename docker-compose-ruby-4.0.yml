@@ -1,6 +1,6 @@
 services:
   httpx:
-    image: ruby:4.0-rc
+    image: ruby:4.0
     environment:
       - HTTPBIN_COALESCING_HOST=another
       - HTTPX_RESOLVER_URI=https://doh/dns-query

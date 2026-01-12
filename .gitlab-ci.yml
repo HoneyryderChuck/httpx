@@ -40,7 +40,7 @@ cache:
     - vendor
 
 lint rubocop code:
-  image: "ruby:3.4"
+  image: "ruby:4.0"
   variables:
     BUNDLE_WITHOUT: test:coverage:assorted
   before_script:
@@ -48,7 +48,7 @@ lint rubocop code:
   script:
     - bundle exec rake rubocop
 lint rubocop wiki:
-  image: "ruby:3.4"
+  image: "ruby:4.0"
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
   variables:
@@ -62,7 +62,7 @@ lint rubocop wiki:
         - rubocop-md
 
       AllCops:
-        TargetRubyVersion: 3.4
+        TargetRubyVersion: 4.0
         DisabledByDefault: true
       FILE
   script:
@@ -112,18 +112,17 @@ test ruby 4/0:
   <<: *yjit_matrix
   script:
     ./spec.sh ruby 4.0
-  allow_failure: true
 test truffleruby:
   <<: *test_settings
   script:
     ./spec.sh truffleruby latest
   allow_failure: true
 regression tests:
-  image: "ruby:3.4"
+  image: "ruby:4.0"
   variables:
     BUNDLE_WITHOUT: lint:assorted
     CI: 1
-    COVERAGE_KEY: "ruby-3.4-regression-tests"
+    COVERAGE_KEY: "ruby-4.0-regression-tests"
   artifacts:
     paths:
       - coverage/
@@ -136,7 +135,7 @@ regression tests:
 # TODO: uncomment this if docker ever supports ipv6 connectivity, or CI runs
 # outside of docker
 # smoke_tests:
-#   image: "ruby:3.4"
+#   image: "ruby:4.0"
 #   variables:
 #     BUNDLE_WITHOUT: lint:assorted
 #     CI: 1
@@ -157,8 +156,7 @@ coverage:
   stage: prepare
   variables:
     BUNDLE_WITHOUT: lint:test:assorted
-
-  image: "ruby:3.4"
+  image: "ruby:4.0"
   script:
     - gem install simplecov --no-doc
     # this is a workaround, because simplecov doesn't support relative paths.
@@ -180,7 +178,7 @@ pages:
   stage: deploy
   needs:
     - coverage
-  image: "ruby:3.4"
+  image: "ruby:4.0"
   before_script:
     - gem install hanna-nouveau
   script:
