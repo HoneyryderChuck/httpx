@@ -5,21 +5,21 @@ module HTTPX
       IDEMPOTENT_METHODS: Array[String]
       RECONNECTABLE_ERRORS: Array[singleton(StandardError)]
       RETRYABLE_ERRORS: Array[singleton(StandardError)]
-      DEFAULT_JITTER: ^(Numeric) -> Numeric
+      DEFAULT_JITTER: ^(interval) -> interval
       BACKOFF_ALGORITHMS: Array[Symbol]
 
-      def self?.retry_after_polynomial_backoff: (retriesRequest request, retriesResponse response) -> Numeric
+      def self?.retry_after_polynomial_backoff: (retriesRequest request, retriesResponse response) -> interval
 
-      def self?.retry_after_exponential_backoff: (retriesRequest request, retriesResponse response) -> Numeric
+      def self?.retry_after_exponential_backoff: (retriesRequest request, retriesResponse response) -> interval
 
       interface _RetryCallback
         def call: (retriesResponse response) -> bool?
       end
 
       interface _RetriesOptions
-        def retry_after: () -> (^(retriesRequest request, retriesResponse response) -> Numeric | Numeric)?
+        def retry_after: () -> (^(retriesRequest request, retriesResponse response) -> interval | interval)?
 
-        def retry_jitter: () -> ^(Numeric jitter) -> Numeric
+        def retry_jitter: () -> ^(interval jitter) -> interval
 
         def max_retries: () -> Integer
 
