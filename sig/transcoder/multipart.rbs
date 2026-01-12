@@ -18,7 +18,7 @@ module HTTPX
 
       def self?.encode: (multipart_input form_data) -> Multipart::Encoder
 
-      def self?.multipart?: (form_nested_value | multipart_nested_value form_data) -> bool
+      def self?.multipart?: (urlencoded_input | multipart_input form_data) -> bool
 
       def self?.multipart_value?: (multipart_nested_value value) -> bool
 
@@ -56,6 +56,8 @@ module HTTPX
       end
 
       class Decoder
+        include Utils
+
         CRLF: String
         BOUNDARY_RE: Regexp
         MULTIPART_CONTENT_TYPE: Regexp
@@ -82,6 +84,7 @@ module HTTPX
       class FilePart #  < SimpleDelegator
         attr_reader original_filename: String
         attr_reader content_type: String
+        @file: Tempfile
 
         # @file: Tempfile
 
