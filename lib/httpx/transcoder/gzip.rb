@@ -8,6 +8,7 @@ module HTTPX
       class Deflater < Transcoder::Deflater
         def initialize(body)
           @compressed_chunk = "".b
+          @deflater = nil
           super
         end
 
@@ -28,8 +29,12 @@ module HTTPX
 
         private
 
-        def write(chunk)
-          @compressed_chunk << chunk
+        def write(*chunks)
+          chunks.sum do |chunk|
+            chunk = chunk.to_s
+            @compressed_chunk << chunk
+            chunk.bytesize
+          end
         end
 
         def compressed_chunk

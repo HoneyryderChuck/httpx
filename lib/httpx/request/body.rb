@@ -128,7 +128,7 @@ module HTTPX
           Transcoder::Body.encode(body)
         elsif (form = params.delete(:form))
           if Transcoder::Multipart.multipart?(form)
-            # @type var form: Transcoder::multipart_input
+            # @type var form: Transcoder::Multipart::multipart_input
             Transcoder::Multipart.encode(form)
           else
             # @type var form: Transcoder::urlencoded_input

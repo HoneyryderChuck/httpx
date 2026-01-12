@@ -19,7 +19,7 @@ module HTTPX::Transcoder
 
     def multipart_value?(value)
       value.respond_to?(:read) ||
-        (value.respond_to?(:to_hash) &&
+        (value.is_a?(Hash) &&
           value.key?(:body) &&
           (value.key?(:filename) || value.key?(:content_type)))
     end

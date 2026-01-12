@@ -12,7 +12,6 @@ module HTTPX
         def initialize(filename, content_type)
           @original_filename = filename
           @content_type = content_type
-          @current = nil
           @file = Tempfile.new("httpx", encoding: Encoding::BINARY, mode: File::RDWR)
           super(@file)
         end
@@ -39,6 +38,7 @@ module HTTPX
           @parts = {}
           @intermediate_boundary = "--#{@boundary}"
           @state = :idle
+          @current = nil
         end
 
         def call(response, *)
