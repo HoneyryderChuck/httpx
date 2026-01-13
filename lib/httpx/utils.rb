@@ -71,5 +71,18 @@ module HTTPX
       uri.non_ascii_hostname = non_ascii_hostname
       uri
     end
+
+    if defined?(Ractor) &&
+       # no ractor support for 3.0
+       RUBY_VERSION >= "3.1.0"
+
+      def in_ractor?
+        Ractor.main != Ractor.current
+      end
+    else
+      def in_ractor?
+        false
+      end
+    end
   end
 end

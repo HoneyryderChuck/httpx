@@ -125,7 +125,7 @@ module HTTPX
     end
 
     def early_resolve(connection, hostname: connection.peer.host) # rubocop:disable Naming/PredicateMethod
-      addresses = @resolver_options[:cache] && (connection.addresses || HTTPX::Resolver.nolookup_resolve(hostname))
+      addresses = @resolver_options[:cache] && (connection.addresses || @options.resolver_cache.resolve(hostname))
 
       return false unless addresses
 

@@ -20,6 +20,12 @@ module HTTPX
       def early_resolve: (Connection connection) -> bool
 
       def lazy_resolve: (Connection connection) -> void
+
+      private
+
+      def nolookup_resolve: (String hostname, Options options) -> Array[Entry]?
+
+      def initialize: (singleton(Native) | singleton(HTTPS) resolver_type, Options options) -> void
     end
   end
 end

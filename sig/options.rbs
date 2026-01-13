@@ -17,11 +17,13 @@ module HTTPX
 
     DEFAULT_OPTIONS: Hash[Symbol, untyped]
     REQUEST_BODY_IVARS: Array[Symbol]
+    RESOLVER_TYPES: Array[Symbol]
     USER_AGENT: String
 
     type timeout_type = :connect_timeout | :settings_timeout | :close_handshake_timeout | :operation_timeout | :keep_alive_timeout | :read_timeout | :write_timeout | :request_timeout
     type timeout = Hash[timeout_type, Numeric?]
     type redact_value = :headers | :body | bool
+    type resolver_cache_option = :memory | :file | (Object & Resolver::_Cache)
 
     def self.new: (?options) -> instance
 
@@ -102,8 +104,6 @@ module HTTPX
 
     attr_reader options_class: singleton(Options)
 
-    attr_reader resolver_class: Symbol | singleton(Resolver::Resolver)
-
     attr_reader ssl: Hash[Symbol, untyped]
 
     # io
@@ -134,6 +134,12 @@ module HTTPX
     # ip_families
     attr_reader ip_families: Array[ip_family]?
 
+    @resolver_cache: resolver_cache_option
+
+    def resolver_class: () -> singleton(Resolver::Resolver)
+
+    def resolver_cache: () -> (Object | Resolver::_Cache)
+
     def ==: (Options other) -> bool
 
     def options_equals?: (Options other, ?Array[Symbol] ignore_ivars) -> bool
@@ -148,7 +154,7 @@ module HTTPX
 
     def initialize: (?options options) -> void
 
-    def do_initialize: (?options options) -> void
+    def do_initialize: () -> void
 
     def access_option: (Hash[Symbol, untyped] | Object | nil obj, Symbol k, Hash[Symbol, Symbol]? ivar_map) -> untyped
 
@@ -184,6 +190,8 @@ module HTTPX
     def option_decompress_response_body: (bool value) -> bool
     def option_persistent: (bool value) -> bool
     def option_close_on_fork: (bool value) -> bool
+
+    def option_resolver_cache: (resolver_cache_option value) -> resolver_cache_option
 
     def option_origin: (http_uri | String value) -> http_uri
 

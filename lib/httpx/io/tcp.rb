@@ -111,7 +111,7 @@ module HTTPX
       raise e if @ip_index.negative?
 
       log { "failed connecting to #{@ip} (#{e.message}), evict from cache and trying next..." }
-      Resolver.cached_lookup_evict(@hostname, @ip)
+      @options.resolver_cache.evict(@hostname, @ip)
 
       @io = build_socket
       retry

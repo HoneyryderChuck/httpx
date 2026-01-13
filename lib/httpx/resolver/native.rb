@@ -417,7 +417,7 @@ module HTTPX
           reset_hostname(name, connection: connection)
           @timeouts.delete(connection.peer.host)
           @connections.delete(connection)
-          Resolver.cached_lookup_set(connection.peer.host, @family, addresses) if @resolver_options[:cache]
+          @options.resolver_cache.set(connection.peer.host, @family, addresses) if @resolver_options[:cache]
           catch(:coalesced) do
             emit_addresses(connection, @family, addresses.map { |a| Resolver::Entry.new(a["data"], a["TTL"]) })
           end

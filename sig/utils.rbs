@@ -15,5 +15,7 @@ module HTTPX
     def self?.to_uri: (generic_uri uri) -> URI::Generic
 
     def self?.get_filename: (String header) -> String?
+
+    def self?.in_ractor?: () -> bool
   end
 end
