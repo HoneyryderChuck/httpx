@@ -55,7 +55,7 @@ module HTTPX
     def <<(connection)
       return if @uri.origin == connection.peer.to_s
 
-      @uri_addresses ||= HTTPX::Resolver.nolookup_resolve(@uri.host) || @resolver.getaddresses(@uri.host)
+      @uri_addresses ||= @options.resolver_cache.resolve(@uri.host) || @resolver.getaddresses(@uri.host)
 
       if @uri_addresses.empty?
         ex = ResolveError.new("Can't resolve DNS server #{@uri.host}")
@@ -251,7 +251,7 @@ module HTTPX
           # eliminate other candidates
           @queries.delete_if { |_, conn| connection == conn }
 
-          Resolver.cached_lookup_set(hostname, @family, addresses) if @resolver_options[:cache]
+          @options.resolver_cache.set(hostname, @family, addresses) if @resolver_options[:cache]
           catch(:coalesced) { emit_addresses(connection, @family, addresses.map { |a| Resolver::Entry.new(a["data"], a["TTL"]) }) }
         end
       end

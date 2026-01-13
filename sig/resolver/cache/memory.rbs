@@ -1,0 +1,13 @@
+module HTTPX::Resolver
+  module Cache
+    class Memory < Base
+      @lookup_mutex: Thread::Mutex
+      @hostnames: Array[String]
+      @lookups: Hash[String, Array[dns_result]]
+
+      private
+
+      def synchronize: [U] () { (Hash[String, Array[dns_result]] lookups, Array[String] hostnames) -> U } -> U
+    end
+  end
+end

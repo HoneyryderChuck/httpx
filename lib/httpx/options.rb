@@ -12,6 +12,7 @@ module HTTPX
     CLOSE_HANDSHAKE_TIMEOUT = 10
     CONNECT_TIMEOUT = READ_TIMEOUT = WRITE_TIMEOUT = 60
     REQUEST_TIMEOUT = OPERATION_TIMEOUT = nil
+    RESOLVER_TYPES = %i[memory file].freeze
 
     # default value used for "user-agent" header, when not overridden.
     USER_AGENT = "httpx.rb/#{VERSION}".freeze # rubocop:disable Style/RedundantFreeze
@@ -44,7 +45,7 @@ module HTTPX
 
         return unless meth =~ /^option_(.+)$/
 
-        optname = Regexp.last_match(1)
+        optname = Regexp.last_match(1) #: String
 
         if optname =~ /^(.+[^_])_+with/
           # ignore alias method chain generated methods.
@@ -52,14 +53,14 @@ module HTTPX
           # it relies on the "_with/_without" separator, which is the most used convention,
           # however it shouldn't be used in practice in httpx given the plugin architecture
           # as the main extension API.
-          orig_name = Regexp.last_match(1)
+          orig_name = Regexp.last_match(1) #: String
 
           return if @options_names.include?(orig_name.to_sym)
         end
 
         optname = optname.to_sym
 
-        attr_reader(optname)
+        attr_reader(optname) unless method_defined?(optname)
 
         @options_names << optname unless @options_names.include?(optname)
       end
@@ -103,7 +104,10 @@ module HTTPX
     # :io :: open socket, or domain/ip-to-socket hash, which requests should be sent to
     # :persistent :: whether to persist connections in between requests (defaults to <tt>true</tt>)
     # :resolver_class :: which resolver to use (defaults to <tt>:native</tt>, can also be <tt>:system<tt> for
-    #                    using getaddrinfo or <tt>:https</tt> for DoH resolver, or a custom class)
+    #                    using getaddrinfo or <tt>:https</tt> for DoH resolver, or a custom class inheriting
+    #                    from HTTPX::Resolver::Resolver)
+    # :resolver_cache :: strategy to cache DNS results, ignored by the <tt>:system</tt> resolver, can be set to <tt>:memory<tt>
+    #                    or an instance of a custom class inheriting from HTTPX::Resolver::Cache::Base
     # :resolver_options :: hash of options passed to the resolver. Accepted keys depend on the resolver type.
     # :pool_options :: hash of options passed to the connection pool (See Pool#initialize).
     # :ip_families :: which socket families are supported (system-dependent)
@@ -151,6 +155,36 @@ module HTTPX
       freeze
     end
 
+    # returns the class with which to instantiate the DNS resolver.
+    def resolver_class
+      case @resolver_class
+      when Symbol
+        public_send(:"resolver_#{@resolver_class}_class")
+      else
+        @resolver_class
+      end
+    end
+
+    def resolver_cache
+      cache_type = @resolver_cache
+
+      case cache_type
+      when :memory
+        Resolver::Cache::Memory.cache(cache_type)
+      when :file
+        Resolver::Cache::File.cache(cache_type)
+      else
+        unless cache_type.respond_to?(:resolve) &&
+               cache_type.respond_to?(:get) &&
+               cache_type.respond_to?(:set) &&
+               cache_type.respond_to?(:evict)
+          raise TypeError, ":resolver_cache must be a compatible resolver cache and implement #get, #set and #evict"
+        end
+
+        cache_type #: Object & Resolver::_Cache
+      end
+    end
+
     def freeze
       self.class.options_names.each do |ivar|
         # avoid freezing debug option, as when it's set, it's usually an
@@ -172,6 +206,7 @@ module HTTPX
       super || options_equals?(other)
     end
 
+    # checks whether +other+ is equal by comparing the session options
     def options_equals?(other, ignore_ivars = REQUEST_BODY_IVARS)
       # headers and other request options do not play a role, as they are
       # relevant only for the request.
@@ -187,6 +222,8 @@ module HTTPX
       end
     end
 
+    # returns a HTTPX::Options instance resulting of the merging of +other+ with self.
+    # it may return self if +other+ is self or equal to self.
     def merge(other)
       if (is_options = other.is_a?(Options))
 
@@ -421,6 +458,41 @@ module HTTPX
       Array(value)
     end
 
+    def option_resolver_class(resolver_type)
+      case resolver_type
+      when Symbol
+        meth = :"resolver_#{resolver_type}_class"
+
+        raise TypeError, ":resolver_class must be a supported type" unless respond_to?(meth)
+
+        resolver_type
+      when Class
+        raise TypeError, ":resolver_class must be a subclass of `#{Resolver::Resolver}`" unless resolver_type < Resolver::Resolver
+
+        resolver_type
+      else
+        raise TypeError, ":resolver_class must be a supported type"
+      end
+    end
+
+    def option_resolver_cache(cache_type)
+      if cache_type.is_a?(Symbol)
+        raise TypeError, ":resolver_cache: #{cache_type} is invalid" unless RESOLVER_TYPES.include?(cache_type)
+
+        require "httpx/resolver/cache/file" if cache_type == :file
+
+      else
+        unless cache_type.respond_to?(:resolve) &&
+               cache_type.respond_to?(:get) &&
+               cache_type.respond_to?(:set) &&
+               cache_type.respond_to?(:evict)
+          raise TypeError, ":resolver_cache must be a compatible resolver cache and implement #resolve, #get, #set and #evict"
+        end
+      end
+
+      cache_type
+    end
+
     # called after all options are initialized
     def do_initialize
       hs = @headers
@@ -496,6 +568,7 @@ module HTTPX
       :addresses => nil,
       :persistent => false,
       :resolver_class => (ENV["HTTPX_RESOLVER"] || :native).to_sym,
+      :resolver_cache => (ENV["HTTPX_RESOLVER_CACHE"] || :memory).to_sym,
       :resolver_options => { cache: true }.freeze,
       :pool_options => EMPTY_HASH,
       :ip_families => nil,

@@ -35,6 +35,20 @@ class OptionsTest < Minitest::Test
     assert !opt3.headers.key?("accept-encoding")
   end
 
+  def test_options_resolver_class
+    assert Options.new(resolver_class: :native).resolver_class < Resolver::Native
+    assert Options.new(resolver_class: :system).resolver_class < Resolver::System
+    assert Options.new(resolver_class: :https).resolver_class < Resolver::HTTPS
+    ex = assert_raises(TypeError) { Options.new(resolver_class: :smth) }
+    assert(ex.message.include?(":resolver_class must be a supported type"))
+    assert Options.new(resolver_class: Resolver::HTTPS).resolver_class == Resolver::HTTPS
+
+    return if defined?(RBS)
+
+    ex = assert_raises(TypeError) { Options.new(resolver_class: Object) }
+    assert(ex.message.include?(":resolver_class must be a subclass of `HTTPX::Resolver::Resolver`"))
+  end
+
   def test_options_headers_with_instance
     proc_headers_class = Class.new(HTTPX::Headers) do
       def initialize(headers = nil)
@@ -98,12 +112,12 @@ class OptionsTest < Minitest::Test
 
   def test_options_merge_attributes_match
     foo = Options.new(
-      :http2_settings => { :foo => "foo" },
+      :http2_settings => { :foo => 1 },
       :headers => { :accept => "json", :foo => "foo" },
     )
 
     bar = Options.new(
-      :http2_settings => { :bar => "bar" },
+      :http2_settings => { :bar => 2 },
       :headers => { :accept => "xml", :bar => "bar" },
       :ssl => { :foo => "bar" },
     )
@@ -117,7 +131,7 @@ class OptionsTest < Minitest::Test
       :buffer_size => 16_384,
       :window_size => 16_384,
       :body_threshold_size => 114_688,
-      :http2_settings => { foo: "foo", :bar => "bar" },
+      :http2_settings => { foo: 1, :bar => 2 },
       :timeout => {
         connect_timeout: 60,
         settings_timeout: 10,
@@ -161,6 +175,7 @@ class OptionsTest < Minitest::Test
       :persistent => false,
       :close_on_fork => false,
       :resolver_class => bar.resolver_class,
+      :resolver_cache => bar.resolver_cache,
       :resolver_options => bar.resolver_options,
       :ip_families => bar.ip_families,
     }.compact

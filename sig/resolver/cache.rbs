@@ -1,0 +1,16 @@
+module HTTPX
+  module Resolver
+    module Cache
+    end
+
+    interface _Cache
+      def resolve: (String hostname) -> Array[Entry]?
+
+      def get: (String hostname) -> Array[Entry]?
+
+      def set: (String hostname, ip_family family, Array[dns_result] addresses) -> void
+
+      def evict: (String hostname, _ToS ip) -> void
+    end
+  end
+end

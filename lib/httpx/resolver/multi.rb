@@ -19,8 +19,6 @@ module HTTPX
         resolver.multi = self
         resolver
       end
-
-      @errors = Hash.new { |hs, k| hs[k] = [] }
     end
 
     def state
@@ -47,7 +45,7 @@ module HTTPX
 
     def early_resolve(connection)
       hostname = connection.peer.host
-      addresses = @resolver_options[:cache] && (connection.addresses || HTTPX::Resolver.nolookup_resolve(hostname))
+      addresses = @resolver_options[:cache] && (connection.addresses || nolookup_resolve(hostname, connection.options))
       return false unless addresses
 
       ip_families = connection.options.ip_families
@@ -82,6 +80,12 @@ module HTTPX
         @current_session.pin(conn_to_resolve, @current_selector)
         @current_session.select_resolver(resolver, @current_selector)
       end
+    end
+
+    private
+
+    def nolookup_resolve(hostname, options)
+      options.resolver_cache.resolve(hostname)
     end
   end
 end
