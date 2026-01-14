@@ -23,6 +23,8 @@ group :test do
   gem "webmock"
   gem "websocket-driver"
 
+  gem "pstore" if RUBY_VERSION >= "4.0.0"
+
   platform :mri do
     gem "grpc"
     gem "logging"
