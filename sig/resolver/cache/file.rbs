@@ -1,0 +1,13 @@
+module HTTPX::Resolver
+  module Cache
+    class File < Base
+      DEFAULT_PATH: String
+
+      @store: PStore
+
+      private
+
+      def initialize: (?path path) -> void
+    end
+  end
+end
