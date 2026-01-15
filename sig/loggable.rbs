@@ -4,7 +4,7 @@ module HTTPX
   end
 
   module Loggable
-    USE_DEBUG_LOGS: bool
+    USE_DEBUG_LOG: bool
 
     COLORS: Hash[Symbol, Integer]
 
