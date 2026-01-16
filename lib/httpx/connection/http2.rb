@@ -404,34 +404,39 @@ module HTTPX
 
     def on_frame_sent(frame)
       log(level: 2) { "#{frame[:stream]}: frame was sent!" }
-      log(level: 2, color: :blue) do
-        payload =
-          case frame[:type]
-          when :data
-            frame.merge(payload: frame[:payload].bytesize)
-          when :headers, :ping
-            frame.merge(payload: log_redact_headers(frame[:payload]))
-          else
-            frame
-          end
-        "#{frame[:stream]}: #{payload}"
-      end
+      log(level: 2, color: :blue) { "#{frame[:stream]}: #{frame_with_extra_info(frame)}" }
     end
 
     def on_frame_received(frame)
       log(level: 2) { "#{frame[:stream]}: frame was received!" }
-      log(level: 2, color: :magenta) do
-        payload =
-          case frame[:type]
-          when :data
-            frame.merge(payload: frame[:payload].bytesize)
-          when :headers, :ping
-            frame.merge(payload: log_redact_headers(frame[:payload]))
-          else
-            frame
-          end
-        "#{frame[:stream]}: #{payload}"
-      end
+      log(level: 2, color: :magenta) { "#{frame[:stream]}: #{frame_with_extra_info(frame)}" }
+    end
+
+    def frame_with_extra_info(frame)
+      case frame[:type]
+      when :data
+        frame.merge(payload: frame[:payload].bytesize)
+      when :headers, :ping
+        frame.merge(payload: log_redact_headers(frame[:payload]))
+      when :window_update
+        connection_or_stream = if (id = frame[:stream]).zero?
+          @connection
+        else
+          @streams.each_value.find { |s| s.id == id }
+        end
+        if connection_or_stream
+          frame.merge(
+            local_window: connection_or_stream.local_window,
+            remote_window: connection_or_stream.remote_window,
+            buffered_amount: connection_or_stream.buffered_amount,
+            stream_state: connection_or_stream.state,
+          )
+        else
+          frame
+        end
+      else
+        frame
+      end.merge(connection_state: @connection.state)
     end
 
     def on_altsvc(origin, frame)
