@@ -87,13 +87,15 @@ module HTTPX
 
     def on_close: (Integer last_frame, Symbol? error, String? payload) -> void
 
-    def on_frame_sent: (::HTTP2::frame) -> void
+    def on_frame_sent: (::HTTP2::frame frame) -> void
 
-    def on_frame_received: (::HTTP2::frame) -> void
+    def frame_with_extra_info: (::HTTP2::frame frame) -> Hash[Symbol, untyped]
 
-    def on_altsvc: (String origin, ::HTTP2::frame) -> void
+    def on_frame_received: (::HTTP2::frame frame) -> void
 
-    def on_promise: (::HTTP2::Stream) -> void
+    def on_altsvc: (String origin, ::HTTP2::frame frame) -> void
+
+    def on_promise: (::HTTP2::Stream stream) -> void
 
     def on_origin: (String) -> void
 
