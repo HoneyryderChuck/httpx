@@ -138,7 +138,7 @@ module HTTPX
 
     def resolver_class: () -> singleton(Resolver::Resolver)
 
-    def resolver_cache: () -> (Object | Resolver::_Cache)
+    def resolver_cache: () -> (Object & Resolver::_Cache)
 
     def ==: (Options other) -> bool
 
