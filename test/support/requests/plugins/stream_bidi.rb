@@ -193,6 +193,111 @@ module Requests
           verify_status(response, 200)
         end
       end
+
+      # Tests that stream_bidi + retries works correctly when user continues
+      # to write data after a retry is triggered. This specifically tests
+      # the callback leak fix where stale :body callbacks from previous
+      # connection attempts could cause protocol errors.
+      def test_plugin_stream_bidi_retry_with_ongoing_writes
+        start_test_servlet(BidiFailAfterData, tls: false) do |server|
+          uri = "#{server.origin}/"
+
+          start_msg = "{\"message\":\"started\"}\n"
+          pong_msg = "{\"message\":\"pong\"}\n"
+
+          session = HTTPX.plugin(:stream_bidi)
+                         .plugin(:retries, retry_change_requests: true, max_retries: 2)
+
+          request = session.build_request(
+            "POST",
+            uri,
+            headers: { "content-type" => "application/x-ndjson" },
+            body: [start_msg],
+            stream: true
+          )
+
+          response = session.request(request)
+
+          # Read response in a separate thread while we continue writing
+          chunks = []
+          error = nil
+          reader = Thread.start do
+            response.each { |chunk| chunks << chunk }
+          rescue StandardError => e
+            error = e
+          end
+
+          # Continue writing data - this is where the callback leak bug manifests
+          # Without the fix, stale callbacks fire and cause protocol_error
+          3.times do |i|
+            request << "{\"message\":\"update_#{i}\"}\n"
+            sleep 0.05
+          end
+
+          request.close
+          reader.join(10)
+
+          refute error, "expected no error during response reading, got: #{error&.class}: #{error&.message}"
+          refute response.is_a?(HTTPX::ErrorResponse), "expected successful response after retry"
+          assert chunks.size >= 1, "expected to receive response chunks"
+        end
+      end
+
+      # Tests that stream_bidi + retries correctly handles the case where
+      # user writes data from a separate thread while a retry happens.
+      def test_plugin_stream_bidi_retry_with_concurrent_writes
+        start_test_servlet(BidiFailOnce, tls: false) do |server|
+          uri = "#{server.origin}/"
+          q = Queue.new
+
+          start_msg = "{\"message\":\"started\"}\n"
+          pong_msg = "{\"message\":\"pong\"}\n"
+
+          session = HTTPX.plugin(:stream_bidi)
+                         .plugin(:retries, retry_change_requests: true, max_retries: 2)
+
+          request = session.build_request(
+            "POST",
+            uri,
+            headers: { "content-type" => "application/x-ndjson" },
+            body: [start_msg],
+            stream: true
+          )
+
+          response = session.request(request)
+
+          # Writer thread - continues writing data regardless of retry
+          writer_error = nil
+          writer = Thread.start do
+            4.times do
+              msg = q.pop
+              request << msg
+            end
+            request.close
+          rescue StandardError => e
+            writer_error = e
+          end
+
+          # Read responses and signal writer to send more
+          chunks = []
+          reader_error = nil
+          begin
+            response.each do |chunk|
+              chunks << chunk
+              q << pong_msg
+            end
+          rescue StandardError => e
+            reader_error = e
+          end
+
+          writer.join(10)
+
+          refute writer_error, "writer thread should not error: #{writer_error&.class}: #{writer_error&.message}"
+          refute reader_error, "reader should not error: #{reader_error&.class}: #{reader_error&.message}"
+          refute response.is_a?(HTTPX::ErrorResponse), "expected successful response"
+          assert chunks.size >= 1, "expected to receive response chunks"
+        end
+      end
     end
   end
 end

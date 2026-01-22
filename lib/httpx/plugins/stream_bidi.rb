@@ -280,6 +280,9 @@ module HTTPX
           case nextstate
           when :idle
             headers_sent = false
+            # Clear :body callbacks to prevent stale callbacks from previous
+            # connection attempts when retrying (fixes stream_bidi + retries interaction)
+            callbacks(:body).clear
           when :waiting_for_chunk
             return unless @state == :body
           when :body
