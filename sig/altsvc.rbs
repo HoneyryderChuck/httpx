@@ -5,18 +5,21 @@ module HTTPX
 
       def send: (Request request) -> void
 
-      def match?: (URI::Generic uri, Options options) -> bool
+      def match?: (http_uri uri, Options options) -> bool
 
       private
 
-      def match_altsvcs?: (URI::Generic uri) -> bool
+      def match_altsvcs?: (http_uri uri) -> bool
 
-      def match_altsvc_options?: (URI::Generic uri, Options options) -> bool
+      def match_altsvc_options?: (http_uri uri, Options options) -> bool
 
-      def altsvc_match?: (uri uri, uri other_uri) -> bool
+      def altsvc_match?: (http_uri uri, uri other_uri) -> bool
     end
 
     type altsvc_params = Hash[String, untyped]
+
+    self.@altsvc_mutex: Thread::Mutex
+    self.@altsvcs: Hash[String, Array[altsvc_params]]
 
     def self?.cached_altsvc: (String origin) -> Array[altsvc_params]
 
