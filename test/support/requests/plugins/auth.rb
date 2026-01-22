@@ -50,18 +50,27 @@ module Requests
       end
 
       def test_plugin_auth_regenerate_on_retry
-        uri = build_uri("/status/401")
         i = 0
         session = HTTPX.plugin(RequestInspector)
-                       .plugin(:retries, max_retries: 1, retry_on: ->(res) { res.status == 401 })
-                       .plugin(:auth, generate_auth_value_on_retry: ->(res) { res.status == 401 })
+                       .plugin(:retries, max_retries: 1, retry_on: ->(res) { res.status == 400 })
+                       .plugin(:auth, generate_auth_value_on_retry: ->(res) { res.status == 400 })
                        .authorization { "TOKEN#{i += 1}" }
-        response = session.get(uri)
-        verify_status(response, 401)
+
+        response = session.get(build_uri("/status/400"))
+        verify_status(response, 400)
         assert session.calls == 1, "expected two errors to have been sent"
         req1, req2 = session.total_requests
         assert req1.headers["authorization"] == "TOKEN1"
         assert req2.headers["authorization"] == "TOKEN2"
+        session.reset
+
+        # 401 errors are always retried with a fresh token, no matter the verb
+        response = session.get(build_uri("/status/401"))
+        verify_status(response, 401)
+        assert session.calls == 1, "expected two errors to have been sent"
+        req1, req2 = session.total_requests
+        assert req1.headers["authorization"] == "TOKEN2", "the last successful token should have been reused"
+        assert req2.headers["authorization"] == "TOKEN3"
       end
 
       # Bearer Auth

@@ -81,9 +81,13 @@ module HTTPX
         def generate_auth_token
           return unless (auth_value = @options.auth_header_value)
 
-          auth_value = auth_value.call(self) if auth_value.respond_to?(:call)
+          auth_value = auth_value.call(self) if dynamic_auth_token?(auth_value)
 
           auth_value
+        end
+
+        def dynamic_auth_token?(auth_header_value)
+          auth_header_value&.respond_to?(:call)
         end
       end
 
@@ -99,13 +103,28 @@ module HTTPX
 
       module AuthRetries
         module InstanceMethods
+          private
+
+          def retryable_request?(request, response, options)
+            super || auth_error?(response, options)
+          end
+
+          def retryable_response?(response, options)
+            auth_error?(response, options) || super
+          end
+
           def prepare_to_retry(request, response)
             super
 
-            return unless @options.generate_auth_value_on_retry && @options.generate_auth_value_on_retry.call(response)
+            return unless auth_error?(response, request.options) ||
+                          (@options.generate_auth_value_on_retry && @options.generate_auth_value_on_retry.call(response))
 
             request.headers.get("authorization").pop
             @auth_header_value = generate_auth_token
+          end
+
+          def auth_error?(response, options)
+            response.is_a?(Response) && response.status == 401 && dynamic_auth_token?(options.auth_header_value)
           end
         end
       end

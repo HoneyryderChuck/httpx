@@ -1,8 +1,10 @@
 module HTTPX
   module Plugins
     module Auth
+      type auth_header_value_type = String | ^(Request request) -> string
+
       interface _AuthOptions
-        def auth_header_value: () -> (String | ^(Request request) -> string)?
+        def auth_header_value: () -> auth_header_value_type?
 
         def auth_header_type: () -> String?
       end
@@ -22,6 +24,8 @@ module HTTPX
         private
 
         def generate_auth_token: () -> String?
+
+        def dynamic_auth_token?: (auth_header_value_type auth_header_value) -> boolish
       end
 
       module RequestMethods
@@ -29,6 +33,11 @@ module HTTPX
       end
 
       module AuthRetries
+        module InstanceMethods
+          private
+
+          def auth_error?: (response response, Options options) -> boolish
+        end
       end
     end
 
