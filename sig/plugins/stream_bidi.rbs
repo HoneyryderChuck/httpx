@@ -47,7 +47,10 @@ module HTTPX
         attr_accessor headers_sent: bool
 
         @closed: bool
+        @flush_buffer_on_body_cb: ^() -> void | nil
         @mutex: Thread::Mutex
+
+        def flush_buffer_on_body: { () -> void } -> void
 
         def closed?: () -> bool
       end

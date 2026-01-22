@@ -61,7 +61,7 @@ module HTTPX
         def handle_stream(stream, request)
           return super unless @options.stream
 
-          request.on(:body) do
+          request.flush_buffer_on_body do
             next unless request.headers_sent
 
             handle(request, stream)
@@ -254,7 +254,12 @@ module HTTPX
           super
           @headers_sent = false
           @closed = false
+          @flush_buffer_on_body_cb = nil
           @mutex = Thread::Mutex.new
+        end
+
+        def flush_buffer_on_body(&cb)
+          @flush_buffer_on_body_cb = on(:body, &cb)
         end
 
         def closed?
@@ -280,6 +285,11 @@ module HTTPX
           case nextstate
           when :idle
             headers_sent = false
+
+            if @flush_buffer_on_body_cb
+              callbacks(:body).delete(@flush_buffer_on_body_cb)
+              @flush_buffer_on_body_cb = nil
+            end
           when :waiting_for_chunk
             return unless @state == :body
           when :body
