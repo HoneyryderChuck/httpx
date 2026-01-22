@@ -23,7 +23,7 @@ module HTTPX
         module InstanceMethods
           private
 
-          def repeatable_request?(request, options)
+          def retryable_request?(request, *)
             super || request.verb == "QUERY"
           end
         end

@@ -55,10 +55,8 @@ module HTTPX
 
         private
 
-        def repeatable_request?(request, _)
+        def retryable_request?(request, response, *)
           super || begin
-            response = request.response
-
             return false unless response && response.is_a?(ErrorResponse)
 
             error = response.error
@@ -67,13 +65,13 @@ module HTTPX
           end
         end
 
-        def retryable_error?(ex)
+        def retryable_error?(ex, options)
           super &&
             # under the persistent plugin rules, requests are only retried for connection related errors,
             # which do not include request timeout related errors. This only gets overriden if the end user
             # manually changed +:max_retries+ to something else, which means it is aware of the
             # consequences.
-            (!ex.is_a?(RequestTimeoutError) || @options.max_retries != 1)
+            (!ex.is_a?(RequestTimeoutError) || options.max_retries != 1)
         end
       end
     end

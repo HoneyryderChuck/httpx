@@ -326,7 +326,9 @@ module HTTPX
 
       module ProxyRetries
         module InstanceMethods
-          def retryable_error?(ex)
+          private
+
+          def retryable_error?(ex, *)
             super || ex.is_a?(ProxyConnectionError)
           end
         end

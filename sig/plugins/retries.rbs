@@ -37,9 +37,11 @@ module HTTPX
 
         def fetch_response: (retriesRequest request, Selector selector, retriesOptions options) -> (retriesResponse | ErrorResponse)?
 
-        def repeatable_request?: (retriesRequest request, retriesOptions options) -> boolish
+        def retryable_request?: (retriesRequest request, response response, retriesOptions options) -> boolish
 
-        def retryable_error?: (_Exception error) -> bool
+        def retryable_response?: (response response, retriesOptions options) -> boolish
+
+        def retryable_error?: (_Exception error, Options options) -> boolish
 
         def try_partial_retry: (retriesRequest request, (retriesResponse | ErrorResponse) response) -> void
 

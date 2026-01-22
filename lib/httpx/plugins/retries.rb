@@ -142,15 +142,8 @@ module HTTPX
 
           if response &&
              request.retries.positive? &&
-             repeatable_request?(request, options) &&
-             (
-               (
-                 response.is_a?(ErrorResponse) && retryable_error?(response.error)
-               ) ||
-
-                 options.retry_on&.call(response)
-
-             )
+             retryable_request?(request, response, options) &&
+             retryable_response?(response, options)
             try_partial_retry(request, response)
             log { "failed to get response, #{request.retries} tries to go..." }
             prepare_to_retry(request, response)
@@ -186,12 +179,16 @@ module HTTPX
         end
 
         # returns whether +request+ can be retried.
-        def repeatable_request?(request, options)
+        def retryable_request?(request, _, options)
           IDEMPOTENT_METHODS.include?(request.verb) || options.retry_change_requests
         end
 
+        def retryable_response?(response, options)
+          (response.is_a?(ErrorResponse) && retryable_error?(response.error, options)) || options.retry_on&.call(response)
+        end
+
         # returns whether the +ex+ exception happend for a retriable request.
-        def retryable_error?(ex)
+        def retryable_error?(ex, _)
           RETRYABLE_ERRORS.any? { |klass| ex.is_a?(klass) }
         end
 
