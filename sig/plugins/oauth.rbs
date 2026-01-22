@@ -87,8 +87,6 @@ module HTTPX
       end
 
       module OAuthRetries
-        def self?.response_oauth_error?: (response res) -> bool
-
         module InstanceMethods
         end
       end

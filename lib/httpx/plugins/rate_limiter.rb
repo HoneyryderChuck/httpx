@@ -12,22 +12,11 @@ module HTTPX
     # https://gitlab.com/os85/httpx/wikis/Rate-Limiter
     #
     module RateLimiter
+      RATE_LIMIT_CODES = [429, 503].freeze
+
       class << self
-        RATE_LIMIT_CODES = [429, 503].freeze
-
-        def configure(klass)
-          klass.plugin(:retries,
-                       retry_change_requests: true,
-                       retry_on: method(:retry_on_rate_limited_response?),
-                       retry_after: method(:retry_after_rate_limit))
-        end
-
-        def retry_on_rate_limited_response?(response)
-          return false unless response.is_a?(Response)
-
-          status = response.status
-
-          RATE_LIMIT_CODES.include?(status)
+        def load_dependencies(klass)
+          klass.plugin(:retries, retry_after: method(:retry_after_rate_limit))
         end
 
         # Servers send the "Retry-After" header field to indicate how long the
@@ -46,6 +35,22 @@ module HTTPX
           return unless retry_after
 
           Utils.parse_retry_after(retry_after)
+        end
+      end
+
+      module InstanceMethods
+        private
+
+        def retryable_request?(request, response, options)
+          super || rate_limit_error?(response)
+        end
+
+        def retryable_response?(response, options)
+          rate_limit_error?(response) || super
+        end
+
+        def rate_limit_error?(response)
+          response.is_a?(Response) && RATE_LIMIT_CODES.include?(response.status)
         end
       end
     end

@@ -259,29 +259,18 @@ module HTTPX
 
           @oauth_session.fetch_access_token(self)
         end
+
+        def dynamic_auth_token?(_)
+          @oauth_session
+        end
       end
 
       module OAuthRetries
-        class << self
-          def extra_options(options)
-            options.merge(
-              retry_on: method(:response_oauth_error?),
-              generate_auth_value_on_retry: method(:response_oauth_error?)
-            )
-          end
-
-          def response_oauth_error?(res)
-            res.is_a?(Response) && res.status == 401
-          end
-        end
-
         module InstanceMethods
-          def prepare_to_retry(_request, response)
-            unless @oauth_session && @options.generate_auth_value_on_retry && @options.generate_auth_value_on_retry.call(response)
-              return super
-            end
+          private
 
-            @oauth_session.reset!
+          def prepare_to_retry(_request, response)
+            @oauth_session.reset! if @oauth_session
 
             super
           end

@@ -136,7 +136,11 @@ module HTTPX
     private
 
     def calculate_interests
-      return if @queries.empty?
+      if @queries.empty?
+        return @io.interests if (@socket_type == :tcp) && (@state == :idle)
+
+        return
+      end
 
       return :r if @write_buffer.empty?
 

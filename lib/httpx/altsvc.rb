@@ -43,7 +43,7 @@ module HTTPX
       end
 
       def altsvc_match?(uri, other_uri)
-        other_uri = URI(other_uri)
+        other_uri = URI(other_uri) #: http_uri
 
         uri.origin == other_uri.origin || begin
           case uri.scheme

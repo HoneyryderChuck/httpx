@@ -5,9 +5,11 @@ module HTTPX
 
       def self.load_dependencies: (singleton(Session)) -> void
 
-      def self.retry_on_rate_limited_response?: (_Response) -> bool
-
       def self.retry_after_rate_limit: (untyped, response) -> Numeric?
+
+      module InstanceMethods
+        def rate_limit_error?: (response response) -> bool
+      end
     end
   end
 end
