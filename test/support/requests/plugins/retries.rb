@@ -57,15 +57,23 @@ module Requests
         retries_session = HTTPX
                           .plugin(RequestInspector)
                           .plugin(:retries, retry_on: retry_callback)
+                          .with(timeout: { request_timeout: 3 })
                           .max_retries(2)
 
         retries_response = retries_session.get(build_uri("/status/400"))
         verify_status(retries_response, 400)
-        assert retries_session.calls == 2, "expect request to be retried (it was, #{retries_session.calls} times)"
+        assert retries_session.calls == 2, "expect request to be retried for 400 status code (it was, #{retries_session.calls} times)"
+        retries_session.reset
 
         retries_response = retries_session.get(build_uri("/status/401"))
         verify_status(retries_response, 401)
-        assert retries_session.calls == 3, "expect request not to be retried (it was, #{retries_session.calls - 2} times)"
+        assert retries_session.calls.zero?, "expect request not to be retried for 401 status code (it was, #{retries_session.calls} times)"
+        retries_session.reset
+
+        retries_response = retries_session.get(build_uri("/delay/10"))
+        verify_error_response(retries_response)
+        assert retries_session.calls == 2,
+               "expect request to still be retried for regular socket errors (it was, #{retries_session.calls} times)"
       end
 
       def test_plugin_retries_retry_after
