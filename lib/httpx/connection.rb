@@ -850,6 +850,9 @@ module HTTPX
       end
     end
 
+    # recover internal state and emit all relevant error responses when +error+ was raised.
+    # this takes an optiona +request+ which may have already been handled and can be opted out
+    # in the state recovery process.
     def handle_error(error, request = nil)
       parser.handle_error(error, request) if @parser && @parser.respond_to?(:handle_error)
       while (req = @pending.shift)
