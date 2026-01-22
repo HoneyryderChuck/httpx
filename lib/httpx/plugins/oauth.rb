@@ -260,7 +260,7 @@ module HTTPX
           @oauth_session.fetch_access_token(self)
         end
 
-        def dynamic_auth_token?(auth_header_value)
+        def dynamic_auth_token?(_)
           @oauth_session
         end
       end
@@ -274,7 +274,6 @@ module HTTPX
 
             super
           end
-
         end
       end
     end
