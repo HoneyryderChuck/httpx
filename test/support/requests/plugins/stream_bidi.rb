@@ -221,9 +221,10 @@ module Requests
           chunks = []
           error = nil
           reader = Thread.start do
-            response.each { |chunk| chunks << chunk }
-          rescue StandardError => e
-            error = e
+            Thread.abort_on_exception = true
+            response.each do |chunk|
+              chunks << chunk
+            end
           end
 
           # Continue writing data - this is where the callback leak bug manifests
@@ -234,9 +235,9 @@ module Requests
           end
 
           request.close
-          reader.join(10)
+          reader.join
 
-          refute error, "expected no error during response reading, got: #{error&.class}: #{error&.message}"
+          refute error, "expected no error during response reading, got: #{error}"
           refute response.is_a?(HTTPX::ErrorResponse), "expected successful response after retry"
           assert chunks.size >= 1, "expected to receive response chunks"
         end
