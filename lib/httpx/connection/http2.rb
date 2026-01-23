@@ -302,7 +302,7 @@ module HTTPX
       end
 
       log(color: :yellow) do
-        h.map { |k, v| "#{stream.id}: <- HEADER: #{k}: #{log_redact_headers(v)}" }.join("\n")
+        h.map { |k, v| "#{stream.id}: <- HEADER: #{k}: #{k == ":status" ? v : log_redact_headers(v)}" }.join("\n")
       end
       _, status = h.shift
       headers = request.options.headers_class.new(h)
