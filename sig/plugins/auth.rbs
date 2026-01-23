@@ -29,6 +29,12 @@ module HTTPX
       end
 
       module RequestMethods
+        @auth_token_value: String?
+
+        def authorized?: () -> bool
+
+        def unauthorize!: () -> void
+
         def authorize: (String auth_value) -> void
       end
 

@@ -41,19 +41,35 @@ module Requests
           body = json_body(response)
           verify_header(body["headers"], "Authorization", "TOKEN1")
         end
+
+        # proves that token is discarded
         authed.reset_auth_header_value!
-        # proves that token is reused
         response = authed.get(get_uri)
         verify_status(response, 200)
         body = json_body(response)
         verify_header(body["headers"], "Authorization", "TOKEN2")
       end
 
+      def test_plugin_auth_generate_token_once_for_multi_request
+        get_uri = build_uri("/get")
+        authed = HTTPX.plugin(:auth)
+        i = 0
+        r1, r2 = authed.authorization { "TOKEN#{i += 1}" }.get(get_uri, get_uri)
+        verify_status(r1, 200)
+        body = json_body(r1)
+        verify_header(body["headers"], "Authorization", "TOKEN1")
+
+        verify_status(r2, 200)
+        body = json_body(r2)
+        verify_header(body["headers"], "Authorization", "TOKEN1")
+      end
+
       def test_plugin_auth_regenerate_on_retry
         i = 0
         session = HTTPX.plugin(RequestInspector)
-                       .plugin(:retries, max_retries: 1, retry_on: ->(res) { res.status == 400 })
-                       .plugin(:auth, generate_auth_value_on_retry: ->(res) { res.status == 400 })
+                       .plugin(:retries, max_retries: 1, retry_on: ->(res) { res.respond_to?(:status) && res.status == 400 })
+                       .plugin(:auth, generate_auth_value_on_retry: ->(res) { res.respond_to?(:status) && res.status == 400 })
+                       .with(timeout: { request_timeout: 3 })
                        .authorization { "TOKEN#{i += 1}" }
 
         response = session.get(build_uri("/status/400"))
@@ -71,6 +87,15 @@ module Requests
         req1, req2 = session.total_requests
         assert req1.headers["authorization"] == "TOKEN2", "the last successful token should have been reused"
         assert req2.headers["authorization"] == "TOKEN3"
+        session.reset
+
+        # on regular errors, it should try to reuse the same token
+        response = session.get(build_uri("/delay/10"))
+        verify_error_response(response, HTTPX::RequestTimeoutError)
+        assert session.calls == 1, "expected two errors to have been sent"
+        req1, req2 = session.total_requests
+        assert req1.headers["authorization"] == "TOKEN3", "the last successful token should have been reused"
+        assert req2.headers["authorization"] == "TOKEN3", "the previous token should have been reused"
       end
 
       # Bearer Auth
