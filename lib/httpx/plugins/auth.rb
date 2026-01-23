@@ -69,7 +69,7 @@ module HTTPX
         private
 
         def send_request(request, *)
-          return super if @skip_auth_header_value
+          return super if @skip_auth_header_value || request.authorized?
 
           @auth_header_value ||= generate_auth_token
 
@@ -92,12 +92,31 @@ module HTTPX
       end
 
       module RequestMethods
+        def initialize(*)
+          super
+          @auth_token_value = nil
+        end
+
+        def authorized?
+          !@auth_token_value.nil?
+        end
+
+        def unauthorize!
+          return unless (auth_value = @auth_token_value)
+
+          @headers.get("authorization").delete(auth_value)
+
+          @auth_token_value = nil
+        end
+
         def authorize(auth_value)
           if (auth_type = @options.auth_header_type)
             auth_value = "#{auth_type} #{auth_value}"
           end
 
           @headers.add("authorization", auth_value)
+
+          @auth_token_value = auth_value
         end
       end
 
@@ -119,7 +138,7 @@ module HTTPX
             return unless auth_error?(response, request.options) ||
                           (@options.generate_auth_value_on_retry && @options.generate_auth_value_on_retry.call(response))
 
-            request.headers.get("authorization").pop
+            request.unauthorize!
             @auth_header_value = generate_auth_token
           end
 
