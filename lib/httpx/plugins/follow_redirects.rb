@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
 module HTTPX
-  InsecureRedirectError = Class.new(Error)
+  class InsecureRedirectError < Error
+  end
+
   module Plugins
     #
     # This plugin adds support for automatically following redirect (status 30X) responses.
