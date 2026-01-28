@@ -82,6 +82,7 @@ module WebMock
 
         def mock!
           @mocked = true
+          @body.mock!
         end
 
         def mocked?
@@ -90,10 +91,8 @@ module WebMock
       end
 
       module ResponseBodyMethods
-        def decode_chunk(chunk)
-          return chunk if @response.mocked?
-
-          super
+        def mock!
+          @inflaters = nil
         end
       end
 
