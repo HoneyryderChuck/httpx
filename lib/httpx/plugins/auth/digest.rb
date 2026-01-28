@@ -8,7 +8,8 @@ module HTTPX
   module Plugins
     module Authentication
       class Digest
-        Error = Class.new(Error)
+        class Error < Error
+        end
 
         def initialize(user, password, hashed: false, **)
           @user = user

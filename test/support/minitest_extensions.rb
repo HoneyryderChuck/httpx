@@ -3,7 +3,8 @@
 module MinitestExtensions
   module TimeoutForTest
     # our own subclass so we never confused different timeouts
-    TestTimeout = Class.new(Timeout::Error)
+    class TestTimeout < Timeout::Error
+    end
 
     def run(*)
       ::Timeout.timeout(60 * 5, TestTimeout) { super }

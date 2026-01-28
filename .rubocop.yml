@@ -172,6 +172,14 @@ Style/HashTransformValues:
   Exclude:
     - 'lib/httpx/plugins/authentication/digest.rb'
 
+Lint/InheritException:
+  Exclude:
+    - 'test/**/*.rb'
+
+Lint/ConstantDefinitionInBlock:
+  Exclude:
+    - 'test/**/*.rb'
+
 Bundler/DuplicatedGem:
   Enabled: false
 
