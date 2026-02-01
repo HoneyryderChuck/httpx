@@ -59,6 +59,7 @@ class WebmockTest < Minitest::Test
     request = stub_request(:get, MOCK_URL_HTTP).to_return(body: "body", headers: { content_encoding: "gzip" })
     response = HTTPX.get(MOCK_URL_HTTP)
 
+    assert !response.body.empty?
     assert_equal("body", response.body.to_s)
     assert_requested(request)
   end
