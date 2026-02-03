@@ -99,23 +99,23 @@ module Requests
           HTTPX
             .plugin(SessionWithPool)
             .with(ip_families: [Socket::AF_INET6, Socket::AF_INET]) do |session|
-            response = session.get(uri, resolver_class: resolver_type, resolver_options: options.merge(resolver_opts))
+              response = session.get(uri, resolver_class: resolver_type, resolver_options: options.merge(resolver_opts))
 
-            verify_status(response, 200)
-            conns = session.connections
+              verify_status(response, 200)
+              conns = session.connections
 
-            if resolver_type == :https
-              assert conns.size == 3
-              resolver_uri = URI(resolver_opts[:uri])
-              conns.reject! { |c| c.origin.to_s == resolver_uri.origin }
-            else
-              assert conns.size == 2
-            end
+              if resolver_type == :https
+                assert conns.size == 3
+                resolver_uri = URI(resolver_opts[:uri])
+                conns.reject! { |c| c.origin.to_s == resolver_uri.origin }
+              else
+                assert conns.size == 2
+              end
 
-            assert(conns.all? { |c| c.origin.to_s == uri.origin })
-            assert(conns.one? { |c| c.family == Socket::AF_INET6 })
-            assert(conns.one? { |c| c.family == Socket::AF_INET })
-            assert(conns.one?(&:main_sibling))
+              assert(conns.all? { |c| c.origin.to_s == uri.origin })
+              assert(conns.one? { |c| c.family == Socket::AF_INET6 })
+              assert(conns.one? { |c| c.family == Socket::AF_INET })
+              assert(conns.one?(&:main_sibling))
           end
         end
       end

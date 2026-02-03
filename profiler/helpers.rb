@@ -33,8 +33,8 @@ module ProfilerHelpers
       HTTPX::Parser,
       HTTPX::Resolver,
     ].map { |klass| [klass, klass.constants.map { |cons| klass.const_get(cons) }] }
-                    .flatten
-                    .grep(Class)
+     .flatten
+     .grep(Class)
 
     http2_next_classes = HTTP2.constants.map { |sym| HTTP2.const_get(sym) }.grep(Class)
 
