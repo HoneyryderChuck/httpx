@@ -5,6 +5,14 @@ require "http/2"
 
 HTTP2::Connection.__send__(:public, :send_buffer) if HTTP2::VERSION < "1.1.1"
 
+# TODO: move this patch to http-2
+class HTTP2::FlowBuffer::FrameBuffer
+  def clear
+    @buffer.clear
+    @bytesize = 0
+  end
+end
+
 module HTTPX
   class Connection::HTTP2
     include Callbacks
@@ -215,9 +223,7 @@ module HTTPX
     def handle_stream(stream, request)
       request.on(:refuse, &method(:on_stream_refuse).curry(3)[stream, request])
       stream.on(:close, &method(:on_stream_close).curry(3)[stream, request])
-      stream.on(:half_close) do
-        log(level: 2) { "#{stream.id}: waiting for response..." }
-      end
+      stream.on(:half_close) { on_stream_half_close(stream, request) }
       stream.on(:altsvc, &method(:on_altsvc).curry(2)[request.origin])
       stream.on(:headers, &method(:on_stream_headers).curry(3)[stream, request])
       stream.on(:data, &method(:on_stream_data).curry(3)[stream, request])
@@ -329,6 +335,16 @@ module HTTPX
     def on_stream_refuse(stream, request, error)
       on_stream_close(stream, request, error)
       stream.close
+    end
+
+    def on_stream_half_close(stream, _request)
+      unless stream.send_buffer.empty?
+        stream.send_buffer.clear
+        stream.data("", end_stream: true)
+      end
+
+      # TODO: omit log line if response already here
+      log(level: 2) { "#{stream.id}: waiting for response..." }
     end
 
     def on_stream_close(stream, request, error)
