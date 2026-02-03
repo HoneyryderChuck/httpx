@@ -32,7 +32,7 @@ Gem::Specification.new do |gem|
 
   gem.require_paths = ["lib"]
 
-  gem.add_dependency "http-2", ">= 1.0.0"
+  gem.add_dependency "http-2", ">= 1.1.3"
 
   gem.required_ruby_version = ">= 2.7.0"
 end

@@ -79,6 +79,8 @@ module HTTPX
 
     def on_stream_refuse: (::HTTP2::Stream stream, Request request, StandardError error) -> void
 
+    def on_stream_half_close: (::HTTP2::Stream stream, Request request) -> void
+
     def on_stream_close: (::HTTP2::Stream stream, Request request, (Symbol | StandardError)? error) -> void
 
     def on_frame: (string bytes) -> void
