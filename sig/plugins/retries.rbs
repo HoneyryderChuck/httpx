@@ -8,16 +8,16 @@ module HTTPX
       DEFAULT_JITTER: ^(Numeric) -> Numeric
       BACKOFF_ALGORITHMS: Array[Symbol]
 
-      def self?.retry_after_polynomial_backoff: (retriesRequest request, response response) -> Numeric
+      def self?.retry_after_polynomial_backoff: (retriesRequest request, retriesResponse response) -> Numeric
 
-      def self?.retry_after_exponential_backoff: (retriesRequest request, response response) -> Numeric
+      def self?.retry_after_exponential_backoff: (retriesRequest request, retriesResponse response) -> Numeric
 
       interface _RetryCallback
-        def call: (response response) -> bool?
+        def call: (retriesResponse response) -> bool?
       end
 
       interface _RetriesOptions
-        def retry_after: () -> (^(retriesRequest request, response response) -> Numeric | Numeric)?
+        def retry_after: () -> (^(retriesRequest request, retriesResponse response) -> Numeric | Numeric)?
 
         def retry_jitter: () -> ^(Numeric jitter) -> Numeric
 
@@ -35,17 +35,19 @@ module HTTPX
 
         private
 
-        def fetch_response: (retriesRequest request, Selector selector, retriesOptions options) -> (retriesResponse | ErrorResponse)?
+        def fetch_response: (retriesRequest request, Selector selector, retriesOptions options) -> retriesResponse?
 
-        def retryable_request?: (retriesRequest request, response response, retriesOptions options) -> boolish
+        def retryable_request?: (retriesRequest request, retriesResponse response, retriesOptions options) -> boolish
 
-        def retryable_response?: (response response, retriesOptions options) -> boolish
+        def retryable_response?: (retriesResponse response, retriesOptions options) -> boolish
 
         def retryable_error?: (_Exception error, Options options) -> boolish
 
-        def try_partial_retry: (retriesRequest request, (retriesResponse | ErrorResponse) response) -> void
+        def try_partial_retry: (retriesRequest request, retriesResponse response) -> void
 
-        def prepare_to_retry: (Request & RequestMethods request, response response) -> void
+        def prepare_to_retry: (Request & RequestMethods request, retriesResponse response) -> void
+
+        def when_to_retry: (Request & RequestMethods request, retriesResponse response, retriesOptions options) -> void
       end
 
       module RequestMethods
@@ -53,20 +55,22 @@ module HTTPX
 
         attr_accessor retries: Integer
 
-        attr_writer partial_response: Response?
+        attr_writer partial_response: retriesResponse?
 
-        def response=: (retriesResponse | ErrorResponse response) -> void
+        def response=: (retriesResponse response) -> void
       end
 
       module ResponseMethods
-        def from_partial_response: (Response response) -> void
+        def from_partial_response: (retriesHTTPResponse response) -> void
       end
 
       type retriesOptions = Options & _RetriesOptions
 
       type retriesRequest = Request & RequestMethods
 
-      type retriesResponse = Response & ResponseMethods
+      type retriesHTTPResponse = Response & ResponseMethods
+
+      type retriesResponse = retriesHTTPResponse | ErrorResponse
     end
 
     type sessionRetries = Session & Retries::InstanceMethods

@@ -29,7 +29,7 @@ module HTTPX
               | (:proxy, ?options) -> (Plugins::sessionProxy & Plugins::httpProxy)
               | (:push_promise, ?options) -> Plugins::sessionPushPromise
               | (:retries, ?options) -> Plugins::sessionRetries
-              | (:rate_limiter, ?options) -> Session
+              | (:rate_limiter, ?options) -> Plugins::sessionRateLimiter
               | (:stream, ?options) -> Plugins::sessionStream
               | (:stream_bidi, ?options) -> Plugins::sessionStreamBidi
               | (:aws_sigv4, ?options) -> Plugins::awsSigV4Session
