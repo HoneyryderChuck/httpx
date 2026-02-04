@@ -38,8 +38,6 @@ if RUBY_ENGINE == "truffleruby" && ENV.key?("SSL_CERT_FILE")
   OpenSSL::SSL::SSLContext::DEFAULT_CERT_STORE.add_file("/etc/pki/ca-trust/extracted/openssl/ca-bundle.trust.crt")
 end
 
-# 9090 drops SYN packets for connect timeout tests, make sure there's a server binding there.
-CONNECT_TIMEOUT_PORT = ENV.fetch("CONNECT_TIMEOUT_PORT", 9090).to_i
 ETIMEDOUT_PORT = ENV.fetch("ETIMEDOUT_PORT", 9091).to_i
 EHOSTUNREACH_HOST = ENV.fetch("EHOSTUNREACH_HOST", "192.168.2.1")
 

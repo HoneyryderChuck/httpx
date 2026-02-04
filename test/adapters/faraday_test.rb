@@ -12,6 +12,7 @@ class FaradayTest < Minitest::Test
   include HTTPHelpers
   include FaradayHelpers
   include ProxyHelper
+  include ConnectTimeoutHelpers
 
   using HTTPX::URIExtensions
 
@@ -180,15 +181,12 @@ class FaradayTest < Minitest::Test
   end
 
   def test_adapter_timeout_open_timeout
-    server = TCPServer.new("127.0.0.1", CONNECT_TIMEOUT_PORT)
-    begin
-      uri = URI(build_uri("/", origin("127.0.0.1:#{CONNECT_TIMEOUT_PORT}")))
+    start_connect_timeout_tcp_server do |authority|
+      uri = URI(build_uri("/", origin(authority)))
       conn = faraday_connection(server_uri: uri.origin, request: { open_timeout: 0.5 })
       assert_raises Faraday::TimeoutError do
         conn.get("/")
       end
-    ensure
-      server.close
     end
   end
 
