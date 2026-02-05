@@ -4,6 +4,7 @@ require_relative "test_helper"
 
 class SessionTest < Minitest::Test
   include HTTPHelpers
+  include ConnectTimeoutHelpers
 
   def test_session_block
     yielded = nil
@@ -137,23 +138,12 @@ class SessionTest < Minitest::Test
   end
 
   def test_session_timeout_connect_timeout
-    i = 3
-    begin
-      server = TCPServer.new("127.0.0.1", CONNECT_TIMEOUT_PORT)
-    rescue Errno::EADDRINUSE
-      retry unless (i -= 1).zero?
-
-      raise
-    end
-
-    begin
-      uri = build_uri("/", origin("127.0.0.1:#{CONNECT_TIMEOUT_PORT}"))
+    start_connect_timeout_tcp_server do |authority|
+      uri = build_uri("/", origin(authority))
       session = HTTPX.with_timeout(connect_timeout: 0.5)
       response = session.get(uri)
       verify_error_response(response)
       verify_error_response(response, HTTPX::ConnectTimeoutError)
-    ensure
-      server.close
     end
   end
 

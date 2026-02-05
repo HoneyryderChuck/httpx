@@ -148,10 +148,7 @@ module HTTPX
             log { "failed to get response, #{request.retries} tries to go..." }
             prepare_to_retry(request, response)
 
-            retry_after = options.retry_after
-            retry_after = retry_after.call(request, response) if retry_after.respond_to?(:call)
-
-            if retry_after
+            if (retry_after = when_to_retry(request, response, options))
               # apply jitter
               if (jitter = request.options.retry_jitter)
                 retry_after = jitter.call(retry_after)
@@ -201,6 +198,12 @@ module HTTPX
           request.transition(:idle)
         end
 
+        def when_to_retry(request, response, options)
+          retry_after = options.retry_after
+          retry_after = retry_after.call(request, response) if retry_after.respond_to?(:call)
+          retry_after
+        end
+
         #
         # Attempt to set the request to perform a partial range request.
         # This happens if the peer server accepts byte-range requests, and
@@ -237,14 +240,15 @@ module HTTPX
         def initialize(*args)
           super
           @retries = @options.max_retries
+          @partial_response = nil
         end
 
         def response=(response)
-          if @partial_response
+          if (partial_response = @partial_response)
             if response.is_a?(Response) && response.status == 206
-              response.from_partial_response(@partial_response)
+              response.from_partial_response(partial_response)
             else
-              @partial_response.close
+              partial_response.close
             end
             @partial_response = nil
           end
