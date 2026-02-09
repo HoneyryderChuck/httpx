@@ -28,6 +28,8 @@ AllCops:
     - 'lib/httpx/extensions.rb'
     # Do not lint ffi block, for openssl parity
     - 'test/extensions/response_pattern_match.rb'
+    # deliberately keep close to https://github.com/ruby/ruby/blob/master/test/fiber/scheduler.rb#L21
+    - 'test/support/test_fiber_scheduler.rb'
     # Old release notes
     - !ruby/regexp /doc/release_notes/0_.*.md/
 
