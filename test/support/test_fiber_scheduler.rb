@@ -17,6 +17,30 @@ module FiberSchedulerTestHelpers
       @urgent = IO.pipe
     end
 
+    class FiberInterrupt
+      def initialize(fiber, exception)
+        @fiber = fiber
+        @exception = exception
+      end
+
+      def alive?
+        @fiber.alive?
+      end
+
+      def transfer
+        @fiber.raise(@exception)
+      end
+    end
+
+    def fiber_interrupt(fiber, exception)
+      @lock.synchronize do
+        @ready << FiberInterrupt.new(fiber, exception)
+      end
+
+      io = @urgent.last
+      io.write_nonblock(".")
+    end
+
     # Hook for `Fiber.schedule`
     def fiber(&block)
       Fiber.new(blocking: false, &block).tap(&:transfer)
