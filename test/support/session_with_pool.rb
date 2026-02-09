@@ -72,9 +72,10 @@ module SessionWithPool
     private
 
     def resolve(*)
+      resolving = @name.nil?
       super
 
-      return unless @name
+      return unless @name && resolving
 
       @tries[@name.delete_suffix(".")] += 1
     end
