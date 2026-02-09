@@ -11,6 +11,7 @@ class Bug_1_7_2_2_Test < Minitest::Test
     session = HTTPX.plugin(RequestInspector)
                    .plugin(:persistent, max_retries: 1)
                    .with(timeout: { request_timeout: 3 }, resolver: { cache: false })
+                   .with(debug: $stderr, debug_level: 3)
 
     with_test_fiber_scheduler do
       3.times.map do
