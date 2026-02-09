@@ -119,11 +119,15 @@ module HTTPX
 
     def on_error: (HTTPX::TimeoutError | Error | StandardError error, ?Request? request) -> void
 
+    def on_io_error: (IOError error) -> void
+
     private
 
     def initialize: (http_uri uri, Options options) -> void
 
     def initialize_type: (http_uri uri, Options options) -> io_type
+
+    def in_use?: () -> boolish
 
     def connect: () -> void
 

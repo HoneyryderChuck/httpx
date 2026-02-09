@@ -27,8 +27,6 @@ module HTTPX
 
       def terminate: () -> void
 
-      def force_close: (*untyped args) -> void
-
       def closed?: () -> bool
 
       def empty?: () -> bool

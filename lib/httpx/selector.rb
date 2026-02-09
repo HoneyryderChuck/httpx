@@ -204,8 +204,7 @@ module HTTPX
       rescue IOError => e
         (Array(r) + Array(w)).each do |sel|
           # TODO: is there a way to cheaply find the IO associated with the error?
-          sel.on_error(e)
-          sel.force_close(true)
+          sel.on_io_error(e)
         end
       rescue StandardError => e
         (Array(r) + Array(w)).each do |sel|
@@ -249,8 +248,7 @@ module HTTPX
           when :rw then rw_wait(io, interval)
           end
       rescue IOError => e
-        io.on_error(e)
-        io.force_close(true)
+        io.on_io_error(e)
       rescue StandardError => e
         io.on_error(e)
 

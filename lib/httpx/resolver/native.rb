@@ -133,6 +133,17 @@ module HTTPX
       super
     end
 
+    # callback specific to the case where an IOError exception is raised while waiting
+    # for socket readiness in the selector.
+    def on_io_error(error)
+      # in case this IOError is a re-raise of a closed socket error, in casdes
+      # where the socket has been closed in a separate fiber.
+      return unless @name
+
+      on_error(error)
+      force_close(true)
+    end
+
     private
 
     def calculate_interests

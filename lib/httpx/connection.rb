@@ -393,6 +393,17 @@ module HTTPX
       reset
     end
 
+    # callback specific to the case where an IOError exception is raised while waiting
+    # for socket readiness in the selector.
+    def on_io_error(error)
+      # in case this IOError is a re-raise of a closed socket error, in casdes
+      # where the socket has been closed in a separate fiber.
+      return unless in_use?
+
+      on_error(error)
+      force_close(true)
+    end
+
     # :nocov:
     def inspect
       "#<#{self.class}:#{object_id} " \
@@ -404,6 +415,16 @@ module HTTPX
     # :nocov:
 
     private
+
+    # whether the connection has pending activity in any of its phases.
+    def in_use?
+      # socket / proxy handshakes
+      connecting? ||
+        # ongoing requests
+        @inflight.positive? ||
+        # waiting for peer server to acknowledge connectivity
+        @parser&.waiting_for_ping?
+    end
 
     def connect
       transition(:open)
@@ -493,7 +514,7 @@ module HTTPX
           # flush as many bytes as the sockets allow.
           #
           loop do
-            # buffer has been drainned, mark and exit the write loop.
+            # buffer has been drained, mark and exit the write loop.
             if @write_buffer.empty?
               # we only mark as drained on the first loop
               write_drained = write_drained.nil? && @inflight.positive?

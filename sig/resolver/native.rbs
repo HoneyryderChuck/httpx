@@ -37,6 +37,8 @@ module HTTPX
 
       def handle_socket_timeout: (Numeric interval) -> void
 
+      def on_io_error: (IOError error) -> void
+
       private
 
       def initialize: (ip_family family, options options) -> void
