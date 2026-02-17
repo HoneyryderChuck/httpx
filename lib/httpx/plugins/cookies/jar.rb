@@ -50,6 +50,39 @@ module HTTPX
         @cookies << c
       end
 
+      def delete(cookie)
+        @cookies.delete(cookie)
+      end
+
+      def reject!(&block)
+        return to_enum(__method__) unless block_given?
+
+        @cookies.reject!(&block)
+        self
+      end
+      alias_method :delete_if, :reject!
+
+      def select!(&block)
+        return to_enum(__method__) unless block_given?
+
+        @cookies.select!(&block)
+        self
+      end
+      alias_method :keep_if, :select!
+      alias_method :filter!, :select!
+
+      def clear(uri = nil)
+        unless uri
+          @cookies.clear
+          return
+        end
+
+        tpath = uri.path
+        @cookies.delete_if do |cookie|
+          cookie.valid_for_uri?(uri) && Cookie.path_match?(cookie.path, tpath)
+        end
+      end
+
       def [](uri)
         each(uri).sort
       end

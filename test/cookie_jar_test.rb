@@ -107,6 +107,107 @@ class CookieJarTest < Minitest::Test
     assert [c4, c3, c2, c1].sort == [c3, c4, c1, c2]
   end
 
+  def test_plugin_cookies_jar_clear
+    HTTPX.plugin(:cookies) # force loading the modules
+
+    # Clear all cookies
+    jar = HTTPX::Plugins::Cookies::Jar.new
+    jar.parse(%(a=b))
+    jar.parse(%(a=b; Path=/; Domain=.google.com))
+    jar.clear
+    assert jar.each.to_a.empty?
+
+    # Clear domain cookies
+    jar = HTTPX::Plugins::Cookies::Jar.new
+    jar.parse(%(a=b; Path=/; Domain=.example.com, a=b; Path=/; Domain=.google.com))
+    jar.clear(URI("https://google.com/"))
+    assert jar[URI("https://google.com/")].each.to_a.empty?
+    assert !jar[URI("https://example.com/")].each.to_a.empty?
+  end
+
+  def test_plugin_cookies_jar_delete
+    HTTPX.plugin(:cookies) # force loading the modules
+
+    # Delete a cookie
+    jar = HTTPX::Plugins::Cookies::Jar.new
+    cookie = HTTPX::Plugins::Cookies::Cookie.new("a", "b")
+    jar.add(cookie)
+    jar.delete(cookie)
+    assert jar.each.to_a.empty?
+
+    # Deleting cookies not in the jar is a noop
+    jar = HTTPX::Plugins::Cookies::Jar.new
+    cookie = HTTPX::Plugins::Cookies::Cookie.new("a", "b")
+    cookie2 = HTTPX::Plugins::Cookies::Cookie.new("x", "y")
+    jar.add(cookie)
+    jar.delete(cookie2)
+    assert jar.each.to_a == [cookie]
+  end
+
+  def test_plugin_cookies_jar_reject
+    HTTPX.plugin(:cookies) # force loading the modules
+
+    # Delete a cookies with a block
+    jar = HTTPX::Plugins::Cookies::Jar.new
+    jar.parse(%(a=b; Path=/; Domain=.example.com, a=b; Path=/; Domain=.google.com))
+    jar.reject! { |cookie| cookie.domain == "google.com" }
+    assert jar[URI("https://google.com/")].each.to_a.empty?
+    assert !jar[URI("https://example.com/")].each.to_a.empty?
+
+    # Cookies can be rejected by any criteria
+    jar = HTTPX::Plugins::Cookies::Jar.new
+    jar.parse(%(a=1, b=2, c=1, d=2))
+    jar.reject! { |cookie| cookie.value == "2" }
+    assert jar.each.to_a.map(&:name) == %w[a c]
+
+    # The method returns an enumerator if block is missing
+    jar = HTTPX::Plugins::Cookies::Jar.new
+    jar.parse(%(a=1, b=2, c=1, d=2))
+    jar.reject!.with_index { |_cookie, index| index == 2 }
+    assert jar.each.to_a.map(&:name) == %w[a b d]
+
+    # delete_if does the same thing
+    jar = HTTPX::Plugins::Cookies::Jar.new
+    jar.parse(%(a=1, b=2, c=1, d=2))
+    jar.delete_if { |cookie| cookie.value == "2" }
+    assert jar.each.to_a.map(&:name) == %w[a c]
+  end
+
+  def test_plugin_cookies_jar_select
+    HTTPX.plugin(:cookies) # force loading the modules
+
+    # Keep a cookies with a block
+    jar = HTTPX::Plugins::Cookies::Jar.new
+    jar.parse(%(a=b; Path=/; Domain=.example.com, a=b; Path=/; Domain=.google.com))
+    jar.select! { |cookie| cookie.domain == "google.com" }
+    assert !jar[URI("https://google.com/")].each.to_a.empty?
+    assert jar[URI("https://example.com/")].each.to_a.empty?
+
+    # Cookies can be selected by any criteria
+    jar = HTTPX::Plugins::Cookies::Jar.new
+    jar.parse(%(a=1, b=2, c=1, d=2))
+    jar.select! { |cookie| cookie.value == "1" }
+    assert jar.each.to_a.map(&:name) == %w[a c]
+
+    # The method returns an enumerator if block is missing
+    jar = HTTPX::Plugins::Cookies::Jar.new
+    jar.parse(%(a=1, b=2, c=1, d=2))
+    jar.select!.with_index { |_cookie, index| index != 2 }
+    assert jar.each.to_a.map(&:name) == %w[a b d]
+
+    # keep_if does the same thing
+    jar = HTTPX::Plugins::Cookies::Jar.new
+    jar.parse(%(a=1, b=2, c=1, d=2))
+    jar.keep_if { |cookie| cookie.value == "1" }
+    assert jar.each.to_a.map(&:name) == %w[a c]
+
+    # filter! does the same thing
+    jar = HTTPX::Plugins::Cookies::Jar.new
+    jar.parse(%(a=1, b=2, c=1, d=2))
+    jar.filter! { |cookie| cookie.value == "1" }
+    assert jar.each.to_a.map(&:name) == %w[a c]
+  end
+
   private
 
   def jar_cookies_uri(path = "/cookies", scheme: "http")

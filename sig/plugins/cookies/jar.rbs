@@ -11,6 +11,19 @@ module HTTPX
 
       def add: (Cookie name, ?String path) -> void
 
+      def delete: (Cookie cookie) -> Cookie?
+
+      def reject!: () { (Cookie cookie) -> boolish } -> self?
+                 | () -> ::Enumerator[Cookie, self?]
+      alias delete_if reject!
+
+      def select!: () { (Cookie cookie) -> boolish } -> self?
+                 | () -> ::Enumerator[Cookie, self?]
+      alias keep_if select!
+      alias filter! select!
+
+      def clear: (?http_uri?) -> void
+
       def []: (http_uri) -> Array[Cookie]
 
       def each: (?http_uri?) { (Cookie) -> void } -> void
