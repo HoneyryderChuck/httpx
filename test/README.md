@@ -30,7 +30,7 @@ Most (not all) tests can be executed locally. Tests using [httpbin](https://http
 
 If you want to reproduce the whole test suite, or have a test that runs locally and fails in the CI; the (Gilab) CI suite is backed by a docker-compose based script. If you have `docker` and `docker-compose` installed, you can set the environment:
 
-* open a console via `docker-compose.yml -f docker-compose.yml -f docker-compose-ruby-{RUBY_VERSION}.yml run --entrypoint bash httpx`
+* open a console via `docker-compose -f docker-compose.yml -f docker-compose-ruby-{RUBY_VERSION}.yml run --entrypoint bash httpx`
 * copy the relevant instructions from the [the build script](support/ci/build.sh) script
     * install packages
     * set required env vars
