@@ -45,10 +45,10 @@ module HTTPX
     protected :ssl_session, :sibling
 
     def initialize(uri, options)
-      @current_session = @current_selector =
-        @parser = @sibling = @coalesced_connection = @altsvc_connection =
-                               @family = @io = @ssl_session = @timeout =
-                                                 @connected_at = @response_received_at = nil
+      @current_session = @current_selector = @max_concurrent_requests =
+                           @parser = @sibling = @coalesced_connection = @altsvc_connection =
+                                                  @family = @io = @ssl_session = @timeout =
+                                                                    @connected_at = @response_received_at = nil
 
       @exhausted = @cloned = @main_sibling = false
 
@@ -285,6 +285,15 @@ module HTTPX
 
     def reset
       return if @state == :closing || @state == :closed
+
+      parser = @parser
+
+      if parser && parser.respond_to?(:max_concurrent_requests)
+        # if connection being reset has at some downgraded the number of concurrent
+        # requests, such as in the case where an attempt to use HTTP/1 pipelining failed,
+        # keep that information around.
+        @max_concurrent_requests = parser.max_concurrent_requests
+      end
 
       transition(:closing)
 
@@ -603,6 +612,9 @@ module HTTPX
     def build_parser(protocol = @io.protocol)
       parser = parser_type(protocol).new(@write_buffer, @options)
       set_parser_callbacks(parser)
+      if @max_concurrent_requests && parser.respond_to?(:max_concurrent_requests=)
+        parser.max_concurrent_requests = @max_concurrent_requests
+      end
       parser
     end
 
