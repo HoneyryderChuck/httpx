@@ -594,6 +594,8 @@ module HTTPX
       # back to the pending list before the parser is reset.
       @inflight -= parser_pending_requests.size
       @pending.unshift(*parser_pending_requests)
+
+      parser.pending.clear
     end
 
     def build_parser(protocol = @io.protocol)
