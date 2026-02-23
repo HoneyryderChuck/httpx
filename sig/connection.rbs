@@ -37,6 +37,7 @@ module HTTPX
     @read_buffer: Buffer
     @write_buffer: Buffer
     @inflight: Integer
+    @max_concurrent_requests: Integer?
     @keep_alive_timeout: Numeric?
     @timeout: Numeric?
     @current_timeout: Numeric?
