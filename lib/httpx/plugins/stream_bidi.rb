@@ -189,6 +189,10 @@ module HTTPX
           !@closed
         end
 
+        def force_close(*)
+          terminate
+        end
+
         def terminate
           return if @closed
 
@@ -201,6 +205,8 @@ module HTTPX
           @error = error
           terminate
         end
+
+        alias_method :on_io_error, :on_error
 
         # noop (the owner connection will take of it)
         def handle_socket_timeout(interval); end
