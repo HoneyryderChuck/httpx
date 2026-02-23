@@ -81,7 +81,7 @@ module HTTPX
           @parser.upgrade(request, response)
           @upgrade_protocol = "h2c"
 
-          prev_parser.requests.each do |req|
+          prev_parser.pending.each do |req|
             req.transition(:idle)
             send(req)
           end

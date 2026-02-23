@@ -80,7 +80,7 @@ module HTTPX
                   disconnect
                 end
                 parser.on(:reset) do
-                  if parser.empty?
+                  if parser.pending.empty? && parser.empty?
                     reset
                   else
                     enqueue_pending_requests_from_parser(parser)
@@ -96,17 +96,23 @@ module HTTPX
                     # keep parser state around due to proxy auth protocol;
                     # intermediate authenticated request is already inside
                     # the parser
-                    parser = nil
+                    connect_request = parser = nil
 
                     if initial_state == :connecting
                       parser = @parser
                       @parser.reset
+                      if @pending.first.is_a?(ConnectRequest)
+                        connect_request = @pending.shift # this happened when reenqueing
+                      end
                     end
 
                     idling
 
                     @parser = parser
-
+                    if connect_request
+                      @inflight += 1
+                      parser.send(connect_request)
+                    end
                     transition(:connecting)
                   end
                 end
