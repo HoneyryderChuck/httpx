@@ -6,6 +6,7 @@ module HTTPX
     MAX_CONCURRENT_REQUESTS: Integer
 
     attr_reader streams: Hash[Request, ::HTTP2::Stream]
+
     attr_reader pending: Array[Request]
 
     @connection: HTTP2::Client
