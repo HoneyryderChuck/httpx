@@ -50,6 +50,7 @@ module HTTPX
       @parser.reset!
       @handshake_completed = false
       @pending.unshift(*@requests)
+      @requests.clear
     end
 
     def close
