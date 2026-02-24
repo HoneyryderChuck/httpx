@@ -178,16 +178,15 @@ module HTTPX
 
     # returns the HTTPX::Connection through which the +request+ should be sent through.
     def find_connection(request_uri, selector, options)
-      log(level: 2) { "finding connection for #{request_uri}..." }
       if (connection = selector.find_connection(request_uri, options))
         connection.idling if connection.state == :closed
-        connection.log(level: 2) { "found connection##{connection.object_id}(#{connection.state}) in selector##{selector.object_id}" }
+        log(level: 2) { "found connection##{connection.object_id}(#{connection.state}) in selector##{selector.object_id}" }
         return connection
       end
 
       connection = @pool.checkout_connection(request_uri, options)
 
-      connection.log(level: 2) { "found connection##{connection.object_id}(#{connection.state}) in pool##{@pool.object_id}" }
+      log(level: 2) { "found connection##{connection.object_id}(#{connection.state}) in pool##{@pool.object_id}" }
 
       case connection.state
       when :idle
@@ -241,7 +240,7 @@ module HTTPX
 
       return unless response && response.finished?
 
-      log(level: 2) { "response fetched" }
+      log(level: 2) { "response##{response.object_id} fetched" }
 
       response
     end
@@ -250,6 +249,7 @@ module HTTPX
     def send_request(request, selector, options = request.options)
       error = begin
         catch(:resolve_error) do
+          log(level: 2) { "finding connection for request##{request.object_id}..." }
           connection = find_connection(request.uri, selector, options)
           connection.send(request)
         end
