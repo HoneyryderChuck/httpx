@@ -53,7 +53,7 @@ module FiberSchedulerTestHelpers
     # Hook for IO#read_nonblock
     def io_read(io, buffer, length, offset)
       total = 0
-      io.nonblock = true
+      io.nonblock = true if io.respond_to?(:nonblock=)
 
       loop do
         result = Fiber.blocking { buffer.read(io, 0, offset) }
@@ -80,7 +80,7 @@ module FiberSchedulerTestHelpers
     # Hook for IO#write_nonblock
     def io_write(io, buffer, length, offset)
       total = 0
-      io.nonblock = true
+      io.nonblock = true if io.respond_to?(:nonblock=)
 
       loop do
         result = Fiber.blocking { buffer.write(io, 0, offset) }
