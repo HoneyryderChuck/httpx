@@ -76,7 +76,6 @@ module HTTPX
           @options.merge(resolver_class: :system, ssl: { alpn_protocols: %w[h2] })
         ).tap do |conn|
           emit_addresses(conn, @family, @uri_addresses) unless conn.addresses
-          conn.on(:force_closed, &method(:force_close))
         end
     end
 

@@ -272,7 +272,6 @@ module HTTPX
       @write_buffer.clear
       purge_after_closed
       disconnect
-      emit(:force_closed, delete_pending)
     end
 
     # bypasses the state machine to force closing of connections still connecting.
