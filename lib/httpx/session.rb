@@ -140,9 +140,10 @@ module HTTPX
       end
       selector.deregister(connection)
 
+      # do not check-in connections only created for Happy Eyeballs
       return if cloned
 
-      return if @closing && connection.state == :closed
+      return if @closing && connection.state == :closed && !connection.used?
 
       connection.log(level: 2) { "check-in connection##{connection.object_id}(#{connection.state}) in pool##{@pool.object_id}" }
       @pool.checkin_connection(connection)

@@ -731,8 +731,6 @@ module HTTPX
 
         # do not deactivate connection in use
         return if @inflight.positive? || @parser.waiting_for_ping?
-
-        disconnect
       when :closing
         return unless connecting? || @state == :open
 
@@ -750,8 +748,9 @@ module HTTPX
         return unless @write_buffer.empty?
 
         purge_after_closed
-        disconnect if @pending.empty?
 
+        # TODO: should this raise an error instead?
+        return unless @pending.empty?
       when :already_open
         nextstate = :open
         # the first check for given io readiness must still use a timeout.
@@ -768,6 +767,11 @@ module HTTPX
       end
       log(level: 3) { "#{@state} -> #{nextstate}" }
       @state = nextstate
+      # post state change
+      case nextstate
+      when :closed, :inactive
+        disconnect
+      end
     end
 
     def close_sibling
