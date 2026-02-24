@@ -31,6 +31,8 @@ module HTTPX
       def cookie_value: () -> String
       alias to_s cookie_value
 
+      def match?: (String | cookie_attributes name_or_options) -> bool
+
       def valid_for_uri?: (http_uri uri) -> bool
 
       def self.new: (Cookie) -> instance
@@ -41,8 +43,7 @@ module HTTPX
 
       private
 
-      def initialize: (cookie_attributes) -> untyped
-                    | (_ToS, _ToS, ?cookie_attributes) -> untyped
+      def initialize: (_ToS name, _ToS value, ?cookie_attributes) -> void
 
       def acceptable_from_uri?: (uri) -> bool
 

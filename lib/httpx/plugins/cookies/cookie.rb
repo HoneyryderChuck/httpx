@@ -14,12 +14,14 @@ module HTTPX
 
       attr_reader :domain, :path, :name, :value, :created_at
 
+      # assigns a new +path+ to this cookie.
       def path=(path)
         path = String(path)
+        @for_domain = false
         @path = path.start_with?("/") ? path : "/"
       end
 
-      # See #domain.
+      # assigns a new +domain+ to this cookie.
       def domain=(domain)
         domain = String(domain)
 
@@ -37,6 +39,13 @@ module HTTPX
         @domain = @domain_name.hostname
       end
 
+      # checks whether +other+ is the same cookie, i.e. name, value, domain and path are
+      # the same.
+      def ==(other)
+        @name == other.name && @value == other.value &&
+          @path == other.path && @domain == other.domain
+      end
+
       # Compares the cookie with another.  When there are many cookies with
       # the same name for a URL, the value of the smallest must be used.
       def <=>(other)
@@ -47,11 +56,29 @@ module HTTPX
           (@created_at <=> other.created_at).nonzero? || 0
       end
 
+      def match?(name_or_options)
+        case name_or_options
+        when String
+          @name == name_or_options
+        when Hash, Array
+          name_or_options.all? { |k, v| respond_to?(k) && send(k) == v }
+        else
+          false
+        end
+      end
+
       class << self
         def new(cookie, *args)
-          return cookie if cookie.is_a?(self)
+          case cookie
+          when self
+            cookie
+          when Array, Hash
+            options = Hash[cookie] #: cookie_attributes
+            super(options[:name], options[:value], options)
+          else
 
-          super
+            super
+          end
         end
 
         # Tests if +target_path+ is under +base_path+ as described in RFC
@@ -84,16 +111,12 @@ module HTTPX
         end
       end
 
-      def initialize(arg, *attrs)
+      def initialize(arg, value, attrs = nil)
         @created_at = Time.now
 
-        if attrs.empty?
-          attr_hash = Hash.try_convert(arg)
-        else
-          @name = arg
-          @value, attr_hash = attrs
-          attr_hash = Hash.try_convert(attr_hash)
-        end
+        @name = arg
+        @value = value
+        attr_hash = Hash.try_convert(attrs)
 
         attr_hash.each do |key, val|
           key = key.downcase.tr("-", "_").to_sym unless key.is_a?(Symbol)
