@@ -3,6 +3,13 @@
 require_relative "test_helper"
 
 class CookieJarTest < Minitest::Test
+  def test_plugin_cookies_make_jar
+    session = HTTPX.plugin(:cookies)
+    assert session.make_jar.is_a?(HTTPX::Plugins::Cookies::Jar)
+    cookie = HTTPX::Plugins::Cookies::Cookie.new("a", "b")
+    assert session.make_jar({ "a" => "b" }).each.to_a == [cookie]
+  end
+
   def test_plugin_cookies_jar
     HTTPX.plugin(:cookies) # force loading the modules
 
