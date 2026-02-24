@@ -44,6 +44,12 @@ module HTTPX
           request
         end
 
+        # factory method to return a Jar to the user, which can then manipulate
+        # externally to the session.
+        def make_jar(*args)
+          Jar.new(*args)
+        end
+
         private
 
         def set_request_callbacks(request)
