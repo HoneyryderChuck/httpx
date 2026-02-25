@@ -437,6 +437,10 @@ module HTTPX
 
       raise Error, "no URI to resolve" unless connection
 
+      do_resolve(connection, hostname)
+    end
+
+    def do_resolve(connection, hostname = nil)
       # do not buffer query if previous is still in the buffer or awaiting reply/retry
       return unless @write_buffer.empty? && @timer.nil?
 

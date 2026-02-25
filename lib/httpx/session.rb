@@ -62,6 +62,7 @@ module HTTPX
     # will be picked up from the connection pool and closed. Connections in use
     # by other sessions, or same session in a different thread, will not be reaped.
     def close(selector = Selector.new)
+      log { "closing time..." }
       # throw resolvers away from the pool
       @pool.reset_resolvers
 
@@ -308,8 +309,10 @@ module HTTPX
       ensure
         unless @wrapped
           if @persistent
+            log { "deactivating now" }
             deactivate(selector)
           else
+            log { "closing now" }
             close(selector)
           end
         end
@@ -339,6 +342,7 @@ module HTTPX
         responses << response
         requests.shift
 
+        log { "response##{response.object_id} fetched, #{requests.size} to go..." }
         break if requests.empty?
 
         next unless selector.empty?

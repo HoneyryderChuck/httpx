@@ -221,10 +221,19 @@ module HTTPX
 
         consume
       when :closed
-        return
+        return if @pending.empty?
+
+        idling
+
+        return unless @state == :idle
+
+        call
       when :closing
         consume
         transition(:closed)
+        return if @state == :closed && @pending.empty?
+
+        call
       when :open
         consume
       end
@@ -250,7 +259,7 @@ module HTTPX
       case @state
       when :idle
         purge_after_closed
-        disconnect
+        disconnect if @io.closed? && @pending.empty?
       when :closed
         @connected_at = nil
       end
@@ -261,17 +270,27 @@ module HTTPX
     # bypasses state machine rules while setting the connection in the
     # :closed state.
     def force_close(delete_pending = false)
+      unless @state == :closed
+        @state = :closed
+        @write_buffer.clear
+        begin
+          purge_after_closed
+        rescue IOError
+          # may be raised when closing the socket.
+          # due to connection reuse / fiber scheduling, it may
+          # have been reopened, to bail out in that case.
+        end
+
+        return unless @state == :closed
+      end
+
       if delete_pending
         @pending.clear
       elsif (parser = @parser)
         enqueue_pending_requests_from_parser(parser)
       end
-      return if @state == :closed
 
-      @state = :closed
-      @write_buffer.clear
-      purge_after_closed
-      disconnect
+      disconnect if @io.closed? && @pending.empty?
     end
 
     # bypasses the state machine to force closing of connections still connecting.
@@ -333,10 +352,17 @@ module HTTPX
     end
 
     def idling
+      log { "idling..." }
       purge_after_closed
+
+      return unless @state == :closed
+
       @write_buffer.clear
       transition(:idle)
-      @parser = nil if @parser
+      if @parser
+        enqueue_pending_requests_from_parser(parser)
+        @parser = nil
+      end
     end
 
     def used?
@@ -379,13 +405,26 @@ module HTTPX
 
     # disconnects from the current session it's attached to
     def disconnect
+      return unless @state == :closed
+
       return if @exhausted # it'll reset
 
       return unless (current_session = @current_session) && (current_selector = @current_selector)
 
       @current_session = @current_selector = nil
 
+      log { "disconnecting, io:#{@io}, state:#{@state}, io-closed:#{@io.closed?}" }
+
       current_session.deselect_connection(self, current_selector, @cloned)
+    end
+
+    def on_connect_error(e)
+      log { "abruptly closing... #{e}"}
+      # connect errors, exit gracefully
+      error = ConnectionError.new(e.message)
+      error.set_backtrace(e.backtrace)
+      handle_connect_error(error) if connecting?
+      force_close
     end
 
     def on_io_error(e)
@@ -596,6 +635,7 @@ module HTTPX
     end
 
     def enqueue_pending_requests_from_parser(parser)
+      parser.reset_requests # move sequential requests back to pending queue.
       parser_pending_requests = parser.pending
 
       return if parser_pending_requests.empty?
@@ -640,7 +680,12 @@ module HTTPX
         @exhausted = true
         parser.close
 
+        next unless @exhausted
+
         idling
+
+        next unless @exhausted
+
         @exhausted = false
       end
       parser.on(:origin) do |origin|
@@ -648,15 +693,18 @@ module HTTPX
       end
       parser.on(:close) do
         reset
-        disconnect
       end
       parser.on(:close_handshake) do
         consume unless @state == :closed
       end
       parser.on(:reset) do
         enqueue_pending_requests_from_parser(parser)
+        log { "local pending: #{@pending.size}, parser-pending:#{parser.pending.size}, parser-requests:#{parser.requests.size}, @state:#{@state}" }
 
         reset
+
+        next unless @state == :closed
+
         # :reset event only fired in http/1.1, so this guarantees
         # that the connection will be closed here.
         idling unless @pending.empty?
@@ -705,11 +753,7 @@ module HTTPX
            Errno::ENOENT,
            SocketError,
            IOError => e
-      # connect errors, exit gracefully
-      error = ConnectionError.new(e.message)
-      error.set_backtrace(e.backtrace)
-      handle_connect_error(error) if connecting?
-      force_close
+      on_connect_error(e)
     rescue TLSError, ::HTTP2::Error::ProtocolError, ::HTTP2::Error::HandshakeError => e
       # connect errors, exit gracefully
       handle_error(e)
@@ -739,6 +783,9 @@ module HTTPX
         emit(:open)
       when :inactive
         return unless @state == :open
+        log {"(#{@state}) inactivating (inflight:#{@inflight})... "}
+
+        # @type ivar @parser: HTTP1 | HTTP2
 
         # do not deactivate connection in use
         return if @inflight.positive? || @parser.waiting_for_ping?
@@ -759,6 +806,9 @@ module HTTPX
         return unless @write_buffer.empty?
 
         purge_after_closed
+
+        log { "purging done, pending:#{@pending.size}, @state:#{@state} io-state:#{@io.state}" }
+        return unless @state == :closing && @io.state == :closed
       when :already_open
         nextstate = :open
         # the first check for given io readiness must still use a timeout.
@@ -804,7 +854,14 @@ module HTTPX
     end
 
     def purge_after_closed
-      @io.close if @io
+      if @io && @io.state != :closed
+        @io.close
+
+        # due to fiber scheduler, multiple fibers may be listening on the same connection
+        # and moving the state machine forward; in such cases, when the control flow reaches
+        # this line, the io object may not be closed anymore.
+        return unless @io.state == :closed
+      end
       @read_buffer.clear
       @timeout = nil
     end

@@ -24,7 +24,9 @@ module HTTPX
     end
 
     def close
+      log { "CLOSING..." }
       @io.close
+      log { "CLOSED..." }
     end
 
     if RUBY_ENGINE == "jruby"

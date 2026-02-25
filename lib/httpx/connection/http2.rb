@@ -161,6 +161,7 @@ module HTTPX
       @pings.any?
     end
 
+    def reset_requests; end
     private
 
     def can_buffer_more_requests?

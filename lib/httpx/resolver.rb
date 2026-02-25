@@ -97,15 +97,15 @@ module HTTPX
     def find_supported_ip_families
       list = Socket.ip_address_list
 
-      begin
-        if list.any? { |a| a.ipv6? && !a.ipv6_loopback? && !a.ipv6_linklocal? }
-          [Socket::AF_INET6, Socket::AF_INET]
-        else
-          [Socket::AF_INET]
-        end
-      rescue NotImplementedError
-        [Socket::AF_INET]
-      end.freeze
+      # begin
+      #   if list.any? { |a| a.ipv6? && !a.ipv6_loopback? && !a.ipv6_linklocal? }
+      #     [Socket::AF_INET6, Socket::AF_INET]
+      #   else
+      #     [Socket::AF_INET]
+      #   end
+      # rescue NotImplementedError
+      [Socket::AF_INET]
+      # end.freeze
     end
   end
 end

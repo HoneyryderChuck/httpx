@@ -139,7 +139,7 @@ module HTTPX
 
     def try_connect
       ret = @io.connect_nonblock(Socket.sockaddr_in(@port, @ip.to_s), exception: false)
-      log(level: 3, color: :cyan) { "TCP CONNECT: #{ret}..." }
+      log(level: 3, color: :cyan) { "(##{@io.fileno}) TCP CONNECT: #{ret}..." }
       case ret
       when :wait_readable
         @interests = :r
@@ -179,12 +179,16 @@ module HTTPX
     end
 
     def close
+      log { "closing TCP: #{@io&.to_io} (closed?:#{@io&.to_io&.closed?})" }
+      puts caller
       return if @keep_open || closed?
 
       begin
         @io.close
       ensure
-        transition(:closed)
+        log { "closed TCP: #{@io&.to_io} (closed?:#{@io&.to_io&.closed?})" }
+        log { "error while closing: #{$!}"} if $!
+        transition(:closed) if @io.closed?
       end
     end
 

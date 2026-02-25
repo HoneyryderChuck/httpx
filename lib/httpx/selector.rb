@@ -133,7 +133,10 @@ module HTTPX
       # the connections to be reaped (such as the total timeout error) before #select
       # gets called.
       if @selectables.empty?
-        sleep(interval) if interval
+        begin
+          sleep(interval) if interval
+        rescue IOError
+        end
         return
       end
 
@@ -146,10 +149,25 @@ module HTTPX
 
         is_closed = io.state == :closed
 
+        io.log { "rejecting from selector? #{is_closed}"}
         next(is_closed) if is_closed
 
         io.log(level: 2) do
           "[#{io.state}] registering in selector##{object_id} for select (#{interests})#{" for #{interval} seconds" unless interval.nil?}"
+        end
+
+        if io.is_a?(Connection)
+          io.log(level: 2) do
+            parser = io.instance_variable_get(:@parser)
+            pending = io.pending
+            parser_pending = parser&.pending || []
+            requests = parser&.requests || []
+            "connecting:#{io.connecting?}, " \
+            "buffer:#{io.instance_variable_get(:@write_buffer).bytesize}, " \
+            "pending:#{pending.map { |r| [r.context.object_id, r.interests] }}, " \
+            "parser-pending:#{parser_pending.map { |r| [r.context.object_id, r.interests] }}, " \
+            "requests:#{requests.map { |r| [r.context.object_id, r.interests] }}"
+          end
         end
 
         if READABLE.include?(interests)
@@ -200,6 +218,8 @@ module HTTPX
 
     def select_many(r, w, interval, &block)
       begin
+        Array(r).each { |io| io.log { "select many: check for #{interests}" }}
+        Array(w).each { |io| io.log { "select many: check for #{interests}" }}
         readers, writers = ::IO.select(r, w, nil, interval)
       rescue IOError => e
         (Array(r) + Array(w)).each do |sel|
@@ -240,7 +260,9 @@ module HTTPX
     end
 
     def select_one(io, interests, interval)
+      start_at = Utils.now
       begin
+        io.log { "select one: check for #{interests}" }
         result =
           case interests
           when :r then io.to_io.wait_readable(interval)
@@ -260,8 +282,10 @@ module HTTPX
 
         raise e
       end
+      end_at = Utils.now
 
       unless result || interval.nil?
+        io.log { "timeout after #{end_at - start_at} secs..."}
         io.handle_socket_timeout(interval) unless @is_timer_interval
         return
       end

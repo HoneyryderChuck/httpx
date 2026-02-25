@@ -49,6 +49,10 @@ module HTTPX
       @max_requests = @options.max_requests || MAX_REQUESTS
       @parser.reset!
       @handshake_completed = false
+      reset_requests
+    end
+
+    def reset_requests
       @pending.unshift(*@requests)
       @requests.clear
     end
@@ -96,6 +100,7 @@ module HTTPX
         break if idx >= concurrent_requests_limit
         next unless request.can_buffer?
 
+        log { "really sending request##{request.object_id}! pending:#{@pending.size}, requests:#{@requests.size}" }
         handle(request)
       end
     end
