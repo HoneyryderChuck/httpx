@@ -13,6 +13,10 @@ module HTTPX
     def handle_socket_timeout: (Numeric interval) -> void
 
     def on_error: (StandardError) -> void
+
+    def on_io_error: (IOError error) -> void
+
+    def force_close: (?bool delete_pending) -> void
   end
 
   class Selector

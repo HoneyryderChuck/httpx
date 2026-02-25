@@ -119,6 +119,11 @@ module HTTPX
       end
     end
 
+    def on_io_error(e)
+      on_error(e)
+      force_close(true)
+    end
+
     def on_error(error)
       handle_error(error)
       disconnect

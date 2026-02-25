@@ -37,6 +37,7 @@ module HTTPX
     @read_buffer: Buffer
     @write_buffer: Buffer
     @inflight: Integer
+    @max_concurrent_requests: Integer?
     @keep_alive_timeout: Numeric?
     @timeout: Numeric?
     @current_timeout: Numeric?
@@ -118,6 +119,8 @@ module HTTPX
     def disconnect: () -> void
 
     def on_error: (HTTPX::TimeoutError | Error | StandardError error, ?Request? request) -> void
+
+    def on_io_error: (IOError error) -> void
 
     private
 

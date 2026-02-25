@@ -27,8 +27,6 @@ module HTTPX
 
       def terminate: () -> void
 
-      def force_close: (*untyped args) -> void
-
       def closed?: () -> bool
 
       def empty?: () -> bool
@@ -60,6 +58,8 @@ module HTTPX
       def resolve_error: (String hostname, ?StandardError?) -> (ResolveError | ResolveTimeoutError)
 
       def close_or_resolve: () -> void
+
+      def disconnect: () -> void
     end
   end
 end

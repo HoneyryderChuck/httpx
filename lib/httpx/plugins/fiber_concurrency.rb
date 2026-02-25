@@ -160,9 +160,7 @@ module HTTPX
         end
       end
 
-      module NativeResolverMethods
-        private
-
+      module ResolverNativeMethods
         def calculate_interests
           return if @queries.empty?
 
@@ -172,7 +170,7 @@ module HTTPX
         end
       end
 
-      module SystemResolverMethods
+      module ResolverSystemMethods
         def interests
           return unless @queries.any? { |_, conn| conn.current_context? }
 

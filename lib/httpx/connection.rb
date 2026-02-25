@@ -227,6 +227,9 @@ module HTTPX
         consume
       end
       nil
+    rescue IOError => e
+      @write_buffer.clear
+      on_io_error(e)
     rescue StandardError => e
       @write_buffer.clear
       on_error(e)
@@ -375,6 +378,11 @@ module HTTPX
       current_session.deselect_connection(self, current_selector, @cloned)
     end
 
+    def on_io_error(e)
+      on_error(e)
+      force_close(true)
+    end
+
     def on_error(error, request = nil)
       if error.is_a?(OperationTimeoutError)
 
@@ -493,7 +501,7 @@ module HTTPX
           # flush as many bytes as the sockets allow.
           #
           loop do
-            # buffer has been drainned, mark and exit the write loop.
+            # buffer has been drained, mark and exit the write loop.
             if @write_buffer.empty?
               # we only mark as drained on the first loop
               write_drained = write_drained.nil? && @inflight.positive?
@@ -586,6 +594,8 @@ module HTTPX
       # back to the pending list before the parser is reset.
       @inflight -= parser_pending_requests.size
       @pending.unshift(*parser_pending_requests)
+
+      parser.pending.clear
     end
 
     def build_parser(protocol = @io.protocol)
@@ -721,8 +731,6 @@ module HTTPX
 
         # do not deactivate connection in use
         return if @inflight.positive? || @parser.waiting_for_ping?
-
-        disconnect
       when :closing
         return unless connecting? || @state == :open
 
@@ -740,8 +748,9 @@ module HTTPX
         return unless @write_buffer.empty?
 
         purge_after_closed
-        disconnect if @pending.empty?
 
+        # TODO: should this raise an error instead?
+        return unless @pending.empty?
       when :already_open
         nextstate = :open
         # the first check for given io readiness must still use a timeout.
@@ -758,6 +767,11 @@ module HTTPX
       end
       log(level: 3) { "#{@state} -> #{nextstate}" }
       @state = nextstate
+      # post state change
+      case nextstate
+      when :closed, :inactive
+        disconnect
+      end
     end
 
     def close_sibling
