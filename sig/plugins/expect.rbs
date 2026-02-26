@@ -2,14 +2,29 @@ module HTTPX
   module Plugins
     module Expect
       EXPECT_TIMEOUT: Integer
+      NOEXPECT_STORE_MUTEX: Thread::Mutex
+
+      self.@no_expect_store: Store
+      def self.no_expect_store: () -> Store
+
+      def self.extra_options: (Options) -> (Options & _ExpectOptions)
+
+      class Store
+        @store: Array[String]
+        @mutex: Thread::Mutex
+
+        def include?: (String host) -> bool
+
+        def add: (String host) -> void
+
+        def delete: (String host) -> void
+      end
 
       interface _ExpectOptions
         def expect_timeout: () -> Integer?
 
         def expect_threshold_size: () -> Integer?
       end
-
-      def self.extra_options: (Options) -> (Options & _ExpectOptions)
     end
   end
 end

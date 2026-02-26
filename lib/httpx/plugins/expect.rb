@@ -9,10 +9,34 @@ module HTTPX
     #
     module Expect
       EXPECT_TIMEOUT = 2
+      NOEXPECT_STORE_MUTEX = Thread::Mutex.new
+
+      class Store
+        def initialize
+          @store = []
+          @mutex = Thread::Mutex.new
+        end
+
+        def include?(host)
+          @mutex.synchronize { @store.include?(host) }
+        end
+
+        def add(host)
+          @mutex.synchronize { @store << host }
+        end
+
+        def delete(host)
+          @mutex.synchronize { @store.delete(host) }
+        end
+      end
 
       class << self
         def no_expect_store
-          @no_expect_store ||= []
+          return Ractor.store_if_absent(:httpx_no_expect_store) { Store.new } if Utils.in_ractor?
+
+          @no_expect_store ||= NOEXPECT_STORE_MUTEX.synchronize do
+            @no_expect_store || Store.new
+          end
         end
 
         def extra_options(options)
@@ -89,7 +113,7 @@ module HTTPX
           set_request_timeout(:expect_timeout, request, expect_timeout, :expect, %i[body response]) do
             # expect timeout expired
             if request.state == :expect && !request.expects?
-              Expect.no_expect_store << request.origin
+              Expect.no_expect_store.add(request.origin)
               request.headers.delete("expect")
               consume
             end
