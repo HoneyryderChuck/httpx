@@ -5,6 +5,10 @@ module HTTPX
   module Plugins
     module Proxy
       module Socks4
+        VERSION: Integer
+        CONNECT: Integer
+        GRANTED: Integer
+        PROTOCOLS: Array[String]
 
         module ConnectionMethods
           def __socks4_proxy_connect: () ->  void

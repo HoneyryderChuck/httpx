@@ -6,6 +6,7 @@ module HTTPX
 
     METHODS: Array[Symbol]
     USER_AGENT: String
+    ALLOWED_URI_SCHEMES: Array[String]
 
     attr_reader verb: verb
     attr_reader uri: http_uri

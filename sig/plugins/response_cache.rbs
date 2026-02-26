@@ -51,7 +51,7 @@ module HTTPX
       module ResponseMethods
         attr_writer original_request: cacheRequest
 
-        @cache: bool
+        @cached: bool
         @cache_control: Array[String]?
         @vary: Array[String]?
         @date: Time?
@@ -66,9 +66,9 @@ module HTTPX
 
         def fresh?: () -> bool
 
-        def cache_control: () -> Array[String]?
+         %a{pure} def cache_control: () -> Array[String]?
 
-        def vary: () -> Array[String]?
+         %a{pure} def vary: () -> Array[String]?
 
         private
 
