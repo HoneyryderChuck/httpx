@@ -46,14 +46,14 @@ class HTTPXContentDigestTest < Minitest::Test
   end
 
   def test_plugin_content_digest_from_file
-    json_file = File.open(File.expand_path("support/fixtures/hello_world.json", __dir__))
-    request = HTTPX.plugin(:content_digest)
-                   .build_request(
-                     "POST",
-                     "http://domain.com",
-                     body: json_file
-                   )
-    json_file.close
+    File.open(File.expand_path("support/fixtures/hello_world.json", __dir__)) do |json_file|
+      HTTPX.plugin(:content_digest)
+           .build_request(
+             "POST",
+             "http://domain.com",
+             body: json_file
+           )
+    end
 
     expected_digest = "sha-256=:RK/0qy18MlBSVnWgjwz6lZEWjP/lF5HF9bvEF8FabDg=:"
 

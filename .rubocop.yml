@@ -113,6 +113,9 @@ Style/HashConversion:
 Style/FetchEnvVar:
   Enabled: False
 
+Style/OneClassPerFile:
+  Enabled: false
+
 Performance/TimesMap:
   Enabled: false
 
