@@ -46,7 +46,7 @@ class HTTPXContentDigestTest < Minitest::Test
   end
 
   def test_plugin_content_digest_from_file
-    File.open(File.expand_path("support/fixtures/hello_world.json", __dir__)) do |json_file|
+    request = File.open(File.expand_path("support/fixtures/hello_world.json", __dir__)) do |json_file|
       HTTPX.plugin(:content_digest)
            .build_request(
              "POST",
