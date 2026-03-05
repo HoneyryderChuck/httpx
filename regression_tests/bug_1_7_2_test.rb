@@ -35,4 +35,10 @@ class Bug_1_7_2_Test < Minitest::Test
       end
     end
   end
+
+  def test_brotli_cant_decode_chunks_when_receiving_large_payload
+    session = HTTPX.plugin(:brotli)
+    response = session.get("https://cdn.ventrata.com/raw/upload/s--pBtVfkCH--/v1744920951/AvenirLTStd-Light_ugoo8n.otf")
+    verify_status(response, 200)
+  end
 end
