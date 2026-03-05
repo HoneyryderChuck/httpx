@@ -7,8 +7,6 @@ module HTTPX
     #
     # This plugin implements a persistent cookie jar for the duration of a session.
     #
-    # It also adds a *#cookies* helper, so that you can pre-fill the cookies of a session.
-    #
     # https://gitlab.com/os85/httpx/wikis/Cookies
     #
     module Cookies
@@ -44,6 +42,12 @@ module HTTPX
           request = super
           request.headers.set_cookie(request.options.cookies[request.uri])
           request
+        end
+
+        # factory method to return a Jar to the user, which can then manipulate
+        # externally to the session.
+        def make_jar(*args)
+          Jar.new(*args)
         end
 
         private
@@ -96,7 +100,7 @@ module HTTPX
           cookies.each do |ck|
             ck.split(/ *; */).each do |cookie|
               name, value = cookie.split("=", 2)
-              jar.add(Cookie.new(name, value))
+              jar.set(name, value)
             end
           end
         end

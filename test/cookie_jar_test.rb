@@ -3,6 +3,13 @@
 require_relative "test_helper"
 
 class CookieJarTest < Minitest::Test
+  def test_plugin_cookies_make_jar
+    session = HTTPX.plugin(:cookies)
+    assert session.make_jar.is_a?(HTTPX::Plugins::Cookies::Jar)
+    cookie = HTTPX::Plugins::Cookies::Cookie.new("a", "b")
+    assert session.make_jar({ "a" => "b" }).each.to_a == [cookie]
+  end
+
   def test_plugin_cookies_jar
     HTTPX.plugin(:cookies) # force loading the modules
 
@@ -105,6 +112,106 @@ class CookieJarTest < Minitest::Test
 
     c4 = HTTPX::Plugins::Cookies::Cookie.new("a", "b", created_at: (Time.now - (60 * 60 * 24)))
     assert [c4, c3, c2, c1].sort == [c3, c4, c1, c2]
+  end
+
+  def test_plugin_cookies_jar_get
+    HTTPX.plugin(:cookies) # force loading the modules
+
+    cookie = HTTPX::Plugins::Cookies::Cookie.new("a", "b")
+    # get by name
+    jar = HTTPX::Plugins::Cookies::Jar.new({ "a" => "b" })
+    assert jar.get("a") == cookie
+    assert jar.get("b").nil?
+    # get by option
+    assert jar.get({ name: "a" }) == cookie
+    assert jar.get({ name: "a", value: "b" }) == cookie
+    assert jar.get({ name: "a", value: "b", foo: "bar" }).nil?
+    assert jar.get({ name: "a", value: "c" }).nil?
+  end
+
+  def test_plugin_cookies_jar_get_all
+    HTTPX.plugin(:cookies) # force loading the modules
+
+    cookie = HTTPX::Plugins::Cookies::Cookie.new("a", "b")
+    cookie2 = HTTPX::Plugins::Cookies::Cookie.new("a", "c")
+    # get by name
+    jar = HTTPX::Plugins::Cookies::Jar.new([%w[a b], %w[a c]])
+    assert jar.get_all("a") == [cookie, cookie2]
+    assert jar.get_all("b").empty?
+    # get by option
+    assert jar.get_all({ name: "a" }) == [cookie, cookie2]
+    assert jar.get_all({ name: "a", value: "b" }) == [cookie]
+    assert jar.get_all({ name: "a", value: "b", foo: "bar" }).empty?
+  end
+
+  def test_plugin_cookies_jar_set
+    HTTPX.plugin(:cookies) # force loading the modules
+
+    cookie = HTTPX::Plugins::Cookies::Cookie.new("a", "b")
+    # set by name
+    jar = HTTPX::Plugins::Cookies::Jar.new
+    jar.set("a", "b")
+    assert jar.each.to_a == [cookie]
+
+    # set by option
+    jar = HTTPX::Plugins::Cookies::Jar.new
+    jar.set({ name: "a", value: "b" })
+    assert jar.each.to_a == [cookie]
+
+    # set by cookie
+    jar = HTTPX::Plugins::Cookies::Jar.new
+    jar.set(cookie)
+    jar.each.to_a
+    [cookie]
+
+    # errors
+    jar = HTTPX::Plugins::Cookies::Jar.new
+    assert_raises(ArgumentError) { jar.set("a") }
+    assert_raises(ArgumentError) { jar.set({ name: "a", value: "b" }, "c") }
+    assert_raises(ArgumentError) { jar.set(cookie, "c") }
+  end
+
+  # deprecated
+  def test_plugin_cookies_jar_add
+    HTTPX.plugin(:cookies) # force loading the modules
+
+    cookie = HTTPX::Plugins::Cookies::Cookie.new("a", "b")
+
+    # set by cookie
+    jar = HTTPX::Plugins::Cookies::Jar.new
+    jar.add(cookie)
+    jar.each.to_a
+    [cookie]
+  end
+
+  def test_plugin_cookies_jar_delete
+    HTTPX.plugin(:cookies) # force loading the modules
+
+    cookie = HTTPX::Plugins::Cookies::Cookie.new("a", "b")
+
+    # Delete itself
+    jar = HTTPX::Plugins::Cookies::Jar.new([cookie])
+    assert jar.each.to_a == [cookie]
+    jar.delete(cookie)
+    assert jar.each.to_a.empty?
+
+    # Delete by name
+    jar = HTTPX::Plugins::Cookies::Jar.new({ "a" => "b" })
+    assert jar.each.to_a == [cookie]
+    jar.delete("a")
+    assert jar.each.to_a.empty?
+
+    # Delete by option
+    jar = HTTPX::Plugins::Cookies::Jar.new({ "a" => "b" })
+    assert jar.each.to_a == [cookie]
+    jar.delete({ name: "a" })
+    assert jar.each.to_a.empty?
+
+    # Deleting cookies not in the jar is a noop
+    jar = HTTPX::Plugins::Cookies::Jar.new({ "a" => "b" })
+    assert jar.each.to_a == [cookie]
+    jar.delete("x")
+    assert jar.each.to_a == [cookie]
   end
 
   private
