@@ -4,10 +4,45 @@ module HTTPX
   module Plugins
     module Brotli
       class Deflater < Transcoder::Deflater
-        def deflate(chunk)
-          return unless chunk
+        def initialize(body)
+          @compressed_chunk = "".b
+          @deflater = nil
+          @closed = false
+          super
+        end
 
-          ::Brotli.deflate(chunk)
+        def deflate(chunk)
+          @deflater ||= ::Brotli::Writer.new(self)
+
+          if chunk.nil?
+            unless @closed
+              @deflater.finish
+              @deflater.close
+              @closed = true
+              compressed_chunk
+            end
+
+          else
+            @deflater.write(chunk)
+            @deflater.flush
+            compressed_chunk
+          end
+        end
+
+        def compressed_chunk
+          @compressed_chunk.dup
+        ensure
+          @compressed_chunk.clear
+        end
+
+        private
+
+        def write(*chunks)
+          chunks.sum do |chunk|
+            chunk = chunk.to_s
+            @compressed_chunk << chunk
+            chunk.bytesize
+          end
         end
       end
 
