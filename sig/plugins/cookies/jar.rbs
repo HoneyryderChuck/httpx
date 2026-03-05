@@ -6,6 +6,7 @@ module HTTPX
       include Enumerable[Cookie]
 
       @cookies: Array[Cookie]
+      @mtx: Thread::Mutex
 
       def parse: (String set_cookie) -> void
 
@@ -29,6 +30,8 @@ module HTTPX
       private
 
       def initialize: (?_Each[cookie] cookies) -> untyped
+
+      def synchronize: [T] { () -> T } -> T
     end
   end
 end

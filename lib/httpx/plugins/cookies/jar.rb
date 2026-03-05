@@ -17,12 +17,14 @@ module HTTPX
 
       def initialize_dup(orig)
         super
+        @mtx = orig.instance_variable_get(:@mtx).dup
         @cookies = orig.instance_variable_get(:@cookies).dup
       end
 
       # initializes the cookie store, either empty, or with whatever is passed as +cookies+, which
       # can be an array of HTTPX::Plugins::Cookies::Cookie objects or hashes-or-tuples of cookie attributes.
       def initialize(cookies = nil)
+        @mtx = Thread::Mutex.new
         @cookies = []
 
         cookies.each do |elem|
@@ -78,11 +80,13 @@ module HTTPX
                    Cookie.new(name, value_or_options)
         end
 
-        # If the user agent receives a new cookie with the same cookie-name, domain-value, and path-value
-        # as a cookie that it has already stored, the existing cookie is evicted and replaced with the new cookie.
-        @cookies.delete_if { |ck| ck.name == cookie.name && ck.domain == cookie.domain && ck.path == cookie.path }
+        synchronize do
+          # If the user agent receives a new cookie with the same cookie-name, domain-value, and path-value
+          # as a cookie that it has already stored, the existing cookie is evicted and replaced with the new cookie.
+          @cookies.delete_if { |ck| ck.name == cookie.name && ck.domain == cookie.domain && ck.path == cookie.path }
 
-        @cookies << cookie
+          @cookies << cookie
+        end
       end
 
       # @deprecated
@@ -98,11 +102,13 @@ module HTTPX
       #
       # alternatively, of +name_or_options+ is an instance of HTTPX::Plugins::Cookies::Cookiem, it deletes it from the store.
       def delete(name_or_options)
-        case name_or_options
-        when Cookie
-          @cookies.delete(name_or_options)
-        else
-          @cookies.delete_if { |ck| ck.match?(name_or_options) }
+        synchronize do
+          case name_or_options
+          when Cookie
+            @cookies.delete(name_or_options)
+          else
+            @cookies.delete_if { |ck| ck.match?(name_or_options) }
+          end
         end
       end
 
@@ -116,17 +122,19 @@ module HTTPX
       def each(uri = nil, &blk)
         return enum_for(__method__, uri) unless blk
 
-        return @cookies.each(&blk) unless uri
+        return synchronize { @cookies.each(&blk) } unless uri
 
         now = Time.now
         tpath = uri.path
 
-        @cookies.delete_if do |cookie|
-          if cookie.expired?(now)
-            true
-          else
-            yield cookie if cookie.valid_for_uri?(uri) && Cookie.path_match?(cookie.path, tpath)
-            false
+        synchronize do
+          @cookies.delete_if do |cookie|
+            if cookie.expired?(now)
+              true
+            else
+              yield cookie if cookie.valid_for_uri?(uri) && Cookie.path_match?(cookie.path, tpath)
+              false
+            end
           end
         end
       end
@@ -148,6 +156,14 @@ module HTTPX
         end
 
         jar_dup
+      end
+
+      private
+
+      def synchronize(&block)
+        return yield if @mtx.owned?
+
+        @mtx.synchronize(&block)
       end
     end
   end
