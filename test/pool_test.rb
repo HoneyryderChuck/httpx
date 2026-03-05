@@ -36,7 +36,7 @@ class PoolTest < Minitest::Test
       ths.find(&:alive?).join(not_after - now)
     end
 
-    assert pool.connections.empty?, "thread sessions should still be holding to the connections"
+    assert pool.connections.empty?, "thread sessions should still be holding to the connections, instead pool has #{pool.connections.size}"
     assert pool.connections_counter <= 2
 
     3.times { q << :done }
