@@ -3,8 +3,6 @@
 require "securerandom"
 require "http/2"
 
-HTTP2::Connection.__send__(:public, :send_buffer) if HTTP2::VERSION < "1.1.1"
-
 module HTTPX
   class Connection::HTTP2
     include Callbacks
@@ -215,9 +213,7 @@ module HTTPX
     def handle_stream(stream, request)
       request.on(:refuse, &method(:on_stream_refuse).curry(3)[stream, request])
       stream.on(:close, &method(:on_stream_close).curry(3)[stream, request])
-      stream.on(:half_close) do
-        log(level: 2) { "#{stream.id}: waiting for response..." }
-      end
+      stream.on(:half_close) { on_stream_half_close(stream, request) }
       stream.on(:altsvc, &method(:on_altsvc).curry(2)[request.origin])
       stream.on(:headers, &method(:on_stream_headers).curry(3)[stream, request])
       stream.on(:data, &method(:on_stream_data).curry(3)[stream, request])
@@ -302,7 +298,7 @@ module HTTPX
       end
 
       log(color: :yellow) do
-        h.map { |k, v| "#{stream.id}: <- HEADER: #{k}: #{log_redact_headers(v)}" }.join("\n")
+        h.map { |k, v| "#{stream.id}: <- HEADER: #{k}: #{k == ":status" ? v : log_redact_headers(v)}" }.join("\n")
       end
       _, status = h.shift
       headers = request.options.headers_class.new(h)
@@ -329,6 +325,16 @@ module HTTPX
     def on_stream_refuse(stream, request, error)
       on_stream_close(stream, request, error)
       stream.close
+    end
+
+    def on_stream_half_close(stream, _request)
+      unless stream.send_buffer.empty?
+        stream.send_buffer.clear
+        stream.data("", end_stream: true)
+      end
+
+      # TODO: omit log line if response already here
+      log(level: 2) { "#{stream.id}: waiting for response..." }
     end
 
     def on_stream_close(stream, request, error)
@@ -404,34 +410,39 @@ module HTTPX
 
     def on_frame_sent(frame)
       log(level: 2) { "#{frame[:stream]}: frame was sent!" }
-      log(level: 2, color: :blue) do
-        payload =
-          case frame[:type]
-          when :data
-            frame.merge(payload: frame[:payload].bytesize)
-          when :headers, :ping
-            frame.merge(payload: log_redact_headers(frame[:payload]))
-          else
-            frame
-          end
-        "#{frame[:stream]}: #{payload}"
-      end
+      log(level: 2, color: :blue) { "#{frame[:stream]}: #{frame_with_extra_info(frame)}" }
     end
 
     def on_frame_received(frame)
       log(level: 2) { "#{frame[:stream]}: frame was received!" }
-      log(level: 2, color: :magenta) do
-        payload =
-          case frame[:type]
-          when :data
-            frame.merge(payload: frame[:payload].bytesize)
-          when :headers, :ping
-            frame.merge(payload: log_redact_headers(frame[:payload]))
-          else
-            frame
-          end
-        "#{frame[:stream]}: #{payload}"
-      end
+      log(level: 2, color: :magenta) { "#{frame[:stream]}: #{frame_with_extra_info(frame)}" }
+    end
+
+    def frame_with_extra_info(frame)
+      case frame[:type]
+      when :data
+        frame.merge(payload: frame[:payload].bytesize)
+      when :headers, :ping
+        frame.merge(payload: log_redact_headers(frame[:payload]))
+      when :window_update
+        connection_or_stream = if (id = frame[:stream]).zero?
+          @connection
+        else
+          @streams.each_value.find { |s| s.id == id }
+        end
+        if connection_or_stream
+          frame.merge(
+            local_window: connection_or_stream.local_window,
+            remote_window: connection_or_stream.remote_window,
+            buffered_amount: connection_or_stream.buffered_amount,
+            stream_state: connection_or_stream.state,
+          )
+        else
+          frame
+        end
+      else
+        frame
+      end.merge(connection_state: @connection.state)
     end
 
     def on_altsvc(origin, frame)

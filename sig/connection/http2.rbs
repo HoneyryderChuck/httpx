@@ -79,6 +79,8 @@ module HTTPX
 
     def on_stream_refuse: (::HTTP2::Stream stream, Request request, StandardError error) -> void
 
+    def on_stream_half_close: (::HTTP2::Stream stream, Request request) -> void
+
     def on_stream_close: (::HTTP2::Stream stream, Request request, (Symbol | StandardError)? error) -> void
 
     def on_frame: (string bytes) -> void
@@ -87,13 +89,15 @@ module HTTPX
 
     def on_close: (Integer last_frame, Symbol? error, String? payload) -> void
 
-    def on_frame_sent: (::HTTP2::frame) -> void
+    def on_frame_sent: (::HTTP2::frame frame) -> void
 
-    def on_frame_received: (::HTTP2::frame) -> void
+    def frame_with_extra_info: (::HTTP2::frame frame) -> Hash[Symbol, untyped]
 
-    def on_altsvc: (String origin, ::HTTP2::frame) -> void
+    def on_frame_received: (::HTTP2::frame frame) -> void
 
-    def on_promise: (::HTTP2::Stream) -> void
+    def on_altsvc: (String origin, ::HTTP2::frame frame) -> void
+
+    def on_promise: (::HTTP2::Stream stream) -> void
 
     def on_origin: (String) -> void
 
