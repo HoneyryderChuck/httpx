@@ -46,6 +46,24 @@ module HTTPX
         end
       end
 
+      class Inflater
+        def initialize(bytesize)
+          @inflater = ::Brotli::Decompressor.new
+          @bytesize = bytesize
+        end
+
+        def call(chunk)
+          buffer = @inflater.process(chunk)
+          @bytesize -= chunk.bytesize
+
+          if @bytesize <= 0 && !@inflater.finished?
+            raise ::Brotli::Error, "Unexpected end of compressed stream"
+          end
+
+          buffer
+        end
+      end
+
       module RequestBodyClassMethods
         def initialize_deflater_body(body, encoding)
           return Brotli.encode(body) if encoding == "br"
@@ -76,8 +94,9 @@ module HTTPX
         Deflater.new(body)
       end
 
-      def decode(_response, **)
-        ::Brotli.method(:inflate)
+      def decode(response, bytesize: nil)
+        bytesize ||= response.headers.key?("content-length") ? response.headers["content-length"].to_i : Float::INFINITY
+        Inflater.new(bytesize)
       end
     end
     register_plugin :brotli, Brotli
