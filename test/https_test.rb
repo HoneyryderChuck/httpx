@@ -40,6 +40,7 @@ class HTTPSTest < Minitest::Test
   include Plugins::CircuitBreaker
   include Plugins::WebDav
   include Plugins::Brotli if RUBY_ENGINE == "ruby"
+  include Plugins::Zstd if RUBY_ENGINE == "ruby"
   include Plugins::SsrfFilter
   include Plugins::XML
 
