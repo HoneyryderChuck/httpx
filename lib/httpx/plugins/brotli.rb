@@ -5,44 +5,17 @@ module HTTPX
     module Brotli
       class Deflater < Transcoder::Deflater
         def initialize(body)
-          @compressed_chunk = "".b
-          @deflater = nil
-          @closed = false
+          @compressor = ::Brotli::Compressor.new
           super
         end
 
         def deflate(chunk)
-          @deflater ||= ::Brotli::Writer.new(self)
+          return unless @compressor
+          return @compressor.process(chunk) << @compressor.flush if chunk
 
-          if chunk.nil?
-            unless @closed
-              @deflater.finish
-              @deflater.close
-              @closed = true
-              compressed_chunk
-            end
-
-          else
-            @deflater.write(chunk)
-            @deflater.flush
-            compressed_chunk
-          end
-        end
-
-        def compressed_chunk
-          @compressed_chunk.dup
-        ensure
-          @compressed_chunk.clear
-        end
-
-        private
-
-        def write(*chunks)
-          chunks.sum do |chunk|
-            chunk = chunk.to_s
-            @compressed_chunk << chunk
-            chunk.bytesize
-          end
+          compressed_chunk = @compressor.finish
+          @compressor = nil
+          compressed_chunk
         end
       end
 
@@ -55,10 +28,7 @@ module HTTPX
         def call(chunk)
           buffer = @inflater.process(chunk)
           @bytesize -= chunk.bytesize
-
-          if @bytesize <= 0 && !@inflater.finished?
-            raise ::Brotli::Error, "Unexpected end of compressed stream"
-          end
+          raise ::Brotli::Error, "Unexpected end of compressed stream" if @bytesize <= 0 && !@inflater.finished?
 
           buffer
         end
