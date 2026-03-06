@@ -46,7 +46,7 @@ group :test do
   platform :mri, :truffleruby do
     gem "bcrypt_pbkdf"
     gem "benchmark-ips"
-    gem "brotli", github: "ollym/brotli", branch: "stream"
+    gem "brotli", github: "ollym/brotli", branch: "stream", submodules: true
     gem "ed25519"
     gem "net-ssh-gateway"
     # https://github.com/TwP/logging/issues/247
