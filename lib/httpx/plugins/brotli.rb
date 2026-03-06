@@ -57,12 +57,7 @@ module HTTPX
       end
 
       def self.extra_options(options)
-        supported_compression_formats = ["br", *options.supported_compression_formats].uniq
-
-        options.merge(
-          supported_compression_formats: supported_compression_formats,
-          headers: { "accept-encoding" => supported_compression_formats }
-        )
+        options.merge(supported_compression_formats: %w[br] + options.supported_compression_formats)
       end
 
       def encode(body)
