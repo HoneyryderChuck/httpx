@@ -5,9 +5,19 @@ module HTTPX
 
       def self?.encode: (body_encoder body) -> Deflater
 
-      def self?.decode: (HTTPX::Response response, ?bytesize: Integer) -> Transcoder::_Decoder
+      def self?.decode: (HTTPX::Response response, ?bytesize: Integer | Float) -> Inflater
 
       class Deflater < Transcoder::Deflater
+        @compressor: ::Brotli::Compressor?
+      end
+
+      class Inflater
+        @inflater: ::Brotli::Decompressor
+        @bytesize: Integer | Float
+
+        def initialize: (Integer | Float bytesize) -> void
+
+        def call: (String chunk) -> String
       end
 
       module RequestBodyClassMethods
@@ -15,7 +25,7 @@ module HTTPX
       end
 
       module ResponseBodyClassMethods
-        def initialize_inflater_by_encoding: (Encoding | String encoding, Response response, ?bytesize: Integer) -> (Transcoder::_Decoder | Transcoder::GZIP::Inflater)
+        def initialize_inflater_by_encoding: (Encoding | String encoding, Response response, ?bytesize: Integer | Float) -> (Inflater | Transcoder::GZIP::Inflater)?
       end
     end
   end
