@@ -54,6 +54,10 @@ module HTTPX
 
       def load_dependencies(*)
         require "brotli"
+
+        return if Gem::Version.new(::Brotli::VERSION.to_s) >= Gem::Version.new("0.8.0")
+
+        raise Error, "the brotli plugin requires brotli >= 0.8.0 (loaded: #{::Brotli::VERSION})"
       end
 
       def self.extra_options(options)
