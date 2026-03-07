@@ -5,44 +5,32 @@ module HTTPX
     module Brotli
       class Deflater < Transcoder::Deflater
         def initialize(body)
-          @compressed_chunk = "".b
-          @deflater = nil
-          @closed = false
+          @compressor = ::Brotli::Compressor.new
           super
         end
 
         def deflate(chunk)
-          @deflater ||= ::Brotli::Writer.new(self)
+          return unless @compressor
+          return @compressor.process(chunk) << @compressor.flush if chunk
 
-          if chunk.nil?
-            unless @closed
-              @deflater.finish
-              @deflater.close
-              @closed = true
-              compressed_chunk
-            end
+          compressed_chunk = @compressor.finish
+          @compressor = nil
+          compressed_chunk
+        end
+      end
 
-          else
-            @deflater.write(chunk)
-            @deflater.flush
-            compressed_chunk
-          end
+      class Inflater
+        def initialize(bytesize)
+          @inflater = ::Brotli::Decompressor.new
+          @bytesize = bytesize
         end
 
-        def compressed_chunk
-          @compressed_chunk.dup
-        ensure
-          @compressed_chunk.clear
-        end
+        def call(chunk)
+          buffer = @inflater.process(chunk)
+          @bytesize -= chunk.bytesize
+          raise ::Brotli::Error, "Unexpected end of compressed stream" if @bytesize <= 0 && !@inflater.finished?
 
-        private
-
-        def write(*chunks)
-          chunks.sum do |chunk|
-            chunk = chunk.to_s
-            @compressed_chunk << chunk
-            chunk.bytesize
-          end
+          buffer
         end
       end
 
@@ -66,6 +54,10 @@ module HTTPX
 
       def load_dependencies(*)
         require "brotli"
+
+        return if Gem::Version.new(::Brotli::VERSION.to_s) >= Gem::Version.new("0.8.0")
+
+        raise Error, "the brotli plugin requires brotli >= 0.8.0 (loaded: #{::Brotli::VERSION})"
       end
 
       def self.extra_options(options)
@@ -76,8 +68,9 @@ module HTTPX
         Deflater.new(body)
       end
 
-      def decode(_response, **)
-        ::Brotli.method(:inflate)
+      def decode(response, bytesize: nil)
+        bytesize ||= response.headers.key?("content-length") ? response.headers["content-length"].to_i : Float::INFINITY
+        Inflater.new(bytesize)
       end
     end
     register_plugin :brotli, Brotli
