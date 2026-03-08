@@ -748,9 +748,6 @@ module HTTPX
         return unless @write_buffer.empty?
 
         purge_after_closed
-
-        # TODO: should this raise an error instead?
-        return unless @pending.empty?
       when :already_open
         nextstate = :open
         # the first check for given io readiness must still use a timeout.
@@ -769,7 +766,12 @@ module HTTPX
       @state = nextstate
       # post state change
       case nextstate
-      when :closed, :inactive
+      when :inactive
+        disconnect
+      when :closed
+        # TODO: should this raise an error instead?
+        return unless @pending.empty?
+
         disconnect
       end
     end
