@@ -154,6 +154,7 @@ module HTTPX
         end if @io
       end
       connection.purge_pending do |req|
+        req.transition(:idle)
         send(req)
       end
     end
@@ -161,8 +162,9 @@ module HTTPX
     def purge_pending(&block)
       pendings = []
       if @parser
-        @inflight -= @parser.pending.size
-        pendings << @parser.pending
+        pending = @oarser.pending
+        @inflight -= pending.size
+        pendings << pending
       end
       pendings << @pending
       pendings.each do |pending|
