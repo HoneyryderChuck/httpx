@@ -162,7 +162,7 @@ module HTTPX
     def purge_pending(&block)
       pendings = []
       if @parser
-        pending = @oarser.pending
+        pending = @parser.pending
         @inflight -= pending.size
         pendings << pending
       end
