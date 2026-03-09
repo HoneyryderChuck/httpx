@@ -597,6 +597,7 @@ module HTTPX
     end
 
     def enqueue_pending_requests_from_parser(parser)
+      parser.reset_requests # move sequential requests back to pending queue.
       parser_pending_requests = parser.pending
 
       return if parser_pending_requests.empty?

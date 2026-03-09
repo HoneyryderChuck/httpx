@@ -49,6 +49,10 @@ module HTTPX
       @max_requests = @options.max_requests || MAX_REQUESTS
       @parser.reset!
       @handshake_completed = false
+      reset_requests
+    end
+
+    def reset_requests
       @pending.unshift(*@requests)
       @requests.clear
     end

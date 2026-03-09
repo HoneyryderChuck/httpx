@@ -44,6 +44,8 @@ module HTTPX
 
     def timeout: () -> Numeric?
 
+    def reset_requests: () -> void
+
     private
 
     def initialize: (Buffer buffer, Options options) -> untyped
