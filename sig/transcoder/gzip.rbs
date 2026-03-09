@@ -16,7 +16,7 @@ module HTTPX
 
       class Inflater
         @inflater: Zlib::Inflate
-        @bytesize: Integer
+        @bytesize: Integer | Float
 
         def initialize: (Integer | Float bytesize) -> void
 
