@@ -7,8 +7,11 @@ module HTTPX
 
       def self?.decode: (HTTPX::Response response, ?bytesize: Integer | Float) -> Inflater
 
+      class Error < ::HTTPX::Error
+      end
+
       class Deflater < Transcoder::Deflater
-        @compressor: ::Brotli::Compressor?
+        @compressor: ::Brotli::Compressor
       end
 
       class Inflater

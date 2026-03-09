@@ -3,6 +3,8 @@
 module HTTPX
   module Plugins
     module Brotli
+      class Error < HTTPX::Error; end
+
       class Deflater < Transcoder::Deflater
         def initialize(body)
           @compressor = ::Brotli::Compressor.new
@@ -28,7 +30,7 @@ module HTTPX
         def call(chunk)
           buffer = @inflater.process(chunk)
           @bytesize -= chunk.bytesize
-          raise ::Brotli::Error, "Unexpected end of compressed stream" if @bytesize <= 0 && !@inflater.finished?
+          raise Error, "Unexpected end of compressed stream" if @bytesize <= 0 && !@inflater.finished?
 
           buffer
         end
