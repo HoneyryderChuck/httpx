@@ -261,18 +261,19 @@ module HTTPX
     # bypasses state machine rules while setting the connection in the
     # :closed state.
     def force_close(delete_pending = false)
+      force_purge
+      return unless @state == :closed
+
       if delete_pending
         @pending.clear
       elsif (parser = @parser)
         enqueue_pending_requests_from_parser(parser)
       end
-      return if @state == :closed
 
-      @state = :closed
-      @write_buffer.clear
-      purge_after_closed
-      disconnect
-      emit(:force_closed, delete_pending)
+      if @pending.empty?
+        disconnect
+        emit(:force_closed, delete_pending)
+      end
     end
 
     # bypasses the state machine to force closing of connections still connecting.
@@ -787,6 +788,20 @@ module HTTPX
         return unless @pending.empty?
 
         disconnect
+      end
+    end
+
+    def force_purge
+      return if @state == :closed
+
+      @state = :closed
+      @write_buffer.clear
+      begin
+        purge_after_closed
+      rescue IOError
+        # may be raised when closing the socket.
+        # due to connection reuse / fiber scheduling, it may
+        # have been reopened, to bail out in that case.
       end
     end
 
