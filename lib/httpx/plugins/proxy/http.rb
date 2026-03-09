@@ -46,7 +46,7 @@ module HTTPX
           def force_close(*)
             if @state == :connecting
               # proxy connect related requests should not be reenqueed
-              @parser.reset!
+              @parser.reset
               @inflight -= @parser.pending.size
               @parser.pending.clear
             end
