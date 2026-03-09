@@ -26,6 +26,8 @@ module HTTPX
 
     def reset: () -> void
 
+    def reset_requests: () -> void
+
     def close: () -> void
 
     def empty?: () -> bool
