@@ -12,12 +12,9 @@ module HTTPX
         end
 
         def deflate(chunk)
-          return unless @compressor
           return @compressor.process(chunk) << @compressor.flush if chunk
 
-          compressed_chunk = @compressor.finish
-          @compressor = nil
-          compressed_chunk
+          @compressor.finish
         end
       end
 
