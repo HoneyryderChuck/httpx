@@ -652,7 +652,6 @@ module HTTPX
       end
       parser.on(:close) do
         reset
-        disconnect
       end
       parser.on(:close_handshake) do
         consume unless @state == :closed

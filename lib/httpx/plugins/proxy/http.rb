@@ -75,7 +75,6 @@ module HTTPX
                   next unless @parser
 
                   reset
-                  disconnect
                 end
                 parser.on(:reset) do
                   if parser.pending.empty? && parser.empty?
