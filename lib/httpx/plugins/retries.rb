@@ -166,11 +166,12 @@ module HTTPX
                   send_request(request, selector, options)
                 end
               end
+
+              return
             else
               send_request(request, selector, options)
+              return request.response
             end
-
-            return
           end
           response
         end
