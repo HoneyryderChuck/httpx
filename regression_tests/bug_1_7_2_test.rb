@@ -35,4 +35,13 @@ class Bug_1_7_2_Test < Minitest::Test
       end
     end
   end
+
+  def test_brotli_cant_decode_chunks_when_receiving_large_payload
+    session = HTTPX.plugin(:brotli)
+    response = session.get("https://cdn.ventrata.com/raw/upload/s--pBtVfkCH--/v1744920951/AvenirLTStd-Light_ugoo8n.otf",
+                           params: { "_" => SecureRandom.uuid })
+    verify_status(response, 200)
+    assert response.body.to_s.start_with?("OTTO")
+    assert_equal "br", response.headers["content-encoding"]
+  end
 end

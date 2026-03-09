@@ -31,8 +31,6 @@ module HTTPX
     end
 
     interface _Inflater
-      def initialize: (Integer | Float bytesize) -> void
-
       def call: (String chunk) -> String
     end
 

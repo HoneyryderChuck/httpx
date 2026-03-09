@@ -3,11 +3,33 @@
 module HTTPX
   module Plugins
     module Brotli
-      class Deflater < Transcoder::Deflater
-        def deflate(chunk)
-          return unless chunk
+      class Error < HTTPX::Error; end
 
-          ::Brotli.deflate(chunk)
+      class Deflater < Transcoder::Deflater
+        def initialize(body)
+          @compressor = ::Brotli::Compressor.new
+          super
+        end
+
+        def deflate(chunk)
+          return @compressor.process(chunk) << @compressor.flush if chunk
+
+          @compressor.finish
+        end
+      end
+
+      class Inflater
+        def initialize(bytesize)
+          @inflater = ::Brotli::Decompressor.new
+          @bytesize = bytesize
+        end
+
+        def call(chunk)
+          buffer = @inflater.process(chunk)
+          @bytesize -= chunk.bytesize
+          raise Error, "Unexpected end of compressed stream" if @bytesize <= 0 && !@inflater.finished?
+
+          buffer
         end
       end
 
@@ -30,19 +52,25 @@ module HTTPX
       module_function
 
       def load_dependencies(*)
+        gem "brotli", ">= 0.8.0"
         require "brotli"
       end
 
       def self.extra_options(options)
-        options.merge(supported_compression_formats: %w[br] + options.supported_compression_formats)
+        supported_compression_formats = (%w[br] + options.supported_compression_formats).freeze
+        options.merge(
+          supported_compression_formats: supported_compression_formats,
+          headers: options.headers_class.new(options.headers.merge("accept-encoding" => supported_compression_formats))
+        )
       end
 
       def encode(body)
         Deflater.new(body)
       end
 
-      def decode(_response, **)
-        ::Brotli.method(:inflate)
+      def decode(response, bytesize: nil)
+        bytesize ||= response.headers.key?("content-length") ? response.headers["content-length"].to_i : Float::INFINITY
+        Inflater.new(bytesize)
       end
     end
     register_plugin :brotli, Brotli
