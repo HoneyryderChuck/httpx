@@ -344,7 +344,10 @@ module HTTPX
 
       @write_buffer.clear
       transition(:idle)
-      @parser = nil if @parser
+      if @parser
+        enqueue_pending_requests_from_parser(parser)
+        @parser = nil
+      end
     end
 
     def used?
