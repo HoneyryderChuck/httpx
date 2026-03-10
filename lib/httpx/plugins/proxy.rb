@@ -323,7 +323,12 @@ module HTTPX
 
         def purge_after_closed
           super
-          @io = @io.proxy_io if @io.respond_to?(:proxy_io)
+
+          while @io.respond_to?(:proxy_io)
+            @io = @io.proxy_io
+
+            super
+          end
         end
       end
 
