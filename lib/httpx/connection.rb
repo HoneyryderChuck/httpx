@@ -250,7 +250,10 @@ module HTTPX
       case @state
       when :idle
         purge_after_closed
-        disconnect
+        if @io.can_disconnect? && @pending.empty?
+          disconnect
+          return
+        end
       when :closed
         @connected_at = nil
       end
@@ -336,6 +339,9 @@ module HTTPX
 
     def idling
       purge_after_closed
+
+      return unless @state == :closed
+
       @write_buffer.clear
       transition(:idle)
       @parser = nil if @parser
@@ -661,6 +667,9 @@ module HTTPX
         enqueue_pending_requests_from_parser(parser)
 
         reset
+
+        next unless @state == :closed
+
         # :reset event only fired in http/1.1, so this guarantees
         # that the connection will be closed here.
         idling unless @pending.empty?
@@ -763,6 +772,8 @@ module HTTPX
         return unless @write_buffer.empty?
 
         purge_after_closed
+
+        return unless @state == :closing && (@io.nil? || @io.can_disconnect?)
       when :already_open
         nextstate = :open
         # the first check for given io readiness must still use a timeout.
@@ -822,7 +833,14 @@ module HTTPX
     end
 
     def purge_after_closed
-      @io.close if @io
+      if @io
+        @io.close
+
+        # due to fiber scheduler, multiple fibers may be listening on the same connection
+        # and moving the state machine forward; in such cases, when the control flow reaches
+        # this line, the io object may not be closed anymore.
+        return unless @io.can_disconnect?
+      end
       @read_buffer.clear
       @timeout = nil
     end

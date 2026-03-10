@@ -52,6 +52,8 @@ module HTTPX
 
     def close: () -> void
 
+    def can_disconnect?: () -> bool
+
     def connected?: () -> bool
 
     def closed?: () -> bool
