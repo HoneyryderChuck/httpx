@@ -122,6 +122,8 @@ module HTTPX
 
     def on_io_error: (IOError error) -> void
 
+    def on_connect_error: (Exception error) -> void
+
     private
 
     def initialize: (http_uri uri, Options options) -> void

@@ -396,6 +396,14 @@ module HTTPX
       current_session.deselect_connection(self, current_selector, @cloned)
     end
 
+    def on_connect_error(e)
+      # connect errors, exit gracefully
+      error = ConnectionError.new(e.message)
+      error.set_backtrace(e.backtrace)
+      handle_connect_error(error) if connecting?
+      force_close
+    end
+
     def on_io_error(e)
       on_error(e)
       force_close(true)
@@ -718,11 +726,7 @@ module HTTPX
            Errno::ENOENT,
            SocketError,
            IOError => e
-      # connect errors, exit gracefully
-      error = ConnectionError.new(e.message)
-      error.set_backtrace(e.backtrace)
-      handle_connect_error(error) if connecting?
-      force_close
+      on_connect_error(e)
     rescue TLSError, ::HTTP2::Error::ProtocolError, ::HTTP2::Error::HandshakeError => e
       # connect errors, exit gracefully
       handle_error(e)
