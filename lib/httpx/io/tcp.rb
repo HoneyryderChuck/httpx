@@ -190,8 +190,20 @@ module HTTPX
         log { "error closing socket" }
         log { e.full_message(highlight: false) }
       ensure
+        # @fiber-switch-guard
+        # ensure that all :closed IOs don't leave dangling sockets
+        # behind. This may happen in a fiber scheduler scenario where
+        # connection is reused across fibers.
+        return unless @io.closed?
+
         transition(:closed)
       end
+    end
+
+    # signals that the connection that contains this IO can be checked back into the pool.
+    # that includes sockets opened outside of the scope of the session, or closed IOs.
+    def can_disconnect?
+      @keep_open || @state == :closed
     end
 
     def connected?

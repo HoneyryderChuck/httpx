@@ -512,12 +512,16 @@ module HTTPX
       transition(:open)
     end
 
+    # moves the resolver state machine to the +nextstate+ state (if all conditions are met)-
     def transition(nextstate)
       case nextstate
       when :idle
-        if @io
-          @io.close
+        if (io = @io)
           @io = nil
+          io.close
+
+          # @fiber-switch-guard
+          return if @io
         end
       when :open
         return unless @state == :idle
@@ -531,7 +535,14 @@ module HTTPX
       when :closed
         return if @state == :closed
 
-        @io.close if @io
+        if (io = @io)
+          @io = nil
+          io.close
+
+          # @fiber-switch-guard
+          return if @io
+        end
+
         @start_timeout = nil
         @write_buffer.clear
         @read_buffer.clear
