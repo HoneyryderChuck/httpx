@@ -134,7 +134,10 @@ module HTTPX
       # the connections to be reaped (such as the total timeout error) before #select
       # gets called.
       if @selectables.empty?
-        sleep(interval) if interval
+        begin
+          sleep(interval)
+        rescue IOError
+        end if interval
         return
       end
 
