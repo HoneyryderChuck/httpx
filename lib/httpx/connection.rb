@@ -270,10 +270,10 @@ module HTTPX
         enqueue_pending_requests_from_parser(parser)
       end
 
-      if @pending.empty?
-        disconnect
-        emit(:force_closed, delete_pending)
-      end
+      return unless @pending.empty?
+
+      disconnect
+      emit(:force_closed, delete_pending)
     end
 
     # bypasses the state machine to force closing of connections still connecting.
@@ -338,7 +338,10 @@ module HTTPX
       purge_after_closed
       @write_buffer.clear
       transition(:idle)
-      @parser = nil if @parser
+      return unless @parser
+
+      enqueue_pending_requests_from_parser(parser)
+      @parser = nil
     end
 
     def used?
