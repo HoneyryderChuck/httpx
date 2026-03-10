@@ -190,8 +190,14 @@ module HTTPX
         log { "error closing socket" }
         log { e.full_message(highlight: false) }
       ensure
-        transition(:closed)
+        transition(:closed) if @io.closed?
       end
+    end
+
+    # signals that the connection that contains this IO can be checked back into the pool.
+    # that includes sockets opened outside of the scope of the session, or closed IOs.
+    def can_disconnect?
+      @keep_open || @state == :closed
     end
 
     def connected?
