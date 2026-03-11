@@ -175,6 +175,7 @@ module HTTPX
 
       if @parser.upgrade?
         response << @parser.upgrade_data
+        @parser.reset!
         throw(:called)
       end
 
