@@ -40,6 +40,7 @@ class HTTPTest < Minitest::Test
   include Plugins::SsrfFilter
   include Plugins::XML
   include Plugins::Query
+  include Plugins::Tracing
 
   def test_verbose_log
     log = StringIO.new
