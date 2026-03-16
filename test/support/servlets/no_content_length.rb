@@ -20,6 +20,15 @@ class NoContentLengthServer < TestServer
     end
   end
 
+  class UpgradeNoContentLengthApp < WEBrick::HTTPServlet::AbstractServlet
+    def do_GET(_req, res) # rubocop:disable Naming/MethodName
+      res.status = 200
+      res["Connection"] = "Keep-Alive, Upgrade"
+      res["Upgrade"] = "h2"
+      res.body = ""
+    end
+  end
+
   class NoContentLengthApp < WEBrick::HTTPServlet::AbstractServlet
     def do_GET(_req, res) # rubocop:disable Naming/MethodName
       zipped = StringIO.new
@@ -38,5 +47,6 @@ class NoContentLengthServer < TestServer
   def initialize(options = {})
     super
     mount("/", NoContentLengthApp)
+    mount("/upgrade", UpgradeNoContentLengthApp)
   end
 end

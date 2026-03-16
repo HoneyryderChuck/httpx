@@ -44,4 +44,20 @@ class Bug_1_7_2_Test < Minitest::Test
     assert response.body.to_s.start_with?("OTTO")
     assert_equal "br", response.headers["content-encoding"]
   end
+
+  def test_upgrade_does_not_break_keep_alive
+    start_test_servlet(NoContentLengthServer) do |server|
+      HTTPX.with(persistent: true) do |http|
+        uri = "#{server.origin}/upgrade"
+
+        2.times do
+          response = http.get(uri,)
+          verify_status(response, 200)
+          # verify_header(response.headers, "connection", "Upgrade, Keep-Alive")
+          verify_header(response.headers, "upgrade", "h2")
+          assert response.version == "1.1", "request should be in HTTP/1.1"
+        end
+      end
+    end
+  end
 end
