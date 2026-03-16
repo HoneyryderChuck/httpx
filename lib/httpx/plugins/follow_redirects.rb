@@ -165,6 +165,10 @@ module HTTPX
             end
           else
             send_request(retry_request, selector, options)
+
+            # recalling itself, in case an error was triggered by the above, and we can
+            # verify retriability again.
+            return fetch_response(request, selector, options)
           end
           nil
         end

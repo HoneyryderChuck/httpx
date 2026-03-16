@@ -202,7 +202,10 @@ module HTTPX
               log { "failed connecting to proxy, trying next..." }
               request.transition(:idle)
               send_request(request, selector, options)
-              return
+
+              # recalling itself, in case an error was triggered by the above, and we can
+              # verify retriability again.
+              return fetch_response(request, selector, options)
             end
             response
           rescue ProxyError

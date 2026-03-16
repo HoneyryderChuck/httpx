@@ -35,7 +35,10 @@ module HTTPX
               request.headers["proxy-authorization"] =
                 options.proxy.authenticate(request, response.headers["proxy-authenticate"])
               send_request(request, selector, options)
-              return
+
+              # recalling itself, in case an error was triggered by the above, and we can
+              # verify retriability again.
+              return fetch_response(request, selector, options)
             end
 
             response
