@@ -46,35 +46,25 @@ module Datadog::Tracing
 
           SPAN_REQUEST = "httpx.request"
 
-          # initializes tracing on the +request+.
-          def call(request)
-            return unless configuration(request).enabled
-
-            span = nil
-
-            # request objects are reused, when already buffered requests get rerouted to a different
-            # connection due to connection issues, or when they already got a response, but need to
-            # be retried. In such situations, the original span needs to be extended for the former,
-            # while a new is required for the latter.
-            request.on(:idle) do
-              span = nil
-            end
-            # the span is initialized when the request is buffered in the parser, which is the closest
-            # one gets to actually sending the request.
-            request.on(:headers) do
-              next if span
-
-              span = initialize_span(request, now)
-            end
-
-            request.on(:response) do |response|
-              span = initialize_span(request, request.init_time) if !span && request.init_time
-
-              finish(response, span)
-            end
+          def enabled?(request)
+            configuration(request).enabled
           end
 
-          def finish(response, span)
+          def start(request)
+            request.datadog_span = initialize_span(request, now)
+          end
+
+          def reset(request)
+            request.datadog_span = nil
+          end
+
+          def finish(request, response)
+            request.datadog_span ||= initialize_span(request, request.init_time) if request.init_time
+
+            finish_span(response, request.datadog_span)
+          end
+
+          def finish_span(response, span)
             if response.is_a?(::HTTPX::ErrorResponse)
               span.set_error(response.error)
             else
@@ -137,9 +127,9 @@ module Datadog::Tracing
             ) if Datadog.configuration.tracing.respond_to?(:header_tags)
 
             span
-          rescue StandardError => e
-            Datadog.logger.error("error preparing span for http request: #{e}")
-            Datadog.logger.error(e.backtrace)
+        rescue StandardError => e
+          Datadog.logger.error("error preparing span for http request: #{e}")
+          Datadog.logger.error(e.backtrace)
           end
 
           def now
@@ -179,44 +169,18 @@ module Datadog::Tracing
           end
         end
 
-        module RequestMethods
-          attr_accessor :init_time
-
-          # intercepts request initialization to inject the tracing logic.
-          def initialize(*)
-            super
-
-            @init_time = nil
-
-            return unless Datadog::Tracing.enabled?
-
-            RequestTracer.call(self)
+        class << self
+          def load_dependencies(klass)
+            klass.plugin(:tracing)
           end
 
-          def response=(*)
-            # init_time should be set when it's send to a connection.
-            # However, there are situations where connection initialization fails.
-            # Example is the :ssrf_filter plugin, which raises an error on
-            # initialize if the host is an IP which matches against the known set.
-            # in such cases, we'll just set here right here.
-            @init_time ||= ::Datadog::Core::Utils::Time.now.utc
-
-            super
+          def extra_options(options)
+            options.merge(tracer: RequestTracer)
           end
         end
 
-        module ConnectionMethods
-          def initialize(*)
-            super
-
-            @init_time = ::Datadog::Core::Utils::Time.now.utc
-          end
-
-          def send(request)
-            request.init_time ||= @init_time
-
-            super
-          end
+        module RequestMethods
+          attr_accessor :datadog_span
         end
       end
 

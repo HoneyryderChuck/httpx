@@ -166,11 +166,15 @@ module HTTPX
                   send_request(request, selector, options)
                 end
               end
+
+              return
             else
               send_request(request, selector, options)
-            end
 
-            return
+              # recalling itself, in case an error was triggered by the above, and we can
+              # verify retriability again.
+              return fetch_response(request, selector, options)
+            end
           end
           response
         end

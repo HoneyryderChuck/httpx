@@ -7,14 +7,14 @@ module Requests
         no_retries_session = HTTPX.plugin(RequestInspector).with(timeout: { request_timeout: 3 })
         no_retries_response = no_retries_session.get(build_uri("/delay/10"))
         verify_error_response(no_retries_response)
-        assert no_retries_session.calls.zero?, "expect request to be built 1 times (was #{no_retries_session.calls})"
+        assert no_retries_session.calls.zero?, "expect request to be retried 1 time (was #{no_retries_session.calls})"
         retries_session = HTTPX
                           .plugin(RequestInspector)
                           .plugin(:retries)
                           .with(timeout: { request_timeout: 3 })
         retries_response = retries_session.get(build_uri("/delay/10"))
         verify_error_response(retries_response)
-        assert retries_session.calls == 3, "expect request to be built 3 times (was #{retries_session.calls})"
+        assert retries_session.calls == 3, "expect request to be retried 3 times (was #{retries_session.calls})"
       end
 
       def test_plugin_retries_change_requests
@@ -32,7 +32,7 @@ module Requests
 
         retries_response = retries_session.post(build_uri("/delay/10"), body: ["a" * 1024], retry_change_requests: true)
         assert check_error[retries_response]
-        assert retries_session.calls == 3, "expect request to be built 3 times (was #{retries_session.calls})"
+        assert retries_session.calls == 3, "expect request to be retried 3 times (was #{retries_session.calls})"
       end
 
       def test_plugin_retries_max_retries
@@ -46,7 +46,7 @@ module Requests
         verify_error_response(retries_response)
         # we're comparing against max-retries + 1, because the calls increment will happen
         # also in the last call, where the request is not going to be retried.
-        assert retries_session.calls == 2, "expect request to be built 2 times (was #{retries_session.calls})"
+        assert retries_session.calls == 2, "expect request to be retried 2 times (was #{retries_session.calls})"
       end
 
       def test_plugin_retries_retry_on

@@ -1,0 +1,41 @@
+module HTTPX
+  module Plugins
+    module Tracing
+      interface _Tracer
+        def enabled?: (retriesRequest request) -> boolish
+
+        def start: (retriesRequest request) -> void
+
+        def reset: (retriesRequest request) -> void
+
+        def finish: (retriesRequest request, response response) -> void
+      end
+
+      class Wrapper
+        include _Tracer
+
+        attr_reader tracers: Array[_Tracer]
+
+        def initialize: (*_Tracer tracers) -> void
+
+        def merge: (instance | _Tracer) -> void
+      end
+
+      interface _RetriesOptions
+        def tracer: () -> _Tracer
+      end
+
+      module RequestMethods
+        attr_accessor init_time: Time?
+      end
+
+      module ConnectionMethods
+        @init_time: Time
+      end
+
+      type retriesRequest = Request & RequestMethods
+    end
+
+    type sessionTracing = Session
+  end
+end

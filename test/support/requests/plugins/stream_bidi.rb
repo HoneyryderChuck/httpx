@@ -2,11 +2,6 @@
 
 module Requests
   module Plugins
-    #
-    # This plugin adds support for HTTP/2 bidirectional streaming.
-    #
-    # https://gitlab.com/os85/httpx/wikis/Stream-Bidi
-    #
     module StreamBidi
       def test_plugin_stream_bidi
         uri = build_uri("/get")
