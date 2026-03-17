@@ -222,10 +222,19 @@ module HTTPX
 
         consume
       when :closed
-        return
+        return if @pending.empty?
+
+        idling
+
+        return unless @state == :idle
+
+        call
       when :closing
         consume
         transition(:closed)
+        return if @state == :closed && @pending.empty?
+
+        call
       when :open
         consume
       end
