@@ -675,7 +675,14 @@ module HTTPX
         @exhausted = true
         parser.close
 
+        # fiber may have switched, check whether still exhausted
+        next unless @exhausted
+
         idling
+
+        # fiber may have switched, check whether still exhausted
+        next unless @exhausted
+
         @exhausted = false
       end
       parser.on(:origin) do |origin|
