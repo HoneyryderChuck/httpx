@@ -222,10 +222,27 @@ module HTTPX
 
         consume
       when :closed
-        return
+        return if @pending.empty?
+
+        # there are pending requests to send, restart the state machine.
+        idling
+
+        # @fiber-switch-guard
+        # fiber may have switch after ensuring that @io is closed.
+        return unless @state == :idle
+
+        call
       when :closing
         consume
         transition(:closed)
+
+        # @fiber-switch-guard
+        # fiber may have switch while closing @io.
+        return if @state == :closed &&
+                  # only remain here if there are pending requests.
+                  @pending.empty?
+
+        call
       when :open
         consume
       end
