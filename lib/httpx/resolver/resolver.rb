@@ -143,6 +143,19 @@ module HTTPX
       true
     end
 
+    def lazy_resolve(connection)
+      return unless @current_session && @current_selector
+
+      conn_to_resolve = @current_session.try_clone_connection(connection, @current_selector, @family)
+      self << conn_to_resolve
+
+      return if empty?
+
+      # both the resolver and the connection it's resolving must be pinned to the session
+      @current_session.pin(conn_to_resolve, @current_selector)
+      @current_session.select_resolver(self, @current_selector)
+    end
+
     private
 
     def emit_resolved_connection(connection, addresses, early_resolve)

@@ -116,7 +116,9 @@ module HTTPX
       @current_session.select_resolver(self, @current_selector)
     end
 
-    def early_resolve(connection, **); end
+    def early_resolve(_, **) # rubocop:disable Naming/PredicateMethod
+      false
+    end
 
     def handle_socket_timeout(interval)
       error = HTTPX::ResolveTimeoutError.new(interval, "timed out while waiting on select")

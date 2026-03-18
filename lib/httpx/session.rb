@@ -392,7 +392,11 @@ module HTTPX
       resolver = find_resolver_for(connection, selector)
 
       pin(connection, selector)
-      resolver.early_resolve(connection) || resolver.lazy_resolve(connection)
+      early_resolve(resolver, connection) || resolver.lazy_resolve(connection)
+    end
+
+    def early_resolve(resolver, connection)
+      resolver.early_resolve(connection)
     end
 
     def on_resolver_connection(connection, selector)

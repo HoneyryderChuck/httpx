@@ -18,8 +18,6 @@ module HTTPX
 
       def initialize: (Options options) -> void
 
-      def lazy_resolve: (Connection connection) -> void
-
       private
 
       def transition: (Symbol nextstate) -> void

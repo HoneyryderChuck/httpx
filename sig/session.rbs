@@ -66,6 +66,8 @@ module HTTPX
 
     def receive_requests: (Array[Request] requests, Selector selector) -> Array[response]
 
+    def early_resolve: (resolver resolver, Connection connection) -> bool
+
     def resolve_connection: (Connection connection, Selector selector) -> void
 
     def on_resolver_connection: (Connection connection, Selector selector) -> void
