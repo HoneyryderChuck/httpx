@@ -76,11 +76,43 @@ module HTTPX
           super
         end
 
-        def send(request)
-          # DoH requests bypass the session, so context needs to be set here.
-          request.set_context!
+        def on_io_error(e)
+          return super unless e.is_a?(IOError) && e.message.include?("stream closed in another thread")
+
+          # @fiber-switch-guard
+          # sockets closed during fiber scheduler switches are raised in separate fibers than the fiber the
+          # socket may be used in. this check verifies that this is actually about this socket.
+          return unless to_io.closed?
+
+          if @state == :closing
+            # @fiber-switch-guard
+            # if the connection is reused across fibers, the socket may have been closed in the other fiber
+            # and switched here during the process, so continue what it was doing and transition to closed
+            # via #call.
+            call
+          elsif !backlog?
+            super
+          end
+        end
+
+        def on_connect_error(e)
+          return super unless e.is_a?(IOError) && e.message.include?("stream closed in another thread")
+
+          # @fiber-switch-guard
+          # sockets closed during fiber scheduler switches are raised in separate fibers than the fiber the
+          # socket may be used in. this check verifies that this is actually about this socket.
+          return unless to_io.closed? && !backlog?
 
           super
+        end
+
+        private
+
+        # checks whether the connection has any pending request (which the connection itself may
+        # have stored, or it may be somewhere in the parser).
+        def backlog?
+          @pending.any? ||
+            (@parser && (@parser.pending.any? || @parser.requests.any?))
         end
       end
 
@@ -165,6 +197,21 @@ module HTTPX
           return if @queries.empty?
 
           return unless @queries.values.any?(&:current_context?) || @connections.any?(&:current_context?)
+
+          super
+        end
+
+        def disconnect
+          return unless @connections.all?(&:current_context?)
+
+          super
+        end
+
+        def on_io_error(e)
+          # TODO: return super if this is not stream clsed in another thread
+
+          log { "IO Erroring: #{e.message}, current:#{@name}, queries:#{@queries.size}" }
+          return unless @name
 
           super
         end
