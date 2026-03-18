@@ -529,7 +529,7 @@ module HTTPX
 
         resolve if @queries.empty? && !@connections.empty?
       when :closed
-        return unless @state == :open
+        return if @state == :closed
 
         @io.close if @io
         @start_timeout = nil
