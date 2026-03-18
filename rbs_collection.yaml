@@ -17,5 +17,9 @@ gems:
   # If you want to avoid installing rbs files for gems, you can specify them here.
   - name: rbs
     ignore: true
+  - name: http-form_data
+    ignore: true
+  # - name: ffi
+  #   ignore: true
   - name: ffi
     ignore: true
