@@ -199,9 +199,10 @@ module HTTPX
     end
 
     def disconnect
+      close
+
       return if closed?
 
-      close
       @current_session.deselect_resolver(self, @current_selector)
     end
   end
