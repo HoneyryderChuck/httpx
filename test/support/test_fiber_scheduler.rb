@@ -2,12 +2,14 @@
 
 module FiberSchedulerTestHelpers
   class TestFiberScheduler
-    experimental = Warning[:experimental]
-    begin
-      Warning[:experimental] = false
-      IO::Buffer.new(0)
-    ensure
-      Warning[:experimental] = experimental
+    if defined?(IO::Buffer)
+      experimental = Warning[:experimental]
+      begin
+        Warning[:experimental] = false
+        IO::Buffer.new(0)
+      ensure
+        Warning[:experimental] = experimental
+      end
     end
 
     def initialize(fiber = Fiber.current)

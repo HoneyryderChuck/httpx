@@ -17,6 +17,10 @@ module HTTPX
         def current_context?: () -> boolish
 
         def send: (request request) -> void
+
+        private
+
+        def backlog?: () -> bool
       end
 
       module HTTP1Methods
