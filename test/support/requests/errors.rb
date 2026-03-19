@@ -69,7 +69,7 @@ module Requests
         assert http.connections.first.state == :closed
         selector = http.get_current_selector
         assert selector
-        assert selector.empty?, "there should be no conn being selected after error was raised"
+        assert selector.instance_variable_get(:@selectables).empty?, "there should be no conn being selected after error was raised"
       end
     end
 

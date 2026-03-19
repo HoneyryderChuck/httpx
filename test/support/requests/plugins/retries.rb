@@ -7,14 +7,14 @@ module Requests
         no_retries_session = HTTPX.plugin(RequestInspector).with(timeout: { request_timeout: 3 })
         no_retries_response = no_retries_session.get(build_uri("/delay/10"))
         verify_error_response(no_retries_response)
-        assert no_retries_session.calls.zero?, "expect request to be retried 1 time (was #{no_retries_session.calls})"
+        assert no_retries_session.calls.zero?, "expected request to be retried 1 time (was #{no_retries_session.calls})"
         retries_session = HTTPX
                           .plugin(RequestInspector)
                           .plugin(:retries)
                           .with(timeout: { request_timeout: 3 })
         retries_response = retries_session.get(build_uri("/delay/10"))
         verify_error_response(retries_response)
-        assert retries_session.calls == 3, "expect request to be retried 3 times (was #{retries_session.calls})"
+        assert retries_session.calls == 3, "expected request to be retried 3 times (was #{retries_session.calls})"
       end
 
       def test_plugin_retries_change_requests
@@ -26,13 +26,38 @@ module Requests
 
         retries_response = retries_session.post(build_uri("/delay/10"), body: ["a" * 1024])
         assert check_error[retries_response]
-        assert retries_session.calls.zero?, "expect request to be built 0 times (was #{retries_session.calls})"
+        assert retries_session.calls.zero?, "expected request to be built 0 times (was #{retries_session.calls})"
 
         retries_session.reset
 
         retries_response = retries_session.post(build_uri("/delay/10"), body: ["a" * 1024], retry_change_requests: true)
         assert check_error[retries_response]
-        assert retries_session.calls == 3, "expect request to be retried 3 times (was #{retries_session.calls})"
+        assert retries_session.calls == 3, "expected request to be retried 3 times (was #{retries_session.calls})"
+      end
+
+      def test_plugin_retries_multi_request
+        retries_session = HTTPX
+                          .plugin(RequestInspector)
+                          .plugin(:retries)
+                          .with(timeout: { request_timeout: 3 })
+                          .max_retries(1)
+
+        uri = build_uri("/delay/10")
+        expected = 6 # each request should retry once and fail after 3 seconds
+
+        started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+        responses = retries_session.get(uri, uri, uri)
+        actual = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started_at
+
+        assert responses.size == 3
+        responses.each do |response|
+          verify_error_response(response)
+          # we're comparing against max-retries + 1, because the calls increment will happen
+          # also in the last call, where the request is not going to be retried.
+        end
+        assert retries_session.calls == 5, "expected each request to be retried 2 times (was #{retries_session.calls})"
+
+        assert_in_delta expected, actual, 2, "expected to have executed in #{expected} secs (actual: #{actual} secs)"
       end
 
       def test_plugin_retries_max_retries
@@ -46,7 +71,7 @@ module Requests
         verify_error_response(retries_response)
         # we're comparing against max-retries + 1, because the calls increment will happen
         # also in the last call, where the request is not going to be retried.
-        assert retries_session.calls == 2, "expect request to be retried 2 times (was #{retries_session.calls})"
+        assert retries_session.calls == 2, "expected request to be retried 2 times (was #{retries_session.calls})"
       end
 
       def test_plugin_retries_retry_on
@@ -62,18 +87,19 @@ module Requests
 
         retries_response = retries_session.get(build_uri("/status/400"))
         verify_status(retries_response, 400)
-        assert retries_session.calls == 2, "expect request to be retried for 400 status code (it was, #{retries_session.calls} times)"
+        assert retries_session.calls == 2, "expected request to be retried for 400 status code (it was, #{retries_session.calls} times)"
         retries_session.reset
 
         retries_response = retries_session.get(build_uri("/status/401"))
         verify_status(retries_response, 401)
-        assert retries_session.calls.zero?, "expect request not to be retried for 401 status code (it was, #{retries_session.calls} times)"
+        assert retries_session.calls.zero?,
+               "expected request not to be retried for 401 status code (it was, #{retries_session.calls} times)"
         retries_session.reset
 
         retries_response = retries_session.get(build_uri("/delay/10"))
         verify_error_response(retries_response)
         assert retries_session.calls == 2,
-               "expect request to still be retried for regular socket errors (it was, #{retries_session.calls} times)"
+               "expected request to still be retried for regular socket errors (it was, #{retries_session.calls} times)"
       end
 
       def test_plugin_retries_retry_after
@@ -190,7 +216,7 @@ module Requests
                                .with_timeout(request_timeout: 2)
         retries_response = retries_session.post(uri, retry_change_requests: true, form: { image: File.new(fixture_file_path) })
         assert check_error[retries_response], "expected #{retries_response} to be an error response"
-        assert retries_session.calls == 1, "expect request to be retried 1 time (was #{retries_session.calls})"
+        assert retries_session.calls == 1, "expected request to be retried 1 time (was #{retries_session.calls})"
       end
 
       def test_plugin_retries_multipart_tempfile_post
@@ -207,7 +233,7 @@ module Requests
           retries_response = retries_session.post(uri, retry_change_requests: true, form: { image: file })
         end
         assert check_error[retries_response], "expected #{retries_response} to be an error response"
-        assert retries_session.calls == 1, "expect request to be retried 1 time (was #{retries_session.calls})"
+        assert retries_session.calls == 1, "expected request to be retried 1 time (was #{retries_session.calls})"
       end
 
       module RequestFailAfter100Bytes
