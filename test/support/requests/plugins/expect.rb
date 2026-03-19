@@ -15,7 +15,7 @@ module Requests
 
       def test_plugin_expect_100_with_delay_form_params
         # run this only for http/1.1 mode, as this is a local test server
-        return unless origin.start_with?("http://")
+        return unless origin.start_with?("https://")
 
         start_test_servlet(Expect100Server) do |server|
           http = HTTPX.plugin(:expect)

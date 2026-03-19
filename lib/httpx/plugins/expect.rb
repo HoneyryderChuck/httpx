@@ -70,6 +70,9 @@ module HTTPX
       module RequestMethods
         def initialize(*)
           super
+
+          @informational_status = nil
+
           return if @body.empty?
 
           threshold = @options.expect_threshold_size
