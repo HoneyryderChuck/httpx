@@ -29,7 +29,7 @@ module HTTPX
 
     def_delegator :@timers, :after
 
-    def_delegator :@selectables, :empty?
+    def_delegator :@selectables, :each
 
     def initialize
       @timers = Timers.new
@@ -37,8 +37,8 @@ module HTTPX
       @is_timer_interval = false
     end
 
-    def each(&blk)
-      @selectables.each(&blk)
+    def empty?
+      @selectables.empty? && @timers.empty?
     end
 
     def next_tick

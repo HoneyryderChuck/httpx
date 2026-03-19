@@ -24,8 +24,6 @@ module HTTPX
 
     type io_select_selectable = (selectable | Array[selectable])?
 
-    include _Each[selectable]
-
     extend Forwardable
 
     READABLE: Array[io_interests]
@@ -35,6 +33,9 @@ module HTTPX
 
     @selectables: Array[selectable]
     @is_timer_interval: bool
+
+    def each: () -> ::Enumerator[selectable, self]
+            | () { (selectable) -> void } -> self
 
     def next_tick: () -> void
 

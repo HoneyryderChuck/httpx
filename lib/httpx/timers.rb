@@ -6,6 +6,10 @@ module HTTPX
       @intervals = []
     end
 
+    def empty?
+      @intervals.empty?
+    end
+
     def after(interval_in_secs, cb = nil, &blk)
       callback = cb || blk
 
