@@ -89,7 +89,7 @@ module HTTPX::Plugins
         on(:headers) do
           # the usual request init time (when not including the connection handshake)
           # should be the time the request is buffered the first time.
-          @init_time ||= ::Time.now
+          @init_time ||= ::Time.now.utc
 
           tracer.start(self)
         end
@@ -102,7 +102,7 @@ module HTTPX::Plugins
         # Example is the :ssrf_filter plugin, which raises an error on
         # initialize if the host is an IP which matches against the known set.
         # in such cases, we'll just set here right here.
-        @init_time ||= ::Time.now
+        @init_time ||= ::Time.now.utc
 
         super
       end
@@ -113,7 +113,7 @@ module HTTPX::Plugins
       def initialize(*)
         super
 
-        @init_time = ::Time.now
+        @init_time = ::Time.now.utc
       end
 
       def send(request)
@@ -129,7 +129,7 @@ module HTTPX::Plugins
 
         # time of initial request(s) is accounted from the moment
         # the connection is back to :idle, and ready to connect again.
-        @init_time = ::Time.now
+        @init_time = ::Time.now.utc
       end
     end
   end
