@@ -51,7 +51,7 @@ module Datadog::Tracing
           end
 
           def start(request)
-            request.datadog_span = initialize_span(request, now)
+            request.datadog_span = initialize_span(request, request.init_time)
           end
 
           def reset(request)
@@ -130,10 +130,6 @@ module Datadog::Tracing
         rescue StandardError => e
           Datadog.logger.error("error preparing span for http request: #{e}")
           Datadog.logger.error(e.backtrace)
-          end
-
-          def now
-            ::Datadog::Core::Utils::Time.now.utc
           end
 
           def configuration(request)
