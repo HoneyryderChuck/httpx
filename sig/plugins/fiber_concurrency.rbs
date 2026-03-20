@@ -9,12 +9,12 @@ module HTTPX
 
         def set_context!: () -> void
 
-        def current_context?: () -> bool
+        def current_context?: () -> boolish
       end
 
       module ConnectionMethods
 
-        def current_context?: () -> bool
+        def current_context?: () -> boolish
 
         def send: (request request) -> void
       end

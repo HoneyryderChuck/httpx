@@ -20,6 +20,10 @@ module HTTPX
         def delete: (String host) -> void
       end
 
+      module RequestMethods
+        @informational_status: Integer?
+      end
+
       interface _ExpectOptions
         def expect_timeout: () -> Integer?
 
