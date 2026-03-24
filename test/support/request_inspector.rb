@@ -35,4 +35,8 @@ module RequestInspector
       response
     end
   end
+
+  module ResponseMethods
+    attr_reader :request
+  end
 end
