@@ -19,6 +19,7 @@ module Datadog::Tracing
         Datadog::Tracing::Contrib::Ext::Metadata::TAG_BASE_SERVICE
       end
       TAG_PEER_HOSTNAME = Datadog::Tracing::Metadata::Ext::TAG_PEER_HOSTNAME
+      TAG_PEER_SERVICE = Datadog::Tracing::Metadata::Ext::TAG_PEER_SERVICE
 
       TAG_KIND = Datadog::Tracing::Metadata::Ext::TAG_KIND
       TAG_CLIENT = Datadog::Tracing::Metadata::Ext::SpanKind::TAG_CLIENT
@@ -108,7 +109,9 @@ module Datadog::Tracing
             span.set_tag(TAG_PEER_HOSTNAME, uri.host)
 
             # Tag as an external peer service
-            # span.set_tag(TAG_PEER_SERVICE, span.service)
+            if (peer_service = config[:peer_service])
+              span.set_tag(TAG_PEER_SERVICE, peer_service)
+            end
 
             if config[:distributed_tracing]
               propagate_trace_http(
