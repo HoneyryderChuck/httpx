@@ -116,30 +116,32 @@ module HTTPX
     end
 
     def on_headers(h)
-      @request = @requests.first
+      request = @request = @requests.first
 
-      return if @request.response
+      return if request.response
 
-      log(level: 2) { "headers received" }
-      headers = @request.options.headers_class.new(h)
-      response = @request.options.response_class.new(@request,
-                                                     @parser.status_code,
-                                                     @parser.http_version.join("."),
-                                                     headers)
-      log(color: :yellow) { "-> HEADLINE: #{response.status} HTTP/#{@parser.http_version.join(".")}" }
-      log(color: :yellow) { response.headers.each.map { |f, v| "-> HEADER: #{f}: #{log_redact_headers(v)}" }.join("\n") }
+      request.log(level: 2) { "headers received" }
+      headers = request.options.headers_class.new(h)
+      response = request.options.response_class.new(request,
+                                                    @parser.status_code,
+                                                    @parser.http_version.join("."),
+                                                    headers)
+      request.log(color: :yellow) { "-> HEADLINE: #{response.status} HTTP/#{@parser.http_version.join(".")}" }
+      request.log(color: :yellow) { response.headers.each.map { |f, v| "-> HEADER: #{f}: #{log_redact_headers(v)}" }.join("\n") }
 
-      @request.response = response
+      request.response = response
       on_complete if response.finished?
     end
 
     def on_trailers(h)
-      return unless @request
+      request = @request
 
-      response = @request.response
-      log(level: 2) { "trailer headers received" }
+      return unless request
 
-      log(color: :yellow) { h.each.map { |f, v| "-> HEADER: #{f}: #{log_redact_headers(v.join(", "))}" }.join("\n") }
+      response = request.response
+
+      request.log(level: 2) { "trailer headers received" }
+      request.log(color: :yellow) { h.each.map { |f, v| "-> HEADER: #{f}: #{log_redact_headers(v.join(", "))}" }.join("\n") }
       response.merge_headers(h)
     end
 
@@ -149,8 +151,9 @@ module HTTPX
       return unless request
 
       begin
-        log(color: :green) { "-> DATA: #{chunk.bytesize} bytes..." }
-        log(level: 2, color: :green) { "-> #{log_redact_body(chunk.inspect)}" }
+        request.log(color: :green) { "-> DATA: #{chunk.bytesize} bytes..." }
+        request.log(level: 2, color: :green) { "-> #{log_redact_body(chunk.inspect)}" }
+
         response = request.response
 
         response << chunk
@@ -166,7 +169,7 @@ module HTTPX
 
       return unless request
 
-      log(level: 2) { "parsing complete" }
+      request.log(level: 2) { "parsing complete" }
       dispatch(request)
     end
 
@@ -362,10 +365,10 @@ module HTTPX
     def join_headers(request)
       headline = join_headline(request)
       @buffer << headline << CRLF
-      log(color: :yellow) { "<- HEADLINE: #{headline.chomp.inspect}" }
+      request.log(color: :yellow) { "<- HEADLINE: #{headline.chomp.inspect}" }
       extra_headers = set_protocol_headers(request)
-      join_headers2(request.headers.each(extra_headers))
-      log { "<- " }
+      join_headers2(request, request.headers.each(extra_headers))
+      request.log { "<- " }
       @buffer << CRLF
     end
 
@@ -373,8 +376,8 @@ module HTTPX
       return if request.body.empty?
 
       while (chunk = request.drain_body)
-        log(color: :green) { "<- DATA: #{chunk.bytesize} bytes..." }
-        log(level: 2, color: :green) { "<- #{log_redact_body(chunk.inspect)}" }
+        request.log(color: :green) { "<- DATA: #{chunk.bytesize} bytes..." }
+        request.log(level: 2, color: :green) { "<- #{log_redact_body(chunk.inspect)}" }
         @buffer << chunk
         throw(:buffer_full, request) if @buffer.full?
       end
@@ -387,15 +390,15 @@ module HTTPX
     def join_trailers(request)
       return unless request.trailers? && request.callbacks_for?(:trailers)
 
-      join_headers2(request.trailers)
-      log { "<- " }
+      join_headers2(request, request.trailers)
+      request.log { "<- " }
       @buffer << CRLF
     end
 
-    def join_headers2(headers)
+    def join_headers2(request, headers)
       headers.each do |field, value|
         field = capitalized(field)
-        log(color: :yellow) { "<- HEADER: #{[field, log_redact_headers(value)].join(": ")}" }
+        request.log(color: :yellow) { "<- HEADER: #{[field, log_redact_headers(value)].join(": ")}" }
         @buffer << "#{field}: #{value}#{CRLF}"
       end
     end

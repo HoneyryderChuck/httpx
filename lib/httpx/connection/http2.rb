@@ -242,11 +242,11 @@ module HTTPX
       extra_headers = set_protocol_headers(request)
 
       if request.headers.key?("host")
-        log { "forbidden \"host\" header found (#{log_redact_headers(request.headers["host"])}), will use it as authority..." }
+        request.log { "forbidden \"host\" header found (#{log_redact_headers(request.headers["host"])}), will use it as authority..." }
         extra_headers[":authority"] = request.headers["host"]
       end
 
-      log(level: 1, color: :yellow) do
+      request.log(level: 1, color: :yellow) do
         "\n#{request.headers.merge(extra_headers).each.map { |k, v| "#{stream.id}: -> HEADER: #{k}: #{log_redact_headers(v)}" }.join("\n")}"
       end
       stream.headers(request.headers.each(extra_headers), end_stream: request.body.empty?)
@@ -258,7 +258,7 @@ module HTTPX
         return
       end
 
-      log(level: 1, color: :yellow) do
+      request.log(level: 1, color: :yellow) do
         request.trailers.each.map { |k, v| "#{stream.id}: -> HEADER: #{k}: #{log_redact_headers(v)}" }.join("\n")
       end
       stream.headers(request.trailers.each, end_stream: true)
@@ -286,8 +286,8 @@ module HTTPX
     end
 
     def send_chunk(request, stream, chunk, next_chunk)
-      log(level: 1, color: :green) { "#{stream.id}: -> DATA: #{chunk.bytesize} bytes..." }
-      log(level: 2, color: :green) { "#{stream.id}: -> #{log_redact_body(chunk.inspect)}" }
+      request.log(level: 1, color: :green) { "#{stream.id}: -> DATA: #{chunk.bytesize} bytes..." }
+      request.log(level: 2, color: :green) { "#{stream.id}: -> #{log_redact_body(chunk.inspect)}" }
       stream.data(chunk, end_stream: end_stream?(request, next_chunk))
     end
 
@@ -303,11 +303,11 @@ module HTTPX
       response = request.response
 
       if response.is_a?(Response) && response.version == "2.0"
-        on_stream_trailers(stream, response, h)
+        on_stream_trailers(stream, request, response, h)
         return
       end
 
-      log(color: :yellow) do
+      request.log(color: :yellow) do
         h.map { |k, v| "#{stream.id}: <- HEADER: #{k}: #{k == ":status" ? v : log_redact_headers(v)}" }.join("\n")
       end
       _, status = h.shift
@@ -319,16 +319,16 @@ module HTTPX
       handle(request, stream) if request.expects?
     end
 
-    def on_stream_trailers(stream, response, h)
-      log(color: :yellow) do
+    def on_stream_trailers(stream, request, response, h)
+      request.log(color: :yellow) do
         h.map { |k, v| "#{stream.id}: <- HEADER: #{k}: #{log_redact_headers(v)}" }.join("\n")
       end
       response.merge_headers(h)
     end
 
     def on_stream_data(stream, request, data)
-      log(level: 1, color: :green) { "#{stream.id}: <- DATA: #{data.bytesize} bytes..." }
-      log(level: 2, color: :green) { "#{stream.id}: <- #{log_redact_body(data.inspect)}" }
+      request.log(level: 1, color: :green) { "#{stream.id}: <- DATA: #{data.bytesize} bytes..." }
+      request.log(level: 2, color: :green) { "#{stream.id}: <- #{log_redact_body(data.inspect)}" }
       request.response << data
     end
 
@@ -337,14 +337,14 @@ module HTTPX
       stream.close
     end
 
-    def on_stream_half_close(stream, _request)
+    def on_stream_half_close(stream, request)
       unless stream.send_buffer.empty?
         stream.send_buffer.clear
         stream.data("", end_stream: true)
       end
 
       # TODO: omit log line if response already here
-      log(level: 2) { "#{stream.id}: waiting for response..." }
+      request.log(level: 2) { "#{stream.id}: waiting for response..." }
     end
 
     def on_stream_close(stream, request, error)
