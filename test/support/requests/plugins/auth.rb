@@ -98,6 +98,28 @@ module Requests
         assert req2.headers["authorization"] == "TOKEN3", "the previous token should have been reused"
       end
 
+      def test_plugin_auth_multi_request_regenerate_on_retry
+        i = 0
+        session = HTTPX.plugin(RequestInspector)
+                       .plugin(:retries, max_retries: 1, retry_on: ->(res) { res.respond_to?(:status) && res.status == 400 })
+                       .plugin(:auth, generate_auth_value_on_retry: ->(res) { res.respond_to?(:status) && res.status == 400 })
+                       .with(timeout: { request_timeout: 3 })
+                       .authorization { "TOKEN#{i += 1}" }
+
+        uri = build_uri("/status/401")
+
+        responses = session.get(uri, uri, uri)
+
+        assert responses.size == 3
+        assert session.calls == 5, "expected two errors to have been sent per request"
+
+        responses.each do |response|
+          verify_status(response, 401)
+          request = response.request
+          assert request.headers["authorization"] == "TOKEN2", "the last successful token should have been reused"
+        end
+      end
+
       # Bearer Auth
 
       def test_plugin_bearer_auth

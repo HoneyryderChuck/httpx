@@ -44,6 +44,7 @@ module HTTPX
           super
 
           @auth_header_value = nil
+          @auth_header_value_mtx = Thread::Mutex.new
           @skip_auth_header_value = false
         end
 
@@ -63,7 +64,9 @@ module HTTPX
         end
 
         def reset_auth_header_value!
-          @auth_header_value = nil
+          @auth_header_value_mtx.synchronize do
+            @auth_header_value = nil
+          end
         end
 
         private
@@ -71,9 +74,11 @@ module HTTPX
         def send_request(request, *)
           return super if @skip_auth_header_value || request.authorized?
 
-          @auth_header_value ||= generate_auth_token
+          auth_header_value = @auth_header_value_mtx.synchronize do
+            @auth_header_value ||= generate_auth_token
+          end
 
-          request.authorize(@auth_header_value) if @auth_header_value
+          request.authorize(auth_header_value) if auth_header_value
 
           super
         end
@@ -92,9 +97,11 @@ module HTTPX
       end
 
       module RequestMethods
+        attr_reader :auth_token_value
+
         def initialize(*)
           super
-          @auth_token_value = nil
+          @auth_token_value = @auth_header_value = nil
         end
 
         def authorized?
@@ -102,19 +109,20 @@ module HTTPX
         end
 
         def unauthorize!
-          return unless (auth_value = @auth_token_value)
+          return unless (auth_value = @auth_header_value)
 
           @headers.get("authorization").delete(auth_value)
 
-          @auth_token_value = nil
+          @auth_token_value = @auth_header_value = nil
         end
 
         def authorize(auth_value)
+          @auth_header_value = auth_value
           if (auth_type = @options.auth_header_type)
-            auth_value = "#{auth_type} #{auth_value}"
+            @auth_header_value = "#{auth_type} #{@auth_header_value}"
           end
 
-          @headers.add("authorization", auth_value)
+          @headers.add("authorization", @auth_header_value)
 
           @auth_token_value = auth_value
         end
@@ -138,8 +146,14 @@ module HTTPX
             return unless auth_error?(response, request.options) ||
                           (@options.generate_auth_value_on_retry && @options.generate_auth_value_on_retry.call(response))
 
+            # regenerate token before retry, but only if it's the first request from batch failing.
+            # otherwise, it means that the first request already passed here, so this request should
+            # use whatever was generated for it.
+            @auth_header_value_mtx.synchronize do
+              @auth_header_value = generate_auth_token if request.auth_token_value == @auth_header_value
+            end
+
             request.unauthorize!
-            @auth_header_value = generate_auth_token
           end
 
           def auth_error?(response, options)
