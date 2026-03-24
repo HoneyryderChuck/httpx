@@ -76,7 +76,7 @@ module HTTPX
 
     def on_stream_headers: (::HTTP2::Stream stream, Request request, Array[[String, String]] headers) -> void
 
-    def on_stream_trailers: (::HTTP2::Stream stream, Response response, Array[[String, String]] headers) -> void
+    def on_stream_trailers: (::HTTP2::Stream stream, Request request, Response response, Array[[String, String]] headers) -> void
 
     def on_stream_data: (::HTTP2::Stream stream, Request request, String data) -> void
 
