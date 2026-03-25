@@ -69,7 +69,7 @@ module FiberSchedulerTestHelpers
           break if total >= length
         when 0
           break
-        when (...0)
+        when ...0
           return result
         end
       end
@@ -97,7 +97,7 @@ module FiberSchedulerTestHelpers
           break if total >= length
         when 0
           break
-        when (...0)
+        when ...0
           return result
         end
       end
