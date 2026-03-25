@@ -148,7 +148,7 @@ module HTTPX
             log { "failed to get response, #{request.retries} tries to go..." }
             prepare_to_retry(request, response)
 
-            if (retry_after = when_to_retry(request, response, options))
+            if (retry_after = when_to_retry(request, response, options)) && retry_after.positive?
               # apply jitter
               if (jitter = request.options.retry_jitter)
                 retry_after = jitter.call(retry_after)
