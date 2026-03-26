@@ -34,7 +34,7 @@ module HTTPX
 
     def checkout_resolver: (Options options) -> resolver_manager
 
-    def checkin_resolver: (Resolver::Resolver resolver) -> void
+    def checkin_resolver: (Resolver::Multi | Resolver::Resolver resolver) -> void
 
     private
 
