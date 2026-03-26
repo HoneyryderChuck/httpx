@@ -160,9 +160,13 @@ module HTTPX
     end
 
     def checkin_resolver(resolver)
-      resolver_class = resolver.class
+      if resolver.is_a?(Resolver::Multi)
+        resolver_class = resolver.resolvers.first.class
+      else
+        resolver_class = resolver.class
 
-      resolver = resolver.multi
+        resolver = resolver.multi
+      end
 
       # a multi requires all sub-resolvers being closed in order to be
       # correctly checked back in.
