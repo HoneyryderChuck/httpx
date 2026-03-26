@@ -3,6 +3,8 @@ module HTTPX
     module ConnectionMixin
       H2_ALTSVC_SCHEMES: Array[String]
 
+      ALTSVC_IGNORE_IVARS: Array[Symbol]
+
       def send: (Request request) -> void
 
       def match?: (http_uri uri, Options options) -> bool

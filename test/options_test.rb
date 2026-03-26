@@ -199,9 +199,18 @@ class OptionsTest < Minitest::Test
     assert opts.to_hash.is_a?(Hash)
   end
 
-  def test_options_equals
+  def test_connection_options_match
     opts = Options.new(origin: "http://example.com")
-    assert opts == Options.new(origin: "http://example.com")
-    assert Options.new(origin: "http://example.com", headers: { "foo" => "bar" }) == Options.new(origin: "http://example.com")
+    assert opts.connection_options_match?(Options.new(origin: "http://example.com"))
+    assert Options.new(origin: "http://example.com", headers: { "foo" => "bar" }).connection_options_match?(Options.new(origin: "http://example.com"))
+    assert !opts.connection_options_match?(Options.new(origin: "http://example2.com"))
+  end
+
+  def test_resolver_options_match
+    opts = Options.new(origin: "http://example.com")
+    assert opts.resolver_options_match?(Options.new(origin: "http://example.com"))
+    assert Options.new(origin: "http://example.com", headers: { "foo" => "bar" }).resolver_options_match?(Options.new(origin: "http://example.com"))
+    assert opts.resolver_options_match?(Options.new(origin: "http://example2.com"))
+    assert !opts.resolver_options_match?(Options.new(resolver_options: { cache: false }))
   end
 end

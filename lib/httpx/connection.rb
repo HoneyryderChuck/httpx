@@ -106,7 +106,7 @@ module HTTPX
         # origin came from an ORIGIN frame, we're going to verify the hostname with the
         # SSL certificate
         (@origins.size == 1 || @origin == uri.origin || (@io.is_a?(SSL) && @io.verify_hostname(uri.host))) &&
-        @options == options
+        @options.connection_options_match?(options)
     end
 
     def mergeable?(connection)
@@ -117,7 +117,7 @@ module HTTPX
       (
         (open? && @origin == connection.origin) ||
         !(@io.addresses & (connection.addresses || [])).empty?
-      ) && @options == connection.options
+      ) && @options.connection_options_match?(connection.options)
     end
 
     # coalesces +self+ into +connection+.

@@ -10,6 +10,8 @@ module HTTPX
 
       H2_ALTSVC_SCHEMES = %w[https h2].freeze
 
+      ALTSVC_IGNORE_IVARS = %i[@ssl].freeze
+
       def send(request)
         request.headers["alt-used"] = @origin.authority if @parser && !@write_buffer.full? && match_altsvcs?(request.uri)
 
@@ -35,11 +37,11 @@ module HTTPX
       end
 
       def match_altsvc_options?(uri, options)
-        return @options == options unless @options.ssl.all? do |k, v|
+        return @options.connection_options_match?(options) unless @options.ssl.all? do |k, v|
           v == (k == :hostname ? uri.host : options.ssl[k])
         end
 
-        @options.options_equals?(options, Options::REQUEST_BODY_IVARS + %i[@ssl])
+        @options.connection_options_match?(options, ALTSVC_IGNORE_IVARS)
       end
 
       def altsvc_match?(uri, other_uri)

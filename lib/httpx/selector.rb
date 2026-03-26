@@ -81,7 +81,8 @@ module HTTPX
 
     def find_resolver(options)
       res = @selectables.find do |c|
-        c.is_a?(Resolver::Resolver) && options == c.options
+        c.is_a?(Resolver::Resolver) &&
+          options.resolver_options_match?(c.options)
       end
 
       res.multi if res
