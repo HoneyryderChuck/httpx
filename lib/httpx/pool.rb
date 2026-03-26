@@ -153,7 +153,7 @@ module HTTPX
         resolvers = @resolvers[resolver_type]
 
         idx = resolvers.find_index do |res|
-          res.options == options
+          res.options.resolver_options_match?(options)
         end
         resolvers.delete_at(idx) if idx
       end || checkout_new_resolver(resolver_type, options)

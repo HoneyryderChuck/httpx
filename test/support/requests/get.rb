@@ -54,15 +54,38 @@ module Requests
       end
     end
 
-    def test_get_multiple
+    def test_get_multiple_same_origin
       uri = build_uri("/delay/2")
-      response1, response2 = HTTPX.get(uri, uri)
+
+      session = HTTPX.plugin(SessionWithPool)
+
+      response1, response2 = session.get(uri, uri)
 
       verify_status(response1, 200)
       verify_body_length(response1)
 
       verify_status(response2, 200)
       verify_body_length(response2)
+
+      assert session.resolvers.size == 1
+    end
+
+    def test_get_multiple_different_origin
+      session = HTTPX.plugin(SessionWithPool)
+
+      req1 = ["/delay/2", { origin: origin(httpbin) }]
+      req2 = ["/delay/2", { origin: httpbin_no_proxy }]
+
+      response1, response2 = session.get(req1, req2)
+
+      verify_status(response1, 200)
+      verify_body_length(response1)
+
+      verify_status(response2, 200)
+      verify_body_length(response2)
+
+      num_resolvers = session.resolvers.size
+      assert num_resolvers == 1, "should have only had 1 resolver, was #{num_resolvers}"
     end
 
     def test_get_multiple_no_concurrency

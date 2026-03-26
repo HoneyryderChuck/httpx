@@ -202,16 +202,19 @@ module HTTPX
 
     REQUEST_BODY_IVARS = %i[@headers].freeze
 
-    def ==(other)
-      super || options_equals?(other)
-    end
+    # checks whether +other+ matches the same connection-level options
+    def connection_options_match?(other, ignore_ivars = nil)
+      return true if self == other
 
-    # checks whether +other+ is equal by comparing the session options
-    def options_equals?(other, ignore_ivars = REQUEST_BODY_IVARS)
       # headers and other request options do not play a role, as they are
       # relevant only for the request.
-      ivars = instance_variables - ignore_ivars
-      other_ivars = other.instance_variables - ignore_ivars
+      ivars = instance_variables
+      ivars.reject! { |iv| REQUEST_BODY_IVARS.include?(iv) }
+      ivars.reject! { |iv| ignore_ivars.include?(iv) } if ignore_ivars
+
+      other_ivars = other.instance_variables
+      other_ivars.reject! { |iv| REQUEST_BODY_IVARS.include?(iv) }
+      other_ivars.reject! { |iv| ignore_ivars.include?(iv) } if ignore_ivars
 
       return false if ivars.size != other_ivars.size
 
@@ -220,6 +223,19 @@ module HTTPX
       ivars.all? do |ivar|
         instance_variable_get(ivar) == other.instance_variable_get(ivar)
       end
+    end
+
+    RESOLVER_IVARS = %i[
+      @resolver_class @resolver_cache @resolver_options
+      @resolver_native_class @resolver_system_class @resolver_https_class
+    ].freeze
+
+    # checks whether +other+ matches the same resolver-level options
+    def resolver_options_match?(other)
+      self == other ||
+        RESOLVER_IVARS.all? do |ivar|
+          instance_variable_get(ivar) == other.instance_variable_get(ivar)
+        end
     end
 
     # returns a HTTPX::Options instance resulting of the merging of +other+ with self.
