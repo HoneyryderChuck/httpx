@@ -183,6 +183,9 @@ module HTTPX
 
       begin
         @io.close
+      rescue StandardError => e
+        log { "error closing socket" }
+        log { e.full_message(highlight: false) }
       ensure
         transition(:closed)
       end
