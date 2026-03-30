@@ -57,29 +57,37 @@ module HTTPX
 
         return if @buffer.empty?
 
+        # HTTP/2 GOAWAY frame buffered.
         return :w
       end
 
       unless @connection.state == :connected && @handshake_completed
+        # HTTP/2 in intermediate state or still completing initialization-
         return @buffer.empty? ? :r : :rw
       end
 
       unless @connection.send_buffer.empty?
+        # HTTP/2 connection is buffering data chunks and failing to emit DATA frames,
+        # most likely because the flow control window is exhausted.
         return :rw unless @buffer.empty?
 
         # waiting for WINDOW_UPDATE frames
         return :r
       end
 
+      # there are pending bufferable requests
       return :w if !@pending.empty? && can_buffer_more_requests?
 
+      # there are pending frames from the last run
       return :w unless @drains.empty?
 
       if @buffer.empty?
+        # skip if no more requests or pings to process
         return if @streams.empty? && @pings.empty?
 
         :r
       else
+        # buffered frames
         :w
       end
     end
