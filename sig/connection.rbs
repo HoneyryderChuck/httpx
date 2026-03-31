@@ -156,6 +156,10 @@ module HTTPX
 
     def build_socket: (?Array[Resolver::Entry]? addrs) -> (TCP | SSL | UNIX)
 
+    def ping: () -> void
+
+    def pong: () -> void
+
     def handle_error: (StandardError error, ?Request? request) -> void
 
     def force_purge: () -> void

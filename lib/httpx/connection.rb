@@ -313,8 +313,8 @@ module HTTPX
           log(level: 3) { "keep alive timeout expired, pinging connection..." }
           @pending << request
           transition(:active) if @state == :inactive
-          parser.ping unless parser.waiting_for_ping?
           request.ping!
+          ping
           return
         end
 
@@ -643,7 +643,7 @@ module HTTPX
         build_altsvc_connection(alt_origin, origin, alt_params)
       end
 
-      parser.on(:pong, &method(:send_pending))
+      parser.on(:pong, &method(:pong))
 
       parser.on(:promise) do |request, stream|
         request.emit(:promise, parser, stream)
@@ -896,6 +896,18 @@ module HTTPX
       else
         raise Error, "unsupported transport (#{@type})"
       end
+    end
+
+    def ping
+      return if parser.waiting_for_ping?
+
+      parser.ping
+      call
+    end
+
+    def pong
+      @response_received_at = Utils.now
+      send_pending
     end
 
     # recover internal state and emit all relevant error responses when +error+ was raised.
