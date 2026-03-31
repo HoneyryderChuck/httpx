@@ -755,16 +755,6 @@ module HTTPX
         return if @inflight.positive? || @parser.waiting_for_ping?
       when :closing
         return unless connecting? || @state == :open
-
-        unless @write_buffer.empty?
-          # preset state before handshake, as error callbacks
-          # may take it back here.
-          @state = nextstate
-          # handshakes, try sending
-          consume
-          @write_buffer.clear
-          return
-        end
       when :closed
         return unless @state == :closing
         return unless @write_buffer.empty?
@@ -790,6 +780,12 @@ module HTTPX
       case nextstate
       when :inactive
         disconnect
+      when :closing
+        return if @write_buffer.empty?
+
+        # try flushing termination handshakes
+        consume
+        @write_buffer.clear
       when :closed
         # TODO: should this raise an error instead?
         return unless @pending.empty?
