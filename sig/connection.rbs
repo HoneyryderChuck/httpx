@@ -50,6 +50,7 @@ module HTTPX
     @altsvc_connection: instance?
     @sibling: instance?
     @main_sibling: bool
+    @no_more_requests_counter: Integer
 
 
     def addresses: () -> Array[Resolver::Entry]?
@@ -159,6 +160,8 @@ module HTTPX
     def ping: () -> void
 
     def pong: () -> void
+
+    def no_more_requests_loop_check: () -> void
 
     def handle_error: (StandardError error, ?Request? request) -> void
 

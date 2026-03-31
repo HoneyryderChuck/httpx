@@ -62,6 +62,7 @@ module HTTPX
       @pending = []
       @inflight = 0
       @keep_alive_timeout = @options.timeout[:keep_alive_timeout]
+      @no_more_requests_counter = 0
 
       if @options.io
         # if there's an already open IO, get its
@@ -455,11 +456,11 @@ module HTTPX
           #
           # this condition takes into account:
           #
-          # * the number of inflight requests
           # * the number of pending requests
+          # * the number of inflight requests
           # * whether the write buffer has bytes (i.e. for close handshake)
           if @pending.empty? && @inflight.zero? && @write_buffer.empty?
-            log(level: 3) { "NO MORE REQUESTS..." } if @parser && @parser.pending.any?
+            no_more_requests_loop_check if @parser && @parser.pending.any?
 
             # terminate if an altsvc connection has been established
             terminate if @altsvc_connection
@@ -509,7 +510,7 @@ module HTTPX
 
             # exit #consume altogether if all outstanding requests have been dealt with
             if @pending.empty? && @inflight.zero? && @write_buffer.empty? # rubocop:disable Style/Next
-              log(level: 3) { "NO MORE REQUESTS..." } if @parser && @parser.pending.any?
+              no_more_requests_loop_check if @parser && @parser.pending.any?
 
               # terminate if an altsvc connection has been established
               terminate if @altsvc_connection
@@ -635,6 +636,7 @@ module HTTPX
           build_altsvc_connection(alt_origin, origin, alt_params)
         end
         @response_received_at = Utils.now
+        @no_more_requests_counter = 0
         @inflight -= 1
         response.finish!
         request.emit(:response, response)
@@ -907,7 +909,19 @@ module HTTPX
 
     def pong
       @response_received_at = Utils.now
+      @no_more_requests_counter = 0
       send_pending
+    end
+
+    def no_more_requests_loop_check
+      log(level: 3) { "NO MORE REQUESTS..." }
+      @no_more_requests_counter += 1
+
+      return if @no_more_requests_counter < 50
+
+      raise Error, "connection corrupted, aborted after looping for a while, " \
+                   "please report this https://gitlab.com/os85/httpx/-/work_items " \
+                   "along with debug logs"
     end
 
     # recover internal state and emit all relevant error responses when +error+ was raised.
