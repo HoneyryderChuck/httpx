@@ -290,7 +290,7 @@ module HTTPX
       parser = @parser
 
       if parser && parser.respond_to?(:max_concurrent_requests)
-        # if connection being reset has at some point downgraded the number of concurrent
+        # if connection being reset has at some downgraded the number of concurrent
         # requests, such as in the case where an attempt to use HTTP/1 pipelining failed,
         # keep that information around.
         @max_concurrent_requests = parser.max_concurrent_requests
@@ -313,7 +313,7 @@ module HTTPX
           log(level: 3) { "keep alive timeout expired, pinging connection..." }
           @pending << request
           transition(:active) if @state == :inactive
-          parser.ping
+          parser.ping unless parser.waiting_for_ping?
           request.ping!
           return
         end
