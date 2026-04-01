@@ -16,6 +16,7 @@ module HTTPX
               | (:basic_auth, ?options) -> Plugins::sessionBasicAuth
               | (:digest_auth, ?options) -> Plugins::sessionDigestAuth
               | (:ntlm_auth, ?options) -> Plugins::sessionNTLMAuth
+              | (:ntlm_v2_auth, ?options) -> Plugins::sessionNTLMV2Auth
               | (:aws_sdk_authentication, ?options) -> Plugins::sessionAwsSdkAuthentication
               | (:brotli, ?options) -> Session
               | (:cookies, ?options) -> Plugins::sessionCookies

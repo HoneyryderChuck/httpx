@@ -233,6 +233,40 @@ module Requests
         end
       end
 
+      # NTLMv2
+
+      def test_plugin_ntlm_v2_auth
+        return if origin.start_with?("https")
+
+        start_test_servlet(NTLMServer) do |server|
+          uri = "#{server.origin}/"
+          HTTPX.plugin(SessionWithPool).plugin(:ntlm_v2_auth).wrap do |http|
+            # authenticated request should succeed via NTLMv2 handshake
+            response = http.ntlm_auth("user", "password").get(uri)
+            verify_status(response, 200)
+          end
+        end
+      end
+
+      def test_plugin_ntlm_v2_auth_with_domain
+        return if origin.start_with?("https")
+
+        start_test_servlet(NTLMServer) do |server|
+          uri = "#{server.origin}/"
+          HTTPX.plugin(SessionWithPool).plugin(:ntlm_v2_auth).wrap do |http|
+            response = http.ntlm_auth("user", "password", "DOMAIN").get(uri)
+            verify_status(response, 200)
+          end
+        end
+      end
+
+      def test_plugin_ntlm_v2_auth_option_type_check
+        session = HTTPX.plugin(:ntlm_v2_auth)
+        assert_raises(TypeError) do
+          session.with(ntlm: "not an authenticator")
+        end
+      end
+
       private
 
       def basic_auth_uri

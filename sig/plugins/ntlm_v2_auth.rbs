@@ -1,0 +1,36 @@
+module HTTPX
+  module Plugins
+    module NTLMV2Auth
+      class Authenticator
+        @user: String
+        @password: String
+        @domain: String?
+
+        def can_authenticate?: (String? www_authenticate) -> boolish
+
+        def authenticate: (Request request, String authenticate) -> String
+
+        def negotiate: () -> String
+
+        private
+
+        def initialize: (string user, string password, ?domain: String?) -> void
+      end
+
+      interface _NTLMV2Options
+        def ntlm: () -> Authentication?
+      end
+
+      def self.extra_options: (Options) -> (Options & _NTLMV2Options)
+
+      def self.load_dependencies: (singleton(Session) klass) -> void
+
+      module InstanceMethods
+        def ntlm_auth: (string user, string password, ?string? domain) -> instance
+      end
+
+    end
+
+    type sessionNTLMV2Auth = sessionAuth & NTLMV2Auth::InstanceMethods
+  end
+end

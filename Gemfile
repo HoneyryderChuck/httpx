@@ -18,6 +18,7 @@ group :test do
   gem "minitest-proveit"
   gem "nokogiri"
   gem "ruby-ntlm"
+  gem "rubyntlm"
   gem "sentry-ruby"
   gem "spy"
   gem "webmock"

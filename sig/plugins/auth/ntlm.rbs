@@ -10,7 +10,7 @@ module HTTPX
 
         def authenticate: (Request request, String authenticate) -> String
 
-        def negotiate: () -> void
+        def negotiate: () -> String
 
         private
 
