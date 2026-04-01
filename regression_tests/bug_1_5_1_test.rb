@@ -33,6 +33,11 @@ class Bug_1_5_1_Test < Minitest::Test
     assert responses.size == urls.size
 
     responses.each do |response|
+      if response.respond_to?(:status) && response.status.between?(502, 504)
+        warn "`#{response.uri}` is down again"
+        next
+      end
+
       verify_status(response, 200)
     end
   end
