@@ -930,21 +930,29 @@ module HTTPX
     # this takes an optiona +request+ which may have already been handled and can be opted out
     # in the state recovery process.
     def handle_error(error, request = nil)
-      parser.handle_error(error, request) if @parser && @parser.respond_to?(:handle_error)
-      while (req = @pending.shift)
-        next if request && req == request
-
-        response = ErrorResponse.new(req, error)
-        req.response = response
-        req.emit(:response, response)
+      if request
+        @inflight -= 1
+        response = ErrorResponse.new(request, error)
+        request.response = response
+        request.emit(:response, response)
       end
 
-      return unless request
+      pending = @pending
+      if (parser = @parser) && parser.respond_to?(:handle_error)
+        # parser.handle_error may disconnect the connection
+        pending = @pending.dup
+        @pending = []
 
-      @inflight -= 1
-      response = ErrorResponse.new(request, error)
-      request.response = response
-      request.emit(:response, response)
+        parser.handle_error(error, request)
+      end
+
+      while (req = pending.shift)
+        next if request && req == request
+
+        resp = ErrorResponse.new(req, error)
+        req.response = resp
+        req.emit(:response, resp)
+      end
     end
 
     def set_request_timeouts(request)
