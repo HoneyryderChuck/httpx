@@ -811,16 +811,18 @@ module HTTPX
     end
 
     def close_sibling
-      return unless @sibling
+      sibling = @sibling
 
-      if @sibling.io_connected?
+      return unless sibling
+
+      if sibling.io_connected?
         reset
         # TODO: transition connection to closed
       end
 
-      unless @sibling.state == :closed
-        merge(@sibling) unless @main_sibling
-        @sibling.force_reset(true)
+      unless sibling.state == :closed
+        merge(sibling) unless @main_sibling
+        sibling.force_reset(true)
       end
 
       @sibling = nil

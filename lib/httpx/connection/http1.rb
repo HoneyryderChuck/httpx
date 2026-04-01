@@ -145,15 +145,17 @@ module HTTPX
 
       return unless request
 
-      log(color: :green) { "-> DATA: #{chunk.bytesize} bytes..." }
-      log(level: 2, color: :green) { "-> #{log_redact_body(chunk.inspect)}" }
-      response = request.response
+      begin
+        log(color: :green) { "-> DATA: #{chunk.bytesize} bytes..." }
+        log(level: 2, color: :green) { "-> #{log_redact_body(chunk.inspect)}" }
+        response = request.response
 
-      response << chunk
-    rescue StandardError => e
-      error_response = ErrorResponse.new(request, e)
-      request.response = error_response
-      dispatch
+        response << chunk
+      rescue StandardError => e
+        error_response = ErrorResponse.new(request, e)
+        request.response = error_response
+        dispatch(request)
+      end
     end
 
     def on_complete
@@ -162,12 +164,10 @@ module HTTPX
       return unless request
 
       log(level: 2) { "parsing complete" }
-      dispatch
+      dispatch(request)
     end
 
-    def dispatch
-      request = @request
-
+    def dispatch(request)
       if request.expects?
         @parser.reset!
         return handle(request)
