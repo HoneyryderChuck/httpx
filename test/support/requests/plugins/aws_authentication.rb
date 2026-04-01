@@ -5,11 +5,10 @@ require "aws-sdk-s3"
 module Requests
   module Plugins
     module AWSAuthentication
-      AWS_URI = ENV.fetch("AMZ_HOST", "aws:4566")
+      AWS_URI = ENV.fetch("AMZ_HOST", "aws:9090")
+      AWSS_URI = ENV.fetch("AMZS_HOST", "aws:9191")
 
       def test_plugin_aws_authentication_put_object
-        amz_uri = origin(AWS_URI)
-
         begin
           s3_client = Aws::S3::Client.new(
             endpoint: amz_uri,
@@ -19,10 +18,12 @@ module Requests
             # logger: Logger.new(STDERR)
           )
           s3_client.create_bucket(bucket: "test", acl: "private")
-          object = s3_client.put_object(bucket: "test", key: "testimage", body: "bucketz")
-        rescue Aws::S3::Errors::BucketAlreadyExists
+        rescue Aws::S3::Errors::BucketAlreadyExists,
+               Aws::S3::Errors::BucketAlreadyOwnedByYou
           # because this test will run 2 times (http and https)
         end
+
+        object = s3_client.put_object(bucket: "test", key: "testimage", body: "bucketz")
 
         # now let's get it
         # no_sig_response = HTTPX.get("http://#{AWS_URI}/test/testimage")
@@ -52,6 +53,11 @@ module Requests
 
       def aws_s3_session(**options)
         HTTPX.plugin(:aws_sdk_authentication, aws_profile: "default").aws_sdk_authentication(service: "s3", **options)
+      end
+
+      def amz_uri
+        uri = scheme == "https://" ? AWSS_URI : AWS_URI
+        origin(uri)
       end
     end
   end

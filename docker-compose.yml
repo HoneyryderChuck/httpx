@@ -22,7 +22,8 @@ services:
       - AWS_DEFAULT_REGION=us-east-1
       - AWS_ACCESS_KEY_ID=test
       - AWS_SECRET_ACCESS_KEY=test
-      - AMZ_HOST=aws:4566
+      - AMZ_HOST=aws:9090
+      - AMZS_HOST=aws:9191
       - WEBDAV_HOST=webdav
       - DD_INSTRUMENTATION_TELEMETRY_ENABLED=false
       - GRPC_VERBOSITY=ERROR
@@ -114,15 +115,7 @@ services:
     command: gunicorn --bind=0.0.0.0:8000 --workers=12 --access-logfile - --error-logfile - --log-level debug --capture-output httpbin:app
 
   aws:
-    image: localstack/localstack
-    environment:
-      - SERVICES=s3
-      - HOSTNAME=aws
-      - DEBUG=1
-    ports:
-      - 4566:4566
-    volumes:
-      - ./test/support/ci/aws:/docker-entrypoint-initaws.d
+    image: adobe/s3mock
     networks:
       default:
         aliases:

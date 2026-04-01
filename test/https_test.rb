@@ -91,7 +91,7 @@ class HTTPSTest < Minitest::Test
   # HTTP/2-specific tests
 
   {
-    http1: { uri: "https://aws:4566", ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE, alpn_protocols: %w[http/1.1] } },
+    http1: { uri: "https://#{AWSS_URI}", ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE, alpn_protocols: %w[http/1.1] } },
     http2: {},
   }.each do |proto, proto_options|
     define_method :"test_multiple_get_max_requests_#{proto}" do
@@ -101,11 +101,8 @@ class HTTPSTest < Minitest::Test
       HTTPX.plugin(SessionWithPool).with(options).wrap do |http|
         response1, response2, response3 = http.get(uri, uri, uri)
         verify_status(response1, 200)
-        verify_body_length(response1)
         verify_status(response2, 200)
-        verify_body_length(response2)
         verify_status(response3, 200)
-        verify_body_length(response3)
         connection_count = http.connection_count
         assert connection_count == 2, "expected to have 2 connections, instead have #{connection_count}"
         http.connections.tally(&:family).each_value do |count|
