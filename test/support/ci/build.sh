@@ -43,13 +43,6 @@ fi
 
 bundle install
 
-echo "Waiting for S3 at address ${AMZ_HOST}/health, attempting every 5s"
-until $(curl --silent --fail ${AMZ_HOST}/_localstack/health | grep "\"s3\": \"available\"" > /dev/null); do
-    printf '.'
-    sleep 5
-done
-echo ' Success: Reached S3'
-
 CABUNDLEDIR=/home/test/support/ci/certs
 if [[ "$RUBY_PLATFORM" = "java" ]]; then
 
