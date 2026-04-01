@@ -2,6 +2,9 @@
 
 RUBY=$1
 VERSION=$2
+SCRIPT=${3:-tests}
+
+SCRIPTPATH=/home/test/support/ci/${SCRIPT}.sh
 
 cleanup () {
   docker compose -p ci kill
@@ -17,7 +20,7 @@ else
 fi
 
 free -m
-docker compose -f docker-compose.yml ${extra} -p ci run httpx
+docker compose -f docker-compose.yml ${extra} -p ci run --entrypoint $SCRIPTPATH httpx
 
 #
 #

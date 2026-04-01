@@ -71,67 +71,57 @@ lint rubocop wiki:
 test jruby 9:
   <<: *test_settings
   script:
-    ./spec.sh jruby 9.0.0.0
+    ./spec.sh jruby 9.0.0.0 tests
   allow_failure: true
 test jruby 10:
   <<: *test_settings
   script:
-    ./spec.sh jruby 10
+    ./spec.sh jruby 10 tests
   allow_failure: true
 test ruby 2/7:
   <<: *test_settings
   script:
-    ./spec.sh ruby 2.7
+    ./spec.sh ruby 2.7 tests
 test ruby 3/0:
   <<: *test_settings
   only:
     - master
   script:
-    ./spec.sh ruby 3.0
+    ./spec.sh ruby 3.0 tests
 test ruby 3/1:
   <<: *test_settings
   only:
     - master
   script:
-    ./spec.sh ruby 3.1
+    ./spec.sh ruby 3.1 tests
 test ruby 3/2:
   <<: *test_settings
   script:
-    ./spec.sh ruby 3.2
+    ./spec.sh ruby 3.2 tests
 test ruby 3/3:
   <<: *test_settings
   script:
-    ./spec.sh ruby 3.3
+    ./spec.sh ruby 3.3 tests
 test ruby 3/4:
   <<: *test_settings
   <<: *yjit_matrix
   script:
-    ./spec.sh ruby 3.4
+    ./spec.sh ruby 3.4 tests
 test ruby 4/0:
   <<: *test_settings
   <<: *yjit_matrix
   script:
-    ./spec.sh ruby 4.0
+    ./spec.sh ruby 4.0 tests
 test truffleruby:
   <<: *test_settings
   script:
-    ./spec.sh truffleruby latest
+    ./spec.sh truffleruby latest tests
   allow_failure: true
 regression tests:
-  image: "ruby:4.0"
-  variables:
-    BUNDLE_WITHOUT: lint:assorted
-    CI: 1
-    COVERAGE_KEY: "ruby-4.0-regression-tests"
-  artifacts:
-    paths:
-      - coverage/
-  stage: test
-  before_script:
-    - apt-get update && apt-get install -y libmagic-dev shared-mime-info
-    - bundle install
+  <<: *test_settings
+  <<: *yjit_matrix
   script:
-    - bundle exec rake regression_tests
+    ./spec.sh ruby 4.0 regression_tests
 # TODO: uncomment this if docker ever supports ipv6 connectivity, or CI runs
 # outside of docker
 # smoke_tests:
