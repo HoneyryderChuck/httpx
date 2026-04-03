@@ -112,6 +112,7 @@ module HTTPX
     def finish!
       @finished = true
       @headers.freeze
+      @request.connection = nil
     end
 
     # returns whether the response contains body payload.
@@ -282,6 +283,7 @@ module HTTPX
       @error = error
       @options = request.options
       log_exception(@error)
+      finish!
     end
 
     # returns the exception full message.
@@ -299,7 +301,9 @@ module HTTPX
       true
     end
 
-    def finish!; end
+    def finish!
+      @request.connection = nil
+    end
 
     # raises the wrapped exception.
     def raise_for_status

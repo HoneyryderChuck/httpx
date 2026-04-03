@@ -956,6 +956,7 @@ module HTTPX
     end
 
     def set_request_timeouts(request)
+      request.connection = self
       set_request_write_timeout(request)
       set_request_read_timeout(request)
       set_request_request_timeout(request)
@@ -991,29 +992,29 @@ module HTTPX
       end
     end
 
-    def write_timeout_callback(request, write_timeout)
+    def write_timeout_callback(request, timeout)
       return if request.state == :done
 
       @write_buffer.clear
-      error = WriteTimeoutError.new(request, nil, write_timeout)
+      error = WriteTimeoutError.new(request, nil, timeout)
 
-      on_error(error, request)
+      request.handle_error(error)
     end
 
-    def read_timeout_callback(request, read_timeout, error_type = ReadTimeoutError)
+    def read_timeout_callback(request, timeout, error_type = ReadTimeoutError)
       response = request.response
 
       return if response && response.finished?
 
       @write_buffer.clear
-      error = error_type.new(request, request.response, read_timeout)
+      error = error_type.new(request, response, timeout)
 
-      on_error(error, request)
+      request.handle_error(error)
     end
 
     def set_request_timeout(label, request, timeout, start_event, finish_events, &callback)
       request.set_timeout_callback(start_event) do
-        unless @current_selector
+        unless (selector = @current_selector)
           raise Error, "request has been resend to an out-of-session connection, and this " \
                        "should never happen!!! Please report this error! " \
                        "(state:#{@state}, " \
@@ -1024,7 +1025,7 @@ module HTTPX
                        "coalesced?:#{coalesced?})"
         end
 
-        timer = @current_selector.after(timeout, callback)
+        timer = selector.after(timeout, callback)
         request.active_timeouts << label
 
         Array(finish_events).each do |event|
