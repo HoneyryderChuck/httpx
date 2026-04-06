@@ -39,7 +39,7 @@ class Bug_1_7_5_Test < Minitest::Test
     end
 
     # start_test_servlet(CloseAfterXSeconds) do |server1|
-    start_test_servlet(CloseAfterXThenDelaySeconds, seconds_to_close: 1) do |server|
+    start_test_servlet(CloseAfterXThenDelaySeconds, seconds_to_close: 1, delay: 2) do |server|
       uri = "#{server.origin}/"
 
       http = HTTPX.plugin(SessionWithPool)

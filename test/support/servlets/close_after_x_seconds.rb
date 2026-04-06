@@ -2,7 +2,7 @@
 
 # it'll close the first stream immediately on first data chunk received
 class CloseAfterXThenDelaySeconds < TestHTTP2Server
-  def initialize(seconds_to_close: 2, delay: 2, **kw)
+  def initialize(seconds_to_close: 2, delay: nil, **kw)
     super(**kw)
     @timers = []
     @delay = delay
@@ -22,14 +22,19 @@ class CloseAfterXThenDelaySeconds < TestHTTP2Server
   end
 
   def handle_stream(_conn, stream)
-    if @can_delay
+    if @can_delay && @delay
       sleep(@delay)
 
       return super
     end
 
+    response = "".b
+
+    stream.on(:data) do |data|
+      response << data
+    end
+
     stream.on(:half_close) do
-      response = "OK"
       stream.headers({
                        ":status" => "200",
                        "content-length" => response.bytesize.to_s,
