@@ -7,7 +7,10 @@ module Requests
         session = HTTPX.plugin(:brotli)
         response = session.get("http://nghttp2.org/httpbin/brotli")
 
-        skip "`#{response.uri}` is down again" if response.respond_to?(:status) && response.status.between?(502, 504)
+        if (response.respond_to?(:status) && response.status.between?(502, 504)) ||
+           (response.respond_to?(:error) && response.error.is_a?(HTTPX::TimeoutError))
+          skip "`#{response.uri}` is down again"
+        end
 
         verify_status(response, 200)
         body = json_body(response)
