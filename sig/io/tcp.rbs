@@ -46,7 +46,7 @@ module HTTPX
 
     public
 
-    def read: (Integer size, ?(Buffer | String) buffer) -> (0 | nil | untyped)
+    def read: (Integer size, Buffer | String buffer) -> (0 | nil | untyped)
 
     def write: (Buffer buffer) -> Integer?
 
@@ -67,6 +67,6 @@ module HTTPX
 
     def do_transition: (Symbol nextstate) -> void
 
-    def log_transition_state: (Symbol nextstate) -> void
+    def log_transition_state: (Symbol nextstate) -> String
   end
 end

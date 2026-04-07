@@ -107,8 +107,10 @@ module HTTPX
 
     attr_reader ssl: Hash[Symbol, untyped]
 
-    # io
-    type io_option = _ToIO | Hash[String, _ToIO]
+    type external_io = TCPSocket | OpenSSL::SSL::SSLSocket | UNIXSocket
+
+    type io_option = external_io | Hash[String, external_io]
+
     attr_reader io: io_option?
 
     # fallback_protocol

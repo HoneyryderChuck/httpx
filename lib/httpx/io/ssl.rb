@@ -51,6 +51,7 @@ module HTTPX
     end
 
     def protocol
+      # @type ivar @io: OpenSSL::SSL::SSLSocket
       @io.alpn_protocol || super
     rescue StandardError
       super
@@ -60,6 +61,7 @@ module HTTPX
       # in jruby, alpn_protocol may return ""
       # https://github.com/jruby/jruby-openssl/issues/287
       def protocol
+        # @type ivar @io: OpenSSL::SSL::SSLSocket
         proto = @io.alpn_protocol
 
         return super if proto.nil? || proto.empty?
@@ -76,9 +78,10 @@ module HTTPX
 
     def verify_hostname(host)
       return false if @ctx.verify_mode == OpenSSL::SSL::VERIFY_NONE
-      return false if !@io.respond_to?(:peer_cert) || @io.peer_cert.nil?
+      # @type ivar @io: OpenSSL::SSL::SSLSocket
+      return false if !@io.respond_to?(:peer_cert) || (peer_cert = @io.peer_cert).nil?
 
-      OpenSSL::SSL.verify_certificate_identity(@io.peer_cert, host)
+      OpenSSL::SSL.verify_certificate_identity(peer_cert, host)
     end
 
     def connected?
@@ -86,7 +89,9 @@ module HTTPX
     end
 
     def ssl_session_expired?
-      @ssl_session.nil? || Process.clock_gettime(Process::CLOCK_REALTIME) >= (@ssl_session.time.to_f + @ssl_session.timeout)
+      ssl_session = @ssl_session
+
+      ssl_session.nil? || Process.clock_gettime(Process::CLOCK_REALTIME) >= (ssl_session.time.to_f + ssl_session.timeout)
     end
 
     def connect
@@ -97,6 +102,8 @@ module HTTPX
         return unless @state == :connected
       end
 
+      # @type ivar @io: OpenSSL::SSL::SSLSocket
+
       unless @io.is_a?(OpenSSL::SSL::SSLSocket)
         if (hostname_is_ip = (@ip == @sni_hostname)) && @ctx.verify_hostname
           # IPv6 address would be "[::1]", must turn to "0000:0000:0000:0000:0000:0000:0000:0001" for cert SAN check
@@ -105,16 +112,19 @@ module HTTPX
           @ctx.verify_hostname = false
         end
 
-        @io = OpenSSL::SSL::SSLSocket.new(@io, @ctx)
+        ssl = OpenSSL::SSL::SSLSocket.new(@io, @ctx)
 
-        @io.hostname = @sni_hostname unless hostname_is_ip
-        @io.session = @ssl_session unless ssl_session_expired?
-        @io.sync_close = true
+        ssl.hostname = @sni_hostname unless hostname_is_ip
+        ssl.session = @ssl_session unless ssl_session_expired?
+        ssl.sync_close = true
+
+        @io = ssl
       end
       try_ssl_connect
     end
 
     def try_ssl_connect
+      # @type ivar @io: OpenSSL::SSL::SSLSocket
       ret = @io.connect_nonblock(exception: false)
       log(level: 3, color: :cyan) { "TLS CONNECT: #{ret}..." }
       case ret
@@ -147,7 +157,9 @@ module HTTPX
     def log_transition_state(nextstate)
       return super unless nextstate == :negotiated
 
-      server_cert = @io.peer_cert
+      # @type ivar @io: OpenSSL::SSL::SSLSocket
+
+      server_cert = @io.peer_cert #: OpenSSL::X509::Certificate
 
       "#{super}\n\n" \
         "SSL connection using #{@io.ssl_version} / #{Array(@io.cipher).first}\n" \
