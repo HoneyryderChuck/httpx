@@ -23,7 +23,7 @@ module HTTPX
 
       @observer: _HTTP1Events
       @state: Symbol
-      @buffer: String
+      @buffer: String | Transcoder::Chunker::Decoder
       @content_type: String?
       @content_length: Integer
       @_has_trailers: bool

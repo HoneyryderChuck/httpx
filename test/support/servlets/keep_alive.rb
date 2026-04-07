@@ -22,10 +22,25 @@ class KeepAliveServer < TestServer
     end
   end
 
+  class KeepAliveTransferEncodingChunk < WEBrick::HTTPServlet::AbstractServlet
+    def do_GET(_req, res) # rubocop:disable Naming/MethodName
+      res.status = 200
+      res.chunked = true
+      res["Connection"] = "Keep-Alive"
+      res["Content-Type"] = "application/json"
+      res.body = proc do |out|
+        out.write("{")
+        out.write("\"chunked\": true")
+        out.write("}")
+      end
+    end
+  end
+
   def initialize(options = {})
     super
     mount("/", KeepAliveApp)
     mount("/2", KeepAliveMax2App)
+    mount("/chunk", KeepAliveTransferEncodingChunk)
   end
 end
 

@@ -14,6 +14,8 @@ module HTTPX
         @state = :idle
         @buffer = "".b
         @headers = {}
+        @content_length = nil
+        @_has_trailers = @upgrade = false
       end
 
       def <<(chunk)
@@ -25,7 +27,8 @@ module HTTPX
         @state = :idle
         @headers = {}
         @content_length = nil
-        @_has_trailers = nil
+        @_has_trailers = @upgrade = false
+        @buffer = @buffer.to_s
         @buffer.clear
       end
 
@@ -34,7 +37,7 @@ module HTTPX
       end
 
       def upgrade_data
-        @buffer
+        @buffer.to_s
       end
 
       private
@@ -55,6 +58,7 @@ module HTTPX
       end
 
       def parse_headline
+        #: @type ivar @buffer: String
         idx = @buffer.index("\n")
         return unless idx
 
@@ -74,6 +78,8 @@ module HTTPX
       def parse_headers
         headers = @headers
         buffer = @buffer
+
+        #: @type var buffer: String
 
         while (idx = buffer.index("\n"))
           # @type var line: String
@@ -118,17 +124,20 @@ module HTTPX
 
       def parse_data
         if @buffer.respond_to?(:each)
+          # @type ivar @buffer: Transcoder::Chunker::Decoder
           @buffer.each do |chunk|
             @observer.on_data(chunk)
           end
         elsif @content_length
-          # @type var data: String
+          # @type ivar @buffer: String
           data = @buffer.byteslice(0, @content_length)
+          # @type var data: String
           @buffer = @buffer.byteslice(@content_length..-1) || "".b
           @content_length -= data.bytesize
           @observer.on_data(data)
           data.clear
         else
+          # @type ivar @buffer: String
           @observer.on_data(@buffer)
           @buffer.clear
         end
@@ -152,7 +161,7 @@ module HTTPX
             tr_encoding.split(/ *, */).each do |encoding|
               case encoding
               when "chunked"
-                @buffer = Transcoder::Chunker::Decoder.new(@buffer, @_has_trailers)
+                @buffer = Transcoder::Chunker::Decoder.new(@buffer.to_s, @_has_trailers)
               end
             end
           end
@@ -165,6 +174,7 @@ module HTTPX
         if @content_length
           @content_length <= 0
         elsif @buffer.respond_to?(:finished?)
+          # @type ivar @buffer: Transcoder::Chunker::Decoder
           @buffer.finished?
         else
           false
