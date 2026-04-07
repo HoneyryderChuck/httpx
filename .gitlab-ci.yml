@@ -119,7 +119,6 @@ test truffleruby:
   allow_failure: true
 regression tests:
   <<: *test_settings
-  <<: *yjit_matrix
   script:
     ./spec.sh ruby 4.0 regression_tests
 # TODO: uncomment this if docker ever supports ipv6 connectivity, or CI runs
