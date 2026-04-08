@@ -146,7 +146,7 @@ module HTTPX
         settings_ex.set_backtrace(ex.backtrace)
         ex = settings_ex
       end
-      @streams.each_key do |req|
+      while (req, _ = @streams.shift)
         next if request && request == req
 
         emit(:error, req, ex)
@@ -407,10 +407,9 @@ module HTTPX
           ex = GoawayError.new(error)
           ex.set_backtrace(caller)
 
-          @pending.unshift(*@streams.keys)
+          handle_error(ex)
           teardown
 
-          handle_error(ex)
         end
       end
       return unless is_connection_closed && @streams.empty?

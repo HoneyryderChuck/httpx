@@ -217,12 +217,12 @@ module HTTPX
       if @pipelining
         catch(:called) { disable }
       else
-        @requests.each do |req|
+        while (req = @requests.shift)
           next if request && request == req
 
           emit(:error, req, ex)
         end
-        @pending.each do |req|
+        while (req = @pending.shift)
           next if request && request == req
 
           emit(:error, req, ex)
