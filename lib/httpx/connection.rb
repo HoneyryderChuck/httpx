@@ -288,6 +288,10 @@ module HTTPX
     def reset
       return if @state == :closing || @state == :closed
 
+      # do not reset a connection which may have restarted back to :idle, such when the parser resets
+      # (example: HTTP/1 parser disabling pipelining)
+      return if @state == :idle && @pending.any?
+
       parser = @parser
 
       if parser && parser.respond_to?(:max_concurrent_requests)
