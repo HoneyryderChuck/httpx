@@ -28,7 +28,8 @@ module HTTPX
       @version = [1, 1]
       @pending = []
       @requests = []
-      @handshake_completed = false
+      @request = nil
+      @handshake_completed = @pipelining = false
     end
 
     def timeout
@@ -53,7 +54,9 @@ module HTTPX
     end
 
     def reset_requests
-      @pending.unshift(*@requests)
+      requests = @requests
+      requests.each { |r| r.transition(:idle) }
+      @pending.unshift(*requests)
       @requests.clear
     end
 
@@ -90,7 +93,7 @@ module HTTPX
       return if @requests.include?(request)
 
       @requests << request
-      @pipelining = true if @requests.size > 1
+      @pipelining = @max_concurrent_requests > 1 && @requests.size > 1
     end
 
     def consume
