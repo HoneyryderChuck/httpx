@@ -10,7 +10,8 @@ module HTTPX
       end
 
       module InstanceMethods
-        @auth_header_value: String
+        @auth_header_value: String?
+        @auth_header_value_mtx: Thread::Mutex
         @skip_auth_header_value: bool
 
         def authorization: (?string token, ?auth_header_type: string) ?{ (Request) -> string } -> instance
@@ -29,7 +30,9 @@ module HTTPX
       end
 
       module RequestMethods
-        @auth_token_value: String?
+        attr_reader auth_token_value: String?
+
+        @auth_header_value: String?
 
         def authorized?: () -> bool
 

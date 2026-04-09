@@ -14,16 +14,20 @@ module HTTPX
       @state = :idle
       @options = options
       @fallback_protocol = @options.fallback_protocol
-      if @options.io
-        @io = case @options.io
-              when Hash
-                @options.io[origin.authority]
-              else
-                @options.io
-        end
-        raise Error, "Given IO objects do not match the request authority" unless @io
+      if (io = @options.io)
+        io =
+          case io
+          when Hash
+            io[origin.authority]
+          else
+            io
+          end
+        raise Error, "Given IO objects do not match the request authority" unless io
 
-        @path = @io.path
+        # @type var io: UNIXSocket
+
+        _, @path = io.addr
+        @io = io
         @keep_open = true
         @state = :connected
       elsif path

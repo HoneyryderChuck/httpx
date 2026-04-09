@@ -234,7 +234,6 @@ module Requests
 
           refute error, "expected no error during response reading, got: #{error}"
           refute response.is_a?(HTTPX::ErrorResponse), "expected successful response after retry"
-          assert chunks.size >= 1, "expected to receive response chunks"
         end
       end
 

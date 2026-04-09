@@ -156,6 +156,159 @@ module Requests
           end
         end
       end unless RUBY_ENGINE == "jruby"
+
+      unless RUBY_ENGINE != "jruby" || JRUBY_VERSION >= "10.0.0.0"
+        def test_persistent_on_stream_close_get_retried
+          return unless origin.start_with?("https")
+
+          start_test_servlet(CloseAfterXThenDelaySeconds, seconds_to_close: 1) do |server|
+            uri = "#{server.origin}/"
+
+            http = HTTPX.plugin(SessionWithPool)
+                        .plugin(RequestInspector)
+                        .plugin(:persistent) # implicit max_retries == 1
+                        .with(ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE })
+
+            response = http.get(uri)
+            verify_status(response, 200)
+
+            sleep 2
+
+            response = http.get(uri)
+            verify_status(response, 200)
+            verify_body_length(response)
+
+            _, error_response, _ = http.total_responses
+            verify_error_response(error_response)
+
+            assert http.calls == 2, "expect request to be built 2 times (was #{http.calls})"
+          end
+        end
+
+        def test_persistent_on_stream_close_post_body_string_retried
+          return unless origin.start_with?("https")
+
+          start_test_servlet(CloseAfterXThenDelaySeconds, seconds_to_close: 1) do |server|
+            uri = "#{server.origin}/"
+
+            http = HTTPX.plugin(SessionWithPool)
+                        .plugin(RequestInspector)
+                        .plugin(:persistent) # implicit max_retries == 1
+                        .with(ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE })
+
+            response = http.get(uri)
+            verify_status(response, 200)
+
+            sleep 2
+
+            response = http.post(uri, body: "BANGARANG")
+            verify_status(response, 200)
+            assert response.body.to_s == "BANGARANG"
+
+            _, error_response, _ = http.total_responses
+            verify_error_response(error_response)
+
+            assert http.calls == 2, "expect request to be built 2 times (was #{http.calls})"
+          end
+        end
+
+        def test_persistent_on_stream_close_post_body_stringio_retried
+          return unless origin.start_with?("https")
+
+          start_test_servlet(CloseAfterXThenDelaySeconds, seconds_to_close: 1) do |server|
+            uri = "#{server.origin}/"
+
+            http = HTTPX.plugin(SessionWithPool)
+                        .plugin(RequestInspector)
+                        .plugin(:persistent) # implicit max_retries == 1
+                        .with(ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE })
+
+            response = http.get(uri)
+            verify_status(response, 200)
+
+            sleep 2
+
+            response = http.post(uri, body: StringIO.new("BANGARANG"))
+            verify_status(response, 200)
+            assert response.body.to_s == "BANGARANG"
+
+            _, error_response, _ = http.total_responses
+            verify_error_response(error_response)
+
+            assert http.calls == 2, "expect request to be built 2 times (was #{http.calls})"
+          end
+        end
+
+        def test_persistent_on_stream_close_post_body_file_retried
+          return unless origin.start_with?("https")
+
+          start_test_servlet(CloseAfterXThenDelaySeconds, seconds_to_close: 1) do |server|
+            uri = "#{server.origin}/"
+
+            http = HTTPX.plugin(SessionWithPool)
+                        .plugin(RequestInspector)
+                        .plugin(:persistent) # implicit max_retries == 1
+                        .with(ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE })
+
+            rng = Random.new(42)
+            req_body = Tempfile.new("httpx-body", binmode: true)
+
+            begin
+              response = http.get(uri)
+              verify_status(response, 200)
+
+              sleep 2
+
+              req_body.write(rng.bytes(16_385))
+              req_body.rewind
+
+              response = http.post(uri, body: req_body)
+              verify_status(response, 200)
+              assert response.body.bytesize == 16_385
+
+              _, error_response, _ = http.total_responses
+              verify_error_response(error_response)
+
+              assert http.calls == 2, "expect request to be built 2 times (was #{http.calls})"
+            ensure
+              req_body.close
+              req_body.unlink
+            end
+          end
+        end
+
+        def test_persistent_on_stream_close_post_body_multipart_retried
+          return unless origin.start_with?("https")
+
+          start_test_servlet(CloseAfterXThenDelaySeconds, seconds_to_close: 1) do |server|
+            uri = "#{server.origin}/"
+
+            http = HTTPX.plugin(SessionWithPool)
+                        .plugin(RequestInspector)
+                        .plugin(:persistent) # implicit max_retries == 1
+                        .with(ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE })
+
+            begin
+              response = http.get(uri)
+              verify_status(response, 200)
+
+              sleep 2
+
+              file = File.new(fixture_file_path)
+              response = http.post(uri, form: [
+                                     ["image1", file],
+                                   ])
+              verify_status(response, 200)
+              assert response.body.bytesize > File.size(fixture_file_path)
+
+              _, error_response, _ = http.total_responses
+              verify_error_response(error_response)
+
+              assert http.calls == 2, "expect request to be built 2 times (was #{http.calls})"
+            end
+          end
+        end
+      end
     end
   end
 end

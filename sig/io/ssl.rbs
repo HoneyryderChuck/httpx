@@ -8,6 +8,7 @@ module HTTPX
 
     @ctx: OpenSSL::SSL::SSLContext
     @verify_hostname: bool
+    @sni_hostname: String
 
     attr_writer ssl_session: OpenSSL::SSL::Session?
 

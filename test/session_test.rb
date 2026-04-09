@@ -188,7 +188,7 @@ class SessionTest < Minitest::Test
   #   verify_error_response(response, /timed out while waiting/)
   # end
 
-  def test_session_timeout_keep_alive_timeout
+  def test_session_timeout_keep_alive_timeout_reopens
     uri = build_uri("/get")
 
     HTTPX.plugin(SessionWithPool).wrap do |http|
@@ -201,6 +201,10 @@ class SessionTest < Minitest::Test
       connection_count = http.connection_count
       assert connection_count == 1, "session opened more connections than expected (#{connection_count})"
     end
+  end
+
+  def test_session_timeout_keep_alive_timeout_ping_before_send
+    uri = build_uri("/get")
 
     HTTPX.plugin(SessionWithPool).with(timeout: { keep_alive_timeout: 2 }).wrap do |http|
       response1 = http.get(uri)
@@ -209,8 +213,24 @@ class SessionTest < Minitest::Test
 
       verify_status(response1, 200)
       verify_status(response2, 200)
-      ping_count = http.ping_count
-      assert ping_count == 1, "session should have pinged after timeout (#{ping_count})"
+      assert http.ping_count == 1, "session should have pinged after timeout (#{http.ping_count})"
+      assert http.pong_count == 1, "session should have ponged after timeout (#{http.pong_count})"
+    end
+  end
+
+  def test_session_timeout_keep_alive_timeout_multi_request_pings_once
+    uri = build_uri("/get")
+
+    HTTPX.plugin(SessionWithPool).with(timeout: { keep_alive_timeout: 2 }).wrap do |http|
+      response1 = http.get(uri)
+      sleep(3)
+      response2, response3 = http.get(uri, uri)
+
+      verify_status(response1, 200)
+      verify_status(response2, 200)
+      verify_status(response3, 200)
+      assert http.ping_count == 1, "session should have pinged after timeout (#{http.ping_count})"
+      assert http.pong_count == 1, "session should have ponged after timeout (#{http.pong_count})"
     end
   end
 

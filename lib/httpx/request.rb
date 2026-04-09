@@ -42,6 +42,9 @@ module HTTPX
     # The IP address from the peer server.
     attr_accessor :peer_address
 
+    # the connection the request is currently being sent to (none if before or after transaction)
+    attr_writer :connection
+
     attr_writer :persistent
 
     attr_reader :active_timeouts
@@ -91,7 +94,7 @@ module HTTPX
       raise UnsupportedSchemeError, "#{@uri}: #{@uri.scheme}: unsupported URI scheme" unless ALLOWED_URI_SCHEMES.include?(@uri.scheme)
 
       @state = :idle
-      @response = @drainer = @peer_address = @informational_status = nil
+      @connection = @response = @drainer = @peer_address = @informational_status = nil
       @ping = false
       @persistent = @options.persistent
       @active_timeouts = []
@@ -274,8 +277,7 @@ module HTTPX
       when :idle
         @body.rewind
         @ping = false
-        @response = nil
-        @drainer = nil
+        @response = @drainer = nil
         @active_timeouts.clear
       when :headers
         return unless @state == :idle
@@ -319,6 +321,16 @@ module HTTPX
       # reset timeout callbacks when requests get rerouted to a different connection
       once(:idle) do
         callbacks(event).delete(clb)
+      end
+    end
+
+    def handle_error(error)
+      if (connection = @connection)
+        connection.on_error(error, self)
+      else
+        response = ErrorResponse.new(self, error)
+        self.response = response
+        emit(:response, response)
       end
     end
   end

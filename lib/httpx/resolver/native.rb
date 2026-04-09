@@ -66,7 +66,7 @@ module HTTPX
     end
 
     def closed?
-      @state == :closed
+      @state == :idle || @state == :closed
     end
 
     def to_io

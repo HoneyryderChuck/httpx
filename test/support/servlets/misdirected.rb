@@ -25,8 +25,8 @@ class MisdirectedServer < TestHTTP2Server
         break if data.end_with?("\r\n")
       end
 
-      sock.write("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nConten-length: 3\r\nConnection: close\r\n\r\nfoo")
-      sock.close
+      sock.write("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-length: 3\r\nConnection: close\r\n\r\nfoo")
+      close_socket(sock)
     end
   end
 end

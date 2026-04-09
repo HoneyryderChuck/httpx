@@ -122,12 +122,6 @@ module HTTPX
 
         @max_connections_cond.signal
         @origin_conds[connection.origin.to_s].signal
-
-        # Observed situations where a session handling multiple requests in a loop
-        # across multiple threads checks the same connection in and out, while another
-        # thread which is waiting on the same connection never gets the chance to pick
-        # it up, because ruby's thread scheduler never switched on to it in the process.
-        Thread.pass
       end
     end
 
@@ -153,16 +147,20 @@ module HTTPX
         resolvers = @resolvers[resolver_type]
 
         idx = resolvers.find_index do |res|
-          res.options == options
+          res.options.resolver_options_match?(options)
         end
         resolvers.delete_at(idx) if idx
       end || checkout_new_resolver(resolver_type, options)
     end
 
     def checkin_resolver(resolver)
-      resolver_class = resolver.class
+      if resolver.is_a?(Resolver::Multi)
+        resolver_class = resolver.resolvers.first.class
+      else
+        resolver_class = resolver.class
 
-      resolver = resolver.multi
+        resolver = resolver.multi
+      end
 
       # a multi requires all sub-resolvers being closed in order to be
       # correctly checked back in.

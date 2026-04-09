@@ -62,6 +62,7 @@ module HTTPX
       @pending = []
       @inflight = 0
       @keep_alive_timeout = @options.timeout[:keep_alive_timeout]
+      @no_more_requests_counter = 0
 
       if @options.io
         # if there's an already open IO, get its
@@ -106,7 +107,7 @@ module HTTPX
         # origin came from an ORIGIN frame, we're going to verify the hostname with the
         # SSL certificate
         (@origins.size == 1 || @origin == uri.origin || (@io.is_a?(SSL) && @io.verify_hostname(uri.host))) &&
-        @options == options
+        @options.connection_options_match?(options)
     end
 
     def mergeable?(connection)
@@ -117,7 +118,7 @@ module HTTPX
       (
         (open? && @origin == connection.origin) ||
         !(@io.addresses & (connection.addresses || [])).empty?
-      ) && @options == connection.options
+      ) && @options.connection_options_match?(connection.options)
     end
 
     # coalesces +self+ into +connection+.
@@ -287,6 +288,10 @@ module HTTPX
     def reset
       return if @state == :closing || @state == :closed
 
+      # do not reset a connection which may have restarted back to :idle, such when the parser resets
+      # (example: HTTP/1 parser disabling pipelining)
+      return if @state == :idle && @pending.any?
+
       parser = @parser
 
       if parser && parser.respond_to?(:max_concurrent_requests)
@@ -313,8 +318,8 @@ module HTTPX
           log(level: 3) { "keep alive timeout expired, pinging connection..." }
           @pending << request
           transition(:active) if @state == :inactive
-          parser.ping
           request.ping!
+          ping
           return
         end
 
@@ -455,11 +460,11 @@ module HTTPX
           #
           # this condition takes into account:
           #
-          # * the number of inflight requests
           # * the number of pending requests
+          # * the number of inflight requests
           # * whether the write buffer has bytes (i.e. for close handshake)
           if @pending.empty? && @inflight.zero? && @write_buffer.empty?
-            log(level: 3) { "NO MORE REQUESTS..." } if @parser && @parser.pending.any?
+            no_more_requests_loop_check if @parser && @parser.pending.any?
 
             # terminate if an altsvc connection has been established
             terminate if @altsvc_connection
@@ -509,7 +514,7 @@ module HTTPX
 
             # exit #consume altogether if all outstanding requests have been dealt with
             if @pending.empty? && @inflight.zero? && @write_buffer.empty? # rubocop:disable Style/Next
-              log(level: 3) { "NO MORE REQUESTS..." } if @parser && @parser.pending.any?
+              no_more_requests_loop_check if @parser && @parser.pending.any?
 
               # terminate if an altsvc connection has been established
               terminate if @altsvc_connection
@@ -635,6 +640,7 @@ module HTTPX
           build_altsvc_connection(alt_origin, origin, alt_params)
         end
         @response_received_at = Utils.now
+        @no_more_requests_counter = 0
         @inflight -= 1
         response.finish!
         request.emit(:response, response)
@@ -643,7 +649,7 @@ module HTTPX
         build_altsvc_connection(alt_origin, origin, alt_params)
       end
 
-      parser.on(:pong, &method(:send_pending))
+      parser.on(:pong, &method(:pong))
 
       parser.on(:promise) do |request, stream|
         request.emit(:promise, parser, stream)
@@ -755,16 +761,6 @@ module HTTPX
         return if @inflight.positive? || @parser.waiting_for_ping?
       when :closing
         return unless connecting? || @state == :open
-
-        unless @write_buffer.empty?
-          # preset state before handshake, as error callbacks
-          # may take it back here.
-          @state = nextstate
-          # handshakes, try sending
-          consume
-          @write_buffer.clear
-          return
-        end
       when :closed
         return unless @state == :closing
         return unless @write_buffer.empty?
@@ -790,6 +786,12 @@ module HTTPX
       case nextstate
       when :inactive
         disconnect
+      when :closing
+        return if @write_buffer.empty?
+
+        # try flushing termination handshakes
+        consume
+        @write_buffer.clear
       when :closed
         # TODO: should this raise an error instead?
         return unless @pending.empty?
@@ -813,16 +815,18 @@ module HTTPX
     end
 
     def close_sibling
-      return unless @sibling
+      sibling = @sibling
 
-      if @sibling.io_connected?
+      return unless sibling
+
+      if sibling.io_connected?
         reset
         # TODO: transition connection to closed
       end
 
-      unless @sibling.state == :closed
-        merge(@sibling) unless @main_sibling
-        @sibling.force_reset(true)
+      unless sibling.state == :closed
+        merge(sibling) unless @main_sibling
+        sibling.force_reset(true)
       end
 
       @sibling = nil
@@ -902,28 +906,61 @@ module HTTPX
       end
     end
 
+    def ping
+      return if parser.waiting_for_ping?
+
+      parser.ping
+      call
+    end
+
+    def pong
+      @response_received_at = Utils.now
+      @no_more_requests_counter = 0
+      send_pending
+    end
+
+    def no_more_requests_loop_check
+      log(level: 3) { "NO MORE REQUESTS..." }
+      @no_more_requests_counter += 1
+
+      return if @no_more_requests_counter < 50
+
+      raise Error, "connection corrupted, aborted after looping for a while, " \
+                   "please report this https://gitlab.com/os85/httpx/-/work_items " \
+                   "along with debug logs"
+    end
+
     # recover internal state and emit all relevant error responses when +error+ was raised.
     # this takes an optiona +request+ which may have already been handled and can be opted out
     # in the state recovery process.
     def handle_error(error, request = nil)
-      parser.handle_error(error, request) if @parser && @parser.respond_to?(:handle_error)
-      while (req = @pending.shift)
-        next if request && req == request
-
-        response = ErrorResponse.new(req, error)
-        req.response = response
-        req.emit(:response, response)
+      if request
+        @inflight -= 1
+        response = ErrorResponse.new(request, error)
+        request.response = response
+        request.emit(:response, response)
       end
 
-      return unless request
+      pending = @pending
+      if (parser = @parser) && parser.respond_to?(:handle_error)
+        # parser.handle_error may disconnect the connection
+        pending = @pending.dup
+        @pending = []
 
-      @inflight -= 1
-      response = ErrorResponse.new(request, error)
-      request.response = response
-      request.emit(:response, response)
+        parser.handle_error(error, request)
+      end
+
+      while (req = pending.shift)
+        next if request && req == request
+
+        resp = ErrorResponse.new(req, error)
+        req.response = resp
+        req.emit(:response, resp)
+      end
     end
 
     def set_request_timeouts(request)
+      request.connection = self
       set_request_write_timeout(request)
       set_request_read_timeout(request)
       set_request_request_timeout(request)
@@ -959,29 +996,29 @@ module HTTPX
       end
     end
 
-    def write_timeout_callback(request, write_timeout)
+    def write_timeout_callback(request, timeout)
       return if request.state == :done
 
       @write_buffer.clear
-      error = WriteTimeoutError.new(request, nil, write_timeout)
+      error = WriteTimeoutError.new(request, nil, timeout)
 
-      on_error(error, request)
+      request.handle_error(error)
     end
 
-    def read_timeout_callback(request, read_timeout, error_type = ReadTimeoutError)
+    def read_timeout_callback(request, timeout, error_type = ReadTimeoutError)
       response = request.response
 
       return if response && response.finished?
 
       @write_buffer.clear
-      error = error_type.new(request, request.response, read_timeout)
+      error = error_type.new(request, response, timeout)
 
-      on_error(error, request)
+      request.handle_error(error)
     end
 
     def set_request_timeout(label, request, timeout, start_event, finish_events, &callback)
       request.set_timeout_callback(start_event) do
-        unless @current_selector
+        unless (selector = @current_selector)
           raise Error, "request has been resend to an out-of-session connection, and this " \
                        "should never happen!!! Please report this error! " \
                        "(state:#{@state}, " \
@@ -992,7 +1029,7 @@ module HTTPX
                        "coalesced?:#{coalesced?})"
         end
 
-        timer = @current_selector.after(timeout, callback)
+        timer = selector.after(timeout, callback)
         request.active_timeouts << label
 
         Array(finish_events).each do |event|

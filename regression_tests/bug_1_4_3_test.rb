@@ -3,7 +3,7 @@
 require "test_helper"
 require "support/http_helpers"
 
-class Bug_1_4_1_Test < Minitest::Test
+class Bug_1_4_3_Test < Minitest::Test
   include HTTPHelpers
 
   def test_persistent_do_not_exhaust_retry_on_eof_error

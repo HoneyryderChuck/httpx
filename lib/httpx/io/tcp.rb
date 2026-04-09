@@ -23,18 +23,21 @@ module HTTPX
       @fallback_protocol = @options.fallback_protocol
       @port = origin.port
       @interests = :w
-      if @options.io
-        @io = case @options.io
-              when Hash
-                @options.io[origin.authority]
-              else
-                @options.io
-        end
-        raise Error, "Given IO objects do not match the request authority" unless @io
+      if (io = @options.io)
+        io =
+          case io
+          when Hash
+            io[origin.authority]
+          else
+            io
+          end
+        raise Error, "Given IO objects do not match the request authority" unless io
 
-        _, _, _, ip = @io.addr
-        @ip = Resolver::Entry.new(ip)
-        @addresses << @ip
+        # @type var io: TCPSocket | OpenSSL::SSL::SSLSocket
+
+        _, _, _, ip = io.addr
+        @io = io
+        @addresses << (@ip = Resolver::Entry.new(ip))
         @keep_open = true
         @state = :connected
       else
@@ -183,6 +186,9 @@ module HTTPX
 
       begin
         @io.close
+      rescue StandardError => e
+        log { "error closing socket" }
+        log { e.full_message(highlight: false) }
       ensure
         transition(:closed)
       end

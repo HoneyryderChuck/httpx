@@ -50,6 +50,7 @@ module HTTPX
     @altsvc_connection: instance?
     @sibling: instance?
     @main_sibling: bool
+    @no_more_requests_counter: Integer
 
 
     def addresses: () -> Array[Resolver::Entry]?
@@ -156,6 +157,12 @@ module HTTPX
 
     def build_socket: (?Array[Resolver::Entry]? addrs) -> (TCP | SSL | UNIX)
 
+    def ping: () -> void
+
+    def pong: () -> void
+
+    def no_more_requests_loop_check: () -> void
+
     def handle_error: (StandardError error, ?Request? request) -> void
 
     def force_purge: () -> void
@@ -172,9 +179,9 @@ module HTTPX
 
     def set_request_request_timeout: (Request request) -> void
 
-    def write_timeout_callback: (Request request, Numeric write_timeout) -> void
+    def write_timeout_callback: (Request request, Numeric timeout) -> void
 
-    def read_timeout_callback: (Request request, Numeric read_timeout, ?singleton(RequestTimeoutError) error_type) -> void
+    def read_timeout_callback: (Request request, Numeric timeout, ?singleton(RequestTimeoutError) error_type) -> void
 
     def set_request_timeout: (Symbol label, Request request, Numeric timeout, Symbol start_event, Symbol | Array[Symbol] finish_events) { () -> void } -> void
 

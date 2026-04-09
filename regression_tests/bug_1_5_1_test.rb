@@ -33,7 +33,8 @@ class Bug_1_5_1_Test < Minitest::Test
     assert responses.size == urls.size
 
     responses.each do |response|
-      if response.respond_to?(:status) && response.status.between?(502, 504)
+      if (response.respond_to?(:status) && response.status.between?(502, 504)) ||
+         (response.respond_to?(:error) && response.error.is_a?(HTTPX::TimeoutError))
         warn "`#{response.uri}` is down again"
         next
       end

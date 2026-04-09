@@ -28,7 +28,8 @@ module HTTPX
       @version = [1, 1]
       @pending = []
       @requests = []
-      @handshake_completed = false
+      @request = nil
+      @handshake_completed = @pipelining = false
     end
 
     def timeout
@@ -53,7 +54,9 @@ module HTTPX
     end
 
     def reset_requests
-      @pending.unshift(*@requests)
+      requests = @requests
+      requests.each { |r| r.transition(:idle) }
+      @pending.unshift(*requests)
       @requests.clear
     end
 
@@ -90,7 +93,7 @@ module HTTPX
       return if @requests.include?(request)
 
       @requests << request
-      @pipelining = true if @requests.size > 1
+      @pipelining = @max_concurrent_requests > 1 && @requests.size > 1
     end
 
     def consume
@@ -145,15 +148,17 @@ module HTTPX
 
       return unless request
 
-      log(color: :green) { "-> DATA: #{chunk.bytesize} bytes..." }
-      log(level: 2, color: :green) { "-> #{log_redact_body(chunk.inspect)}" }
-      response = request.response
+      begin
+        log(color: :green) { "-> DATA: #{chunk.bytesize} bytes..." }
+        log(level: 2, color: :green) { "-> #{log_redact_body(chunk.inspect)}" }
+        response = request.response
 
-      response << chunk
-    rescue StandardError => e
-      error_response = ErrorResponse.new(request, e)
-      request.response = error_response
-      dispatch
+        response << chunk
+      rescue StandardError => e
+        error_response = ErrorResponse.new(request, e)
+        request.response = error_response
+        dispatch(request)
+      end
     end
 
     def on_complete
@@ -162,12 +167,10 @@ module HTTPX
       return unless request
 
       log(level: 2) { "parsing complete" }
-      dispatch
+      dispatch(request)
     end
 
-    def dispatch
-      request = @request
-
+    def dispatch(request)
       if request.expects?
         @parser.reset!
         return handle(request)
@@ -217,12 +220,12 @@ module HTTPX
       if @pipelining
         catch(:called) { disable }
       else
-        @requests.each do |req|
+        while (req = @requests.shift)
           next if request && request == req
 
           emit(:error, req, ex)
         end
-        @pending.each do |req|
+        while (req = @pending.shift)
           next if request && request == req
 
           emit(:error, req, ex)

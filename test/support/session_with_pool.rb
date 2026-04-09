@@ -6,12 +6,10 @@ module SessionWithPool
   end
 
   module InstanceMethods
-    attr_reader :pool, :connections_exausted, :connection_count, :ping_count, :resolvers, :connections
+    attr_reader :pool, :connections_exausted, :connection_count, :ping_count, :pong_count, :resolvers, :connections
 
     def initialize(*)
-      @connection_count = 0
-      @connections_exausted = 0
-      @ping_count = 0
+      @connection_count = @connections_exausted = @ping_count = @pong_count = 0
       @connections = []
       @resolvers = []
       super
@@ -40,7 +38,8 @@ module SessionWithPool
     def do_init_connection(connection, *)
       super
       connection.on(:open) { @connection_count += 1 }
-      connection.on(:pong) { @ping_count += 1 }
+      connection.on(:ping) { @ping_count += 1 }
+      connection.on(:pong) { @pong_count += 1 }
       connection.on(:exhausted) do
         @connections_exausted += 1
       end
@@ -49,6 +48,12 @@ module SessionWithPool
   end
 
   module ConnectionMethods
+    module Pinger
+      def ping
+        super
+        emit(:ping)
+      end
+    end
     attr_reader :origins, :main_sibling, :sibling, :current_session, :current_selector
 
     def closed?
@@ -57,6 +62,8 @@ module SessionWithPool
 
     def set_parser_callbacks(parser)
       super
+      parser.singleton_class.prepend(Pinger)
+      parser.on(:ping) { emit(:ping) }
       parser.on(:pong) { emit(:pong) }
     end
   end

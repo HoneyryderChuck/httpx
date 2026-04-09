@@ -47,7 +47,7 @@ module HTTPX
 
         def prepare_to_retry: (Request & RequestMethods request, retriesResponse response) -> void
 
-        def when_to_retry: (Request & RequestMethods request, retriesResponse response, retriesOptions options) -> void
+        def when_to_retry: (Request & RequestMethods request, retriesResponse response, retriesOptions options) -> Numeric?
       end
 
       module RequestMethods

@@ -131,9 +131,26 @@ class HTTPSTest < Minitest::Test
         uri = "#{server.origin}/"
         response = http.get(uri)
         verify_status(response, 200)
+        assert response.version == "1.1", "request should have been retried with HTTP/1.1"
         connection_count = http.connection_count
         assert connection_count == 2, "expected to have 2 connections, instead have #{connection_count}"
-        assert response.version == "1.1", "request should have been retried with HTTP/1.1"
+      end
+    end
+  end
+
+  def test_http2_uncoalesce_on_misdirected_multi_request
+    start_test_servlet(MisdirectedServer) do |server|
+      HTTPX.plugin(SessionWithPool).with(ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE }).wrap do |http|
+        uri = "#{server.origin}/"
+        responses = http.get(uri, uri, uri)
+        assert responses.size == 3
+        responses.each do |response|
+          verify_status(response, 200)
+          assert response.version == "1.1", "request should have been retried with HTTP/1.1"
+        end
+        connection_count = http.connection_count
+        # the test server does not support pipelining
+        assert connection_count == 4, "expected to have 4 connections, instead have #{connection_count}"
       end
     end
   end

@@ -81,7 +81,8 @@ module HTTPX
 
     def find_resolver(options)
       res = @selectables.find do |c|
-        c.is_a?(Resolver::Resolver) && options == c.options
+        c.is_a?(Resolver::Resolver) &&
+          options.resolver_options_match?(c.options)
       end
 
       res.multi if res
@@ -148,16 +149,18 @@ module HTTPX
 
         next(is_closed) if is_closed
 
-        io.log(level: 2) do
-          "[#{io.state}] registering in selector##{object_id} for select (#{interests})#{" for #{interval} seconds" unless interval.nil?}"
-        end
+        if interests
+          io.log(level: 2) do
+            "[#{io.state}] registering in selector##{object_id} for select (#{interests})#{" for #{interval} seconds" unless interval.nil?}"
+          end
 
-        if READABLE.include?(interests)
-          r = r.nil? ? io : (Array(r) << io)
-        end
+          if READABLE.include?(interests)
+            r = r.nil? ? io : (Array(r) << io)
+          end
 
-        if WRITABLE.include?(interests)
-          w = w.nil? ? io : (Array(w) << io)
+          if WRITABLE.include?(interests)
+            w = w.nil? ? io : (Array(w) << io)
+          end
         end
 
         is_closed
