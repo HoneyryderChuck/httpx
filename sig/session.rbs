@@ -62,8 +62,6 @@ module HTTPX
 
     def send_requests: (*Request) -> Array[response]
 
-    def _send_requests: (Array[Request] requests, Selector selector) -> void
-
     def receive_requests: (Array[Request] requests, Selector selector) -> Array[response]
 
     def early_resolve: (resolver resolver, Connection connection) -> bool
