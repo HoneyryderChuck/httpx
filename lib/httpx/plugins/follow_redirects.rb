@@ -201,6 +201,11 @@ module HTTPX
         # returns the top-most original HTTPX::Request from the redirect chain
         attr_accessor :root_request
 
+        def initialize(*)
+          super
+          @redirect_request = nil
+        end
+
         # returns the follow-up redirect request, or itself
         def redirect_request
           @redirect_request || self
