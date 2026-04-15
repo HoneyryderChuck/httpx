@@ -33,32 +33,32 @@ module HTTPX
         def fetch_response(request, selector, options)
           response = super
 
-          if response
-            return response unless response.is_a?(Response)
+          return unless response
 
-            return response unless response.headers.key?("upgrade")
+          return response unless response.is_a?(Response)
 
-            upgrade_protocol = response.headers["upgrade"].split(/ *, */).first
+          return response unless response.headers.key?("upgrade")
 
-            return response unless upgrade_protocol && options.upgrade_handlers.key?(upgrade_protocol)
+          upgrade_protocol = response.headers["upgrade"].split(/ *, */).first
 
-            protocol_handler = options.upgrade_handlers[upgrade_protocol]
+          return response unless upgrade_protocol && options.upgrade_handlers.key?(upgrade_protocol)
 
-            return response unless protocol_handler
+          protocol_handler = options.upgrade_handlers[upgrade_protocol]
 
-            log { "upgrading to #{upgrade_protocol}..." }
-            connection = find_connection(request.uri, selector, options)
+          return response unless protocol_handler
 
-            # do not upgrade already upgraded connections
-            return if connection.upgrade_protocol == upgrade_protocol
+          log { "upgrading to #{upgrade_protocol}..." }
+          connection = find_connection(request.uri, selector, options)
 
-            protocol_handler.call(connection, request, response)
+          # do not upgrade already upgraded connections
+          return if connection.upgrade_protocol == upgrade_protocol
 
-            # keep in the loop if the server is switching, unless
-            # the connection has been hijacked, in which case you want
-            # to terminante immediately
-            return if response.status == 101 && !connection.hijacked
-          end
+          protocol_handler.call(connection, request, response)
+
+          # keep in the loop if the server is switching, unless
+          # the connection has been hijacked, in which case you want
+          # to terminante immediately
+          return fetch_response(request, selector, options) if response.status == 101 && !connection.hijacked
 
           response
         end
