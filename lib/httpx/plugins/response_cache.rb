@@ -140,7 +140,7 @@ module HTTPX
             cached_response = cached_response.dup
             cached_response.mark_as_cached!
             request.response = cached_response
-            request.emit(:response, cached_response)
+            request.emit_response(cached_response)
             return
           end
 

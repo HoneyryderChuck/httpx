@@ -107,7 +107,7 @@ module HTTPX
             error.set_backtrace(caller)
             response = ErrorResponse.new(request, error)
             request.response = response
-            request.emit(:response, response)
+            request.emit_response(response)
             response
           end
           allowed_requests = requests.select { |req| responses[requests.index(req)].nil? }

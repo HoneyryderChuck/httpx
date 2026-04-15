@@ -132,7 +132,7 @@ module WebMock
             request.transition(:done)
             response.finish!
             request.response = response
-            request.emit(:response, response)
+            request.emit_response(response)
             request_signature.headers = request.headers.to_h
 
             response << mock_response.body.dup unless response.is_a?(HTTPX::ErrorResponse)

@@ -262,7 +262,7 @@ module HTTPX
 
       response = ErrorResponse.new(request, error)
       request.response = response
-      request.emit(:response, response)
+      request.emit_response(response)
     end
 
     # returns a set of HTTPX::Request objects built from the given +args+ and +options+.
@@ -318,20 +318,30 @@ module HTTPX
     # returns the array of HTTPX::Response objects corresponding to the array of HTTPX::Request +requests+.
     def receive_requests(requests, selector)
       pending_idxs = [] #: Array[Integer]
+      pending = 0
+
+      waiting = false
 
       responses = requests.each_with_index.map do |request, idx|
         send_request(request, selector)
 
         fetch_response(request, selector, request.options).tap do |response|
-          pending_idxs << idx if response.nil?
+          if response.nil?
+            pending += 1
+            request.on_response_arrived = lambda do
+              pending_idxs << idx if waiting
+            end
+          end
         end
       end
 
-      until pending_idxs.empty? || selector.empty?
+      until pending.zero? || selector.empty?
         # loop on selector until at least one response has been received.
+        waiting = true
         catch(:coalesced) { selector.next_tick }
+        waiting = false
 
-        pending_idxs.delete_if do |idx|
+        while (idx = pending_idxs.shift)
           request = requests[idx]
 
           response = fetch_response(request, selector, request.options)
@@ -339,15 +349,16 @@ module HTTPX
           # stop on first pending response. this avoids traversing pending idxs all the way
           # (which is more expensive in the beginning, when the array is larger and N) while
           # making the next loop cheaper (because we're dropping).
-          break unless response
+          next unless response
 
           request.complete!(response)
           responses[idx] = response
-          true
+          request.on_response_arrived = nil
+          pending -= 1
         end
       end
 
-      raise Error, "something went wrong, responses not found and requests not resent" unless pending_idxs.empty?
+      raise Error, "something went wrong, responses not found and requests not resent" unless pending.zero?
 
       responses
     end
