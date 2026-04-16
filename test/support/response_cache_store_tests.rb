@@ -46,7 +46,14 @@ module ResponseCacheStoreTests
     assert request.response.nil?
 
     prepare(request)
-    assert request.response
+    assert request.response,
+           "expected cached response (" \
+           "request-headers:#{request.headers.to_hash}" \
+           "vary:#{response.vary}, " \
+           "supported-vary-headers:#{request.options.supported_vary_headers}, " \
+           "cache-control:#{response.cache_control}, " \
+           "age:#{response.send(:age)}" \
+           ")"
     assert request.response.headers == response.headers
     assert request.response.body == response.body
     assert request.cached_response.nil?
