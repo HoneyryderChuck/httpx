@@ -115,6 +115,7 @@ module HTTPX
 
     # deregisters +io+ from selectables.
     def deregister(io)
+      io.log { "deregistering from selector##{object_id}..." }
       @selectables.delete(io)
     end
 
@@ -146,6 +147,8 @@ module HTTPX
         interests = io.interests
 
         is_closed = io.state == :closed
+
+        io.log { "pre-registering, interests:#{interests}, is_closed:#{is_closed} ..." }
 
         next(is_closed) if is_closed
 

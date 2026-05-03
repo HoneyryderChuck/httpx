@@ -217,6 +217,8 @@ module HTTPX
       when :idle
         connect
 
+        log { "state after connect: #{@state}" }
+
         # when opening the tcp or ssl socket fails
         return if @state == :closed
 

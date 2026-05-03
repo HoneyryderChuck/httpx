@@ -334,7 +334,10 @@ module HTTPX
 
       until waiting.zero? || selector.empty?
         # loop on selector until at least one response has been received.
-        catch(:coalesced) { selector.next_tick }
+        catch(:coalesced) do
+          log { "next_tick!" }
+          selector.next_tick
+        end
 
         responses.each_with_index do |response, idx|
           next unless response.nil?
