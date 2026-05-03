@@ -69,7 +69,7 @@ module Requests
       def test_plugin_stream_multiple_responses_error
         session = HTTPX.plugin(:stream)
 
-        assert_raises(HTTPX::Error, /support only 1 response at a time/) do
+        assert_raises(HTTPX::Error, "support only 1 response at a time") do
           response = session.get(build_uri("/stream/2"), build_uri("/stream/3"), stream: true)
           # force request
           response.each_line.to_a
