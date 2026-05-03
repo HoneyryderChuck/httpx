@@ -127,6 +127,18 @@ module Requests
         verify_status(response, 407)
       end
 
+      def test_plugin_http_proxy_basic_auth_wrong_error
+        wrong_auth_proxy = URI(http_proxy.first)
+        return unless wrong_auth_proxy.user
+
+        wrong_auth_proxy.password = "wrongpass"
+
+        session = HTTPX.plugin(:proxy).with_proxy(uri: wrong_auth_proxy.to_s)
+        uri = build_uri("/get")
+        response = session.get(uri)
+        verify_status(response, 407)
+      end
+
       def test_plugin_http_proxy_digest_auth
         auth_proxy = URI(http_proxy.first)
         return unless auth_proxy.user

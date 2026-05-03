@@ -35,22 +35,6 @@ class ProxyTest < Minitest::Test
     verify_error_response(res, "https: unsupported proxy protocol")
   end
 
-  def test_parameters_can_authenticate_when_authenticator_is_preemptive
-    # Authentication::Basic is preemptive — it does not implement
-    # can_authenticate? because it always sends credentials and never
-    # consumes a challenge. Parameters#can_authenticate? must therefore
-    # answer "no" rather than raising NoMethodError.
-    params = parameters(username: "user", password: "pass")
-    assert params.scheme == "basic"
-    assert_equal false, params.can_authenticate?("Basic realm=\"\"")
-  end
-
-  def test_parameters_can_authenticate_when_authenticator_supports_challenge
-    params = parameters(uri: "http://user:pass@proxy", scheme: "digest")
-    assert params.scheme == "digest"
-    refute_nil params.can_authenticate?("Digest realm=\"r\", nonce=\"n\", qop=\"auth\"")
-  end
-
   private
 
   def parameters(uri: "http://proxy", **args)

@@ -88,8 +88,7 @@ module HTTPX
         end
 
         def can_authenticate?(*args)
-          return false unless @authenticator
-          return false unless @authenticator.respond_to?(:can_authenticate?)
+          return false unless @authenticator && @authenticator.respond_to?(:can_authenticate?)
 
           @authenticator.can_authenticate?(*args)
         end
