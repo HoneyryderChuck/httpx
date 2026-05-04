@@ -147,7 +147,12 @@ module HTTPX
 
         is_closed = io.state == :closed
 
-        next(is_closed) if is_closed
+        if is_closed
+          # the process by which io was closed may have already triggered the on_close callback,
+          # which already deregistered the io. this check prevents it from deleting the wrong io,
+          # because of https://bugs.ruby-lang.org/issues/22021 .
+          next(@selectables.include?(io))
+        end
 
         if interests
           io.log(level: 2) do
