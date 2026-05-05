@@ -57,7 +57,7 @@ module HTTPX
       log_redact(text, @options.debug_redact == :body)
     end
 
-    def log_redact(text, should_redact)
+    def log_redact(text, should_redact = nil)
       should_redact ||= @options.debug_redact == true
 
       return text.to_s unless should_redact

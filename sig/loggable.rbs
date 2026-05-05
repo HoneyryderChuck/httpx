@@ -16,6 +16,6 @@ module HTTPX
 
     def log_redact_body: (_ToS text) -> String
 
-    def log_redact: (_ToS text, bool should_redact) -> String
+    def log_redact: (_ToS text, ?bool? should_redact) -> String
   end
 end
