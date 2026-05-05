@@ -68,23 +68,13 @@ module HTTPX
         end
 
         def upgrade_to_h2c(request, response)
-          prev_parser = @parser
-
-          if prev_parser
-            prev_parser.reset
-            @inflight -= prev_parser.requests.size
-          end
+          enqueue_pending_requests_from_parser(@parser)
 
           @parser = request.options.h2c_class.new(@write_buffer, @options)
           set_parser_callbacks(@parser)
-          @inflight += 1
+          @inflight += 1 # request is being completed below
           @parser.upgrade(request, response)
           @upgrade_protocol = "h2c"
-
-          prev_parser.pending.each do |req|
-            req.transition(:idle)
-            send(req)
-          end
         end
 
         private

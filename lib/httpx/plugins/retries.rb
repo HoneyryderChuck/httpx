@@ -160,7 +160,7 @@ module HTTPX
                 if (response = request.response)
                   response.finish!
                   # request has terminated abruptly meanwhile
-                  request.emit(:response, response)
+                  request.emit_response(response)
                 else
                   log { "retrying (elapsed time: #{Utils.elapsed_time(retry_start)})!!" }
                   send_request(request, selector, options)

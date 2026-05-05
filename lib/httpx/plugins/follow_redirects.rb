@@ -157,7 +157,7 @@ module HTTPX
                 response.finish!
                 retry_request.response = response
                 # request has terminated abruptly meanwhile
-                retry_request.emit(:response, response)
+                retry_request.emit_response(response)
               else
                 log { "redirecting (elapsed time: #{Utils.elapsed_time(retry_start)})!!" }
                 send_request(retry_request, selector, options)
@@ -201,6 +201,17 @@ module HTTPX
         # returns the top-most original HTTPX::Request from the redirect chain
         attr_accessor :root_request
 
+        def initialize(*)
+          super
+          @redirect_request = nil
+        end
+
+        def on_response_arrived=(cb)
+          @redirect_request.on_response_arrived = cb if @redirect_request
+
+          super
+        end
+
         # returns the follow-up redirect request, or itself
         def redirect_request
           @redirect_request || self
@@ -210,6 +221,7 @@ module HTTPX
         def redirect_request=(req)
           @redirect_request = req
           req.root_request = @root_request || self
+          req.on_response_arrived = @on_response_arrived
           @response = nil
         end
 

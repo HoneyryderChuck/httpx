@@ -262,7 +262,7 @@ module HTTPX
 
       response = ErrorResponse.new(request, error)
       request.response = response
-      request.emit(:response, response)
+      request.emit_response(response)
     end
 
     # returns a set of HTTPX::Request objects built from the given +args+ and +options+.
@@ -303,7 +303,6 @@ module HTTPX
     def send_requests(*requests)
       selector = get_current_selector { Selector.new }
       begin
-        _send_requests(requests, selector)
         receive_requests(requests, selector)
       ensure
         unless @wrapped
@@ -316,42 +315,50 @@ module HTTPX
       end
     end
 
-    # sends an array of HTTPX::Request objects
-    def _send_requests(requests, selector)
-      requests.each do |request|
-        send_request(request, selector)
-      end
-    end
-
     # returns the array of HTTPX::Response objects corresponding to the array of HTTPX::Request +requests+.
     def receive_requests(requests, selector)
-      waiting = 0
-      responses = requests.map do |request|
+      pending_idxs = [] #: Array[Integer]
+      pending = 0
+
+      waiting = false
+
+      responses = requests.each_with_index.map do |request, idx|
+        send_request(request, selector)
+
         fetch_response(request, selector, request.options).tap do |response|
-          waiting += 1 if response.nil?
+          if response.nil?
+            pending += 1
+            request.on_response_arrived = lambda do
+              pending_idxs << idx if waiting
+            end
+          end
         end
       end
 
-      until waiting.zero? || selector.empty?
+      until pending.zero? || selector.empty?
         # loop on selector until at least one response has been received.
+        waiting = true
         catch(:coalesced) { selector.next_tick }
+        waiting = false
 
-        responses.each_with_index do |response, idx|
-          next unless response.nil?
-
+        while (idx = pending_idxs.shift)
           request = requests[idx]
 
           response = fetch_response(request, selector, request.options)
 
+          # stop on first pending response. this avoids traversing pending idxs all the way
+          # (which is more expensive in the beginning, when the array is larger and N) while
+          # making the next loop cheaper (because we're dropping).
           next unless response
 
           request.complete!(response)
           responses[idx] = response
-          waiting -= 1
+          request.on_response_arrived = nil
+          pending -= 1
         end
       end
 
-      raise Error, "something went wrong, responses not found and requests not resent" unless waiting.zero?
+      raise Error, "something went wrong, responses not found and requests not resent" unless pending.zero?
 
       responses
     end

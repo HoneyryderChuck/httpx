@@ -33,12 +33,7 @@ module HTTPX
         end
 
         def upgrade_to_h2
-          prev_parser = @parser
-
-          if prev_parser
-            prev_parser.reset
-            @inflight -= prev_parser.requests.size
-          end
+          enqueue_pending_requests_from_parser(@parser)
 
           @parser = @options.http2_class.new(@write_buffer, @options)
           set_parser_callbacks(@parser)
@@ -51,11 +46,6 @@ module HTTPX
           # while the parser is already here.
           purge_after_closed
           transition(:idle)
-
-          prev_parser.requests.each do |req|
-            req.transition(:idle)
-            send(req)
-          end
         end
       end
     end

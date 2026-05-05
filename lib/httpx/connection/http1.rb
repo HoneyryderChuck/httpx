@@ -54,9 +54,12 @@ module HTTPX
     end
 
     def reset_requests
-      requests = @requests
-      requests.each { |r| r.transition(:idle) }
-      @pending.unshift(*requests)
+      @requests.reverse_each do |request|
+        next if request.response
+
+        request.transition(:idle)
+        @pending.unshift(request)
+      end
       @requests.clear
     end
 
@@ -293,7 +296,7 @@ module HTTPX
       return if @max_concurrent_requests == 1
 
       @requests.each do |r|
-        r.transition(:idle)
+        r.transition(:idle) if r.response.nil?
 
         # when we disable pipelining, we still want to try keep-alive.
         # only when keep-alive with one request fails, do we fallback to

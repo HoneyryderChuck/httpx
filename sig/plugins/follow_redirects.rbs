@@ -30,7 +30,7 @@ module HTTPX
       end
 
       module RequestMethods
-        attr_accessor root_request: instance?
+        attr_accessor root_request: (Request & RequestMethods)?
 
         @redirect_request: redirect_request
 

@@ -171,7 +171,7 @@ module HTTPX
               while (req = pending.shift)
                 response.finish!
                 req.response = response
-                req.emit(:response, response)
+                req.emit_response(response)
               end
               reset
             end

@@ -45,6 +45,9 @@ module HTTPX
     # the connection the request is currently being sent to (none if before or after transaction)
     attr_writer :connection
 
+    # callback triggered when a response (which may not be the final response) was assigned to the request.
+    attr_writer :on_response_arrived
+
     attr_writer :persistent
 
     attr_reader :active_timeouts
@@ -94,7 +97,9 @@ module HTTPX
       raise UnsupportedSchemeError, "#{@uri}: #{@uri.scheme}: unsupported URI scheme" unless ALLOWED_URI_SCHEMES.include?(@uri.scheme)
 
       @state = :idle
-      @connection = @response = @drainer = @peer_address = @informational_status = nil
+      @connection = @response =
+        @drainer = @peer_address =
+          @informational_status = @on_response_arrived = nil
       @ping = false
       @persistent = @options.persistent
       @active_timeouts = []
@@ -330,8 +335,16 @@ module HTTPX
       else
         response = ErrorResponse.new(self, error)
         self.response = response
-        emit(:response, response)
+        emit_response(response)
       end
+    end
+
+    def emit_response(response)
+      emit(:response, response)
+
+      return unless @on_response_arrived
+
+      @on_response_arrived.call
     end
   end
 end

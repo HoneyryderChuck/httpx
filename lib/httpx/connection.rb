@@ -643,7 +643,7 @@ module HTTPX
         @no_more_requests_counter = 0
         @inflight -= 1
         response.finish!
-        request.emit(:response, response)
+        request.emit_response(response)
       end
       parser.on(:altsvc) do |alt_origin, origin, alt_params|
         build_altsvc_connection(alt_origin, origin, alt_params)
@@ -707,7 +707,7 @@ module HTTPX
         @inflight -= 1
         response = ErrorResponse.new(request, error)
         request.response = response
-        request.emit(:response, response)
+        request.emit_response(response)
       end
     end
 
@@ -938,7 +938,7 @@ module HTTPX
         @inflight -= 1
         response = ErrorResponse.new(request, error)
         request.response = response
-        request.emit(:response, response)
+        request.emit_response(response)
       end
 
       pending = @pending
@@ -955,7 +955,7 @@ module HTTPX
 
         resp = ErrorResponse.new(req, error)
         req.response = resp
-        req.emit(:response, resp)
+        req.emit_response(resp)
       end
     end
 
