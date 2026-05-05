@@ -24,6 +24,7 @@ module HTTPX
         attr_reader scheme: String?
         attr_reader no_proxy: Array[String]?
 
+        @ns: Integer
         @uris: Array[URI::Generic | String]
         @authenticator: _Authenticator
 
