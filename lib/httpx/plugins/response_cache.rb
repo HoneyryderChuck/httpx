@@ -220,11 +220,12 @@ module HTTPX
       end
 
       module ResponseMethods
-        attr_writer :original_request
+        attr_writer :original_request, :revalidated_at
 
         def initialize(*)
           super
           @cached = false
+          @revalidated_at = nil
         end
 
         # a copy of the request this response was originally cached from
@@ -254,6 +255,8 @@ module HTTPX
           @body = cached_response.body.dup
 
           @body.rewind
+
+          cached_response.revalidated_at = date
         end
 
         # A response is fresh if its age has not yet exceeded its freshness lifetime.
@@ -314,9 +317,13 @@ module HTTPX
         # returns the value of the "age" header as an Integer (time since epoch).
         # if no "age" of header exists, it returns the number of seconds since {#date}.
         def age
-          return @headers["age"].to_i if @headers.key?("age")
+          if (revalidated_at = @revalidated_at)
+            (Time.now - revalidated_at).to_i
+          else
+            return @headers["age"].to_i if @headers.key?("age")
 
-          (Time.now - date).to_i
+            (Time.now - date).to_i
+          end
         end
 
         # returns the value of the "date" header as a Time object

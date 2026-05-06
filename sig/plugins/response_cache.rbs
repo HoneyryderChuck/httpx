@@ -51,6 +51,8 @@ module HTTPX
       module ResponseMethods
         attr_writer original_request: cacheRequest
 
+        attr_writer revalidated_at: Time
+
         @cached: bool
         @cache_control: Array[String]?
         @vary: Array[String]?
