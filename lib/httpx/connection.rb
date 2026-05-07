@@ -62,6 +62,7 @@ module HTTPX
       @pending = []
       @inflight = 0
       @keep_alive_timeout = @options.timeout[:keep_alive_timeout]
+      @idle_timeout = @options.timeout[:idle_timeout]
       @no_more_requests_counter = 0
 
       if @options.io
@@ -96,6 +97,16 @@ module HTTPX
 
     def addresses?
       @io && @io.addresses?
+    end
+
+    def idle_timeout_expired?
+      @response_received_at && @idle_timeout &&
+        Utils.elapsed_time(@response_received_at) > @idle_timeout
+    end
+
+    def keep_alive_timeout_expired?
+      @response_received_at && @keep_alive_timeout &&
+        Utils.elapsed_time(@response_received_at) > @keep_alive_timeout
     end
 
     def match?(uri, options)
@@ -310,8 +321,7 @@ module HTTPX
       return @coalesced_connection.send(request) if @coalesced_connection
 
       if @parser && !@write_buffer.full?
-        if @response_received_at && @keep_alive_timeout &&
-           Utils.elapsed_time(@response_received_at) > @keep_alive_timeout
+        if keep_alive_timeout_expired?
           # when pushing a request into an existing connection, we have to check whether there
           # is the possibility that the connection might have extended the keep alive timeout.
           # for such cases, we want to ping for availability before deciding to shovel requests.

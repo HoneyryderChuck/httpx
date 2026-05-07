@@ -186,13 +186,24 @@ module HTTPX
     private
 
     def acquire_connection(uri, options)
-      idx = @connections.find_index do |connection|
-        connection.match?(uri, options)
+      conn = nil
+
+      @connections.delete_if do |connection|
+        if connection.state == :inactive && connection.idle_timeout_expired?
+          # discard connections which have been open and idle for too long
+          connection.force_close
+          next(true)
+        end
+
+        if connection.match?(uri, options)
+          conn = connection
+          break
+        end
+
+        false
       end
 
-      return unless idx
-
-      @connections.delete_at(idx)
+      conn
     end
 
     def checkout_new_connection(uri, options)
