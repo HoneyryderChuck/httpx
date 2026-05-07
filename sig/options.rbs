@@ -8,11 +8,12 @@ module HTTPX
     CONNECT_TIMEOUT: Integer
     READ_TIMEOUT: Integer
     WRITE_TIMEOUT: Integer
-    REQUEST_TIMEOUT: Integer
-    OPERATION_TIMEOUT: Integer
+    REQUEST_TIMEOUT: nil
+    OPERATION_TIMEOUT: nil
     KEEP_ALIVE_TIMEOUT: Integer
     SETTINGS_TIMEOUT: Integer
     CLOSE_HANDSHAKE_TIMEOUT: Integer
+    IDLE_TIMEOUT: nil
     SET_TEMPORARY_NAME: ^(Class klass, ?Symbol pl) -> void
 
     DEFAULT_OPTIONS: Hash[Symbol, untyped]

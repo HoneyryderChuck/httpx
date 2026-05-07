@@ -102,8 +102,20 @@ module HTTPX
     end
 
     def find_connection(request_uri, options)
-      each_connection.find do |connection|
-        connection.match?(request_uri, options)
+      loop do
+        conn = each_connection.find do |connection|
+          connection.match?(request_uri, options)
+        end
+
+        return unless conn
+
+        if conn.idle_timeout_expired?
+          # discard connections which have been idle for too long
+          conn.force_close
+          next
+        end
+
+        return conn
       end
     end
 

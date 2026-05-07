@@ -234,6 +234,20 @@ class SessionTest < Minitest::Test
     end
   end
 
+  def test_session_timeout_idle_timeout_no_ping
+    uri = build_uri("/get")
+
+    HTTPX.plugin(SessionWithPool).with(timeout: { keep_alive_timeout: 2, idle_timeout: 2 }).wrap do |http|
+      response1 = http.get(uri)
+      sleep(3)
+      response2 = http.get(uri)
+
+      verify_status(response1, 200)
+      verify_status(response2, 200)
+      assert http.ping_count.zero?, "session should have pinged after timeout (#{http.ping_count})"
+    end
+  end
+
   def test_session_response_peer_address
     uri = URI(build_uri("/get"))
     response = HTTPX.get(uri)

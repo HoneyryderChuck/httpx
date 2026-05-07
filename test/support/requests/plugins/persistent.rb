@@ -133,6 +133,24 @@ module Requests
         end
       end unless RUBY_ENGINE == "jruby"
 
+      def test_persistent_idle_timeout_no_ping
+        return unless origin.start_with?("https")
+
+        uri = build_uri("/get")
+
+        http = HTTPX.plugin(SessionWithPool)
+                    .plugin(RequestInspector)
+                    .plugin(:persistent)
+                    .with(timeout: { keep_alive_timeout: 2, idle_timeout: 2 })
+        response1 = http.get(uri)
+        sleep(3)
+        response2 = http.get(uri)
+
+        verify_status(response1, 200)
+        verify_status(response2, 200)
+        assert http.ping_count.zero?, "session should have pinged after timeout (#{http.ping_count})"
+      end
+
       def test_persistent_proxy_retry_http2_goaway
         return unless origin.start_with?("https")
 

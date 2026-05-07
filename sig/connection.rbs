@@ -39,6 +39,7 @@ module HTTPX
     @inflight: Integer
     @max_concurrent_requests: Integer?
     @keep_alive_timeout: Numeric?
+    @idle_timeout: Numeric?
     @timeout: Numeric?
     @current_timeout: Numeric?
     @parser: Object & _Parser
@@ -62,6 +63,10 @@ module HTTPX
     def send: (Request request) -> void
 
     def addresses?: () -> boolish
+
+    def idle_timeout_expired?: () -> boolish
+
+    def keep_alive_timeout_expired?: () -> boolish
 
     def match?: (http_uri uri, Options options) -> bool
 
