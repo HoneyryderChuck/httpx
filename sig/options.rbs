@@ -25,7 +25,7 @@ module HTTPX
     RESOLVER_TYPES: Array[Symbol]
     USER_AGENT: String
 
-    type timeout_type = :connect_timeout | :settings_timeout | :close_handshake_timeout | :operation_timeout | :keep_alive_timeout | :read_timeout | :write_timeout | :total_request_timeout | :request_timeout
+    type timeout_type = :connect_timeout | :settings_timeout | :close_handshake_timeout | :operation_timeout | :keep_alive_timeout | :idle_timeout | :read_timeout | :write_timeout | :total_request_timeout | :request_timeout
     type timeout = Hash[timeout_type, interval?]
     type redact_value = :headers | :body | bool
     type resolver_cache_option = :memory | :file | (Object & Resolver::_Cache)

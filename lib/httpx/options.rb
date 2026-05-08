@@ -449,6 +449,8 @@ module HTTPX
         next if val.nil?
 
         raise TypeError, ":#{key} must be numeric" unless val.is_a?(Numeric)
+
+        raise TypeError, ":#{key} must be positive" unless val.positive?
       end
 
       timeout_hash

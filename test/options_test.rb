@@ -137,6 +137,7 @@ class OptionsTest < Minitest::Test
         settings_timeout: 10,
         close_handshake_timeout: 10,
         operation_timeout: nil,
+        idle_timeout: nil,
         keep_alive_timeout: 20,
         read_timeout: 60,
         write_timeout: 60,
