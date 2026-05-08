@@ -138,6 +138,7 @@ module HTTPX
       connection.log(level: 2) do
         "deregistering connection##{connection.object_id}(#{connection.state}) from selector##{selector.object_id}"
       end
+      connection.log(level: 2) { caller.first(20).join("\n") }
       selector.deregister(connection)
 
       # do not check-in connections only created for Happy Eyeballs
