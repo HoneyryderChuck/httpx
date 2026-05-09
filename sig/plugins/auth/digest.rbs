@@ -12,7 +12,7 @@ module HTTPX
 
         def can_authenticate?: (String? authenticate) -> boolish
 
-        def authenticate: (Request request, String authenticate) -> String
+        def authenticate: (Request request, String authenticate) -> String?
 
         private
 

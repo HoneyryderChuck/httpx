@@ -194,6 +194,15 @@ module Requests
         verify_status(response, 200)
       end
 
+      def test_plugin_digest_auth_invalid_header
+        start_test_servlet(InvalidDigestServer) do |server|
+          uri = "#{server.origin}/"
+          session = HTTPX.plugin(:digest_auth)
+          response = session.digest_auth("user", "pass").get(uri)
+          verify_error_response(response, "unsupported digest header format")
+        end
+      end
+
       # NTLM
 
       if RUBY_VERSION < "3.1.0"

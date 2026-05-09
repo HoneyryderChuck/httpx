@@ -51,7 +51,9 @@ module HTTPX
 
             if probe_response.status == 401 && digest.can_authenticate?(probe_response.headers["www-authenticate"])
               request.transition(:idle)
-              request.authorize(digest.authenticate(request, probe_response.headers["www-authenticate"]))
+              if (auth_header = digest.authenticate(request, probe_response.headers["www-authenticate"]))
+                request.authorize(auth_header)
+              end
               super(request)
             else
               probe_response

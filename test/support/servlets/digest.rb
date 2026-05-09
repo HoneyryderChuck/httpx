@@ -28,3 +28,17 @@ class DigestServer < TestServer
     end
   end
 end
+
+class InvalidDigestServer < TestServer
+  class InvalidUsername < WEBrick::HTTPServlet::AbstractServlet
+    def do_GET(_req, res) # rubocop:disable Naming/MethodName
+      res.status = 401
+      res["WWW-Authenticate"] = "Digest username:\"user\""
+    end
+  end
+
+  def initialize(options = {})
+    super
+    mount("/", InvalidUsername)
+  end
+end
