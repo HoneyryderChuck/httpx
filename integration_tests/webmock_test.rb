@@ -62,6 +62,7 @@ class WebmockTest < Minitest::Test
     assert !response.body.empty?
     assert_equal("body", response.body.to_s)
     assert_requested(request)
+    assert response.mocked?
   end
 
   def test_to_timeout
@@ -75,6 +76,7 @@ class WebmockTest < Minitest::Test
     assert_requested(@stub_timeout_retries, times: 3)
     assert !response.is_a?(HTTPX::ErrorResponse)
     assert_equal("body", response.to_s)
+    assert response.mocked?
   end
 
   def test_error_on_non_stubbed_request
@@ -201,6 +203,10 @@ class WebmockTest < Minitest::Test
     response_2 = http_request(:get, MOCK_URL_HTTP, params: { "a" => %w[b c] })
     response_3 = http_request(:get, MOCK_URL_HTTP, params: { test: "value" })
 
+    assert response_1.mocked?
+    assert response_2.mocked?
+    assert response_3.mocked?
+
     assert_equal "1", response_1.body.to_s
     assert_equal "2", response_2.body.to_s
     assert_equal "3", response_3.body.to_s
@@ -289,6 +295,7 @@ class WebmockTest < Minitest::Test
     verify_status(response, 200)
     verify_body_length(response)
     assert_requested(:get, uri, query: { "foo" => "bar" })
+    assert !response.mocked?
   end
 
   def test_webmock_allows_real_request_with_body
@@ -298,6 +305,7 @@ class WebmockTest < Minitest::Test
     verify_status(response, 200)
     verify_body_length(response)
     assert_requested(:post, uri, headers: { "Content-Type" => "application/x-www-form-urlencoded" }, body: "foo=bar")
+    assert !response.mocked?
   end
 
   def test_webmock_allows_real_request_with_file_body
@@ -309,6 +317,7 @@ class WebmockTest < Minitest::Test
     body = json_body(response)
     verify_header(body["headers"], "Content-Type", "multipart/form-data")
     verify_uploaded_image(body, "image", "image/jpeg")
+    assert !response.mocked?
     # TODO: webmock does not support matching multipart request body
     # assert_requested(:post, uri, headers: { "Content-Type" => "multipart/form-data" }, form: { "image" => File.new(fixture_file_path) })
   end
