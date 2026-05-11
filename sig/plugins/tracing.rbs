@@ -18,7 +18,7 @@ module HTTPX
 
         def initialize: (*_Tracer tracers) -> void
 
-        def merge: (instance | _Tracer) -> void
+        def merge: (instance) -> void
       end
 
       interface _RetriesOptions

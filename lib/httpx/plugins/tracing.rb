@@ -25,12 +25,7 @@ module HTTPX::Plugins
       end
 
       def merge(tracer)
-        case tracer
-        when Wrapper
-          Wrapper.new(*@tracers, *tracer.tracers)
-        else
-          Wrapper.new(*@tracers, tracer)
-        end
+        Wrapper.new(*@tracers, *tracer.tracers)
       end
 
       def freeze

@@ -45,6 +45,35 @@ module Requests
         end
       end
 
+      def test_plugin_tracing_merge_tracers
+        tracer1 = TestTracer.new
+        tracer2 = TestTracer.new
+        tracer3 = TestTracer.new
+
+        http1 = HTTPX.plugin(:tracing, tracer: tracer1)
+
+        def http1.options
+          @options
+        end
+
+        assert http1.options.tracer.is_a?(TestTracer)
+        assert http1.options.tracer == tracer1
+
+        http2 = http1.with(tracer: tracer2)
+        def http2.options
+          @options
+        end
+        assert !http2.options.tracer.is_a?(TestTracer)
+        assert http2.options.tracer.send(:tracers) == [tracer1, tracer2]
+
+        http3 = http2.with(tracer: tracer3)
+        def http3.options
+          @options
+        end
+        assert !http3.options.tracer.is_a?(TestTracer)
+        assert http3.options.tracer.send(:tracers) == [tracer1, tracer2, tracer3]
+      end
+
       private
 
       def test_tracer
