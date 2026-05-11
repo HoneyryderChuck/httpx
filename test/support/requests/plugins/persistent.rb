@@ -115,6 +115,31 @@ module Requests
         http.close
       end if ENV.key?("HTTPBIN_COALESCING_HOST")
 
+      def test_persistent_with_io
+        return unless origin.start_with?("https")
+
+        io = origin_io
+        uri = build_uri("/get")
+
+        session = HTTPX.plugin(SessionWithPool).plugin(:persistent)
+        response = session.get(uri)
+        verify_status(response, 200)
+
+        assert !io.closed?, "io should have been left open"
+        connections = session.pool.connections
+        assert connections.size == 1
+
+        response = session.get(uri)
+        verify_status(response, 200)
+
+        assert !io.closed?, "io should have been left open"
+        connections = session.pool.connections
+        assert connections.size == 1
+
+        session.close
+        assert session.connections.one?(&:closed?), "should have been no connections"
+      end
+
       def test_persistent_retry_http2_goaway
         return unless origin.start_with?("https")
 
