@@ -192,11 +192,8 @@ module HTTPX
       when :idle
         do_init_connection(connection, selector)
       when :open
-        if options.io
-          select_connection(connection, selector)
-        else
-          pin(connection, selector)
-        end
+        # external io
+        select_connection(connection, selector)
       when :closing, :closed
         connection.idling
         if connection.addresses?
