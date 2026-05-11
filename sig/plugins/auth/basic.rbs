@@ -9,7 +9,7 @@ module HTTPX
 
         private
 
-        def initialize: (string user, string password, *untyped) -> void
+        def initialize: (string user, string password, **untyped) -> void
 
       end
     end

@@ -155,7 +155,6 @@ module HTTPX
       # Tests if it is OK to send this cookie to a given `uri`.  A
       # RuntimeError is raised if the cookie's domain is unknown.
       def valid_for_uri?(uri)
-        uri = URI(uri)
         # RFC 6265 5.4
 
         return false if @secure && uri.scheme != "https"

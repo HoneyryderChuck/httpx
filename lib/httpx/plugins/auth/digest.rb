@@ -82,6 +82,7 @@ module HTTPX
 
           if params["algorithm"] =~ /(.*?)(-sess)?$/
             alg = Regexp.last_match(1)
+            raise_format_error unless alg
             algorithm = ::Digest.const_get(alg)
             raise Error, "unknown algorithm \"#{alg}\"" unless algorithm
 

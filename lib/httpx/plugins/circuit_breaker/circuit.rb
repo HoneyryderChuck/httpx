@@ -17,6 +17,7 @@ module HTTPX
         @break_in = break_in
         @circuit_breaker_half_open_drip_rate = circuit_breaker_half_open_drip_rate
         @attempts = 0
+        @opened_at = @attempted_at = @response = nil
 
         total_real_attempts = @max_attempts * @circuit_breaker_half_open_drip_rate
         @drip_factor = (@max_attempts / total_real_attempts).round
