@@ -182,15 +182,6 @@ module Faraday
               @on_response
             end
           end
-
-          def on_complete(&blk)
-            if blk
-              @on_complete = blk
-              self
-            else
-              @on_complete
-            end
-          end
         end
 
         include RequestMixin
@@ -224,7 +215,6 @@ module Faraday
             Array(responses).each_with_index do |response, index|
               handler = @handlers[index]
               handler.on_response.call(response)
-              handler.on_complete.call(handler.env) if handler.on_complete
             end
           end
         end
