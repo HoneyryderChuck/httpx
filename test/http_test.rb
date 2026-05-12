@@ -41,6 +41,7 @@ class HTTPTest < Minitest::Test
   include Plugins::XML
   include Plugins::Query
   include Plugins::Tracing
+  include Plugins::ServerSentEvents
 
   def test_verbose_log
     log = StringIO.new

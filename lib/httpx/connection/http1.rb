@@ -14,6 +14,7 @@ module HTTPX
       "www-authenticate" => "WWW-Authenticate",
       "http2-settings" => "HTTP2-Settings",
       "content-md5" => "Content-MD5",
+      "last-event-id" => "Last-Event-ID",
     }.freeze
     attr_reader :pending, :requests
 
