@@ -200,7 +200,13 @@ module HTTPX
 
         def when_to_retry(request, response, options)
           retry_after = options.retry_after
+
+          return unless retry_after
+
           retry_after = retry_after.call(request, response) if retry_after.respond_to?(:call)
+
+          return unless retry_after
+
           # apply jitter
           if (jitter = request.options.retry_jitter)
             retry_after = jitter.call(retry_after)
