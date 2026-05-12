@@ -35,4 +35,8 @@ module HTTPHelpers
   ensure
     server.close
   end
+
+  def tls?
+    scheme == "https://"
+  end
 end

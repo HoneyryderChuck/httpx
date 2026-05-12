@@ -1,0 +1,45 @@
+module HTTPX
+  module Plugins
+    module ServerSentEvents
+      def self.load_dependencies: (singleton(Session)) -> void
+
+      def self.subplugins: () -> Hash[Symbol, Module]
+
+      class Message
+        attr_reader data: String
+        attr_reader id: _ToS?
+        attr_reader event: _ToS?
+        attr_reader retry_after: Integer?
+
+        def initialize: (data: String, ?event: _ToS?, ?id: _ToS?, ?retry_after: Integer?) -> void
+      end
+
+      interface _ServerSentEventsOptions
+        def event_stream: () -> boolish
+      end
+
+      module InstanceMethods
+      end
+
+      module RequestMethods
+        attr_accessor last_server_sent_message: Message?
+      end
+
+      module StreamResponseMethods
+        def each_message: () { (Message) -> void } -> void
+                 | () -> Enumerable[Message]
+
+        private
+
+        def raise_format_error: (String line) -> void
+      end
+
+      module ServerSentEventsRetries
+        module InstanceMethods
+        end
+      end
+    end
+
+    type sessionServerSentEvents = Session & ServerSentEvents::InstanceMethods
+  end
+end

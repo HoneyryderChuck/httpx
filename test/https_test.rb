@@ -44,6 +44,7 @@ class HTTPSTest < Minitest::Test
   include Plugins::SsrfFilter
   include Plugins::XML
   include Plugins::Tracing
+  include Plugins::ServerSentEvents
 
   def test_ssl_session_resumption
     uri = build_uri("/get")

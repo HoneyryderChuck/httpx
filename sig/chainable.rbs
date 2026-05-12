@@ -33,6 +33,7 @@ module HTTPX
               | (:rate_limiter, ?options) -> Plugins::sessionRateLimiter
               | (:stream, ?options) -> Plugins::sessionStream
               | (:stream_bidi, ?options) -> Plugins::sessionStreamBidi
+              | (:server_sent_events, ?options) -> Plugins::sessionServerSentEvents
               | (:aws_sigv4, ?options) -> Plugins::awsSigV4Session
               | (:grpc, ?options) -> Plugins::grpcSession
               | (:cache, ?options) -> Plugins::sessionCache
