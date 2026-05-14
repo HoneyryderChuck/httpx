@@ -10,7 +10,7 @@ class MultipartFilemagicTest < Minitest::Test
   include HTTPHelpers
 
   def test_plugin_multipart_filemagic_file_upload
-    assert defined?(FileMagic)
+    assertdefined?(FileMagic)
 
     filemagic_spy = Spy.on(FileMagic, :open).and_call_through
 
