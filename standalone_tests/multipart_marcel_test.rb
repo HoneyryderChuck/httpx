@@ -10,7 +10,7 @@ class MultipartMarcelTest < Minitest::Test
   include HTTPHelpers
 
   def test_plugin_multipart_marcel_file_upload
-    assert defined?(Marcel)
+    assert(defined?(Marcel))
 
     marcel_spy = Spy.on(Marcel::MimeType, :for).and_call_through
 

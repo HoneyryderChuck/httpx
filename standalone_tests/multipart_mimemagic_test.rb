@@ -10,7 +10,7 @@ class MultipartMimemagicTest < Minitest::Test
   include HTTPHelpers
 
   def test_plugin_multipart_mimemagic_file_upload
-    assert defined?(MimeMagic)
+    assert(defined?(MimeMagic))
 
     mimemagic_spy = Spy.on(MimeMagic, :by_magic).and_call_through
 
