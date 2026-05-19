@@ -65,7 +65,7 @@ set_rbs_test() {
   export RUBYOPT="$RUBYOPT -rbundler/setup -rrbs/test/setup"
   export RBS_TEST_RAISE=true
   export RBS_TEST_LOGLEVEL=error
-  export RBS_TEST_OPT="-Isig -rforwardable -ruri -rjson -ripaddr -rpathname -rtime -rtimeout -rresolv -rsocket -ropenssl -rbase64 -rzlib -rcgi -rdigest -rstrscan -rhttp-2"
+  export RBS_TEST_OPT="-Isig -rforwardable -ruri -rjson -ripaddr -rpathname -rtime -rtimeout -rresolv -rsocket -ropenssl -rbase64 -rzlib -rcgi -rdigest -rstrscan -rpstore -rtmpdir -rhttp-2"
   export RBS_TEST_TARGET="HTTP*"
 }
 
