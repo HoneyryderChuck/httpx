@@ -6,8 +6,8 @@ module HTTPX
       ERROR: 2
 
       @resolver: Resolv::DNS
-      @_timeouts: Array[Numeric]
-      @timeouts: Hash[String, Array[Numeric]]
+      @_timeouts: Array[interval]
+      @timeouts: Hash[String, Array[interval]]
       @queries: Array[[ip_family, Connection]]
       @ips: Array[[ip_family, Connection, (Array[Addrinfo] | StandardError)]]
       @pipe_mutex: Thread::Mutex

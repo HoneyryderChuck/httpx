@@ -6,7 +6,7 @@ module HTTPX
     FILENAME_EXTENSION_REGEX: Regexp
     URIParser: URI::RFC2396_Parser
 
-    def self?.parse_retry_after: (String) -> Numeric
+    def self?.parse_retry_after: (String) -> interval
 
     def self?.now: () -> Float
 

@@ -186,7 +186,7 @@ module HTTPX
 
         # returns whether the +ex+ exception happend for a retriable request.
         def retryable_error?(ex, _)
-          RETRYABLE_ERRORS.any? { |klass| ex.is_a?(klass) }
+          RETRYABLE_ERRORS.any? { |klass| ex.is_a?(klass) } && !ex.is_a?(TotalRequestTimeoutError)
         end
 
         def proxy_error?(request, response, _)

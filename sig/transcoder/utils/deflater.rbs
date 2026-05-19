@@ -19,6 +19,8 @@ module HTTPX
 
       def deflate: (String? chunk) -> String?
 
+      def rewind: () -> void
+
       private
 
       def buffer_deflate!: () -> void

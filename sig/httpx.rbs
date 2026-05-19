@@ -10,6 +10,8 @@ module HTTPX
   type uri = http_uri | string
   type generic_uri = String | URI::Generic
 
+  type interval = Numeric & _ToF & Time::_Timeout?
+
   type verb = String
 
   type request_params = Hash[Symbol, untyped]

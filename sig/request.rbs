@@ -31,10 +31,13 @@ module HTTPX
     @informational_status: Integer?
     @query: String?
     @drainer: Enumerator[String, void]?
+    @started: bool
 
     def initialize: (Symbol | String verb, generic_uri uri, Options options, ?request_params params) -> untyped
 
     def complete!: (?response response) -> void
+
+    def started?: () -> bool
 
     def ping?: () -> bool
 
@@ -76,11 +79,11 @@ module HTTPX
 
     def persistent?: () -> bool
 
-    def read_timeout: () -> Numeric?
+    def read_timeout: () -> interval?
 
-    def write_timeout: () -> Numeric?
+    def write_timeout: () -> interval?
 
-    def request_timeout: () -> Numeric?
+    def request_timeout: () -> interval?
 
     def set_timeout_callback: (Symbol event) { (*untyped) -> void } -> void
 

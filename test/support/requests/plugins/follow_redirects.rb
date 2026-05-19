@@ -118,6 +118,18 @@ module Requests
         verify_error_response(timeout_response, HTTPX::RequestTimeoutError)
       end
 
+      def test_plugin_follow_redirects_total_request_timeout_across_redirects
+        uri = max_redirect_uri(20) # high enough that the timeout should apply
+        session = HTTPX.plugin(RequestInspector)
+                       .plugin(SessionWithMockResponse, mock_tries: 4, mock_status: 302, mock_headers: { "retry-after" => "2" })
+                       .plugin(:follow_redirects)
+                       .max_redirects(200)
+                       .with(timeout: { total_request_timeout: 8 })
+        response = session.get(uri)
+        verify_error_response(response, HTTPX::TotalRequestTimeoutError)
+        assert session.total_responses.size > 2, "not enough redirections happening"
+      end
+
       def test_plugin_follow_insecure_no_insecure_downgrade
         return unless origin.start_with?("https")
 

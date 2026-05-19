@@ -1,7 +1,7 @@
 module HTTPX
   module Resolver
     class Multi
-      attr_reader resolvers: Array[Native | HTTPS]
+      attr_reader resolvers: Array[HTTPX::Resolver::Resolver]
 
       attr_reader options: Options
 

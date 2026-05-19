@@ -3,6 +3,10 @@ module HTTPX
     def <<: (string?) -> void
   end
 
+  interface _Loggable
+    def log: (?level: Integer?, ?color: Symbol?, ?debug_level: Integer, ?debug: _IOLogger?) { () -> String } -> void
+  end
+
   module Loggable
     USE_DEBUG_LOG: bool
 
