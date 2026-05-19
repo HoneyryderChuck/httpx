@@ -56,6 +56,13 @@ module SessionWithPool
     end
     attr_reader :origins, :main_sibling, :sibling, :current_session, :current_selector
 
+    def self.included(klass)
+      super
+      klass.class_eval do
+        public :parser
+      end
+    end
+
     def closed?
       @io.closed?
     end
@@ -65,6 +72,22 @@ module SessionWithPool
       parser.singleton_class.prepend(Pinger)
       parser.on(:ping) { emit(:ping) }
       parser.on(:pong) { emit(:pong) }
+    end
+  end
+
+  module RequestMethods
+    attr_accessor :stream # http2 stream
+  end
+
+  module ResponseMethods
+    attr_reader :request
+  end
+
+  module HTTP2Methods
+    def handle_stream(stream, request)
+      request.stream = stream
+
+      super
     end
   end
 

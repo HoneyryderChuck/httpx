@@ -118,7 +118,7 @@ module HTTPX
         return false
       end
       unless (stream = @streams[request])
-        stream = @connection.new_stream
+        stream = @connection.new_stream(**request.http2_stream_options)
         handle_stream(stream, request)
         @streams[request] = stream
         @max_requests -= 1
@@ -128,6 +128,8 @@ module HTTPX
     rescue ::HTTP2::Error::StreamLimitExceeded
       @pending.unshift(request)
       false
+    rescue StandardError => e
+      emit(:error, request, e)
     end
 
     def consume
