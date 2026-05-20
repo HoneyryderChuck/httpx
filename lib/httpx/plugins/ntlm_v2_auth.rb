@@ -6,7 +6,7 @@ module HTTPX
     module NtlmV2Auth
       class << self
         def load_dependencies(klass)
-          require 'rubyntlm'
+          require "rubyntlm"
           klass.plugin(:auth)
         end
 
@@ -70,11 +70,11 @@ module HTTPX
 
               return probe_response unless probe_response.is_a?(Response)
 
-              if probe_response.status == 401 && ntlm.can_authenticate?(probe_response.headers['www-authenticate'])
+              if probe_response.status == 401 && ntlm.can_authenticate?(probe_response.headers["www-authenticate"])
                 request.transition(:idle)
                 request.unauthorize!
                 request.authorize(ntlm.authenticate(request,
-                                                    probe_response.headers['www-authenticate']).encode('utf-8'))
+                                                    probe_response.headers["www-authenticate"]).encode("utf-8"))
                 super(request)
               else
                 probe_response
