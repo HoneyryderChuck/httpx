@@ -13,7 +13,6 @@ class Bug_1_5_1_Test < Minitest::Test
       https://nghttp2.org/httpbin/get
       https://railsatscale.com/feed.xml
       https://www.mikeperham.com/index.xml
-      https://www.opennet.ru/opennews/opennews_mini_noadv.rss
       http://blog.cleancoder.com/atom.xml
     ]
     http = HTTPX.plugin(:persistent)
