@@ -8,6 +8,11 @@ class OAuthProviderServer < TestServer
   attr_reader :metadata
 
   class Token < WEBrick::HTTPServlet::AbstractServlet
+    def initialize(_, options)
+      @expires_in = options.fetch(:expires_in, 3600)
+      super
+    end
+
     def do_POST(req, res) # rubocop:disable Naming/MethodName
       body = URI.decode_www_form(req.body).to_h
       user = pass = nil
@@ -37,7 +42,7 @@ class OAuthProviderServer < TestServer
           token << "-" << aud
         end
 
-        res.body = JSON.dump({ "access_token" => token, "expires_in" => 3600, "token_type" => "bearer" })
+        res.body = JSON.dump({ "access_token" => token, "expires_in" => @expires_in, "token_type" => "bearer" })
       when "refresh_token"
         token << "REFRESH-TOKEN-AUTH" if user == "CLIENT_ID" && pass == "SECRET" && body["refresh_token"] == "REFRESH_TOKEN"
 
@@ -49,12 +54,12 @@ class OAuthProviderServer < TestServer
 
       raise "unsupported" if token.empty?
 
-      res.body = JSON.dump({ "access_token" => token, "expires_in" => 3600, "token_type" => "bearer" })
+      res.body = JSON.dump({ "access_token" => token, "expires_in" => @expires_in, "token_type" => "bearer" })
     end
   end
 
-  def initialize(*)
-    super
+  def initialize(*args, **kwargs)
+    super(*args)
     @metadata = {
       "issuer" => origin,
       "authorization_endpoint" => "#{origin}/authorize",
@@ -75,7 +80,7 @@ class OAuthProviderServer < TestServer
       res["Content-Type"] = "application/json"
       res.body = JSON.dump(metadata)
     end
-    mount("/token", Token)
+    mount("/token", Token, kwargs)
 
     mount_proc "/client-credentials-authed" do |req, res|
       if (auth = req["authorization"]) &&

@@ -11,23 +11,23 @@ module ResolverCacheHelpers
     assert_ips nil, cache.get("test.com")
 
     now = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-    dns_entry = { "data" => "::2", "TTL" => now + 2, "name" => "test.com" }
-    alias_entry = { "alias" => "test.com", "TTL" => now + 2, "name" => "foo.com" }
+    dns_entry = { "data" => "::2", "TTL" => now + 20, "name" => "test.com" }
+    alias_entry = { "alias" => "test.com", "TTL" => now + 20, "name" => "foo.com" }
     cache.set("test.com", Socket::AF_INET6, [dns_entry])
     cache.set("foo.com", Socket::AF_INET6, [alias_entry])
     assert_ips ["::2"], cache.get("foo.com")
 
-    cache.set("test.com", Socket::AF_INET6, [{ "data" => "::3", "TTL" => now + 2, "name" => "test.com" }])
+    cache.set("test.com", Socket::AF_INET6, [{ "data" => "::3", "TTL" => now + 20, "name" => "test.com" }])
     assert_ips %w[::2 ::3], cache.get("test.com")
 
-    cache.set("test.com", Socket::AF_INET, [{ "data" => "127.0.0.2", "TTL" => now + 2, "name" => "test.com" }])
+    cache.set("test.com", Socket::AF_INET, [{ "data" => "127.0.0.2", "TTL" => now + 20, "name" => "test.com" }])
     assert_ips %w[127.0.0.2 ::2 ::3], cache.get("test.com")
 
-    cache.set("test2.com", Socket::AF_INET6, [{ "data" => "::4", "TTL" => now + 2, "name" => "test3.com" }])
+    cache.set("test2.com", Socket::AF_INET6, [{ "data" => "::4", "TTL" => now + 20, "name" => "test3.com" }])
     assert_ips %w[::4], cache.get("test2.com")
     assert_ips %w[::4], cache.get("test3.com")
 
-    cache.set("test2.com", Socket::AF_INET, [{ "data" => "127.0.0.3", "TTL" => now + 2, "name" => "test3.com" }])
+    cache.set("test2.com", Socket::AF_INET, [{ "data" => "127.0.0.3", "TTL" => now + 20, "name" => "test3.com" }])
     assert_ips %w[127.0.0.3 ::4], cache.get("test2.com")
     assert_ips %w[127.0.0.3 ::4], cache.get("test3.com")
   end

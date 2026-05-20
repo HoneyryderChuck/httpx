@@ -20,6 +20,9 @@ module HTTPX
       #
       # :auth_header_value :: the token to use as a string, or a callable which returns a string when called.
       # :auth_header_type :: the authentication type to use in the "authorization" header value (i.e. "Bearer", "Digest"...)
+      # :auth_header_expires_at :: timestamp at which the auth header will be discarded. should be a callable (like a proc)
+      #                            receiving the request as an argument, and should return either a Time object, or an integer (UNIX time).
+      # :auth_header_expires_in :: time (in seconds) since the first use of an auth header after which that header will be discarded.
       # :generate_auth_value_on_retry :: callable which returns whether the request should regenerate the auth_header_value
       #                                  when the request is retried (this option will only work if the session also loads the
       #                                  <tt>:retries</tt> plugin).
@@ -29,6 +32,22 @@ module HTTPX
         end
 
         def option_auth_header_type(value)
+          value
+        end
+
+        def option_auth_header_expires_at(value)
+          unless value.respond_to?(:call)
+            value = Float(value)
+            raise TypeError, "`:auth_header_expires_at` must be positive" unless value.positive?
+          end
+
+          value
+        end
+
+        def option_auth_header_expires_in(value)
+          value = Float(value)
+          raise TypeError, "`:auth_header_expires_in` must be positive" unless value.positive?
+
           value
         end
 
@@ -43,7 +62,7 @@ module HTTPX
         def initialize(*)
           super
 
-          @auth_header_value = nil
+          @auth_header_value = @auth_header_expires_at = nil
           @auth_header_value_mtx = Thread::Mutex.new
           @skip_auth_header_value = false
         end
@@ -65,7 +84,7 @@ module HTTPX
 
         def reset_auth_header_value!
           @auth_header_value_mtx.synchronize do
-            @auth_header_value = nil
+            @auth_header_value = @auth_header_expires_at = nil
           end
         end
 
@@ -75,12 +94,25 @@ module HTTPX
           return super if @skip_auth_header_value || request.authorized?
 
           auth_header_value = @auth_header_value_mtx.synchronize do
-            @auth_header_value ||= generate_auth_token
+            try_invalidate_auth_header_value
+
+            @auth_header_value ||= begin
+              set_auth_header_expires_at(request)
+              generate_auth_token
+            end
           end
 
           request.authorize(auth_header_value) if auth_header_value
 
           super
+        end
+
+        def try_invalidate_auth_header_value
+          return unless (expires_at = @auth_header_expires_at)
+
+          return if expires_at > Time.now.utc.to_i
+
+          @auth_header_value = @auth_header_expires_at = nil
         end
 
         def generate_auth_token
@@ -89,6 +121,19 @@ module HTTPX
           auth_value = auth_value.call(self) if dynamic_auth_token?(auth_value)
 
           auth_value
+        end
+
+        def set_auth_header_expires_at(request)
+          @auth_header_expires_at = if (expires_in = request.options.auth_header_expires_in)
+            Time.now.to_i + expires_in
+          elsif (expires_at = request.options.auth_header_expires_at)
+            if expires_at.respond_to?(:call)
+              expires_at = expires_at.call(request).to_f
+              raise Error, "`:auth_header_expires_at` must be positive" unless expires_at.positive?
+
+              expires_at
+            end
+          end
         end
 
         def dynamic_auth_token?(auth_header_value)
@@ -150,7 +195,10 @@ module HTTPX
             # otherwise, it means that the first request already passed here, so this request should
             # use whatever was generated for it.
             @auth_header_value_mtx.synchronize do
-              @auth_header_value = generate_auth_token if request.auth_token_value == @auth_header_value
+              if request.auth_token_value == @auth_header_value
+                @auth_header_value = generate_auth_token
+                set_auth_header_expires_at(request)
+              end
             end
 
             request.unauthorize!

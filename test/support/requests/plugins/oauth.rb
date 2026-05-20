@@ -149,6 +149,23 @@ module Requests
         end
       end
 
+      def test_plugin_oauth_expires_in
+        with_oauth_metadata(expires_in: 1) do |server|
+          session = HTTPX.plugin(
+            :oauth,
+            oauth_options: {
+              issuer: server.origin,
+              client_id: "CLIENT_ID", client_secret: "SECRET", scope: "all"
+            }
+          )
+          oauth_session = session.send(:oauth_session)
+          token = oauth_session.fetch_access_token(session)
+          assert token == oauth_session.access_token
+          sleep(2)
+          assert oauth_session.access_token.nil?
+        end
+      end
+
       def test_plugin_oauth_retries_refresh_token_on_retry
         with_oauth_metadata do |server|
           session = HTTPX.plugin(:retries).plugin(
@@ -233,8 +250,8 @@ module Requests
 
       private
 
-      def with_oauth_metadata(metadata = {})
-        start_test_servlet(OAuthProviderServer) do |server|
+      def with_oauth_metadata(metadata = {}, **kwargs)
+        start_test_servlet(OAuthProviderServer, **kwargs) do |server|
           server.metadata.merge!(metadata)
           yield server
         end
