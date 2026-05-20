@@ -12,6 +12,7 @@ module HTTPX
     module OAuth
       class << self
         def load_dependencies(klass)
+          require "monitor"
           require_relative "auth/basic"
           klass.plugin(:auth)
         end
@@ -33,8 +34,6 @@ module HTTPX
       # Implements the bulk of functionality and maintains the state associated with the
       # management of the the lifecycle of an OAuth session.
       class OAuthSession
-        attr_reader :access_token, :refresh_token
-
         def initialize(
           issuer:,
           client_id:,
@@ -62,8 +61,8 @@ module HTTPX
           @refresh_token = refresh_token
           @token_endpoint_auth_method = String(token_endpoint_auth_method) if token_endpoint_auth_method
           @grant_type = grant_type || (@refresh_token ? "refresh_token" : "client_credentials")
-          @access_token = access_token
-          @refresh_token = refresh_token
+          @expires_at = nil
+          @token_mon = Monitor.new
 
           unless @token_endpoint_auth_method.nil? || SUPPORTED_AUTH_METHODS.include?(@token_endpoint_auth_method)
             raise Error, "#{@token_endpoint_auth_method} is not a supported auth method"
@@ -84,8 +83,24 @@ module HTTPX
           @token_endpoint_auth_method || "client_secret_basic"
         end
 
+        def expires_at
+          @token_mon.synchronize { @expires_at }
+        end
+
+        def access_token
+          @token_mon.synchronize do
+            if (expires_at = @expires_at) && expires_at < Time.now.to_i
+              reset!
+            end
+
+            @access_token
+          end
+        end
+
         def reset!
-          @access_token = nil
+          @token_mon.synchronize do
+            @access_token = @expires_at = nil
+          end
         end
 
         # when not available, it uses the +http+ object to request new access and refresh tokens.
@@ -117,9 +132,11 @@ module HTTPX
           when "client_credentials"
             # do nothing
           when "refresh_token"
-            raise Error, "cannot use the `\"refresh_token\"` grant type without a refresh token" unless refresh_token
+            ref_token = refresh_token
 
-            form_post["refresh_token"] = refresh_token
+            raise Error, "cannot use the `\"refresh_token\"` grant type without a refresh token" unless ref_token
+
+            form_post["refresh_token"] = ref_token
           end
 
           # POST /token
@@ -138,8 +155,13 @@ module HTTPX
 
           payload = token_response.json
 
-          @refresh_token = payload["refresh_token"] || @refresh_token
-          @access_token = payload["access_token"]
+          @token_mon.synchronize do
+            @refresh_token = payload.fetch("refresh_token", @refresh_token)
+            if (expires_in = payload["expires_in"])
+              @expires_at = Time.now.to_i + Integer(expires_in)
+            end
+            @access_token = payload["access_token"]
+          end
         end
 
         # TODO: remove this after deprecating the `:oauth_session` option
@@ -164,17 +186,23 @@ module HTTPX
 
         private
 
+        def refresh_token
+          @token_mon.synchronize { @refresh_token }
+        end
+
         # uses +http+ to fetch for the oauth server metadata.
         def load(http)
           return if @grant_type && @scope
 
           metadata = http.skip_auth_header { http.get("#{@issuer}/.well-known/oauth-authorization-server").raise_for_status.json }
 
-          @token_endpoint = metadata["token_endpoint"]
-          @scope = metadata["scopes_supported"]
-          @grant_type = Array(metadata["grant_types_supported"]).find { |gr| SUPPORTED_GRANT_TYPES.include?(gr) }
-          @token_endpoint_auth_method = Array(metadata["token_endpoint_auth_methods_supported"]).find do |am|
-            SUPPORTED_AUTH_METHODS.include?(am)
+          @token_mon.synchronize do
+            @token_endpoint = metadata["token_endpoint"]
+            @scope = metadata["scopes_supported"]
+            @grant_type = Array(metadata["grant_types_supported"]).find { |gr| SUPPORTED_GRANT_TYPES.include?(gr) }
+            @token_endpoint_auth_method = Array(metadata["token_endpoint_auth_methods_supported"]).find do |am|
+              SUPPORTED_AUTH_METHODS.include?(am)
+            end
           end
           nil
         end
@@ -239,6 +267,11 @@ module HTTPX
 
           @oauth_session.reset!
           @oauth_session.fetch_access_token(self)
+          if (expires_at = @oauth_session.expires_at)
+            @auth_header_value_mtx.synchronize do
+              @auth_header_expires_at = expires_at
+            end
+          end
         end
 
         # TODO: deprecate
@@ -249,7 +282,16 @@ module HTTPX
           other_session = dup # : instance
           oauth_session = other_session.oauth_session
           oauth_session.fetch_access_token(other_session)
+          if (expires_at = oauth_session.expires_at)
+            @auth_header_expires_at = expires_at
+          end
           other_session
+        end
+
+        def reset_auth_header_value!
+          super.tap do
+            @oauth_session.reset if @oauth_session
+          end
         end
 
         private
@@ -258,6 +300,16 @@ module HTTPX
           return unless @oauth_session
 
           @oauth_session.fetch_access_token(self)
+        end
+
+        def set_auth_header_expires_at(_)
+          return super unless @oauth_session
+
+          expires_at = @oauth_session.expires_at
+
+          return super unless expires_at
+
+          @auth_header_expires_at = expires_at
         end
 
         def dynamic_auth_token?(_)

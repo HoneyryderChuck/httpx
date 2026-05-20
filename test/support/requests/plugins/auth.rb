@@ -50,6 +50,52 @@ module Requests
         verify_header(body["headers"], "Authorization", "TOKEN2")
       end
 
+      def test_plugin_auth_reset_auth_value_expires_at
+        get_uri = build_uri("/get")
+        session = HTTPX.plugin(:auth, auth_header_expires_at: ->(_req) { Time.now.to_i + 2 })
+
+        i = 0
+        authed = session.authorization { "TOKEN#{i += 1}" }
+        2.times do
+          # proves that token is reused
+          response = authed.get(get_uri)
+          verify_status(response, 200)
+          body = json_body(response)
+          verify_header(body["headers"], "Authorization", "TOKEN1")
+        end
+
+        sleep 2
+
+        # proves that token is discarded
+        response = authed.get(get_uri)
+        verify_status(response, 200)
+        body = json_body(response)
+        verify_header(body["headers"], "Authorization", "TOKEN2")
+      end
+
+      def test_plugin_auth_reset_auth_value_expires_in
+        get_uri = build_uri("/get")
+        session = HTTPX.plugin(:auth, auth_header_expires_in: 2)
+
+        i = 0
+        authed = session.authorization { "TOKEN#{i += 1}" }
+        2.times do
+          # proves that token is reused
+          response = authed.get(get_uri)
+          verify_status(response, 200)
+          body = json_body(response)
+          verify_header(body["headers"], "Authorization", "TOKEN1")
+        end
+
+        sleep 2
+
+        # proves that token is discarded
+        response = authed.get(get_uri)
+        verify_status(response, 200)
+        body = json_body(response)
+        verify_header(body["headers"], "Authorization", "TOKEN2")
+      end
+
       def test_plugin_auth_generate_token_once_for_multi_request
         get_uri = build_uri("/get")
         authed = HTTPX.plugin(:auth)
