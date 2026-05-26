@@ -33,6 +33,7 @@ class HTTPTest < Minitest::Test
   include Plugins::AWSAuthentication
   include Plugins::Upgrade
   include Plugins::GRPC if RUBY_ENGINE == "ruby"
+  include Plugins::Cache
   include Plugins::ResponseCache
   include Plugins::CircuitBreaker
   include Plugins::WebDav

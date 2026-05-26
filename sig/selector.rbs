@@ -44,7 +44,7 @@ module HTTPX
 
     def terminate: () -> void
 
-    def find_resolver: (Options options) ->  Resolver::Multi?
+    def find_resolver: (Options options) -> Resolver::Resolver?
 
     def find_connection: (http_uri request_uri, Options options) -> Connection?
 

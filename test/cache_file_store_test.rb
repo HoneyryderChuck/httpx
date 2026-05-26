@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require_relative "test_helper"
-require "httpx/plugins/response_cache/file_store"
+require "httpx/plugins/cache/file_store"
 
-class ResponseCacheFileStoreTest < Minitest::Test
+class CacheFileStoreTest < Minitest::Test
   include ResponseCacheStoreTests
 
   def test_internal_store_set
@@ -27,6 +27,6 @@ class ResponseCacheFileStoreTest < Minitest::Test
   def init_store
     tmpdir = Pathname.new(Dir.tmpdir).join(SecureRandom.alphanumeric)
     FileUtils.mkdir_p(tmpdir)
-    HTTPX::Plugins::ResponseCache::FileStore.new(tmpdir)
+    HTTPX::Plugins::Cache::FileStore.new(tmpdir)
   end
 end

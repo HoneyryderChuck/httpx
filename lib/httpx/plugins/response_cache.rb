@@ -3,7 +3,8 @@
 module HTTPX
   module Plugins
     #
-    # This plugin adds support for retrying requests when certain errors happen.
+    # This plugin caches and reuses responses based on HTTP caching directives defined by
+    # the [HTTP Caching RFC](https://www.rfc-editor.org/rfc/rfc9111.html)
     #
     # https://gitlab.com/os85/httpx/wikis/Response-Cache
     #
@@ -15,9 +16,8 @@ module HTTPX
       private_constant :CACHEABLE_STATUS_CODES
 
       class << self
-        def load_dependencies(*)
-          require_relative "response_cache/store"
-          require_relative "response_cache/file_store"
+        def load_dependencies(klass)
+          klass.plugin(:cache)
         end
 
         # whether the +response+ can be stored in the response cache.
@@ -47,7 +47,6 @@ module HTTPX
         def extra_options(options)
           options.merge(
             supported_vary_headers: SUPPORTED_VARY_HEADERS,
-            response_cache_store: :store,
           )
         end
       end
@@ -56,29 +55,9 @@ module HTTPX
       #
       # :supported_vary_headers :: array of header values that will be considered for a "vary" header based cache validation
       #                            (defaults to {SUPPORTED_VARY_HEADERS}).
-      # :response_cache_store :: object where cached responses are fetch from or stored in; defaults to <tt>:store</tt> (in-memory
-      #                          cache), can be set to <tt>:file_store</tt> (file system cache store) as well, or any object which
-      #                          abides by the Cache Store Interface
-      #
-      # The Cache Store Interface requires implementation of the following methods:
-      #
-      # * +#get(request) -> response or nil+
-      # * +#set(request, response) -> void+
-      # * +#clear() -> void+)
       #
       module OptionsMethods
         private
-
-        def option_response_cache_store(value)
-          case value
-          when :store
-            Store.new
-          when :file_store
-            FileStore.new
-          else
-            value
-          end
-        end
 
         def option_supported_vary_headers(value)
           Array(value).sort
@@ -86,27 +65,7 @@ module HTTPX
       end
 
       module InstanceMethods
-        # wipes out all cached responses from the cache store.
-        def clear_response_cache
-          @options.response_cache_store.clear
-        end
-
-        def build_request(*)
-          request = super
-          return request unless cacheable_request?(request)
-
-          prepare_cache(request)
-
-          request
-        end
-
         private
-
-        def send_request(request, *)
-          return request if request.response
-
-          super
-        end
 
         def fetch_response(request, *)
           response = super
@@ -117,11 +76,7 @@ module HTTPX
             log { "returning cached response for #{request.uri}" }
 
             response.copy_from_cached!
-          elsif request.cacheable_verb? && ResponseCache.cacheable_response?(response)
-            unless response.cached?
-              log { "caching response for #{request.uri}..." }
-              request.options.response_cache_store.set(request, response)
-            end
+
           end
 
           response
@@ -130,21 +85,13 @@ module HTTPX
         # will either assign a still-fresh cached response to +request+, or set up its HTTP
         # cache invalidation headers in case it's not fresh anymore.
         def prepare_cache(request)
-          cached_response = request.options.response_cache_store.get(request)
+          super
+
+          return if request.response # already cached
+
+          cached_response = retrieve_cached_response(request)
 
           return unless cached_response && match_by_vary?(request, cached_response)
-
-          cached_response.body.rewind
-
-          if cached_response.fresh?
-            cached_response = cached_response.dup
-            cached_response.mark_as_cached!
-            request.response = cached_response
-            request.emit_response(cached_response)
-            return
-          end
-
-          request.cached_response = cached_response
 
           if !request.headers.key?("if-modified-since") && (last_modified = cached_response.headers["last-modified"])
             request.headers.add("if-modified-since", last_modified)
@@ -156,20 +103,31 @@ module HTTPX
         end
 
         def cacheable_request?(request)
-          request.cacheable_verb? &&
+          (
+            request.cacheable_verb? &&
             (
               !request.headers.key?("cache-control") || !request.headers.get("cache-control").include?("no-store")
             )
+          ) || super
         end
 
-        # whether the +response+ complies with the directives set by the +request+ "vary" header
+        def cacheable_response?(_, response)
+          ResponseCache.cacheable_response?(response) || super
+        end
+
+        # +cached_response+ is still valid if it's still fresh
+        def valid_cached_response?(_, cached_response)
+          cached_response.fresh?
+        end
+
+        # whether the +cached_response+ complies with the directives set by the +request+ "vary" header
         # (true when none is available).
-        def match_by_vary?(request, response)
-          vary = response.vary
+        def match_by_vary?(request, cached_response)
+          vary = cached_response.vary
 
           return true unless vary
 
-          original_request = response.original_request
+          original_request = cached_response.original_request
 
           if vary == %w[*]
             request.options.supported_vary_headers.each do |field|
@@ -186,19 +144,6 @@ module HTTPX
       end
 
       module RequestMethods
-        # points to a previously cached Response corresponding to this request.
-        attr_accessor :cached_response
-
-        def initialize(*)
-          super
-          @cached_response = nil
-        end
-
-        def merge_headers(*)
-          super
-          @response_cache_key = nil
-        end
-
         # returns whether this request is cacheable as per HTTP caching rules.
         def cacheable_verb?
           CACHEABLE_VERBS.include?(@verb)
@@ -220,27 +165,11 @@ module HTTPX
       end
 
       module ResponseMethods
-        attr_writer :original_request, :revalidated_at
+        attr_writer :revalidated_at
 
         def initialize(*)
           super
-          @cached = false
           @revalidated_at = nil
-        end
-
-        # a copy of the request this response was originally cached from
-        def original_request
-          @original_request || @request
-        end
-
-        # whether this Response was duplicated from a previously {RequestMethods#cached_response}.
-        def cached?
-          @cached
-        end
-
-        # sets this Response as being duplicated from a previously cached response.
-        def mark_as_cached!
-          @cached = true
         end
 
         # eager-copies the response headers and body from {RequestMethods#cached_response}.
@@ -331,14 +260,6 @@ module HTTPX
           @date ||= Time.httpdate(@headers["date"])
         rescue NoMethodError, ArgumentError
           Time.now
-        end
-      end
-
-      module ResponseBodyMethods
-        def decode_chunk(chunk)
-          return chunk if @response.cached?
-
-          super
         end
       end
     end

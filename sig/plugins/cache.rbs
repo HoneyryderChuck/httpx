@@ -1,0 +1,69 @@
+module HTTPX
+  module Plugins
+    module Cache
+      interface _CacheStore
+        def get: (cacheRequest request) -> cacheResponse?
+
+        def set: (cacheRequest request, cacheResponse response) -> void
+
+        def clear: () -> void
+      end
+
+      interface _CacheOptions
+        def cache_key: () -> String?
+
+        def cacheable_request: () -> ^(cacheRequest request) -> boolish
+
+        def cacheable_response: () -> ^(cacheRequest request, cacheResponse response) -> boolish
+
+        def valid_cached_response: () -> ^(cacheRequest request, cacheResponse response) -> boolish
+
+         def response_cache_store: () -> Store
+      end
+
+      module InstanceMethods
+        def clear_response_cache: () -> void
+
+        private
+
+        def cacheable_request?: (cacheRequest request) -> boolish
+
+        def cacheable_response?: (cacheRequest request, cacheResponse response) -> boolish
+
+        def valid_cached_response?: (cacheRequest request, cacheResponse cached_response) -> boolish
+
+        def prepare_cache: (cacheRequest request) -> void
+
+        def retrieve_cached_response: (cacheRequest request) -> cacheResponse?
+      end
+
+      module RequestMethods
+        attr_accessor cached_response: cacheResponse?
+        attr_reader options: cacheOptions
+
+        def response_cache_key: () -> String?
+      end
+
+      module ResponseMethods
+        attr_writer original_request: cacheRequest
+
+        @cached: bool
+
+        def original_request: () -> cacheRequest?
+
+        def cached?: () -> bool
+
+        def mark_as_cached!: () -> void
+      end
+
+
+      type cacheOptions = Options & _CacheOptions
+
+      type cacheRequest = Request & RequestMethods
+
+      type cacheResponse = Response & ResponseMethods
+    end
+
+    type sessionCache = Session & Cache::InstanceMethods
+  end
+end

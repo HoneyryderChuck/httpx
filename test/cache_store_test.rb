@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require_relative "test_helper"
-require "httpx/plugins/response_cache/store"
+require "httpx/plugins/cache/store"
 
-class ResponseCacheStoreTest < Minitest::Test
+class CacheStoreTest < Minitest::Test
   include ResponseCacheStoreTests
 
   def test_internal_store_set
@@ -30,6 +30,6 @@ class ResponseCacheStoreTest < Minitest::Test
   private
 
   def init_store
-    Plugins::ResponseCache::Store.new
+    Plugins::Cache::Store.new
   end
 end
