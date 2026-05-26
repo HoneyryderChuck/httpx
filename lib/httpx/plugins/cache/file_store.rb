@@ -3,7 +3,7 @@
 require "pathname"
 
 module HTTPX::Plugins
-  module ResponseCache
+  module Cache
     # Implementation of a file system based cache store.
     #
     # It stores cached responses in a file under a directory pointed by the +dir+

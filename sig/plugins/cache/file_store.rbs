@@ -1,12 +1,12 @@
 module HTTPX
   module Plugins
-    module ResponseCache
+    module Cache
       class FileStore
         CRLF: String
 
         @dir: Pathname
 
-        include _ResponseCacheStore
+        include _CacheStore
 
         def initialize: (?path dir) -> void
 

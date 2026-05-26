@@ -15,8 +15,10 @@ module HTTPX
       SUPPORTED_AUTH_METHODS: ::Array[token_auth_method]
 
       class OAuthSession
-        @access_token: String?
-        @@refresh_token_token: String?
+        attr_reader access_token: String?
+
+        attr_reader refresh_token: String?
+
         @issuer: http_uri
         @grant_type: grant_type
         @client_id: String
@@ -25,8 +27,6 @@ module HTTPX
         @scope: Array[String]?
         @audience: String?
         @token_endpoint_auth_method: String?
-        @expires_at: Float?
-        @token_mon: Monitor
 
         def initialize: (
           issuer: uri,
@@ -41,10 +41,6 @@ module HTTPX
           ?audience: ::String
         ) -> void
 
-        def access_token: () -> String?
-
-        def expires_at: () -> Integer?
-
         def token_endpoint: () -> uri
 
         def token_endpoint_auth_method: () -> String
@@ -57,7 +53,6 @@ module HTTPX
 
         private
 
-        def refresh_token: () -> String?
 
         def load: (sessionOAuth http) -> void
       end

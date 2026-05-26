@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module HTTPX::Plugins
-  module ResponseCache
+  module Cache
     # Implementation of a thread-safe in-memory cache store.
     class Store
       def initialize

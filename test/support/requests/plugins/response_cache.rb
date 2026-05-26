@@ -7,9 +7,9 @@ module Requests
     module ResponseCache
       def test_plugin_response_cache_options
         cache_client = HTTPX.plugin(:response_cache, response_cache_store: :store)
-        assert cache_client.class.default_options.response_cache_store.is_a?(HTTPX::Plugins::ResponseCache::Store)
+        assert cache_client.class.default_options.response_cache_store.is_a?(HTTPX::Plugins::Cache::Store)
         cache_client = HTTPX.plugin(:response_cache, response_cache_store: :file_store)
-        assert cache_client.class.default_options.response_cache_store.is_a?(HTTPX::Plugins::ResponseCache::FileStore)
+        assert cache_client.class.default_options.response_cache_store.is_a?(HTTPX::Plugins::Cache::FileStore)
       end
 
       def test_plugin_response_cache_etag

@@ -42,13 +42,13 @@ module ResponseCacheStoreTests
 
   def test_store_prepare_maxage
     request = make_request("GET", "http://prepare-maxage/")
-    response = cached_response(request, extra_headers: { "cache-control" => "max-age=2" })
+    response = cached_response(request, extra_headers: { "cache-control" => "max-age=3" })
     assert request.response.nil?
 
     prepare(request)
     assert request.response,
            "expected cached response (" \
-           "request-headers:#{request.headers.to_hash}" \
+           "request-headers:#{request.headers.to_hash}, " \
            "vary:#{response.vary}, " \
            "supported-vary-headers:#{request.options.supported_vary_headers}, " \
            "cache-control:#{response.cache_control}, " \
@@ -170,7 +170,7 @@ module ResponseCacheStoreTests
   end
 
   def options_class
-    @options_class ||= response_cache_session_optionsoptions_class
+    @options_class ||= response_cache_session_options.options_class
   end
 
   def response_cache_session_options

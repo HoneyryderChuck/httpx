@@ -5,72 +5,47 @@ module HTTPX
       CACHEABLE_STATUS_CODES: Array[Integer]
       SUPPORTED_VARY_HEADERS: Array[String]
 
-      def self?.cacheable_response?: (::HTTPX::ErrorResponse | cacheResponse response) -> bool
+      def self?.cacheable_response?: (::HTTPX::ErrorResponse | responseCacheResponse response) -> bool
 
       def self?.not_modified?: (response response) -> bool
 
       interface _ResponseCacheOptions
-        def response_cache_store: () -> Store
-
         def supported_vary_headers: () -> Array[String]
       end
 
-      interface _ResponseCacheStore
-        def get: (cacheRequest request) -> cacheResponse?
-
-        def set: (cacheRequest request, cacheResponse response) -> void
-
-        def clear: () -> void
-      end
-
       module InstanceMethods
-        @response_cache: Store
-
-        def clear_response_cache: () -> void
-
         private
 
-        def prepare_cache: (cacheRequest request) -> void
-
-        def cacheable_request?: (cacheRequest request) -> bool
-
-        def match_by_vary?: (cacheRequest request, cacheResponse response) -> bool
+        def match_by_vary?: (responseCacheRequest request, responseCacheResponse response) -> bool
       end
 
       module RequestMethods
-        attr_accessor cached_response: cacheResponse?
-        attr_reader options: cacheOptions
+        attr_accessor cached_response: responseCacheResponse?
+        attr_reader options: responseCacheOptions
 
         @response_cache_key: String
 
-        def response_cache_key: () -> String
+        private
 
         def cacheable_verb?: () -> bool
       end
 
       module ResponseMethods
-        attr_writer original_request: cacheRequest
-
         attr_writer revalidated_at: Time
 
-        @cached: bool
         @cache_control: Array[String]?
+
         @vary: Array[String]?
+
         @date: Time?
-
-        def original_request: () -> cacheRequest?
-
-        def cached?: () -> bool
-
-        def mark_as_cached!: () -> void
 
         def copy_from_cached!: () -> void
 
         def fresh?: () -> bool
 
-         %a{pure} def cache_control: () -> Array[String]?
+        %a{pure} def cache_control: () -> Array[String]?
 
-         %a{pure} def vary: () -> Array[String]?
+        %a{pure} def vary: () -> Array[String]?
 
         private
 
@@ -80,13 +55,13 @@ module HTTPX
       end
 
 
-      type cacheOptions = Options & _ResponseCacheOptions
+      type responseCacheOptions = Options & Cache::_CacheOptions & _ResponseCacheOptions
 
-      type cacheRequest = Request & RequestMethods
+      type responseCacheRequest = Request & Cache::RequestMethods & RequestMethods
 
-      type cacheResponse = Response & ResponseMethods
+      type responseCacheResponse = Response & Cache::ResponseMethods & ResponseMethods
     end
 
-    type sessionResponseCache = Session & ResponseCache::InstanceMethods
+    type sessionResponseCache = Session & Cache::InstanceMethods & ResponseCache::InstanceMethods
   end
 end

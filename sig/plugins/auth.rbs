@@ -7,17 +7,10 @@ module HTTPX
         def auth_header_value: () -> auth_header_value_type?
 
         def auth_header_type: () -> String?
-
-        def auth_header_expires_at: () -> (^(Request & RequestMethods request) -> (Time | _ToF) | _ToF)?
-
-        def auth_header_expires_in: () -> _ToF?
-
-        def generate_auth_value_on_retry: () -> ^(Response response) -> boolish
       end
 
       module InstanceMethods
         @auth_header_value: String?
-        @auth_header_expires_at: Float?
         @auth_header_value_mtx: Thread::Mutex
         @skip_auth_header_value: bool
 
@@ -31,11 +24,7 @@ module HTTPX
 
         private
 
-        def try_invalidate_auth_header_value: () -> void
-
         def generate_auth_token: () -> String?
-
-        def set_auth_header_expires_at: (Request & RequestMethods request) -> void
 
         def dynamic_auth_token?: (auth_header_value_type auth_header_value) -> boolish
       end
