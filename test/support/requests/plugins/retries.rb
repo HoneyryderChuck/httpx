@@ -169,7 +169,7 @@ module Requests
         total_time = after_time - before_time
 
         verify_error_response(retries_response, HTTPX::RequestTimeoutError)
-        verify_execution_delta(3 + 3 + 2 + 3 + 4, total_time, 1)
+        verify_execution_delta(3 + 3 + 1 + 3 + 1, total_time, 1)
       end
 
       def test_plugin_retries_retry_after_callable

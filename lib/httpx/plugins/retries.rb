@@ -53,16 +53,18 @@ module HTTPX
           end
         end
 
-        # returns the time to wait before resending +request+ as per the polynomial backoff retry strategy.
+        # returns the time to wait before resending +request+ as per the polynomial backoff retry strategy,
+        # where base is 1 and exponent is 2.
         def retry_after_polynomial_backoff(request, _)
           offset = request.options.max_retries - request.retries
-          2 * (offset - 1)
+          1 * (offset - 1) ** 2
         end
 
-        # returns the time to wait before resending +request+ as per the exponential backoff retry strategy.
+        # returns the time to wait before resending +request+ as per the exponential backoff retry strategy,
+        # where base is 2
         def retry_after_exponential_backoff(request, _)
           offset = request.options.max_retries - request.retries
-          (offset - 1) * 2
+          2 ** (offset - 1)
         end
       end
 
