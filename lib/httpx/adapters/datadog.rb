@@ -15,8 +15,10 @@ module Datadog::Tracing
 
       TAG_BASE_SERVICE = if Gem::Version.new(DATADOG_VERSION::STRING) < Gem::Version.new("1.15.0")
         "_dd.base_service"
-      else
+      elsif Gem::Version.new(DATADOG_VERSION::STRING) < Gem::Version.new("2.34.0")
         Datadog::Tracing::Contrib::Ext::Metadata::TAG_BASE_SERVICE
+      else
+        Datadog::Tracing::Metadata::Ext::TAG_BASE_SERVICE
       end
       TAG_PEER_HOSTNAME = Datadog::Tracing::Metadata::Ext::TAG_PEER_HOSTNAME
       TAG_PEER_SERVICE = Datadog::Tracing::Metadata::Ext::TAG_PEER_SERVICE
