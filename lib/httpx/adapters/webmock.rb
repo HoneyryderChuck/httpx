@@ -130,12 +130,12 @@ module WebMock
             request.transition(:body)
             request.transition(:trailers)
             request.transition(:done)
+            response << mock_response.body.dup unless response.is_a?(HTTPX::ErrorResponse)
             response.finish!
             request.response = response
             request.emit_response(response)
             request_signature.headers = request.headers.to_h
 
-            response << mock_response.body.dup unless response.is_a?(HTTPX::ErrorResponse)
           elsif WebMock.net_connect_allowed?(request_signature.uri)
             if WebMock::CallbackRegistry.any_callbacks?
               request.on(:response) do |resp|
