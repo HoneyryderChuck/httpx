@@ -397,6 +397,25 @@ class WebmockTest < Minitest::Test
     assert_requested(request)
   end
 
+  def test_webmock_with_callbacks_plugin_response_completed
+    request = stub_request(:get, MOCK_URL_HTTP).to_return(body: "body")
+
+    body_in_callback = nil
+
+    session = HTTPX.plugin(:callbacks).on_response_completed do |_req, resp|
+      body_in_callback = resp.body.to_s
+    end
+
+    response = session.get(MOCK_URL_HTTP)
+    verify_status(response, 200)
+
+    # the body must already be populated by the time on_response_completed fires,
+    # i.e. before the mocked response is finalized/emitted (regression test for
+    # the webmock adapter writing the body after emitting the :response event).
+    assert_equal("body", body_in_callback)
+    assert_requested(request)
+  end
+
   private
 
   def assert_raise_with_message(e, message, &block)
