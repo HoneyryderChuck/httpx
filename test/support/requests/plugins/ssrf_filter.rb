@@ -27,6 +27,21 @@ module Requests
         verify_error_response(response, HTTPX::ServerSideRequestForgeryError)
       end
 
+      def test_plugin_ssrf_filter_extra_unsafe_ranges
+        # Intentionally blocking IP addresses resolved from nghttp2.org, which normally works
+        session = HTTPX.plugin(:ssrf_filter, extra_unsafe_ranges: Resolv.getaddresses("nghttp2.org"))
+        response = session.get("#{scheme}nghttp2.org")
+        verify_error_response(response, HTTPX::ServerSideRequestForgeryError)
+      end
+
+      def test_plugin_ssrf_filter_safe_private_ranges
+        session = HTTPX.plugin(:ssrf_filter, safe_private_ranges: ["127.0.0.1", "::1"])
+        response = session.get("#{scheme}localhost/get")
+
+        # connection error means that a connection was attempted, not blocked by SSRF filtering
+        verify_error_response(response, HTTPX::ConnectionError)
+      end
+
       def test_plugin_ssrf_filter_aws_metadata_endpoint
         session = HTTPX.plugin(:ssrf_filter)
         response = session.get("#{scheme}169.254.169.254/latest/meta-data")

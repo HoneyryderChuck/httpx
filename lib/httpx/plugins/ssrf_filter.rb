@@ -90,11 +90,21 @@ module HTTPX
       # adds support for the following options:
       #
       # :allowed_schemes :: list of URI schemes allowed (defaults to <tt>["https", "http"]</tt>)
+      # :extra_unsafe_ranges :: A list of IP ranges (or addresses) that will be filtered, in addition to the defaults
+      # :safe_private_ranges :: A list of IP ranges (or addresses) that will not be filtered, even if they'd be filtered by default
       module OptionsMethods
         private
 
         def option_allowed_schemes(value)
           Array(value)
+        end
+
+        def option_extra_unsafe_ranges(value)
+          Array(value).map { |v| v.is_a?(IPAddr) ? v : IPAddr.new(v) }
+        end
+
+        def option_safe_private_ranges(value)
+          Array(value).map { |v| v.is_a?(IPAddr) ? v : IPAddr.new(v) }
         end
       end
 
@@ -132,7 +142,13 @@ module HTTPX
         end
 
         def addresses=(addrs)
-          addrs.reject!(&SsrfFilter.method(:unsafe_ip_address?))
+          addrs.reject! do |ipaddr|
+            next false if @options.safe_private_ranges&.any? { |r| r.include?(ipaddr) }
+
+            SsrfFilter.unsafe_ip_address?(ipaddr) || (
+              @options.extra_unsafe_ranges&.any? { |r| r.include?(ipaddr) }
+            )
+          end
 
           raise ServerSideRequestForgeryError, "#{@origin.host} has no public IP addresses" if addrs.empty?
 

@@ -12,6 +12,10 @@ module HTTPX
 
       interface _Options
         def allowed_schemes: () -> Array[String]
+
+        def extra_unsafe_ranges: () -> Array[IPAddr]?
+
+        def safe_private_ranges: () -> Array[IPAddr]?
       end
 
       module InstanceMethods
