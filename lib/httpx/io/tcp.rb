@@ -194,9 +194,7 @@ module HTTPX
         # ensure that all :closed IOs don't leave dangling sockets
         # behind. This may happen in a fiber scheduler scenario where
         # connection is reused across fibers.
-        return unless @io.closed?
-
-        transition(:closed)
+        transition(:closed) if @io.closed?
       end
     end
 

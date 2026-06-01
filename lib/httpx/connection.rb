@@ -446,6 +446,8 @@ module HTTPX
         if @timeout
           @timeout -= error.timeout
           return unless @timeout <= 0
+
+          @timeout = nil
         end
 
         error = error.to_connection_error if connecting?
