@@ -222,10 +222,27 @@ module HTTPX
 
         consume
       when :closed
-        return
+        return if @pending.empty?
+
+        # there are pending requests to send, restart the state machine.
+        idling
+
+        # @fiber-switch-guard
+        # fiber may have switch after ensuring that @io is closed.
+        return unless @state == :idle
+
+        call
       when :closing
         consume
         transition(:closed)
+
+        # @fiber-switch-guard
+        # fiber may have switch while closing @io.
+        return if @state == :closed &&
+                  # only remain here if there are pending requests.
+                  @pending.empty?
+
+        call
       when :open
         consume
       end
@@ -251,7 +268,12 @@ module HTTPX
       case @state
       when :idle
         purge_after_closed
-        disconnect
+
+        # @fiber-switch-guard
+        if @io.can_disconnect? && @pending.empty?
+          disconnect
+          return
+        end
       when :closed
         @connected_at = nil
       end
@@ -341,6 +363,9 @@ module HTTPX
 
     def idling
       purge_after_closed
+
+      return unless @state == :closed
+
       @write_buffer.clear
       transition(:idle)
       return unless @parser
@@ -421,6 +446,8 @@ module HTTPX
         if @timeout
           @timeout -= error.timeout
           return unless @timeout <= 0
+
+          @timeout = nil
         end
 
         error = error.to_connection_error if connecting?
@@ -660,7 +687,12 @@ module HTTPX
         @exhausted = true
         parser.close
 
+        # @fiber-switch-guard
+        # fiber may have switched while closing @io, check whether still in the exhausted loop.
+        next unless @exhausted
+
         idling
+
         @exhausted = false
       end
       parser.on(:origin) do |origin|
@@ -676,6 +708,9 @@ module HTTPX
         enqueue_pending_requests_from_parser(parser)
 
         reset
+
+        next unless @state == :closed
+
         # :reset event only fired in http/1.1, so this guarantees
         # that the connection will be closed here.
         idling unless @pending.empty?
@@ -766,6 +801,9 @@ module HTTPX
         return unless @write_buffer.empty?
 
         purge_after_closed
+
+        # @fiber-switch-guard
+        return unless @state == :closing && (@io.nil? || @io.can_disconnect?)
       when :already_open
         nextstate = :open
         # the first check for given io readiness must still use a timeout.
@@ -833,7 +871,15 @@ module HTTPX
     end
 
     def purge_after_closed
-      @io.close if @io
+      if @io
+        @io.close
+
+        # @fiber-switch-guard
+        # due to fiber scheduler, multiple fibers may be listening on the same connection
+        # and moving the state machine forward; in such cases, when the control flow reaches
+        # this line, the io object may not be closed anymore.
+        return unless @io&.can_disconnect?
+      end
       @read_buffer.clear
       @timeout = nil
     end

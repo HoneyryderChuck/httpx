@@ -134,7 +134,13 @@ module HTTPX
       # the connections to be reaped (such as the total timeout error) before #select
       # gets called.
       if @selectables.empty?
-        sleep(interval) if interval
+        begin
+          sleep(interval)
+        rescue IOError
+          # @fiber-switch-guard
+          # in a fiber scheduler scenario, IOs may be closed by the scheduler and raised in a separate fiber
+          # on wakeup, which includes a sleep call.
+        end if interval
         return
       end
 
