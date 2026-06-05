@@ -143,6 +143,7 @@ module HTTPX
 
         def addresses=(addrs)
           addrs.reject! do |ipaddr|
+            ipaddr = ipaddr.address
             next false if @options.safe_private_ranges&.any? { |r| r.include?(ipaddr) }
 
             SsrfFilter.unsafe_ip_address?(ipaddr) || @options.extra_unsafe_ranges&.any? { |r| r.include?(ipaddr) }
