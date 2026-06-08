@@ -46,8 +46,8 @@ module HTTPX
       end
     end
 
-    def each_line
-      return enum_for(__method__) unless block_given?
+    def each_line(&block)
+      return enum_for(__method__) unless block
 
       line = "".b
 
@@ -55,7 +55,11 @@ module HTTPX
         line << chunk
 
         while (idx = line.index("\n"))
-          yield line.byteslice(0..(idx - 1))
+          if idx.zero?
+            yield ""
+          else
+            yield line.byteslice(0..(idx - 1))
+          end
 
           line = line.byteslice((idx + 1)..-1)
         end

@@ -115,6 +115,8 @@ class TestHTTP2Server
         handle_connection(conn, sock)
 
         @conns[sock] = conn
+
+        handle_socket(sock)
       end
     end
   rescue StandardError => e

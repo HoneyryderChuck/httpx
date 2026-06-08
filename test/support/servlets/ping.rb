@@ -11,10 +11,20 @@ class DelayedPingServer < TestHTTP2Server
   def handle_connection(conn, sock)
     super
     conn.on(:frame_received) do |frame|
-      if frame[:type] == :ping && !frame[:flags].anybits?(HTTP2::ACK)
+      if ping_frame?(frame)
         # received ping from client
         sleep @ping_delay
       end
+    end
+  end
+
+  if HTTP2::VERSION >= "1.3.0"
+    def ping_frame?(frame)
+      frame[:type] == :ping && !frame[:flags].anybits?(HTTP2::ACK)
+    end
+  else
+    def ping_frame?(frame)
+      frame[:type] == :ping && !frame[:flags].include?(:ack)
     end
   end
 end
