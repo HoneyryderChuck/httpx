@@ -45,6 +45,34 @@ module Requests
         end
       end
 
+      def test_plugin_tracing_retries_with_delayed_ping
+        start_test_servlet(DelayedPingServer, ping_delay: 2) do |server|
+          uri = "#{server.origin}/"
+          HTTPX.plugin(RequestInspector)
+               .plugin(:retries)
+               .plugin(:tracing, tracer: test_tracer)
+               .with(timeout: { keep_alive_timeout: 1 }, ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE,
+                                                                verify_hostname: false }).wrap do |http|
+            response1 = http.get(uri)
+            sleep 2
+            response2 = http.get(uri)
+            sleep 2
+            response3 = http.get(uri)
+
+            verify_status(response1, 200)
+            verify_status(response2, 200)
+            verify_status(response3, 200)
+
+            assert test_tracer.total_times.size == 3
+            test_tracer.total_times.each_value.with_index do |times, idx|
+              next unless idx.positive?
+
+              assert_in_delta(2, times.first, 2, "expected all requests to have taken 2 seconds to ping")
+            end
+          end
+        end
+      end
+
       def test_plugin_tracing_merge_tracers
         tracer1 = TestTracer.new
         tracer2 = TestTracer.new
@@ -81,7 +109,7 @@ module Requests
       end
 
       class TestTracer
-        attr_reader :requests, :started, :finished, :errored, :reset_times
+        attr_reader :requests, :started, :finished, :errored, :reset_times, :total_times
 
         def initialize(enabled = true)
           @enabled = enabled
@@ -90,6 +118,8 @@ module Requests
           @finished = Hash.new(0)
           @errored = Hash.new(0)
           @reset_times = Hash.new { |hs, k| hs[k] = [] }
+          @started_at = {}
+          @total_times = Hash.new { |hs, k| hs[k] = [] }
         end
 
         def enabled?(_)
@@ -99,6 +129,7 @@ module Requests
         def start(request)
           @requests << request
           @started[request] += 1
+          @started_at[request] = Time.now
         end
 
         def reset(request)
@@ -107,6 +138,7 @@ module Requests
 
         def finish(request, _response)
           @finished[request] += 1
+          @total_times[request] << (Time.now - @started_at[request])
         end
       end
     end

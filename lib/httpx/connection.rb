@@ -341,7 +341,7 @@ module HTTPX
           @pending << request
           transition(:active) if @state == :inactive
           request.ping!
-          ping
+          ping(request)
           return
         end
 
@@ -952,7 +952,7 @@ module HTTPX
       end
     end
 
-    def ping
+    def ping(_request)
       return if parser.waiting_for_ping?
 
       parser.ping

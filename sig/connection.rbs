@@ -157,7 +157,7 @@ module HTTPX
 
     def build_socket: (?Array[Resolver::Entry]? addrs) -> (TCP | SSL | UNIX)
 
-    def ping: () -> void
+    def ping: (Request request) -> void
 
     def pong: () -> void
 
