@@ -9,7 +9,7 @@ class HTTP1ParserTest < Minitest::Test
     attr_reader :response, :parser
 
     def initialize
-      @parser = Parser::HTTP1.new(self)
+      @parser = Parser::HTTP1.new(self, 1000, nil)
     end
 
     def on_headers(h)

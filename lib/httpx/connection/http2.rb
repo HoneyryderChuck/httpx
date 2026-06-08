@@ -314,7 +314,21 @@ module HTTPX
       end
       _, status = h.shift
       headers = request.options.headers_class.new(h)
+
+      raise HTTPX::Error, "maximum number of response headers exceeded" if h.size > @options.max_response_headers
+
+      if (max_header_value_size = @options.max_response_header_value_size)
+        headers.each do |_, v| # rubocop:disable Style/HashEachMethods
+          raise HTTPX::Error, "maximum header value size exceeded" if v.size > max_header_value_size
+        end
+      end
+
       response = request.options.response_class.new(request, status, "2.0", headers)
+
+      if response.content_length && response.content_length > request.options.max_response_body_size
+        raise HTTPX::Error.new, "maximum response body size exceeded"
+      end
+
       request.response = response
       @streams[request] = stream
 

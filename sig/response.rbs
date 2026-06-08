@@ -27,6 +27,7 @@ module HTTPX
     @options: Options
     @request: Request
     @content_type: ContentType
+    @content_length: Integer?
     @finished: bool
 
     def copy_to: (_ToPath | _Writer destination) -> void
@@ -42,6 +43,8 @@ module HTTPX
     def bodyless?: () -> bool
 
     def content_type: () -> ContentType
+
+    def content_length: () -> Integer?
 
     def complete?: () -> bool
 

@@ -6,6 +6,7 @@ class HTTPSTest < Minitest::Test
   include HTTPHelpers
   include Requests
   include Get
+  include Limits
   include Compression
   include Head
   include WithBody

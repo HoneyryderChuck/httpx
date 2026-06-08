@@ -81,6 +81,12 @@ module HTTPX
     #             <tt>:operation_timeout</tt>, <tt>:keep_alive_timeout</tt>,  <tt>:read_timeout</tt>,  <tt>:write_timeout</tt>,
     #             <tt>:request_timeout</tt> and <tt>:total_request_timeout</tt>
     # :headers :: hash of HTTP headers (ex: <tt>{ "x-custom-foo" => "bar" }</tt>)
+    # :max_response_body_size :: maximum size (in bytes) that the response body can consume (no threshold by default), after which an
+    #                            error is raised.
+    # :max_response_headers :: maximum number of header fields that a response can receive, after which an error is raised.
+    # :max_response_header_value_size :: maximum size (in bytes) a header value can have (no threshold by default).
+    #                                    for cases where the value is broken into multiple header fields (such as "cookie" or "set-cookie"),
+    #                                    this is the total aggregated size.
     # :window_size :: number of bytes to read from a socket
     # :buffer_size :: internal read and write buffer size in bytes
     # :body_threshold_size :: maximum size in bytes of response payload that is buffered in memory.
@@ -386,6 +392,7 @@ module HTTPX
     # number options
     %i[
       max_concurrent_requests max_requests window_size buffer_size
+      max_response_body_size max_response_headers max_response_header_value_size
       body_threshold_size debug_level
     ].each do |option|
       class_eval(<<-OUT, __FILE__, __LINE__ + 1)
@@ -552,6 +559,9 @@ module HTTPX
       :supported_compression_formats => %w[gzip deflate],
       :decompress_response_body => true,
       :compress_request_body => true,
+      :max_response_headers => 1000,
+      :max_response_header_value_size => nil,
+      :max_response_body_size => Float::INFINITY,
       :timeout => {
         connect_timeout: CONNECT_TIMEOUT,
         settings_timeout: SETTINGS_TIMEOUT,

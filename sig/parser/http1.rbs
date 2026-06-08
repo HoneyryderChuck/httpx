@@ -28,6 +28,8 @@ module HTTPX
       @content_length: Integer
       @_has_trailers: bool
       @upgrade: bool
+      @max_headers: Options::maybe_unbounded
+      @max_header_value_size: Options::maybe_unbounded?
 
       def <<: (string chunk) -> void
 
@@ -39,7 +41,7 @@ module HTTPX
 
       private
 
-      def initialize: (_HTTP1Events observer) -> untyped
+      def initialize: (_HTTP1Events observer, Options::maybe_unbounded max_headers, Options::maybe_unbounded? max_header_value_size) -> void
 
       def nextstate: (Symbol state) -> void
 

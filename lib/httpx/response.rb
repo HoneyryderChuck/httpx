@@ -68,7 +68,7 @@ module HTTPX
       @headers = @options.headers_class.new(headers)
       @body = @options.response_body_class.new(self, @options)
       @finished = complete?
-      @content_type = nil
+      @content_type = @content_length = nil
     end
 
     # dupped initialization
@@ -88,6 +88,7 @@ module HTTPX
     # merges headers defined in +h+ into the response headers.
     def merge_headers(h)
       @headers = @headers.merge(h)
+      @content_type = @content_length = nil
     end
 
     # writes +data+ chunk into the response body.
@@ -101,6 +102,13 @@ module HTTPX
     #   response.content_type.mime_type #=> "text/plain"
     def content_type
       @content_type ||= ContentType.new(@headers["content-type"])
+    end
+
+    # returns the response content length as advertised in the HTTP Content-Length header value.
+    def content_length
+      return @content_length if defined?(@content_length)
+
+      @content_length = @headers["content-length"]&.to_i
     end
 
     # returns whether the response has been fully fetched.
