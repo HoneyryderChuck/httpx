@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class DelayedPingServer < TestHTTP2Server
   def initialize(ping_delay: 1, **kw)
     super(**kw)
