@@ -131,6 +131,9 @@ class OptionsTest < Minitest::Test
       :buffer_size => 16_384,
       :window_size => 16_384,
       :body_threshold_size => 114_688,
+      :max_response_headers => 1000,
+      :max_response_header_value_size => nil,
+      :max_response_body_size => Float::INFINITY,
       :http2_settings => { foo: 1, :bar => 2 },
       :timeout => {
         connect_timeout: 60,

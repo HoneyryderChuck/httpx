@@ -60,6 +60,15 @@ module HTTPX
     # body_threshold_size
     attr_reader body_threshold_size: Integer
 
+    # max_response_headers
+    attr_reader max_response_headers: Integer
+
+    # max_response_header_value_size
+    attr_reader max_response_header_value_size: maybe_unbounded?
+
+    # max_response_body_size
+    attr_reader max_response_body_size: maybe_unbounded
+
     # transport
     attr_reader transport: io_type | nil
 

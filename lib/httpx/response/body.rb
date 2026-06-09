@@ -20,10 +20,10 @@ module HTTPX
       @headers = response.headers
       @options = options
       @window_size = options.window_size
+      @max_response_body_size = options.max_response_body_size
       @encodings = []
       @length = 0
-      @buffer = nil
-      @reader = nil
+      @buffer = @reader = nil
       @state = :idle
 
       # initialize response encoding
@@ -58,6 +58,8 @@ module HTTPX
       return 0 if chunk.empty?
 
       chunk = decode_chunk(chunk)
+
+      raise Error, "maximum response body size exceeded" if @max_response_body_size < @length
 
       transition(:open)
       @buffer.write(chunk)

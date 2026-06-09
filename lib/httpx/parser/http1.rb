@@ -9,11 +9,13 @@ module HTTPX
 
       attr_reader :status_code, :http_version, :headers
 
-      def initialize(observer)
+      def initialize(observer, max_headers, max_header_value_size)
         @observer = observer
         @state = :idle
         @buffer = "".b
         @headers = {}
+        @max_headers = max_headers
+        @max_header_value_size = max_header_value_size
         @content_length = nil
         @_has_trailers = @upgrade = false
       end
@@ -117,7 +119,11 @@ module HTTPX
           value.strip!
           raise Error, "wrong header format" if value.nil?
 
-          (headers[key.downcase] ||= []) << value
+          values = (headers[key.downcase] ||= []) << value
+
+          raise Error, "maximum header value size exceeded" if @max_header_value_size && (values.sum(&:size) > @max_header_value_size)
+
+          raise Error, "maximum number of response headers exceeded" if headers.size > @max_headers
         end
       end
 

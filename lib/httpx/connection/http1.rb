@@ -24,7 +24,7 @@ module HTTPX
       @options = options
       @max_concurrent_requests = @options.max_concurrent_requests || MAX_REQUESTS
       @max_requests = @options.max_requests
-      @parser = Parser::HTTP1.new(self)
+      @parser = Parser::HTTP1.new(self, options.max_response_headers, options.max_response_header_value_size)
       @buffer = buffer
       @version = [1, 1]
       @pending = []
@@ -132,6 +132,10 @@ module HTTPX
                                                     headers)
       request.log(color: :yellow) { "-> HEADLINE: #{response.status} HTTP/#{@parser.http_version.join(".")}" }
       request.log(color: :yellow) { response.headers.each.map { |f, v| "-> HEADER: #{f}: #{log_redact_headers(v)}" }.join("\n") }
+
+      if response.content_length && response.content_length > request.options.max_response_body_size
+        raise HTTPX::Error, "maximum response body size exceeded"
+      end
 
       request.response = response
       on_complete if response.finished?
