@@ -140,6 +140,38 @@ module Requests
         assert session.connections.one?(&:closed?), "should have been no connections"
       end
 
+      def test_persistent_retry_http2_ping_timeout
+        return unless origin.start_with?("https")
+
+        start_test_servlet(DelayedPingServer, ping_delay: 2) do |server|
+          http = HTTPX.plugin(SessionWithPool)
+                      .plugin(RequestInspector)
+                      .plugin(:persistent) # implicit max_retries == 1
+                      .with(timeout: { keep_alive_timeout: 0, ping_timeout: 4 }, ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE })
+          uri = "#{server.origin}/"
+          response = http.get(uri)
+          verify_status(response, 200)
+          response = http.get(uri)
+          verify_status(response, 200)
+          assert http.calls == 1, "expect request to be built 1 time (was #{http.calls})"
+          http.close
+
+          other_http = http.with(timeout: { ping_timeout: 1 })
+          uri = "#{server.origin}/"
+          response = other_http.get(uri)
+          verify_status(response, 200)
+
+          before_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)
+          response = other_http.get(uri)
+          after_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)
+          total_time = after_time - before_time
+          verify_status(response, 200)
+          assert other_http.calls == 2, "expect request to be built 2 times (was #{other_http.calls})"
+          verify_execution_delta(1, total_time, 1)
+          http.close
+        end
+      end
+
       def test_persistent_retry_http2_goaway
         return unless origin.start_with?("https")
 

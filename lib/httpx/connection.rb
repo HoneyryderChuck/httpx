@@ -47,8 +47,8 @@ module HTTPX
     def initialize(uri, options)
       @current_session = @current_selector = @max_concurrent_requests =
                            @parser = @sibling = @coalesced_connection = @altsvc_connection =
-                                                  @family = @io = @ssl_session = @timeout =
-                                                                    @connected_at = @response_received_at = nil
+                                                  @ping_timer = @family = @io = @ssl_session =
+                                                                            @timeout = @connected_at = @response_received_at = nil
 
       @exhausted = @cloned = @main_sibling = false
 
@@ -956,10 +956,20 @@ module HTTPX
       return if parser.waiting_for_ping?
 
       parser.ping
+
+      ping_timeout = @options.timeout[:ping_timeout]
+
+      @ping_timer = @current_selector.after(ping_timeout) do
+        error = PingTimeoutError.new(ping_timeout, "Timed out after #{ping_timeout} seconds")
+        on_error(error)
+      end
+
       call
     end
 
     def pong
+      @ping_timer.cancel
+      @ping_timer = nil
       @response_received_at = Utils.now
       @no_more_requests_counter = 0
       send_pending

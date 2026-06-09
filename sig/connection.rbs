@@ -51,6 +51,7 @@ module HTTPX
     @sibling: instance?
     @main_sibling: bool
     @no_more_requests_counter: Integer
+    @ping_timer: Timers::Timer?
 
 
     def addresses: () -> Array[Resolver::Entry]?

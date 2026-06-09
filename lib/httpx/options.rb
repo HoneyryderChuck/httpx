@@ -8,6 +8,7 @@ module HTTPX
     WINDOW_SIZE = 1 << 14 # 16K
     MAX_BODY_THRESHOLD_SIZE = (1 << 10) * 112 # 112K
     KEEP_ALIVE_TIMEOUT = 20
+    PING_TIMEOUT = 2
     SETTINGS_TIMEOUT = 10
     CLOSE_HANDSHAKE_TIMEOUT = 10
     CONNECT_TIMEOUT = READ_TIMEOUT = WRITE_TIMEOUT = 60
@@ -78,8 +79,8 @@ module HTTPX
     # :decompress_response_body :: whether to auto-decompress response body (defaults to <tt>true</tt>).
     # :compress_request_body :: whether to auto-decompress response body (defaults to <tt>true</tt>)
     # :timeout :: hash of timeout configurations (supports <tt>:connect_timeout</tt>, <tt>:settings_timeout</tt>,
-    #             <tt>:operation_timeout</tt>, <tt>:keep_alive_timeout</tt>,  <tt>:read_timeout</tt>,  <tt>:write_timeout</tt>,
-    #             <tt>:request_timeout</tt> and <tt>:total_request_timeout</tt>
+    #             <tt>:operation_timeout</tt>, <tt>:keep_alive_timeout</tt>, <tt>:read_timeout</tt>,  <tt>:write_timeout</tt>,
+    #             <tt>:request_timeout</tt>, <tt>:total_request_timeout</tt> and <tt>:ping_timeout</tt>,
     # :headers :: hash of HTTP headers (ex: <tt>{ "x-custom-foo" => "bar" }</tt>)
     # :max_response_body_size :: maximum size (in bytes) that the response body can consume (no threshold by default), after which an
     #                            error is raised.
@@ -568,6 +569,7 @@ module HTTPX
         close_handshake_timeout: CLOSE_HANDSHAKE_TIMEOUT,
         operation_timeout: OPERATION_TIMEOUT,
         keep_alive_timeout: KEEP_ALIVE_TIMEOUT,
+        ping_timeout: PING_TIMEOUT,
         read_timeout: READ_TIMEOUT,
         write_timeout: WRITE_TIMEOUT,
         request_timeout: REQUEST_TIMEOUT,

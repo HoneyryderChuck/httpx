@@ -48,6 +48,9 @@ module HTTPX
   class OperationTimeoutError < TimeoutError
   end
 
+  class PingTimeoutError < TimeoutError
+  end
+
   class ResolveError < Error
   end
 
