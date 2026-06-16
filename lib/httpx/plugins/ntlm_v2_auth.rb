@@ -2,7 +2,7 @@
 
 module HTTPX
   module Plugins
-    # https://gitlab.com/os85/httpx/wikis/Auth#ntlm-auth
+    # https://gitlab.com/os85/httpx/wikis/Auth#ntlm-v2-auth
     module NtlmV2Auth
       class << self
         def load_dependencies(klass)

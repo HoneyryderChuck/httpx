@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "cgi"
+
 module HTTPX
   class ProxyError < ConnectionError; end
 
@@ -64,6 +66,9 @@ module HTTPX
           @scheme ||= infer_default_auth_scheme(@uri)
 
           return unless @scheme
+
+          @username = CGI.unescape(@username) if @username
+          @password = CGI.unescape(@password) if @password
 
           @authenticator = load_authenticator(@scheme, @username, @password, **extra)
         end
