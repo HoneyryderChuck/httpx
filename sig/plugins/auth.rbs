@@ -7,6 +7,10 @@ module HTTPX
         def auth_header_value: () -> auth_header_value_type?
 
         def auth_header_type: () -> String?
+
+        def auth_header_expires_at: () -> (^(Request request) -> _ToF?)?
+
+        def auth_header_expires_in: () -> Float?
       end
 
       module InstanceMethods

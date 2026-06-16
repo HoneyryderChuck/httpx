@@ -127,8 +127,8 @@ module HTTPX
           @auth_header_expires_at = if (expires_in = request.options.auth_header_expires_in)
             Time.now.to_i + expires_in
           elsif (expires_at = request.options.auth_header_expires_at)
-            if expires_at.respond_to?(:call)
-              expires_at = expires_at.call(request).to_f
+            if expires_at.respond_to?(:call) && (expires_at = expires_at.call(request))
+              expires_at = expires_at.to_f
               raise Error, "`:auth_header_expires_at` must be positive" unless expires_at.positive?
 
               expires_at
