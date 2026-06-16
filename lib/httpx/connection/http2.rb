@@ -444,11 +444,28 @@ module HTTPX
     end
 
     def frame_with_extra_info(frame)
+      flags_bits = frame.fetch(:flags, 0)
       case frame[:type]
       when :data
-        frame.merge(payload: frame[:payload].bytesize)
-      when :headers, :ping
-        frame.merge(payload: log_redact_headers(frame[:payload]))
+        flags = [] #: Array[Symbol]
+        flags << :end_stream if flags_bits.anybits?(0b0001)
+        flags << :padded if flags_bits.anybits?(0b1000)
+        frame.merge(payload: frame[:payload].bytesize, flags: flags)
+      when :push_promise, :headers
+        flags = [] #: Array[Symbol]
+        flags << :end_stream if flags_bits.anybits?(0b0001)
+        flags << :priority if flags_bits.anybits?(0b0010)
+        flags << :end_headers if flags_bits.anybits?(0b0100)
+        flags << :padded if flags_bits.anybits?(0b1000)
+        frame.merge(payload: log_redact_headers(frame[:payload]), flags: flags)
+      when :ping
+        flags = [] #: Array[Symbol]
+        flags << :ack if flags_bits.anybits?(0b0001)
+        frame.merge(payload: log_redact_headers(frame[:payload]), flags: flags)
+      when :settings
+        flags = [] #: Array[Symbol]
+        flags << :ack if flags_bits.anybits?(0b0001)
+        frame.merge(flags: flags)
       when :window_update
         connection_or_stream = if (id = frame[:stream]).zero?
           @connection

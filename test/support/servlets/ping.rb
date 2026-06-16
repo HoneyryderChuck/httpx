@@ -18,13 +18,7 @@ class DelayedPingServer < TestHTTP2Server
     end
   end
 
-  if HTTP2::VERSION >= "1.2.0"
-    def ping_frame?(frame)
-      frame[:type] == :ping && !frame[:flags].anybits?(HTTP2::ACK)
-    end
-  else
-    def ping_frame?(frame)
-      frame[:type] == :ping && !frame[:flags].include?(:ack)
-    end
+  def ping_frame?(frame)
+    frame[:type] == :ping && !frame[:flags].anybits?(HTTP2::ACK)
   end
 end
