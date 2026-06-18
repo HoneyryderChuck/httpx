@@ -267,7 +267,6 @@ module HTTPX
   #   response = HTTPX.get("https://some-domain/path") #=> response is HTTPX::Response or HTTPX::ErrorResponse
   #   response.raise_for_status #=> raises if it wraps an error
   class ErrorResponse
-    include Loggable
     extend Forwardable
 
     # the corresponding HTTPX::Request instance.
@@ -290,7 +289,7 @@ module HTTPX
       @response = request.response if request.response.is_a?(Response)
       @error = error
       @options = request.options
-      log_exception(@error)
+      @request.log_exception(@error)
       finish!
     end
 
