@@ -128,7 +128,7 @@ module HTTPX
     rescue ::HTTP2::Error::StreamLimitExceeded
       @pending.unshift(request)
       false
-    rescue StandardError => e
+    rescue ::HTTP2::Error::Error, ArgumentError => e
       emit(:error, request, e)
     end
 
