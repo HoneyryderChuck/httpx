@@ -122,6 +122,18 @@ module HTTPX
         end
       end
 
+      module RequestMethods
+        def drain_body
+          super.tap do |chunk|
+            emit(:body_chunk, chunk) if chunk
+          rescue StandardError => e
+            # in case an error occurs in callback code
+            @drain_error = e
+            nil
+          end
+        end
+      end
+
       module ConnectionMethods
         private
 

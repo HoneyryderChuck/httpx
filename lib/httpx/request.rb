@@ -268,16 +268,14 @@ module HTTPX
 
     # consumes and returns the next available chunk of request body that can be sent
     def drain_body
-      return nil if @body.nil?
+      return if @body.nil?
 
       @drainer ||= @body.each
-      chunk = @drainer.next.dup
-
-      emit(:body_chunk, chunk)
-      chunk
+      @drainer.next.dup
     rescue StopIteration
       nil
     rescue StandardError => e
+      # in case an error occurs while emitting body chunks
       @drain_error = e
       nil
     end
