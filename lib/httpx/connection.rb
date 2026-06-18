@@ -204,7 +204,7 @@ module HTTPX
       return @parser.interests if @parser
 
       nil
-    rescue StandardError => e
+    rescue Error => e
       on_error(e)
       nil
     end
@@ -251,7 +251,7 @@ module HTTPX
     rescue IOError => e
       @write_buffer.clear
       on_io_error(e)
-    rescue StandardError => e
+    rescue Error => e
       @write_buffer.clear
       on_error(e)
     rescue Exception => e # rubocop:disable Lint/RescueException
