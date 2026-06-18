@@ -24,7 +24,7 @@ module HTTPX
 
         def authenticate(request, authenticate)
           "Digest #{generate_header(request.verb, request.path, authenticate)}"
-        rescue StandardError => e
+        rescue HTTPX::Error => e
           response = ErrorResponse.new(request, e)
           request.response = response
           request.emit_response(response)
