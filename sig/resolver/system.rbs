@@ -5,6 +5,9 @@ module HTTPX
       DONE: 1
       ERROR: 2
 
+      class AddrinfoTimeoutError < StandardError
+      end
+
       @resolver: Resolv::DNS
       @_timeouts: Array[interval]
       @timeouts: Hash[String, Array[interval]]
