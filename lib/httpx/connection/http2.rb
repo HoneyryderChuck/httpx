@@ -37,6 +37,7 @@ module HTTPX
       @streams = {}
       @drains = {}
       @pings = []
+      @streams_to_close_after_receive = []
       @buffer = buffer
       @handshake_completed = false
       @wait_for_handshake = @settings.key?(:wait_for_handshake) ? @settings.delete(:wait_for_handshake) : true
@@ -110,6 +111,12 @@ module HTTPX
 
     def <<(data)
       @connection << data
+
+      while (stream, request, error = @streams_to_close_after_receive.shift)
+        # these streams were marked for cancellation due to errors found while processing the
+        # data received by the peer.
+        emit_stream_error(stream, request, error)
+      end
     end
 
     def send(request, head = false)
@@ -333,6 +340,8 @@ module HTTPX
       @streams[request] = stream
 
       handle(request, stream) if request.expects?
+    rescue HTTPX::Error => e
+      @streams_to_close_after_receive << [stream, request, e]
     end
 
     def on_stream_trailers(stream, request, response, h)
@@ -346,6 +355,8 @@ module HTTPX
       request.log(level: 1, color: :green) { "#{stream.id}: <- DATA: #{data.bytesize} bytes..." }
       request.log(level: 2, color: :green) { "#{stream.id}: <- #{log_redact_body(data.inspect)}" }
       request.response << data
+    rescue HTTPX::Error => e
+      @streams_to_close_after_receive << [stream, request, e]
     end
 
     def on_stream_refuse(stream, request, error)
@@ -507,6 +518,12 @@ module HTTPX
       raise PingError unless @pings.delete(ping.to_s)
 
       emit(:pong)
+    end
+
+    def emit_stream_error(stream, request, error)
+      teardown(request)
+      stream.close
+      emit(:error, request, error)
     end
 
     def teardown(request = nil)
