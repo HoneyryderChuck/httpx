@@ -37,6 +37,7 @@ module HTTPX
       @streams = {}
       @drains = {}
       @pings = []
+      @streams_to_close_after_receive = []
       @buffer = buffer
       @handshake_completed = false
       @wait_for_handshake = @settings.key?(:wait_for_handshake) ? @settings.delete(:wait_for_handshake) : true
@@ -110,6 +111,12 @@ module HTTPX
 
     def <<(data)
       @connection << data
+
+      while (stream, request, error = @streams_to_close_after_receive.shift)
+        # these streams were marked for cancellation due to errors found while processing the
+        # data received by the peer.
+        emit_stream_error(stream, request, error)
+      end
     end
 
     def send(request, head = false)
@@ -333,6 +340,8 @@ module HTTPX
       @streams[request] = stream
 
       handle(request, stream) if request.expects?
+    rescue HTTPX::Error => e
+      @streams_to_close_after_receive << [stream, request, e]
     end
 
     def on_stream_trailers(stream, request, response, h)
@@ -345,7 +354,18 @@ module HTTPX
     def on_stream_data(stream, request, data)
       request.log(level: 1, color: :green) { "#{stream.id}: <- DATA: #{data.bytesize} bytes..." }
       request.log(level: 2, color: :green) { "#{stream.id}: <- #{log_redact_body(data.inspect)}" }
+
+      return unless request.response
+
       request.response << data
+    rescue HTTPX::Error => e
+      if stream.state == :closing
+        # there won't be any more chunks to process after this one.
+        emit_stream_error(stream, request, e)
+      else
+        # defer until the last chunk from the payload is processed.
+        @streams_to_close_after_receive << [stream, request, e]
+      end
     end
 
     def on_stream_refuse(stream, request, error)
@@ -381,11 +401,12 @@ module HTTPX
           emit(:response, request, response)
         end
       else
-        response = request.response
-        if response && response.is_a?(Response) && response.status == 421
-          emit(:error, request, :http_1_1_required)
-        else
-          emit(:response, request, response)
+        if (response = request.response)
+          if response.is_a?(Response) && response.status == 421
+            emit(:error, request, :http_1_1_required)
+          else
+            emit(:response, request, response)
+          end
         end
       end
       send(@pending.shift) unless @pending.empty?
@@ -507,6 +528,12 @@ module HTTPX
       raise PingError unless @pings.delete(ping.to_s)
 
       emit(:pong)
+    end
+
+    def emit_stream_error(stream, request, error)
+      teardown(request)
+      stream.close
+      emit(:error, request, error)
     end
 
     def teardown(request = nil)

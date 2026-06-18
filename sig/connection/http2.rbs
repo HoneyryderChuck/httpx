@@ -16,6 +16,7 @@ module HTTPX
     @max_requests: Integer
     @drains: Hash[Request, String]
     @pings: Array[String]
+    @streams_to_close_after_receive: Array[[HTTP2::Stream, Request, HTTPX::Error]]
     @buffer: Buffer
     @handshake_completed: bool
     @wait_for_handshake: bool
@@ -105,6 +106,8 @@ module HTTPX
     def on_origin: (String) -> void
 
     def on_pong: (string ping) -> void
+
+    def emit_stream_error: (HTTP2::Stream stream, Request request, StandardError error) -> void
 
     def teardown: (?Request? request) -> void
 
