@@ -247,7 +247,7 @@ module Requests
       end
 
       module RequestFailAfter100Bytes
-        class BiggerThan100Bytes < StandardError; end
+        class BiggerThan100Bytes < HTTPX::Error; end
 
         module ResponseBodyMethods
           def write(chunk)
