@@ -162,18 +162,12 @@ module HTTPX
 
       return unless request
 
-      begin
-        request.log(color: :green) { "-> DATA: #{chunk.bytesize} bytes..." }
-        request.log(level: 2, color: :green) { "-> #{log_redact_body(chunk.inspect)}" }
+      request.log(color: :green) { "-> DATA: #{chunk.bytesize} bytes..." }
+      request.log(level: 2, color: :green) { "-> #{log_redact_body(chunk.inspect)}" }
 
-        response = request.response
+      response = request.response
 
-        response << chunk
-      rescue StandardError => e
-        error_response = ErrorResponse.new(request, e)
-        request.response = error_response
-        dispatch(request)
-      end
+      response << chunk
     end
 
     def on_complete
