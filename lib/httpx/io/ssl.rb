@@ -51,7 +51,8 @@ module HTTPX
     end
 
     def protocol
-      # @type ivar @io: OpenSSL::SSL::SSLSocket
+      return super unless @io.is_a?(OpenSSL::SSL::SSLSocket)
+
       @io.alpn_protocol || super
     end
 
