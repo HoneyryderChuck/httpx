@@ -157,6 +157,7 @@ module HTTPX
       connection.purge_pending do |req|
         req.transition(:idle)
         send(req)
+        true
       end
     end
 
