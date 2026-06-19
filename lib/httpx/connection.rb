@@ -314,6 +314,11 @@ module HTTPX
       # (example: HTTP/1 parser disabling pipelining)
       return if @state == :idle && @pending.any?
 
+      if @ping_timer
+        @ping_timer.cancel
+        @ping_timer = nil
+      end
+
       parser = @parser
 
       if parser && parser.respond_to?(:max_concurrent_requests)
@@ -960,6 +965,7 @@ module HTTPX
       ping_timeout = @options.timeout[:ping_timeout]
 
       @ping_timer = @current_selector.after(ping_timeout) do
+        log(level: 3) { "ping timeout expired..." }
         error = PingTimeoutError.new(ping_timeout, "Timed out after #{ping_timeout} seconds")
         on_error(error)
       end
