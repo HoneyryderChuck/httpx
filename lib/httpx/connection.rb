@@ -157,20 +157,21 @@ module HTTPX
       connection.purge_pending do |req|
         req.transition(:idle)
         send(req)
-        true
       end
     end
 
     def purge_pending(&block)
-      pendings = []
       if @parser
         pending = @parser.pending
         @inflight -= pending.size
-        pendings << pending
+        pending.reject! do |req|
+          block(req)
+          true
+        end
       end
-      pendings << @pending
-      pendings.each do |pending|
-        pending.reject!(&block)
+      @pending.reject! do |req|
+        block(req)
+        true
       end
     end
 
