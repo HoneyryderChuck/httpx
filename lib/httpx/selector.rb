@@ -43,7 +43,7 @@ module HTTPX
 
     # first time the registered selectables are added, there's probably work to do.
     def initial_call
-      @selectables.each(&:call)
+      @selectables.each(&:initial_call)
     end
 
     def next_tick

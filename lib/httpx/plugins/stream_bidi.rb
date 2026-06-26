@@ -177,6 +177,8 @@ module HTTPX
           @pipe_read.readpartial(1)
         end
 
+        def initial_call; end
+
         def interests
           return if @closed
 

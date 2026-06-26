@@ -6,6 +6,8 @@ module HTTPX
 
     def call: () -> void
 
+    def initial_call: () -> void
+
     def interests: () -> io_interests?
 
     def timeout: () -> interval?
@@ -39,8 +41,6 @@ module HTTPX
 
     def each: () -> ::Enumerator[selectable, self]
             | () { (selectable) -> void } -> self
-
-    def initial_calls: () -> void
 
     def next_tick: () -> void
 

@@ -92,6 +92,8 @@ module HTTPX
 
     def call: () -> void
 
+    def initial_call: () -> void
+
     def terminate: () -> void
 
     def close: () -> void
