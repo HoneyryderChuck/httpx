@@ -41,6 +41,11 @@ module HTTPX
       @selectables.empty? && @timers.empty?
     end
 
+    # first time the registered selectables are added, there's probably work to do.
+    def initial_call
+      @selectables.each(&:call)
+    end
+
     def next_tick
       catch(:jump_tick) do
         timeout = next_timeout

@@ -319,9 +319,14 @@ module HTTPX
 
       waiting = false
 
-      responses = requests.each_with_index.map do |request, idx|
+      requests.each do |request|
         send_request(request, selector)
+      end
 
+      # do work first
+      selector.initial_call
+
+      responses = requests.each_with_index.map do |request, idx|
         fetch_response(request, selector, request.options).tap do |response|
           if response.nil?
             pending += 1

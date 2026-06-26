@@ -75,6 +75,9 @@ module Requests
 
     SocketErrorPlugin = Module.new do
       self::ResolverNativeMethods = Module.new do
+        define_method :call do
+        end
+
         define_method :to_io do
           raise "socket error here"
         end
@@ -84,6 +87,9 @@ module Requests
     SocketExceptionPlugin = Module.new do
       self::SocketException = Class.new(Exception) # rubocop:disable Style/EmptyClassDefinition
       self::ResolverNativeMethods = Module.new do
+        define_method :call do
+        end
+
         define_method :to_io do
           raise SocketExceptionPlugin::SocketException, "socket exception here"
         end

@@ -40,6 +40,8 @@ module HTTPX
     def each: () -> ::Enumerator[selectable, self]
             | () { (selectable) -> void } -> self
 
+    def initial_calls: () -> void
+
     def next_tick: () -> void
 
     def terminate: () -> void
