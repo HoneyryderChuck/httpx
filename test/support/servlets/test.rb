@@ -283,6 +283,12 @@ class TestDNSResolver
     qdcount = "\x00\x01".b
     ancount = [ancount].pack("n").b
     "#{header}\x81#{rc}#{qdcount}#{ancount}\x00\x00\x00\x00".b
+  rescue Encoding::CompatibilityError
+    warn "encoding error: header: `#{header.inspect}`, (#{header.encoding}) " \
+         "[#{rc.inspect} (#{rc.encoding}), " \
+         "#{qdcount.inspect} (#{qdcount.encoding}), " \
+         "#{ancount.inspect} (#{ancount.encoding})]"
+    raise
   end
 
   def question_section(query)
