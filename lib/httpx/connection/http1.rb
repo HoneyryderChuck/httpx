@@ -410,7 +410,7 @@ module HTTPX
     end
 
     def capitalized(field)
-      UPCASED[field] || field.split("-").map(&:capitalize).join("-")
+      UPCASED.fetch(field) { field.split("-").map(&:capitalize).join("-") }
     end
   end
 end
