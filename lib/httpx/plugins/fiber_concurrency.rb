@@ -70,6 +70,12 @@ module HTTPX
           )
         end
 
+        def initial_call
+          return unless current_context?
+
+          super
+        end
+
         def interests
           return if connecting? && @pending.none?(&:current_context?)
 
@@ -193,6 +199,12 @@ module HTTPX
       end
 
       module ResolverNativeMethods
+        def initial_call
+          return unless @queries.values.any?(&:current_context?) || @connections.any?(&:current_context?)
+
+          super
+        end
+
         def calculate_interests
           return if @queries.empty?
 
@@ -218,10 +230,22 @@ module HTTPX
       end
 
       module ResolverSystemMethods
-        def interests
-          return unless @queries.any? { |_, conn| conn.current_context? }
+        def initial_call
+          return unless current_context?
 
           super
+        end
+
+        def interests
+          return unless current_context?
+
+          super
+        end
+
+        private
+
+        def current_context?
+          @queries.any? { |_, conn| conn.current_context? }
         end
       end
 

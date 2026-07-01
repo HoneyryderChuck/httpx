@@ -259,6 +259,10 @@ module HTTPX
       raise e
     end
 
+    def initial_call
+      call
+    end
+
     def close
       transition(:active) if @state == :inactive
 

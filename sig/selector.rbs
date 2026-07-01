@@ -6,6 +6,8 @@ module HTTPX
 
     def call: () -> void
 
+    def initial_call: () -> void
+
     def interests: () -> io_interests?
 
     def timeout: () -> interval?
