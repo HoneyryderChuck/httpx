@@ -282,7 +282,7 @@ class TestDNSResolver
     rc = [rcode].pack("C").b
     qdcount = "\x00\x01".b
     ancount = [ancount].pack("n").b
-    "#{header}\x81#{rc}#{qdcount}#{ancount}\x00\x00\x00\x00".b
+    "".b << header << "\x81".b << rc << qdcount << ancount << "\x00\x00\x00\x00".b
   rescue Encoding::CompatibilityError
     warn "encoding error: header: `#{header.inspect}`, (#{header.encoding}) " \
          "[#{rc.inspect} (#{rc.encoding}), " \
