@@ -249,7 +249,11 @@ module HTTPX
         consume
       end
       nil
-    rescue IOError => e
+    rescue Errno::ECONNRESET,
+           Errno::EINVAL,
+           SocketError,
+           IOError,
+           TLSError => e
       @write_buffer.clear
       on_io_error(e)
     rescue Error => e
@@ -444,6 +448,11 @@ module HTTPX
 
     def on_io_error(e)
       on_error(e)
+
+      # do not force close if parser resets the connection.
+      # can happen i.e. when HTTP/1.1 pipelining is disabled.
+      return if @state == :idle && @pending.any?
+
       force_close(true)
     end
 
