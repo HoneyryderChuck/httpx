@@ -126,27 +126,27 @@ module HTTPX
     end
 
     def on_response(request, response)
-      response.raise_for_status
-    rescue StandardError => e
-      hostname = @requests.delete(request)
-      connection = reset_hostname(hostname)
-      emit_resolve_error(connection, connection.peer.host, e)
-      close_or_resolve
-    else
-      # @type var response: HTTPX::Response
-      if response.status.between?(300, 399) && response.headers.key?("location")
-        hostname = @requests[request]
-        connection = @queries[hostname]
-        location_uri = URI(response.headers["location"])
-        location_uri = response.uri.merge(location_uri) if location_uri.relative?
+      if (e = response.error)
+        hostname = @requests.delete(request)
+        connection = reset_hostname(hostname)
+        emit_resolve_error(connection, connection.peer.host, e)
+        close_or_resolve
+      else
+        # @type var response: HTTPX::Response
+        if response.status.between?(300, 399) && response.headers.key?("location")
+          hostname = @requests[request]
+          connection = @queries[hostname]
+          location_uri = URI(response.headers["location"])
+          location_uri = response.uri.merge(location_uri) if location_uri.relative?
 
-        # we assume that the DNS server URI changed permanently and move on
-        @uri = location_uri
-        send_request(hostname, connection)
-        return
+          # we assume that the DNS server URI changed permanently and move on
+          @uri = location_uri
+          send_request(hostname, connection)
+          return
+        end
+
+        parse(request, response)
       end
-
-      parse(request, response)
     ensure
       @requests.delete(request)
     end

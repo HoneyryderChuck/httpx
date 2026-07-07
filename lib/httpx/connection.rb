@@ -157,20 +157,21 @@ module HTTPX
       connection.purge_pending do |req|
         req.transition(:idle)
         send(req)
-        true
       end
     end
 
     def purge_pending(&block)
-      pendings = []
       if @parser
         pending = @parser.pending
         @inflight -= pending.size
-        pendings << pending
+        pending.reject! do |req|
+          block.call(req)
+          true
+        end
       end
-      pendings << @pending
-      pendings.each do |pending|
-        pending.reject!(&block)
+      @pending.reject! do |req|
+        block.call(req)
+        true
       end
     end
 
@@ -204,7 +205,7 @@ module HTTPX
       return @parser.interests if @parser
 
       nil
-    rescue StandardError => e
+    rescue Error => e
       on_error(e)
       nil
     end
@@ -248,10 +249,14 @@ module HTTPX
         consume
       end
       nil
-    rescue IOError => e
+    rescue Errno::ECONNRESET,
+           Errno::EINVAL,
+           SocketError,
+           IOError,
+           TLSError => e
       @write_buffer.clear
       on_io_error(e)
-    rescue StandardError => e
+    rescue Error => e
       @write_buffer.clear
       on_error(e)
     rescue Exception => e # rubocop:disable Lint/RescueException
@@ -443,6 +448,11 @@ module HTTPX
 
     def on_io_error(e)
       on_error(e)
+
+      # do not force close if parser resets the connection.
+      # can happen i.e. when HTTP/1.1 pipelining is disabled.
+      return if @state == :idle && @pending.any?
+
       force_close(true)
     end
 

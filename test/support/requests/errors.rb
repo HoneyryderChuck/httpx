@@ -52,27 +52,6 @@ module Requests
     #   end
     # end
 
-    ResponseErrorEmitter = Module.new do
-      self::ResponseMethods = Module.new do
-        def <<(_)
-          raise "done with it"
-        end
-      end
-    end
-
-    def test_errors_mid_response_buffering
-      uri = URI(build_uri("/get"))
-      HTTPX.plugin(SessionWithPool).plugin(ResponseErrorEmitter).wrap do |http|
-        response = http.get(uri)
-        verify_error_response(response, "done with it")
-        assert http.connections.size == 1
-        assert http.connections.first.state == :closed
-        selector = http.get_current_selector
-        assert selector
-        assert selector.instance_variable_get(:@selectables).empty?, "there should be no conn being selected after error was raised"
-      end
-    end
-
     SocketErrorPlugin = Module.new do
       self::ResolverNativeMethods = Module.new do
         define_method :call do

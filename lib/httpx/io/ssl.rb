@@ -51,10 +51,9 @@ module HTTPX
     end
 
     def protocol
-      # @type ivar @io: OpenSSL::SSL::SSLSocket
+      return super unless @io.is_a?(OpenSSL::SSL::SSLSocket)
+
       @io.alpn_protocol || super
-    rescue StandardError
-      super
     end
 
     if RUBY_ENGINE == "jruby"
@@ -67,8 +66,6 @@ module HTTPX
         return super if proto.nil? || proto.empty?
 
         proto
-      rescue StandardError
-        super
       end
     end
 

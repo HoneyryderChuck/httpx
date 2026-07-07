@@ -155,6 +155,12 @@ module WebMock
             raise WebMock::NetConnectNotAllowedError, request_signature
           end
         end
+
+        private
+
+        def connect
+          super unless @mocked
+        end
       end
     end
 

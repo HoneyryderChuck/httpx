@@ -23,6 +23,9 @@ module HTTPX
     DONE = 1
     ERROR = 2
 
+    class AddrinfoTimeoutError < StandardError
+    end
+
     class << self
       def multi?
         false
@@ -227,7 +230,7 @@ module HTTPX
         begin
           addrs = if resolve_timeout
 
-            Timeout.timeout(resolve_timeout) do
+            Timeout.timeout(resolve_timeout, AddrinfoTimeoutError) do
               __addrinfo_resolve(hostname, scheme)
             end
           else
@@ -246,7 +249,7 @@ module HTTPX
             end
           end
         rescue StandardError => e
-          if e.is_a?(Timeout::Error)
+          if e.is_a?(AddrinfoTimeoutError)
             timeouts.shift
             retry unless timeouts.empty?
             e = ResolveTimeoutError.new(resolve_timeout, e.message)

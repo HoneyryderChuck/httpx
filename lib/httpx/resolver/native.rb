@@ -75,16 +75,10 @@ module HTTPX
 
     def call
       case @state
-      when :idle
+      when :idle, :closed
         return if @connections.empty?
 
-        transition(:open)
-
-        consume if @state == :open
-      when :closed
-        return if @connections.empty?
-
-        transition(:idle)
+        transition(:idle) if @state == :closed
         transition(:open)
 
         consume if @state == :open

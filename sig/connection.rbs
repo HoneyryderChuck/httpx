@@ -124,7 +124,7 @@ module HTTPX
 
     def on_error: (HTTPX::TimeoutError | Error | StandardError error, ?Request? request) -> void
 
-    def on_io_error: (IOError error) -> void
+    def on_io_error: (SocketError | IOError | TLSError error) -> void
 
     def on_connect_error: (Exception error) -> void
 
