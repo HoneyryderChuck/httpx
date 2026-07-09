@@ -60,7 +60,8 @@ module HTTPX
       # in jruby, alpn_protocol may return ""
       # https://github.com/jruby/jruby-openssl/issues/287
       def protocol
-        # @type ivar @io: OpenSSL::SSL::SSLSocket
+        return super unless @io.is_a?(OpenSSL::SSL::SSLSocket)
+
         proto = @io.alpn_protocol
 
         return super if proto.nil? || proto.empty?

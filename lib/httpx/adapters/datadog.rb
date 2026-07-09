@@ -185,6 +185,13 @@ module Datadog::Tracing
         end
       end
 
+      # patches httpx debug logs to include datadog correlation ids
+      module LoggablePatch
+        def log_identifiers
+          "#{super} #{Datadog::Tracing.log_correlation}"
+        end
+      end
+
       module Configuration
         # Default settings for httpx
         #
@@ -297,6 +304,8 @@ module Datadog::Tracing
 
           ::HTTPX.send(:remove_const, :Session)
           ::HTTPX.send(:const_set, :Session, datadog_session.class)
+
+          ::HTTPX::Loggable.singleton_class.prepend(LoggablePatch)
         end
       end
 

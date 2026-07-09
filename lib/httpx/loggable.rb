@@ -17,6 +17,12 @@ module HTTPX
 
     USE_DEBUG_LOG = ENV.key?("HTTPX_DEBUG")
 
+    def self.log_identifiers
+      "pid=#{Process.pid} " \
+        "tid=#{Thread.current.object_id}" \
+        "fid=#{Fiber.current.object_id}"
+    end
+
     def log(
       level: @options.debug_level,
       color: nil,
@@ -36,10 +42,9 @@ module HTTPX
         klass = klass.superclass
       end
 
-      message = +"(time:#{Time.now.utc}, pid:#{Process.pid}, " \
-                 "tid:#{Thread.current.object_id}, " \
-                 "fid:#{Fiber.current.object_id}, " \
-                 "self:#{class_name}##{object_id}) "
+      message = +"(time=#{Time.now.utc} " \
+                 "#{Loggable.log_identifiers} " \
+                 "self=#{class_name}##{object_id}) "
       message << msg.call << "\n"
       message = "\e[#{COLORS[color]}m#{message}\e[0m" if color && debug_stream.respond_to?(:isatty) && debug_stream.isatty
       debug_stream << message
@@ -48,6 +53,8 @@ module HTTPX
     def log_exception(ex, level: @options.debug_level, color: nil, debug_level: @options.debug_level, debug: @options.debug)
       log(level: level, color: color, debug_level: debug_level, debug: debug) { ex.full_message }
     end
+
+    private
 
     def log_redact_headers(text)
       log_redact(text, @options.debug_redact == :headers)

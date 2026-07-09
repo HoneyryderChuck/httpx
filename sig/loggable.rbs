@@ -12,9 +12,13 @@ module HTTPX
 
     COLORS: Hash[Symbol, Integer]
 
+    def self.log_identifiers: () -> String
+
     def log: (?level: Integer?, ?color: Symbol?, ?debug_level: Integer, ?debug: _IOLogger?) { () -> String } -> void
 
     def log_exception: (Exception error, ?level: Integer, ?color: Symbol, ?debug_level: Integer, ?debug: _IOLogger?) -> void
+
+    private
 
     def log_redact_headers: (_ToS text) -> String
 
