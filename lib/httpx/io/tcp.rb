@@ -182,7 +182,14 @@ module HTTPX
     end
 
     def close
-      return if @keep_open || closed?
+      return if @keep_open
+
+      # mark tcp as closed, so that it can be disconnected.
+      # this bypasses the state machine API as not not allow the transition
+      # from idle to closed in normal circumstances.
+      @state = :closed if @state == :idle
+
+      return if closed?
 
       begin
         @io.close
