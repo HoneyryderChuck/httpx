@@ -55,13 +55,29 @@ module HTTPX
 
         private
 
+        def reconnectable_error?(error)
+          Retries::RECONNECTABLE_ERRORS.any? { |klass| error.is_a?(klass) }
+        end
+
+        def when_to_retry(request, response, *)
+          return super unless response.is_a?(ErrorResponse)
+
+          error = response.error
+          # allow request to be retried immediately if the request failed right after the keep alive timeout.
+          # the chances are, the request failed because the connect has been dropped by the peer server, so it's
+          # fine to reopen.
+          return if request.ping? && reconnectable_error?(error)
+
+          super
+        end
+
         def retryable_request?(request, response, *)
           super || begin
-            return false unless response && response.is_a?(ErrorResponse)
+            return false unless response.is_a?(ErrorResponse)
 
             error = response.error
 
-            Retries::RECONNECTABLE_ERRORS.any? { |klass| error.is_a?(klass) }
+            reconnectable_error?(error)
           end
         end
 
