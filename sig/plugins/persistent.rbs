@@ -6,6 +6,9 @@ module HTTPX
       def self.extra_options: (Options) -> (Options)
 
       module InstanceMethods
+        private
+
+        def reconnectable_error?: (StandardError error) -> bool
       end
     end
 
