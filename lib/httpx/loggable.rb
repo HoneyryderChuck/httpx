@@ -19,7 +19,7 @@ module HTTPX
 
     def self.log_identifiers
       "pid=#{Process.pid} " \
-        "tid=#{Thread.current.object_id}" \
+        "tid=#{Thread.current.object_id} " \
         "fid=#{Fiber.current.object_id}"
     end
 
