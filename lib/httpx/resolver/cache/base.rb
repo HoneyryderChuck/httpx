@@ -106,14 +106,7 @@ module HTTPX
           name = entry["name"]
           next unless name != hostname
 
-          lookups[name] ||= []
-
-          case family
-          when Socket::AF_INET6
-            lookups[name] << entry
-          when Socket::AF_INET
-            lookups[name].unshift(entry)
-          end
+          _set(name, family, [entry], lookups, hostnames)
         end
       end
 
