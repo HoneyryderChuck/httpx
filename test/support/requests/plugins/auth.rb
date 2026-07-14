@@ -243,7 +243,7 @@ module Requests
       def test_plugin_digest_auth_invalid_header
         start_test_servlet(InvalidDigestServer) do |server|
           uri = "#{server.origin}/"
-          session = HTTPX.plugin(:digest_auth)
+          session = HTTPX.plugin(:digest_auth, debug: $stderr, debug_level: 3)
           response = session.digest_auth("user", "pass").get(uri)
           verify_error_response(response, "unsupported digest header format")
         end
