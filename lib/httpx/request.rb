@@ -324,7 +324,7 @@ module HTTPX
         return if @state == :expect
 
       end
-      log(level: 3) { "#{@state}] -> #{nextstate}" }
+      log(level: 3) { "#{@state} -> #{nextstate}" }
       @state = nextstate
       emit(@state, self)
       nil
