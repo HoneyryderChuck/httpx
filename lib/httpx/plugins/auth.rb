@@ -205,13 +205,13 @@ module HTTPX
           end
 
           def when_to_retry(request, response, *)
-          return super unless response.is_a?(Response)
+            return super unless response.is_a?(Response)
 
-          # retry immediately if authentication no longer valid.
-          return if response.status == 401
+            # retry immediately if authentication no longer valid.
+            return if response.status == 401
 
-          super
-        end
+            super
+          end
 
           def auth_error?(response, options)
             response.is_a?(Response) && response.status == 401 && dynamic_auth_token?(options.auth_header_value)
