@@ -44,9 +44,9 @@ module HTTPX
 
         def __on_promise_request(parser, stream, h)
           log(level: 1, color: :yellow) do
-            # :nocov:
+            # simplecov:disable
             h.map { |k, v| "#{stream.id}: -> PROMISE HEADER: #{k}: #{v}" }.join("\n")
-            # :nocov:
+            # simplecov:enable
           end
           headers = @options.headers_class.new(h)
           path = headers[":path"]

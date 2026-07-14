@@ -75,11 +75,11 @@ module HTTPX
       @on_chunk.call(chunk)
     end
 
-    # :nocov:
+    # simplecov:disable
     def inspect
       "#<#{self.class}:#{object_id}>"
     end
-    # :nocov:
+    # simplecov:enable
 
     def to_s
       if @request.response

@@ -114,12 +114,12 @@ module HTTPX
       @headers.add("transfer-encoding", "chunked")
     end
 
-    # :nocov:
+    # simplecov:disable
     def inspect
       "#<#{self.class}:#{object_id} " \
         "#{unbounded_body? ? "stream" : "@bytesize=#{bytesize}"}>"
     end
-    # :nocov:
+    # simplecov:enable
 
     class << self
       def initialize_body(params)

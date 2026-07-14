@@ -60,11 +60,11 @@ module HTTPX
       true
     end
 
-    # :nocov:
+    # simplecov:disable
     def inspect
       "#<#{self.class}:#{object_id} @path=#{@path}) @state=#{@state})>"
     end
-    # :nocov:
+    # simplecov:enable
 
     private
 

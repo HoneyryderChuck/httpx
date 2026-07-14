@@ -476,7 +476,7 @@ module HTTPX
       reset
     end
 
-    # :nocov:
+    # simplecov:disable
     def inspect
       "#<#{self.class}:#{object_id} " \
         "@origin=#{@origin} " \
@@ -484,7 +484,7 @@ module HTTPX
         "@pending=#{@pending.size} " \
         "@io=#{@io}>"
     end
-    # :nocov:
+    # simplecov:enable
 
     private
 

@@ -161,13 +161,13 @@ module HTTPX
                end
     end
 
-    # :nocov:
+    # simplecov:disable
     def inspect
       "#<#{self.class}:#{object_id} " \
         "@state=#{@state} " \
         "@length=#{@length}>"
     end
-    # :nocov:
+    # simplecov:enable
 
     # rewinds the response payload buffer.
     def rewind

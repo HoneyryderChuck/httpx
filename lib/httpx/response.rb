@@ -141,7 +141,7 @@ module HTTPX
       bodyless? || (@request.verb == "CONNECT" && @status == 200)
     end
 
-    # :nocov:
+    # simplecov:disable
     def inspect
       "#<#{self.class}:#{object_id} " \
         "HTTP/#{version} " \
@@ -149,7 +149,7 @@ module HTTPX
         "@headers=#{@headers} " \
         "@body=#{@body.bytesize}>"
     end
-    # :nocov:
+    # simplecov:enable
 
     # returns an instance of HTTPX::HTTPError if the response has a 4xx or 5xx
     # status code, or nothing.

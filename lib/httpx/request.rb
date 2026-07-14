@@ -280,7 +280,7 @@ module HTTPX
       nil
     end
 
-    # :nocov:
+    # simplecov:disable
     def inspect
       "#<#{self.class}:#{object_id} " \
         "#{@verb} " \
@@ -288,7 +288,7 @@ module HTTPX
         "@headers=#{@headers} " \
         "@body=#{@body}>"
     end
-    # :nocov:
+    # simplecov:enable
 
     # moves on to the +nextstate+ of the request state machine (when all preconditions are met)
     def transition(nextstate)

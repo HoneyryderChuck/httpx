@@ -173,7 +173,7 @@ module HTTPX
       end
     end
 
-    # :nocov:
+    # simplecov:disable
     def inspect
       "#<#{self.class}:#{object_id} " \
         "@max_connections=#{@max_connections} " \
@@ -181,7 +181,7 @@ module HTTPX
         "@pool_timeout=#{@pool_timeout} " \
         "@connections=#{@connections.size}>"
     end
-    # :nocov:
+    # simplecov:enable
 
     private
 

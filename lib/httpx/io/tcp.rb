@@ -219,7 +219,7 @@ module HTTPX
       @state == :idle || @state == :closed
     end
 
-    # :nocov:
+    # simplecov:disable
     def inspect
       "#<#{self.class}:#{object_id} " \
         "#{@ip}:#{@port} " \
@@ -228,7 +228,7 @@ module HTTPX
         "@addresses=#{@addresses} " \
         "@state=#{@state}>"
     end
-    # :nocov:
+    # simplecov:enable
 
     private
 

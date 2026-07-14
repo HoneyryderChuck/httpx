@@ -20,11 +20,11 @@ module HTTPX
     $VERBOSE = original_verbosity
   end
 
-  # :nocov:
+  # simplecov:disable
   if Session.default_options.debug_level > 2
     proxy_session = plugin(:internal_telemetry)
     remove_const(:Session)
     const_set(:Session, proxy_session.class)
   end
-  # :nocov:
+  # simplecov:enable
 end

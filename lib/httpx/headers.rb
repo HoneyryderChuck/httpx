@@ -140,12 +140,12 @@ module HTTPX
       @headers.to_s
     end
 
-    # :nocov:
+    # simplecov:disable
     def inspect
       "#<#{self.class}:#{object_id} " \
         "#{to_hash.inspect}>"
     end
-    # :nocov:
+    # simplecov:enable
 
     # this is internal API and doesn't abide to other public API
     # guarantees, like downcasing strings.
