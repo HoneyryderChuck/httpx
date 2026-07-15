@@ -20,8 +20,9 @@ module HTTPX
       super
 
       @ssl_session = nil
-      ctx_options = TLS_OPTIONS.merge(options.ssl)
-      @sni_hostname = ctx_options.delete(:hostname) || @hostname
+      ctx_options = TLS_OPTIONS
+      ctx_options = ctx_options.merge(options.ssl) if options.ssl && !options.ssl.empty?
+      @sni_hostname = (ctx_options.delete(:hostname) if ctx_options.key?(:hostname)) || @hostname
 
       if @keep_open && @io.is_a?(OpenSSL::SSL::SSLSocket)
         # externally initiated ssl socket
@@ -29,7 +30,7 @@ module HTTPX
         @state = :negotiated
       else
         @ctx = OpenSSL::SSL::SSLContext.new
-        @ctx.set_params(ctx_options) unless ctx_options.empty?
+        @ctx.set_params(ctx_options)
         unless @ctx.session_cache_mode.nil? # a dummy method on JRuby
           @ctx.session_cache_mode =
             OpenSSL::SSL::SSLContext::SESSION_CACHE_CLIENT | OpenSSL::SSL::SSLContext::SESSION_CACHE_NO_INTERNAL_STORE
