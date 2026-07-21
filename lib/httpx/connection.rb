@@ -217,6 +217,8 @@ module HTTPX
     def call
       case @state
       when :idle
+        return if no_more_requests?
+
         connect
 
         # when opening the tcp or ssl socket fails
@@ -224,7 +226,7 @@ module HTTPX
 
         consume
       when :closed
-        return if @pending.empty?
+        return if no_more_requests?
 
         # there are pending requests to send, restart the state machine.
         idling
@@ -510,7 +512,7 @@ module HTTPX
           # * the number of pending requests
           # * the number of inflight requests
           # * whether the write buffer has bytes (i.e. for close handshake)
-          if @pending.empty? && @inflight.zero? && @write_buffer.empty?
+          if no_more_requests? && @write_buffer.empty?
             no_more_requests_loop_check if @parser && @parser.pending.any?
 
             # terminate if an altsvc connection has been established
@@ -560,7 +562,7 @@ module HTTPX
             break if @state == :closing || @state == :closed
 
             # exit #consume altogether if all outstanding requests have been dealt with
-            if @pending.empty? && @inflight.zero? && @write_buffer.empty? # rubocop:disable Style/Next
+            if no_more_requests? && @write_buffer.empty? # rubocop:disable Style/Next
               no_more_requests_loop_check if @parser && @parser.pending.any?
 
               # terminate if an altsvc connection has been established
@@ -1005,6 +1007,11 @@ module HTTPX
       raise Error, "connection corrupted, aborted after looping for a while, " \
                    "please report this https://gitlab.com/os85/httpx/-/work_items " \
                    "along with debug logs"
+    end
+
+    # true when there are no more pending nor inflight (in parser) requests
+    def no_more_requests?
+      @pending.empty? && @inflight.zero?
     end
 
     # recover internal state and emit all relevant error responses when +error+ was raised.
