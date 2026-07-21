@@ -62,6 +62,9 @@ module HTTPX
     end
 
     class Timer
+      # simpler helper which allows classification
+      attr_accessor :label
+
       def initialize(interval, callback)
         @interval = interval
         @callback = callback

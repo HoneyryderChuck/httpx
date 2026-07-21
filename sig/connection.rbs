@@ -166,6 +166,8 @@ module HTTPX
 
     def no_more_requests_loop_check: () -> void
 
+    def no_more_requests?: () -> bool
+
     def handle_error: (StandardError error, ?Request? request) -> void
 
     def force_purge: () -> void

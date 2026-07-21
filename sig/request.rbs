@@ -17,7 +17,7 @@ module HTTPX
     attr_reader response: response?
     attr_reader http2_stream_options: { ?dependency: Integer, ?exclusive: bool, ?weight: Integer }
     attr_reader drain_error: StandardError?
-    attr_reader active_timeouts: Array[Symbol]
+    attr_reader active_timeouts: Array[Timers::Timer]
 
     attr_writer connection: Connection?
     attr_writer on_response_arrived: (^() -> void)?
@@ -93,7 +93,6 @@ module HTTPX
 
     private
 
-    def initialize_body: (Options options) -> Transcoder::_Encoder?
-
+    def reset_timers: (bool reset_total_request_timers) -> void
   end
 end

@@ -122,6 +122,7 @@ module HTTPX
 
     def complete!(response = @response)
       emit(:complete, response)
+      reset_timers(true)
     end
 
     # whether request has been buffered with a ping
@@ -297,7 +298,10 @@ module HTTPX
         @body.rewind
         @ping = false
         @response = @drainer = nil
-        @active_timeouts.clear
+
+        # request may be sent to a different connection and will be
+        # reassigned a new set of timers.
+        reset_timers(false)
       when :headers
         return unless @state == :idle
 
@@ -360,6 +364,19 @@ module HTTPX
       return unless @on_response_arrived
 
       @on_response_arrived.call
+    end
+
+    private
+
+    def reset_timers(reset_total_request_timers)
+      timers = @active_timeouts
+
+      until (timer = timers.shift).nil?
+        next if !reset_total_request_timers && timer.label == :total_request_timeout
+
+        # cancel active timers.
+        timer.cancel
+      end
     end
   end
 end
