@@ -22,7 +22,7 @@ class Bug_1_7_5_Test < Minitest::Test
     end
   end
 
-  def test_plugin_retries_request_timeoust_close_current_connection
+  def test_plugin_retries_request_timeout_close_current_connection
     pool_class = Class.new(HTTPX::Pool) do
       attr_reader :used_connections
 
