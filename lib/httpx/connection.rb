@@ -1120,14 +1120,14 @@ module HTTPX
         end
 
         timer = selector.after(timeout, callback)
-        request.active_timeouts << label
-        request.once(:idle) { timer.cancel }
+        timer.label = label
+        request.active_timeouts << timer
 
         Array(finish_events).each do |event|
           # clean up request timeouts if the connection errors out
           request.set_timeout_callback(event) do
             timer.cancel
-            request.active_timeouts.delete(label)
+            request.active_timeouts.delete(timer)
           end
         end
       end

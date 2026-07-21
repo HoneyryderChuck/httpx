@@ -18,19 +18,17 @@ class Bug_1_8_0_Test < Minitest::Test
     with_unreliable_server do |uri|
       http = HTTPX.plugin(:persistent).with(timeout: { request_timeout: 10 })
 
-      100.times do |i|
+      100.times do
         http.get(uri).raise_for_status
       end
 
       selector = Thread.current.thread_variable_get(:httpx_persistent_selector_store)[http]
 
-      callback_size = selector.
-        instance_variable_get(:@timers).
-        instance_variable_get(:@intervals).
-        map { |interval| interval.instance_variable_get(:@callbacks).size }.
-        sum
+      callback_size = selector
+                      .instance_variable_get(:@timers)
+                      .instance_variable_get(:@intervals).sum { |interval| interval.instance_variable_get(:@callbacks).size }
 
-      assert callback_size == 0, "Expected callbacks to be clear after close connection"
+      assert callback_size.zero?, "Expected callbacks to be clear after close connection"
     end
   end
 
@@ -45,8 +43,8 @@ class Bug_1_8_0_Test < Minitest::Test
           sock = server.accept
           line = sock.gets until line != "\r\n"
           sock.write "HTTP/1.1 200 OK\r\n" \
-                    "Content-Length: 2\r\n\r\n" \
-                    "ok"
+                     "Content-Length: 2\r\n\r\n" \
+                     "ok"
           sock.close
         end
       rescue IOError
@@ -59,7 +57,11 @@ class Bug_1_8_0_Test < Minitest::Test
     ensure
       begin
         Timeout.timeout(2) do
-          server.close rescue nil
+          begin
+            server.close
+          rescue StandardError
+            nil
+          end
         end
       rescue Timeout::Error
         thread.kill

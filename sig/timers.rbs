@@ -48,6 +48,8 @@ module HTTPX
       @interval: Interval
       @callback: callback
 
+      attr_accessor label: Symbol?
+
       def initialize: (Interval interval, callback callback) -> void
 
       def cancel: () -> void
