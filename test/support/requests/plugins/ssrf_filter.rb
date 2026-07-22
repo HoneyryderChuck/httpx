@@ -57,7 +57,7 @@ module Requests
         start_test_servlet(dns_spoof_resolver) do |spoof_dns|
           HTTPX.plugin(SessionWithPool).plugin(:ssrf_filter).wrap do |session|
             response = session.get("https://wqwereasdsada.xyz", resolver_options: { nameserver: [spoof_dns.nameserver], cache: false })
-            verify_error_response(response, "wqwereasdsada.xyz has no public IP addresses")
+            verify_error_response(response, "wqwereasdsada.xyz has no allowed IP addresses")
           end
         end
       end unless RUBY_ENGINE == "jruby"

@@ -149,7 +149,7 @@ module HTTPX
             SsrfFilter.unsafe_ip_address?(ipaddr) || @options.extra_unsafe_ranges&.any? { |r| r.include?(ipaddr) }
           end
 
-          raise ServerSideRequestForgeryError, "#{@origin.host} has no public IP addresses" if addrs.empty?
+          raise ServerSideRequestForgeryError, "#{@origin.host} has no allowed IP addresses" if addrs.empty?
 
           super
         end
