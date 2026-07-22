@@ -15,15 +15,15 @@ module FiberSchedulerTestHelpers
     def initialize(fiber = Fiber.current)
       @fiber = fiber
 
-      @readable = {}
-      @writable = {}
+      @readable = Hash.new { |hs, k| hs[k] = [] }
+      @writable = Hash.new { |hs, k| hs[k] = [] }
       @waiting = {}
 
       @closed = false
 
       @lock = Thread::Mutex.new
       @blocking = Hash.new.compare_by_identity
-      @ready = []
+      @ready = Set.new
 
       @urgent = IO.pipe
     end
@@ -65,18 +65,28 @@ module FiberSchedulerTestHelpers
       selected = {}
 
       readable&.each do |io|
-        if fiber = @readable.delete(io)
-          @writable.delete(io) if @writable[io] == fiber
-          selected[fiber] = IO::READABLE
+        if (fibers = @readable.delete(io))
+          fibers.each do |fiber|
+            if @writable.key?(io) && @writable[io].include?(fiber)
+              @writable[io].delete(fiber)
+              @writable.delete(io) if @writable[io].empty?
+            end
+            selected[fiber] = IO::READABLE
+          end
         elsif io == @urgent.first
           @urgent.first.read_nonblock(1024)
         end
       end
 
       writable&.each do |io|
-        if fiber = @writable.delete(io)
-          @readable.delete(io) if @readable[io] == fiber
-          selected[fiber] = selected.fetch(fiber, 0) | IO::WRITABLE
+        if (fibers = @writable.delete(io))
+          fibers.each do |fiber|
+            if @readable.key?(io) && @readable[io].include?(fiber)
+              @readable[io].delete(fiber)
+              @readable.delete(io) if @readable[io].empty?
+            end
+            selected[fiber] = selected.fetch(fiber, 0) | IO::WRITABLE
+          end
         end
       end
 
@@ -107,7 +117,7 @@ module FiberSchedulerTestHelpers
         end
 
         ready.each do |fiber|
-          fiber.transfer if fiber.alive?
+          fiber.transfer(selected[fiber]) if fiber.alive?
         end
       end
     end
@@ -211,12 +221,12 @@ module FiberSchedulerTestHelpers
       fiber = Fiber.current
 
       unless (events & IO::READABLE).zero?
-        @readable[io] = fiber
+        @readable[io] << fiber
         readable = true
       end
 
       unless (events & IO::WRITABLE).zero?
-        @writable[io] = fiber
+        @writable[io] << fiber
         writable = true
       end
 
@@ -227,8 +237,14 @@ module FiberSchedulerTestHelpers
       @fiber.transfer
     ensure
       @waiting.delete(fiber) if duration
-      @readable.delete(io) if readable
-      @writable.delete(io) if writable
+      if readable
+        @readable[io].delete(fiber)
+        @readable.delete(io) if @readable[io].empty?
+      end
+      if writable
+        @writable[io].delete(fiber)
+        @writable.delete(io) if @writable[io].empty?
+      end
     end
 
     # This hook is invoked by `IO.select`. Using a thread ensures that the
@@ -308,7 +324,7 @@ module FiberSchedulerTestHelpers
         @fiber.alive?
       end
 
-      def transfer
+      def transfer(*)
         @fiber.raise(@exception)
       end
     end
