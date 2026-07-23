@@ -24,8 +24,6 @@ group :test do
   gem "webmock"
   gem "websocket-driver"
 
-  gem "pstore" if RUBY_VERSION >= "4.0.0"
-
   platform :mri do
     gem "grpc"
     gem "logging"
@@ -36,7 +34,6 @@ group :test do
     if RUBY_VERSION >= "3.0.0"
       gem "multi_json", require: false
       gem "oj", require: false
-      gem "rbs"
       gem "yajl-ruby", require: false
     end
 
@@ -53,6 +50,7 @@ group :test do
     gem "ed25519"
     gem "net-ssh-gateway"
     # https://github.com/TwP/logging/issues/247
+    gem "rbs" if RUBY_VERSION >= "4.0.0"
     gem "syslog" if RUBY_VERSION >= "3.3.0"
   end
 
@@ -66,6 +64,7 @@ group :test do
   gem "idnx"
   gem "oga"
 
+  gem "pstore" if RUBY_VERSION >= "4.0.0"
   gem "webrick" if RUBY_VERSION >= "3.0.0"
   # https://github.com/ffi/ffi/issues/1103
   # ruby 2.7 only, it seems
