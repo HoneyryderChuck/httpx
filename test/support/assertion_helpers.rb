@@ -3,7 +3,7 @@
 module ResponseHelpers
   private
 
-  if RUBY_ENGINE == "jruby" || RUBY_ENGINE == "truffleruby"
+  if RUBY_ENGINE == "jruby" || RUBY_ENGINE == "truffleruby" || defined?(RBS::Test)
     def can_run_ractor_tests?
       false
     end
