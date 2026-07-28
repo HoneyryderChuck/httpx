@@ -9,6 +9,7 @@ module HTTPX
     @ctx: OpenSSL::SSL::SSLContext
     @verify_hostname: bool
     @sni_hostname: String
+    @session_new_cb: (^(OpenSSL::SSL::Session sess) -> void)?
 
     attr_writer ssl_session: OpenSSL::SSL::Session?
 
@@ -24,5 +25,9 @@ module HTTPX
 
     # :nocov:
     def try_ssl_connect: () -> void
+
+    private
+
+    def init_session_new_cb: () -> void
   end
 end

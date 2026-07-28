@@ -148,11 +148,11 @@ module HTTPX
 
     def merge(connection)
       @origins |= connection.instance_variable_get(:@origins)
-      if @ssl_session.nil? && connection.ssl_session
-        @ssl_session = connection.ssl_session
-        @io.session_new_cb do |sess|
-          @ssl_session = sess
-        end if @io
+      if @ssl_session.nil? && (ssl_session = connection.ssl_session)
+        @ssl_session = ssl_session
+        # the socket only needs the merged session if it can still resume it,
+        # i.e. if TLS hasn't been negotiated yet.
+        @io.ssl_session = ssl_session if @io.is_a?(SSL) && !@io.connected?
       end
       connection.purge_pending do |req|
         req.transition(:idle)

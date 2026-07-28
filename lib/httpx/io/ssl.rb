@@ -19,7 +19,8 @@ module HTTPX
     def initialize(_, _, options)
       super
 
-      @ssl_session = nil
+      @ssl_session = @session_new_cb = nil
+
       ctx_options = TLS_OPTIONS
       ctx_options = ctx_options.merge(options.ssl) if options.ssl && !options.ssl.empty?
       @sni_hostname = (ctx_options.delete(:hostname) if ctx_options.key?(:hostname)) || @hostname
@@ -35,6 +36,7 @@ module HTTPX
           @ctx.session_cache_mode =
             OpenSSL::SSL::SSLContext::SESSION_CACHE_CLIENT | OpenSSL::SSL::SSLContext::SESSION_CACHE_NO_INTERNAL_STORE
         end
+        init_session_new_cb
 
         yield(self) if block_given?
       end
@@ -43,13 +45,23 @@ module HTTPX
     end
 
     if OpenSSL::SSL::SSLContext.method_defined?(:session_new_cb=)
+      # sets the ssl session callback to be picked up by the ssl context.
       def session_new_cb(&pr)
-        @ctx.session_new_cb = proc { |_, sess| pr.call(sess) }
+        @session_new_cb = pr
+      end
+
+      # sets the ssl context's new session callback, which points at @session_new_cb when available.
+      def init_session_new_cb
+        @ctx.session_new_cb = proc { |_, sess| @session_new_cb&.call(sess) }
       end
     else
       # session_new_cb not implemented under JRuby
       def session_new_cb; end
+
+      def init_session_new_cb; end
     end
+
+    private :init_session_new_cb
 
     def protocol
       return super unless @io.is_a?(OpenSSL::SSL::SSLSocket)
