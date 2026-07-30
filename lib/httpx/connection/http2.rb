@@ -53,7 +53,7 @@ module HTTPX
     end
 
     def interests
-      if @connection.state == :closed
+      if @connection.closed?
         return unless @handshake_completed
 
         return if @buffer.empty?
@@ -94,7 +94,7 @@ module HTTPX
     end
 
     def close
-      unless @connection.state == :closed
+      unless @connection.closed?
         @connection.goaway
         emit(:timeout, @options.timeout[:close_handshake_timeout])
       end
@@ -102,7 +102,7 @@ module HTTPX
     end
 
     def empty?
-      @connection.state == :closed || @streams.empty?
+      @connection.closed? || @streams.empty?
     end
 
     def exhausted?
@@ -432,7 +432,7 @@ module HTTPX
     end
 
     def on_close(_last_frame, error, _payload)
-      is_connection_closed = @connection.state == :closed
+      is_connection_closed = @connection.closed?
       if error
         @buffer.clear if is_connection_closed
         case error
