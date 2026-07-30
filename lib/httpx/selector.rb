@@ -68,9 +68,9 @@ module HTTPX
       end
     end
 
-    def terminate
+    def terminate(selectables = nil)
       # array may change during iteration
-      selectables = @selectables.reject(&:inflight?)
+      selectables ||= @selectables.reject(&:inflight?)
 
       selectables.delete_if do |sel|
         sel.terminate

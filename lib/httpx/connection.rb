@@ -95,9 +95,9 @@ module HTTPX
         self.addresses = addresses
       end
 
-      if @current_session && @current_selector
-        @current_session.pin(self, @current_selector)
-      end
+      return unless @current_session && @current_selector
+
+      @current_session.pin(self, @current_selector)
     end
 
     def peer

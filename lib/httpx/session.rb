@@ -143,7 +143,7 @@ module HTTPX
       # do not check-in connections only created for Happy Eyeballs
       return if cloned
 
-      return if @closing && connection.state == :closed && !connection.used?
+      return unless can_checkin?(connection)
 
       connection.log(level: 2) { "check-in connection##{connection.object_id}(#{connection.state}) in pool##{@pool.object_id}" }
       @pool.checkin_connection(connection)
@@ -211,10 +211,14 @@ module HTTPX
 
     private
 
-    def selector_close(selector)
+    def can_checkin?(connection)
+      !@closing || connection.state != :closed || connection.used?
+    end
+
+    def selector_close(selector, ...)
       begin
         @closing = true
-        selector.terminate
+        selector.terminate(...)
       ensure
         @closing = false
       end
