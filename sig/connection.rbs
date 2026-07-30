@@ -199,7 +199,7 @@ module HTTPX
 
     def set_request_total_request_timeout: (Request request) -> void
 
-    def write_timeout_callback: (Request request, Numeric timeout) -> void
+    def write_timeout_callback: (Request request, interval timeout) -> void
 
     def read_timeout_callback: (Request request, interval timeout, ?singleton(RequestTimeoutError) error_type) -> void
 

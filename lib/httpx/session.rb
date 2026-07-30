@@ -143,7 +143,7 @@ module HTTPX
       # do not check-in connections only created for Happy Eyeballs
       return if cloned
 
-      return if @closing && connection.state == :closed && !connection.used?
+      return unless can_checkin?(connection)
 
       connection.log(level: 2) { "check-in connection##{connection.object_id}(#{connection.state}) in pool##{@pool.object_id}" }
       @pool.checkin_connection(connection)
@@ -211,10 +211,14 @@ module HTTPX
 
     private
 
-    def selector_close(selector)
+    def can_checkin?(connection)
+      !@closing || connection.state != :closed || connection.used?
+    end
+
+    def selector_close(selector, ...)
       begin
         @closing = true
-        selector.terminate
+        selector.terminate(...)
       ensure
         @closing = false
       end
@@ -253,13 +257,18 @@ module HTTPX
       response
     end
 
-    # sends the +request+ to the corresponding HTTPX::Connection
-    def send_request(request, selector, options = request.options)
+    # sends the +request+ to a suitable HTTPX::Connection, which gets yielded if a block is passed.
+    def send_request(request, selector, options = request.options, &blk)
       error = begin
         catch(:resolve_error) do
           log(level: 2) { "finding connection for request##{request.object_id}..." }
           connection = find_connection(request.uri, selector, options)
-          connection.send(request)
+          yield(connection) if blk
+          do_request(
+            request,
+            connection,
+            selector
+          )
         end
       rescue StandardError => e
         e
@@ -271,6 +280,10 @@ module HTTPX
       response = ErrorResponse.new(request, error)
       request.response = response
       request.emit_response(response)
+    end
+
+    def do_request(request, connection, _)
+      connection.send(request)
     end
 
     # returns a set of HTTPX::Request objects built from the given +args+ and +options+.

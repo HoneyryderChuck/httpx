@@ -816,11 +816,11 @@ module HTTPX
           current_selector = @current_selector
           parser.close
 
-          other_connection = current_session.find_connection(@origin, current_selector,
-                                                             @options.merge(ssl: { alpn_protocols: %w[http/1.1] }))
-          other_connection.merge(self)
           request.transition(:idle)
-          other_connection.send(request)
+          current_session.__send__(:send_request, request, current_selector,
+                                   @options.merge(ssl: { alpn_protocols: %w[http/1.1] })) do |other_conn|
+            other_conn.merge(self)
+          end
           next
         when OperationTimeoutError
           # request level timeouts should take precedence
