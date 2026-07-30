@@ -44,7 +44,7 @@ module HTTPX
 
     def next_tick: () -> void
 
-    def terminate: () -> void
+    def terminate: (?Array[selectable]) -> void
 
     def find_resolver: (Options options) -> Resolver::Resolver?
 

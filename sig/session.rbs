@@ -42,7 +42,9 @@ module HTTPX
     def initialize: (?options) { (self) -> void } -> void
                   | (?options) -> void
 
-    def selector_close: (Selector close) -> void
+    def can_checkin?: (Connection) -> bool
+
+    def selector_close: (Selector close, *untyped) -> void
 
     def deactivate: (Selector selector) -> void
 

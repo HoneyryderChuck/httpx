@@ -47,6 +47,7 @@ module HTTPX
               | (:xml, ?options) -> Plugins::sessionXML
               | (:query, ?options) -> Plugins::sessionQuery
               | (:tracing, ?options) -> Plugins::sessionTracing
+              | (:hedging, ?options) -> Plugins::sessionHedging
               | (Symbol | Module, ?options) { (Class) -> void } -> Session
               | (Symbol | Module, ?options) -> Session
 
