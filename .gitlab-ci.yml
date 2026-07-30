@@ -141,7 +141,7 @@ regression tests:
 #     - bundle exec rake smoke_tests
 
 coverage:
-  coverage: '/Coverage: \d+.\d+\%/'
+  coverage: '/coverage: \d+ \/ \d+ \((\d+.\d+\%)/'
   stage: prepare
   variables:
     BUNDLE_WITHOUT: lint:test:assorted
