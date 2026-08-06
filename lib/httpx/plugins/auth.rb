@@ -96,9 +96,8 @@ module HTTPX
           auth_header_value = @auth_header_value_mtx.synchronize do
             try_invalidate_auth_header_value
 
-            @auth_header_value ||= begin
+            @auth_header_value ||= generate_auth_token.tap do
               set_auth_header_expires_at(request)
-              generate_auth_token
             end
           end
 
