@@ -19,6 +19,8 @@ module HTTPX
       # adds support for the following options:
       #
       # :auth_header_value :: the token to use as a string, or a callable which returns a string when called.
+      #                       the callable is called a request, and a boolean: when true, the user must regenerate a token, otherwise it
+      #                       may probe for token freshness and return the same token.
       # :auth_header_type :: the authentication type to use in the "authorization" header value (i.e. "Bearer", "Digest"...)
       # :auth_header_expires_at :: timestamp at which the auth header will be discarded. should be a callable (like a proc)
       #                            receiving the request as an argument, and should return either a Time object, or an integer (UNIX time).
@@ -96,7 +98,7 @@ module HTTPX
           auth_header_value = @auth_header_value_mtx.synchronize do
             try_invalidate_auth_header_value
 
-            @auth_header_value ||= generate_auth_token.tap do
+            @auth_header_value ||= generate_auth_token(request, false).tap do
               set_auth_header_expires_at(request)
             end
           end
@@ -114,12 +116,12 @@ module HTTPX
           @auth_header_value = @auth_header_expires_at = nil
         end
 
-        def generate_auth_token
+        def generate_auth_token(request, should_regenerate)
           return unless (auth_value = @options.auth_header_value)
 
-          auth_value = auth_value.call(self) if dynamic_auth_token?(auth_value)
+          return unless dynamic_auth_token?(auth_value)
 
-          auth_value
+          auth_value.call(request, should_regenerate)
         end
 
         def set_auth_header_expires_at(request)
@@ -195,7 +197,7 @@ module HTTPX
             # use whatever was generated for it.
             @auth_header_value_mtx.synchronize do
               if request.auth_token_value == @auth_header_value
-                @auth_header_value = generate_auth_token
+                @auth_header_value = generate_auth_token(request, true)
                 set_auth_header_expires_at(request)
               end
             end
