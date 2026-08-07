@@ -296,9 +296,11 @@ module HTTPX
 
         private
 
-        def generate_auth_token
-          return unless @oauth_session
+        def generate_auth_token(*)
+          return super unless @oauth_session
 
+          # should_regenerate arg ignored, as there's no way to check
+          # for token expiration yet.
           @oauth_session.fetch_access_token(self)
         end
 

@@ -1,7 +1,7 @@
 module HTTPX
   module Plugins
     module Auth
-      type auth_header_value_type = String | ^(Request request) -> string
+      type auth_header_value_type = String | ^(?Request request, ?bool should_regenerate) -> string
 
       interface _AuthOptions
         def auth_header_value: () -> auth_header_value_type?
@@ -18,7 +18,7 @@ module HTTPX
         @auth_header_value_mtx: Thread::Mutex
         @skip_auth_header_value: bool
 
-        def authorization: (?string token, ?auth_header_type: string) ?{ (Request) -> string } -> instance
+        def authorization: (?string token, ?auth_header_type: string) ?{ (?Request, ?bool) -> string } -> instance
 
         def bearer_auth: (?string token) ?{ (Request) -> string } -> instance
 
@@ -28,7 +28,7 @@ module HTTPX
 
         private
 
-        def generate_auth_token: () -> String?
+        def generate_auth_token: (bool should_regenerate) -> String?
 
         def dynamic_auth_token?: (auth_header_value_type auth_header_value) -> boolish
       end
