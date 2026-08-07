@@ -539,6 +539,10 @@ module HTTPX
         return unless @io.connected?
 
         resolve if @queries.empty? && !@connections.empty?
+
+        # #resolve may have closed the resolver already as part of error handling.
+        # @fiber-switch-guard
+        return unless @io
       when :closed
         return if @state == :closed
 
