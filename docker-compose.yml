@@ -69,41 +69,45 @@ services:
     command: -d 3
 
   http2proxy:
-    image: registry.gitlab.com/os85/httpx/nghttp2:3
+    image: dajobe/nghttpx
+    environment:
+      ARGS: "--no-ocsp  --frontend *,80;no-tls --backend httpproxy,3128 --http2-proxy"
     ports:
       - 3300:80
     depends_on:
       - httpproxy
-    entrypoint: /usr/local/bin/nghttpx
-    command: --no-ocsp --frontend '*,80;no-tls' --backend 'httpproxy,3128' --http2-proxy
 
   nghttp2:
-    image: registry.gitlab.com/os85/httpx/nghttp2:3
+    image: dajobe/nghttpx
+    environment:
+      ARGS: "--no-ocsp --frontend *,80;no-tls --frontend *,443"
+      KEY_FILE: /data/etc/certs/server.key
+      CERT_FILE: /data/etc/certs/server.crt
     ports:
       - 80:80
       - 443:443
     depends_on:
       - httpbin
-    entrypoint: /usr/local/bin/nghttpx
     volumes:
-      - ./test/support/ci:/home
-    command: --conf /home/nghttp.conf --no-ocsp --frontend '*,80;no-tls' --frontend '*,443'
+      - ./test/support/ci:/data/etc
     networks:
       default:
         aliases:
           - another
 
   altsvc-nghttp2:
-    image: registry.gitlab.com/os85/httpx/nghttp2:3
+    image: dajobe/nghttpx
+    environment:
+      ARGS: "--no-ocsp --frontend *,80;no-tls --frontend *,443 --altsvc h2,443,nghttp2"
+      KEY_FILE: /data/etc/certs/server.key
+      CERT_FILE: /data/etc/certs/server.crt
     ports:
       - 81:80
       - 444:443
     depends_on:
       - httpbin
-    entrypoint: /usr/local/bin/nghttpx
     volumes:
-      - ./test/support/ci:/home
-    command: --conf /home/nghttp.conf --no-ocsp --frontend '*,80;no-tls' --frontend '*,443' --altsvc "h2,443,nghttp2"
+      - ./test/support/ci:/data/etc
     networks:
       default:
         aliases:
