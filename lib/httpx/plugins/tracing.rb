@@ -108,11 +108,13 @@ module HTTPX::Plugins
       def initialize(*)
         super
 
-        @init_time = ::Time.now.utc
+        @init_time = nil
       end
 
       def send_request_to_parser(request)
         if connecting?
+          @init_time ||= ::Time.now.utc
+
           # request span timeframe should include the time it took to connect.
           request.init_time ||= @init_time
         end
@@ -123,12 +125,16 @@ module HTTPX::Plugins
       def idling
         super
 
-        # time of initial request(s) is accounted from the moment
-        # the connection is back to :idle, and ready to connect again.
-        @init_time = ::Time.now.utc
+        @init_time = nil
       end
 
       private
+
+      def connect
+        @init_time ||= ::Time.now.utc
+
+        super
+      end
 
       def ping(request)
         # if a connection is probed for liveness, the request timeframe should include

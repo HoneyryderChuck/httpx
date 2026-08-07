@@ -30,7 +30,7 @@ module HTTPX
       end
 
       module ConnectionMethods
-        @init_time: Time
+        @init_time: Time?
       end
 
       type retriesRequest = Request & RequestMethods
