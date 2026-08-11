@@ -32,10 +32,11 @@ module HTTPX
     attr_accessor current_session: Session?
     attr_accessor family: Integer?
 
+    attr_reader read_buffer: Buffer
+    attr_reader write_buffer: Buffer
+
 
     @window_size: Integer
-    @read_buffer: Buffer
-    @write_buffer: Buffer
     @inflight: Integer
     @max_concurrent_requests: Integer?
     @keep_alive_timeout: interval?

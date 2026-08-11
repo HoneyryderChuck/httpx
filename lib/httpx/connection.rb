@@ -36,13 +36,14 @@ module HTTPX
 
     def_delegator :@write_buffer, :empty?
 
-    attr_reader :type, :io, :origin, :origins, :state, :pending, :options, :ssl_session, :sibling
+    attr_reader :type, :io, :origin, :origins, :state, :pending, :options, :ssl_session, :sibling,
+                :read_buffer, :write_buffer
 
     attr_writer :current_selector
 
     attr_accessor :current_session, :family
 
-    protected :ssl_session, :sibling
+    protected :ssl_session, :sibling, :read_buffer, :write_buffer
 
     def initialize(uri, options)
       @current_session = @current_selector = @max_concurrent_requests =
@@ -74,6 +75,29 @@ module HTTPX
         transition(:idle)
       end
       self.addresses = @options.addresses if @options.addresses
+    end
+
+    # dupped initialization
+    def initialize_dup(orig)
+      super
+      @parser = @sibling = @coalesced_connection = @altsvc_connection = nil
+      @origins = orig.origins.dup
+      @read_buffer = orig.read_buffer.dup
+      @write_buffer = orig.write_buffer.dup
+      @inflight = 0
+      @pending = []
+      transition(:idle)
+
+      if @io
+        # initialize new IO object with the same set of addresses
+        addresses = @io.addresses
+        @io = nil
+        self.addresses = addresses
+      end
+
+      if @current_session && @current_selector
+        @current_session.pin(self, @current_selector)
+      end
     end
 
     def peer
