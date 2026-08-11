@@ -15,15 +15,34 @@ variables:
   BUNDLE_JOBS: 4
   BUNDLE_PATH: vendor
 
+.services: &services
+
 .test_settings: &test_settings
   variables:
     BUNDLE_WITHOUT: assorted
+    HTTPBIN_HOST: nghttp2
+    HTTPBIN_NO_PROXY_HOST: http://httpbin:8000
+    HTTPX_HTTP_PROXY: http://proxyuser:password@httpproxy:3128
+    HTTPX_HTTPS_PROXY: http://proxyuser:password@httpproxy:3128
+    HTTPX_HTTP2_PROXY: http://proxyuser:password@http2proxy:80
+    HTTPX_SOCKS4_PROXY: socks4://user4:@socksproxy:8080
+    HTTPX_SOCKS4A_PROXY: socks4a://user4:@socksproxy:8080
+    HTTPX_SOCKS5_PROXY: socks5://user5:password@socksproxy:8080
+    HTTPX_SSH_PROXY: ssh://sshproxy:22
+    HTTPX_NO_JITTER: 1
+    N: 6 # minitest workers
+    MT_CPU: 6 # minitest workers
+    CI: 1
+    HTTPBIN_ALTSVC_HOST: another2
+    AWS_DEFAULT_REGION: us-east-1
+    AWS_ACCESS_KEY_ID: test
+    AWS_SECRET_ACCESS_KEY: test
+    AMZ_HOST: aws:9090
+    AMZS_HOST: aws:9191
+    WEBDAV_HOST: webdav
+    DD_INSTRUMENTATION_TELEMETRY_ENABLED: false
+    GRPC_VERBOSITY: ERROR
   stage: test
-  image: docker:latest
-  services:
-    - docker:dind
-  before_script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   artifacts:
     paths:
       - coverage/
@@ -68,147 +87,176 @@ lint rubocop wiki:
   script:
     - bundle exec rubocop httpx.wiki --config .rubocop-wiki.yml
 
-test jruby 9:
-  <<: *test_settings
-  script:
-    ./spec.sh jruby 9.0.0.0 tests
-  allow_failure: true
-test jruby 10:
-  <<: *test_settings
-  script:
-    ./spec.sh jruby 10 tests
-  allow_failure: true
-test ruby 2/7:
-  <<: *test_settings
-  script:
-    ./spec.sh ruby 2.7 tests
-test ruby 3/0:
-  <<: *test_settings
-  only:
-    - master
-  script:
-    ./spec.sh ruby 3.0 tests
-test ruby 3/1:
-  <<: *test_settings
-  only:
-    - master
-  script:
-    ./spec.sh ruby 3.1 tests
-test ruby 3/2:
-  <<: *test_settings
-  script:
-    ./spec.sh ruby 3.2 tests
-test ruby 3/3:
-  <<: *test_settings
-  script:
-    ./spec.sh ruby 3.3 tests
-test ruby 3/4:
-  <<: *test_settings
-  <<: *yjit_matrix
-  script:
-    ./spec.sh ruby 3.4 tests
-test ruby 4/0:
-  <<: *test_settings
-  <<: *yjit_matrix
-  script:
-    ./spec.sh ruby 4.0 tests
-test truffleruby:
-  <<: *test_settings
-  script:
-    ./spec.sh truffleruby latest tests
-  allow_failure: true
-regression tests:
-  <<: *test_settings
-  script:
-    ./spec.sh ruby 4.0 regression_tests
-# TODO: uncomment this if docker ever supports ipv6 connectivity, or CI runs
-# outside of docker
-# smoke_tests:
-#   image: "ruby:4.0"
-#   variables:
-#     BUNDLE_WITHOUT: lint:assorted
-#     CI: 1
-#     COVERAGE_KEY: "$RUBY_ENGINE-$RUBY_VERSION-smoke-tests"
+# test jruby 9:
+#   <<: *test_settings
+#   script:
+#     ./spec.sh jruby 9.0.0.0 tests
 #   allow_failure: true
+# test jruby 10:
+#   <<: *test_settings
+#   script:
+#     ./spec.sh jruby 10 tests
+#   allow_failure: true
+# test ruby 2/7:
+#   <<: *test_settings
+#   script:
+#     ./spec.sh ruby 2.7 tests
+# test ruby 3/0:
+#   <<: *test_settings
+#   only:
+#     - master
+#   script:
+#     ./spec.sh ruby 3.0 tests
+# test ruby 3/1:
+#   <<: *test_settings
+#   only:
+#     - master
+#   script:
+#     ./spec.sh ruby 3.1 tests
+# test ruby 3/2:
+#   <<: *test_settings
+#   script:
+#     ./spec.sh ruby 3.2 tests
+# test ruby 3/3:
+#   <<: *test_settings
+#   script:
+#     ./spec.sh ruby 3.3 tests
+# test ruby 3/4:
+#   <<: *test_settings
+#   <<: *yjit_matrix
+#   script:
+#     ./spec.sh ruby 3.4 tests
+test ruby 4/0:
+  <<: *services
+  <<: *test_settings
+  <<: *yjit_matrix
+  services:
+    nghttp2:
+      image: dajobe/nghttpx
+      environment:
+        ARGS: "--no-ocsp --frontend *,80;no-tls --frontend *,443"
+        KEY_FILE: /data/etc/certs/server.key
+        CERT_FILE: /data/etc/certs/server.crt
+      depends_on:
+        - httpbin
+      volumes:
+        - ./test/support/ci:/data/etc
+      networks:
+        default:
+          aliases:
+            - another
+    httpbin:
+      environment:
+        - DEBUG=True
+      image: citizenstig/httpbin
+      command: gunicorn --bind=0.0.0.0:8000 --workers=12 --access-logfile - --error-logfile - --log-level debug --capture-output httpbin:app
+
+  image: ruby:4.0
+  before_script:
+    - source test/support/ci/build.sh
+    - install_packages
+    - set_route_rules
+    - install_gems
+    - set_rbs_test
+  script:
+    ./tests.sh
+# test truffleruby:
+#   <<: *test_settings
+#   script:
+#     ./spec.sh truffleruby latest tests
+#   allow_failure: true
+# regression tests:
+#   <<: *test_settings
+#   script:
+#     ./spec.sh ruby 4.0 regression_tests
+# # TODO: uncomment this if docker ever supports ipv6 connectivity, or CI runs
+# # outside of docker
+# # smoke_tests:
+# #   image: "ruby:4.0"
+# #   variables:
+# #     BUNDLE_WITHOUT: lint:assorted
+# #     CI: 1
+# #     COVERAGE_KEY: "$RUBY_ENGINE-$RUBY_VERSION-smoke-tests"
+# #   allow_failure: true
+# #   artifacts:
+# #     paths:
+# #       - coverage/
+# #   stage: test
+# #   before_script:
+# #     - apt-get update && apt-get install -y libmagic-dev shared-mime-info
+# #     - bundle install
+# #   script:
+# #     - bundle exec rake smoke_tests
+
+# coverage:
+#   coverage: '/coverage: \d+ \/ \d+ \((\d+.\d+\%)/'
+#   stage: prepare
+#   variables:
+#     BUNDLE_WITHOUT: lint:test:assorted
+#   image: "ruby:4.0"
+#   script:
+#     - gem install simplecov --no-doc
+#     # this is a workaround, because simplecov doesn't support relative paths.
+#     #
+#     # https://github.com/simplecov-ruby/simplecov/issues/887
+#     #
+#     # this is necessary in our case, because coverage files are generated inside
+#     # the custom docker container, which runs in /home, and the absolute paths aren't
+#     # gonna match the paths where the files are, once we merge them. Therefore,
+#     # all of those have to be rewritten before the merge happens.
+#     #
+#     - find coverage -name "*resultset.json" -exec sed -i 's?/home?'`pwd`'?' {} \;
+#     - rake coverage:report
 #   artifacts:
 #     paths:
-#       - coverage/
-#   stage: test
+#       - "coverage/"
+
+# pages:
+#   stage: deploy
+#   needs:
+#     - coverage
+#   image: "ruby:4.0"
 #   before_script:
-#     - apt-get update && apt-get install -y libmagic-dev shared-mime-info
-#     - bundle install
+#     - gem install hanna-nouveau
 #   script:
-#     - bundle exec rake smoke_tests
+#     - rake prepare_website
+#     - mkdir -p public/
+#     - cp -r coverage/ public/
+#   artifacts:
+#     paths:
+#       - rdoc/
+#       - wiki/
+#       - data/
+#       - coverage/
+#       - public/
+#   only:
+#     - master
 
-coverage:
-  coverage: '/coverage: \d+ \/ \d+ \((\d+.\d+\%)/'
-  stage: prepare
-  variables:
-    BUNDLE_WITHOUT: lint:test:assorted
-  image: "ruby:4.0"
-  script:
-    - gem install simplecov --no-doc
-    # this is a workaround, because simplecov doesn't support relative paths.
-    #
-    # https://github.com/simplecov-ruby/simplecov/issues/887
-    #
-    # this is necessary in our case, because coverage files are generated inside
-    # the custom docker container, which runs in /home, and the absolute paths aren't
-    # gonna match the paths where the files are, once we merge them. Therefore,
-    # all of those have to be rewritten before the merge happens.
-    #
-    - find coverage -name "*resultset.json" -exec sed -i 's?/home?'`pwd`'?' {} \;
-    - rake coverage:report
-  artifacts:
-    paths:
-      - "coverage/"
+# prepare_release:
+#   stage: prepare
+#   rules:
+#     - if: $CI_COMMIT_TAG
+#       when: never
+#   script:
+#     - echo "EXTRA_DESCRIPTION=$(cat doc/release_notes/${${CI_COMMIT_TAG:1}//./_}.md)" >> variables.env
+#     - echo "TAG=v$(cat CI_COMMIT_TAG)" >> variables.env
+#   artifacts:
+#     reports:
+#       dotenv: variables.env
 
-pages:
-  stage: deploy
-  needs:
-    - coverage
-  image: "ruby:4.0"
-  before_script:
-    - gem install hanna-nouveau
-  script:
-    - rake prepare_website
-    - mkdir -p public/
-    - cp -r coverage/ public/
-  artifacts:
-    paths:
-      - rdoc/
-      - wiki/
-      - data/
-      - coverage/
-      - public/
-  only:
-    - master
-
-prepare_release:
-  stage: prepare
-  rules:
-    - if: $CI_COMMIT_TAG
-      when: never
-  script:
-    - echo "EXTRA_DESCRIPTION=$(cat doc/release_notes/${${CI_COMMIT_TAG:1}//./_}.md)" >> variables.env
-    - echo "TAG=v$(cat CI_COMMIT_TAG)" >> variables.env
-  artifacts:
-    reports:
-      dotenv: variables.env
-
-release:
-  stage: deploy
-  image: registry.gitlab.com/gitlab-org/release-cli:latest
-  needs:
-    - job: prepare_release
-      artifacts: true
-  rules:
-    - if: $CI_COMMIT_TAG
-      when: never
-  script:
-    - echo "running release_job for $TAG"
-  release:
-    name: 'Release $TAG'
-    description: '$EXTRA_DESCRIPTION'
-    tag_name: '$TAG'
-    ref: '$CI_COMMIT_SHA'
+# release:
+#   stage: deploy
+#   image: registry.gitlab.com/gitlab-org/release-cli:latest
+#   needs:
+#     - job: prepare_release
+#       artifacts: true
+#   rules:
+#     - if: $CI_COMMIT_TAG
+#       when: never
+#   script:
+#     - echo "running release_job for $TAG"
+#   release:
+#     name: 'Release $TAG'
+#     description: '$EXTRA_DESCRIPTION'
+#     tag_name: '$TAG'
+#     ref: '$CI_COMMIT_SHA'
