@@ -782,7 +782,10 @@ module HTTPX
            SocketError,
            IOError => e
       on_connect_error(e)
-    rescue TLSError, ::HTTP2::Error::ProtocolError, ::HTTP2::Error::HandshakeError => e
+    rescue TLSError,
+           Errno::ETIMEDOUT,
+           ::HTTP2::Error::ProtocolError,
+           ::HTTP2::Error::HandshakeError => e
       # connect errors, exit gracefully
       handle_error(e)
       handle_connect_error(e) if connecting?
