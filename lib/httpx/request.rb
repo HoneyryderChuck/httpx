@@ -115,9 +115,9 @@ module HTTPX
     # dupped initialization
     def initialize_dup(orig)
       super
-      @uri = orig.instance_variable_get(:@uri).dup
       @headers = orig.instance_variable_get(:@headers).dup
       @body = orig.instance_variable_get(:@body).dup
+      @active_timeouts = orig.instance_variable_get(:@active_timeouts).dup
     end
 
     def complete!(response = @response)
