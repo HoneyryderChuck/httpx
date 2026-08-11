@@ -46,6 +46,11 @@ module HTTPX
       def_delegator :@buffer, :<<
     end
 
+    def initialize_dup(other)
+      super
+      @buffer = other.instance_variable_get(:@buffer).dup
+    end
+
     def full?
       @buffer.bytesize >= @limit
     end
