@@ -28,7 +28,7 @@ module HTTPX
 
         private
 
-        def generate_auth_token: (bool should_regenerate) -> String?
+        def generate_auth_token: (Request & RequestMethods request, bool should_regenerate) -> String?
 
         def dynamic_auth_token?: (auth_header_value_type auth_header_value) -> boolish
       end
