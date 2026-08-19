@@ -68,7 +68,7 @@ module HTTPX
       @headers = @options.headers_class.new(headers)
       @body = @options.response_body_class.new(self, @options)
       @finished = complete?
-      @content_type = @content_length = nil
+      @callbacks = @content_type = @content_length = nil
     end
 
     # dupped initialization
