@@ -29,7 +29,7 @@ module HTTPX
       @version = [1, 1]
       @pending = []
       @requests = []
-      @request = nil
+      @callbacks = @request = nil
       @handshake_completed = @pipelining = false
     end
 

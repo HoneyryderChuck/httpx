@@ -48,8 +48,8 @@ module HTTPX
     def initialize(uri, options)
       @current_session = @current_selector = @max_concurrent_requests =
                            @parser = @sibling = @coalesced_connection = @altsvc_connection =
-                                                  @ping_timer = @family = @io = @ssl_session =
-                                                                            @timeout = @connected_at = @response_received_at = nil
+                                                  @callbacks = @ping_timer = @family =
+                                                                 @io = @ssl_session = @timeout = @connected_at = @response_received_at = nil
 
       @exhausted = @cloned = @main_sibling = false
 
@@ -80,7 +80,7 @@ module HTTPX
     # dupped initialization
     def initialize_dup(orig)
       super
-      @parser = @sibling = @coalesced_connection = @altsvc_connection = nil
+      @callbacks = @parser = @sibling = @coalesced_connection = @altsvc_connection = nil
       @origins = orig.origins.dup
       @read_buffer = orig.read_buffer.dup
       @write_buffer = orig.write_buffer.dup

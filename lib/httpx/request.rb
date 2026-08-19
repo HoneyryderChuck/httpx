@@ -105,8 +105,8 @@ module HTTPX
 
       @state = :idle
       @connection = @response =
-        @drainer = @peer_address =
-          @informational_status = @on_response_arrived = nil
+        @drainer = @peer_address = @callbacks =
+                     @informational_status = @on_response_arrived = nil
       @ping = @started = false
       @persistent = @options.persistent
       @active_timeouts = []
