@@ -56,7 +56,7 @@ module HTTPX
 
         begin
           select(timeout) do |c|
-            c.log(level: 2) { "[#{c.state}] selected from selector##{object_id} #{" after #{timeout} secs" unless timeout.nil?}..." }
+            c.log(level: 2) { "[#{c.state}] selected from selector##{object_id}#{" after #{timeout} secs" unless timeout.nil?}..." }
 
             c.call
           end
