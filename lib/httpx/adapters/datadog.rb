@@ -58,6 +58,7 @@ module Datadog::Tracing
           end
 
           def reset(request)
+            request.datadog_span&.finish
             request.datadog_span = nil
           end
 
