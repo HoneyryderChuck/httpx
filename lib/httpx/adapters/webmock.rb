@@ -34,7 +34,7 @@ module WebMock
         end
 
         def build_from_webmock_response(request, webmock_response)
-          return build_error_response(request, HTTPX::TimeoutError.new(1, "Timed out")) if webmock_response.should_timeout
+          return build_error_response(request, HTTPX::RequestTimeoutError.new(request, webmock_response, 1)) if webmock_response.should_timeout
 
           return build_error_response(request, webmock_response.exception) if webmock_response.exception
 

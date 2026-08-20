@@ -68,7 +68,7 @@ class WebmockTest < Minitest::Test
   def test_to_timeout
     response = http_request(:get, MOCK_URL_HTTP_TIMEOUT)
     assert_requested(@stub_timeout)
-    assert_equal(HTTPX::TimeoutError.new(1, "Timed out"), response.error)
+    assert_kind_of(HTTPX::RequestTimeoutError, response.error)
   end
 
   def test_to_timeout_with_retries
