@@ -61,12 +61,11 @@ module Requests
         assert persistent_session.calls.zero?, "expect request to be built 0 times (was #{persistent_session.calls})"
       end
 
-      def test_plugin_persistent_does_not_retry_change_requests_on_keep_alive_interval_timeouts
+      def test_plugin_persistent_should_retry_change_requests_on_keep_alive_interval_timeouts
         start_test_servlet(KeepAlivePongThenTimeoutSocketServer) do |server|
-          check_error = ->(response) { response.is_a?(HTTPX::ErrorResponse) || response.status == 405 }
           persistent_session = HTTPX
                                .plugin(RequestInspector)
-                               .plugin(:persistent, retry_on: check_error)
+                               .plugin(:persistent)
                                .with(
                                  ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE },
                                  timeout: { keep_alive_timeout: 1, request_timeout: 2 }
@@ -77,8 +76,9 @@ module Requests
           assert persistent_session.calls.zero?, "expect request to be built 0 times (was #{persistent_session.calls})"
           sleep(2)
           response = persistent_session.post(server.origin, body: "test")
-          assert check_error[response]
-          assert persistent_session.calls == 1, "expect request to be built 1 time (was #{persistent_session.calls})"
+          verify_status(response, 200)
+          assert persistent_session.calls == 2, "expect request to be built 2 time due to ping timeout" \
+                                                "(was #{persistent_session.calls})"
         end
       end
 

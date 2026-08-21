@@ -146,7 +146,7 @@ module HTTPX
           def when_to_retry(request, *)
             retry_after = request.last_server_sent_message&.retry_after
 
-            retry_after / 1_000.0 if retry_after # original in milliseconds
+            retry_after.to_i / 1_000.0 if retry_after # original in milliseconds
 
             request.last_server_sent_message&.retry_after && super
           end

@@ -29,6 +29,7 @@ module HTTPX
         Errno::ETIMEDOUT,
         ConnectionError,
         TLSError,
+        PingTimeoutError,
         Connection::HTTP2::Error,
       ].freeze
 
@@ -148,10 +149,13 @@ module HTTPX
              retryable_response?(response, options)
             try_partial_retry(request, response)
             log { "failed to get response, #{request.retries} tries to go..." }
+
+            # retry-after must be calculated before prepare_to_retry, as it relies on
+            # state changed byit.
+            retry_after = when_to_retry(request, response, options)
             prepare_to_retry(request, response)
 
-            if (retry_after = when_to_retry(request, response, options)) && retry_after.positive?
-
+            if retry_after&.positive?
               retry_start = Utils.now
               log { "retrying after #{retry_after} secs..." }
               selector.after(retry_after) do
