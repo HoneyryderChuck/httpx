@@ -341,6 +341,7 @@ module HTTPX
       end
 
       transition(:closing)
+
       transition(:closed)
     end
 

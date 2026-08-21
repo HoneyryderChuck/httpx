@@ -128,13 +128,6 @@ module HTTPX::Plugins
         @init_time = nil
       end
 
-      def terminate
-        super
-
-        # ensure that connections which go back to the pool reset their init time.
-        @init_time = nil
-      end
-
       private
 
       def connect
