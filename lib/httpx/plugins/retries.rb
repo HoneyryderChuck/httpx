@@ -30,7 +30,8 @@ module HTTPX
         ConnectionError,
         TLSError,
         PingTimeoutError,
-        Connection::HTTP2::Error,
+        Connection::HTTP2::GoawayError,
+        Connection::HTTP2::PingError,
       ].freeze
 
       RETRYABLE_ERRORS = (RECONNECTABLE_ERRORS + [
