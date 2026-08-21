@@ -20,4 +20,10 @@ class ChainableTest < Minitest::Test
     http = HTTPX.on_connection_closed {}
     assert http.class.ancestors.include?(HTTPX::Plugins::Callbacks::InstanceMethods)
   end
+
+  def test_with_unknown_options
+    assert_raises(HTTPX::Error) do
+      HTTPX.with(foo: :bar)
+    end
+  end
 end

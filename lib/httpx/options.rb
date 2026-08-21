@@ -257,12 +257,16 @@ module HTTPX
 
         other_opts = opts_names
       else
-        other_opts = other # : Hash[Symbol, untyped]
+        other_opts = other #: Hash[Symbol, untyped]
         other_opts = Hash[other] unless other.is_a?(Hash)
 
         return self if other_opts.empty?
 
-        return self if other_opts.all? { |opt, v| !respond_to?(opt) || public_send(opt) == v }
+        return self if other_opts.all? do |opt, v|
+          raise Error, "unknown option: #{opt}" unless respond_to?(opt)
+
+          public_send(opt) == v
+        end
       end
 
       opts = dup

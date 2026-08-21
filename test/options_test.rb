@@ -91,6 +91,12 @@ class OptionsTest < Minitest::Test
     assert opts.equal?(merged_opts3), "merged options should be the same object"
   end
 
+  def test_options_merge_unknown
+    opts = Options.new(fallback_protocol: "fat")
+    ex = assert_raises(Error) { Options.new(fallback_protocol: "fat").merge(foo: :bar) }
+    assert ex.message == "unknown option: foo", ex.message
+  end
+
   def test_options_merge_same_options
     opts = Options.new(fallback_protocol: "fat")
 

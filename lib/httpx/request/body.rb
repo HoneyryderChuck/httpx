@@ -4,14 +4,17 @@ module HTTPX
   # Implementation of the HTTP Request body as a delegator which iterates (responds to +each+) payload chunks.
   class Request::Body < SimpleDelegator
     class << self
-      def new(_, options, body: nil, **params)
-        if body.is_a?(self)
+      def new(h, options, body: nil, **params)
+        case body
+        when self
           # request derives its options from body
           body.options = options.merge(params)
-          return body
+          body
+        when nil
+          super(h, options, **params)
+        else
+          super
         end
-
-        super
       end
     end
 
