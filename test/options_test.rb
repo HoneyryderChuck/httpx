@@ -92,7 +92,6 @@ class OptionsTest < Minitest::Test
   end
 
   def test_options_merge_unknown
-    opts = Options.new(fallback_protocol: "fat")
     ex = assert_raises(Error) { Options.new(fallback_protocol: "fat").merge(foo: :bar) }
     assert ex.message == "unknown option: foo", ex.message
   end
