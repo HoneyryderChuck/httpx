@@ -196,11 +196,14 @@ module HTTPX
           RETRYABLE_ERRORS.any? { |klass| ex.is_a?(klass) } && !ex.is_a?(TotalRequestTimeoutError)
         end
 
+        def prepare_to_retry(request, response)
+          request.retries -= 1 unless can_reconnect?(request, response)
+          request.transition(:idle)
         end
 
-        def prepare_to_retry(request, _response)
-          request.retries -= 1 unless request.ping? # do not exhaust retries on connection liveness probes
-          request.transition(:idle)
+        # do not exhaust retries on connection liveness probes
+        def can_reconnect?(request, _)
+          request.ping?
         end
 
         def when_to_retry(request, response, options)

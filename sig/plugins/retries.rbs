@@ -45,9 +45,11 @@ module HTTPX
 
         def try_partial_retry: (retriesRequest request, retriesResponse response) -> void
 
-        def prepare_to_retry: (Request & RequestMethods request, retriesResponse response) -> void
+        def prepare_to_retry: (retriesRequest request, retriesResponse response) -> void
 
-        def when_to_retry: (Request & RequestMethods request, retriesResponse response, retriesOptions options) -> Numeric?
+        def can_reconnect?: (retriesRequest request, retriesResponse response) -> bool
+
+        def when_to_retry: (retriesRequest request, retriesResponse response, retriesOptions options) -> Numeric?
       end
 
       module RequestMethods

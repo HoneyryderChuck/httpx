@@ -18,6 +18,12 @@ module HTTPX
     # https://gitlab.com/os85/httpx/wikis/Persistent
     #
     module Persistent
+      SAFE_REONNECTABLE_ERRORS = [
+        PingTimeoutError,
+        Connection::HTTP2::GoawayError,
+        Connection::HTTP2::PingError,
+      ].freeze
+
       class << self
         def load_dependencies(klass)
           klass.plugin(:fiber_concurrency)
@@ -57,6 +63,15 @@ module HTTPX
 
         def reconnectable_error?(error)
           Retries::RECONNECTABLE_ERRORS.any? { |klass| error.is_a?(klass) }
+        end
+
+        # whether the error can be safely retried with no threshold.
+        def safe_reconnectable_error?(error)
+          SAFE_REONNECTABLE_ERRORS.any? { |klass| error.is_a?(klass) }
+        end
+
+        def can_reconnect?(_, response)
+          super || (response.is_a?(ErrorResponse) && safe_reconnectable_error?(response.error))
         end
 
         def when_to_retry(request, response, *)

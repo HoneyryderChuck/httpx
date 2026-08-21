@@ -1,6 +1,8 @@
 module HTTPX
   module Plugins
     module Persistent
+      SAFE_REONNECTABLE_ERRORS: Array[singleton(StandardError)]
+
       def self.load_dependencies: (singleton(Session)) -> void
 
       def self.extra_options: (Options) -> (Options)
@@ -9,6 +11,8 @@ module HTTPX
         private
 
         def reconnectable_error?: (StandardError error) -> bool
+
+        def safe_reconnectable_error?: (StandardError error) -> bool
       end
     end
 
