@@ -31,9 +31,9 @@ module HTTPX
 
   class RequestTimeoutError < TimeoutError
     attr_reader request: Request
-    attr_reader response: response?
+    attr_reader response: untyped
 
-    def initialize: (Request request, response? response, interval timeout) -> void
+    def initialize: (Request request, untyped response, interval timeout) -> void
   end
 
   class ReadTimeoutError < RequestTimeoutError

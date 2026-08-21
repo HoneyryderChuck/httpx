@@ -43,6 +43,9 @@ module HTTPX
     # The HTTPX::Request request object this exception refers to.
     attr_reader :request
 
+    # The response object this exception refers to.
+    attr_reader :response
+
     # initializes the exception with the +request+ and +response+ it refers to, and the
     # +timeout+ causing the error, and the
     def initialize(request, response, timeout)
