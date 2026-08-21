@@ -341,6 +341,10 @@ module HTTPX
         module InstanceMethods
           private
 
+          def proxy_error?(request, response, _)
+            super && !request.retries.positive?
+          end
+
           def retryable_error?(ex, *)
             super || ex.is_a?(ProxyConnectionError)
           end

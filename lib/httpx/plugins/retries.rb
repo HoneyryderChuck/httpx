@@ -195,8 +195,6 @@ module HTTPX
           RETRYABLE_ERRORS.any? { |klass| ex.is_a?(klass) } && !ex.is_a?(TotalRequestTimeoutError)
         end
 
-        def proxy_error?(request, response, _)
-          super && !request.retries.positive?
         end
 
         def prepare_to_retry(request, _response)
