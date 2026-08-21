@@ -140,6 +140,45 @@ module Requests
         assert session.connections.one?(&:closed?), "should have been no connections"
       end
 
+      def test_persistent_retry_http1_ping_timeout_is_just_a_forced_reconnect
+        return unless origin.start_with?("https")
+
+        begin
+          start_test_servlet(KeepAliveServer, tls: true) do |server|
+            uri = "#{server.origin}/"
+            http = HTTPX.plugin(SessionWithPool)
+                        .plugin(RequestInspector)
+                        .plugin(:persistent) # implicit max_retries == 1
+                        .with(
+                          fallback_protocol: "http/1.1",
+                          ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE, alpn_protocols: %w[http/1.1] },
+                          timeout: { keep_alive_timeout: 1 }
+                        )
+
+            response = http.get(uri)
+            verify_status(response, 200)
+            response = http.get(uri)
+            verify_status(response, 200)
+            assert http.calls == 1, "expect request to be built 1 time (was #{http.calls})"
+            assert http.connections.size == 1
+            connection = http.connections.first
+            assert connection.state == :inactive
+            io = connection.io.instance_variable_get(:@io)
+            sleep(2)
+
+            response = http.get(uri)
+            verify_status(response, 200)
+            assert http.calls == 2, "expect request to be built 1 more time (was #{http.calls})"
+            assert http.connections.size == 1
+            assert http.connections.include?(connection), "connection object should have been reused"
+            assert connection.io.instance_variable_get(:@io) != io, "connection should have reconnected"
+            assert !connection.instance_variable_get(:@ping_timer), "there should be no live timer for http/1 pings"
+          ensure
+            http.close
+          end
+        end
+      end
+
       def test_persistent_retry_http2_ping_timeout
         return unless origin.start_with?("https")
 

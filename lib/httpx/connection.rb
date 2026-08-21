@@ -982,6 +982,8 @@ module HTTPX
 
       parser.ping
 
+      return unless parser.waiting_for_ping?
+
       ping_timeout = @options.timeout[:ping_timeout]
 
       @ping_timer = @current_selector.after(ping_timeout) do

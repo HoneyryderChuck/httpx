@@ -3,15 +3,29 @@
 require "logger"
 
 class TestServer < WEBrick::HTTPServer
+  CERTS_DIR = File.expand_path("../ci/certs", __dir__)
+
   def initialize(options = {})
-    super({
+    default_options = {
       :BindAddress => "127.0.0.1",
       :Port => 0,
       :AccessLog => File.new(File::NULL),
       :Logger => Logger.new(File::NULL),
       # stretching due to some timeouts observed in CI due to thread deprioritization
       :RequestTimeout => 120,
-    }.merge(options))
+    }
+
+    if options.delete(:tls)
+      cert = OpenSSL::X509::Certificate.new(File.read(File.join(CERTS_DIR, "localhost-server.crt")))
+      key = OpenSSL::PKey.read(File.read(File.join(CERTS_DIR, "localhost-server.key")))
+      default_options.merge!(
+        :SSLEnable => true,
+        :SSLCertificate => cert,
+        :SSLPrivateKey => key,
+      )
+    end
+
+    super(default_options.merge(options))
   end
 
   def origin
@@ -142,8 +156,10 @@ class TestHTTP2Server
       end
     end
   rescue StandardError => e
-    puts "#{e.class} exception: #{e.message} - closing socket."
-    puts e.backtrace
+    if ENV.key?("HTTPX_DEBUG")
+      puts "#{e.class} exception: #{e.message} - closing socket."
+      puts e.backtrace
+    end
     close_socket(sock)
   end
 
