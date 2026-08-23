@@ -65,7 +65,7 @@ module HTTPX
           Retries::RECONNECTABLE_ERRORS.any? { |klass| error.is_a?(klass) }
         end
 
-        # whether the error can be safely retried with no threshold.
+        # whether the error can be safely retried without booking threshold attempts.
         def safe_reconnectable_error?(error)
           SAFE_REONNECTABLE_ERRORS.any? { |klass| error.is_a?(klass) }
         end
