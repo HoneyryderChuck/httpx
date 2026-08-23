@@ -95,9 +95,9 @@ module HTTPX
         self.addresses = addresses
       end
 
-      if @current_session && @current_selector
-        @current_session.pin(self, @current_selector)
-      end
+      return unless @current_session && @current_selector
+
+      @current_session.pin(self, @current_selector)
     end
 
     def peer
@@ -798,8 +798,10 @@ module HTTPX
            Errno::ECONNRESET,
            Errno::EADDRNOTAVAIL,
            Errno::EHOSTUNREACH,
-           Errno::EINVAL,
            Errno::ENETUNREACH,
+           Errno::EHOSTDOWN,
+           Errno::ENETDOWN,
+           Errno::EINVAL,
            Errno::EPIPE,
            Errno::ENOENT,
            SocketError,

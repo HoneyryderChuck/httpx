@@ -29,6 +29,7 @@ module HTTPX
         Errno::ETIMEDOUT,
         ConnectionError,
         TLSError,
+        Zlib::BufError,
         PingTimeoutError,
         Connection::HTTP2::GoawayError,
         Connection::HTTP2::PingError,
