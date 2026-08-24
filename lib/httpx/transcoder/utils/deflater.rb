@@ -55,7 +55,7 @@ module HTTPX
 
       private
 
-      # rubocop:disable Naming/MemoizedInstanceVariableName
+      # rubocop:disable-next Naming/MemoizedInstanceVariableName
       def buffer_deflate!
         return @buffer if defined?(@buffer)
 
@@ -68,7 +68,6 @@ module HTTPX
 
         @buffer = buffer
       end
-      # rubocop:enable Naming/MemoizedInstanceVariableName
     end
   end
 end

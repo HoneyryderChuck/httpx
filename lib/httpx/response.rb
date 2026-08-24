@@ -36,10 +36,10 @@ module HTTPX
     # * HTTPX::Response::Body#read
     # * HTTPX::Response::Body#copy_to
     # * HTTPX::Response::Body#close
-    attr_reader  :body
+    attr_reader :body
 
     # The HTTP protocol version used to fetch the response.
-    attr_reader  :version
+    attr_reader :version
 
     # returns the response body buffered in a string.
     def_delegator :@body, :to_s

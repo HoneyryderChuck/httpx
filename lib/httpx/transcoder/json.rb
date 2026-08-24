@@ -51,7 +51,7 @@ module HTTPX::Transcoder
       method(:json_load)
     end
 
-    # rubocop:disable Style/SingleLineMethods
+    # rubocop:disable-next Style/SingleLineMethods
     if defined?(MultiJson)
       def json_load(*args); MultiJson.load(*args); end
       def json_dump(*args); MultiJson.dump(*args); end
@@ -66,6 +66,5 @@ module HTTPX::Transcoder
       def json_load(*args); ::JSON.parse(*args); end
       def json_dump(*args); ::JSON.generate(*args); end
     end
-    # rubocop:enable Style/SingleLineMethods
   end
 end
