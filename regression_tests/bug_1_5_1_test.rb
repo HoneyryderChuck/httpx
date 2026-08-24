@@ -43,7 +43,7 @@ class Bug_1_5_1_Test < Minitest::Test
   end
 
   def test_persistent_connection_http1_should_use_buffered_requests_to_switch_context_too
-    http = HTTPX.plugin(:persistent, max_retries: 10, ssl: { alpn_protocols: %w[http/1.1] })
+    http = HTTPX.plugin(:persistent, ssl: { alpn_protocols: %w[http/1.1] })
     url = build_uri("/get")
 
     with_test_fiber_scheduler do

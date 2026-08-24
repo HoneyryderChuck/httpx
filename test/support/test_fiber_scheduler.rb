@@ -113,7 +113,7 @@ module FiberSchedulerTestHelpers
         ready = nil
 
         @lock.synchronize do
-          ready, @ready = @ready, []
+          ready, @ready = @ready, Set.new
         end
 
         ready.each do |fiber|
