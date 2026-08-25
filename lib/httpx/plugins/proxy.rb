@@ -182,9 +182,11 @@ module HTTPX
           if (no_proxy = proxy.no_proxy)
             no_proxy = no_proxy.join(",") if no_proxy.is_a?(Array)
 
-            # TODO: setting proxy to nil leaks the connection object in the pool
-            return super(request_uri, selector, options.merge(proxy: nil)) unless URI::Generic.use_proxy?(request_uri.host, next_proxy.host,
-                                                                                                          next_proxy.port, no_proxy)
+            unless no_proxy != "*" && # NO_PROXY=* bypasses proxy use
+                   URI::Generic.use_proxy?(request_uri.host, next_proxy.host, next_proxy.port, no_proxy)
+              # TODO: setting proxy to nil leaks the connection object in the pool
+              return super(request_uri, selector, options.merge(proxy: nil))
+            end
           end
 
           super(request_uri, selector, options.merge(proxy: proxy))

@@ -32,18 +32,31 @@ module Requests
       def test_plugin_http_no_proxy
         return unless origin.start_with?("http://")
 
-        session = HTTPX.plugin(:proxy).plugin(ProxyResponseDetector).with_proxy(uri: http_proxy, no_proxy: [httpbin_no_proxy.host])
+        session = HTTPX.plugin(:proxy).plugin(ProxyResponseDetector)
+        httpbin_no_proxy_session = session.with_proxy(uri: http_proxy, no_proxy: [httpbin_no_proxy.host])
 
         # proxy
         uri = build_uri("/get")
-        response = session.get(uri)
+        response = httpbin_no_proxy_session.get(uri)
         verify_status(response, 200)
         verify_body_length(response)
         assert response.proxied?
 
         # no proxy
         no_proxy_uri = build_uri("/get", httpbin_no_proxy)
-        no_proxy_response = session.get(no_proxy_uri)
+        no_proxy_response = httpbin_no_proxy_session.get(no_proxy_uri)
+        verify_status(no_proxy_response, 200)
+        verify_body_length(no_proxy_response)
+        assert !no_proxy_response.proxied?
+
+        all_no_proxy_session = session.with_proxy(uri: http_proxy, no_proxy: "*")
+        response = all_no_proxy_session.get(uri)
+        verify_status(response, 200)
+        verify_body_length(response)
+        assert !response.proxied?
+
+        # no proxy
+        no_proxy_response = httpbin_no_proxy_session.get(no_proxy_uri)
         verify_status(no_proxy_response, 200)
         verify_body_length(no_proxy_response)
         assert !no_proxy_response.proxied?
