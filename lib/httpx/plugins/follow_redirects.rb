@@ -168,7 +168,7 @@ module HTTPX
 
             # recalling itself, in case an error was triggered by the above, and we can
             # verify retriability again.
-            return fetch_response(request, selector, options)
+            return fetch_response(retry_request, selector, options)
           end
           nil
         end
