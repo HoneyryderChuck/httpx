@@ -237,7 +237,7 @@ module HTTPX
 
       return unless response && response.finished?
 
-      log(level: 2) { "response##{response.object_id} fetched" }
+      request.log(level: 2) { "response##{response.object_id} fetched" }
 
       response
     end
@@ -337,6 +337,8 @@ module HTTPX
         end
       end
 
+      log(level: 2) { "waiting to receive #{pending} pending requests..." }
+
       until pending.zero? || selector.empty?
         # loop on selector until at least one response has been received.
         waiting = true
@@ -360,7 +362,8 @@ module HTTPX
         end
       end
 
-      raise Error, "something went wrong, responses not found and requests not resent" unless pending.zero?
+      raise Error, "something went wrong, #{pending} responses not found " \
+                   "and requests not resent" unless pending.zero?
 
       responses
     end
