@@ -135,9 +135,9 @@ module HTTPX
             return ErrorResponse.new(request, error)
           end
 
-          retry_request = build_request(redirect_method, redirect_uri, redirect_params, options)
+          redirect_request = build_request(redirect_method, redirect_uri, redirect_params, options)
 
-          request.redirect_request = retry_request
+          request.redirect_request = redirect_request
 
           redirect_after = response.headers["retry-after"]
 
@@ -151,24 +151,24 @@ module HTTPX
             redirect_after = Utils.parse_retry_after(redirect_after)
 
             retry_start = Utils.now
-            retry_request.log { "redirecting after #{redirect_after} secs..." }
+            redirect_request.log { "redirecting after #{redirect_after} secs..." }
             selector.after(redirect_after) do
               if (response = request.response)
                 response.finish!
-                retry_request.response = response
+                redirect_request.response = response
                 # request has terminated abruptly meanwhile
-                retry_request.emit_response(response)
+                redirect_request.emit_response(response)
               else
-                retry_request.log { "redirecting (elapsed time: #{Utils.elapsed_time(retry_start)})!!" }
-                send_request(retry_request, selector, options)
+                redirect_request.log { "redirecting (elapsed time: #{Utils.elapsed_time(retry_start)})!!" }
+                send_request(redirect_request, selector, options)
               end
             end
           else
-            send_request(retry_request, selector, options)
+            send_request(redirect_request, selector, options)
 
             # recalling itself, in case an error was triggered by the above, and we can
             # verify retriability again.
-            return fetch_response(retry_request, selector, options)
+            return fetch_response(redirect_request, selector, options)
           end
           nil
         end
