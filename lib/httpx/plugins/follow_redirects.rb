@@ -231,6 +231,18 @@ module HTTPX
           @redirect_request.response
         end
 
+        def response=(response)
+          return super unless @redirect_request && @response.nil? # rubocop:disable Lint/ReturnInVoidContext
+
+          @redirect_request.response = response
+        end
+
+        def emit_response(response)
+          return super unless @redirect_request && @response.nil?
+
+          @redirect_request.emit_response(response)
+        end
+
         def max_redirects
           @options.max_redirects || MAX_REDIRECTS
         end
