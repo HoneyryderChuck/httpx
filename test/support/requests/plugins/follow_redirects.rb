@@ -124,7 +124,7 @@ module Requests
                        .plugin(SessionWithMockResponse, mock_tries: 4, mock_status: 302, mock_headers: { "retry-after" => "2" })
                        .plugin(:follow_redirects)
                        .max_redirects(200)
-                       .with(timeout: { total_request_timeout: 8 })
+                       .with(timeout: { total_request_timeout: 8 }, debug_level: 3, debug: $stderr)
         response = session.get(uri)
         verify_error_response(response, HTTPX::TotalRequestTimeoutError)
         assert session.total_responses.size > 2, "not enough redirections happening"
