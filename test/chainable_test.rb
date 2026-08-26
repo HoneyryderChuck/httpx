@@ -22,8 +22,11 @@ class ChainableTest < Minitest::Test
   end
 
   def test_with_unknown_options
-    assert_raises(HTTPX::Error) do
+    assert_output(nil, /DEPRECATION WARNING: unknown option: `:foo`/) do
       HTTPX.with(foo: :bar)
     end
+    # assert_raises(HTTPX::Error) do
+    #   HTTPX.with(foo: :bar)
+    # end
   end
 end

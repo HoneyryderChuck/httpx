@@ -133,12 +133,12 @@ module HTTPX
         when Options
           unknown_options = options.class.options_names - options_names
 
-          raise Error, "unknown option: #{unknown_options.first}" unless unknown_options.empty?
+          raise Error, "unknown option: `:#{unknown_options.first}`" unless unknown_options.empty?
 
           DEFAULT_OPTIONS.merge(options)
         else
           options.each_key do |k|
-            raise Error, "unknown option: #{k}" unless options_names.include?(k)
+            raise Error, "unknown option: `:#{k}`" unless options_names.include?(k)
           end
 
           options.empty? ? DEFAULT_OPTIONS : DEFAULT_OPTIONS.merge(options)
@@ -184,7 +184,7 @@ module HTTPX
                cache_type.respond_to?(:get) &&
                cache_type.respond_to?(:set) &&
                cache_type.respond_to?(:evict)
-          raise TypeError, ":resolver_cache must be a compatible resolver cache and implement #get, #set and #evict"
+          raise TypeError, "`:resolver_cache` must be a compatible resolver cache and implement `#get`, `#set` and `#evict`"
         end
 
         cache_type #: Object & Resolver::_Cache
@@ -263,9 +263,14 @@ module HTTPX
         return self if other_opts.empty?
 
         return self if other_opts.all? do |opt, v|
-          raise Error, "unknown option: #{opt}" unless respond_to?(opt)
+          unless respond_to?(opt)
+            # TODO: do this instead in a major or minor version bump
+            # raise Error, "unknown option: #{opt}" unless respond_to?(opt)
+            warn "DEPRECATION WARNING: unknown option: `:#{opt}`. an exception will be raised in a future version."
+            next(true)
+          end
 
-          public_send(opt) == v
+          !respond_to?(opt) || public_send(opt) == v
         end
       end
 
@@ -404,7 +409,7 @@ module HTTPX
         # converts +v+ into an Integer before setting the +#{option}+ option.
         private def option_#{option}(value)                                             # private def option_max_requests(v)
           value = Integer(value) unless value.respond_to?(:infinite?) && value.infinite?
-          raise TypeError, ":#{option} must be positive" unless value.positive? # raise TypeError, ":max_requests must be positive" unless value.positive?
+          raise TypeError, "`:#{option}` must be positive" unless value.positive? # raise TypeError, ":max_requests must be positive" unless value.positive?
 
           value
         end
@@ -456,11 +461,11 @@ module HTTPX
 
       # Validate keys and values
       timeout_hash.each do |key, val|
-        raise TypeError, "invalid timeout: :#{key}" unless default_timeouts.key?(key)
+        raise TypeError, "invalid timeout: `:#{key}`" unless default_timeouts.key?(key)
 
         next if val.nil?
 
-        raise TypeError, ":#{key} must be numeric" unless val.is_a?(Numeric)
+        raise TypeError, "`:#{key}` must be numeric" unless val.is_a?(Numeric)
       end
 
       timeout_hash
@@ -490,15 +495,15 @@ module HTTPX
       when Symbol
         meth = :"resolver_#{resolver_type}_class"
 
-        raise TypeError, ":resolver_class must be a supported type" unless respond_to?(meth)
+        raise TypeError, "`:resolver_class` must be a supported type" unless respond_to?(meth)
 
         resolver_type
       when Class
-        raise TypeError, ":resolver_class must be a subclass of `#{Resolver::Resolver}`" unless resolver_type < Resolver::Resolver
+        raise TypeError, "`:resolver_class` must be a subclass of `#{Resolver::Resolver}`" unless resolver_type < Resolver::Resolver
 
         resolver_type
       else
-        raise TypeError, ":resolver_class must be a supported type"
+        raise TypeError, "`:resolver_class` must be a supported type"
       end
     end
 
@@ -513,7 +518,7 @@ module HTTPX
                cache_type.respond_to?(:get) &&
                cache_type.respond_to?(:set) &&
                cache_type.respond_to?(:evict)
-          raise TypeError, ":resolver_cache must be a compatible resolver cache and implement #resolve, #get, #set and #evict"
+          raise TypeError, "`:resolver_cache` must be a compatible resolver cache and implement `#resolve`, `#get`, `#set` and `#evict`"
         end
       end
 

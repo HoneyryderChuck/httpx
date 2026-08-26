@@ -7,7 +7,7 @@ class OptionsTest < Minitest::Test
 
   def test_options_unknown
     ex = assert_raises(Error) { Options.new(foo: "bar") }
-    assert ex.message == "unknown option: foo", ex.message
+    assert ex.message == "unknown option: `:foo`", ex.message
   end
 
   def test_options_no_method_error_during_validation
@@ -40,13 +40,13 @@ class OptionsTest < Minitest::Test
     assert Options.new(resolver_class: :system).resolver_class < Resolver::System
     assert Options.new(resolver_class: :https).resolver_class < Resolver::HTTPS
     ex = assert_raises(TypeError) { Options.new(resolver_class: :smth) }
-    assert(ex.message.include?(":resolver_class must be a supported type"))
+    assert(ex.message.include?("`:resolver_class` must be a supported type"))
     assert Options.new(resolver_class: Resolver::HTTPS).resolver_class == Resolver::HTTPS
 
     return if defined?(RBS)
 
     ex = assert_raises(TypeError) { Options.new(resolver_class: Object) }
-    assert(ex.message.include?(":resolver_class must be a subclass of `HTTPX::Resolver::Resolver`"))
+    assert(ex.message.include?("`:resolver_class` must be a subclass of `HTTPX::Resolver::Resolver`"))
   end
 
   def test_options_headers_with_instance
@@ -64,9 +64,9 @@ class OptionsTest < Minitest::Test
     assert_equal 30, Options.new(timeout: { connect_timeout: 30 }).timeout[:connect_timeout]
     assert_equal 30.5, Options.new(timeout: { connect_timeout: 30.5 }).timeout[:connect_timeout]
     ex = assert_raises(TypeError) { Options.new(timeout: { connect_timeout: "30" }) }
-    assert_match(/:connect_timeout must be numeric/, ex.message)
+    assert_match(/`:connect_timeout` must be numeric/, ex.message)
     ex = assert_raises(TypeError) { Options.new(timeout: { invalid_timeout: 30 }) }
-    assert_match(/invalid timeout: :invalid_timeout/, ex.message)
+    assert_match(/invalid timeout: `:invalid_timeout`/, ex.message)
   end
 
   def test_options_merge_hash
@@ -92,8 +92,11 @@ class OptionsTest < Minitest::Test
   end
 
   def test_options_merge_unknown
-    ex = assert_raises(Error) { Options.new(fallback_protocol: "fat").merge(foo: :bar) }
-    assert ex.message == "unknown option: foo", ex.message
+    assert_output(nil, /DEPRECATION WARNING: unknown option: `:foo`/) do
+      Options.new(fallback_protocol: "fat").merge(foo: :bar)
+    end
+    # ex = assert_raises(Error) { Options.new(fallback_protocol: "fat").merge(foo: :bar) }
+    # assert ex.message == "unknown option: foo", ex.message
   end
 
   def test_options_merge_same_options
