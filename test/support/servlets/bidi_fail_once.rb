@@ -28,8 +28,11 @@ class BidiFailOnce < Bidi
                        "date" => Time.now.httpdate,
                        "content-type" => "application/x-ndjson",
                      }, end_stream: false)
-      # Send GOAWAY to trigger retry on client side
-      conn.goaway(:no_error)
+      # Send GOAWAY to trigger retry on client side. a real error code is used because
+      # :no_error on a stream the server has no intention of ever finishing (no END_STREAM
+      # was sent) is not a graceful goaway, and httpx now (correctly) treats a genuine
+      # graceful goaway as "leave streams at or below last_stream_id alone to complete".
+      conn.goaway(:internal_error)
     else
       # Subsequent requests: work normally
       super

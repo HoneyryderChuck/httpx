@@ -57,7 +57,11 @@ class KeepAlivePongThenGoawayServer < TestHTTP2Server
   def handle_stream(conn, stream)
     # responds once, then closes the connection
     if @sent[conn]
-      conn.goaway
+      # a real error code (rather than the default :no_error) is what actually models an
+      # abrupt connection failure: :no_error on a stream the server has no intention of ever
+      # finishing is not a graceful goaway, and httpx now (correctly) treats a genuine
+      # graceful goaway as "leave streams at or below last_stream_id alone to complete".
+      conn.goaway(:internal_error)
       @sent[conn] = false
     else
       super

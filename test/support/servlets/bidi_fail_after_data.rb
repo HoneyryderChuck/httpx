@@ -23,8 +23,11 @@ class BidiFailAfterData < Bidi
     if @stream_count == 1
       # First request: send headers, wait for first data, then fail
       stream.on(:data) do |_d|
-        # After receiving first data chunk, send GOAWAY
-        conn.goaway(:no_error)
+        # After receiving first data chunk, send GOAWAY. a real error code is used because
+        # :no_error on a stream the server has no intention of ever finishing (no END_STREAM
+        # was sent) is not a graceful goaway, and httpx now (correctly) treats a genuine
+        # graceful goaway as "leave streams at or below last_stream_id alone to complete".
+        conn.goaway(:internal_error)
       end
 
       stream.headers({

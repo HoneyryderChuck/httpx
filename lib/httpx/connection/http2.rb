@@ -46,6 +46,7 @@ module HTTPX
       @drains = {}
       @pings = []
       @streams_to_close_after_receive = []
+      @goaway_error = :no_error
       @buffer = buffer
       @handshake_completed = false
       @wait_for_handshake = @settings.key?(:wait_for_handshake) ? @settings.delete(:wait_for_handshake) : true
@@ -128,6 +129,13 @@ module HTTPX
     end
 
     def send(request, head = false)
+      # a GOAWAY (graceful or not) forbids opening new streams; this request will never be
+      # sent on this connection, so it's unconditionally safe to retry elsewhere.
+      if @connection.closed?
+        emit_goaway_error(request, @goaway_error, true)
+        return false
+      end
+
       unless can_buffer_more_requests?
         head ? @pending.unshift(request) : @pending << request
         return false
@@ -192,6 +200,7 @@ module HTTPX
 
     def can_buffer_more_requests?
       (@handshake_completed || !@wait_for_handshake) &&
+        !@connection.closed? &&
         @streams.size < @max_concurrent_requests &&
         @streams.size < @max_requests
     end
@@ -419,7 +428,9 @@ module HTTPX
       end
       send(@pending.shift) unless @pending.empty?
 
-      return unless @streams.empty? && exhausted?
+      # once a goaway leaves the connection draining, closing it once the last tracked
+      # stream finishes is not optional (no new streams can be opened on it anymore).
+      return unless @streams.empty? && (exhausted? || @connection.closed?)
 
       if @pending.empty?
         close
@@ -442,15 +453,23 @@ module HTTPX
     def on_close(last_stream_id, error, _payload)
       is_connection_closed = @connection.closed?
       if error
-        @buffer.clear if is_connection_closed
         case error
         when :http_1_1_required
+          @buffer.clear
           while (request = @pending.shift)
             emit(:error, request, error)
           end
         else
-          handle_goaway(last_stream_id, error)
-          teardown
+          # a NO_ERROR goaway with streams still open leaves the connection +closing?+
+          # (not +closed?+) until those streams finish, per RFC 7540 section 6.8 (this
+          # includes the initial phase of a graceful shutdown, sent with the maximum
+          # stream id as a sentinel, before the peer follows up with the real cutoff).
+          # only tear everything down when this goaway is the terminal one.
+          going_away = @connection.closing?
+          @buffer.clear unless going_away
+          @goaway_error = error
+          handle_goaway(last_stream_id, error, going_away)
+          teardown unless going_away
         end
       end
       return unless is_connection_closed && @streams.empty?
@@ -458,12 +477,17 @@ module HTTPX
       emit(:close) if is_connection_closed
     end
 
-    # streams above +last_stream_id+, and requests still in +@pending+ (which never got a
-    # stream id at all), are guaranteed by RFC 7540 section 6.8 to have never been processed.
-    def handle_goaway(last_stream_id, error)
-      while (req, stream = @streams.shift)
+    # streams above +last_stream_id+ are guaranteed by RFC 7540 section 6.8 to have never
+    # been processed, and are failed unconditionally; while the connection is gracefully
+    # +going_away+, streams at or below it are left alone to complete normally, since the
+    # peer promised to still act on them. requests still in +@pending+ never got a stream
+    # id at all, so the same guarantee as the above-cutoff case applies to them regardless.
+    def handle_goaway(last_stream_id, error, going_away)
+      @streams.select { |_, stream| !going_away || stream.id > last_stream_id }.each do |req, stream|
+        @streams.delete(req)
         emit_goaway_error(req, error, stream.id > last_stream_id)
       end
+
       while (req = @pending.shift)
         emit_goaway_error(req, error, true)
       end
