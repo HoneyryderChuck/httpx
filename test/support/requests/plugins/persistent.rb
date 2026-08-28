@@ -34,6 +34,35 @@ module Requests
         assert options.persistent
       end
 
+      def test_plugin_persistent_retries_change_request_on_unprocessed_goaway
+        session = HTTPX.plugin(:persistent)
+        request = session.build_request("POST", "http://example.com/")
+        error = HTTPX::Connection::HTTP2::GoawayError.new(:no_error, unprocessed: true)
+        response = HTTPX::ErrorResponse.new(request, error)
+
+        assert session.send(:retryable_request?, request, response, request.options),
+               "expected a POST request unprocessed by the peer to be retryable"
+      end
+
+      def test_plugin_persistent_does_not_retry_change_request_on_processed_goaway
+        session = HTTPX.plugin(:persistent)
+        request = session.build_request("POST", "http://example.com/")
+        error = HTTPX::Connection::HTTP2::GoawayError.new(:no_error, unprocessed: false)
+        response = HTTPX::ErrorResponse.new(request, error)
+
+        refute session.send(:retryable_request?, request, response, request.options),
+               "expected a POST request possibly processed by the peer to follow idempotency rules"
+      end
+
+      def test_plugin_persistent_still_retries_change_request_on_reconnectable_errors
+        session = HTTPX.plugin(:persistent)
+        request = session.build_request("POST", "http://example.com/")
+        response = HTTPX::ErrorResponse.new(request, EOFError.new)
+
+        assert session.send(:retryable_request?, request, response, request.options),
+               "expected a POST request to still be retried for other reconnectable errors"
+      end
+
       def test_plugin_persistent_does_not_retry_timeout_requests
         before_time = Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)
         persistent_session = HTTPX

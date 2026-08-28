@@ -92,6 +92,10 @@ module HTTPX
 
             error = response.error
 
+            # a goaway error reaching this point is not unprocessed (see the check above), so it
+            # must follow the default method idempotency rules instead of being blindly retried.
+            return false if error.is_a?(Connection::HTTP2::GoawayError)
+
             reconnectable_error?(error)
           end
         end
