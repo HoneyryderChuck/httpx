@@ -13,6 +13,8 @@ module HTTPX
 
     def rewind: () -> void
 
+    def rewindable?: () -> bool
+
     def empty?: () -> bool
 
     def bytesize: () -> (Integer | Float)

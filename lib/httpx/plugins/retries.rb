@@ -8,7 +8,9 @@ module HTTPX
     # It has a default max number of retries (see *MAX_RETRIES* and the *max_retries* option),
     # after which it will return the last response, error or not. It will **not** raise an exception.
     #
-    # It does not retry which are not considered idempotent (see *retry_change_requests* to override).
+    # It does not retry requests which are not considered idempotent (see *retry_change_requests*
+    # to override), unless the request is one the peer is guaranteed to have never processed (e.g.
+    # an HTTP/2 GOAWAY for a stream above the reported last stream id) and its body can be re-sent.
     #
     # https://gitlab.com/os85/httpx/wikis/Retries
     #
@@ -187,7 +189,7 @@ module HTTPX
         def retryable_request?(request, response, options)
           IDEMPOTENT_METHODS.include?(request.verb) ||
             options.retry_change_requests ||
-            goaway_unprocessed?(response)
+            (goaway_unprocessed?(response) && request.body.rewindable?)
         end
 
         # returns whether +response+ carries a GOAWAY error for a request the peer never processed.

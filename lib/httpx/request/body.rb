@@ -78,6 +78,11 @@ module HTTPX
       @body.rewind if @body.respond_to?(:rewind)
     end
 
+    # returns whether the body can be safely re-sent from the start on a retry.
+    def rewindable?
+      !unbounded_body? && (empty? || @body.respond_to?(:rewind))
+    end
+
     # return +true+ if the +body+ has been fully drained (or does nnot exist).
     def empty?
       return true if @body.nil?

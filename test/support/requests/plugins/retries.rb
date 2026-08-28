@@ -65,6 +65,48 @@ module Requests
                "expected a POST request possibly processed by the peer to follow idempotency rules"
       end
 
+      def test_plugin_retries_unprocessed_goaway_change_request_with_rewindable_body
+        session = HTTPX.plugin(:retries)
+        request = session.build_request("POST", "http://example.com/", body: StringIO.new("abc"))
+        error = HTTPX::Connection::HTTP2::GoawayError.new(:no_error, unprocessed: true)
+        response = HTTPX::ErrorResponse.new(request, error)
+
+        assert session.send(:retryable_request?, request, response, request.options),
+               "expected a POST request with a rewindable body to be retryable"
+      end
+
+      def test_plugin_retries_unprocessed_goaway_change_request_with_unrewindable_body
+        session = HTTPX.plugin(:retries)
+        body = Object.new
+        def body.each
+          yield "abc"
+        end
+
+        def body.bytesize
+          3
+        end
+        request = session.build_request("POST", "http://example.com/", body: body)
+        error = HTTPX::Connection::HTTP2::GoawayError.new(:no_error, unprocessed: true)
+        response = HTTPX::ErrorResponse.new(request, error)
+
+        refute session.send(:retryable_request?, request, response, request.options),
+               "expected a POST request with a body that cannot be re-sent not to be retried automatically"
+      end
+
+      def test_plugin_retries_unprocessed_goaway_change_request_with_unbounded_body
+        session = HTTPX.plugin(:retries)
+        request = session.build_request(
+          "POST", "http://example.com/",
+          body: StringIO.new("abc"),
+          headers: { "transfer-encoding" => "chunked" }
+        )
+        error = HTTPX::Connection::HTTP2::GoawayError.new(:no_error, unprocessed: true)
+        response = HTTPX::ErrorResponse.new(request, error)
+
+        refute session.send(:retryable_request?, request, response, request.options),
+               "expected a POST request with an unbounded body not to be retried automatically"
+      end
+
       def test_plugin_retries_multi_request
         retries_session = HTTPX
                           .plugin(RequestInspector)
