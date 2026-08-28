@@ -184,8 +184,17 @@ module HTTPX
         end
 
         # returns whether +request+ can be retried.
-        def retryable_request?(request, _, options)
-          IDEMPOTENT_METHODS.include?(request.verb) || options.retry_change_requests
+        def retryable_request?(request, response, options)
+          IDEMPOTENT_METHODS.include?(request.verb) ||
+            options.retry_change_requests ||
+            goaway_unprocessed?(response)
+        end
+
+        # returns whether +response+ carries a GOAWAY error for a request the peer never processed.
+        def goaway_unprocessed?(response)
+          response.is_a?(ErrorResponse) &&
+            response.error.is_a?(Connection::HTTP2::GoawayError) &&
+            response.error.unprocessed?
         end
 
         def retryable_response?(response, options)

@@ -91,7 +91,11 @@ module HTTPX
 
     def on_settings: (*untyped) -> void
 
-    def on_close: (Integer last_frame, Symbol? error, String? payload) -> void
+    def on_close: (Integer last_stream_id, Symbol? error, String? payload) -> void
+
+    def handle_goaway: (Integer last_stream_id, Symbol error) -> void
+
+    def emit_goaway_error: (Request request, Symbol error, bool unprocessed) -> void
 
     def on_frame_sent: (::HTTP2::frame frame) -> void
 
@@ -116,7 +120,9 @@ module HTTPX
     end
 
     class GoawayError < Error
-      def initialize: (?Symbol code) -> void
+      def initialize: (?Symbol code, ?unprocessed: bool) -> void
+
+      def unprocessed?: () -> bool
     end
 
     class PingError < Error

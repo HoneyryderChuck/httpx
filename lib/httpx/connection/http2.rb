@@ -23,8 +23,15 @@ module HTTPX
     end
 
     class GoawayError < Error
-      def initialize(code = :no_error)
+      def initialize(code = :no_error, unprocessed: false)
         super(0, code)
+        @unprocessed = unprocessed
+      end
+
+      # RFC 7540 section 6.8: true when the peer is guaranteed to have never processed the
+      # associated request.
+      def unprocessed?
+        @unprocessed
       end
     end
 
@@ -432,7 +439,7 @@ module HTTPX
       send_pending
     end
 
-    def on_close(_last_frame, error, _payload)
+    def on_close(last_stream_id, error, _payload)
       is_connection_closed = @connection.closed?
       if error
         @buffer.clear if is_connection_closed
@@ -442,17 +449,30 @@ module HTTPX
             emit(:error, request, error)
           end
         else
-          ex = GoawayError.new(error)
-          ex.set_backtrace(caller)
-
-          handle_error(ex)
+          handle_goaway(last_stream_id, error)
           teardown
-
         end
       end
       return unless is_connection_closed && @streams.empty?
 
       emit(:close) if is_connection_closed
+    end
+
+    # streams above +last_stream_id+, and requests still in +@pending+ (which never got a
+    # stream id at all), are guaranteed by RFC 7540 section 6.8 to have never been processed.
+    def handle_goaway(last_stream_id, error)
+      while (req, stream = @streams.shift)
+        emit_goaway_error(req, error, stream.id > last_stream_id)
+      end
+      while (req = @pending.shift)
+        emit_goaway_error(req, error, true)
+      end
+    end
+
+    def emit_goaway_error(request, error, unprocessed)
+      ex = GoawayError.new(error, unprocessed: unprocessed)
+      ex.set_backtrace(caller)
+      emit(:error, request, ex)
     end
 
     def on_frame_sent(frame)

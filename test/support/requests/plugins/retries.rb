@@ -45,6 +45,26 @@ module Requests
         assert retries_session.calls == 3, "expected request to be retried 3 times (was #{retries_session.calls})"
       end
 
+      def test_plugin_retries_unprocessed_goaway_change_request
+        session = HTTPX.plugin(:retries)
+        request = session.build_request("POST", "http://example.com/")
+        error = HTTPX::Connection::HTTP2::GoawayError.new(:no_error, unprocessed: true)
+        response = HTTPX::ErrorResponse.new(request, error)
+
+        assert session.send(:retryable_request?, request, response, request.options),
+               "expected a POST request unprocessed by the peer to be retryable"
+      end
+
+      def test_plugin_retries_processed_goaway_change_request
+        session = HTTPX.plugin(:retries)
+        request = session.build_request("POST", "http://example.com/")
+        error = HTTPX::Connection::HTTP2::GoawayError.new(:no_error, unprocessed: false)
+        response = HTTPX::ErrorResponse.new(request, error)
+
+        refute session.send(:retryable_request?, request, response, request.options),
+               "expected a POST request possibly processed by the peer to follow idempotency rules"
+      end
+
       def test_plugin_retries_multi_request
         retries_session = HTTPX
                           .plugin(RequestInspector)
