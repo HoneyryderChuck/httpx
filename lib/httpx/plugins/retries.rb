@@ -31,11 +31,21 @@ module HTTPX
         TLSError,
         Zlib::BufError,
         PingTimeoutError,
+        # HTTP/2 GOAWAY or RST_STREAM errors guaranteed to be retriable for all
+        # types of requests.
+        Connection::HTTP2::RefusedStreamError,
         Connection::HTTP2::GoawayError,
         Connection::HTTP2::PingError,
+
+        # happens if connections were somehow sent to a closed or closing
+        # HTTP2::Connection, request guaranteed to not have been processed.
+        ::HTTP2::Error::ConnectionClosed,
       ].freeze
 
       RETRYABLE_ERRORS = (RECONNECTABLE_ERRORS + [
+        # most RST_STREAM errors aren't safely retriable, as request may have
+        # been partially processed.
+        Connection::HTTP2::RstStreamError,
         Parser::Error,
         TimeoutError,
       ]).freeze
