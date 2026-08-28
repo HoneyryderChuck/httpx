@@ -28,6 +28,12 @@ module HTTPX
       end
     end
 
+    class RstStreamError < Error
+    end
+
+    class RefusedStreamError < RstStreamError
+    end
+
     attr_reader :streams, :pending
 
     def initialize(buffer, options)
@@ -395,7 +401,14 @@ module HTTPX
         when :http_1_1_required
           emit(:error, request, error)
         else
-          ex = Error.new(stream.id, error)
+          ex =
+            case error
+            when :refused_stream
+              RefusedStreamError.new(stream.id, error)
+            else
+              RstStreamError.new(stream.id, error)
+            end
+
           ex.set_backtrace(caller)
           response = ErrorResponse.new(request, ex)
           request.response = response

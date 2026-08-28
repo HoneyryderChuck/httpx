@@ -122,5 +122,11 @@ module HTTPX
     class PingError < Error
       def initialize: () -> void
     end
+
+    class RstStreamError < Error
+    end
+
+    class RefusedStreamError < Error
+    end
   end
 end

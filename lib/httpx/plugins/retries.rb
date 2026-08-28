@@ -31,11 +31,13 @@ module HTTPX
         TLSError,
         Zlib::BufError,
         PingTimeoutError,
+        Connection::HTTP2::RefusedStreamError,
         Connection::HTTP2::GoawayError,
         Connection::HTTP2::PingError,
       ].freeze
 
       RETRYABLE_ERRORS = (RECONNECTABLE_ERRORS + [
+        Connection::HTTP2::RstStreamError,
         Parser::Error,
         TimeoutError,
       ]).freeze
