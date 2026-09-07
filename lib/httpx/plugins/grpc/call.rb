@@ -48,12 +48,12 @@ module HTTPX
           end
         end
 
-        def respond_to_missing?(meth, *args, &blk)
-          grpc_response.respond_to?(meth, *args) || super
+        def respond_to_missing?(meth, ...)
+          grpc_response.respond_to?(meth, ...) || super
         end
 
-        def method_missing(meth, *args, &blk)
-          return grpc_response.__send__(meth, *args, &blk) if grpc_response.respond_to?(meth)
+        def method_missing(meth, ...)
+          return grpc_response.__send__(meth, ...) if grpc_response.respond_to?(meth)
 
           super
         end

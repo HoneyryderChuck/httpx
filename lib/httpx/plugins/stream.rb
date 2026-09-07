@@ -111,10 +111,10 @@ module HTTPX
       end || super
     end
 
-    def method_missing(meth, *args, **kwargs, &block)
+    def method_missing(meth, ...)
       return super unless response.respond_to?(meth)
 
-      response.__send__(meth, *args, **kwargs, &block)
+      response.__send__(meth, ...)
     end
   end
 

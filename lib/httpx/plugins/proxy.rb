@@ -92,16 +92,16 @@ module HTTPX
           @authenticator = load_authenticator(scheme, @username, @password)
         end
 
-        def can_authenticate?(*args)
+        def can_authenticate?(...)
           return false unless @authenticator && @authenticator.respond_to?(:can_authenticate?)
 
-          @authenticator.can_authenticate?(*args)
+          @authenticator.can_authenticate?(...)
         end
 
-        def authenticate(*args)
+        def authenticate(...)
           return unless @authenticator
 
-          @authenticator.authenticate(*args)
+          @authenticator.authenticate(...)
         end
 
         def ==(other)

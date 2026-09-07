@@ -24,8 +24,8 @@ module HTTPX::Transcoder
         yield "0#{CRLF}"
       end
 
-      def respond_to_missing?(meth, *args)
-        @raw.respond_to?(meth, *args) || super
+      def respond_to_missing?(...)
+        @raw.respond_to?(...) || super
       end
     end
 

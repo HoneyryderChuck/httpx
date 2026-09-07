@@ -13,8 +13,8 @@ module HTTPX
     end
 
     # delegates to the default session (see HTTPX::Session#request).
-    def request(*args, **options)
-      branch(default_options).request(*args, **options)
+    def request(...)
+      branch(default_options).request(...)
     end
 
     def accept(type)

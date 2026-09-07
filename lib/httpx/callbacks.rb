@@ -14,9 +14,9 @@ module HTTPX
       end
     end
 
-    def emit(type, *args)
+    def emit(type, ...)
       log { "emit #{type.inspect} callbacks" } if respond_to?(:log)
-      callbacks(type).delete_if { |pr| :delete == pr.call(*args) } # rubocop:disable Style/YodaCondition
+      callbacks(type).delete_if { |pr| :delete == pr.call(...) } # rubocop:disable Style/YodaCondition
     end
 
     def callbacks_for?(type)

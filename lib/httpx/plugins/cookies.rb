@@ -46,8 +46,8 @@ module HTTPX
 
         # factory method to return a Jar to the user, which can then manipulate
         # externally to the session.
-        def make_jar(*args)
-          Jar.new(*args)
+        def make_jar(...)
+          Jar.new(...)
         end
 
         private
