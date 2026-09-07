@@ -46,6 +46,11 @@ module HTTPX
         end
 
         module ConnectionMethods
+          def initialize(*)
+            @tunnel_parser = nil
+            super
+          end
+
           def force_close(*)
             if @state == :connecting
               # proxy connect related requests should not be reenqueed
@@ -59,6 +64,12 @@ module HTTPX
 
           private
 
+          def purge_after_closed
+            super
+
+            @tunnel_parser = nil
+          end
+
           def handle_transition(nextstate)
             return super unless @options.proxy && @options.proxy.uri.scheme == "http"
 
@@ -69,8 +80,15 @@ module HTTPX
               @io.connect
               return unless @io.connected?
 
-              @parser || begin
-                @parser = parser = parser_type(@io.protocol).new(@write_buffer, @options.merge(max_concurrent_requests: 1))
+              @tunnel_parser || begin
+                if @parser
+                  # in case this happens, requests from @parser need to be reenqueued for delivery.
+                  enqueue_pending_requests_from_parser(@parser)
+                  @parser = nil
+                end
+
+                @tunnel_parser = @parser = parser =
+                                   parser_type(@io.protocol).new(@write_buffer, @options.merge(max_concurrent_requests: 1))
                 parser.extend(ProxyParser)
                 parser.on(:response, &method(:__http_on_connect))
                 parser.on(:close) do
@@ -86,6 +104,9 @@ module HTTPX
 
                     initial_state = @state
 
+                    # because #reset will nillify @parser...
+                    tunnel_parser = @parser
+
                     reset
 
                     if @pending.empty?
@@ -98,8 +119,8 @@ module HTTPX
                     connect_request = parser = nil
 
                     if initial_state == :connecting
-                      parser = @parser
-                      @parser.reset
+                      parser = tunnel_parser
+                      parser.reset
                       if @pending.first.is_a?(ConnectRequest)
                         connect_request = @pending.shift # this happened when reenqueing
                       end
@@ -107,7 +128,7 @@ module HTTPX
 
                     idling
 
-                    @parser = parser
+                    @tunnel_parser = @parser = parser
                     if connect_request
                       @inflight += 1
                       parser.send(connect_request)
@@ -124,7 +145,7 @@ module HTTPX
               case @state
               when :connecting
                 parser = @parser
-                @parser = nil
+                @tunnel_parser = @parser = nil
                 parser.close
               when :idle
                 @parser.callbacks.clear
