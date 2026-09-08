@@ -53,6 +53,10 @@ module HTTPX
 
       @exhausted = @cloned = @main_sibling = false
 
+      # variable used to gate against a potential endless loop where the peer continuously closes the connection with
+      # GOAWAY frames without ever processing a request.
+      @exhausted_error_counter = 1
+
       @options = Options.new(options)
       @type = initialize_type(uri, @options)
       @origins = [uri.origin]
@@ -726,8 +730,18 @@ module HTTPX
       parser.on(:promise) do |request, stream|
         request.emit(:promise, parser, stream)
       end
-      parser.on(:exhausted) do
+      parser.on(:exhausted) do |error|
         enqueue_pending_requests_from_parser(parser)
+
+        if error
+          if @exhausted_error_counter.zero?
+            @exhausted_error_counter += 1
+            on_error(error)
+            next
+          else
+            @exhausted_error_counter -= 1
+          end
+        end
 
         @exhausted = true
         parser.close

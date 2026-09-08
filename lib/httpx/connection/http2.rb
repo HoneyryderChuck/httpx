@@ -23,11 +23,18 @@ module HTTPX
     end
 
     class GoawayError < Error
+      UNRECOVERABLE_ERRORS = %i[settings_timeout inadequate_security].freeze
+
       attr_reader :last_stream_id
 
       def initialize(code, last_stream_id)
+        @code = code
         @last_stream_id = last_stream_id
         super(0, code)
+      end
+
+      def unrecoverable?
+        UNRECOVERABLE_ERRORS.include?(@code)
       end
     end
 
@@ -188,10 +195,10 @@ module HTTPX
         emit(:error, req, ex)
       end
 
-      if ex.is_a?(GoawayError)
+      if ex.is_a?(GoawayError) && !ex.unrecoverable?
         # resend unprocessed requests on a different connection
         @pending.unshift(*inflight_unprocessed_requests) if inflight_unprocessed_requests.any?
-        emit(:exhausted) if @pending.any?
+        emit(:exhausted, ex) if @pending.any?
         return
       end
 
