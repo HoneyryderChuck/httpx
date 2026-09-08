@@ -23,7 +23,10 @@ module HTTPX
     end
 
     class GoawayError < Error
-      def initialize(code = :no_error)
+      attr_reader :last_stream_id
+
+      def initialize(code, last_stream_id)
+        @last_stream_id = last_stream_id
         super(0, code)
       end
     end
@@ -155,18 +158,43 @@ module HTTPX
     end
 
     def handle_error(ex, request = nil)
-      if ex.is_a?(OperationTimeoutError) && !@handshake_completed && @connection.state != :closed
-        @connection.goaway(:settings_timeout, "closing due to settings timeout")
-        emit(:close_handshake)
-        settings_ex = SettingsTimeoutError.new(ex.timeout, ex.message)
-        settings_ex.set_backtrace(ex.backtrace)
-        ex = settings_ex
+      last_stream_id = 0
+      case ex
+      when OperationTimeoutError
+        if !@handshake_completed && @connection.state != :closed
+          @connection.goaway(:settings_timeout, "closing due to settings timeout")
+          emit(:close_handshake)
+          settings_ex = SettingsTimeoutError.new(ex.timeout, ex.message)
+          settings_ex.set_backtrace(ex.backtrace)
+          ex = settings_ex
+        end
+      when GoawayError
+        last_stream_id = ex.last_stream_id
       end
-      while (req, _ = @streams.shift)
+
+      inflight_unprocessed_requests = [] #: Array[Request]
+
+      while (req, stream = @streams.shift)
         next if request && request == req
+
+        if stream.id > last_stream_id
+          req.transition(:idle)
+          # unprocessed request
+          inflight_unprocessed_requests << req
+
+          next
+        end
 
         emit(:error, req, ex)
       end
+
+      if ex.is_a?(GoawayError)
+        # resend unprocessed requests on a different connection
+        @pending.unshift(*inflight_unprocessed_requests) if inflight_unprocessed_requests.any?
+        emit(:exhausted) if @pending.any?
+        return
+      end
+
       while (req = @pending.shift)
         next if request && request == req
 
@@ -445,7 +473,7 @@ module HTTPX
       send_pending
     end
 
-    def on_close(_last_frame, error, _payload)
+    def on_close(last_stream_id, error, _payload)
       is_connection_closed = @connection.closed?
       if error
         @buffer.clear if is_connection_closed
@@ -455,12 +483,11 @@ module HTTPX
             emit(:error, request, error)
           end
         else
-          ex = GoawayError.new(error)
+          ex = GoawayError.new(error, last_stream_id)
           ex.set_backtrace(caller)
 
           handle_error(ex)
           teardown
-
         end
       end
       return unless is_connection_closed && @streams.empty?

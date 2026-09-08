@@ -137,6 +137,19 @@ class HTTPSTest < Minitest::Test
     end
   end
 
+  def test_http2_retry_unprocessed_requests_on_goaway
+    start_test_servlet(CloseAfterXRequests) do |server|
+      HTTPX.plugin(SessionWithPool).with(ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE }).wrap do |http|
+        uri = "#{server.origin}/"
+        responses = http.get(uri, uri, uri)
+        assert responses.size == 3
+        connection_count = http.connection_count
+        # the test server does not support pipelining
+        assert connection_count == 3, "expected to have 3 connections, instead have #{connection_count}"
+      end
+    end
+  end
+
   def test_http2_uncoalesce_on_misdirected
     uri = build_uri("/status/421")
     HTTPX.plugin(SessionWithPool).wrap do |http|

@@ -116,7 +116,9 @@ module HTTPX
     end
 
     class GoawayError < Error
-      def initialize: (?Symbol code) -> void
+      attr_reader last_stream_id: Integer
+
+      def initialize: (Symbol code, Integer last_stream_id) -> void
     end
 
     class PingError < Error
