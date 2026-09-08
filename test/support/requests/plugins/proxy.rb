@@ -94,6 +94,44 @@ module Requests
       #   verify_body_length(response)
       # end
 
+      def test_plugin_proxy_http_persistent_connect_proxy_reconnect
+        start_test_servlet(KeepAliveServer, SSLEnable: true, SSLCertName: [%w[CN localhost]]) do |server|
+          start_test_servlet(ConnectProxyServer) do |proxy|
+            uri = server.origin
+            http = HTTPX.plugin(SessionWithPool)
+                        .plugin(:proxy)
+                        .plugin(:persistent)
+                        .with(
+                          ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE, alpn_protocols: %w[http/1.1] },
+                          timeout: {
+                            keep_alive_timeout: 1,
+                            connect_timeout: 3,
+                            request_timeout: 3,
+                          },
+                        ).with_proxy(uri: proxy.origin)
+
+            begin
+              response = http.get(uri)
+              verify_status(response, 200)
+              assert proxy.connect_requests.size == 1
+              assert http.connections.size == 1
+
+              # lapse the keep alive window
+              sleep(1.5)
+              response = http.get(uri)
+              verify_status(response, 200)
+
+              assert proxy.connect_requests.size == 2,
+                     "did not open new CONNECT proxy"
+              assert http.connections.size == 1,
+                     "should have reconnected on existing connection"
+            ensure
+              http.close
+            end
+          end
+        end
+      end
+
       def test_plugin_http_next_proxy
         session = HTTPX.plugin(SessionWithPool)
                        .plugin(:proxy)

@@ -69,7 +69,7 @@ module HTTPX
     end
 
     # reads a chunk from the payload (implementation of the IO reader protocol).
-    def read(*args)
+    def read(...)
       return unless @buffer
 
       unless @reader
@@ -77,7 +77,7 @@ module HTTPX
         @reader = @buffer
       end
 
-      @reader.read(*args)
+      @reader.read(...)
     end
 
     # size of the decoded response payload. May differ from "content-length" header if

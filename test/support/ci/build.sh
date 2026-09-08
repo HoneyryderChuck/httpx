@@ -1,3 +1,5 @@
+. /etc/os-release
+
 export LANG=C.UTF-8
 export LANGUAGE=C.UTF-8
 
@@ -14,6 +16,12 @@ install_packages() {
   elif [[ "$RUBY_PLATFORM" = "java" ]]; then
     apt-get update && apt-get install -y build-essential iptables iproute2 file idn2 git
   else
+    echo "version: $VERSION_CODENAME"
+    if [[ "$VERSION_CODENAME" = "bullseye" ]]; then
+      echo "silencing bullseye-security..."
+      # source expired, and will not apply anymore
+      sed -i '/bullseye-security/d' /etc/apt/sources.list
+    fi
     apt-get update && apt-get install -y iptables iproute2 idn2 libmagic-dev shared-mime-info
   fi
 }

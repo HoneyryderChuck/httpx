@@ -68,7 +68,7 @@ module HTTPX
       end
 
       class << self
-        def new(cookie, *args)
+        def new(cookie, *)
           case cookie
           when self
             cookie

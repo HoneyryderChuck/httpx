@@ -35,8 +35,8 @@ module HTTPX
       @resolvers.each { |r| r.current_session = s }
     end
 
-    def log(*args, **kwargs, &blk)
-      @resolvers.each { |r| r.log(*args, **kwargs, &blk) }
+    def log(...)
+      @resolvers.each { |r| r.log(...) }
     end
 
     def closed?

@@ -12,6 +12,8 @@ module HTTPX
         end
 
         module ConnectionMethods
+          @tunnel_parser: Connection::HTTP1 | Connection::HTTP2
+
           def __http_proxy_connect: (Connection::_Parser parser) ->  void
           def __http_on_connect: (top, Response) ->  void
         end

@@ -36,9 +36,9 @@ module HTTPX::Plugins
       %i[start finish reset enabled?].each do |callback|
         class_eval(<<-OUT, __FILE__, __LINE__ + 1)
           # proxies ##{callback} calls to wrapper tracers.
-          def #{callback}(*args)                        # def start(*args)
-            @tracers.each { |t| t.#{callback}(*args) }  # @tracers.each { |t| t.start(*args) }
-          end                                           # end
+          def #{callback}(...)                        # def start(...)
+            @tracers.each { |t| t.#{callback}(...) }  # @tracers.each { |t| t.start(....) }
+          end                                         # end
         OUT
       end
     end

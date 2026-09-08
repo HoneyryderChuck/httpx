@@ -176,8 +176,8 @@ module HTTPX
     #
     #   response.json #≈> { "foo" => "bar" } for "{\"foo\":\"bar\"}" payload
     #   response.json(symbolize_names: true) #≈> { foo: "bar" } for "{\"foo\":\"bar\"}" payload
-    def json(*args)
-      decode(Transcoder::JSON, *args)
+    def json(...)
+      decode(Transcoder::JSON, ...)
     end
 
     # decodes the response payload into a ruby object **if** the payload is valid
@@ -200,7 +200,7 @@ module HTTPX
     #
     # +transcoder+ must implement the internal transcoder API, i.e. respond to <tt>decode(HTTPX::Response response)</tt>,
     # which returns a decoder which responds to <tt>call(HTTPX::Response response, **kwargs)</tt>
-    def decode(transcoder, *args)
+    def decode(transcoder, ...)
       # TODO: check if content-type is a valid format, i.e. "application/json" for json parsing
 
       decoder = transcoder.decode(self)
@@ -209,7 +209,7 @@ module HTTPX
 
       @body.rewind
 
-      decoder.call(self, *args)
+      decoder.call(self, ...)
     end
   end
 

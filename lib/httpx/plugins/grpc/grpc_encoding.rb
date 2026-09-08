@@ -78,8 +78,8 @@ module HTTPX
         end
       end
 
-      def self.encode(*args, **kwargs)
-        Deflater.new(*args, **kwargs)
+      def self.encode(...)
+        Deflater.new(...)
       end
 
       def self.decode(response)

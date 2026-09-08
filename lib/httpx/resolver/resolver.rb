@@ -56,9 +56,9 @@ module HTTPX
       call
     end
 
-    def force_close(*args)
+    def force_close(...)
       while (connection = @connections.shift)
-        connection.force_close(*args)
+        connection.force_close(...)
       end
     end
 

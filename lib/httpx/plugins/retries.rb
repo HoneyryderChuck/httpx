@@ -266,7 +266,7 @@ module HTTPX
         attr_writer :partial_response
 
         # initializes the request instance, sets the number of retries for the request.
-        def initialize(*args)
+        def initialize(*)
           super
           @retries = @options.max_retries
           @partial_response = nil

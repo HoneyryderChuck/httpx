@@ -53,18 +53,18 @@ module HTTPX::Transcoder
 
     # rubocop:disable-next Style/SingleLineMethods
     if defined?(MultiJson)
-      def json_load(*args); MultiJson.load(*args); end
-      def json_dump(*args); MultiJson.dump(*args); end
+      def json_load(...); MultiJson.load(...); end
+      def json_dump(...); MultiJson.dump(...); end
     elsif defined?(Oj)
-      def json_load(response, *args); Oj.load(response.to_s, *args); end
+      def json_load(response, ...); Oj.load(response.to_s, ...); end
       def json_dump(obj, options = {}); Oj.dump(obj, { mode: :compat }.merge(options)); end
     elsif defined?(Yajl)
-      def json_load(response, *args); Yajl::Parser.new(*args).parse(response.to_s); end
-      def json_dump(*args); Yajl::Encoder.encode(*args); end
+      def json_load(response, ...); Yajl::Parser.new(...).parse(response.to_s); end
+      def json_dump(...); Yajl::Encoder.encode(...); end
     else
       require "json"
-      def json_load(*args); ::JSON.parse(*args); end
-      def json_dump(*args); ::JSON.generate(*args); end
+      def json_load(...); ::JSON.parse(...); end
+      def json_dump(...); ::JSON.generate(...); end
     end
   end
 end
