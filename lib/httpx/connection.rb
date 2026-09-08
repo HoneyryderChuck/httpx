@@ -51,11 +51,10 @@ module HTTPX
                                                   @callbacks = @ping_timer = @family =
                                                                  @io = @ssl_session = @timeout = @connected_at = @response_received_at = nil
 
-      @exhausted = @cloned = @main_sibling = false
-
-      # variable used to gate against a potential endless loop where the peer continuously closes the connection with
-      # GOAWAY frames without ever processing a request.
-      @exhausted_error_counter = 1
+      @exhausted = @cloned = @main_sibling =
+                     # variable used to gate against a potential endless loop where the peer continuously closes the connection with
+                     # GOAWAY frames without ever processing a request.
+                     @previously_exhausted_with_error = false
 
       @options = Options.new(options)
       @type = initialize_type(uri, @options)
@@ -715,6 +714,7 @@ module HTTPX
         AltSvc.emit(request, response) do |alt_origin, origin, alt_params|
           build_altsvc_connection(alt_origin, origin, alt_params)
         end
+        @previously_exhausted_with_error = false
         @response_received_at = Utils.now
         @no_more_requests_counter = 0
         @inflight -= 1
@@ -734,12 +734,12 @@ module HTTPX
         enqueue_pending_requests_from_parser(parser)
 
         if error
-          if @exhausted_error_counter.zero?
-            @exhausted_error_counter += 1
+          if @previously_exhausted_with_error
+            @previously_exhausted_with_error = false
             on_error(error)
             next
           else
-            @exhausted_error_counter -= 1
+            @previously_exhausted_with_error = true
           end
         end
 
