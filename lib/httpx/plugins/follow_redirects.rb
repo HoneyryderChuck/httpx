@@ -75,9 +75,12 @@ module HTTPX
 
           max_redirects = redirect_request.max_redirects
 
-          return response unless response.is_a?(Response)
-          return response unless REDIRECT_STATUS.include?(response.status) && response.headers.key?("location")
-          return response unless max_redirects.positive?
+          return response unless response.is_a?(Response) &&
+                                 # it's a redirect response with location
+                                 REDIRECT_STATUS.include?(response.status) &&
+                                 response.headers.key?("location") &&
+                                 # maximum number of redirects hasn't been reached yet
+                                 max_redirects.positive?
 
           redirect_uri = __get_location_from_response(response)
 
@@ -190,8 +193,7 @@ module HTTPX
 
         # :nodoc:
         def __get_location_from_response(response)
-          # @type var location_uri: http_uri
-          location_uri = URI(response.headers["location"])
+          location_uri = URI(response.headers["location"]) #: http_uri
           location_uri = response.uri.merge(location_uri) if location_uri.relative?
           location_uri
         end
