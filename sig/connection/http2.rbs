@@ -118,11 +118,11 @@ module HTTPX
     class GoawayError < Error
       UNRECOVERABLE_ERRORS: Array[Symbol]
 
-      attr_reader last_stream_id: Integer
-
       @code: Symbol
 
       def initialize: (Symbol code, Integer last_stream_id) -> void
+
+      def last_stream_id: () -> Numeric
 
       def unrecoverable?: () -> bool
     end

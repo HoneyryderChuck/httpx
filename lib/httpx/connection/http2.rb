@@ -25,12 +25,16 @@ module HTTPX
     class GoawayError < Error
       UNRECOVERABLE_ERRORS = %i[settings_timeout inadequate_security].freeze
 
-      attr_reader :last_stream_id
-
       def initialize(code, last_stream_id)
         @code = code
         @last_stream_id = last_stream_id
         super(0, code)
+      end
+
+      def last_stream_id
+        return Float::INFINITY if unrecoverable?
+
+        @last_stream_id
       end
 
       def unrecoverable?
@@ -165,7 +169,7 @@ module HTTPX
     end
 
     def handle_error(ex, request = nil)
-      last_stream_id = 0
+      last_stream_id = Float::INFINITY
       case ex
       when OperationTimeoutError
         if !@handshake_completed && @connection.state != :closed
