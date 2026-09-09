@@ -32,10 +32,11 @@ module HTTPX
     @query: String?
     @drainer: Enumerator[String, void]?
     @started: bool
+    @complete: bool
 
     def initialize: (Symbol | String verb, generic_uri uri, Options options, ?request_params params) -> untyped
 
-    def complete!: (?response response) -> void
+    def complete!: (?response response) -> bool
 
     def started?: () -> bool
 

@@ -107,7 +107,7 @@ module HTTPX
       @connection = @response =
         @drainer = @peer_address = @callbacks =
                      @informational_status = @on_response_arrived = nil
-      @ping = @started = false
+      @ping = @started = @complete = false
       @persistent = @options.persistent
       @active_timeouts = []
     end
@@ -121,8 +121,11 @@ module HTTPX
     end
 
     def complete!(response = @response)
+      return false if @complete
+
       emit(:complete, response)
       reset_timers(true)
+      @complete = true
     end
 
     # whether request has been buffered with a ping
@@ -296,7 +299,7 @@ module HTTPX
       case nextstate
       when :idle
         @body.rewind
-        @ping = false
+        @ping = @complete = false
         @response = @drainer = nil
 
         # request may be sent to a different connection and will be
