@@ -355,11 +355,11 @@ module HTTPX
           # making the next loop cheaper (because we're dropping).
           next unless response
 
-          if request.complete!(response)
-            responses[idx] = response
-            request.on_response_arrived = nil
-            pending -= 1
-          end
+          next unless request.complete!(response)
+
+          responses[idx] = response
+          request.on_response_arrived = nil
+          pending -= 1
         end
       end
 
