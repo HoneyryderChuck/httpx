@@ -33,7 +33,7 @@ class Bug_1_4_1_Test < Minitest::Test
       sleep(2)
       response = persistent_session.get(uri)
       verify_status(response, 200)
-      assert persistent_session.connections.size == 2, "should have been just 1"
+      assert persistent_session.connections.size == 2, "should have been 2 connections"
       assert(persistent_session.connections.one? { |c| c.state == :closed })
     ensure
       persistent_session.close
@@ -54,7 +54,10 @@ class OnPingDisconnectServer < TestHTTP2Server
     def ping_management(*)
       if @num_requests == 1
         @num_requests = 0
-        goaway
+
+        # send GOAWAY with unrecoverable code to avoid request resend and make the
+        # request be retried on the subsequent connection.
+        goaway(:inadequate_security)
       else
         super
       end

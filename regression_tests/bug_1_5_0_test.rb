@@ -41,38 +41,3 @@ class Bug_1_5_0_Test < Minitest::Test
     end
   end
 end
-
-class OnPingDisconnectServer < TestHTTP2Server
-  module GoAwayOnFirstPing
-    attr_accessor :num_requests
-
-    def activate_stream(*, **)
-      super.tap do
-        @num_requests += 1
-      end
-    end
-
-    def ping_management(*)
-      if @num_requests == 1
-        @num_requests = 0
-        goaway
-      else
-        super
-      end
-    end
-  end
-
-  def initialize(*)
-    super
-    @num_requests = Hash.new(0)
-  end
-
-  private
-
-  def handle_connection(conn, _)
-    super
-
-    conn.extend(GoAwayOnFirstPing)
-    conn.num_requests = 0
-  end
-end
