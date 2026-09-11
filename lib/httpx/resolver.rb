@@ -57,7 +57,11 @@ module HTTPX
 
       if message.rcode != Resolv::DNS::RCode::NoError
         case message.rcode
-        when Resolv::DNS::RCode::ServFail
+        when Resolv::DNS::RCode::ServFail,
+             # getaddrinfo also retries these errors, as they're not about the hostname being resolved,
+             # but the DNS resolver state.
+             Resolv::DNS::RCode::NotImp,
+             Resolv::DNS::RCode::Refused
           return :retriable_error, message.rcode
         else
           return :dns_error, message.rcode

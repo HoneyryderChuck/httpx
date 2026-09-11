@@ -522,6 +522,25 @@ module Requests
             assert dns_server.queries == 2
           end
         end
+
+        define_method :"#test_resolver_#{resolver_type}_notimp_should_retry" do
+          uri = URI(build_uri("/get"))
+
+          start_test_servlet(DNSNotImpOnce) do |dns_server|
+            resolver_opts = options.merge(
+              nameserver: [dns_server.nameserver],
+              timeouts: [1, 1, 2] # more than 2 in case one of the writes fail
+            )
+
+            session = HTTPX.plugin(SessionWithPool).with(ip_families: [Socket::AF_INET])
+            response = session.get(uri, resolver_class: resolver_type, resolver_options: options.merge(resolver_opts))
+
+            verify_status(response, 200)
+
+            assert dns_server.failed
+            assert dns_server.queries == 2
+          end
+        end
       end
     end
   end

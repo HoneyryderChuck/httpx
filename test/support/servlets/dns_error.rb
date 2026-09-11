@@ -8,6 +8,6 @@ class DNSErrorServer < TestDNSResolver
   private
 
   def dns_response(query)
-    dns_error_response(query, 4)
+    dns_error_response(query, 1)
   end
 end
