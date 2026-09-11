@@ -887,6 +887,8 @@ module HTTPX
 
         nextstate = :open
 
+        @timeout = @current_timeout = parser.timeout
+
         # activate
         @current_session.select_connection(self, @current_selector)
       end
