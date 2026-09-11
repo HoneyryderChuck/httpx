@@ -399,8 +399,6 @@ module HTTPX
 
       return @timeout if @timeout
 
-      return @options.timeout[:connect_timeout] if @state == :idle
-
       @options.timeout[:operation_timeout]
     end
 
