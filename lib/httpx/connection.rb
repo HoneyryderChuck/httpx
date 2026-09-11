@@ -52,9 +52,10 @@ module HTTPX
                                                                  @io = @ssl_session = @timeout = @connected_at = @response_received_at = nil
 
       @exhausted = @cloned = @main_sibling =
-                     # variable used to gate against a potential endless loop where the peer continuously closes the connection with
-                     # GOAWAY frames without ever processing a request.
-                     @previously_exhausted_with_error = false
+                     @reset_timeout_on_call =
+                       # variable used to gate against a potential endless loop where the peer continuously closes the connection with
+                       # GOAWAY frames without ever processing a request.
+                       @previously_exhausted_with_error = false
 
       @options = Options.new(options)
       @type = initialize_type(uri, @options)
@@ -242,6 +243,11 @@ module HTTPX
     end
 
     def call
+      if @reset_timeout_on_call
+        @timeout = nil
+        @reset_timeout_on_call = false
+      end
+
       case @state
       when :idle
         return if no_more_requests?
@@ -484,16 +490,20 @@ module HTTPX
 
     def on_error(error, request = nil)
       if error.is_a?(OperationTimeoutError)
-
         # inactive connections do not contribute to the select loop, therefore
         # they should not fail due to such errors.
         return if @state == :inactive
 
-        if @timeout
-          @timeout -= error.timeout
+        if (current_timeout = @timeout || timeout)
+          # if @timeout isn't set, it's not a completion-based timeout, i.e.
+          # operation timeout; in such a case, we have to reset it once it piggybacks.
+          @reset_timeout_on_call ||= @timeout.nil?
+
+          @timeout = current_timeout - error.timeout
           return unless @timeout <= 0
 
           @timeout = nil
+          @reset_timeout_on_call = false
         end
 
         error = error.to_connection_error if connecting?
