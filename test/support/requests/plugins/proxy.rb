@@ -74,13 +74,43 @@ module Requests
       end
 
       def test_plugin_https_connect_http1_proxy
-        # return unless origin.start_with?("https://")
-        session = HTTPX.plugin(:proxy).plugin(ProxyResponseDetector).with_proxy(uri: http_proxy)
+        return unless origin.start_with?("https://")
+
+        session = HTTPX.plugin(SessionWithPool).plugin(:proxy).plugin(ProxyResponseDetector).with_proxy(uri: http_proxy)
+        uri = URI(build_uri("/get"))
+        response = session.get(uri)
+        verify_status(response, 200)
+        verify_body_length(response)
+        assert response.proxied?
+
+        connection = session.pool.connections.first
+        connect_requests = connection.connect_requests
+        assert connect_requests.size == 1
+        connect_req = connect_requests.first
+        assert connect_req.verb == "CONNECT"
+        connect_req.headers["host"] == uri.authority
+      end
+
+      def test_plugin_https_connect_proxy_headers
+        return unless origin.start_with?("https://")
+
+        session = HTTPX.plugin(SessionWithPool)
+                       .plugin(:proxy)
+                       .plugin(ProxyResponseDetector)
+                       .with_proxy(uri: http_proxy)
+                       .with(proxy_headers: { "foo" => "bar" })
         uri = build_uri("/get")
         response = session.get(uri)
         verify_status(response, 200)
         verify_body_length(response)
         assert response.proxied?
+
+        connection = session.pool.connections.first
+        connect_requests = connection.connect_requests
+        assert connect_requests.size == 1
+        connect_req = connect_requests.first
+        assert connect_req.verb == "CONNECT"
+        connect_req.headers["foo"] == "bar"
       end
 
       # TODO: uncomment when supporting H2 CONNECT
@@ -137,11 +167,20 @@ module Requests
                        .plugin(:proxy)
                        .plugin(ProxyResponseDetector)
                        .with_proxy(uri: ["http://unavailable-proxy", *http_proxy])
-        uri = build_uri("/get")
+        uri = URI(build_uri("/get"))
         response = session.get(uri)
         verify_status(response, 200)
         verify_body_length(response)
         assert response.proxied?
+
+        return unless uri.scheme == "https"
+
+        connection = session.pool.connections.first
+        connect_requests = connection.connect_requests
+        assert connect_requests.size == 1
+        connect_req = connect_requests.first
+        assert connect_req.verb == "CONNECT"
+        connect_req.headers["host"] == uri.authority
       end
 
       def test_plugin_http_proxy_auth_options

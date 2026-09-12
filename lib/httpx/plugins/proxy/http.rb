@@ -10,6 +10,19 @@ module HTTPX
           end
         end
 
+        # adds support for the following options:
+        #
+        # :proxy_headers :: hash of HTTP headers to send while connecting to the proxy.
+        module OptionsMethods
+          private
+
+          def option_proxy_headers(value)
+            value = value.dup if value.frozen?
+
+            headers_class.new(value)
+          end
+        end
+
         module InstanceMethods
           def with_proxy_basic_auth(opts)
             with(proxy: opts.merge(scheme: "basic"))
@@ -222,7 +235,8 @@ module HTTPX
         class ConnectRequest < Request
           def initialize(uri, options)
             super("CONNECT", uri, options)
-            @headers.delete("accept")
+            @headers = options.headers_class.new
+            merge_headers(options.proxy_headers) if options.proxy_headers
           end
 
           def path
