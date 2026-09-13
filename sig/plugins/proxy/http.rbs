@@ -4,6 +4,8 @@ module HTTPX
       module HTTP
         module OptionsMethods
           def proxy_headers: () -> Headers?
+
+          def enable_proxy_tunnel: () -> bool?
         end
 
         module InstanceMethods

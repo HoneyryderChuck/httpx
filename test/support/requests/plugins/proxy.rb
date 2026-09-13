@@ -73,17 +73,21 @@ module Requests
         assert response.proxied?
       end
 
-      def test_plugin_https_connect_http1_proxy
-        return unless origin.start_with?("https://")
+      def test_plugin_tunnel_connect_http1_proxy
+        session = HTTPX.plugin(SessionWithPool)
+                       .plugin(:proxy)
+                       .plugin(ProxyResponseDetector)
+                       .with_proxy(uri: http_proxy)
 
-        session = HTTPX.plugin(SessionWithPool).plugin(:proxy).plugin(ProxyResponseDetector).with_proxy(uri: http_proxy)
+        session = session.with(enable_proxy_tunnel: true) if origin.start_with?("http://")
+
         uri = URI(build_uri("/get"))
         response = session.get(uri)
         verify_status(response, 200)
         verify_body_length(response)
         assert response.proxied?
 
-        connection = session.pool.connections.first
+        connection = session.connections.first
         connect_requests = connection.connect_requests
         assert connect_requests.size == 1
         connect_req = connect_requests.first
