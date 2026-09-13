@@ -11,8 +11,8 @@ class UnixTest < Minitest::Test
   unless RUBY_ENGINE == "jruby"
     def test_unix_session
       on_unix_server(__method__) do |path|
-        HTTPX.with(transport: "unix", addresses: [path]).wrap do |http|
-          http.get("http://unix.com/ping", "http://unix.com/ping").each do |response|
+        HTTPX.with(transport: "unix", addresses: { "unix.com" => [path], "unix2.com" => [path] }).wrap do |http|
+          http.get("http://unix.com/ping", "http://unix2.com/ping").each do |response|
             verify_status(response, 200)
             assert response.to_s == "pong", "unexpected body (#{response})"
           end

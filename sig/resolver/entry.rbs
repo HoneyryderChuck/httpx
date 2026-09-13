@@ -4,10 +4,10 @@ module HTTPX
 
     @expires_in: interval
 
-    def initialize: (IPAddr | _ToS address, ?Numeric expires_in, ?rescue_on_convert: boolish) -> void
+    def initialize: (ipaddr address, ?Numeric expires_in, ?rescue_on_convert: boolish) -> void
 
     def expired?: () -> bool
 
-    def self.convert: (IPAddr | _ToS address) -> Resolver::Entry
+    def self.convert: (ipaddr address) -> Resolver::Entry
   end
 end

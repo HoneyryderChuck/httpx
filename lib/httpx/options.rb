@@ -483,7 +483,14 @@ module HTTPX
     end
 
     def option_addresses(value)
-      Array(value).map { |entry| Resolver::Entry.convert(entry) }
+      case value
+      when Hash
+        value.transform_values do |value|
+          Array(value).map { |entry| Resolver::Entry.convert(entry) }
+        end
+      else
+        Array(value).map { |entry| Resolver::Entry.convert(entry) }
+      end
     end
 
     def option_ip_families(value)
