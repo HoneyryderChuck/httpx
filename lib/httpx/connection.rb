@@ -77,7 +77,14 @@ module HTTPX
       else
         transition(:idle)
       end
-      self.addresses = @options.addresses if @options.addresses
+
+      case @options.addresses
+      when Array
+        self.addresses = @options.addresses
+      when Hash
+        # TODO: && @origin.host not an IP
+        self.addresses = @options.addresses[@origin.host]
+      end
     end
 
     # dupped initialization

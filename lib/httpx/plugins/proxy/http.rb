@@ -10,6 +10,26 @@ module HTTPX
           end
         end
 
+        # adds support for the following options:
+        #
+        # :proxy_headers :: hash of HTTP headers to send while connecting to the proxy.
+        # :enable_proxy_tunnel :: when <tt>true</tt>, it forces the establishment of the CONNECT proxy
+        #                         tunnel, in cases where it wouldn't otherwise normally establish it
+        #                         (i.e. if the request is an http:// request).
+        module OptionsMethods
+          private
+
+          def option_proxy_headers(value)
+            value = value.dup if value.frozen?
+
+            headers_class.new(value)
+          end
+
+          def option_enable_proxy_tunnel(value) # rubocop:disable Naming/PredicateMethod
+            !!value
+          end
+        end
+
         module InstanceMethods
           def with_proxy_basic_auth(opts)
             with(proxy: opts.merge(scheme: "basic"))
@@ -157,7 +177,11 @@ module HTTPX
 
           def __http_proxy_connect(parser)
             req = @pending.first
-            if req && req.uri.scheme == "https"
+            enable_proxy_tunnel = (
+              req.options.enable_proxy_tunnel.nil? && req && req.uri.scheme == "https"
+            ) || req.options.enable_proxy_tunnel
+
+            if enable_proxy_tunnel
               # if the first request after CONNECT is to an https address, it is assumed that
               # all requests in the queue are not only ALL HTTPS, but they also share the certificate,
               # and therefore, will share the connection.
@@ -175,7 +199,7 @@ module HTTPX
             if response.is_a?(Response) && response.status == 200
               req = @pending.first
               request_uri = req.uri
-              @io = ProxySSL.new(@io, request_uri, @options)
+              @io = ProxySSL.new(@io, request_uri, @options) if request_uri.scheme == "https"
               transition(:connected)
               throw(:called)
             elsif response.is_a?(Response) &&
@@ -222,7 +246,8 @@ module HTTPX
         class ConnectRequest < Request
           def initialize(uri, options)
             super("CONNECT", uri, options)
-            @headers.delete("accept")
+            @headers = options.headers_class.new
+            merge_headers(options.proxy_headers) if options.proxy_headers
           end
 
           def path

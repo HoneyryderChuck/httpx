@@ -74,7 +74,7 @@ module HTTPX
     attr_reader transport: io_type | nil
 
     # addresses
-    attr_reader addresses: Array[Resolver::Entry]?
+    attr_reader addresses: (Hash[String, Array[Resolver::Entry]] | Array[Resolver::Entry])?
 
     # supported_compression_formats
     attr_reader supported_compression_formats: Array[String]
@@ -223,7 +223,8 @@ module HTTPX
 
     def option_transport: (_ToS value) -> String
 
-    def option_addresses: (ipaddr | _ToAry[ipaddr] value) -> Array[ipaddr]
+    def option_addresses: (ipaddr | _ToAry[ipaddr] value) -> Array[Resolver::Entry]
+                        | (Hash[String,  _ToAry[ipaddr]] value) -> Hash[String, Array[Resolver::Entry]]
 
     def option_ip_families: (ip_family | _ToAry[ip_family] value) -> Array[ip_family]
   end

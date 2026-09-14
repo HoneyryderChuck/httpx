@@ -2,6 +2,11 @@ module HTTPX
   module Plugins
     module Proxy
       module HTTP
+        module OptionsMethods
+          def proxy_headers: () -> Headers?
+
+          def enable_proxy_tunnel: () -> bool?
+        end
 
         module InstanceMethods
           def with_proxy_basic_auth: (Hash[Symbol, untyped] opts) -> instance

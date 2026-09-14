@@ -312,7 +312,7 @@ module HTTPX
           when :idle
             transition(:connecting)
           when :connected
-            transition(:open)
+            super
           end
         end
 
