@@ -44,6 +44,33 @@ class KeepAliveServer < TestServer
   end
 end
 
+class KeepAliveGoawayInsteadOfPongServer < TestHTTP2Server
+  def initialize(goaway_delay: 0, **kwargs)
+    raise "delay must be positive" unless goaway_delay >= 0
+
+    @goaway_delay = goaway_delay
+    super(**kwargs)
+  end
+
+  private
+
+  def handle_connection(conn, sock)
+    super
+    conn.on(:frame_received) do |frame|
+      if ping_frame?(frame)
+        sleep @goaway_delay if @goaway_delay.positive?
+
+        conn.goaway
+        raise IOError, "simulated peer teardown instead of ping ack"
+      end
+    end
+  end
+
+  def ping_frame?(frame)
+    frame[:type] == :ping && !frame[:flags].anybits?(HTTP2::ACK)
+  end
+end
+
 class KeepAlivePongThenGoawayServer < TestHTTP2Server
   attr_reader :pings, :pongs
 

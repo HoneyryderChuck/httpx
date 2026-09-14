@@ -73,6 +73,38 @@ module Requests
         end
       end
 
+      def test_plugin_tracing_retries_with_goaway_while_pinging
+        start_test_servlet(KeepAliveGoawayInsteadOfPongServer, goaway_delay: 2) do |server|
+          uri = "#{server.origin}/"
+          HTTPX.plugin(RequestInspector)
+               .plugin(:persistent) # implicit max_retries == 1
+               .plugin(:tracing, tracer: test_tracer)
+               .with(timeout: { keep_alive_timeout: 1, ping_timeout: 2 * 3 },
+                     ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE, verify_hostname: false }).wrap do |http|
+            response1 = http.get(uri)
+            verify_status(response1, 200)
+
+            sleep 2
+
+            request2 = http.build_request("GET", uri)
+            response2 = http.request(request2)
+            verify_status(response2, 200)
+
+            assert request2.ping? == false, "request ping state should have been reset"
+
+            assert !test_tracer.reset_times[request2].empty?, "expected the request to have reset after the GOAWAY"
+
+            assert test_tracer.started[request2] == 2,
+                   "expected one span for the original (was #{test_tracer.started[request2]})"
+            assert test_tracer.finished[request2] == 1,
+                   "expected only the resend to finish (was #{test_tracer.finished[request2]})"
+
+            span_duration = test_tracer.span_durations[request2].last
+            assert span_duration < 1, "expected the span duration to cover reconnect and resend only"
+          end
+        end
+      end
+
       def test_plugin_tracing_merge_tracers
         tracer1 = TestTracer.new
         tracer2 = TestTracer.new
@@ -109,7 +141,7 @@ module Requests
       end
 
       class TestTracer
-        attr_reader :requests, :started, :finished, :errored, :reset_times, :total_times
+        attr_reader :requests, :started, :finished, :errored, :reset_times, :total_times, :span_durations
 
         def initialize(enabled = true)
           @enabled = enabled
@@ -120,6 +152,7 @@ module Requests
           @reset_times = Hash.new { |hs, k| hs[k] = [] }
           @started_at = {}
           @total_times = Hash.new { |hs, k| hs[k] = [] }
+          @span_durations = Hash.new { |hs, k| hs[k] = [] }
         end
 
         def enabled?(_)
@@ -133,12 +166,14 @@ module Requests
         end
 
         def reset(request)
-          @reset_times[request] << (Time.now - request.init_time)
+          @reset_times[request] << (Time.now - request.init_time) if request.init_time
         end
 
         def finish(request, _response)
+          now = Time.now
           @finished[request] += 1
-          @total_times[request] << (Time.now - @started_at[request])
+          @total_times[request] << (now - @started_at[request])
+          @span_durations[request] << (now - request.init_time) if request.init_time
         end
       end
     end
