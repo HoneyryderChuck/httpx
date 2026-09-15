@@ -252,6 +252,48 @@ class HTTPSTest < Minitest::Test
     end
   end
 
+  def test_http2_read_with_streams_open
+    log = []
+
+    log_inspector_plugin = Module.new
+    http2_log_inspector_methods = Module.new
+
+    http2_log_inspector_methods.define_method(:interests) do
+      super().tap do |ints|
+        log << { interests: ints, streams: @streams.size, pending: @pending.size, buffer_empty: @buffer.empty?,
+                 drains_empty: @drains.empty?, can_buffer_more: can_buffer_more_requests? }
+      end
+    end
+    log_inspector_plugin.const_set(:HTTP2Methods, http2_log_inspector_methods)
+
+    start_test_servlet(SingleStreamAtATimeServer) do |server|
+      HTTPX.plugin(log_inspector_plugin).with(ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE }).wrap do |http|
+        uri = "#{server.origin}/"
+        # 1: pass HTTP/2 handshake
+        response = http.get(uri)
+        verify_status(response, 200)
+
+        # 2: burst more requests than the server allows concurrently. some will be
+        # dispatched (get a stream), the rest land in Connection::HTTP2's own @pending queue —
+        # exactly the @pending-and-@streams-both-non-empty state the fixed line 101 branch has
+        # to handle correctly.
+        responses = http.get(uri, uri, uri)
+        responses.each { |response| verify_status(response, 200) }
+      end
+    end
+
+    overlapping_ticks = log.select { |entry| entry[:streams].positive? && entry[:pending].positive? }
+
+    refute_empty overlapping_ticks,
+                 "expected parser to at some point be waiting for streams while having pending requests" \
+                 "(#interests was called #{log.size} times)\n#{log.join("\n\t")}"
+
+    starved_ticks = overlapping_ticks.select { |entry| entry[:interests] == :w }
+
+    assert_empty starved_ticks,
+                 "connection was at some point waiting for writable readiness only while having open streams\n#{log.join("\n\t")}"
+  end
+
   def test_ssl_wrong_hostname
     uri = build_uri("/get")
     response = HTTPX.with(ssl: { hostname: "great-gatsby.com" }).get(uri)
