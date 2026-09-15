@@ -39,9 +39,10 @@ end
 class TestHTTP2Server
   attr_reader :origin
 
-  def initialize(tls: true, alpn_protocols: %w[h2])
+  def initialize(tls: true, alpn_protocols: %w[h2], debug: false)
     @port = 0
     @host = "localhost"
+    @debug = debug
 
     @ios = []
     @conns = {}
@@ -109,6 +110,10 @@ class TestHTTP2Server
     end
   end
 
+  def new_http2_parser
+    ::HTTP2::Server.new
+  end
+
   def handle_server(server)
     loop do
       case (sock = server.to_io.accept_nonblock(exception: false))
@@ -125,7 +130,7 @@ class TestHTTP2Server
 
         @ios << sock
 
-        conn = ::HTTP2::Server.new
+        conn = new_http2_parser
         handle_connection(conn, sock)
 
         @conns[sock] = conn
@@ -184,6 +189,15 @@ class TestHTTP2Server
       # puts "Sending bytes: #{bytes.unpack("H*").first}"
       sock.print bytes
       sock.flush
+    end
+
+    if @debug
+      conn.on(:frame_sent) do |frame|
+        warn "Sent frame: #{frame.inspect}"
+      end
+      conn.on(:frame_received) do |frame|
+        warn "Received frame: #{frame.inspect}"
+      end
     end
 
     conn.on(:goaway) do

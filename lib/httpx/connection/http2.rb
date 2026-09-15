@@ -97,20 +97,28 @@ module HTTPX
         return :r
       end
 
+      # only wait for writable if we're not waiting on more streams,
+      # or waiting on ping ACKs.
+      nothing_to_wait_for = @streams.empty? && @pings.empty?
+
       # there are pending bufferable requests
-      return :w if !@pending.empty? && can_buffer_more_requests?
+      if !@pending.empty? && can_buffer_more_requests?
+        # only wait for writable if we're not waiting on more streams,
+        # or waiting on ping ACKs.
+        return nothing_to_wait_for ? :w : :rw
+      end
 
       # there are pending frames from the last run
       return :w unless @drains.empty?
 
       if @buffer.empty?
         # skip if no more requests or pings to process
-        return if @streams.empty? && @pings.empty?
+        return if nothing_to_wait_for
 
         :r
       else
         # buffered frames
-        :w
+        nothing_to_wait_for ? :w : :rw
       end
     end
 
