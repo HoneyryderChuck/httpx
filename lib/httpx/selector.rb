@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "io/wait"
+require "io/wait" if RUBY_VERSION < "3.2.0"
 
 module HTTPX
   #
