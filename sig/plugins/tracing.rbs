@@ -2,13 +2,13 @@ module HTTPX
   module Plugins
     module Tracing
       interface _Tracer
-        def enabled?: (retriesRequest request) -> boolish
+        def enabled?: (tracingRequest request) -> boolish
 
-        def start: (retriesRequest request) -> void
+        def start: (tracingRequest request) -> void
 
-        def reset: (retriesRequest request) -> void
+        def reset: (tracingRequest request) -> void
 
-        def finish: (retriesRequest request, response response) -> void
+        def finish: (tracingRequest request, response response) -> void
       end
 
       class Wrapper
@@ -27,13 +27,22 @@ module HTTPX
 
       module RequestMethods
         attr_accessor init_time: Time?
+
+        attr_accessor handshake_time: Float?
       end
 
       module ConnectionMethods
         @init_time: Time?
       end
 
-      type retriesRequest = Request & RequestMethods
+      module HTTP2Methods
+        @handshake_time: Float?
+        @handshake_init_time: Time
+
+        def send: (tracingRequest request, ?bool head) -> bool
+      end
+
+      type tracingRequest = Request & RequestMethods
     end
 
     type sessionTracing = Session
