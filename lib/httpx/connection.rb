@@ -237,9 +237,7 @@ module HTTPX
         return @io.interests if connecting?
       end
 
-      return @parser.interests if @parser
-
-      nil
+      @parser&.interests
     rescue Error => e
       on_error(e)
       nil
