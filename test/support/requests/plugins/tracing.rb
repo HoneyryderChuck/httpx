@@ -134,6 +134,63 @@ module Requests
         assert http3.options.tracer.send(:tracers) == [tracer1, tracer2, tracer3]
       end
 
+      def test_plugin_tracing_span_excludes_time_queued_before_write
+        start_test_servlet(SlowResponseServer, response_delay: 1) do |server|
+          http = HTTPX.plugin(:tracing, tracer: test_tracer)
+                      .with(max_concurrent_requests: 1)
+          uri = "#{server.origin}/"
+
+          requests = 3.times.map { http.build_request("GET", uri) }
+          responses = http.request(*requests)
+          responses.each { |response| verify_status(response, 200) }
+
+          first = requests.first
+          last = requests.last
+
+          queued_for = test_tracer.started_at[last] - test_tracer.started_at[first]
+          assert queued_for > 1,
+                 "expected the last request to be written only after the earlier ones completed"
+
+          # #total_times measures from the write, #span_durations from init_time, which may account with the handshake.
+          credited = requests.to_h do |request|
+            [request, test_tracer.span_durations[request].last - test_tracer.total_times[request].last]
+          end
+
+          # all three were queued on the same connection while it performed the same handshake
+          assert_in_delta credited[first], credited[last], 0.1,
+                          "expected every request queued during the handshake have little variation among one another"
+        end
+      end
+
+      def test_plugin_tracing_span_includes_handshake_waited_on
+        start_test_servlet(SlowHandshakeServer, tls: tls?, handshake_delay: 2) do |server|
+          http = HTTPX.plugin(:tracing, tracer: test_tracer)
+                      .with(fallback_protocol: "h2", ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE, verify_hostname: false })
+          uri = "#{server.origin}/"
+          request = http.build_request("GET", uri)
+          response = http.request(request)
+          verify_status(response, 200)
+
+          credited = test_tracer.span_durations[request].last - test_tracer.total_times[request].last
+          assert_in_delta 2, credited, 2,
+                          "expected the span to credit the ~2s handshake this request waited on (credited #{credited}s)"
+        end
+      end
+
+      def test_plugin_tracing_span_includes_h2_handshake_waited_on
+        start_test_servlet(SlowSettingsServer, tls: tls?, settings_delay: 2) do |server|
+          http = HTTPX.plugin(:tracing, tracer: test_tracer)
+                      .with(fallback_protocol: "h2", ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE, verify_hostname: false })
+          request = http.build_request("GET", "#{server.origin}/")
+          verify_status(http.request(request), 200)
+
+          credited = test_tracer.span_durations[request].last - test_tracer.total_times[request].last
+          assert_in_delta 2, credited, 2,
+                          "expected the span to credit the ~2s HTTP/2 handshake " \
+                          "(the SETTINGS exchange) this request waited on (credited #{credited}s)"
+        end
+      end
+
       private
 
       def test_tracer
@@ -141,7 +198,8 @@ module Requests
       end
 
       class TestTracer
-        attr_reader :requests, :started, :finished, :errored, :reset_times, :total_times, :span_durations
+        attr_reader :requests, :started, :finished, :errored, :reset_times,
+                    :total_times, :span_durations, :started_at
 
         def initialize(enabled = true)
           @enabled = enabled

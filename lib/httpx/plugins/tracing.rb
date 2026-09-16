@@ -63,13 +63,18 @@ module HTTPX::Plugins
     end
 
     module RequestMethods
+      # time at which a request started being buffered for sending.
       attr_accessor :init_time
+
+      # when not nil, it means this request was sent to a non-open connection, and contains how much time it took
+      # the connection to connect.
+      attr_accessor :handshake_time
 
       # intercepts request initialization to inject the tracing logic.
       def initialize(*)
         super
 
-        @init_time = nil
+        @init_time = @handshake_time = nil
 
         tracer = @options.tracer
 
@@ -79,12 +84,13 @@ module HTTPX::Plugins
           tracer.reset(self)
 
           # request is reset when it's retried.
-          @init_time = nil
+          @init_time = @handshake_time = nil
         end
         on(:headers) do
           # the usual request init time (when not including the connection handshake)
           # should be the time the request is buffered the first time.
-          @init_time ||= ::Time.now.utc
+          @init_time = ::Time.now.utc
+          @init_time -= @handshake_time if @handshake_time
 
           tracer.start(self)
         end
@@ -92,8 +98,7 @@ module HTTPX::Plugins
       end
 
       def response=(*)
-        # init_time should be set when it's send to a connection.
-        # However, there are situations where connection initialization fails.
+        # There are situations where connection initialization fails.
         # Example is the :ssrf_filter plugin, which raises an error on
         # initialize if the host is an IP which matches against the known set.
         # in such cases, we'll just set here right here.
@@ -112,11 +117,11 @@ module HTTPX::Plugins
       end
 
       def send_request_to_parser(request)
-        if connecting?
-          @init_time ||= ::Time.now.utc
-
-          # request span timeframe should include the time it took to connect.
-          request.init_time ||= @init_time
+        if connecting? && @init_time
+          # at this point, the connection has connected, but hasn't yet transitioned to :open,
+          # so it's the time the requests which caused this connection to connect, are finally being
+          # sent to the parser, so handshake time should factor into the span time.
+          request.handshake_time ||= ::Time.now.utc - @init_time
         end
 
         super
@@ -147,6 +152,33 @@ module HTTPX::Plugins
         # if a connection is probed for liveness, the request timeframe should include
         # it too.
         request.init_time ||= ::Time.now.utc
+
+        super
+      end
+    end
+
+    module HTTP2Methods
+      def initialize(*)
+        super
+
+        @handshake_time = nil
+        @handshake_init_time = ::Time.now.utc
+      end
+
+      def send(request, head = false)
+        if head
+          # only true for pending requests waiting on the handshake, so handshake time accrues.
+          request.handshake_time ||= 0.0
+          request.handshake_time += @handshake_time
+        end
+
+        super
+      end
+
+      private
+
+      def on_settings(*)
+        @handshake_time = ::Time.now.utc - @handshake_init_time unless @handshake_completed
 
         super
       end
