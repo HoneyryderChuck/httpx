@@ -159,12 +159,15 @@ module HTTPX
     private :try_connect
 
     def read(size, buffer)
-      ret = @io.read_nonblock(size, buffer, exception: false)
-      if ret == :wait_readable
+      siz = @io.read_nonblock(size, buffer, exception: false)
+
+      case siz
+      when :wait_readable, :wait_writable
         buffer.clear
         return 0
+      when nil
+        return
       end
-      return if ret.nil?
 
       log { "READ: #{buffer.bytesize} bytes..." }
       buffer.bytesize
@@ -172,8 +175,13 @@ module HTTPX
 
     def write(buffer)
       siz = @io.write_nonblock(buffer, exception: false)
-      return 0 if siz == :wait_writable
-      return if siz.nil?
+
+      case siz
+      when :wait_readable, :wait_writable
+        return 0
+      when nil
+        return
+      end
 
       log { "WRITE: #{siz} bytes..." }
 
