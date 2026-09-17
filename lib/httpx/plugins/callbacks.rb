@@ -44,6 +44,12 @@ module HTTPX
           end
         end
 
+        def close(*)
+          super
+        rescue CallbackError => e
+          raise e.cause
+        end
+
         private
 
         def branch(options, &blk)
@@ -110,12 +116,6 @@ module HTTPX
         end
 
         def receive_requests(*)
-          super
-        rescue CallbackError => e
-          raise e.cause
-        end
-
-        def close(*)
           super
         rescue CallbackError => e
           raise e.cause
