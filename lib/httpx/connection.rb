@@ -1068,9 +1068,32 @@ module HTTPX
 
       return if @no_more_requests_counter < 50
 
+      per_request_state = @parser.pending.map do |req|
+        "[state:#{req.state},ping?:#{req.ping?}]"
+      end.join(",")
+
+      parser_state =
+        case parser
+        when HTTP2
+          +"parser-streams:#{parser.streams.size},"
+        else
+          +""
+        end
+
+      parser_state << "parser-requests:#{per_request_state}"
+
       raise Error, "connection corrupted, aborted after looping for a while, " \
                    "please report this https://gitlab.com/os85/httpx/-/work_items " \
-                   "along with debug logs"
+                   "along with debug logs\n(" \
+                   "state:#{@state},inflight:#{@inflight},pending:#{@pending.size}," \
+                   "previously-exhausted-with-error:#{@previously_exhausted_with_error}," \
+                   "connected_for_secs:#{Utils.elapsed_time(@connected_at) if @connected_at}," \
+                   "num-origins:#{@origins.size}," \
+                   "last_response_received:#{Utils.elapsed_time(@response_received_at) if @response_received_at}," \
+                   "#{parser_state}," \
+                   "in-selector:#{!!@current_selector}," \
+                   "in-session:#{!!@current_session}" \
+                   ")"
     end
 
     # true when there are no more pending nor inflight (in parser) requests
