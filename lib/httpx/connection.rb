@@ -364,10 +364,7 @@ module HTTPX
       # (example: HTTP/1 parser disabling pipelining)
       return if @state == :idle && @pending.any?
 
-      if @ping_timer
-        @ping_timer.cancel
-        @ping_timer = nil
-      end
+      reset_timer
 
       parser = @parser
 
@@ -752,6 +749,9 @@ module HTTPX
             on_error(error)
             next
           else
+            # in case the error came while waiting for a PING ack.
+            reset_ping_timer
+
             @previously_exhausted_with_error = true
           end
         end
@@ -931,6 +931,13 @@ module HTTPX
       end
     end
 
+    def reset_ping_timer
+      return unless @ping_timer
+
+      @ping_timer.cancel
+      @ping_timer = nil
+    end
+
     def close_sibling
       sibling = @sibling
 
@@ -1050,8 +1057,7 @@ module HTTPX
     end
 
     def pong
-      @ping_timer.cancel
-      @ping_timer = nil
+      reset_timer
       @response_received_at = Utils.now
       @no_more_requests_counter = 0
       send_pending

@@ -175,6 +175,8 @@ module HTTPX
 
     def force_purge: () -> void
 
+    def reset_timer: () -> void
+
     def close_sibling: () -> void
 
     def purge_after_closed: () -> void
