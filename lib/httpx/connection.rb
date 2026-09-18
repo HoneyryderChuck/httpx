@@ -311,7 +311,7 @@ module HTTPX
     def close
       transition(:active) if @state == :inactive
 
-      @parser.close if @parser
+      @parser&.close
     end
 
     def terminate
@@ -341,9 +341,8 @@ module HTTPX
         @pending.clear
       elsif (parser = @parser)
         enqueue_pending_requests_from_parser(parser)
+        return unless @pending.empty?
       end
-
-      return unless @pending.empty?
 
       disconnect
       emit(:force_closed, delete_pending)
@@ -364,7 +363,7 @@ module HTTPX
       # (example: HTTP/1 parser disabling pipelining)
       return if @state == :idle && @pending.any?
 
-      reset_timer
+      reset_ping_timer
 
       parser = @parser
 
@@ -419,7 +418,7 @@ module HTTPX
       transition(:idle)
       return unless @parser
 
-      enqueue_pending_requests_from_parser(parser)
+      enqueue_pending_requests_from_parser(@parser)
       @parser = nil
     end
 
@@ -1057,7 +1056,7 @@ module HTTPX
     end
 
     def pong
-      reset_timer
+      reset_ping_timer
       @response_received_at = Utils.now
       @no_more_requests_counter = 0
       send_pending
