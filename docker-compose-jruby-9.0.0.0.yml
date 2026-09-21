@@ -1,6 +1,6 @@
 services:
   httpx:
-    image: jruby:9.4
+    image: jruby:9
     environment:
       - JRUBY_OPTS=--debug
     entrypoint:
