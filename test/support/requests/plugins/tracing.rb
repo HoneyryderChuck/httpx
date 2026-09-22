@@ -191,6 +191,25 @@ module Requests
         end
       end
 
+      def test_plugin_tracing_span_covers_failed_connect
+        start_test_servlet(SlowHandshakeServer, tls: true, handshake_delay: 3) do |server|
+          http = HTTPX.plugin(:tracing, tracer: test_tracer)
+                      .with(timeout: { connect_timeout: 1 },
+                            ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE, verify_hostname: false })
+          request = http.build_request("GET", "#{server.origin}/")
+          response = http.request(request)
+
+          verify_error_response(response, HTTPX::ConnectTimeoutError)
+
+          # delta deliberately under the connect timeout: the bug this pins reported ~40us, which
+          # a delta of 1 would happily accept.
+          span_duration = test_tracer.span_durations[request].last
+          assert_in_delta 1, span_duration, 0.5,
+                          "expected the span to cover the ~1s this request spent waiting on the " \
+                          "connect which timed out (was #{span_duration}s)"
+        end
+      end
+
       private
 
       def test_tracer
@@ -230,7 +249,7 @@ module Requests
         def finish(request, _response)
           now = Time.now
           @finished[request] += 1
-          @total_times[request] << (now - @started_at[request])
+          @total_times[request] << (now - @started_at[request]) if @started_at[request]
           @span_durations[request] << (now - request.init_time) if request.init_time
         end
       end

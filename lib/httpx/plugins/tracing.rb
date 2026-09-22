@@ -102,7 +102,11 @@ module HTTPX::Plugins
         # Example is the :ssrf_filter plugin, which raises an error on
         # initialize if the host is an IP which matches against the known set.
         # in such cases, we'll just set here right here.
-        @init_time ||= ::Time.now.utc
+        unless @init_time
+          @init_time = ::Time.now.utc
+
+          @init_time -= @handshake_time if @handshake_time
+        end
 
         super
       end
@@ -141,6 +145,17 @@ module HTTPX::Plugins
       end
 
       private
+
+      def handle_error(er, request = nil)
+        if connecting? && @init_time
+          # bookkeep handshake time back into pending requests, which were never initialized with it.
+          handshake_time = ::Time.now.utc - @init_time
+          request.handshake_time ||= handshake_time if request
+          @pending.each { |req| req.handshake_time ||= handshake_time }
+        end
+
+        super
+      end
 
       def connect
         @init_time ||= ::Time.now.utc
