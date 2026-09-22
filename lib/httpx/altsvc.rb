@@ -10,7 +10,7 @@ module HTTPX
 
       H2_ALTSVC_SCHEMES = %w[https h2].freeze
 
-      ALTSVC_IGNORE_IVARS = %i[@ssl].freeze
+      ALTSVC_IGNORE_IVARS = %i[ssl].freeze
 
       def send(request)
         request.headers["alt-used"] = @origin.authority if @parser && !@write_buffer.full? && match_altsvcs?(request.uri)
