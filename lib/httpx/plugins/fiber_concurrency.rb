@@ -112,6 +112,12 @@ module HTTPX
           super
         end
 
+        def pending_count
+          count = @pending.count(&:current_context?)
+          count += @parser.pending.count(&:current_context?).size if @parser.respond_to?(:pending)
+          count
+        end
+
         private
 
         # checks whether the connection has any pending request (which the connection itself may

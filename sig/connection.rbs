@@ -79,6 +79,8 @@ module HTTPX
 
     def merge: (Connection connection) -> void
 
+    def pending_count: () -> Integer
+
     def purge_pending: () { (Request request) -> void } -> void
 
     def connecting?: () -> bool
