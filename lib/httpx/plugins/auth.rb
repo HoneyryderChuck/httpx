@@ -186,11 +186,15 @@ module HTTPX
             auth_error?(response, options) || super
           end
 
-          def prepare_to_retry(request, response)
+          def prepare_to_retry(request, response, retry_after)
             super
 
             return unless auth_error?(response, request.options) ||
-                          (@options.generate_auth_value_on_retry && @options.generate_auth_value_on_retry.call(response))
+                          (@options.generate_auth_value_on_retry && @options.generate_auth_value_on_retry.call(response)) ||
+                          (
+                            (expires_at = @auth_header_expires_at) &&
+                             expires_at > (Time.now.utc.to_i + (retry_after || 0))
+                          )
 
             # regenerate token before retry, but only if it's the first request from batch failing.
             # otherwise, it means that the first request already passed here, so this request should

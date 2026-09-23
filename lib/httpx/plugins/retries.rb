@@ -165,7 +165,7 @@ module HTTPX
             # retry-after must be calculated before prepare_to_retry, as it relies on
             # state changed byit.
             retry_after = when_to_retry(request, response, options)
-            prepare_to_retry(request, response)
+            prepare_to_retry(request, response, retry_after)
 
             if retry_after&.positive?
               retry_start = Utils.now
@@ -207,7 +207,7 @@ module HTTPX
           RETRYABLE_ERRORS.any? { |klass| ex.is_a?(klass) } && !ex.is_a?(TotalRequestTimeoutError)
         end
 
-        def prepare_to_retry(request, response)
+        def prepare_to_retry(request, response, _retry_after)
           request.retries -= 1 unless can_reconnect?(request, response)
           request.transition(:idle)
         end
