@@ -46,7 +46,7 @@ module HTTPX
       ensure
         unless prev_wrapped
           if @persistent
-            deactivate(current_selector)
+            deactivate(current_selector, $ERROR_INFO)
           else
             close(current_selector)
           end
@@ -221,8 +221,19 @@ module HTTPX
     end
 
     # tries deactivating connections in the +selector+, deregistering the ones that have been deactivated.
-    def deactivate(selector)
-      selector.each_connection.to_a.each(&:deactivate)
+    def deactivate(selector, error = nil)
+      selector.each_connection.to_a.each do |connection|
+        if (pending_count = connection.pending_count).positive?
+          warn "connection deactivated with pending requests, " \
+               "please report this https://gitlab.com/os85/httpx/-/work_items " \
+               "along with debug logs\n(" \
+               "state:#{connection.state},pending:#{pending_count}," \
+               "connection-pending:#{connection.pending.size}," \
+               "deactivate-on-error:#{error&.detailed_message}," \
+               ")"
+        end
+        connection.deactivate
+      end
     end
 
     # callback executed when an HTTP/2 promise frame has been received.
@@ -304,7 +315,7 @@ module HTTPX
       ensure
         unless @wrapped
           if @persistent
-            deactivate(selector)
+            deactivate(selector, $ERROR_INFO)
           else
             close(selector)
           end

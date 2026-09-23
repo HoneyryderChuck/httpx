@@ -44,7 +44,7 @@ module HTTPX
 
     def selector_close: (Selector close) -> void
 
-    def deactivate: (Selector selector) -> void
+    def deactivate: (Selector selector, ?Exception? error) -> void
 
     def on_promise: (untyped, untyped) -> void
 

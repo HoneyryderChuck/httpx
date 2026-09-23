@@ -195,6 +195,14 @@ module HTTPX
       end
     end
 
+    # returns the number of pending requests both in the connection as well as parser
+    # pending queues
+    def pending_count
+      count = @pending.size
+      count += @parser.pending.size if @parser.respond_to?(:pending)
+      count
+    end
+
     def purge_pending(&block)
       if @parser
         pending = @parser.pending
