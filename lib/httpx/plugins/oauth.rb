@@ -323,7 +323,7 @@ module HTTPX
         module InstanceMethods
           private
 
-          def prepare_to_retry(_request, response)
+          def prepare_to_retry(*)
             @oauth_session.reset! if @oauth_session
 
             super
