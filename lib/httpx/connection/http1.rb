@@ -183,7 +183,7 @@ module HTTPX
 
       @request = nil
       @requests.shift
-      response = request.response
+      response = request.response #: Response
       emit(:response, request, response)
 
       if @parser.upgrade?
@@ -194,11 +194,7 @@ module HTTPX
 
       @parser.reset!
       @max_requests -= 1
-      if response.is_a?(ErrorResponse)
-        disable
-      else
-        manage_connection(request, response)
-      end
+      manage_connection(request, response)
 
       if exhausted?
         @pending.unshift(*@requests)
