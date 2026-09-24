@@ -71,13 +71,19 @@ module HTTPX
             super
           end
 
-          def force_close(*)
+          def handle_connect_error(*)
             if @state == :connecting
               # proxy connect related requests should not be reenqueed
               @parser.reset
               @inflight -= @parser.pending.size
               @parser.pending.clear
             end
+
+            super
+          end
+
+          def on_error(error, *)
+            error = error.to_connection_error if error.is_a?(RequestTimeoutError) && connecting?
 
             super
           end
@@ -156,7 +162,7 @@ module HTTPX
                     transition(:connecting)
                   end
                 end
-                __http_proxy_connect(parser)
+                __http_proxy_connect
               end
               return if @state == :connected
             when :connected
@@ -175,7 +181,7 @@ module HTTPX
             super
           end
 
-          def __http_proxy_connect(parser)
+          def __http_proxy_connect
             req = @pending.first
             enable_proxy_tunnel = (
               req.options.enable_proxy_tunnel.nil? && req && req.uri.scheme == "https"
@@ -187,8 +193,7 @@ module HTTPX
               # and therefore, will share the connection.
               #
               connect_request = ConnectRequest.new(req.uri, @options)
-              @inflight += 1
-              parser.send(connect_request)
+              send(connect_request)
             else
               handle_transition(:connected)
             end
@@ -209,8 +214,7 @@ module HTTPX
 
               request.transition(:idle)
               request.headers["proxy-authorization"] = @options.proxy.authenticate(request, response.headers["proxy-authenticate"])
-              @parser.send(request)
-              @inflight += 1
+              send(request)
             else
               pending = @pending + @parser.pending
               while (req = pending.shift)
