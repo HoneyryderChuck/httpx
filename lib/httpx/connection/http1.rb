@@ -88,9 +88,9 @@ module HTTPX
       @parser << data
     end
 
-    def send(request)
-      unless @max_requests.positive?
-        @pending << request
+    def send(request, head = false)
+      unless @max_requests.positive? && @max_requests > @requests.size
+        head ? @pending.unshift(request) : @pending << request
         return
       end
 
@@ -206,7 +206,7 @@ module HTTPX
 
         emit(:exhausted)
       else
-        send(@pending.shift) unless @pending.empty?
+        send(@pending.shift, true) unless @pending.empty?
       end
     end
 
