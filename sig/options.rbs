@@ -174,8 +174,6 @@ module HTTPX
 
     def do_initialize: () -> void
 
-    def access_option: (Hash[Symbol, untyped] | Object | nil obj, Symbol k, Hash[Symbol, Symbol]? ivar_map) -> untyped
-
     # integer
     def option_max_concurrent_requests: (int value) -> maybe_unbounded
     def option_max_requests: (int value) -> maybe_unbounded

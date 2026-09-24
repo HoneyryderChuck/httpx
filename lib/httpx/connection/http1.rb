@@ -48,10 +48,6 @@ module HTTPX
     end
 
     def reset
-      if @ping_timer
-        @ping_timer.cancel
-        @ping_timer = nil
-      end
       @max_requests = @options.max_requests || MAX_REQUESTS
       @parser.reset!
       @handshake_completed = false

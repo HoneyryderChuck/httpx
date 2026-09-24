@@ -114,6 +114,18 @@ module Requests
       assert chunks.positive?
     end
 
+    def test_callbacks_on_body_chunk_raises_error
+      uri = URI(build_uri("/post"))
+
+      http = HTTPX.plugin(:callbacks)
+                  .on_request_body_chunk { |_, _chunk| raise "ups" }
+
+      ex = assert_raises do
+        http.post(uri, body: "data")
+      end
+      assert ex.message == "ups"
+    end
+
     def test_callbacks_keeps_callbacks_when_building_new_sessions
       http = HTTPX.plugin(:callbacks).on_request_started { puts "test" }
       http.singleton_class.class_eval do
@@ -122,6 +134,17 @@ module Requests
 
       assert http.callbacks_for?(:request_started)
       http = http.with(headers: { a: 1 })
+      assert http.callbacks_for?(:request_started)
+    end
+
+    def test_callbacks_keeps_callbacks_with_other_plugins
+      http = HTTPX.plugin(:callbacks).on_request_started { puts "test" }
+                  .plugin(:auth)
+
+      http.singleton_class.class_eval do
+        public :callbacks_for?
+      end
+
       assert http.callbacks_for?(:request_started)
     end
 

@@ -15,6 +15,7 @@ class HTTPSTest < Minitest::Test
   include ResponseBody
   include IO
   include Callbacks
+  include Timeouts
   include Errors if RUBY_ENGINE == "ruby"
   include Resolvers if ENV.key?("HTTPX_RESOLVER_URI")
   include Coalescing if ENV.key?("HTTPBIN_COALESCING_HOST")

@@ -15,7 +15,7 @@ module Requests
       return unless can_run_ractor_tests?
 
       response2 = Ractor.new(uri) do |uri|
-        HTTPX.get(uri)
+        HTTPX.with(reoslver_options: { cache: false }).get(uri)
       end.value
 
       verify_status(response2, 200)

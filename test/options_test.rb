@@ -39,14 +39,34 @@ class OptionsTest < Minitest::Test
     assert Options.new(resolver_class: :native).resolver_class < Resolver::Native
     assert Options.new(resolver_class: :system).resolver_class < Resolver::System
     assert Options.new(resolver_class: :https).resolver_class < Resolver::HTTPS
+
+    return if defined?(RBS)
+
+    assert_raises(TypeError) { Options.new(resolver_class: 1) }
     ex = assert_raises(TypeError) { Options.new(resolver_class: :smth) }
     assert(ex.message.include?("`:resolver_class` must be a supported type"))
     assert Options.new(resolver_class: Resolver::HTTPS).resolver_class == Resolver::HTTPS
 
-    return if defined?(RBS)
-
     ex = assert_raises(TypeError) { Options.new(resolver_class: Object) }
     assert(ex.message.include?("`:resolver_class` must be a subclass of `HTTPX::Resolver::Resolver`"))
+  end
+
+  def test_options_resolver_cache
+    assert Options.new(resolver_cache: :memory).resolver_cache.instance_of?(HTTPX::Resolver::Cache::Memory)
+    assert Options.new(resolver_cache: :file).resolver_cache.instance_of?(HTTPX::Resolver::Cache::File)
+
+    return if defined?(RBS)
+
+    assert_raises(TypeError) { Options.new(resolver_cache: :smth) }
+    ex = assert_raises(TypeError) { Options.new(resolver_cache: Object.new) }
+    assert(ex.message.include?("`:resolver_cache` must be a compatible resolver cache"))
+
+    custom_cache = Object.new
+    def custom_cache.resolve(*); end
+    def custom_cache.get(*); end
+    def custom_cache.set(*); end
+    def custom_cache.evict(*); end
+    assert Options.new(resolver_cache: custom_cache).resolver_cache == custom_cache
   end
 
   def test_options_headers_with_instance

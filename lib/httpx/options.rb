@@ -544,15 +544,6 @@ module HTTPX
       end
     end
 
-    def access_option(obj, k, ivar_map)
-      case obj
-      when Hash
-        obj[ivar_map[k]]
-      else
-        obj.instance_variable_get(k)
-      end
-    end
-
     # rubocop:disable Lint/UselessConstantScoping
     # these really need to be defined at the end of the class
     SET_TEMPORARY_NAME = ->(klass, pl = nil) do

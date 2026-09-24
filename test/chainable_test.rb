@@ -3,6 +3,14 @@
 require_relative "test_helper"
 
 class ChainableTest < Minitest::Test
+  def test_chainable_with_options
+    assert HTTPX.with_max_requests(2).instance_variable_get(:@options).max_requests == 2
+    assert_raises(NoMethodError) do
+      # test else branch of method_missing
+      HTTPX.smth
+    end
+  end
+
   def test_respond_to_mapping_to_options
     assert !HTTPX.respond_to?(:with_potatoes)
     assert HTTPX.respond_to?(:with_ssl)
@@ -11,6 +19,8 @@ class ChainableTest < Minitest::Test
     assert !HTTPX.respond_to?(:with_cookies)
     http_cookies = HTTPX.plugin(:cookies)
     assert http_cookies.respond_to?(:with_cookies)
+
+    assert !HTTPX.respond_to?(:smth)
   end
 
   def test_deprecated_callbacks
