@@ -992,8 +992,6 @@ module HTTPX
 
     # returns an HTTPX::Connection for the negotiated Alternative Service (or none).
     def build_altsvc_connection(alt_origin, origin, alt_params)
-      return if @altsvc_connection
-
       # do not allow security downgrades on altsvc negotiation
       return if @origin.scheme == "https" && alt_origin.scheme != "https"
 
@@ -1001,6 +999,8 @@ module HTTPX
 
       # altsvc already exists, somehow it wasn't advertised, probably noop
       return unless altsvc
+
+      return if @altsvc_connection
 
       alt_options = @options.merge(ssl: @options.ssl.merge(hostname: URI(origin).host))
 

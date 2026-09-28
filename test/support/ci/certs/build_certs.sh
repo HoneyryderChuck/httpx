@@ -135,6 +135,7 @@ subjectAltName = @alt_names
 DNS.1 = nghttp2
 DNS.2 = another
 DNS.3 = another2
+DNS.4 = another3
 EOF
 
 # build server certs
@@ -162,6 +163,7 @@ subjectKeyIdentifier = hash
 DNS.1 = nghttp2
 DNS.2 = another
 DNS.3 = another2
+DNS.4 = another3
 EOF
 
 openssl ca -config ca.cnf -out server.crt -extfile server.extensions.cnf -in server.csr -batch

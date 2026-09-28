@@ -19,7 +19,7 @@ class HTTPTest < Minitest::Test
   include Callbacks
   include Timeouts
   include Errors if RUBY_ENGINE == "ruby"
-  include AltSvc if ENV.key?("HTTPBIN_ALTSVC_HOST")
+  include AltSvc if ENV.key?("HTTPBIN_ALTSVC_HOSTS")
 
   include Plugins::Proxy unless ENV.key?("HTTPX_NO_PROXY")
   include Plugins::Authentication

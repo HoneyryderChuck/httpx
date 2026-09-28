@@ -30,7 +30,7 @@ module HTTPX
       # +uri+
       def match_altsvcs?(uri)
         @origins.any? { |origin| altsvc_match?(uri, origin) } ||
-          AltSvc.cached_altsvc(@origin).any? do |altsvc|
+          AltSvc.cached_altsvc(@origin.to_s).any? do |altsvc|
             origin = altsvc["origin"]
             altsvc_match?(origin, uri.origin)
           end

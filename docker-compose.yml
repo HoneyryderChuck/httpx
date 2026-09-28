@@ -18,7 +18,7 @@ services:
       - BUNDLE_PATH=/usr/local/bundle
       - BUNDLE_SILENCE_ROOT_WARNING=1
       - BUNDLE_APP_CONFIG=/usr/local/bundle
-      - HTTPBIN_ALTSVC_HOST=another2
+      - HTTPBIN_ALTSVC_HOSTS=another2,another3
       - AWS_DEFAULT_REGION=us-east-1
       - AWS_ACCESS_KEY_ID=test
       - AWS_SECRET_ACCESS_KEY=test
@@ -39,6 +39,7 @@ services:
       - ws-echo-server
       - webdav
       - altsvc-nghttp2
+      - altsvc2-nghttp2
     volumes:
       - ./:/home
     entrypoint: /home/test/support/ci/build.sh
@@ -83,9 +84,6 @@ services:
       ARGS: "--no-ocsp --frontend *,80;no-tls --frontend *,443"
       KEY_FILE: /data/etc/certs/server.key
       CERT_FILE: /data/etc/certs/server.crt
-    ports:
-      - 80:80
-      - 443:443
     depends_on:
       - httpbin
     volumes:
@@ -98,12 +96,9 @@ services:
   altsvc-nghttp2:
     image: dajobe/nghttpx
     environment:
-      ARGS: "--no-ocsp --frontend *,80;no-tls --frontend *,443 --altsvc h2,443,nghttp2"
+      ARGS: "--no-ocsp --frontend *,80;no-tls --frontend *,443 --frontend-keep-alive-timeout=10 --altsvc h2,443,nghttp2 --altsvc h2c,80,another3"
       KEY_FILE: /data/etc/certs/server.key
       CERT_FILE: /data/etc/certs/server.crt
-    ports:
-      - 81:80
-      - 444:443
     depends_on:
       - httpbin
     volumes:
@@ -112,6 +107,20 @@ services:
       default:
         aliases:
           - another2
+  altsvc2-nghttp2:
+    image: dajobe/nghttpx
+    environment:
+      ARGS: "--no-ocsp --frontend *,80;no-tls --frontend *,443  --frontend-keep-alive-timeout=10 --altsvc h2c,80,another2 --altsvc h2,443,nghttp2"
+      KEY_FILE: /data/etc/certs/server.key
+      CERT_FILE: /data/etc/certs/server.crt
+    depends_on:
+      - httpbin
+    volumes:
+      - ./test/support/ci:/data/etc
+    networks:
+      default:
+        aliases:
+          - another3
   httpbin:
     environment:
       - DEBUG=True
