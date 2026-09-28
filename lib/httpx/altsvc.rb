@@ -115,33 +115,45 @@ module HTTPX
         return
       end
 
-      parse(altsvc) do |alt_origin, alt_params|
+      parse(altsvc, host: host) do |alt_origin, alt_params|
         alt_origin.host ||= host
         yield(alt_origin, origin, alt_params)
       end
     end
 
-    def parse(altsvc)
-      return enum_for(__method__, altsvc) unless block_given?
+    def parse(altsvc, host: nil)
+      return enum_for(__method__, altsvc, host: host) unless block_given?
 
       scanner = StringScanner.new(altsvc)
       until scanner.eos?
-        alt_service = scanner.scan(/[^=]+=("[^"]+"|[^;,]+)/)
+        alt_services = [] #: Array[String]
 
-        alt_params = []
+        while (alt_service = scanner.scan(/[^=]+=("[^"]+")/))
+          alt_services << alt_service
+          scanner.skip(/[, ]+/)
+        end
+
+        scanner.skip(/;/)
+
+        alt_params = [] #: Array[String]
         loop do
           alt_param = scanner.scan(/[^=]+=("[^"]+"|[^;,]+)/)
           alt_params << alt_param.strip if alt_param
           scanner.skip(/;/)
           break if scanner.eos? || scanner.scan(/ *, */)
         end
-        alt_params = Hash[alt_params.map { |field| field.split("=", 2) }]
+        alt_params = Hash[alt_params.map do |field|
+          field.split("=", 2)
+        end]
 
-        alt_proto, alt_authority = alt_service.split("=", 2)
-        alt_origin = parse_altsvc_origin(alt_proto, alt_authority)
-        return unless alt_origin
+        alt_services.each do |alt_service|
+          alt_proto, alt_authority = alt_service.split("=", 2)
+          alt_origin = parse_altsvc_origin(alt_proto, alt_authority, host: host)
 
-        yield(alt_origin, alt_params.merge("proto" => alt_proto))
+          next unless alt_origin
+
+          yield(alt_origin, alt_params.merge("proto" => alt_proto))
+        end
       end
     end
 
@@ -149,19 +161,21 @@ module HTTPX
       case alt_proto
       when "h2c"
         "http"
-      when "h2"
+      when "h2", "quic", /^h3/
         "https"
       end
     end
 
-    def parse_altsvc_origin(alt_proto, alt_origin)
+    def parse_altsvc_origin(alt_proto, alt_origin, host: nil)
       alt_scheme = parse_altsvc_scheme(alt_proto)
 
       return unless alt_scheme
 
       alt_origin = alt_origin[1..-2] if alt_origin.start_with?("\"") && alt_origin.end_with?("\"")
 
-      URI.parse("#{alt_scheme}://#{alt_origin}")
+      uri = URI.parse("#{alt_scheme}://#{alt_origin}")
+      uri.host = host if uri.host.nil? || uri.host.empty?
+      uri
     end
   end
 end
