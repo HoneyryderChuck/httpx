@@ -333,6 +333,8 @@ module Requests
           resolver_class = Class.new(HTTPX::Resolver::Native) do
             class << self
               attr_accessor :attempts
+
+              def freeze; end
             end
             self.attempts = 0
 

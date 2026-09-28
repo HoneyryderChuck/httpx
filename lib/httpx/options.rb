@@ -199,7 +199,7 @@ module HTTPX
         # here, which is to make option objects shareable across ractors,
         # and in most cases debug should be nil, or one of the objects
         # which will eventually be shareable, like STDOUT or STDERR.
-        next if ivar == :debug
+        next if %i[debug io].include?(ivar)
 
         instance_variable_get(:"@#{ivar}").freeze
       end
@@ -294,6 +294,7 @@ module HTTPX
         opts.instance_variable_set(ivar, v)
       end
 
+      opts.freeze
       opts
     end
 
