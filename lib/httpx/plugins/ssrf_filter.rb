@@ -142,7 +142,7 @@ module HTTPX
         end
 
         def addresses=(addrs)
-          addrs.reject! do |ipaddr|
+          addrs = addrs.reject do |ipaddr|
             ipaddr = ipaddr.address
             next false if @options.safe_private_ranges&.any? { |r| r.include?(ipaddr) }
 
