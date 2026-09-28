@@ -503,20 +503,39 @@ module Requests
         end
       end
 
-      def test_plugin_ssh_proxy
-        session = HTTPX.plugin(:"proxy/ssh")
-                       .with_proxy(uri: ssh_proxy,
-                                   username: "root",
-                                   auth_methods: %w[publickey],
-                                   host_key: "ssh-rsa",
-                                   keys: %w[test/support/ssh/ssh_host_ed25519_key])
-        uri = build_uri("/get")
-        response = session.get(uri)
-        verify_status(response, 200)
-        verify_body_length(response)
-      end if ENV.key?("HTTPX_SSH_PROXY") && RUBY_ENGINE == "ruby" &&
-             # TODO: remove after https://bugs.ruby-lang.org/issues/22083 is fixed
-             RUBY_VERSION < "4.0.0"
+      if ENV.key?("HTTPX_SSH_PROXY") && RUBY_ENGINE == "ruby" &&
+         # TODO: remove after https://bugs.ruby-lang.org/issues/22083 is fixed
+         RUBY_VERSION < "4.0.0"
+        def test_plugin_ssh_proxy
+          session = HTTPX.plugin(:"proxy/ssh")
+                         .with_proxy(uri: ssh_proxy,
+                                     username: "root",
+                                     auth_methods: %w[publickey],
+                                     host_key: "ssh-rsa",
+                                     keys: %w[test/support/ssh/ssh_host_ed25519_key])
+          uri = build_uri("/get")
+          response = session.get(uri)
+          verify_status(response, 200)
+          verify_body_length(response)
+        end
+
+        def test_plugin_ssh_next_proxy
+          session = HTTPX
+                    .plugin(SessionWithPool)
+                    .plugin(:"proxy/ssh")
+                    .with_proxy(uri: ["ssh://unavailable-proxy", "ssh://localhost:6543", *ssh_proxy],
+                                username: "root",
+                                auth_methods: %w[publickey],
+                                host_key: "ssh-rsa",
+                                keys: %w[test/support/ssh/ssh_host_ed25519_key])
+          uri = build_uri("/get")
+          response = session.get(uri)
+          verify_status(response, 200)
+          verify_body_length(response)
+
+          assert response.peer_address == "127.0.0.1", "expected request to have been SSH-tunneled"
+        end
+      end
 
       def test_plugin_retries_on_proxy_error
         start_test_servlet(Sock5WithNoneServer) do |server|
