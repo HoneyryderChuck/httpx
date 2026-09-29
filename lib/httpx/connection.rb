@@ -195,6 +195,14 @@ module HTTPX
       end
     end
 
+    # returns the number of pending requests both in the connection as well as parser
+    # pending queues
+    def pending_count
+      count = @pending.size
+      count += @parser.pending.size if @parser.respond_to?(:pending)
+      count
+    end
+
     def purge_pending(&block)
       if @parser
         pending = @parser.pending
@@ -984,8 +992,6 @@ module HTTPX
 
     # returns an HTTPX::Connection for the negotiated Alternative Service (or none).
     def build_altsvc_connection(alt_origin, origin, alt_params)
-      return if @altsvc_connection
-
       # do not allow security downgrades on altsvc negotiation
       return if @origin.scheme == "https" && alt_origin.scheme != "https"
 
@@ -993,6 +999,8 @@ module HTTPX
 
       # altsvc already exists, somehow it wasn't advertised, probably noop
       return unless altsvc
+
+      return if @altsvc_connection
 
       alt_options = @options.merge(ssl: @options.ssl.merge(hostname: URI(origin).host))
 

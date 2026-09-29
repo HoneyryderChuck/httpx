@@ -16,7 +16,8 @@ module Requests
       def test_plugin_tracing_multiple_tracers_propagates
         tracer1 = TestTracer.new
         tracer2 = TestTracer.new
-        http = HTTPX.plugin(:tracing, tracer: tracer1).with(tracer: tracer2)
+        tracer3 = TestTracer.new
+        http = HTTPX.plugin(:tracing, tracer: tracer1).with(tracer: tracer2).with(tracer: tracer3)
         uri = build_uri("/get")
         request = http.build_request("GET", uri)
         response = http.request(request)
@@ -25,6 +26,8 @@ module Requests
         assert tracer1.finished[request] == 1
         assert tracer2.started[request] == 1
         assert tracer2.finished[request] == 1
+        assert tracer3.started[request] == 1
+        assert tracer3.finished[request] == 1
       end
 
       def test_plugin_tracing_retries_one_for_each

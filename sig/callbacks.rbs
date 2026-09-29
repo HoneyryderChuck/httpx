@@ -4,6 +4,7 @@ module HTTPX
   end
 
   module Callbacks
+    @callbacks: Hash[Symbol, Array[_Callable]]?
     def on: (Symbol) { (*untyped) -> void } -> ^(*untyped) -> void
     def once: (Symbol) { (*untyped) -> void } -> ^(*untyped) -> void
     def emit: (Symbol, *untyped) -> void

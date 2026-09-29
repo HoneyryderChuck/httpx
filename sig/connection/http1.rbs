@@ -36,7 +36,7 @@ module HTTPX
 
     def <<: (string) -> void
 
-    def send: (Request) -> void
+    def send: (Request request, ?bool head) -> void
 
     def consume: () -> void
 

@@ -16,7 +16,7 @@ module ProxyResponseDetector
   end
 
   module ConnectionMethods
-    attr_reader :connect_requests
+    attr_reader :connect_requests, :inflight
 
     def initialize(*)
       super
@@ -26,7 +26,7 @@ module ProxyResponseDetector
     def send(request)
       return super unless @options.respond_to?(:proxy) && @options.proxy
 
-      request.proxied = true
+      request.proxied = true unless request.verb == "CONNECT"
 
       super
     end

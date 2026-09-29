@@ -78,9 +78,7 @@ module HTTPX
 
       def parse_headers
         headers = @headers
-        buffer = @buffer
-
-        #: @type var buffer: String
+        buffer = @buffer #: String
 
         while (idx = buffer.index("\n"))
           # @type var line: String
@@ -114,8 +112,7 @@ module HTTPX
           key = line.byteslice(0..(separator_index - 1))
 
           key.rstrip! # was lstripped previously!
-          # @type var value: String
-          value = line.byteslice((separator_index + 1)..-1)
+          value = line.byteslice((separator_index + 1)..-1) #: String
           value.strip!
           raise Error, "wrong header format" if value.nil?
 

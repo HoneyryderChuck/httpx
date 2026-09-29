@@ -48,10 +48,6 @@ module HTTPX
     end
 
     def reset
-      if @ping_timer
-        @ping_timer.cancel
-        @ping_timer = nil
-      end
       @max_requests = @options.max_requests || MAX_REQUESTS
       @parser.reset!
       @handshake_completed = false
@@ -92,9 +88,9 @@ module HTTPX
       @parser << data
     end
 
-    def send(request)
-      unless @max_requests.positive?
-        @pending << request
+    def send(request, head = false)
+      unless @max_requests.positive? && @max_requests > @requests.size
+        head ? @pending.unshift(request) : @pending << request
         return
       end
 
@@ -187,7 +183,7 @@ module HTTPX
 
       @request = nil
       @requests.shift
-      response = request.response
+      response = request.response #: Response
       emit(:response, request, response)
 
       if @parser.upgrade?
@@ -198,11 +194,7 @@ module HTTPX
 
       @parser.reset!
       @max_requests -= 1
-      if response.is_a?(ErrorResponse)
-        disable
-      else
-        manage_connection(request, response)
-      end
+      manage_connection(request, response)
 
       if exhausted?
         @pending.unshift(*@requests)
@@ -210,7 +202,7 @@ module HTTPX
 
         emit(:exhausted)
       else
-        send(@pending.shift) unless @pending.empty?
+        send(@pending.shift, true) unless @pending.empty?
       end
     end
 

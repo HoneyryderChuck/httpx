@@ -17,7 +17,7 @@ module HTTPX
     # default value used for "user-agent" header, when not overridden.
     USER_AGENT = "httpx.rb/#{VERSION}".freeze # rubocop:disable Style/RedundantFreeze
 
-    @options_names = []
+    @options_names = Set[]
 
     class << self
       attr_reader :options_names
@@ -199,14 +199,14 @@ module HTTPX
         # here, which is to make option objects shareable across ractors,
         # and in most cases debug should be nil, or one of the objects
         # which will eventually be shareable, like STDOUT or STDERR.
-        next if ivar == :debug
+        next if %i[debug io].include?(ivar)
 
         instance_variable_get(:"@#{ivar}").freeze
       end
       super
     end
 
-    REQUEST_BODY_IVARS = %i[@headers].freeze
+    REQUEST_BODY_IVARS = %i[headers].freeze
 
     # checks whether +other+ matches the same connection-level options
     def connection_options_match?(other, ignore_ivars = nil)
@@ -214,20 +214,18 @@ module HTTPX
 
       # headers and other request options do not play a role, as they are
       # relevant only for the request.
-      ivars = instance_variables
-      ivars.reject! { |iv| REQUEST_BODY_IVARS.include?(iv) }
-      ivars.reject! { |iv| ignore_ivars.include?(iv) } if ignore_ivars
+      ivars = self.class.options_names.reject { |iv| REQUEST_BODY_IVARS.include?(iv) }
+      ivars = ivars.reject { |iv| ignore_ivars.include?(iv) } if ignore_ivars
 
-      other_ivars = other.instance_variables
-      other_ivars.reject! { |iv| REQUEST_BODY_IVARS.include?(iv) }
-      other_ivars.reject! { |iv| ignore_ivars.include?(iv) } if ignore_ivars
+      other_ivars = other.class.options_names.reject { |iv| REQUEST_BODY_IVARS.include?(iv) }
+      other_ivars = other_ivars.reject { |iv| ignore_ivars.include?(iv) } if ignore_ivars
 
       return false if ivars.size != other_ivars.size
 
-      return false if ivars.sort != other_ivars.sort
+      return false if ivars != other_ivars
 
       ivars.all? do |ivar|
-        instance_variable_get(ivar) == other.instance_variable_get(ivar)
+        send(ivar) == other.send(ivar)
       end
     end
 
@@ -296,6 +294,7 @@ module HTTPX
         opts.instance_variable_set(ivar, v)
       end
 
+      opts.freeze
       opts
     end
 
@@ -543,15 +542,6 @@ module HTTPX
         hs.delete("accept-encoding")
       else
         hs["accept-encoding"] = supported_compression_formats unless hs.key?("accept-encoding")
-      end
-    end
-
-    def access_option(obj, k, ivar_map)
-      case obj
-      when Hash
-        obj[ivar_map[k]]
-      else
-        obj.instance_variable_get(k)
       end
     end
 

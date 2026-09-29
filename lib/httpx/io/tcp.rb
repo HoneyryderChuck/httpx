@@ -263,6 +263,7 @@ module HTTPX
 
     def log_transition_state(nextstate)
       label = host
+      label = "#{label}:#{@port}" if label
       label = "#{label}(##{@io.fileno})" if nextstate == :connected
       "#{label} #{@state} -> #{nextstate}"
     end

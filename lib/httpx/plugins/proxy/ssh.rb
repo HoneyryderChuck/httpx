@@ -21,31 +21,50 @@ module HTTPX
         end
 
         module InstanceMethods
+          def initialize(*)
+            super
+            @_gateway = nil
+          end
+
           def request(*args, **options)
             raise ArgumentError, "must perform at least one request" if args.empty?
 
             requests = args.first.is_a?(Request) ? args : build_requests(*args, options)
 
-            request = requests.first or return super
+            request = requests.first
+
+            return super unless request
 
             request_options = request.options
 
             return super unless request_options.proxy
 
-            ssh_options = request_options.proxy
-            ssh_uris = ssh_options.delete(:uri)
-            ssh_uri = URI.parse(ssh_uris.shift)
+            ssh_options = request_options.proxy.dup
+            ssh_uris = Array(ssh_options.delete(:uri))
 
-            return super unless ssh_uri.scheme == "ssh"
+            proxy_ns = 0
 
-            ssh_username = ssh_options.delete(:username)
-            ssh_options[:port] ||= ssh_uri.port || 22
-            if request_options.debug
-              ssh_options[:verbose] = request_options.debug_level == 2 ? :debug : :info
+            begin
+              ssh_uri = URI(ssh_uris[proxy_ns])
+
+              return super unless ssh_uri.scheme == "ssh"
+
+              ssh_username = ssh_options.delete(:username)
+              ssh_options[:port] ||= ssh_uri.port || 22
+              if request_options.debug
+                ssh_options[:verbose] = request_options.debug_level == 2 ? :debug : :info
+              end
+
+              request_uri = URI(requests.first.uri)
+              @_gateway = Net::SSH::Gateway.new(ssh_uri.host, ssh_username, ssh_options)
+            rescue StandardError => e
+              log { "failed connecting to ssh proxy, trying next..." }
+              proxy_ns += 1
+              raise e if proxy_ns >= ssh_uris.size
+
+              retry
             end
 
-            request_uri = URI(requests.first.uri)
-            @_gateway = Net::SSH::Gateway.new(ssh_uri.host, ssh_username, ssh_options)
             begin
               @_gateway.open(request_uri.host, request_uri.port) do |local_port|
                 io = build_gateway_socket(local_port, request_uri, request_options)

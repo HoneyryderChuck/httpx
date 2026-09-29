@@ -17,7 +17,7 @@ class Bug_0_14_4_Test < Minitest::Test
           verify_status(response, 200)
 
           conn_header = ((idx + 1) % 100).zero? ? "close" : "Keep-Alive"
-          assert verify_header(response.headers, "connection", conn_header)
+          verify_header(response.headers, "connection", conn_header)
         end
         connection_count = http.connection_count
         assert connection_count == 4, "expected to have 4 connections (+ an idle one), instead have #{connection_count}"

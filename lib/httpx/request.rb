@@ -82,11 +82,11 @@ module HTTPX
       @uri     = Utils.to_uri(uri)
 
       @headers = options.headers.dup
-      merge_headers(params.delete(:headers)) if params.key?(:headers)
+      merge_headers(params[:headers]) if params.key?(:headers)
 
-      @query_params = params.delete(:params) if params.key?(:params)
+      @query_params = params[:params] if params.key?(:params)
 
-      @http2_stream_options = params.key?(:http2_stream_options) ? params.delete(:http2_stream_options) : EMPTY_HASH
+      @http2_stream_options = params.key?(:http2_stream_options) ? params[:http2_stream_options] : EMPTY_HASH
 
       @body = options.request_body_class.new(@headers, options, **params)
 

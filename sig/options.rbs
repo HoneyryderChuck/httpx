@@ -32,7 +32,7 @@ module HTTPX
 
     def self.new: (?options) -> instance
 
-    attr_reader self.options_names: Array[Symbol]
+    attr_reader self.options_names: Set[Symbol]
 
     # headers
     attr_reader uri: URI?
@@ -173,8 +173,6 @@ module HTTPX
     def initialize: (?options options) -> void
 
     def do_initialize: () -> void
-
-    def access_option: (Hash[Symbol, untyped] | Object | nil obj, Symbol k, Hash[Symbol, Symbol]? ivar_map) -> untyped
 
     # integer
     def option_max_concurrent_requests: (int value) -> maybe_unbounded

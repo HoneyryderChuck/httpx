@@ -1,14 +1,14 @@
 module HTTPX
   module Plugins
     module Auth
-      type auth_header_value_type = String | ^(?Request request, ?bool should_regenerate) -> string
+      type auth_header_value_type = String | ^(?requestAuth request, ?bool should_regenerate) -> string
 
       interface _AuthOptions
         def auth_header_value: () -> auth_header_value_type?
 
         def auth_header_type: () -> String?
 
-        def auth_header_expires_at: () -> (^(Request request) -> _ToF?)?
+        def auth_header_expires_at: () -> (^(requestAuth request) -> _ToF?)?
 
         def auth_header_expires_in: () -> Float?
       end
@@ -17,10 +17,11 @@ module HTTPX
         @auth_header_value: String?
         @auth_header_value_mtx: Thread::Mutex
         @skip_auth_header_value: bool
+        @auth_header_expires_at: interval?
 
-        def authorization: (?string token, ?auth_header_type: string) ?{ (?Request, ?bool) -> string } -> instance
+        def authorization: (?string token, ?auth_header_type: string) ?{ (?requestAuth, ?bool) -> string } -> instance
 
-        def bearer_auth: (?string token) ?{ (Request) -> string } -> instance
+        def bearer_auth: (?string token) ?{ (requestAuth) -> string } -> instance
 
         def skip_auth_header: [T] { () -> T } -> T
 
@@ -28,7 +29,11 @@ module HTTPX
 
         private
 
-        def generate_auth_token: (Request & RequestMethods request, bool should_regenerate) -> String?
+        def generate_auth_token: (requestAuth request, bool should_regenerate) -> String?
+
+        def try_invalidate_auth_header_value: () -> void
+
+        def set_auth_header_expires_at: (requestAuth request) -> void
 
         def dynamic_auth_token?: (auth_header_value_type auth_header_value) -> boolish
       end
@@ -52,6 +57,8 @@ module HTTPX
           def auth_error?: (response response, Options options) -> boolish
         end
       end
+
+      type requestAuth = Request & RequestMethods
     end
 
     type sessionAuth = Session & Auth::InstanceMethods

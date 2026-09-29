@@ -42,18 +42,20 @@ module HTTPX
       class Parameters
         attr_reader :uri, :username, :password, :scheme, :no_proxy
 
-        def initialize(uri: nil, scheme: nil, username: nil, password: nil, no_proxy: nil, **extra)
+        def initialize(uri: nil, ns: 0, scheme: nil, username: nil, password: nil, no_proxy: nil, **extra)
           @no_proxy = Array(no_proxy) if no_proxy
           @uris = Array(uri)
-          uri = @uris.first
+          uri = @uris[ns]
 
           @username = username
           @password = password
 
-          @ns = 0
+          @initial_credentials = @username && @password
+
+          @ns = ns
 
           if uri
-            @uri = uri.is_a?(URI::Generic) ? uri : URI(uri)
+            @uri = URI(uri)
             @username ||= @uri.user
             @password ||= @uri.password
           end
@@ -74,22 +76,15 @@ module HTTPX
         end
 
         def shift
-          # TODO: this operation must be synchronized
-          @ns += 1
-          @uri = @uris[@ns]
+          return if @ns >= @uris.size - 1
 
-          return unless @uri
-
-          @uri = URI(@uri) unless @uri.is_a?(URI::Generic)
-
-          scheme = infer_default_auth_scheme(@uri)
-
-          return unless scheme != @scheme
-
-          @scheme = scheme
-          @username = username || @uri.user
-          @password = password || @uri.password
-          @authenticator = load_authenticator(scheme, @username, @password)
+          Parameters.new(
+            uri: @uris,
+            ns: @ns + 1,
+            username: (@username if @initial_credentials),
+            password: (@password if @initial_credentials),
+            no_proxy: @no_proxy
+          )
         end
 
         def can_authenticate?(...)
@@ -161,25 +156,31 @@ module HTTPX
       end
 
       module InstanceMethods
-        def find_connection(request_uri, selector, options)
-          return super unless options.respond_to?(:proxy)
+        def initialize(*)
+          super
+          @proxy_parameters = @options.proxy
+        end
 
+        def initialize_dup(other)
+          @proxy_parameters = other.instance_variable_get(:@proxy_parameters)
+          super
+        end
+
+        def find_connection(request_uri, selector, options)
           if (next_proxy = request_uri.find_proxy)
             return super(request_uri, selector, options.merge(proxy: Parameters.new(uri: next_proxy)))
           end
 
-          proxy = options.proxy
+          return super unless @proxy_parameters
 
-          return super unless proxy
-
-          next_proxy = proxy.uri
+          next_proxy = @proxy_parameters.uri
 
           raise ProxyError, "Failed to connect to proxy" unless next_proxy
 
           raise ProxyError,
                 "#{next_proxy.scheme}: unsupported proxy protocol" unless options.supported_proxy_protocols.include?(next_proxy.scheme)
 
-          if (no_proxy = proxy.no_proxy)
+          if (no_proxy = @proxy_parameters.no_proxy)
             no_proxy = no_proxy.join(",") if no_proxy.is_a?(Array)
 
             unless no_proxy != "*" && # NO_PROXY=* bypasses proxy use
@@ -189,7 +190,7 @@ module HTTPX
             end
           end
 
-          super(request_uri, selector, options.merge(proxy: proxy))
+          super(request_uri, selector, options.merge(proxy: @proxy_parameters))
         end
 
         private
@@ -201,10 +202,10 @@ module HTTPX
             response = super
 
             if response.is_a?(ErrorResponse) && proxy_error?(request, response, options)
-              options.proxy.shift
+              @proxy_parameters = options.proxy.shift
 
               # return last error response if no more proxies to try
-              return response if options.proxy.uri.nil?
+              return response unless @proxy_parameters
 
               log { "failed connecting to proxy, trying next..." }
               request.transition(:idle)
@@ -222,22 +223,22 @@ module HTTPX
           end
         end
 
-        def proxy_error?(_request, response, options)
-          return false unless options.proxy
+        def proxy_error?(_request, response, _options)
+          proxy_parameters = @proxy_parameters
+
+          return false unless proxy_parameters
 
           error = response.error
           case error
           when NativeResolveError
-            proxy_uri = URI(options.proxy.uri)
+            proxy_uri = proxy_parameters.uri
 
             unresolved_host = error.host
 
             # failed resolving proxy domain
             unresolved_host == proxy_uri.host
           when ResolveError
-            proxy_uri = URI(options.proxy.uri)
-
-            error.message.end_with?(proxy_uri.to_s)
+            error.message.end_with?(proxy_parameters.uri.to_s)
           when ProxyConnectionError
             # timeout errors connecting to proxy
             true
@@ -256,7 +257,7 @@ module HTTPX
 
           # redefining the connection origin as the proxy's URI,
           # as this will be used as the tcp peer ip.
-          @proxy_uri = URI(@options.proxy.uri)
+          @proxy_uri = @options.proxy.uri
         end
 
         def peer

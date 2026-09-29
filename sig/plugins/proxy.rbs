@@ -26,6 +26,7 @@ module HTTPX
 
         @ns: Integer
         @uris: Array[URI::Generic | String]
+        @initial_credentials: boolish
         @authenticator: _Authenticator
 
         def shift: () -> void
@@ -38,7 +39,7 @@ module HTTPX
 
         private
 
-        def initialize: (?uri: generic_uri | Array[generic_uri], ?scheme: String, ?username: String, ?password: String, ?no_proxy: Array[generic_uri] | generic_uri, **untyped) -> void
+        def initialize: (?uri: generic_uri | Array[generic_uri], ?ns: Integer, ?scheme: String?, ?username: String?, ?password: String?, ?no_proxy: Array[generic_uri] | generic_uri | nil, **untyped) -> void
 
         def infer_default_auth_scheme: (URI::Generic uri) -> String?
 
@@ -58,7 +59,7 @@ module HTTPX
       end
 
       module InstanceMethods
-        @__proxy_uris: Array[generic_uri]
+        @proxy_parameters: Parameters?
 
         private
 

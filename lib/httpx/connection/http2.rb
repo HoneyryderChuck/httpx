@@ -470,7 +470,7 @@ module HTTPX
           end
         end
       end
-      send(@pending.shift) unless @pending.empty?
+      send(@pending.shift, true) unless @pending.empty?
 
       return unless @streams.empty? && exhausted?
 

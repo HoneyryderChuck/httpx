@@ -110,6 +110,25 @@ module Requests
         verify_header(body["headers"], "Authorization", "TOKEN1")
       end
 
+      def test_plugin_auth_retries_regenerate_on_retry_after_expires_at
+        i = 0
+        session = HTTPX.plugin(RequestInspector)
+                       .plugin(:retries, max_retries: 1)
+                       .plugin(:auth,
+                               auth_header_expires_at: ->(_req) { Time.now.to_i + 2 })
+                       .with(timeout: { request_timeout: 1 })
+                       .authorization { "TOKEN#{i += 1}" }
+
+        response = session.get(build_uri("/delay/10"))
+        verify_error_response(response)
+        assert session.calls == 1, "expected two errors to have been sent"
+
+        req1, req2 = session.total_requests
+        assert req1.headers["authorization"] == "TOKEN1"
+        assert req2.headers["authorization"] == "TOKEN2"
+        session.reset
+      end
+
       def test_plugin_auth_regenerate_on_retry
         i = 0
         session = HTTPX.plugin(RequestInspector)

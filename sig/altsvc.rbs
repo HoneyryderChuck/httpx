@@ -31,11 +31,11 @@ module HTTPX
 
     def self?.emit: (Request request, response response) { (http_uri alt_origin, String origin, altsvc_params alt_params) -> void } -> void
 
-    def self?.parse: (String altsvc) { (http_uri alt_origin, altsvc_params alt_params) -> void } -> void
-                   | (String altsvc) -> Enumerable[[http_uri, altsvc_params]]
+    def self?.parse: (String altsvc, ?host: String?) { (http_uri alt_origin, altsvc_params alt_params) -> void } -> void
+                   | (String altsvc, ?host: String?) -> Enumerable[[http_uri, altsvc_params]]
 
     def self?.parse_altsvc_scheme: (String alt_proto) -> String?
 
-    def self.parse_altsvc_origin: (string alt_proto, String alt_origin) -> http_uri?
+    def self.parse_altsvc_origin: (string alt_proto, String alt_origin, ?host: String?) -> http_uri?
   end
 end

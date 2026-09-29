@@ -15,11 +15,12 @@ class HTTPSTest < Minitest::Test
   include ResponseBody
   include IO
   include Callbacks
+  include Timeouts
   include Errors if RUBY_ENGINE == "ruby"
   include Resolvers if ENV.key?("HTTPX_RESOLVER_URI")
   include Coalescing if ENV.key?("HTTPBIN_COALESCING_HOST")
   # TODO: uncomment as soon as nghttpx supports altsvc for HTTP/2
-  # include AltSvc if ENV.key?("HTTPBIN_ALTSVC_HOST")
+  # include AltSvc if ENV.key?("HTTPBIN_ALTSVC_HOSTS")
 
   include Plugins::Proxy unless ENV.key?("HTTPX_NO_PROXY")
   include Plugins::Authentication

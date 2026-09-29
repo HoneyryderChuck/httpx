@@ -68,26 +68,4 @@ class EnvProxyTest < Minitest::Test
       end
     end
   end
-
-  # def test_env_proxy_altsvc_get
-  #   altsvc_host = ENV["HTTPBIN_ALTSVC_HOST"]
-
-  #   HTTPX.plugin(SessionWithPool).wrap do |http|
-  #     altsvc_uri = "https://#{altsvc_host}/get"
-  #     response = http.get(altsvc_uri)
-  #     verify_status(response, 200)
-  #     verify_header(response.headers, "alt-svc", "h2=\"nghttp2:443\"")
-  #     response2 = http.get(altsvc_uri)
-  #     verify_status(response2, 200)
-  #     verify_no_header(response2.headers, "alt-svc")
-  #     # introspection time
-  #     pool = session.pool
-  #     connections = pool.connections
-
-  #     assert connections.size == 1
-  #     connections.each do |connection|
-  #       assert HTTPS_PROXY.end_with?(connection.origin.authority), "#{connection.origin.authority} not found in #{HTTPS_PROXY}"
-  #     end
-  #   end
-  # end
 end

@@ -14,7 +14,6 @@ module HTTPX
         def initialize(user, password, hashed: false, **)
           @user = user
           @password = password
-          @nonce = 0
           @hashed = hashed
         end
 
@@ -137,7 +136,7 @@ module HTTPX
         end
 
         def next_nonce
-          @nonce += 1
+          SecureRandom.random_number(2**32)
         end
 
         def raise_format_error
