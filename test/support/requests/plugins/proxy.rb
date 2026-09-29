@@ -126,7 +126,7 @@ module Requests
         verify_body_length(response)
         assert response.proxied?
 
-        connection = session.pool.connections.first
+        connection = session.connections.first
         assert connection.inflight.zero?
         connect_requests = connection.connect_requests
         assert connect_requests.size == 1
@@ -205,7 +205,11 @@ module Requests
 
         return unless uri.scheme == "https"
 
-        connection = session.pool.connections.first
+        assert session.connections.size == 2
+        unavailable_connection, connection = session.connections
+        assert unavailable_connection.inflight.zero?
+        assert unavailable_connection.connect_requests.empty?
+
         assert connection.inflight.zero?
         connect_requests = connection.connect_requests
         assert connect_requests.size == 1
