@@ -54,6 +54,24 @@ module Requests
       end
     end
 
+    def test_get_multiple_same_options
+      uri = build_uri("/get")
+
+      session = HTTPX.plugin(SessionWithPool)
+
+      response1, response2 = session.get(uri, uri, headers: { "x-foo" => "bar" })
+
+      verify_status(response1, 200)
+      verify_body_length(response1)
+      body1 = json_body(response1)
+      verify_header(body1["headers"], "X-Foo", "bar")
+
+      verify_status(response2, 200)
+      verify_body_length(response2)
+      body2 = json_body(response2)
+      verify_header(body2["headers"], "X-Foo", "bar")
+    end
+
     def test_get_multiple_same_origin
       uri = build_uri("/delay/2")
 
