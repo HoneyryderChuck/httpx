@@ -9,11 +9,14 @@ class TestServer < WEBrick::HTTPServer
     default_options = {
       :BindAddress => "127.0.0.1",
       :Port => 0,
-      :AccessLog => File.new(File::NULL),
-      :Logger => Logger.new(File::NULL),
       # stretching due to some timeouts observed in CI due to thread deprioritization
       :RequestTimeout => 120,
     }
+
+    unless options.delete(:debug)
+      default_options[:AccessLog] = []
+      default_options[:Logger] = Logger.new(File::NULL)
+    end
 
     if options.delete(:tls)
       cert = OpenSSL::X509::Certificate.new(File.read(File.join(CERTS_DIR, "localhost-server.crt")))

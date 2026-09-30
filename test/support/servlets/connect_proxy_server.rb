@@ -8,8 +8,6 @@ class ConnectProxyServer < WEBrick::HTTPProxyServer
     super({
       :BindAddress => "127.0.0.1",
       :Port => 0,
-      :AccessLog => File.new(File::NULL),
-      :Logger => Logger.new(File::NULL),
     }.merge(options))
   end
 
