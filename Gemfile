@@ -65,7 +65,7 @@ group :test do
   gem "oga"
 
   gem "pstore" if RUBY_VERSION >= "4.0.0"
-  gem "webrick" if RUBY_VERSION >= "3.0.0"
+  gem "webrick", git: "https://github.com/HoneyryderChuck/webrick", branch: "debug" if RUBY_VERSION >= "3.0.0"
   # https://github.com/ffi/ffi/issues/1103
   # ruby 2.7 only, it seems
   gem "ffi", "< 1.17.0" if Gem::VERSION < "3.3.22"

@@ -14,6 +14,7 @@ module FiberSchedulerTestHelpers
 
     def initialize(fiber = Fiber.current)
       @fiber = fiber
+      log "scheduler on fid:#{@fiber.object_id}"
 
       @readable = Hash.new { |hs, k| hs[k] = [] }
       @writable = Hash.new { |hs, k| hs[k] = [] }
@@ -59,8 +60,8 @@ module FiberSchedulerTestHelpers
         # Ignore - this can happen if the IO is closed while we are waiting.
       end
 
-      # puts "readable: #{readable}" if readable&.any?
-      # puts "writable: #{writable}" if writable&.any?
+      log "fid:#{Fiber.current.object_id} -> readable: #{readable}" if readable&.any?
+      log "fid:#{Fiber.current.object_id} -> writable: #{writable}" if writable&.any?
 
       selected = {}
 
@@ -90,11 +91,14 @@ module FiberSchedulerTestHelpers
         end
       end
 
+      log "fid:#{Fiber.current.object_id} -> selected #{selected.map(&:first).map(&:object_id)}"
       selected.each do |fiber, events|
+        log "fid:#{Fiber.current.object_id} -> let's go fid:#{fiber.object_id}"
         fiber.transfer(events)
       end
 
       if @waiting.any?
+        log "fid:#{Fiber.current.object_id} -> waiting"
         time = current_time
         waiting, @waiting = @waiting, {}
 
@@ -110,16 +114,22 @@ module FiberSchedulerTestHelpers
       end
 
       if @ready.any?
+        log "fid:#{Fiber.current.object_id} -> ready"
         ready = nil
 
         @lock.synchronize do
           ready, @ready = @ready, Set.new
         end
 
+        log "fid:#{Fiber.current.object_id} -> ready fibers: #{ready.map(&:object_id)}"
+        log "fid:#{Fiber.current.object_id} -> ready fibers: #{ready}"
         ready.each do |fiber|
+          log "fid:#{Fiber.current.object_id} -> is ready fid:#{fiber.object_id}"
           fiber.transfer(selected[fiber]) if fiber.alive?
         end
       end
+
+       log "fid:#{Fiber.current.object_id} -> end run once"
     end
 
     def run
@@ -130,6 +140,7 @@ module FiberSchedulerTestHelpers
       # See: https://github.com/socketry/async/blob/main/lib/async/scheduler.rb
       Thread.handle_interrupt(::SignalException => :never) do
         while @readable.any? or @writable.any? or @waiting.any? or @blocking.any?
+          log "fid:#{Fiber.current.object_id} -> scheduler loop"
           run_once
 
           break if Thread.pending_interrupt?
@@ -220,6 +231,7 @@ module FiberSchedulerTestHelpers
 
       fiber = Fiber.current
 
+      log "fid:#{fiber.object_id} -> IO wait events: #{events}"
       unless (events & IO::READABLE).zero?
         @readable[io] << fiber
         readable = true
@@ -234,7 +246,10 @@ module FiberSchedulerTestHelpers
         @waiting[fiber] = current_time + duration
       end
 
-      @fiber.transfer
+      log "fid:#{fiber.object_id} -> preparing to transfer to fid:#{@fiber.object_id}"
+      ret = @fiber.transfer
+      log "fid:#{fiber.object_id} -> fid:#{@fiber.object_id} returns #{ret}"
+      ret
     ensure
       @waiting.delete(fiber) if duration
       if readable
@@ -308,6 +323,7 @@ module FiberSchedulerTestHelpers
 
       if @lock.owned?
         @lock.synchronize do
+          log "fid:#{Fiber.current.object_id} -> unblock fid:#{fiber.object_id} due to #{blocker}"
           @ready << fiber
         end
       else
@@ -329,12 +345,14 @@ module FiberSchedulerTestHelpers
       end
 
       def transfer(*)
+        puts "fid:#{@fiber.object_id} -> raising #{@exception}"
         @fiber.raise(@exception)
       end
     end
 
     def fiber_interrupt(fiber, exception)
       @lock.synchronize do
+        puts "fid:#{Fiber.current.object_id} -> interrupting #{fiber.object_id} because of #{exception}"
         @ready << FiberInterrupt.new(fiber, exception)
       end
 
@@ -405,6 +423,7 @@ module FiberSchedulerTestHelpers
     private
 
     def log(msg)
+      return unless $FIBER_SCHEDULER_LOGS
       fid = Fiber.current.object_id
 
       warn "(scheduler) fid:#{fid}: #{msg}"

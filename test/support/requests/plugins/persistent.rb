@@ -144,7 +144,7 @@ module Requests
         return unless origin.start_with?("https")
 
         begin
-          start_test_servlet(KeepAliveServer, tls: true) do |server|
+          start_test_servlet(KeepAliveServer, tls: true, debug: true) do |server|
             uri = "#{server.origin}/"
             http = HTTPX.plugin(SessionWithPool)
                         .plugin(RequestInspector)
@@ -152,6 +152,7 @@ module Requests
                         .with(
                           fallback_protocol: "http/1.1",
                           ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE, alpn_protocols: %w[http/1.1] },
+                          debug: $stderr, debug_level: 3,
                           timeout: { keep_alive_timeout: 2 }
                         )
 
