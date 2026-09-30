@@ -152,7 +152,7 @@ module Requests
                         .with(
                           fallback_protocol: "http/1.1",
                           ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE, alpn_protocols: %w[http/1.1] },
-                          timeout: { keep_alive_timeout: 1 }
+                          timeout: { keep_alive_timeout: 2 }
                         )
 
             response = http.get(uri)
@@ -164,7 +164,7 @@ module Requests
             connection = http.connections.first
             assert connection.state == :inactive
             io = connection.io.instance_variable_get(:@io)
-            sleep(2)
+            sleep(3)
 
             response = http.get(uri)
             verify_status(response, 200)
