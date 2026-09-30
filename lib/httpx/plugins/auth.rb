@@ -193,7 +193,7 @@ module HTTPX
                           (@options.generate_auth_value_on_retry && @options.generate_auth_value_on_retry.call(response)) ||
                           (
                             (expires_at = @auth_header_expires_at) &&
-                             expires_at > (Time.now.utc.to_i + (retry_after || 0))
+                             expires_at < (Time.now.utc.to_i + (retry_after || 0))
                           )
 
             # regenerate token before retry, but only if it's the first request from batch failing.

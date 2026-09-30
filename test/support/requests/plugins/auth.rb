@@ -52,7 +52,7 @@ module Requests
 
       def test_plugin_auth_reset_auth_value_expires_at
         get_uri = build_uri("/get")
-        session = HTTPX.plugin(:auth, auth_header_expires_at: ->(_req) { Time.now.to_i + 2 })
+        session = HTTPX.plugin(:auth, auth_header_expires_at: ->(_req) { Time.now.utc.to_i + 2 })
 
         i = 0
         authed = session.authorization { "TOKEN#{i += 1}" }
@@ -115,8 +115,8 @@ module Requests
         session = HTTPX.plugin(RequestInspector)
                        .plugin(:retries, max_retries: 1)
                        .plugin(:auth,
-                               auth_header_expires_at: ->(_req) { Time.now.to_i + 2 })
-                       .with(timeout: { request_timeout: 1 })
+                               auth_header_expires_at: ->(_req) { Time.now.utc.to_i + 2 })
+                       .with(timeout: { request_timeout: 3 })
                        .authorization { "TOKEN#{i += 1}" }
 
         response = session.get(build_uri("/delay/10"))
@@ -124,8 +124,8 @@ module Requests
         assert session.calls == 1, "expected two errors to have been sent"
 
         req1, req2 = session.total_requests
-        assert req1.headers["authorization"] == "TOKEN1"
-        assert req2.headers["authorization"] == "TOKEN2"
+        assert_equal "TOKEN1", req1.headers["authorization"]
+        assert_equal "TOKEN2", req2.headers["authorization"]
         session.reset
       end
 
