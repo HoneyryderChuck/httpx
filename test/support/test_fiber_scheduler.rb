@@ -306,7 +306,11 @@ module FiberSchedulerTestHelpers
       # $stderr.puts blocker.backtrace.inspect
       # $stderr.puts fiber.backtrace.inspect
 
-      @lock.synchronize do
+      if @lock.owned?
+        @lock.synchronize do
+          @ready << fiber
+        end
+      else
         @ready << fiber
       end
 
@@ -371,113 +375,27 @@ module FiberSchedulerTestHelpers
     EAGAIN = -Errno::EAGAIN::Errno
 
     def io_read(io, buffer, length, offset)
-      total = 0
       io.nonblock = true
 
-      while true
-        result = blocking{buffer.read(io, 0, offset)}
-
-        if result > 0
-          total += result
-          offset += result
-          break if total >= length
-        elsif result == 0
-          break
-        elsif result == EAGAIN
-          if length > 0
-            self.io_wait(io, IO::READABLE, nil)
-          else
-            return result
-          end
-        elsif result < 0
-          return result
-        end
-      end
-
-      return total
+      blocking{buffer.read(io, offset, length)}
     end
 
     def io_write(io, buffer, length, offset)
-      total = 0
       io.nonblock = true
 
-      while true
-        result = blocking{buffer.write(io, 0, offset)}
-
-        if result > 0
-          total += result
-          offset += result
-          break if total >= length
-        elsif result == 0
-          break
-        elsif result == EAGAIN
-          if length > 0
-            self.io_wait(io, IO::WRITABLE, nil)
-          else
-            return result
-          end
-        elsif result < 0
-          return result
-        end
-      end
-
-      return total
+      blocking{buffer.write(io, offset, length)}
     end
 
     def io_pread(io, buffer, from, length, offset)
-      total = 0
       io.nonblock = true
 
-      while true
-        result = blocking{buffer.pread(io, from, 0, offset)}
-
-        if result > 0
-          total += result
-          offset += result
-          from += result
-          break if total >= length
-        elsif result == 0
-          break
-        elsif result == EAGAIN
-          if length > 0
-            self.io_wait(io, IO::READABLE, nil)
-          else
-            return result
-          end
-        elsif result < 0
-          return result
-        end
-      end
-
-      return total
+      blocking{buffer.pread(io, from, offset, length)}
     end
 
     def io_pwrite(io, buffer, from, length, offset)
-      total = 0
       io.nonblock = true
 
-      while true
-        result = blocking{buffer.pwrite(io, from, 0, offset)}
-
-        if result > 0
-          total += result
-          offset += result
-          from += result
-          break if total >= length
-        elsif result == 0
-          break
-        elsif result == EAGAIN
-          if length > 0
-            self.io_wait(io, IO::WRITABLE, nil)
-          else
-            return result
-          end
-        elsif result < 0
-          return result
-        end
-      end
-
-      return total
+      blocking{buffer.pwrite(io, from, offset, length)}
     end
 
     def blocking(&block)
