@@ -1,3 +1,6 @@
+volumes:
+  bundle:
+
 services:
   httpx:
     environment:
@@ -41,6 +44,7 @@ services:
       - altsvc-nghttp2
       - altsvc2-nghttp2
     volumes:
+      - bundle:/usr/local/bundle
       - ./:/home
     entrypoint: /home/test/support/ci/build.sh
 
