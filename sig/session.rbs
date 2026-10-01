@@ -15,8 +15,6 @@ module HTTPX
     @wrapped: bool
     @closing: bool
 
-    type resolver = Resolver::Multi | Resolver::Resolver
-
     def wrap: () { (instance) -> void } -> void
 
     def close: (?Selector selector) -> void

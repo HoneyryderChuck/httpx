@@ -18,6 +18,8 @@ module HTTPX
 
   type ip_family = Integer #Socket::AF_INET6 | Socket::AF_INET
 
+  type resolver = Resolver::Multi | Resolver::Resolver
+
   module Plugins
     self.@plugins: Hash[Symbol, Module]
     self.@plugins_mutex: Thread::Mutex
