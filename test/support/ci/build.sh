@@ -59,8 +59,7 @@ set_custom_ssl_certs() {
   CABUNDLEDIR=/home/test/support/ci/certs
   if [[ "$RUBY_PLATFORM" = "java" ]]; then
 
-    keytool -import -alias ca -file $CABUNDLEDIR/ca.crt \
-      -keystore $JAVA_HOME/lib/security/cacerts \
+    keytool -import -cacerts -alias ca -file $CABUNDLEDIR/ca.crt \
       -storepass changeit -noprompt
   else
     export SSL_CERT_FILE=$CABUNDLEDIR/ca-bundle.crt
