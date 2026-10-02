@@ -1083,7 +1083,16 @@ module HTTPX
       parser_state =
         case parser
         when HTTP2
-          +"parser-streams:#{parser.streams.size},"
+          parser_pending_requests = parser.pending.map do |r|
+            num_retries = r.respond_to(:retries) ? r.retries : nil
+            req_conn = r.instance_variable_get(:@connection)
+            "id:#{r.object_id},num_retries:#{num_retries}," \
+              "is-same-conn:#{req_conn.equal?(self)},started?:#{r.started?}"
+          end.join(",")
+          +"parser-streams:#{parser.streams.size}," \
+           "parser-handshake-completed:#{parser.instance_variable_get(:@handshake_completed)}," \
+           "parser-wait-for-handshake:#{parser.instance_variable_get(:@wait_for_handshake)}," \
+           "parser-pending:[#{parser_pending_requests}],"
         else
           +""
         end
@@ -1094,6 +1103,7 @@ module HTTPX
                    "please report this https://gitlab.com/os85/httpx/-/work_items " \
                    "along with debug logs\n(" \
                    "state:#{@state},inflight:#{@inflight},pending:#{@pending.size}," \
+                   "exhausted:#{@exhausted}," \
                    "previously-exhausted-with-error:#{@previously_exhausted_with_error}," \
                    "connected_for_secs:#{Utils.elapsed_time(@connected_at) if @connected_at}," \
                    "num-origins:#{@origins.size}," \
