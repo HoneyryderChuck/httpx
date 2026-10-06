@@ -280,6 +280,7 @@ module HTTPX
         reqs.map do |verb, uri, ps = EMPTY_HASH|
           request_params = params
           request_params = request_params.merge(ps) unless ps.empty?
+          request_params = request_params.dup unless request_params.empty? && reqs.size == 1
           build_request(verb, uri, request_params)
         end
       else
@@ -288,6 +289,7 @@ module HTTPX
           uris.enum_for(:each).map do |uri, ps = EMPTY_HASH|
             request_params = params
             request_params = request_params.merge(ps) unless ps.empty?
+            request_params = request_params.dup unless request_params.empty? && uris.size == 1
             build_request(verb, uri, request_params)
           end
         else
