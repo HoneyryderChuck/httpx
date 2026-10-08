@@ -162,31 +162,26 @@ module HTTPX
       siz = @io.read_nonblock(size, buffer, exception: false)
 
       case siz
+      when String
+        log { "READ: #{buffer.bytesize} bytes..." }
+        buffer.bytesize
       when :wait_readable, :wait_writable
         buffer.clear
-        return 0
-      when nil
-        return
+        0
       end
-
-      log { "READ: #{buffer.bytesize} bytes..." }
-      buffer.bytesize
     end
 
     def write(buffer)
       siz = @io.write_nonblock(buffer, exception: false)
 
       case siz
+      when Integer
+        log { "WRITE: #{siz} bytes..." }
+        buffer.shift!(siz)
+        siz
       when :wait_readable, :wait_writable
-        return 0
-      when nil
-        return
+        0
       end
-
-      log { "WRITE: #{siz} bytes..." }
-
-      buffer.shift!(siz)
-      siz
     end
 
     def close
