@@ -215,8 +215,7 @@ module HTTPX
 
   # Helper class which decodes the HTTP "content-type" header.
   class ContentType
-    MIME_TYPE_RE = %r{^([^/]+/[^;]+)(?:$|;)}.freeze
-    CHARSET_RE   = /;\s*charset=([^;]+)/i.freeze
+    SPLIT_PATTERN = /[;,]/.freeze
 
     def initialize(header_value)
       @header_value = header_value
@@ -250,11 +249,21 @@ module HTTPX
     private
 
     def load
-      m = @header_value.to_s[MIME_TYPE_RE, 1]
-      m && @mime_type = m.strip.downcase
+      if @header_value && !@header_value.empty?
+        m, c = @header_value.split(SPLIT_PATTERN, 2)
 
-      c = @header_value.to_s[CHARSET_RE, 1]
-      c && @charset = c.strip.delete('"')
+        if m
+          @mime_type = m.strip
+          @mime_type.downcase
+        end
+
+        if c
+          c.strip!
+          c.delete_prefix!("charset=")
+          c = c[1..-2] if c.start_with?('"') && c.end_with?('"')
+          @charset = c
+        end
+      end
 
       @initialized = true
     end
