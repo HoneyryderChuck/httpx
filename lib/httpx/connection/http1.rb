@@ -199,6 +199,8 @@ module HTTPX
         @requests.clear
 
         emit(:exhausted)
+      elsif @requests.any?
+        consume
       else
         send(@pending.shift, true) unless @pending.empty?
       end
