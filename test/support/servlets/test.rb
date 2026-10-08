@@ -175,16 +175,20 @@ class TestHTTP2Server
     @conns[sock] << data
   end
 
-  def handle_stream(_conn, stream)
+  def handle_stream(conn, stream)
     stream.on(:half_close) do
-      response = "OK"
-      stream.headers({
-                       ":status" => "200",
-                       "content-length" => response.bytesize.to_s,
-                       "content-type" => "text/plain",
-                     }, end_stream: false)
-      stream.data(response, end_stream: true)
+      handle_request(conn, stream)
     end
+  end
+
+  def handle_request(_conn, stream)
+    response = "OK"
+    stream.headers({
+                     ":status" => "200",
+                     "content-length" => response.bytesize.to_s,
+                     "content-type" => "text/plain",
+                   }, end_stream: false)
+    stream.data(response, end_stream: true)
   end
 
   def handle_connection(conn, sock)
