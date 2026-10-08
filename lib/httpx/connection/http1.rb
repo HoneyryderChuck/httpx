@@ -94,8 +94,6 @@ module HTTPX
         return
       end
 
-      return if @requests.include?(request)
-
       @requests << request
       @pipelining = @max_concurrent_requests > 1 && @requests.size > 1
     end
