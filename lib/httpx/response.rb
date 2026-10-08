@@ -119,7 +119,6 @@ module HTTPX
     # marks the response as finished, freezes the headers.
     def finish!
       @finished = true
-      @headers.freeze
       @request.connection = nil
     end
 
