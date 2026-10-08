@@ -201,7 +201,7 @@ module HTTPX
         # which will eventually be shareable, like STDOUT or STDERR.
         next if %i[debug io].include?(ivar)
 
-        instance_variable_get(:"@#{ivar}").freeze
+        send(ivar).freeze
       end
       super
     end

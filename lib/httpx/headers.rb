@@ -159,8 +159,8 @@ module HTTPX
     # This method is more internal, and for this reason doesn't try
     # to "correct" the user input, i.e. it doesn't downcase the key.
     #
-    def get(field)
-      @headers[field] || EMPTY
+    def get(downcased_key)
+      @headers[downcased_key] || EMPTY
     end
 
     private

@@ -17,7 +17,7 @@ module HTTPX
     def each: (?_Each[[String, String]]? extra_headers) { (String k, String v) -> void } -> void
             | (?_Each[[String, String]]? extra_headers) -> Enumerable[[String, String]]
 
-    def get: (String field) -> Array[_ToS]
+    def get: (String downcased_key) -> Array[_ToS]
     def key?: (String downcased_key) -> bool
 
     def merge: (_Each[[String, headers_value]] other) -> Headers

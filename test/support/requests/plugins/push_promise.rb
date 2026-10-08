@@ -3,36 +3,44 @@
 module Requests
   module Plugins
     module PushPromise
-      def test_plugin_no_push_promise
-        html, css = HTTPX.get(push_html_uri, push_css_uri, max_concurrent_requests: 1,
-                                                           http2_settings: { settings_enable_push: 1 })
-        verify_status(html, 200)
-        verify_status(css, 200)
-        verify_no_header(css.headers, "x-http2-push")
-        html.close
-        css.close
+      def test_plugin_push_promise_get
+        start_test_servlet(PushPromiseServer, num_promises: 2) do |server|
+          uri = "#{server.origin}/"
+          session = HTTPX.plugin(:push_promise).with(ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE })
+          parent, child1, child2 = session.get(uri, "#{uri}0", "#{uri}1")
+          verify_status(parent, 200)
+          verify_status(child1, 200)
+          verify_status(child2, 200)
+          verify_header(child1.headers, "x-http2-push", "1")
+          verify_header(child2.headers, "x-http2-push", "1")
+          assert child1.pushed?
+          assert child2.pushed?
+        end
       end
 
-      def test_plugin_push_promise_get
-        session = HTTPX.plugin(:push_promise)
-        html, css = session.get(push_html_uri, push_css_uri)
-        verify_status(html, 200)
-        verify_status(css, 200)
-        verify_header(css.headers, "x-http2-push", "1")
-        assert css.pushed?
-        html.close
-        css.close
+      def test_plugin_push_promise_settings_enable_push_0
+        start_test_servlet(PushPromiseServer) do |server|
+          uri = "#{server.origin}/"
+          session = HTTPX.plugin(:push_promise).with(http2_settings: { settings_enable_push: 0 },
+                                                     ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE })
+          parent, child = session.get(uri, "#{uri}0")
+          verify_status(parent, 200)
+          verify_status(child, 200)
+          verify_no_header(child.headers, "x-http2-push")
+          assert !child.pushed?
+        end
       end
 
       def test_plugin_push_promise_concurrent
-        session = HTTPX.plugin(:push_promise).with(max_concurrent_requests: 100)
-        html, css = session.get(push_html_uri, push_css_uri)
-        verify_status(html, 200)
-        verify_status(css, 200)
-        verify_no_header(css.headers, "x-http2-push")
-        assert !css.pushed?
-        html.close
-        css.close
+        start_test_servlet(PushPromiseServer) do |server|
+          uri = "#{server.origin}/"
+          session = HTTPX.plugin(:push_promise).with(max_concurrent_requests: 100, ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE })
+          parent, child = session.get(uri, "#{uri}0")
+          verify_status(parent, 200)
+          verify_status(child, 200)
+          verify_no_header(child.headers, "x-http2-push")
+          assert !child.pushed?
+        end
       end
 
       private

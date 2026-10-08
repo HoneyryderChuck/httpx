@@ -339,7 +339,7 @@ module HTTPX
 
     # whether the request supports the 100-continue handshake and already processed the 100 response.
     def expects?
-      @headers["expect"] == "100-continue" && @informational_status == 100 && !@response
+      @headers.key?("expect") && @headers.get("expect").include?("100-continue") && @informational_status == 100 && !@response
     end
 
     def set_timeout_callback(event, &callback)

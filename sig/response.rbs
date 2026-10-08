@@ -60,8 +60,7 @@ module HTTPX
   end
 
   class ContentType
-    MIME_TYPE_RE: Regexp
-    CHARSET_RE: Regexp
+    SPLIT_PATTERN: Regexp
 
     @header_value: String?
     @mime_type: String?

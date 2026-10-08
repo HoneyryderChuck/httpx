@@ -94,8 +94,6 @@ module HTTPX
         return
       end
 
-      return if @requests.include?(request)
-
       @requests << request
       @pipelining = @max_concurrent_requests > 1 && @requests.size > 1
     end
@@ -128,9 +126,9 @@ module HTTPX
       headers = request.options.headers_class.new(h)
       response = request.options.response_class.new(request,
                                                     @parser.status_code,
-                                                    @parser.http_version.join("."),
+                                                    @parser.http_version,
                                                     headers)
-      request.log(color: :yellow) { "-> HEADLINE: #{response.status} HTTP/#{@parser.http_version.join(".")}" }
+      request.log(color: :yellow) { "-> HEADLINE: #{response.status} HTTP/#{@parser.http_version}" }
       request.log(color: :yellow) { response.headers.each.map { |f, v| "-> HEADER: #{f}: #{log_redact_headers(v)}" }.join("\n") }
 
       if response.content_length && response.content_length > request.options.max_response_body_size
@@ -201,6 +199,8 @@ module HTTPX
         @requests.clear
 
         emit(:exhausted)
+      elsif @requests.any?
+        consume
       else
         send(@pending.shift, true) unless @pending.empty?
       end
