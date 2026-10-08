@@ -14,7 +14,7 @@ class HTTP1ParserTest < Minitest::Test
 
     def on_headers(h)
       headers = Headers.new(h)
-      @response = Response.new(mock_request, @parser.status_code, @parser.http_version.join("."), headers)
+      @response = Response.new(mock_request, @parser.status_code, @parser.http_version, headers)
     end
 
     def on_data(data)
@@ -52,8 +52,8 @@ class HTTP1ParserTest < Minitest::Test
           assert parser.upgrade_data == res_json["upgrade"]
         end
 
-        assert parser.http_version[0] == res_json["http_major"]
-        assert parser.http_version[1] == res_json["http_minor"]
+        assert parser.http_version[0].to_i == res_json["http_major"]
+        assert parser.http_version[2].to_i == res_json["http_minor"]
 
         assert response.status == res_json["status_code"]
 

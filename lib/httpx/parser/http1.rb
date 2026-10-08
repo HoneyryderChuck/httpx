@@ -68,7 +68,7 @@ module HTTPX
         version, code, _ = m.captures
         raise(Error, "unsupported HTTP version (HTTP/#{version})") unless version && VERSIONS.include?(version)
 
-        @http_version = version.split(".").map(&:to_i)
+        @http_version = version
         @status_code = code.to_i
         raise(Error, "wrong status code (#{@status_code})") unless (100..599).cover?(@status_code)
 

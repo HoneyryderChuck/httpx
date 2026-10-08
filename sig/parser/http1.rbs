@@ -18,7 +18,7 @@ module HTTPX
       VERSIONS: Array[String]
 
       attr_reader status_code: Integer
-      attr_reader http_version: [Integer, Integer]
+      attr_reader http_version: String
       attr_reader headers: parsed_headers
 
       @observer: _HTTP1Events
