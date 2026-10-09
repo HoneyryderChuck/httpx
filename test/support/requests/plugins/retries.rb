@@ -27,6 +27,18 @@ module Requests
         assert session.total_responses.size == 2
       end
 
+      def test_plugin_retries_total_request_timeout_across_attempts_with_timeout_connecting
+        start_connect_timeout_tcp_server do |authority|
+          uri = build_uri("/", origin(authority))
+          session = HTTPX.plugin(RequestInspector)
+                         .plugin(:retries, max_retries: 3)
+                         .with(timeout: { total_request_timeout: 2, connect_timeout: 1.5 })
+          response = session.get(uri)
+          verify_error_response(response, HTTPX::TotalRequestTimeoutError)
+          assert session.total_responses.size < 3, "should have returned without using all attempts"
+        end
+      end
+
       def test_plugin_retries_change_requests
         check_error = ->(response) { response.is_a?(HTTPX::ErrorResponse) || response.status == 405 }
         retries_session = HTTPX

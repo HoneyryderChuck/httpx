@@ -25,7 +25,7 @@ module HTTPX
         def interests
           return super unless connecting? && @parser
 
-          connect
+          try_connect
 
           return @io.interests if connecting?
 

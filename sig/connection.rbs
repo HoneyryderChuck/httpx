@@ -139,6 +139,8 @@ module HTTPX
 
     def initialize_type: (http_uri uri, Options options) -> io_type
 
+    def try_connect: () -> void
+
     def connect: () -> void
 
     def exhausted?: () -> boolish
@@ -169,6 +171,8 @@ module HTTPX
 
     def pong: () -> void
 
+    def no_more_selector_check: () -> void
+
     def no_more_requests_loop_check: () -> void
 
     def no_more_requests?: () -> bool
@@ -185,6 +189,8 @@ module HTTPX
 
     def set_request_timeouts: (Request request) -> void
 
+    def set_connection_timeouts: (Request request) -> void
+
     def set_request_read_timeout: (Request request) -> void
 
     def set_request_write_timeout: (Request request) -> void
@@ -198,6 +204,12 @@ module HTTPX
     def read_timeout_callback: (Request request, interval timeout, ?singleton(RequestTimeoutError) error_type) -> void
 
     def set_request_timeout: (Symbol label, Request request, interval timeout, Symbol start_event, Symbol | Array[Symbol] finish_events) { () -> void } -> void
+
+    def set_connecting_request_timeout: (Request request) -> void
+
+    def set_connecting_total_request_timeout: (Request request) -> void
+
+    def set_connection_timeout: (Symbol label, Request request, interval timeout, Symbol start_event, Symbol | Array[Symbol] finish_events) { () -> void } -> void
 
     def parser_type: (String protocol) -> (singleton(HTTP1) | singleton(HTTP2))
   end

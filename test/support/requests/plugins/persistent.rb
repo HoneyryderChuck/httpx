@@ -62,13 +62,13 @@ module Requests
       end
 
       def test_plugin_persistent_should_retry_change_requests_on_keep_alive_interval_timeouts
-        start_test_servlet(KeepAlivePongThenTimeoutSocketServer) do |server|
+        start_test_servlet(KeepAlivePongThenTimeoutSocketServer, interval: 5) do |server|
           persistent_session = HTTPX
                                .plugin(RequestInspector)
                                .plugin(:persistent)
                                .with(
                                  ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE },
-                                 timeout: { keep_alive_timeout: 1, request_timeout: 2 }
+                                 timeout: { keep_alive_timeout: 1, request_timeout: 5 }
                                )
 
           response = persistent_session.post(server.origin, body: "test")
