@@ -49,5 +49,14 @@ module Requests
       response1 = session.get(uri)
       verify_status(response1, 200)
     end
+
+    def test_session_timeouts_request_timeout_on_timeout_connecting
+      start_connect_timeout_tcp_server do |authority|
+        uri = build_uri("/", origin(authority))
+        session = HTTPX.with(timeout: { request_timeout: 3, operation_timeout: 10 })
+        response = session.get(uri)
+        verify_error_response(response, HTTPX::RequestTimeoutError)
+      end
+    end
   end
 end
