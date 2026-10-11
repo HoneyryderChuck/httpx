@@ -160,6 +160,39 @@ class HTTPTest < Minitest::Test
     end
   end
 
+  def test_http2_request_body_waits_for_flow_control_window
+    buffered = []
+
+    flow_control_inspector_plugin = Module.new
+    http2_flow_control_inspector_methods = Module.new
+
+    http2_flow_control_inspector_methods.define_method(:send_chunk) do |request, stream, chunk, next_chunk|
+      super(request, stream, chunk, next_chunk)
+      buffered << (stream.buffered_amount + @connection.buffered_amount)
+    end
+    flow_control_inspector_plugin.const_set(:HTTP2Methods, http2_flow_control_inspector_methods)
+
+    # streamed in chunks, unlike a string body, which is sent as a single chunk.
+    body = StringIO.new("a" * (2 * 1024 * 1024))
+
+    start_test_servlet(SlowWindowUpdateServer) do |server|
+      http = HTTPX.plugin(flow_control_inspector_plugin).with(fallback_protocol: "h2")
+      response = nil
+      client = Thread.new { response = http.post("#{server.origin}/", body: body) }
+
+      server.wait_until_stalled
+      # give the client time to drain the request body while the peer grants no window
+      sleep(0.5)
+      server.release
+      client.join
+
+      verify_status(response, 200)
+      assert server.received == body.size, "expected the whole request body to be sent, got #{server.received} bytes"
+      assert buffered.max <= SlowWindowUpdateServer::WINDOW,
+             "expected the request body to wait for WINDOW_UPDATE frames, instead #{buffered.max} bytes were buffered"
+    end
+  end
+
   private
 
   def scheme

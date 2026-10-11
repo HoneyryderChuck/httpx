@@ -108,8 +108,14 @@ module HTTPX
         return nothing_to_wait_for ? :w : :rw
       end
 
-      # there are pending frames from the last run
-      return :w unless @drains.empty?
+      unless @drains.empty?
+        # request bodies are held back by exhausted stream flow control windows.
+        # waiting for WINDOW_UPDATE frames
+        return :r if @buffer.empty? && @drains.each_key.all? { |request| (stream = @streams[request]) && flow_control_blocked?(stream) }
+
+        # there are pending frames from the last run
+        return :w
+      end
 
       if @buffer.empty?
         # skip if no more requests or pings to process
@@ -330,12 +336,15 @@ module HTTPX
     def join_body(stream, request)
       return if request.body.empty?
 
+      # the chunk parked by the last run waits until the peer grants more window.
+      throw(:buffer_full) if @drains.key?(request) && flow_control_blocked?(stream)
+
       chunk = @drains.delete(request) || request.drain_body
       while chunk
         next_chunk = request.drain_body
         send_chunk(request, stream, chunk, next_chunk)
 
-        if next_chunk && (@buffer.full? || request.body.unbounded_body?)
+        if next_chunk && (@buffer.full? || request.body.unbounded_body? || flow_control_blocked?(stream))
           @drains[request] = next_chunk
           throw(:buffer_full)
         end
@@ -356,6 +365,13 @@ module HTTPX
 
     def end_stream?(request, next_chunk)
       !(next_chunk || request.trailers? || request.callbacks_for?(:trailers))
+    end
+
+    # whether DATA frames are being buffered by the HTTP/2 stream or connection, because
+    # the peer's flow control window is exhausted. the rest of the request body must wait
+    # for WINDOW_UPDATE frames, otherwise it all piles up in memory.
+    def flow_control_blocked?(stream)
+      !stream.send_buffer.empty? || !@connection.send_buffer.empty?
     end
 
     ######
