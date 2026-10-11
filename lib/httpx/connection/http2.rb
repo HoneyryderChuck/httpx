@@ -108,8 +108,20 @@ module HTTPX
         return nothing_to_wait_for ? :w : :rw
       end
 
-      # there are pending frames from the last run
-      return :w unless @drains.empty?
+      unless @drains.empty?
+        return :w unless @buffer.empty?
+
+        streams_with_no_window = @drains.none? do |request, _|
+          stream = @streams[request]
+
+          # if an existing stream has buffered bytes, it must wait for
+          # WINDOW_UPDATE frames
+          stream.send_buffer.empty?
+        end
+
+        return streams_with_no_window ? :r : :rw
+
+      end
 
       if @buffer.empty?
         # skip if no more requests or pings to process
@@ -330,12 +342,22 @@ module HTTPX
     def join_body(stream, request)
       return if request.body.empty?
 
+      # the next chunk waits until the peer grants more window.
+      throw(:buffer_full) if @drains.key?(request) && (!stream.send_buffer.empty? || !@connection.send_buffer.empty?)
+
       chunk = @drains.delete(request) || request.drain_body
       while chunk
         next_chunk = request.drain_body
         send_chunk(request, stream, chunk, next_chunk)
 
-        if next_chunk && (@buffer.full? || request.body.unbounded_body?)
+        if next_chunk && (
+          # send window is full
+          @buffer.full? ||
+          # stream / chunked request, must write a chunk at a time
+          request.body.unbounded_body? ||
+          # peer window is full, must wait for WINDOW_UPDATE frame(s)
+          !stream.send_buffer.empty? || !@connection.send_buffer.empty?
+        )
           @drains[request] = next_chunk
           throw(:buffer_full)
         end
