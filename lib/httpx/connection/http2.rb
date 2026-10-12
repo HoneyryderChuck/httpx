@@ -111,9 +111,7 @@ module HTTPX
       unless @drains.empty?
         return :w unless @buffer.empty?
 
-        streams_with_no_window = @drains.none? do |request, _|
-          stream = @streams[request]
-
+        streams_with_no_window = @drains.none? do |stream, _|
           # if an existing stream has buffered bytes, it must wait for
           # WINDOW_UPDATE frames
           stream.send_buffer.empty?
@@ -206,6 +204,8 @@ module HTTPX
       inflight_unprocessed_requests = [] #: Array[Request]
 
       while (req, stream = @streams.shift)
+        @drains.delete(stream)
+
         next if request && request == req
 
         if stream.id > last_stream_id
@@ -343,9 +343,9 @@ module HTTPX
       return if request.body.empty?
 
       # the next chunk waits until the peer grants more window.
-      throw(:buffer_full) if @drains.key?(request) && (!stream.send_buffer.empty? || !@connection.send_buffer.empty?)
+      throw(:buffer_full) if @drains.key?(stream) && (!stream.send_buffer.empty? || !@connection.send_buffer.empty?)
 
-      chunk = @drains.delete(request) || request.drain_body
+      chunk = @drains.delete(stream) || request.drain_body
       while chunk
         next_chunk = request.drain_body
         send_chunk(request, stream, chunk, next_chunk)
@@ -358,7 +358,7 @@ module HTTPX
           # peer window is full, must wait for WINDOW_UPDATE frame(s)
           !stream.send_buffer.empty? || !@connection.send_buffer.empty?
         )
-          @drains[request] = next_chunk
+          @drains[stream] = next_chunk
           throw(:buffer_full)
         end
 
@@ -623,8 +623,9 @@ module HTTPX
 
     def teardown(request = nil)
       if request
-        @drains.delete(request)
-        @streams.delete(request)
+        if (stream = @streams.delete(request))
+          @drains.delete(stream)
+        end
       else
         @drains.clear
         @streams.clear
