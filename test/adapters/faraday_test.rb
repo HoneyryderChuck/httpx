@@ -242,9 +242,8 @@ class FaradayTest < Minitest::Test
       request = response.instance_variable_get(:@request)
       (response.is_a?(HTTPX::ErrorResponse) && response.error.is_a?(HTTPX::TimeoutError)) || response.status == 405
     }
-    session = nil
     faraday_conn = faraday_connection(request: { read_timeout: 2 }) do |http|
-      session = http.with(max_retries: 1, retry_on: check_error, retry_change_requests: true)
+      http.with(max_retries: 1, retry_on: check_error, retry_change_requests: true)
     end
     adapter_handler = faraday_conn.builder.handlers.last
     faraday_conn.builder.insert_before adapter_handler, Faraday::Multipart::Middleware
