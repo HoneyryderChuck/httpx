@@ -32,6 +32,7 @@ module HTTPX
       @headers = h
       @body = self.class.initialize_body(params)
       @options = options.merge(params)
+      @unbounded_body = nil
 
       if @body
         if @options.compress_request_body && @headers.key?("content-encoding")
@@ -102,7 +103,7 @@ module HTTPX
 
     # returns whether the body yields infinitely.
     def unbounded_body?
-      return @unbounded_body if defined?(@unbounded_body)
+      return @unbounded_body unless @unbounded_body.nil?
 
       @unbounded_body = !@body.nil? && (chunked? || @body.bytesize == Float::INFINITY)
     end

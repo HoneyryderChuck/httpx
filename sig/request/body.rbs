@@ -4,7 +4,7 @@ module HTTPX
 
     @headers: Headers
     @body: body_encoder?
-    @unbounded_body: bool
+    @unbounded_body: bool?
 
     def initialize: (Headers h, Options options, **untyped) -> void
 
