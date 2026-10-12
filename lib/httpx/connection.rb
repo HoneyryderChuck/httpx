@@ -240,7 +240,7 @@ module HTTPX
     def interests
       # connecting
       if connecting?
-        connect
+        try_connect
 
         return @io.interests if connecting?
       end
@@ -265,7 +265,7 @@ module HTTPX
       when :idle
         return if no_more_requests?
 
-        connect
+        try_connect
 
         # when opening the tcp or ssl socket fails
         return if @state == :closed
@@ -389,6 +389,8 @@ module HTTPX
     def send(request)
       return @coalesced_connection.send(request) if @coalesced_connection
 
+      request.connection = self
+
       if @parser && !@write_buffer.full?
         if @response_received_at && @keep_alive_timeout &&
            Utils.elapsed_time(@response_received_at) > @keep_alive_timeout
@@ -405,6 +407,8 @@ module HTTPX
 
         send_request_to_parser(request)
       else
+        set_connection_timeouts(request) if connecting?
+
         @pending << request
       end
     end
@@ -532,6 +536,11 @@ module HTTPX
     # simplecov:enable
 
     private
+
+    def try_connect
+      emit(:connecting)
+      connect
+    end
 
     def connect
       transition(:open)
@@ -1070,6 +1079,19 @@ module HTTPX
       send_pending
     end
 
+    def no_more_selector_check
+      return if @current_selector
+
+      raise Error, "request has been resend to an out-of-session connection, and this " \
+                   "should never happen!!! Please report this error! " \
+                   "(state:#{@state}, " \
+                   "parser?:#{!!@parser}, " \
+                   "bytes in write buffer?:#{!@write_buffer.empty?}, " \
+                   "cloned?:#{@cloned}, " \
+                   "sibling?:#{!!@sibling}, " \
+                   "coalesced?:#{coalesced?})"
+    end
+
     def no_more_requests_loop_check
       log(level: 3) { "NO MORE REQUESTS..." }
       @no_more_requests_counter += 1
@@ -1149,11 +1171,15 @@ module HTTPX
     end
 
     def set_request_timeouts(request)
-      request.connection = self
       set_request_write_timeout(request)
       set_request_read_timeout(request)
       set_request_request_timeout(request)
       set_request_total_request_timeout(request)
+    end
+
+    def set_connection_timeouts(request)
+      set_connecting_request_timeout(request)
+      set_connecting_total_request_timeout(request)
     end
 
     def set_request_read_timeout(request)
@@ -1219,19 +1245,12 @@ module HTTPX
     end
 
     def set_request_timeout(label, request, timeout, start_event, finish_events, &callback)
-      request.set_timeout_callback(start_event) do
-        unless (selector = @current_selector)
-          raise Error, "request has been resend to an out-of-session connection, and this " \
-                       "should never happen!!! Please report this error! " \
-                       "(state:#{@state}, " \
-                       "parser?:#{!!@parser}, " \
-                       "bytes in write buffer?:#{!@write_buffer.empty?}, " \
-                       "cloned?:#{@cloned}, " \
-                       "sibling?:#{!!@sibling}, " \
-                       "coalesced?:#{coalesced?})"
-        end
+      return if request.active_timeouts.any? { |timer| timer.label == label }
 
-        timer = selector.after(timeout, callback)
+      request.set_timeout_callback(start_event) do
+        no_more_selector_check
+
+        timer = @current_selector.after(timeout, callback)
         timer.label = label
         request.active_timeouts << timer
 
@@ -1242,6 +1261,50 @@ module HTTPX
             request.active_timeouts.delete(timer)
           end
         end
+      end
+    end
+
+    def set_connecting_request_timeout(request)
+      request_timeout = request.request_timeout
+
+      return if request_timeout.nil? || request_timeout.infinite?
+
+      set_connection_timeout(:request_timeout, request, request_timeout, :connecting, :complete) do
+        read_timeout_callback(request, request_timeout, RequestTimeoutError)
+      end
+    end
+
+    def set_connecting_total_request_timeout(request)
+      return if request.started?
+
+      total_request_timeout = request.total_request_timeout
+
+      return if total_request_timeout.nil? || total_request_timeout.infinite?
+
+      set_connection_timeout(:total_request_timeout, request, total_request_timeout, :connecting, :complete) do
+        read_timeout_callback(request, total_request_timeout, TotalRequestTimeoutError)
+      end
+    end
+
+    def set_connection_timeout(label, request, timeout, start_event, finish_events, &callback)
+      cb = once(start_event) do
+        no_more_selector_check
+
+        timer = @current_selector.after(timeout, callback)
+        timer.label = label
+        request.active_timeouts << timer
+
+        Array(finish_events).each do |event|
+          # clean up request timeouts if the connection errors out
+          request.set_timeout_callback(event) do
+            timer.cancel
+            request.active_timeouts.delete(timer)
+          end
+        end
+      end
+
+      request.once(:idle) do
+        callbacks(start_event).delete(cb)
       end
     end
 

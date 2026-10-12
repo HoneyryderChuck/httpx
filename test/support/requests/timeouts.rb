@@ -49,5 +49,42 @@ module Requests
       response1 = session.get(uri)
       verify_status(response1, 200)
     end
+
+    def test_session_timeouts_request_timeout_above_connect_timeout
+      start_connect_timeout_tcp_server do |authority|
+        uri = build_uri("/", origin(authority))
+        expected = 3
+        session = HTTPX.with(timeout: { request_timeout: expected, connect_timeout: 10 })
+        started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+        response = session.get(uri)
+        actual = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started_at
+        verify_error_response(response, HTTPX::RequestTimeoutError)
+        assert_in_delta expected, actual, 2, "expected to have executed in #{expected} secs (actual: #{actual} secs)"
+      end
+    end
+
+    def test_session_timeouts_request_timeout_below_connect_timeout
+      skip unless tls?
+
+      start_connect_timeout_tcp_server do |authority|
+        uri = build_uri("/", origin(authority))
+        expected = 0.5
+        session = HTTPX.with(timeout: { request_timeout: 3, connect_timeout: expected })
+        started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+        response = session.get(uri)
+        actual = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started_at
+        verify_error_response(response, HTTPX::ConnectTimeoutError)
+        assert_in_delta expected, actual, 2, "expected to have executed in #{expected} secs (actual: #{actual} secs)"
+      end
+    end
+
+    def test_session_timeouts_request_timeout_on_timeout_connecting
+      start_connect_timeout_tcp_server do |authority|
+        uri = build_uri("/", origin(authority))
+        session = HTTPX.with(timeout: { request_timeout: 3, operation_timeout: 10 })
+        response = session.get(uri)
+        verify_error_response(response, HTTPX::RequestTimeoutError)
+      end
+    end
   end
 end

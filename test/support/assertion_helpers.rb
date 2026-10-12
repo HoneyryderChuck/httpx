@@ -80,7 +80,7 @@ module ResponseHelpers
              "expected \"#{response.error.message}\" to include \"#{expectation}\""
     when Class
       assert response.error.is_a?(expectation) || response.error.cause.is_a?(expectation),
-             "expected #{response.error} to be a #{expectation}"
+             "expected #{response.error} to be a #{expectation}, was #{response.error.full_message}"
     else
       raise "unexpected expectation (#{expectation})"
     end
