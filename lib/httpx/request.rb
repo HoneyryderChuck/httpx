@@ -140,22 +140,22 @@ module HTTPX
 
     # the read timeout defined for this request.
     def read_timeout
-      @options.timeout[:read_timeout]
+      @options.timeout.read_timeout
     end
 
     # the write timeout defined for this request.
     def write_timeout
-      @options.timeout[:write_timeout]
+      @options.timeout.write_timeout
     end
 
     # the request timeout defined for this request.
     def request_timeout
-      @options.timeout[:request_timeout]
+      @options.timeout.request_timeout
     end
 
     # the total request timeout defined for this request.
     def total_request_timeout
-      @options.timeout[:total_request_timeout]
+      @options.timeout.total_request_timeout
     end
 
     def persistent?

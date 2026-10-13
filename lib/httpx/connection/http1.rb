@@ -34,7 +34,7 @@ module HTTPX
     end
 
     def timeout
-      @options.timeout[:operation_timeout]
+      @options.timeout.operation_timeout
     end
 
     def interests

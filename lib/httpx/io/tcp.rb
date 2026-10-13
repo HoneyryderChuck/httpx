@@ -132,7 +132,7 @@ module HTTPX
     rescue Errno::ETIMEDOUT => e
       @ip_index -= 1
 
-      raise ConnectTimeoutError.new(@options.timeout[:connect_timeout], e.message) if @ip_index.negative?
+      raise ConnectTimeoutError.new(@options.timeout.connect_timeout, e.message) if @ip_index.negative?
 
       log { "failed connecting to #{@ip} (#{e.message}), trying next..." }
 

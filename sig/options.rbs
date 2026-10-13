@@ -10,9 +10,6 @@ module HTTPX
     CONNECT_TIMEOUT: Integer
     READ_TIMEOUT: Integer
     WRITE_TIMEOUT: Integer
-    REQUEST_TIMEOUT: Integer
-    TOTAL_REQUEST_TIMEOUT: Integer
-    OPERATION_TIMEOUT: Integer
     KEEP_ALIVE_TIMEOUT: Integer
     PING_TIMEOUT: Integer
     SETTINGS_TIMEOUT: Integer
@@ -26,7 +23,6 @@ module HTTPX
     USER_AGENT: String
 
     type timeout_type = :connect_timeout | :settings_timeout | :close_handshake_timeout | :operation_timeout | :keep_alive_timeout | :read_timeout | :write_timeout | :total_request_timeout | :request_timeout | :ping_timeout
-    type timeout = Hash[timeout_type, interval?]
     type redact_value = :headers | :body | bool
     type resolver_cache_option = :memory | :file | (Object & Resolver::_Cache)
 
@@ -38,10 +34,10 @@ module HTTPX
     attr_reader uri: URI?
 
     # headers
-    attr_reader headers: headers?
+    attr_reader headers: headers
 
     # timeout
-    attr_reader timeout: timeout
+    attr_reader timeout: Timeouts
 
     # http2_settings
     attr_reader http2_settings: Hash[Symbol, Integer | bool]
@@ -215,7 +211,7 @@ module HTTPX
 
     def option_headers: (headers_input | Headers value) -> Headers
 
-    def option_timeout: (_ToHash[timeout_type, interval?]) -> timeout
+    def option_timeout: (Timeouts | _ToHash[timeout_type, interval?]) -> Timeouts
 
     def option_supported_compression_formats: (_ToS | _ToAry[_ToS] value) -> Array[String]
 
@@ -225,6 +221,42 @@ module HTTPX
                         | (Hash[String,  _ToAry[ipaddr]] value) -> Hash[String, Array[Resolver::Entry]]
 
     def option_ip_families: (ip_family | _ToAry[ip_family] value) -> Array[ip_family]
+
+    class Timeouts
+      attr_reader connect_timeout: interval?
+      attr_reader settings_timeout: interval?
+      attr_reader read_timeout: interval?
+      attr_reader write_timeout: interval?
+      attr_reader request_timeout: interval?
+      attr_reader total_request_timeout: interval?
+      attr_reader operation_timeout: interval?
+      attr_reader close_handshake_timeout: interval
+      attr_reader keep_alive_timeout: interval
+      attr_reader ping_timeout: interval
+
+      def initialize: (
+        ?connect_timeout: interval?,
+        ?settings_timeout: interval?,
+        ?read_timeout: interval?,
+        ?write_timeout: interval?,
+        ?request_timeout: interval?,
+        ?total_request_timeout: interval?,
+        ?operation_timeout: interval?,
+        ?close_handshake_timeout: interval?,
+        ?keep_alive_timeout: interval?,
+        ?ping_timeout: interval?
+      ) -> void
+
+      def merge: (Timeouts | Hash[Symbol, interval?]) -> Timeouts
+
+      def []: (Symbol) -> interval?
+
+      def to_h: () -> Hash[Symbol, interval?]
+
+      private
+
+      def deadline_timeouts?: () -> boolish
+    end
   end
 
   type options = Options | Hash[Symbol, untyped]

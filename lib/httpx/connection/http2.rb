@@ -68,9 +68,9 @@ module HTTPX
     end
 
     def timeout
-      return @options.timeout[:operation_timeout] if @handshake_completed
+      return @options.timeout.operation_timeout if @handshake_completed
 
-      @options.timeout[:settings_timeout]
+      @options.timeout.settings_timeout
     end
 
     def interests
@@ -135,7 +135,7 @@ module HTTPX
     def close
       unless @connection.closed?
         @connection.goaway
-        emit(:timeout, @options.timeout[:close_handshake_timeout])
+        emit(:timeout, @options.timeout.close_handshake_timeout)
       end
       emit(:close)
     end

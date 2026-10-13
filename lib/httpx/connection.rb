@@ -66,7 +66,7 @@ module HTTPX
       @write_buffer = Buffer.new(@options.buffer_size)
       @pending = []
       @inflight = 0
-      @keep_alive_timeout = @options.timeout[:keep_alive_timeout]
+      @keep_alive_timeout = @options.timeout.keep_alive_timeout
       @no_more_requests_counter = 0
 
       if @options.io
@@ -79,12 +79,12 @@ module HTTPX
         transition(:idle)
       end
 
-      case @options.addresses
+      case (addresses = @options.addresses)
       when Array
-        self.addresses = @options.addresses
+        self.addresses = addresses
       when Hash
         # TODO: && @origin.host not an IP
-        self.addresses = @options.addresses[@origin.host]
+        self.addresses = addresses[@origin.host]
       end
     end
 
@@ -418,7 +418,7 @@ module HTTPX
 
       return @timeout if @timeout
 
-      @options.timeout[:operation_timeout]
+      @options.timeout.operation_timeout
     end
 
     def idling
@@ -863,7 +863,7 @@ module HTTPX
     def handle_transition(nextstate)
       case nextstate
       when :idle
-        @timeout = @current_timeout = @options.timeout[:connect_timeout]
+        @timeout = @current_timeout = @options.timeout.connect_timeout
 
         @connected_at = @response_received_at = nil
       when :open
@@ -901,7 +901,7 @@ module HTTPX
         nextstate = :open
         # the first check for given io readiness must still use a timeout.
         # connect is the reasonable choice in such a case.
-        @timeout = @options.timeout[:connect_timeout]
+        @timeout = @options.timeout.connect_timeout
         send_pending
       when :active
         return unless @state == :inactive
@@ -1061,7 +1061,7 @@ module HTTPX
 
       return unless parser.waiting_for_ping?
 
-      ping_timeout = @options.timeout[:ping_timeout]
+      ping_timeout = @options.timeout.ping_timeout
 
       @ping_timer = @current_selector.after(ping_timeout) do
         log(level: 3) { "ping timeout expired..." }
