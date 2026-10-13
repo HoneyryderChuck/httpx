@@ -12,7 +12,6 @@ module HTTPX
     SETTINGS_TIMEOUT = 10
     CLOSE_HANDSHAKE_TIMEOUT = 10
     CONNECT_TIMEOUT = READ_TIMEOUT = WRITE_TIMEOUT = 60
-    REQUEST_TIMEOUT = OPERATION_TIMEOUT = TOTAL_REQUEST_TIMEOUT = nil
     RESOLVER_TYPES = %i[memory file].freeze
     # default value used for "user-agent" header, when not overridden.
     USER_AGENT = "httpx.rb/#{VERSION}".freeze # rubocop:disable Style/RedundantFreeze
@@ -454,20 +453,22 @@ module HTTPX
     end
 
     def option_timeout(value)
+      return value if value.is_a?(Timeouts)
+
       timeout_hash = Hash[value]
 
-      default_timeouts = DEFAULT_OPTIONS[:timeout]
+      default_timeouts = Timeouts.members
 
       # Validate keys and values
       timeout_hash.each do |key, val|
-        raise TypeError, "invalid timeout: `:#{key}`" unless default_timeouts.key?(key)
+        raise TypeError, "invalid timeout: `:#{key}`" unless default_timeouts.include?(key)
 
         next if val.nil?
 
         raise TypeError, "`:#{key}` must be numeric" unless val.is_a?(Numeric)
       end
 
-      timeout_hash
+      Timeouts.new(**timeout_hash)
     end
 
     def option_supported_compression_formats(value)
@@ -545,6 +546,70 @@ module HTTPX
       end
     end
 
+    class Timeouts < Struct.new(
+      :connect_timeout, :settings_timeout,
+      :read_timeout, :write_timeout,
+      :request_timeout, :total_request_timeout,
+      :operation_timeout, :keep_alive_timeout, :ping_timeout, :close_handshake_timeout,
+      keyword_init: true
+    )
+      def initialize(
+        connect_timeout: nil,
+        settings_timeout: nil,
+        read_timeout: nil,
+        write_timeout: nil,
+        request_timeout: nil,
+        total_request_timeout: nil,
+        operation_timeout: nil,
+        close_handshake_timeout: nil,
+        keep_alive_timeout: nil,
+        ping_timeout: nil
+      )
+        super
+        freeze
+      end
+
+      def connect_timeout
+        self[:connect_timeout] || (CONNECT_TIMEOUT unless deadline_timeouts?)
+      end
+
+      def settings_timeout
+        self[:settings_timeout] || (SETTINGS_TIMEOUT unless deadline_timeouts?)
+      end
+
+      def read_timeout
+        self[:read_timeout] || (READ_TIMEOUT unless deadline_timeouts?)
+      end
+
+      def write_timeout
+        self[:write_timeout] || (WRITE_TIMEOUT unless deadline_timeouts?)
+      end
+
+      def close_handshake_timeout
+        self[:close_handshake_timeout] || CLOSE_HANDSHAKE_TIMEOUT
+      end
+
+      def keep_alive_timeout
+        self[:keep_alive_timeout] || KEEP_ALIVE_TIMEOUT
+      end
+
+      def ping_timeout
+        self[:ping_timeout] || PING_TIMEOUT
+      end
+
+      def merge(other)
+        other_h = other.to_h
+        other_h.compact!
+        Timeouts.new(**to_h, **other_h)
+      end
+
+      private
+
+      def deadline_timeouts?
+        request_timeout || total_request_timeout || operation_timeout
+      end
+    end
+
     # rubocop:disable Lint/UselessConstantScoping
     # these really need to be defined at the end of the class
     SET_TEMPORARY_NAME = ->(klass, pl = nil) do
@@ -569,18 +634,7 @@ module HTTPX
       :max_response_headers => 1000,
       :max_response_header_value_size => nil,
       :max_response_body_size => Float::INFINITY,
-      :timeout => {
-        connect_timeout: CONNECT_TIMEOUT,
-        settings_timeout: SETTINGS_TIMEOUT,
-        close_handshake_timeout: CLOSE_HANDSHAKE_TIMEOUT,
-        operation_timeout: OPERATION_TIMEOUT,
-        keep_alive_timeout: KEEP_ALIVE_TIMEOUT,
-        ping_timeout: PING_TIMEOUT,
-        read_timeout: READ_TIMEOUT,
-        write_timeout: WRITE_TIMEOUT,
-        request_timeout: REQUEST_TIMEOUT,
-        total_request_timeout: TOTAL_REQUEST_TIMEOUT,
-      }.freeze,
+      :timeout => Timeouts.new,
       :headers_class => Class.new(Headers, &SET_TEMPORARY_NAME),
       :headers => EMPTY_HASH,
       :window_size => WINDOW_SIZE,
