@@ -157,7 +157,7 @@ module HTTPX
       # :username :: the username to use when authenticating with the proxy
       # :password :: the password to use when authenticating with the proxy
       # :no_proxy :: A list of hostnames (or regex patterns) for which the proxy should be bypassed
-      #              (ex: <tt>["example.com", "localhost", /.*\.google\.com/]</tt>).
+      #              (ex: <tt>["example.com", "localhost", /.*\.google\.com/]</tt>). Can also receive ["*"] as a catch-all.
       #
       # if you systems setting environment variables like `HTTP_PROXY` or `NO_PROXY` though, you won't need to set
       # most of the above.

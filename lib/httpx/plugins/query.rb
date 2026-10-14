@@ -14,6 +14,7 @@ module HTTPX
       end
 
       module InstanceMethods
+        # sends a QUERY request for the given +uri+, using +options+ for each.
         def query(*uri, **options)
           request("QUERY", uri, **options)
         end
