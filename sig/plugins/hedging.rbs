@@ -1,0 +1,44 @@
+module HTTPX
+  module Plugins
+    module Hedging
+      interface _HedgingOptions
+        def hedge_after: () -> (^(requestHedging request, Response response) -> interval | interval)?
+      end
+
+      module InstanceMethods
+        private
+
+        def hedge_connection: (connectionHedging connection) -> connectionHedging
+
+        def hedge_request!: (requestHedging request, connectionHedging connection, Selector selector) -> void
+
+        def when_to_hedge: (requestHedging request) -> interval?
+      end
+
+      module RequestMethods
+        attr_reader hedge_request: requestHedging?
+
+        @is_hedge_request: bool
+
+        def hedge_request=: (requestHedging? request) -> void
+      end
+
+      module ConnectionMethods
+        attr_reader hedge_connection: connectionHedging?
+
+        attr_accessor is_hedge_connection: bool
+
+        def hedge_connection=: (connectionHedging? connection) -> void
+
+        def try_yield_connection: [T] () { (connectionHedging) -> T } -> T
+      end
+    end
+    type optionsHedging = Options & Hedging::_HedgingOptions
+
+    type sessionHedging = Session & Hedging::InstanceMethods
+
+    type requestHedging = Request & Hedging::RequestMethods
+
+    type connectionHedging = Connection & Hedging::ConnectionMethods
+  end
+end

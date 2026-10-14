@@ -40,7 +40,9 @@ module HTTPX
     def initialize: (?options) { (self) -> void } -> void
                   | (?options) -> void
 
-    def selector_close: (Selector close) -> void
+    def can_checkin?: (Connection connection) -> boolish
+
+    def selector_close: (Selector close, *untyped) -> void
 
     def deactivate: (Selector selector, ?Exception? error) -> void
 
@@ -48,7 +50,9 @@ module HTTPX
 
     def fetch_response: (Request request, Selector selector, Options options) -> response?
 
-    def send_request: (Request request, Selector selector, ?Options options) -> void
+    def send_request: (Request request, Selector selector, ?Options options) ?{ (Connection) -> void } -> void
+
+    def do_request: (Request request, Connection connection, Selector selector) -> void
 
     def set_request_callbacks: (Request request) -> void
 
