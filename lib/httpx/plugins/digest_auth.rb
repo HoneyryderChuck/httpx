@@ -33,6 +33,8 @@ module HTTPX
       end
 
       module InstanceMethods
+        # returns a session which will authenticate requests using HTTP Digest Auth, with
+        # +user+ and +password+ as credentials.
         def digest_auth(user, password, hashed: false)
           with(digest: Authentication::Digest.new(user, password, hashed: hashed))
         end

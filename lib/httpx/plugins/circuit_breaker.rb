@@ -34,6 +34,7 @@ module HTTPX
 
         %i[circuit_open].each do |meth|
           class_eval(<<-MOD, __FILE__, __LINE__ + 1)
+        # sets a <tt>:#{meth}</tt> callback on the session.
         def on_#{meth}(&blk)   # def on_circuit_open(&blk)
           on(:#{meth}, &blk)   #   on(:circuit_open, &blk)
           self                 #   self

@@ -13,14 +13,18 @@ module HTTPX
       end
 
       module InstanceMethods
+        # sends a COPY WebDav request for +src+ and +dest+.
         def copy(src, dest)
           request("COPY", src, headers: { "destination" => @options.origin.merge(dest) })
         end
 
+        # sends a MOVE WebDav request for +src+ and +dest+.
         def move(src, dest)
           request("MOVE", src, headers: { "destination" => @options.origin.merge(dest) })
         end
 
+        # sends a LOCK WebDav request for +path+ (for the time set by +timeout+, when passed).
+        # it calls #unlock after the block is executed.
         def lock(path, timeout: nil, &blk)
           headers = {}
           headers["timeout"] = if timeout && timeout.positive?
@@ -51,14 +55,17 @@ module HTTPX
           response
         end
 
+        # sends a UNLOCK WebDav request for +path+, using the given +lock_token+.
         def unlock(path, lock_token)
           request("UNLOCK", path, headers: { "lock-token" => lock_token })
         end
 
+        # sends a MKCOL WebDav request for +dir+.
         def mkcol(dir)
           request("MKCOL", dir)
         end
 
+        # sends a PROPFIND WebDav request for +path+.
         def propfind(path, xml = nil)
           body = case xml
                  when :acl
@@ -73,6 +80,7 @@ module HTTPX
           request("PROPFIND", path, headers: { "depth" => "1" }, xml: body)
         end
 
+        # sends a PROPPATCH WebDav request for +path+.
         def proppatch(path, xml)
           body = "<?xml version=\"1.0\"?>" \
                  "<D:propertyupdate xmlns:D=\"DAV:\" xmlns:Z=\"http://ns.example.com/standards/z39.50/\">#{xml}</D:propertyupdate>"

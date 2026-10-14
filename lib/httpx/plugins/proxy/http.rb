@@ -31,17 +31,22 @@ module HTTPX
         end
 
         module InstanceMethods
+          # returns a new session with the proxy authentication scheme set to <tt>"basic"</tt>, for HTTP Basic Auth.
           def with_proxy_basic_auth(opts)
             with(proxy: opts.merge(scheme: "basic"))
           end
 
+          # returns a new session with the proxy authentication scheme set to <tt>"digest"</tt>, for HTTP Digest Auth.
           def with_proxy_digest_auth(opts)
             with(proxy: opts.merge(scheme: "digest"))
           end
 
+          # returns a new session with the proxy authentication scheme set to <tt>"ntlm"</tt>, for NTLM Auth.
           def with_proxy_ntlm_auth(opts)
             with(proxy: opts.merge(scheme: "ntlm"))
           end
+
+          private
 
           def fetch_response(request, selector, options)
             response = super

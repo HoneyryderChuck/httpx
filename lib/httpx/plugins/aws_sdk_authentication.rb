@@ -85,9 +85,13 @@ module HTTPX
 
       module InstanceMethods
         #
-        # aws_authentication
-        # aws_authentication(credentials: Aws::Credentials.new('akid', 'secret'))
-        # aws_authentication()
+        # returns a session which will use the AWS credentials provided by your AWS system configuration.
+        #
+        #     session = HTTPX.plugin(:aws_sdk_authentication)
+        #     auth_session = session.aws_authentication
+        #     # OR
+        #     auth_session = session.aws_authentication(credentials: Aws::Credentials.new('akid', 'secret'))
+        #     auth_session.get("http://...")
         #
         def aws_sdk_authentication(
           credentials: AwsSdkAuthentication.credentials(@options.aws_profile),

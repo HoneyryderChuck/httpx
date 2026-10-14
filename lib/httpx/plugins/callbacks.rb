@@ -25,6 +25,7 @@ module HTTPX
 
         CALLBACKS.each do |meth|
           class_eval(<<-MOD, __FILE__, __LINE__ + 1)
+            # sets a <tt>:#{meth}</tt> callback on the session
             def on_#{meth}(&blk)   # def on_connection_opened(&blk)
               on(:#{meth}, &blk)   #   on(:connection_opened, &blk)
               self                 #   self

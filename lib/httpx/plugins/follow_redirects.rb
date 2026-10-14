@@ -61,7 +61,7 @@ module HTTPX
       end
 
       module InstanceMethods
-        # returns a session with the *max_redirects* option set to +n+
+        # returns a session with the <tt>:max_redirects</tt> option set to +n+.
         def max_redirects(n)
           with(max_redirects: n.to_i)
         end

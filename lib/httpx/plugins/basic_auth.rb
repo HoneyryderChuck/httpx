@@ -19,6 +19,8 @@ module HTTPX
       end
 
       module InstanceMethods
+        # returns a new session which will authorize requests using HTTP Basic Auth, with
+        # +user+ and +password+ as credentials.
         def basic_auth(user, password)
           authorization(Authentication::Basic.new(user, password).authenticate)
         end

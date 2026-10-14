@@ -5,9 +5,11 @@ module HTTPX
   # delegates to a default session when extended.
   module Chainable
     %w[head get post put delete trace options connect patch].each do |meth|
+      http_verb = meth.upcase
       class_eval(<<-MOD, __FILE__, __LINE__ + 1)
+        # sends a #{http_verb} request for the given +uri+, using +options+ for each.
         def #{meth}(*uri, **options)                # def get(*uri, **options)
-          request("#{meth.upcase}", uri, **options) #   request("GET", uri, **options)
+          request("#{http_verb}", uri, **options)   #   request("GET", uri, **options)
         end                                         # end
       MOD
     end
@@ -17,6 +19,7 @@ module HTTPX
       branch(default_options).request(...)
     end
 
+    # returns a new session with the "Accept" header set to +type+.
     def accept(type)
       with(headers: { "accept" => String(type) })
     end

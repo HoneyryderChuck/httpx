@@ -11,7 +11,7 @@ module HTTPX
     #
     # * HTTP proxies
     # * HTTPS proxies
-    # * Socks4/4a proxies
+    # * Socks4 /Socks4a proxies
     # * Socks5 proxies
     #
     # https://gitlab.com/os85/httpx/wikis/Proxy
@@ -19,6 +19,7 @@ module HTTPX
     module Proxy
       class ProxyConnectionError < ProxyError; end
 
+      # :nodoc:
       PROXY_ERRORS = [TimeoutError, IOError, SystemCallError, Error].freeze
 
       class << self
@@ -39,6 +40,7 @@ module HTTPX
         end
       end
 
+      # Manages the proxy parameters and the proxy authentication flow.
       class Parameters
         attr_reader :uri, :username, :password, :scheme, :no_proxy
 
@@ -139,8 +141,26 @@ module HTTPX
 
       # adds support for the following options:
       #
-      # :proxy :: proxy options defining *:uri*, *:username*, *:password* or
-      #           *:scheme* (i.e. <tt>{ uri: "http://proxy" }</tt>)
+      # :proxy :: hash of proxy options, where a URI an be passed containing most of the requred information,
+      #           or instead the different proxy options can be passed independently.
+      #
+      # The following proxy options are supported:
+      #
+      # :uri :: proxy origin URI, or list of URIs; in the case of the latter, any failed attempt to connect to a list item
+      #         will retry for the next item of the list, until all elements are exhausted or it times out meanwhile.
+      #         <tt>:username</tt> and <tt>:password</tt> will be inferred from it when available. The URI scheme will identify
+      #         the proxy type.  (ex: <tt>"http://proxi-uri:8980"</tt>, <tt>"http://user:pass@proxy-uri:8181"</tt>,
+      #         <tt>"socks5://user:pass@socks-proxy-uri:10300"</tt>, <tt>["http://proxi-uri:8980", "http://user:pass@proxy-uri:8181"]</tt>).
+      # :scheme :: identifies the authentication scheme to use with the proxy, if necessary; defaults to <tt>"basic"</tt>, for basic auth,
+      #            can also be <tt>"digest"</tt> or <tt>"ntml"</tt>). Your recommended to use session methods like HTTP::InstanceMethods#with_proxy_basic_auth
+      #            to set these instead.
+      # :username :: the username to use when authenticating with the proxy
+      # :password :: the password to use when authenticating with the proxy
+      # :no_proxy :: A list of hostnames (or regex patterns) for which the proxy should be bypassed
+      #              (ex: <tt>["example.com", "localhost", /.*\.google\.com/]</tt>).
+      #
+      # if you systems setting environment variables like `HTTP_PROXY` or `NO_PROXY` though, you won't need to set
+      # most of the above.
       module OptionsMethods
         private
 

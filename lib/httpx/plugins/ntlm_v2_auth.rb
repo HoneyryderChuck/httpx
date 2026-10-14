@@ -54,6 +54,7 @@ module HTTPX
       end
 
       module InstanceMethods
+        # returns a new session which authenticates requests using NTLM v2 auth.
         def ntlm_auth(user, password, domain = nil)
           with(ntlm: Authenticator.new(user, password, domain: domain))
         end

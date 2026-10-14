@@ -125,6 +125,8 @@ module HTTPX
       end
 
       module InstanceMethods
+        private
+
         def fetch_response(request, selector, options)
           response = super
 

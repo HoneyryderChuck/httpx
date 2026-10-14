@@ -69,14 +69,18 @@ module HTTPX
           @skip_auth_header_value = false
         end
 
+        # returns a new session where requests will be authorized using +token+ (or what the +blk+ yields),
+        # using +auth_header_type+ as header value prefix.
         def authorization(token = nil, auth_header_type: nil, &blk)
           with(auth_header_type: auth_header_type, auth_header_value: token || blk)
         end
 
+        # returns a new session which call #authorize while setting <tt>"Bearer"</tt> as the +auth_header_type+.
         def bearer_auth(token = nil, &blk)
           authorization(token, auth_header_type: "Bearer", &blk)
         end
 
+        # yields a block where authorization (if available) will be bypassed.
         def skip_auth_header
           @skip_auth_header_value = true
           yield
@@ -84,6 +88,7 @@ module HTTPX
           @skip_auth_header_value = false
         end
 
+        # resets authorization information.
         def reset_auth_header_value!
           @auth_header_value_mtx.synchronize do
             @auth_header_value = @auth_header_expires_at = nil

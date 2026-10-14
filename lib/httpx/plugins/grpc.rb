@@ -69,6 +69,17 @@ module HTTPX
         end
       end
 
+      # adds support for the following options:
+      #
+      # :grpc_service :: name of the GRPC service service.
+      # :grpc_compression :: whether payloads should be GZIP-compressed (<tt>false</tt> by default).
+      # :grpc_rpcs :: maps local rpc names to the service RCP information.
+      # :grpc_deadline :: sets the service call deadline that the peer should stick to.
+      # :call_credentials :: callable which should yield a key-value hash which will be passed in the
+      #                      request HTTP headers.
+      #
+      # You're recommended not to set any of these options directly, and instead use methods such as
+      # InstanceMethods#rpc and InstanceMethods#build_stub.
       module OptionsMethods
         private
 
@@ -125,6 +136,9 @@ module HTTPX
       end
 
       module InstanceMethods
+        # returns a new session which sets the TLS channel credentials (+ca_path+ as the CA file,
+        # +key+ and +cert+ as the TLS public key and certificate, as well as other TLS options via
+        # +ssl_opts+, which should be compatible with what OpenSSL::SSL::SSLContext#set_params receives).
         def with_channel_credentials(ca_path, key = nil, cert = nil, **ssl_opts)
           # @type var ssl_params: ::Hash[::Symbol, untyped]
           ssl_params = {
@@ -144,6 +158,8 @@ module HTTPX
           with(ssl: ssl_params)
         end
 
+        # returns a new session with a service RPC identified by +rpc_name+, passing +input+ and +output+ as its
+        # input encoder and output decoder respectively; extra options (like <tt>:deadline</tt>) can be passed using +opts+.
         def rpc(rpc_name, input, output, **opts)
           rpc_name = rpc_name.to_s
           raise Error, "rpc #{rpc_name} already defined" if @options.grpc_rpcs.key?(rpc_name)
@@ -179,6 +195,9 @@ module HTTPX
                             ))
         end
 
+        # returns a new GRPC Service enabled session pointing to a +origin+ URI; when the
+        # +service+ is a GRPC Service object (as the ones provided by the `grpc` gem), it'll
+        # automatically generate the RPC methods.
         def build_stub(origin, service: nil, compression: false)
           scheme = @options.ssl.empty? ? "http" : "https"
 
@@ -212,6 +231,8 @@ module HTTPX
           session.with(origin: origin, grpc_service: service, grpc_compression: compression)
         end
 
+        # executes an RPC service identified by +rpc_method+. You're recommended to use the generated
+        # RPC methods directly though, in case you're using #build_stub.
         def execute(rpc_method, input,
                     deadline: DEADLINE,
                     metadata: nil,

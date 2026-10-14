@@ -40,6 +40,7 @@ module HTTPX
       end
 
       module InstanceMethods
+        # sends a stream request.
         def request(*, **options)
           options[:stream] = true if options[:event_stream]
 

@@ -178,6 +178,7 @@ module HTTPX
       end
 
       module InstanceMethods
+        # returns a session which will authenticate requests using the AWS Sigv4 protocol.
         def aws_sigv4_authentication(**options)
           with(sigv4_signer: Signer.new(**options))
         end
