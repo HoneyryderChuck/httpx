@@ -283,6 +283,27 @@ class ResponseTest < Minitest::Test
     assert err.message == "invalid json mime type (application/invalidjson)"
   end
 
+  def test_response_content_type_parsing
+    ct1 = ContentType.new("application/json")
+    assert ct1.mime_type == "application/json"
+    assert ct1.charset.nil?
+    ct2 = ContentType.new("application/json; charset=utf-8")
+    assert ct2.mime_type == "application/json"
+    assert ct2.charset == "utf-8"
+    ct3 = ContentType.new("application/json;charset=utf-8")
+    assert ct3.mime_type == "application/json"
+    assert ct3.charset == "utf-8"
+    ct4 = ContentType.new("application/json;charset=UTF-8")
+    assert ct4.mime_type == "application/json"
+    assert ct4.charset == "UTF-8"
+    ct5 = ContentType.new("application/json;charset=utf\-8")
+    assert ct5.mime_type == "application/json"
+    assert ct5.charset == "utf-8"
+    ct6 = ContentType.new("application/json;charset=\"utf\-8\"")
+    assert ct6.mime_type == "application/json"
+    assert ct6.charset == "utf-8"
+  end
+
   private
 
   def request(verb = "GET", uri = "http://google.com")

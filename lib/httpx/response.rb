@@ -259,7 +259,11 @@ module HTTPX
         if c
           c.strip!
           c.delete_prefix!("charset=")
-          c = c[1..-2] if c.start_with?('"') && c.end_with?('"')
+          c.gsub!(/\A"(.*?)(?<!\\)"\z/) do
+            c2 = $1
+            c2.gsub!(/\\(.)/, '\1')
+            c2
+          end
           @charset = c
         end
       end
