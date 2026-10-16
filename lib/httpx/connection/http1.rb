@@ -55,12 +55,20 @@ module HTTPX
     end
 
     def reset_requests
-      @requests.reverse_each do |request|
+      pending_idx = 0
+      @requests.each_with_index do |request, idx|
         next if request.response
 
+        if request.state == :idle
+          pending_idx = idx
+          break
+        end
+
         request.transition(:idle)
-        @pending.unshift(request)
       end
+      # drop completed requests
+      @requests.shift(pending_idx)
+      @pending.unshift(*@requests)
       @requests.clear
     end
 
