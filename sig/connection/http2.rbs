@@ -47,9 +47,11 @@ module HTTPX
 
     def reset_requests: () -> void
 
+    def no_more_requests?: () -> bool
+
     private
 
-    def initialize: (Buffer buffer, Options options) -> untyped
+    def initialize: (Buffer buffer, Array[Request] pending, Options options) -> untyped
 
     def can_buffer_more_requests?: () -> bool
 

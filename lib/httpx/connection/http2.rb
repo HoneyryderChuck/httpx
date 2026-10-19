@@ -50,11 +50,11 @@ module HTTPX
 
     attr_reader :streams, :pending
 
-    def initialize(buffer, options)
+    def initialize(buffer, pending, options)
       @callbacks = nil
       @options = options
       @settings = @options.http2_settings
-      @pending = []
+      @pending = pending
       @streams = {}
       @drains = {}
       @pings = []
@@ -176,6 +176,7 @@ module HTTPX
       false
     rescue ::HTTP2::Error::Error, ArgumentError => e
       emit(:error, request, e)
+      false
     end
 
     def consume
@@ -242,6 +243,10 @@ module HTTPX
 
     def waiting_for_ping?
       @pings.any?
+    end
+
+    def no_more_requests?
+      @streams.empty?
     end
 
     def reset_requests; end

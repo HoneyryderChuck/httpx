@@ -120,7 +120,7 @@ module HTTPX::Plugins
         @init_time = nil
       end
 
-      def send_request_to_parser(request)
+      def send_request_to_parser(request, *)
         if connecting? && @init_time
           # at this point, the connection has connected, but hasn't yet transitioned to :open,
           # so it's the time the requests which caused this connection to connect, are finally being
@@ -181,10 +181,10 @@ module HTTPX::Plugins
       end
 
       def send(request, head = false)
-        if head
+        if head && (htime = @handshake_time)
           # only true for pending requests waiting on the handshake, so handshake time accrues.
           request.handshake_time ||= 0.0
-          request.handshake_time += @handshake_time
+          request.handshake_time += htime
         end
 
         super

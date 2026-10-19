@@ -36,7 +36,7 @@ module HTTPX
 
     def <<: (string) -> void
 
-    def send: (Request request, ?bool head) -> void
+    def send: (Request request, ?bool head) -> bool
 
     def consume: () -> void
 
@@ -60,9 +60,11 @@ module HTTPX
 
     def timeout: () -> interval?
 
+    def no_more_requests?: () -> bool
+
     private
 
-    def initialize: (Buffer buffer, Options options) -> untyped
+    def initialize: (Buffer buffer, Array[Request] pending, Options options) -> untyped
 
     def manage_connection: (Request request, Response response) -> void
 

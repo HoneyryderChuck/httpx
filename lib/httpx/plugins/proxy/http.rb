@@ -80,9 +80,6 @@ module HTTPX
             if @state == :connecting
               # proxy connect related requests should not be reenqueed
               @parser.reset
-              @inflight -= @parser.pending.size
-              check_inflight_is_negative
-              @parser.pending.clear
             end
 
             super
@@ -115,12 +112,12 @@ module HTTPX
               @tunnel_parser || begin
                 if @parser
                   # in case this happens, requests from @parser need to be reenqueued for delivery.
-                  enqueue_pending_requests_from_parser(@parser)
+                  @parser.reset_requests
                   @parser = nil
                 end
 
                 @tunnel_parser = @parser = parser =
-                                   parser_type(@io.protocol).new(@write_buffer, @options.merge(max_concurrent_requests: 1))
+                                   parser_type(@io.protocol).new(@write_buffer, @pending, @options.merge(max_concurrent_requests: 1))
                 parser.extend(ProxyParser)
                 parser.on(:response, &method(:__http_on_connect))
                 parser.on(:close) do
@@ -130,10 +127,10 @@ module HTTPX
                 end
                 parser.on(:error, &method(:on_parser_error))
                 parser.on(:reset) do
-                  if parser.pending.empty? && parser.empty?
+                  if parser.empty?
                     reset
                   else
-                    enqueue_pending_requests_from_parser(parser)
+                    parser.reset_requests
 
                     initial_state = @state
 
@@ -162,10 +159,7 @@ module HTTPX
                     idling
 
                     @tunnel_parser = @parser = parser
-                    if connect_request
-                      @inflight += 1
-                      parser.send(connect_request)
-                    end
+                    parser.send(connect_request) if connect_request
                     transition(:connecting)
                   end
                 end
@@ -207,8 +201,6 @@ module HTTPX
           end
 
           def __http_on_connect(request, response)
-            @inflight -= 1
-            check_inflight_is_negative
             if response.is_a?(Response) && response.status == 200
               req = @pending.first
               request_uri = req.uri
@@ -224,8 +216,7 @@ module HTTPX
               request.headers["proxy-authorization"] = @options.proxy.authenticate(request, response.headers["proxy-authenticate"])
               send(request)
             else
-              pending = @pending + @parser.pending
-              while (req = pending.shift)
+              while (req = @pending.shift)
                 response.finish!
                 req.response = response
                 req.emit_response(response)

@@ -270,10 +270,10 @@ module HTTPX
 
         private
 
-        def send_request_to_parser(request)
+        def send_request_to_parser(request, *)
           # if original request was in the queue, but has since been finished
           # in the hedge connection.
-          return if request.response&.finished?
+          return false if request.response&.finished?
 
           super
         end

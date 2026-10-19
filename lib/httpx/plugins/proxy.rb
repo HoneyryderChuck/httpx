@@ -287,7 +287,7 @@ module HTTPX
         def connecting?
           return super unless @options.proxy
 
-          super || @state == :connecting || @state == :connected
+          super || proxy_connecting?
         end
 
         def call
@@ -309,21 +309,16 @@ module HTTPX
           raise e
         end
 
-        def reset
-          return super unless @options.proxy
-
-          @state = :open
-
-          super
-          # emit(:close)
-        end
-
         private
 
         def initialize_type(uri, options)
           return super unless options.proxy
 
           "tcp"
+        end
+
+        def proxy_connecting?
+          @state == :connecting || @state == :connected
         end
 
         def connect
@@ -342,9 +337,7 @@ module HTTPX
 
           case nextstate
           when :closing
-            # this is a hack so that we can use the super method
-            # and it'll think that the current state is open
-            @state = :open if @state == :connecting
+            @parser = nil if proxy_connecting?
           end
           super
         end

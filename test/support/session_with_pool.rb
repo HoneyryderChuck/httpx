@@ -60,6 +60,7 @@ module SessionWithPool
       super
       klass.class_eval do
         public :parser
+        public :no_more_requests?
       end
     end
 
