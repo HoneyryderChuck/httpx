@@ -33,9 +33,9 @@ module HTTPX
         end
 
         def upgrade_to_h2
-          enqueue_pending_requests_from_parser(@parser)
+          @parser.reset_requests
 
-          @parser = @options.http2_class.new(@write_buffer, @options)
+          @parser = @options.http2_class.new(@write_buffer, @pending, @options)
           set_parser_callbacks(@parser)
           @upgrade_protocol = "h2"
 

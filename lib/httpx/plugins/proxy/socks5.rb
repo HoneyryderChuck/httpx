@@ -42,10 +42,6 @@ module HTTPX
             end
           end
 
-          def connecting?
-            super || @state == :authenticating || @state == :negotiating
-          end
-
           def interests
             if @state == :connecting || @state == :authenticating || @state == :negotiating
               return @write_buffer.empty? ? :r : :w
@@ -55,6 +51,10 @@ module HTTPX
           end
 
           private
+
+          def proxy_connecting?
+            super || @state == :authenticating || @state == :negotiating
+          end
 
           def handle_transition(nextstate)
             return super unless @options.proxy && @options.proxy.uri.scheme == "socks5"

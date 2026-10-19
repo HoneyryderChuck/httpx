@@ -220,11 +220,11 @@ class SessionTest < Minitest::Test
       end
 
       def http1_connection
-        @options.http1_class.new(HTTPX::Buffer.new(4), @options)
+        @options.http1_class.new(HTTPX::Buffer.new(4), [], @options)
       end
 
       def http2_connection
-        @options.http2_class.new(HTTPX::Buffer.new(4), @options)
+        @options.http2_class.new(HTTPX::Buffer.new(4), [], @options)
       end
 
       def resolver(type)

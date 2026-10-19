@@ -163,7 +163,7 @@ class Bug_1_7_5_Test < Minitest::Test
     session.total_responses.each do |response|
       case response
       when HTTPX::Response
-        verify_response(response, 200)
+        verify_status(response, 200)
       when HTTPX::ErrorResponse
         assert_includes(
           [Errno::ECONNRESET, EOFError],
@@ -173,10 +173,7 @@ class Bug_1_7_5_Test < Minitest::Test
     end
 
     session.connections.each do |conn|
-      def conn.inflight # rubocop:disable Style/TrivialAccessors
-        @inflight
-      end
-      assert conn.inflight.zero?, "request accounting is all messed up"
+      assert conn.no_more_requests?, "request accounting is all messed up"
     end
   end
 end

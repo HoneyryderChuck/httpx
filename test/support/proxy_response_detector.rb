@@ -16,7 +16,7 @@ module ProxyResponseDetector
   end
 
   module ConnectionMethods
-    attr_reader :connect_requests, :inflight
+    attr_reader :connect_requests
 
     def initialize(*)
       super

@@ -208,6 +208,27 @@ class HTTPTest < Minitest::Test
     end
   end
 
+  def test_http1_pipelining_unsupported_resends_unanswered_requests
+    start_test_servlet(PipeliningUnsupportedServer) do |server|
+      uri = "#{server.origin}/"
+
+      HTTPX.plugin(SessionWithPool).wrap do |http|
+        responses = http.get(uri, uri, uri)
+
+        assert responses.size == 3
+        responses.each do |response|
+          verify_status(response, 200)
+          verify_body_length(response, 2)
+        end
+
+        pipelined, *rest = server.bursts
+        assert pipelined.first > 1, "requests should have been pipelined (bursts: #{server.bursts})"
+        assert rest.flatten.all?(1), "requests should have been resent one at a time (bursts: #{server.bursts})"
+        assert server.bursts.flatten.size == 3, "each request should have been answered once (bursts: #{server.bursts})"
+      end
+    end
+  end
+
   private
 
   def scheme

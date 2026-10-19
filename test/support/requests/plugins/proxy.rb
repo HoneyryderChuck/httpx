@@ -33,7 +33,7 @@ module Requests
 
         assert session.connection_count == 1
         connection = session.connections.first
-        assert connection.inflight.zero?
+        assert connection.no_more_requests?
       end
 
       def test_plugin_http_no_proxy
@@ -86,7 +86,7 @@ module Requests
 
         assert session.connection_count == 1
         connection = session.connections.first
-        assert connection.inflight.zero?
+        assert connection.no_more_requests?
       end
 
       def test_plugin_tunnel_connect_http1_proxy
@@ -104,7 +104,7 @@ module Requests
         assert response.proxied?
 
         connection = session.connections.first
-        assert connection.inflight.zero?
+        assert connection.no_more_requests?
         connect_requests = connection.connect_requests
         assert connect_requests.size == 1
         connect_req = connect_requests.first
@@ -127,7 +127,7 @@ module Requests
         assert response.proxied?
 
         connection = session.connections.first
-        assert connection.inflight.zero?
+        assert connection.no_more_requests?
         connect_requests = connection.connect_requests
         assert connect_requests.size == 1
         connect_req = connect_requests.first
@@ -170,7 +170,7 @@ module Requests
               assert http.connections.size == 1
 
               connection = http.connections.first
-              assert connection.inflight.zero?
+              assert connection.no_more_requests?
 
               # lapse the keep alive window
               sleep(1.5)
@@ -179,7 +179,7 @@ module Requests
               assert http.connections.size == 1
 
               connection = http.connections.first
-              assert connection.inflight.zero?
+              assert connection.no_more_requests?
 
               assert proxy.connect_requests.size == 2,
                      "did not open new CONNECT proxy"
@@ -207,10 +207,10 @@ module Requests
 
         assert session.connections.size == 2
         unavailable_connection, connection = session.connections
-        assert unavailable_connection.inflight.zero?
+        assert unavailable_connection.no_more_requests?
         assert unavailable_connection.connect_requests.empty?
 
-        assert connection.inflight.zero?
+        assert connection.no_more_requests?
         connect_requests = connection.connect_requests
         assert connect_requests.size == 1
         connect_req = connect_requests.first
@@ -243,7 +243,7 @@ module Requests
 
         assert session.connection_count == 1
         connection = session.connections.first
-        assert connection.inflight.zero?
+        assert connection.no_more_requests?
       end
 
       def test_plugin_http_proxy_connect_error
@@ -264,7 +264,7 @@ module Requests
 
           assert session.connections.size == 1
           connection = session.connections.first
-          assert connection.inflight.zero?
+          assert connection.no_more_requests?
         end
       end
 
@@ -280,7 +280,7 @@ module Requests
 
         assert session.connections.size == 1
         connection = session.connections.first
-        assert connection.inflight.zero?
+        assert connection.no_more_requests?
       end
 
       def test_plugin_http_proxy_auth_error
