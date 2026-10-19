@@ -148,6 +148,18 @@ class HTTPTest < Minitest::Test
     end
   end
 
+  def test_keep_alive_timeout_from_header
+    start_test_servlet(KeepAliveServer) do |server|
+      uri = "#{server.origin}/timeout"
+      HTTPX.plugin(SessionWithPool).plugin(:persistent).wrap do |http|
+        verify_status(http.get(uri), 200)
+        sleep(2)
+        verify_status(http.get(uri), 200)
+        assert http.ping_count == 1, "expected server keep-alive timeout to be used (#{http.ping_count})"
+      end
+    end
+  end
+
   def test_trailers
     start_test_servlet(HTTPTrailersServer) do |server|
       uri = "#{server.origin}/"
