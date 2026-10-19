@@ -141,6 +141,7 @@ module HTTPX
 
                   reset
                 end
+                parser.on(:error, &method(:on_parser_error))
                 parser.on(:reset) do
                   if parser.pending.empty? && parser.empty?
                     reset
