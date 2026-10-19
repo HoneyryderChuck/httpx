@@ -809,6 +809,9 @@ module HTTPX
       parser.on(:timeout) do |tout|
         @timeout = tout
       end
+      parser.on(:keep_alive_timeout) do |tout|
+        @keep_alive_timeout = tout
+      end
       parser.on(:error) do |request, error|
         case error
         when :http_1_1_required

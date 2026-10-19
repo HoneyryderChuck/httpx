@@ -22,6 +22,16 @@ class KeepAliveServer < TestServer
     end
   end
 
+  class KeepAliveTimeoutApp < WEBrick::HTTPServlet::AbstractServlet
+    def do_GET(_req, res) # rubocop:disable Naming/MethodName
+      res.status = 200
+      res["Connection"] = "Keep-Alive"
+      res["Keep-Alive"] = "timeout=1"
+      res["Content-Type"] = "application/json"
+      res.body = "{\"timeout\": 1}"
+    end
+  end
+
   class KeepAliveTransferEncodingChunk < WEBrick::HTTPServlet::AbstractServlet
     def do_GET(_req, res) # rubocop:disable Naming/MethodName
       res.status = 200
@@ -40,6 +50,7 @@ class KeepAliveServer < TestServer
     super
     mount("/", KeepAliveApp)
     mount("/2", KeepAliveMax2App)
+    mount("/timeout", KeepAliveTimeoutApp)
     mount("/chunk", KeepAliveTransferEncodingChunk)
   end
 end

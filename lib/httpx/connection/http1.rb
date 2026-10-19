@@ -267,10 +267,7 @@ module HTTPX
         end]
         @max_requests = parameters["max"].to_i - 1 if parameters.key?("max")
 
-        if parameters.key?("timeout")
-          keep_alive_timeout = parameters["timeout"].to_i
-          emit(:timeout, keep_alive_timeout)
-        end
+        emit(:keep_alive_timeout, parameters["timeout"].to_i) if parameters.key?("timeout")
         @handshake_completed = true
       when /close/i
         disable
