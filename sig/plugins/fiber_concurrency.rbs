@@ -22,14 +22,17 @@ module HTTPX
 
         private
 
-        def backlog?: () -> bool
+        def backlog?: () -> boolish
       end
 
       module HTTP1Methods
+        def backlog?: () -> bool
       end
 
       module HTTP2Methods
         @contexts: Hash[Fiber, Set[Request]]
+
+        def backlog?: () -> bool
 
         private
 

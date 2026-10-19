@@ -53,7 +53,7 @@ module HTTPX
                      @reset_timeout_on_call =
                        # variable used to gate against a potential endless loop where the peer continuously closes the connection with
                        # GOAWAY frames without ever processing a request.
-                       @previously_exhausted_with_error = @inflight_is_negative_already_checked = false
+                       @previously_exhausted_with_error = false
 
       @options = Options.new(options)
       @type = initialize_type(uri, @options)
@@ -63,7 +63,6 @@ module HTTPX
       @read_buffer = Buffer.new(@options.buffer_size)
       @write_buffer = Buffer.new(@options.buffer_size)
       @pending = []
-      @inflight = 0
       @keep_alive_timeout = @options.timeout.keep_alive_timeout
       @no_more_requests_counter = 0
 
@@ -93,7 +92,6 @@ module HTTPX
       @origins = orig.origins.dup
       @read_buffer = orig.read_buffer.dup
       @write_buffer = orig.write_buffer.dup
-      @inflight = 0
       @pending = []
       transition(:idle)
 
@@ -199,21 +197,10 @@ module HTTPX
     # returns the number of pending requests both in the connection as well as parser
     # pending queues
     def pending_count
-      count = @pending.size
-      count += @parser.pending.size if @parser.respond_to?(:pending)
-      count
+      @pending.size
     end
 
     def purge_pending(&block)
-      if @parser
-        pending = @parser.pending
-        @inflight -= pending.size
-        check_inflight_is_negative
-        pending.reject! do |req|
-          block.call(req)
-          true
-        end
-      end
       @pending.reject! do |req|
         block.call(req)
         true
@@ -279,7 +266,7 @@ module HTTPX
 
         consume
       when :closed
-        return if no_more_requests?
+        return if no_requests_to_handle?
 
         # there are pending requests to send, restart the state machine.
         idling
@@ -366,7 +353,7 @@ module HTTPX
       if delete_pending
         @pending.clear
       elsif (parser = @parser)
-        enqueue_pending_requests_from_parser(parser)
+        parser.reset_requests if parser.respond_to?(:reset_requests)
         return unless @pending.empty?
       end
 
@@ -394,6 +381,8 @@ module HTTPX
       parser = @parser
 
       if parser && parser.respond_to?(:max_concurrent_requests)
+        # @type var parser: HTTP1
+
         # if connection being reset has at some downgraded the number of concurrent
         # requests, such as in the case where an attempt to use HTTP/1 pipelining failed,
         # keep that information around.
@@ -453,7 +442,7 @@ module HTTPX
       transition(:idle)
       return unless @parser
 
-      enqueue_pending_requests_from_parser(@parser)
+      @parser.reset_requests if @parser.respond_to?(:reset_requests)
       @parser = nil
     end
 
@@ -617,7 +606,6 @@ module HTTPX
           # * the number of inflight requests
           # * whether the write buffer has bytes (i.e. for close handshake)
           if no_more_requests? && @write_buffer.empty?
-            no_more_requests_loop_check if @parser && @parser.respond_to?(:pending) && @parser.pending.any?
 
             # terminate if an altsvc connection has been established
             terminate if @altsvc_connection
@@ -666,7 +654,6 @@ module HTTPX
 
             # exit #consume altogether if all outstanding requests have been dealt with
             if no_more_requests? && @write_buffer.empty? # rubocop:disable Style/Next
-              no_more_requests_loop_check if @parser && @parser.respond_to?(:pending) && @parser.pending.any?
 
               # terminate if an altsvc connection has been established
               terminate if @altsvc_connection
@@ -684,7 +671,7 @@ module HTTPX
             # buffer has been drained, mark and exit the write loop.
             if @write_buffer.empty?
               # we only mark as drained on the first loop
-              write_drained = write_drained.nil? && @inflight.positive?
+              write_drained = write_drained.nil? && !@parser&.no_more_requests?
 
               break
             end
@@ -741,8 +728,9 @@ module HTTPX
     end
 
     def send_pending
-      while !@write_buffer.full? && (request = @pending.shift)
-        send_request_to_parser(request)
+      while (request = @pending.shift)
+        # request may have been rerouted to the pending list
+        break unless send_request_to_parser(request, true)
       end
     end
 
@@ -750,39 +738,25 @@ module HTTPX
       @parser ||= build_parser
     end
 
-    def send_request_to_parser(request)
-      @inflight += 1
-      request.peer_address = @io.ip && @io.ip.address
+    def send_request_to_parser(request, head = false) # rubocop:disable Naming/PredicateMethod
+      request.peer_address = @io&.ip&.address
       set_request_timeouts(request)
 
-      parser.send(request)
+      return false unless parser.send(request, head)
 
-      return unless @state == :inactive
+      return true unless @state == :inactive
 
       transition(:active)
       # mark request as ping, as this inactive connection may have been
       # closed by the server, and we don't want that to influence retry
       # bookkeeping.
       request.ping!
-    end
 
-    def enqueue_pending_requests_from_parser(parser)
-      parser.reset_requests # move sequential requests back to pending queue.
-      parser_pending_requests = parser.pending
-
-      return if parser_pending_requests.empty?
-
-      # the connection will be reused, so parser requests must come
-      # back to the pending list before the parser is reset.
-      @inflight -= parser_pending_requests.size
-      check_inflight_is_negative
-      @pending.unshift(*parser_pending_requests)
-
-      parser.pending.clear
+      true
     end
 
     def build_parser(protocol = @io.protocol)
-      parser = parser_type(protocol).new(@write_buffer, @options)
+      parser = parser_type(protocol).new(@write_buffer, @pending, @options)
       set_parser_callbacks(parser)
       parser.max_concurrent_requests = @max_concurrent_requests if @max_concurrent_requests && parser.respond_to?(:max_concurrent_requests=)
       parser
@@ -796,8 +770,6 @@ module HTTPX
         @previously_exhausted_with_error = false
         @response_received_at = Utils.now
         @no_more_requests_counter = 0
-        @inflight -= 1
-        check_inflight_is_negative
         response.finish!
         request.emit_response(response)
       end
@@ -811,7 +783,7 @@ module HTTPX
         request.emit(:promise, parser, stream)
       end
       parser.on(:exhausted) do |error|
-        enqueue_pending_requests_from_parser(parser)
+        parser.reset_requests
 
         if error
           if @previously_exhausted_with_error
@@ -854,15 +826,16 @@ module HTTPX
         consume unless @state == :closed
       end
       parser.on(:reset) do
-        enqueue_pending_requests_from_parser(parser)
+        parser.reset_requests
 
         reset
 
         next unless @state == :closed
 
+        # @fiber-switch-guard
         # :reset event only fired in http/1.1, so this guarantees
         # that the connection will be closed here.
-        idling unless @pending.empty?
+        call unless no_more_requests?
       end
       parser.on(:current_timeout) do
         @current_timeout = @timeout = parser.timeout
@@ -885,7 +858,7 @@ module HTTPX
 
         request.transition(:idle)
         current_session.__send__(:send_request, request, current_selector,
-                                 @options.merge(sl: { alpn_protocols: %w[http/1.1] })) do |other_conn|
+                                 @options.merge(ssl: { alpn_protocols: %w[http/1.1] })) do |other_conn|
           other_conn.merge(self)
         end
         return
@@ -947,16 +920,10 @@ module HTTPX
         emit(:open)
       when :inactive
         return unless @state == :open
-
-        # @type ivar @parser: HTTP1 | HTTP2
-
-        # do not deactivate connection in use
-        return if @inflight.positive? || @parser.waiting_for_ping?
       when :closing
         return unless connecting? || @state == :open
       when :closed
-        return unless @state == :closing
-        return unless @write_buffer.empty?
+        return unless @state == :closing && @write_buffer.empty?
       when :already_open
         nextstate = :open
         # the first check for given io readiness must still use a timeout.
@@ -989,9 +956,7 @@ module HTTPX
         purge_after_closed
 
         # @fiber-switch-guard
-        return unless @state == :closed
-        # TODO: should this raise an error instead?
-        return unless @pending.empty?
+        return unless no_more_requests?
 
         disconnect
       end
@@ -1156,98 +1121,38 @@ module HTTPX
                    "coalesced?:#{coalesced?})"
     end
 
-    def no_more_requests_loop_check
-      log(level: 3) { "NO MORE REQUESTS..." }
-      @no_more_requests_counter += 1
-
-      return if @no_more_requests_counter < 50
-
-      raise Error, corrupted_state_error_message("connection corrupted, aborted after looping for a while")
-    end
-
-    def check_inflight_is_negative
-      return if @inflight_is_negative_already_checked
-
-      return unless @inflight.negative?
-
-      @inflight_is_negative_already_checked = true
-
-      warn corrupted_state_error_message("inflight accounting corrupted (is negative)")
-    end
-
-    def corrupted_state_error_message(initial)
-      per_request_state = @parser.pending.map do |req|
-        "[state:#{req.state},ping?:#{req.ping?}]"
-      end.join(",")
-
-      parser_state =
-        case parser
-        when HTTP2
-          parser_pending_requests = parser.pending.map do |r|
-            num_retries = r.respond_to?(:retries) ? r.retries : nil
-            req_conn = r.instance_variable_get(:@connection)
-            "id:#{r.object_id},num_retries:#{num_retries}," \
-              "is-same-conn:#{req_conn.equal?(self)},started?:#{r.started?}"
-          end.join(",")
-          +"parser-streams:#{parser.streams.size}," \
-           "parser-handshake-completed:#{parser.instance_variable_get(:@handshake_completed)}," \
-           "parser-wait-for-handshake:#{parser.instance_variable_get(:@wait_for_handshake)}," \
-           "parser-pending:[#{parser_pending_requests}],"
-        else
-          +""
-        end
-
-      parser_state << "parser-requests:#{per_request_state}"
-
-      "#{initial}, " \
-        "please report this https://gitlab.com/os85/httpx/-/work_items " \
-        "along with debug logs\n(" \
-        "state:#{@state},inflight:#{@inflight},pending:#{@pending.size}," \
-        "exhausted:#{@exhausted}," \
-        "previously-exhausted-with-error:#{@previously_exhausted_with_error}," \
-        "connected_for_secs:#{Utils.elapsed_time(@connected_at) if @connected_at}," \
-        "num-origins:#{@origins.size}," \
-        "last_response_received:#{Utils.elapsed_time(@response_received_at) if @response_received_at}," \
-        "#{parser_state}," \
-        "in-selector:#{!!@current_selector}," \
-        "in-session:#{!!@current_session}" \
-        ")"
-    end
-
     # true when there are no more pending nor inflight (in parser) requests
     def no_more_requests?
-      @pending.empty? && @inflight.zero?
+      @pending.empty? && (
+        connecting? ||
+        @parser.nil? ||
+        !@parser.respond_to?(:no_more_requests?) ||
+        @parser.no_more_requests?
+      )
     end
 
+    alias_method :no_requests_to_handle?, :no_more_requests?
     # recover internal state and emit all relevant error responses when +error+ was raised.
     # this takes an optiona +request+ which may have already been handled and can be opted out
     # in the state recovery process.
     def handle_error(error, request = nil)
       if request
-        unless @pending.delete(request)
-          @inflight -= 1
-          check_inflight_is_negative
-        end
         response = ErrorResponse.new(request, error)
         request.response = response
         request.emit_response(response)
       end
 
-      pending = @pending
       if (parser = @parser) && parser.respond_to?(:handle_error)
         # parser.handle_error may disconnect the connection
-        pending = @pending.dup
-        @pending = []
-
         parser.handle_error(error, request)
-      end
+      else
+        while (req = @pending.shift)
+          next if request && req == request
 
-      while (req = pending.shift)
-        next if request && req == request
-
-        resp = ErrorResponse.new(req, error)
-        req.response = resp
-        req.emit_response(resp)
+          resp = ErrorResponse.new(req, error)
+          req.response = resp
+          req.emit_response(resp)
+        end
       end
     end
 

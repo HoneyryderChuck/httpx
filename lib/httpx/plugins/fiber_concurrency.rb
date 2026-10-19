@@ -94,17 +94,12 @@ module HTTPX
           # @fiber-switch-guard
           # sockets closed during fiber scheduler switches are raised in separate fibers than the fiber the
           # socket may be used in. this check verifies that this is actually about this socket.
-          return unless to_io.closed?
-
-          if @state == :closing
-            # @fiber-switch-guard
-            # if the connection is reused across fibers, the socket may have been closed in the other fiber
-            # and switched here during the process, so continue what it was doing and transition to closed
-            # via #call.
+          unless to_io.closed? && !backlog?
             call
-          elsif !backlog?
-            super
+            return
           end
+
+          super
         end
 
         def on_connect_error(e)
@@ -113,36 +108,53 @@ module HTTPX
           # @fiber-switch-guard
           # sockets closed during fiber scheduler switches are raised in separate fibers than the fiber the
           # socket may be used in. this check verifies that this is actually about this socket.
-          return unless to_io.closed? && !backlog?
+          unless to_io.closed? && !backlog?
+            call
+            return
+          end
 
           super
         end
 
         def pending_count
-          count = @pending.count(&:current_context?)
-          count += @parser.pending.count(&:current_context?) if @parser.respond_to?(:pending)
-          count
+          @pending.count(&:current_context?)
+        end
+
+        def interests
+          idling if (@state == :closed) && !no_more_requests?
+
+          super
         end
 
         private
 
+        def handle_transition(nextstate)
+          case nextstate
+          when :inactive
+            return if @state == :open &&
+                      (!@parser.no_more_requests? || @parser.waiting_for_ping?)
+          end
+          super
+        end
+
+        def no_requests_to_handle?
+          pending_count.zero? && @parser&.no_requests_to_handle?
+        end
+
         # checks whether the connection has any pending request (which the connection itself may
         # have stored, or it may be somewhere in the parser).
         def backlog?
-          @pending.any? ||
-            (@parser && (@parser.pending.any? || @parser.requests.any?))
+          @pending.any? || @parser&.backlog? || @parser&.waiting_for_ping?
         end
       end
 
       module HTTP1Methods
-        def interests
-          request = @request || @requests.first
+        def backlog?
+          !no_more_requests?
+        end
 
-          return unless request
-
-          return unless request.current_context? || @requests.any?(&:current_context?) || @pending.any?(&:current_context?)
-
-          super
+        def no_requests_to_handle?
+          @requests.none?(&:current_context?)
         end
       end
 
@@ -166,6 +178,14 @@ module HTTPX
           add_to_context(request)
 
           super
+        end
+
+        def backlog?
+          !no_more_requests?
+        end
+
+        def no_requests_to_handle?
+          @streams.each_key.none?(&:current_context?)
         end
 
         private

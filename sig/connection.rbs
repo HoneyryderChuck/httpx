@@ -37,7 +37,6 @@ module HTTPX
 
 
     @window_size: Integer
-    @inflight: Integer
     @max_concurrent_requests: Integer?
     @keep_alive_timeout: interval?
     @timeout: interval?
@@ -49,7 +48,6 @@ module HTTPX
     @cloned: bool
     @reset_timeout_on_call: bool
     @previously_exhausted_with_error: bool
-    @inflight_is_negative_already_checked: bool
     @coalesced_connection: instance?
     @altsvc_connection: instance?
     @sibling: instance?
@@ -158,9 +156,7 @@ module HTTPX
 
     def parser: () -> (Object & _Parser)
 
-    def send_request_to_parser: (Request request) -> void
-
-    def enqueue_pending_requests_from_parser: (HTTP1 | HTTP2 parser) -> void
+    def send_request_to_parser: (Request request, ?bool head) -> bool
 
     def build_parser: (?String protocol) -> (Object & _Parser)
 
@@ -182,13 +178,7 @@ module HTTPX
 
     def no_more_selector_check: () -> void
 
-    def no_more_requests_loop_check: () -> void
-
-    def check_inflight_is_negative: () -> void
-
-    def corrupted_state_error_message: (String initial) -> String
-
-    def no_more_requests?: () -> bool
+    def no_more_requests?: () -> boolish
 
     def handle_error: (StandardError error, ?Request? request) -> void
 

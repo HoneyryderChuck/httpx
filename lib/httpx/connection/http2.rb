@@ -50,11 +50,11 @@ module HTTPX
 
     attr_reader :streams, :pending
 
-    def initialize(buffer, options)
+    def initialize(buffer, pending, options)
       @callbacks = @last_error = nil
       @options = options
       @settings = @options.http2_settings
-      @pending = []
+      @pending = pending
       @streams = {}
       @drains = {}
       @pings = []
@@ -144,8 +144,12 @@ module HTTPX
                 req
               end
               @streams.clear
-              @pending.unshift(*inflight_unprocessed_requests)
-              emit(:exhausted, ex)
+
+              # only signal exhaustion when inflight requests had to be moved back.
+              unless inflight_unprocessed_requests.empty?
+                @pending.unshift(*inflight_unprocessed_requests)
+                emit(:exhausted, ex)
+              end
             else
               while (req, _ = @streams.shift)
                 emit(:error, req, ex)
@@ -208,6 +212,7 @@ module HTTPX
       false
     rescue ::HTTP2::Error::Error, ArgumentError => e
       emit(:error, request, e)
+      false
     end
 
     def consume
@@ -299,6 +304,10 @@ module HTTPX
 
     def waiting_for_ping?
       @pings.any?
+    end
+
+    def no_more_requests?
+      @streams.empty?
     end
 
     def reset_requests; end

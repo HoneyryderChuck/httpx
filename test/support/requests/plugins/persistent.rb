@@ -420,8 +420,8 @@ module Requests
             verify_status(http.get(uri), 200)
 
             connection = http.connections.first
-            assert connection.instance_variable_get(:@inflight).zero?,
-                   "inflight should be 0 (was #{connection.instance_variable_get(:@inflight)})"
+            assert connection.pending_count.zero?,
+                   "pending should be empty (had #{connection.pending_count} pending requests)"
 
             response = http.get(uri)
             verify_status(response, 200)
@@ -448,7 +448,7 @@ module Requests
             assert response.to_s == "OKOK", "expected the full body (got #{response.to_s.inspect})"
             assert server.arrivals["/drained"] == 1,
                    "request covered by the GOAWAY should not be resent (sent #{server.arrivals["/drained"]} times)"
-            assert(http.connections.all? { |conn| conn.instance_variable_get(:@inflight).zero? })
+            assert(http.connections.all? { |conn| conn.pending_count.zero? })
 
             verify_status(http.get("#{server.origin}/after"), 200)
           ensure
@@ -499,7 +499,7 @@ module Requests
                    "request covered by the GOAWAY should not be resent (sent #{server.arrivals["/processed"]} times)"
             assert server.arrivals["/unprocessed"] == 2,
                    "request not covered by the GOAWAY should be resent once (sent #{server.arrivals["/unprocessed"]} times)"
-            assert(http.connections.all? { |conn| conn.instance_variable_get(:@inflight).zero? })
+            assert(http.connections.all? { |conn| conn.pending_count.zero? })
           ensure
             http.close
           end
