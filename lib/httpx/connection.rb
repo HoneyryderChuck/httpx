@@ -892,11 +892,6 @@ module HTTPX
       when :closed
         return unless @state == :closing
         return unless @write_buffer.empty?
-
-        purge_after_closed
-
-        # @fiber-switch-guard
-        return unless @state == :closing && (@io.nil? || @io.can_disconnect?)
       when :already_open
         nextstate = :open
         # the first check for given io readiness must still use a timeout.
@@ -926,6 +921,10 @@ module HTTPX
         consume
         @write_buffer.clear
       when :closed
+        purge_after_closed
+
+        # @fiber-switch-guard
+        return unless @state == :closed
         # TODO: should this raise an error instead?
         return unless @pending.empty?
 
