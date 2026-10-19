@@ -158,6 +158,8 @@ module HTTPX
 
     def build_parser: (?String protocol) -> (Object & _Parser)
 
+    def on_parser_error: (Request request, Exception | Symbol error) -> void
+
     def set_parser_callbacks: (HTTP1 | HTTP2 parser) -> void
 
     def transition: (Symbol nextstate) -> void

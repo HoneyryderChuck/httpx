@@ -815,30 +815,30 @@ module HTTPX
       parser.on(:keep_alive_timeout) do |tout|
         @keep_alive_timeout = tout
       end
-      parser.on(:error) do |request, error|
-        case error
-        when :http_1_1_required
-          current_session = @current_session
-          current_selector = @current_selector
-          parser.close
+      parser.on(:error, &method(:on_parser_error))
+    end
 
-          request.transition(:idle)
-          current_session.__send__(:send_request, request, current_selector,
-                                   @options.merge(ssl: { alpn_protocols: %w[http/1.1] })) do |other_conn|
-            other_conn.merge(self)
-          end
-          next
-        when OperationTimeoutError
-          # request level timeouts should take precedence
-          next unless request.active_timeouts.empty?
+    def on_parser_error(request, error)
+      case error
+      when :http_1_1_required
+        current_session = @current_session
+        current_selector = @current_selector
+        parser.close
+
+        request.transition(:idle)
+        current_session.__send__(:send_request, request, current_selector,
+                                 @options.merge(sl: { alpn_protocols: %w[http/1.1] })) do |other_conn|
+          other_conn.merge(self)
         end
-
-        @inflight -= 1
-        check_inflight_is_negative
-        response = ErrorResponse.new(request, error)
-        request.response = response
-        request.emit_response(response)
+        return
+      when OperationTimeoutError
+        # request level timeouts should take precedence
+        return unless request.active_timeouts.empty?
       end
+
+      response = ErrorResponse.new(request, error)
+      request.response = response
+      request.emit_response(response)
     end
 
     def transition(nextstate)
