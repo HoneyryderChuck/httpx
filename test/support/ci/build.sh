@@ -59,9 +59,17 @@ install_gems() {
 set_custom_ssl_certs() {
   CABUNDLEDIR=/home/test/support/ci/certs
   if [[ "$RUBY_PLATFORM" = "java" ]]; then
+    JRUBY_VERSION=`ruby -e 'puts JRUBY_VERSION'`
 
-    keytool -import -cacerts -alias ca -file $CABUNDLEDIR/ca.crt \
-      -storepass changeit -noprompt
+    if [[ ${JRUBY_VERSION:0:1} = "9" ]] ; then
+      # jruby 9.0.0.0 ships with older version
+      keytool -import -alias ca -file $CABUNDLEDIR/ca.crt \
+        -keystore $JAVA_HOME/lib/security/cacerts \
+        -storepass changeit -noprompt
+    else
+      keytool -import -cacerts -alias ca -file $CABUNDLEDIR/ca.crt \
+        -storepass changeit -noprompt
+    fi
   else
     export SSL_CERT_FILE=$CABUNDLEDIR/ca-bundle.crt
   fi
