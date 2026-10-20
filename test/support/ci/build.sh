@@ -10,6 +10,7 @@ export RUBY_VERSION=`ruby -e 'puts RUBY_VERSION'`
 
 install_packages() {
   IPTABLES=iptables-translate
+  DEBIAN_FRONTEND=noninteractive
 
   if [[ "$RUBY_ENGINE" = "truffleruby" ]]; then
     dnf install -y iptables iproute which file idn2 git xz
