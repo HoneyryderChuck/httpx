@@ -15,7 +15,8 @@ install_packages() {
   if [[ "$RUBY_ENGINE" = "truffleruby" ]]; then
     dnf install -y iptables iproute which file idn2 git xz
   elif [[ "$RUBY_PLATFORM" = "java" ]]; then
-    apt-get update && apt-get install -y build-essential iptables iproute2 file idn2 git
+    DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y \
+      build-essential iptables iproute2 file idn2 git
   else
     echo "version: $VERSION_CODENAME"
     if [[ "$VERSION_CODENAME" = "bullseye" ]]; then
@@ -23,7 +24,9 @@ install_packages() {
       # source expired, and will not apply anymore
       sed -i '/bullseye-security/d' /etc/apt/sources.list
     fi
-    apt-get update && apt-get install -y iptables iproute2 idn2 libmagic-dev shared-mime-info
+     DEBIAN_FRONTEND=noninteractive apt-get update && \
+      DEBIAN_FRONTEND=noninteractive apt-get install -y \
+        iptables iproute2 idn2 libmagic-dev shared-mime-info
   fi
 }
 
