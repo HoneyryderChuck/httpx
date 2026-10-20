@@ -1105,7 +1105,7 @@ module HTTPX
         case parser
         when HTTP2
           parser_pending_requests = parser.pending.map do |r|
-            num_retries = r.respond_to(:retries) ? r.retries : nil
+            num_retries = r.respond_to?(:retries) ? r.retries : nil
             req_conn = r.instance_variable_get(:@connection)
             "id:#{r.object_id},num_retries:#{num_retries}," \
               "is-same-conn:#{req_conn.equal?(self)},started?:#{r.started?}"
