@@ -11,7 +11,7 @@ module HTTPX
     #
     # * HTTP proxies
     # * HTTPS proxies
-    # * Socks4 /Socks4a proxies
+    # * Socks4 proxies (also supports Socks4a)
     # * Socks5 proxies
     #
     # https://gitlab.com/os85/httpx/wikis/Proxy
