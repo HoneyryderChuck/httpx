@@ -260,7 +260,7 @@ module HTTPX
           c.strip!
           c.delete_prefix!("charset=")
           c.gsub!(/\A"(.*?)(?<!\\)"\z/) do
-            c2 = $1
+            c2 = ::Regexp.last_match(1)
             c2.gsub!(/\\(.)/, '\1')
             c2
           end

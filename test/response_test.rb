@@ -296,10 +296,10 @@ class ResponseTest < Minitest::Test
     ct4 = ContentType.new("application/json;charset=UTF-8")
     assert ct4.mime_type == "application/json"
     assert ct4.charset == "UTF-8"
-    ct5 = ContentType.new("application/json;charset=utf\-8")
+    ct5 = ContentType.new("application/json;charset=utf-8")
     assert ct5.mime_type == "application/json"
     assert ct5.charset == "utf-8"
-    ct6 = ContentType.new("application/json;charset=\"utf\-8\"")
+    ct6 = ContentType.new("application/json;charset=\"utf-8\"")
     assert ct6.mime_type == "application/json"
     assert ct6.charset == "utf-8"
   end
