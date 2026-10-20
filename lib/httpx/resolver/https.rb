@@ -49,7 +49,7 @@ module HTTPX
     end
 
     def state
-      @resolver_connection ? @resolver_connection.state : :idle
+      @resolver_connection&.state || :idle
     end
 
     def <<(connection)
