@@ -565,7 +565,7 @@ module HTTPX
           # * the number of inflight requests
           # * whether the write buffer has bytes (i.e. for close handshake)
           if no_more_requests? && @write_buffer.empty?
-            no_more_requests_loop_check if @parser && @parser.pending.any?
+            no_more_requests_loop_check if @parser && @parser.respond_to?(:pending) && @parser.pending.any?
 
             # terminate if an altsvc connection has been established
             terminate if @altsvc_connection
@@ -615,7 +615,7 @@ module HTTPX
 
             # exit #consume altogether if all outstanding requests have been dealt with
             if no_more_requests? && @write_buffer.empty? # rubocop:disable Style/Next
-              no_more_requests_loop_check if @parser && @parser.pending.any?
+              no_more_requests_loop_check if @parser && @parser.respond_to?(:pending) && @parser.pending.any?
 
               # terminate if an altsvc connection has been established
               terminate if @altsvc_connection
