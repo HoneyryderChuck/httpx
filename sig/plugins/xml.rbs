@@ -22,10 +22,10 @@ module HTTPX
         end
       end
 
-      module InstanceMethods
+      module InstanceMethods : Session
       end
 
-      module ResponseMethods
+      module ResponseMethods : Response
         def xml: () -> Nokogiri::XML::Node
       end
 

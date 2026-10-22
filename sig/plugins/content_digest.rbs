@@ -23,7 +23,7 @@ module HTTPX
 
       # def self.extra_options: (Options) -> contentDigestOptions
 
-      module InstanceMethods
+      module InstanceMethods : Session
         private
 
         def validate_content_digest: (Response response) -> void
@@ -33,11 +33,11 @@ module HTTPX
         def base64digest: (Request::Body | contentDigestResponseBody body) -> String
       end
 
-      module ResponseMethods
-        attr_reader body: contentDigestResponseBody
+      module ResponseMethods : Response
+        # attr_reader body: contentDigestResponseBody
       end
 
-      module ResponseBodyMethods
+      module ResponseBodyMethods : Response::Body
         attr_reader content_digest_buffer: Response::Buffer?
       end
 

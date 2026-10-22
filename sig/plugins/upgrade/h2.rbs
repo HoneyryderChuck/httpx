@@ -1,7 +1,7 @@
 module HTTPX
   module Plugins
     module H2
-      module ConnectionMethods
+      module ConnectionMethods : Connection
         def upgrade_to_h2: () -> void
       end
     end

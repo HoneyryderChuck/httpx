@@ -7,7 +7,7 @@ module HTTPX
 
       def self.extra_options: (Options) -> (Options)
 
-      module InstanceMethods
+      module InstanceMethods : Session
         private
 
         def reconnectable_error?: (StandardError error) -> bool

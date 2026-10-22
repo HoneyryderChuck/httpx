@@ -25,7 +25,7 @@ module HTTPX
         def tracer: () -> _Tracer
       end
 
-      module RequestMethods
+      module RequestMethods : Request
         attr_accessor init_time: Time?
 
         attr_accessor handshake_time: Float?
@@ -37,11 +37,11 @@ module HTTPX
         def calculate_init_time: () -> Time
       end
 
-      module ConnectionMethods
+      module ConnectionMethods : Connection
         @init_time: Time?
       end
 
-      module HTTP2Methods
+      module HTTP2Methods : Connection::HTTP2
         @handshake_init_time: Time
         @pending: Array[tracingRequest]
 

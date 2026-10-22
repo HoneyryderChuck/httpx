@@ -11,15 +11,15 @@ module HTTPX
         def h2c_class: () -> (singleton(Connection::HTTP2) & H2CParser)
       end
 
-      module H2CParser
+      module H2CParser : Connection::HTTP2
         def upgrade: (Request, Response) -> void
       end
 
-      module RequestMethods
+      module RequestMethods : Request
         def valid_h2c_verb?: () -> bool
       end
 
-      module ConnectionMethods
+      module ConnectionMethods : Connection
         def upgrade_to_h2c: (Request, Response) -> void
       end
     end

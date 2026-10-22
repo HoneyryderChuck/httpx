@@ -13,15 +13,15 @@ module HTTPX
         def supported_vary_headers: () -> Array[String]
       end
 
-      module InstanceMethods
+      module InstanceMethods : Session
         private
 
         def match_by_vary?: (responseCacheRequest request, responseCacheResponse response) -> bool
       end
 
-      module RequestMethods
+      module RequestMethods : Request
         attr_accessor cached_response: responseCacheResponse?
-        attr_reader options: responseCacheOptions
+        # attr_reader options: responseCacheOptions
 
         @response_cache_key: String
 
@@ -30,7 +30,7 @@ module HTTPX
         def cacheable_verb?: () -> bool
       end
 
-      module ResponseMethods
+      module ResponseMethods : Response
         attr_writer revalidated_at: Time
 
         @cache_control: Array[String]?

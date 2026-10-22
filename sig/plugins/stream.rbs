@@ -9,8 +9,8 @@ module HTTPX
         def retry_stream_response_class: () -> singleton(StreamResponse)
       end
 
-      module InstanceMethods
-        @options: Options & _StreamOptions
+      module InstanceMethods : Session
+        # @options: Options & _StreamOptions
 
         private
 
@@ -18,15 +18,15 @@ module HTTPX
                    | (*untyped, **untyped?) -> (response | Array[response] | StreamResponse)
       end
 
-      module RequestMethods
+      module RequestMethods : Request
         attr_accessor stream: StreamResponse?
       end
 
-      module ResponseMethods
+      module ResponseMethods : Response
         def stream: () -> StreamResponse?
       end
 
-      module ResponseBodyMethods
+      module ResponseBodyMethods : Response::Body
         @stream: StreamResponse?
       end
     end

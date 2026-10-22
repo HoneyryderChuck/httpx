@@ -10,7 +10,7 @@ module HTTPX
           def enable_proxy_tunnel: () -> bool?
         end
 
-        module InstanceMethods
+        module InstanceMethods : Session
           def with_proxy_basic_auth: (Hash[Symbol, untyped] opts) -> instance
 
           def with_proxy_digest_auth: (Hash[Symbol, untyped] opts) -> instance
@@ -18,14 +18,14 @@ module HTTPX
           def with_proxy_ntlm_auth: (Hash[Symbol, untyped] opts) -> instance
         end
 
-        module ConnectionMethods
+        module ConnectionMethods : Connection
           @tunnel_parser: Connection::HTTP1 | Connection::HTTP2
 
           def __http_proxy_connect: () ->  void
           def __http_on_connect: (top, Response) ->  void
         end
 
-        module ProxyParser
+        module ProxyParser : Connection::HTTP1
         end
 
         module ConnectRequestMethods : Request

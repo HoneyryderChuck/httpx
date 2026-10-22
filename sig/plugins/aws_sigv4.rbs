@@ -62,11 +62,11 @@ module HTTPX
       def self.extra_options: (Options) -> (Options & _SigV4Options)
       def self.load_dependencies: (singleton(Session)) -> void
 
-      module InstanceMethods
+      module InstanceMethods : Session
         def aws_sigv4_authentication: (**untyped) -> instance
       end
 
-      module RequestMethods
+      module RequestMethods : Request
         def canonical_path: () -> String
 
         def canonical_query: () -> String

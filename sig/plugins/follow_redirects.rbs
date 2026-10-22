@@ -21,15 +21,17 @@ module HTTPX
 
       def self.extra_options: (Options) -> (Options & _FollowRedirectsOptions)
 
-      module InstanceMethods
+      module InstanceMethods : Session
         def max_redirects: (_ToI) -> instance
 
-        def handle_after_redirect_request: (http_uri original_uri, http_uri redirect_uri, Request request, Options & _FollowRedirectsOptions options) -> void
+        private
+
+        def redirect_request_headers: (http_uri original_uri, http_uri redirect_uri, Headers headers, Options & _FollowRedirectsOptions options) -> Headers
 
         def __get_location_from_response: (Response) -> http_uri
       end
 
-      module RequestMethods
+      module RequestMethods : Request
         attr_accessor root_request: (Request & RequestMethods)?
 
         @redirect_request: redirect_request

@@ -13,13 +13,13 @@ module HTTPX
 
       def self.extra_options: (Options) -> (Options & _CookieOptions)
 
-      module InstanceMethods
+      module InstanceMethods : Session
         def cookies: () -> Jar
 
         def make_jar: (*untyped) -> Jar
       end
 
-      module HeadersMethods
+      module HeadersMethods : Headers
         def set_cookie: (Array[Cookie]) -> void
       end
     end

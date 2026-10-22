@@ -56,7 +56,7 @@ module HTTPX
       def self.load_dependencies: (singleton(Session)) -> void
       def self.extra_options: (Options) -> (Options & _CircuitOptions)
 
-      module InstanceMethods
+      module InstanceMethods : Session
         @circuit_store: CircuitStore
 
         private

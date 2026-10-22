@@ -29,7 +29,7 @@ module HTTPX
       def self.extra_options: (Options) -> (Options & _CompressionOptions)
 
 
-      module ResponseBodyMethods
+      module ResponseBodyMethods : Response::Body
         @encodings: Array[String]
         @_deflaters: Array[_Deflater]
 
