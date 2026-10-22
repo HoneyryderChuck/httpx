@@ -3,14 +3,29 @@ module HTTPX
     module Auth
       type auth_header_value_type = String | ^(?requestAuth request, ?bool should_regenerate) -> string
 
-      interface _AuthOptions
-        def auth_header_value: () -> auth_header_value_type?
+      module OptionsMethods : Options
+        attr_reader auth_header_value: auth_header_value_type?
 
-        def auth_header_type: () -> String?
+        attr_reader auth_header_type: String?
 
-        def auth_header_expires_at: () -> (^(requestAuth request) -> _ToF?)?
+        attr_reader auth_header_expires_at: (^(requestAuth request) -> _ToF | (Object & _ToF))?
 
-        def auth_header_expires_in: () -> Float?
+        attr_reader auth_header_expires_in: Float?
+
+        attr_reader generate_auth_value_on_retry: (^(response response) -> boolish)?
+
+        private
+
+        def option_auth_header_value: (auth_header_value_type) -> auth_header_value_type
+
+        def option_auth_header_type: (String) -> String
+
+        def option_auth_header_expires_at: (^(requestAuth request) -> _ToF) -> (^(requestAuth request) -> _ToF)
+                                         | (Object & _ToF) -> (Object & _ToF)
+
+        def option_auth_header_expires_in: (Object & _ToF) -> Float
+
+        def option_generate_auth_value_on_retry: (^(response response) -> boolish) -> ^(response response) -> boolish
       end
 
       module InstanceMethods : Session

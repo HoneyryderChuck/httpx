@@ -9,8 +9,12 @@ module HTTPX
 
       def self?.not_modified?: (response response) -> bool
 
-      interface _ResponseCacheOptions
-        def supported_vary_headers: () -> Array[String]
+      module OptionsMethods : Options
+        attr_reader supported_vary_headers: Array[String]
+
+        private
+
+        def option_supported_vary_headers: (Array[String] value) -> Array[String]
       end
 
       module InstanceMethods : Session
@@ -21,7 +25,7 @@ module HTTPX
 
       module RequestMethods : Request
         attr_accessor cached_response: responseCacheResponse?
-        # attr_reader options: responseCacheOptions
+        # attr_reader options: OptionsMethods
 
         @response_cache_key: String
 
@@ -54,8 +58,6 @@ module HTTPX
         def date: () -> Time
       end
 
-
-      type responseCacheOptions = Options & Cache::_CacheOptions & _ResponseCacheOptions
 
       type responseCacheRequest = Request & Cache::RequestMethods & RequestMethods
 

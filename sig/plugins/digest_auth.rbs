@@ -1,11 +1,15 @@
 module HTTPX
   module Plugins
     module DigestAuth
-      interface _DigestOptions
-        def digest: () -> Authentication::Digest?
+      module OptionsMethods : Options
+        attr_reader digest: Authentication::Digest?
+
+        private
+
+        def option_digest: (Authentication::Digest) -> Authentication::Digest
       end
 
-      def self.extra_options: (Options) -> (Options & _DigestOptions)
+      def self.extra_options: [T] (T & OptionsMethods options) -> T
 
       def self.load_dependencies: (singleton(Session) klass) -> void
 

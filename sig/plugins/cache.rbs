@@ -9,16 +9,30 @@ module HTTPX
         def clear: () -> void
       end
 
-      interface _CacheOptions
-        def cache_key: () -> String?
+      module OptionsMethods
+        attr_reader cache_key: (^(cacheRequest) -> String)?
 
-        def cacheable_request: () -> ^(cacheRequest request) -> boolish
+        attr_reader cacheable_request: (^(cacheRequest) -> boolish)?
 
-        def cacheable_response: () -> ^(cacheRequest request, cacheResponse response) -> boolish
+        attr_reader cacheable_response: (^(cacheRequest, cacheResponse) -> boolish)?
 
-        def valid_cached_response: () -> ^(cacheRequest request, cacheResponse response) -> boolish
+        attr_reader valid_cached_response: (^(cacheRequest, cacheResponse) -> boolish)?
 
-         def response_cache_store: () -> Store
+        attr_reader response_cache_store: Store
+
+         private
+
+        def option_cache_key: (^(cacheRequest) -> String) -> (^(cacheRequest) -> String)
+
+        def option_cacheable_request: (^(cacheRequest) -> boolish) -> (^(cacheRequest) -> boolish)
+
+        def option_cacheable_response: (^(cacheRequest, cacheResponse) -> boolish) -> ((^(cacheRequest, cacheResponse) -> boolish))
+
+        def option_valid_cached_response: (^(cacheRequest, cacheResponse) -> boolish) -> ((^(cacheRequest, cacheResponse) -> boolish))
+
+         def option_response_cache_store: (:store) -> Store
+                                        | (:file_store) -> FileStore
+                                        | [T] (T & _CacheStore) -> T
       end
 
       module InstanceMethods : Session
@@ -39,7 +53,7 @@ module HTTPX
 
       module RequestMethods : Request
         attr_accessor cached_response: cacheResponse?
-        # attr_reader options: cacheOptions
+        # attr_reader options: OptionsMethods
 
         def response_cache_key: () -> String?
       end
@@ -55,9 +69,6 @@ module HTTPX
 
         def mark_as_cached!: () -> void
       end
-
-
-      type cacheOptions = Options & _CacheOptions
 
       type cacheRequest = Request & RequestMethods
 

@@ -7,11 +7,15 @@ module HTTPX
 
       def self.configure: (singleton(Session)) -> void
 
-      interface _UpgradeOptions
-        def upgrade_handlers: () -> Hash[String, _Upgrader]
+      module OptionsMethods : Options
+        attr_reader upgrade_handlers: Hash[String, _Upgrader]
+
+        private
+
+        def option_upgrade_handlers: (Hash[String, _Upgrader]) -> Hash[String, _Upgrader]
       end
 
-      def self.extra_options: (Options) -> (Options & _UpgradeOptions)
+      def self.extra_options: [T] (T & OptionsMethods options) -> T
 
       module InstanceMethods : Session
       end

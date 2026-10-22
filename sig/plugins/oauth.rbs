@@ -57,10 +57,8 @@ module HTTPX
         def load: (sessionOAuth http) -> void
       end
 
-      interface _OAuthOptions
-        def oauth_session: () -> OAuthSession?
-
-        def oauth_options: () -> {
+      module OptionsMethods : Options
+        type oauth_session_options = {
           issuer: uri,
           client_id: String,
           client_secret: String,
@@ -72,12 +70,22 @@ module HTTPX
           ?grant_type: String?,
           ?token_endpoint_auth_method: ::String,
           ?audience: ::String
-        }?
+        }
+
+        attr_reader oauth_session: OAuthSession?
+
+        attr_reader oauth_options: oauth_session_options?
+
+        private
+
+        def option_oauth_session: (OAuthSession | oauth_session_options) -> OAuthSession
+
+        def option_oauth_options: (_ToHash[Symbol, untyped]) -> oauth_session_options
       end
 
       module InstanceMethods : Session
         attr_reader oauth_session: OAuthSession
-        # @options: Options & _OAuthOptions
+        # @options: OptionsMethods
 
         def oauth_auth: (**untyped args) -> instance
 

@@ -2,12 +2,18 @@ module HTTPX
   module Plugins
     module Proxy
       module HTTP
-        module OptionsMethods
-          def connect_request_class: () -> singleton(Request) # & ConnectRequestMethods)
+        module OptionsMethods : Options
+          attr_reader connect_request_class: singleton(Request) # & ConnectRequestMethods)
 
-          def proxy_headers: () -> Headers?
+          attr_reader proxy_headers: Headers?
 
-          def enable_proxy_tunnel: () -> bool?
+          attr_reader enable_proxy_tunnel: boolish
+
+          private
+
+          def option_proxy_headers: (heaheaders_input | Headers value) -> Headers
+
+          def enable_proxy_tunnel: (boolish) -> boolish
         end
 
         module InstanceMethods : Session
@@ -29,7 +35,7 @@ module HTTPX
         end
 
         module ConnectRequestMethods : Request
-          def initialize: (generic_uri uri, Options options) -> void
+          def initialize: (generic_uri uri, OptionsMethods options) -> void
         end
       end
     end

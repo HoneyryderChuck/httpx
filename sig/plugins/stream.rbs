@@ -3,14 +3,20 @@ module HTTPX
     module Stream
       STREAM_REQUEST_OPTIONS: Hash[Symbol, untyped]
 
-      interface _StreamOptions
-        def stream: () -> boolish
+      module OptionsMethods : Options
+        attr_reader stream: boolish
 
-        def retry_stream_response_class: () -> singleton(StreamResponse)
+        attr_reader retry_stream_response_class: singleton(StreamResponse)
+
+        private
+
+        def stream: (boolish) -> boolish
+
+        def retry_stream_response_class: [T] (T & singleton(StreamResponse)) -> T
       end
 
       module InstanceMethods : Session
-        # @options: Options & _StreamOptions
+        # @options: OptionsMethods
 
         private
 
@@ -40,7 +46,7 @@ module HTTPX
     type streamRequest = Request & Plugins::Stream::RequestMethods
 
     attr_reader request: streamRequest
-    @options: Options & Plugins::Stream::_StreamOptions
+    @options: OptionsMethods
 
     @session: Plugins::sessionStream
     @response_enum: Enumerator[String]?

@@ -5,13 +5,17 @@ module HTTPX
 
       type jar = Jar | _Each[Jar::cookie]
 
-      interface _CookieOptions
-        def cookies: () -> Jar?
+      module OptionsMethods : Options
+        attr_reader cookies: Jar
+
+        private
 
         def merge_cookie_in_jar: (Array[String] cookies, Jar jar) -> void
+
+        def option_cookies: (jar?) -> Jar
       end
 
-      def self.extra_options: (Options) -> (Options & _CookieOptions)
+      def self.extra_options: [T] (T & OptionsMethods options) -> T
 
       module InstanceMethods : Session
         def cookies: () -> Jar

@@ -40,7 +40,7 @@ module HTTPX
         def option_auth_header_expires_at(value)
           unless value.respond_to?(:call)
             value = Float(value)
-            raise TypeError, "`:auth_header_expires_at` must be positive" unless value.positive?
+            raise TypeError, "`:auth_header_expires_at` must be positive" unless value&.positive?
           end
 
           value

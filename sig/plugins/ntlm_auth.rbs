@@ -2,11 +2,15 @@ module HTTPX
   module Plugins
     module NTLMAuth
 
-      interface _NTLMOptions
-        def ntlm: () -> Authentication::Ntlm?
+      module OptionsMethods : Options
+        attr_reader ntlm: Authentication::Ntlm?
+
+        private
+
+        def option_ntlm: (Authentication::Ntlm value) -> Authentication::Ntlm
       end
 
-      def self.extra_options: (Options) -> (Options & _NTLMOptions)
+      def self.extra_options: [T] (T & OptionsMethods options) -> T
 
       def self.load_dependencies: (singleton(Session) klass) -> void
 
