@@ -55,7 +55,7 @@ module HTTPX
                      @reset_timeout_on_call =
                        # variable used to gate against a potential endless loop where the peer continuously closes the connection with
                        # GOAWAY frames without ever processing a request.
-                       @previously_exhausted_with_error = false
+                       @previously_exhausted_with_error = @inflight_is_negative_already_checked = false
 
       @options = Options.new(options)
       @type = initialize_type(uri, @options)
@@ -207,6 +207,7 @@ module HTTPX
       if @parser
         pending = @parser.pending
         @inflight -= pending.size
+        check_inflight_is_negative
         pending.reject! do |req|
           block.call(req)
           true
@@ -723,6 +724,7 @@ module HTTPX
       # the connection will be reused, so parser requests must come
       # back to the pending list before the parser is reset.
       @inflight -= parser_pending_requests.size
+      check_inflight_is_negative
       @pending.unshift(*parser_pending_requests)
 
       parser.pending.clear
@@ -744,6 +746,7 @@ module HTTPX
         @response_received_at = Utils.now
         @no_more_requests_counter = 0
         @inflight -= 1
+        check_inflight_is_negative
         response.finish!
         request.emit_response(response)
       end
@@ -831,6 +834,7 @@ module HTTPX
         end
 
         @inflight -= 1
+        check_inflight_is_negative
         response = ErrorResponse.new(request, error)
         request.response = response
         request.emit_response(response)
@@ -1100,6 +1104,20 @@ module HTTPX
 
       return if @no_more_requests_counter < 50
 
+      raise Error, corrupted_state_error_message("connection corrupted, aborted after looping for a while")
+    end
+
+    def check_inflight_is_negative
+      return if @inflight_is_negative_already_checked
+
+      return unless @inflight.negative?
+
+      inflight_is_negative_already_checked = true
+
+      warn corrupted_state_error_message("inflight accounting corrupted (is negative)")
+    end
+
+    def corrupted_state_error_message(initial)
       per_request_state = @parser.pending.map do |req|
         "[state:#{req.state},ping?:#{req.ping?}]"
       end.join(",")
@@ -1123,19 +1141,19 @@ module HTTPX
 
       parser_state << "parser-requests:#{per_request_state}"
 
-      raise Error, "connection corrupted, aborted after looping for a while, " \
-                   "please report this https://gitlab.com/os85/httpx/-/work_items " \
-                   "along with debug logs\n(" \
-                   "state:#{@state},inflight:#{@inflight},pending:#{@pending.size}," \
-                   "exhausted:#{@exhausted}," \
-                   "previously-exhausted-with-error:#{@previously_exhausted_with_error}," \
-                   "connected_for_secs:#{Utils.elapsed_time(@connected_at) if @connected_at}," \
-                   "num-origins:#{@origins.size}," \
-                   "last_response_received:#{Utils.elapsed_time(@response_received_at) if @response_received_at}," \
-                   "#{parser_state}," \
-                   "in-selector:#{!!@current_selector}," \
-                   "in-session:#{!!@current_session}" \
-                   ")"
+      "#{initial}, " \
+        "please report this https://gitlab.com/os85/httpx/-/work_items " \
+        "along with debug logs\n(" \
+        "state:#{@state},inflight:#{@inflight},pending:#{@pending.size}," \
+        "exhausted:#{@exhausted}," \
+        "previously-exhausted-with-error:#{@previously_exhausted_with_error}," \
+        "connected_for_secs:#{Utils.elapsed_time(@connected_at) if @connected_at}," \
+        "num-origins:#{@origins.size}," \
+        "last_response_received:#{Utils.elapsed_time(@response_received_at) if @response_received_at}," \
+        "#{parser_state}," \
+        "in-selector:#{!!@current_selector}," \
+        "in-session:#{!!@current_session}" \
+        ")"
     end
 
     # true when there are no more pending nor inflight (in parser) requests
@@ -1148,7 +1166,10 @@ module HTTPX
     # in the state recovery process.
     def handle_error(error, request = nil)
       if request
-        @inflight -= 1 unless @pending.delete(request)
+        unless @pending.delete(request)
+          @inflight -= 1
+          check_inflight_is_negative
+        end
         response = ErrorResponse.new(request, error)
         request.response = response
         request.emit_response(response)

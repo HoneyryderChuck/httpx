@@ -81,6 +81,7 @@ module HTTPX
               # proxy connect related requests should not be reenqueed
               @parser.reset
               @inflight -= @parser.pending.size
+              check_inflight_is_negative
               @parser.pending.clear
             end
 
@@ -206,6 +207,7 @@ module HTTPX
 
           def __http_on_connect(request, response)
             @inflight -= 1
+            check_inflight_is_negative
             if response.is_a?(Response) && response.status == 200
               req = @pending.first
               request_uri = req.uri
