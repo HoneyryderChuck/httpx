@@ -9,24 +9,34 @@ module HTTPX
 
       type redirect_request = Request & RequestMethods
 
-      interface _FollowRedirectsOptions
-        def max_redirects: () -> Integer?
+      module OptionsMethods : Options
+        attr_reader max_redirects: Integer?
 
-        def follow_insecure_redirects: () -> bool?
+        attr_reader follow_insecure_redirects: boolish
 
-        def allow_auth_to_other_origins: () -> bool?
+        attr_reader allow_auth_to_other_origins: boolish
 
-        def redirect_on: () -> (^(http_uri) -> boolish | nil)
+        attr_reader redirect_on: (^(http_uri) -> boolish | nil)
+
+        private
+
+        def option_max_redirects: (_ToI value) -> Integer
+
+        def option_follow_insecure_redirects: (boolish) -> boolish
+
+        def option_allow_auth_to_other_origins: (boolish) -> boolish
+
+        def option_redirect_on: [T] (T & ^(http_uri) -> boolish) -> T
       end
 
-      def self.extra_options: (Options) -> (Options & _FollowRedirectsOptions)
+      def self.extra_options: [T] (T & OptionsMethods options) -> T
 
       module InstanceMethods : Session
         def max_redirects: (_ToI) -> instance
 
         private
 
-        def redirect_request_headers: (http_uri original_uri, http_uri redirect_uri, Headers headers, Options & _FollowRedirectsOptions options) -> Headers
+        def redirect_request_headers: (http_uri original_uri, http_uri redirect_uri, Headers headers, OptionsMethods options) -> Headers
 
         def __get_location_from_response: (Response) -> http_uri
       end

@@ -22,19 +22,33 @@ module HTTPX
 
       type credentials = Proc
 
-      interface _GRPCOptions
-        def grpc_service: () -> String?
+      module OptionsMethods : Options
+        attr_reader grpc_service: String?
 
-        def grpc_compression: () -> compression_option?
+        attr_reader grpc_compression: compression_option?
 
-        def grpc_rpcs: () -> Hash[String, rpc_def]?
+        attr_reader grpc_rpcs: Hash[String, rpc_def]?
 
-        def grpc_deadline: () -> Integer?
+        attr_reader grpc_deadline: Float?
 
-        def call_credentials: () -> credentials?
+        attr_reader call_credentials: credentials?
+
+        private
+
+        def option_grpc_service: (_ToS value) -> String
+
+        def option_grpc_compression: (bool) -> bool
+                                   | (_ToS) -> String
+
+        def option_grpc_rpcs: (_ToHash[String, rpc_def]) -> Hash[String, rpc_def]
+
+        def option_grpc_deadline: (_ToF value) -> Float
+
+        def option_call_credentials: (credentials) -> credentials
       end
 
-      def self.extra_options: (Options) -> (Options & _GRPCOptions)
+      def self.extra_options: [T] (T & OptionsMethods options) -> T
+
       def self.load_dependencies: (singleton(Session)) -> void
 
       module ResponseMethods : Response

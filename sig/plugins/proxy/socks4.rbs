@@ -20,7 +20,7 @@ module HTTPX
           include HTTPX::Callbacks
 
           @buffer: Buffer
-          @options: Options
+          @options: Proxy::OptionsMethods
 
           def close: () -> void
           def consume: (*untyped) -> void
@@ -29,7 +29,7 @@ module HTTPX
 
           private
 
-          def initialize: (Buffer buffer, Options options) -> untyped
+          def initialize: (Buffer buffer, Proxy::OptionsMethods options) -> untyped
         end
 
         module Packet

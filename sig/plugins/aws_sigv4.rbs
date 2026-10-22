@@ -54,13 +54,17 @@ module HTTPX
         def hexhmac: (String key, String value) -> String
       end
 
+      def self.extra_options: [T] (T & OptionsMethods options) -> T
 
-      interface _SigV4Options
-        def sigv4_signer: () -> Signer?
-      end
-
-      def self.extra_options: (Options) -> (Options & _SigV4Options)
       def self.load_dependencies: (singleton(Session)) -> void
+
+      module OptionsMethods : Options
+        attr_reader sigv4_signer: Signer?
+
+        private
+
+        def option_sigv4_signer: (Signer) -> Signer
+      end
 
       module InstanceMethods : Session
         def aws_sigv4_authentication: (**untyped) -> instance

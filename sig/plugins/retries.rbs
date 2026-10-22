@@ -16,32 +16,46 @@ module HTTPX
         def call: (retriesResponse response) -> bool?
       end
 
-      interface _RetriesOptions
-        def retry_after: () -> (^(retriesRequest request, retriesResponse response) -> interval | interval)?
+      module OptionsMethods : Options
+        attr_reader retry_after: (^(retriesRequest request, retriesResponse response) -> interval | interval)?
 
-        def retry_jitter: () -> ^(interval jitter) -> interval
+        attr_reader retry_jitter: ^(interval jitter) -> interval
 
-        def max_retries: () -> Integer
+        attr_reader max_retries: Integer
 
-        def retry_change_requests: () -> boolish
+        attr_reader retry_change_requests: boolish
 
-        def retry_on: () -> _RetryCallback?
+        attr_reader retry_on: _RetryCallback?
+
+        private
+
+        def option_retry_after: [T] (T & ^(retriesRequest request, retriesResponse response) -> interval) -> T
+                              | (Symbol value) -> (^(retriesRequest request, retriesResponse response) -> interval)
+                              | (_ToF value) -> Float
+
+        def option_retry_jitter: [T] (^(interval jitter) -> interval) -> T
+
+        def option_max_retries: (_ToI value) -> Integer
+
+        def option_retry_change_requests: (boolish) -> boolish
+
+        def option_retry_on: (_RetryCallback value) -> _RetryCallback
       end
 
-      def self.extra_options: (Options options) -> retriesOptions
+      def self.extra_options: [T] (OptionsMethods options) -> T
 
       module InstanceMethods : Session
         def max_retries: (int) -> instance
 
         private
 
-        def fetch_response: (retriesRequest request, Selector selector, retriesOptions options) -> retriesResponse?
+        def fetch_response: (retriesRequest request, Selector selector, OptionsMethods options) -> retriesResponse?
 
-        def retryable_request?: (retriesRequest request, retriesResponse response, retriesOptions options) -> boolish
+        def retryable_request?: (retriesRequest request, retriesResponse response, OptionsMethods options) -> boolish
 
-        def retryable_response?: (retriesResponse response, retriesOptions options) -> boolish
+        def retryable_response?: (retriesResponse response, OptionsMethods options) -> boolish
 
-        def retryable_error?: (_Exception error, Options options) -> boolish
+        def retryable_error?: (_Exception error, OptionsMethods options) -> boolish
 
         def try_partial_retry: (retriesRequest request, retriesResponse response) -> void
 
@@ -49,11 +63,11 @@ module HTTPX
 
         def can_reconnect?: (retriesRequest request, retriesResponse response) -> bool
 
-        def when_to_retry: (retriesRequest request, retriesResponse response, retriesOptions options) -> interval?
+        def when_to_retry: (retriesRequest request, retriesResponse response, OptionsMethods options) -> interval?
       end
 
       module RequestMethods : Request
-        # attr_reader options: retriesOptions
+        # attr_reader options: OptionsMethods
 
         attr_accessor retries: Integer
 
@@ -65,8 +79,6 @@ module HTTPX
       module ResponseMethods : Response
         def from_partial_response: (retriesHTTPResponse response) -> void
       end
-
-      type retriesOptions = Options & _RetriesOptions
 
       type retriesRequest = Request & RequestMethods
 

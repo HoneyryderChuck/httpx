@@ -14,8 +14,12 @@ module HTTPX
         def initialize: (data: String, ?event: _ToS?, ?id: _ToS?, ?retry_after: Integer?) -> void
       end
 
-      interface _ServerSentEventsOptions
-        def event_stream: () -> boolish
+      module OptionsMethods : Options
+        attr_reader event_stream: boolish
+
+        private
+
+        def option_event_stream: (boolish) -> boolish
       end
 
       module InstanceMethods : Session

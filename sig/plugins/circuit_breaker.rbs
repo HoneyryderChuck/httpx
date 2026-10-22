@@ -17,7 +17,7 @@ module HTTPX
 
         def get_circuit_for_uri: (uri uri) -> Circuit
 
-        def initialize: (Options & _CircuitOptions options) -> void
+        def initialize: (OptionsMethods options) -> void
       end
 
       class Circuit
@@ -45,16 +45,33 @@ module HTTPX
         def initialize: (Integer max_attempts, Float reset_attempts_in, Float break_in, Float circuit_breaker_half_open_drip_rate) -> void
       end
 
-      interface _CircuitOptions
-        def circuit_breaker_max_attempts: () -> Integer
-        def circuit_breaker_reset_attempts_in: () -> Float
-        def circuit_breaker_break_in: () -> Float
-        def circuit_breaker_half_open_drip_rate: () -> Float
-        def circuit_breaker_break_on: () -> (^(Response) -> boolish | nil)
+      module OptionsMethods
+        attr_reader circuit_breaker_max_attempts: Integer
+
+        attr_reader circuit_breaker_reset_attempts_in: Float
+
+        attr_reader circuit_breaker_break_in: Float
+
+        attr_reader circuit_breaker_half_open_drip_rate: Float
+
+        attr_reader circuit_breaker_break_on: ^(Response) -> boolish
+
+        private
+
+        def option_circuit_breaker_max_attempts: (_ToI values) -> Integer
+
+        def option_circuit_breaker_reset_attempts_in: (_ToF value) -> Float
+
+        def option_circuit_breaker_break_in: (_ToF value) -> Float
+
+        def option_circuit_breaker_half_open_drip_rate: (_ToF value) -> Float
+
+        def option_circuit_breaker_break_on: (^(Response) -> boolish) -> (^(Response) -> boolish)
       end
 
       def self.load_dependencies: (singleton(Session)) -> void
-      def self.extra_options: (Options) -> (Options & _CircuitOptions)
+
+      def self.extra_options: [T] (T & OptionsMethods) -> T
 
       module InstanceMethods : Session
         @circuit_store: CircuitStore

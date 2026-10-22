@@ -48,11 +48,20 @@ module HTTPX
 
       def self.configure: (singleton(Session)) -> void
 
-      interface _ProxyOptions
-        def proxy: () -> Parameters?
+      module OptionsMethods : Options
+        attr_reader proxy: Parameters?
+
+        def supported_proxy_protocols: () -> Array[String]?
+
+        private
+
+        def option_proxy: (Parameters | _ToHash[Symbol, untyped] value) -> Parameters
+
+        def option_supported_proxy_protocols: (Array[_ToS] value) -> Array[String]
+
       end
 
-      def self.extra_options: (Options) -> (Options & _ProxyOptions)
+      def self.extra_options: [T] (T & OptionsMethods options) -> T
 
       module ConnectionMethods : Connection
         @proxy_uri: generic_uri
@@ -63,7 +72,7 @@ module HTTPX
 
         private
 
-        def proxy_error?: (Request request, response, Options options) -> bool
+        def proxy_error?: (Request request, response, OptionsMethods options) -> bool
       end
     end
 

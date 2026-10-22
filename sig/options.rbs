@@ -14,7 +14,7 @@ module HTTPX
     PING_TIMEOUT: Integer
     SETTINGS_TIMEOUT: Integer
     CLOSE_HANDSHAKE_TIMEOUT: Integer
-    SET_TEMPORARY_NAME: ^(Class klass, ?Symbol pl) -> void
+    SET_TEMPORARY_NAME: ^(Class klass, ?Module pl) -> void
 
     DEFAULT_OPTIONS: Hash[Symbol, untyped]
     REQUEST_BODY_IVARS: Array[Symbol]
