@@ -4,7 +4,7 @@ module HTTPX
       module SSH
         def self.load_dependencies: (singleton(Session)) -> void
 
-        module InstanceMethods
+        module InstanceMethods : Session
           private
 
           def build_gateway_socket: (int, http_uri, Options) ->  _ToIO

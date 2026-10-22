@@ -195,7 +195,7 @@ module HTTPX
         def __get_location_from_response(response)
           location_uri = URI(response.headers["location"]) #: http_uri
           location_uri = response.uri.merge(location_uri) if location_uri.relative?
-          location_uri
+          location_uri #: http_uri
         end
       end
 

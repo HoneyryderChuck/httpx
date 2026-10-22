@@ -18,14 +18,14 @@ module HTTPX
         def event_stream: () -> boolish
       end
 
-      module InstanceMethods
+      module InstanceMethods : Session
       end
 
-      module RequestMethods
+      module RequestMethods : Request
         attr_accessor last_server_sent_message: Message?
       end
 
-      module StreamResponseMethods
+      module StreamResponseMethods : StreamResponse
         def each_message: () { (Message) -> void } -> void
                  | () -> Enumerable[Message]
 
@@ -35,7 +35,7 @@ module HTTPX
       end
 
       module ServerSentEventsRetries
-        module InstanceMethods
+        module InstanceMethods : Session
         end
       end
     end

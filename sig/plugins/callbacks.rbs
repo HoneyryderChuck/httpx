@@ -1,12 +1,12 @@
 module HTTPX
   module Plugins
     module Callbacks
+      CALLBACKS: Array[Symbol]
+
       class CallbackError < Exception
       end
 
-      module InstanceMethods
-        include HTTPX::Callbacks
-
+      module InstanceMethods : Session
         type socket = TCPSocket | OpenSSL::SSL::SSLSocket | UNIXSocket
 
         def on_connection_opened: () { (http_uri origin, socket sock) -> void } -> self
@@ -32,7 +32,7 @@ module HTTPX
         def emit_or_callback_error: (*untyped) -> void
       end
 
-      module ConnectionMethods
+      module ConnectionMethods : Connection
       end
     end
 

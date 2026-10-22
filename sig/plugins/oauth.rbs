@@ -75,9 +75,9 @@ module HTTPX
         }?
       end
 
-      module InstanceMethods
+      module InstanceMethods : Session
         attr_reader oauth_session: OAuthSession
-        @options: Options & _OAuthOptions
+        # @options: Options & _OAuthOptions
 
         def oauth_auth: (**untyped args) -> instance
 
@@ -87,7 +87,7 @@ module HTTPX
       end
 
       module OAuthRetries
-        module InstanceMethods
+        module InstanceMethods : Session
         end
       end
     end

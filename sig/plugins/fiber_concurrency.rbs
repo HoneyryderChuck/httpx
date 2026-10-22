@@ -1,10 +1,10 @@
 module HTTPX
   module Plugins
     module FiberConcurrency
-      module InstanceMethods
+      module InstanceMethods : Session
       end
 
-      module RequestMethods
+      module RequestMethods : Request
         attr_reader context: Fiber?
 
         def set_context!: () -> void
@@ -12,7 +12,7 @@ module HTTPX
         def current_context?: () -> boolish
       end
 
-      module ConnectionMethods
+      module ConnectionMethods : Connection
 
         def current_context?: () -> boolish
 
@@ -23,10 +23,10 @@ module HTTPX
         def backlog?: () -> bool
       end
 
-      module HTTP1Methods
+      module HTTP1Methods : Connection::HTTP1
       end
 
-      module HTTP2Methods
+      module HTTP2Methods : Connection::HTTP2
         @contexts: Hash[Fiber, Set[Request]]
 
         private
@@ -36,19 +36,19 @@ module HTTPX
         def clear_from_context: (request request) -> void
       end
 
-      module NativeResolverMethods
+      module NativeResolverMethods : Resolver::Native
       end
 
-      module SystemResolverMethods
+      module SystemResolverMethods : Resolver::System
       end
 
       module FiberConcurrencyH2C
-        module HTTP2Methods
+        module HTTP2Methods : Connection::HTTP2
         end
       end
 
        module FiberConcurrencyStream
-        module StreamResponseMethods
+        module StreamResponseMethods : StreamResponse
           def close: () -> void
         end
       end

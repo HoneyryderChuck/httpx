@@ -10,7 +10,7 @@ module HTTPX
 
       def self.load_dependencies: (singleton(Session) klass) -> void
 
-      module InstanceMethods
+      module InstanceMethods : Session
         def ntlm_auth: (string user, string password, ?string? domain) -> instance
       end
 
