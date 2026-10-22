@@ -1148,7 +1148,7 @@ module HTTPX
     # in the state recovery process.
     def handle_error(error, request = nil)
       if request
-        @inflight -= 1
+        @inflight -= 1 unless @pending.delete(request)
         response = ErrorResponse.new(request, error)
         request.response = response
         request.emit_response(response)
