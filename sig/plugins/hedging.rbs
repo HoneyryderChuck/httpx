@@ -5,7 +5,7 @@ module HTTPX
         def hedge_after: () -> (^(requestHedging request, Response response) -> interval | interval)?
       end
 
-      module InstanceMethods
+      module InstanceMethods : Session
         private
 
         def hedge_connection: (connectionHedging connection) -> connectionHedging
@@ -15,7 +15,7 @@ module HTTPX
         def when_to_hedge: (requestHedging request) -> interval?
       end
 
-      module RequestMethods
+      module RequestMethods : Request
         attr_reader hedge_request: requestHedging?
 
         @is_hedge_request: bool
@@ -23,7 +23,7 @@ module HTTPX
         def hedge_request=: (requestHedging? request) -> void
       end
 
-      module ConnectionMethods
+      module ConnectionMethods : Connection
         attr_reader hedge_connection: connectionHedging?
 
         attr_accessor is_hedge_connection: bool

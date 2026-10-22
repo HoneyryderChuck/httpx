@@ -21,7 +21,7 @@ module HTTPX
          def response_cache_store: () -> Store
       end
 
-      module InstanceMethods
+      module InstanceMethods : Session
         def clear_response_cache: () -> void
 
         private
@@ -37,14 +37,14 @@ module HTTPX
         def retrieve_cached_response: (cacheRequest request) -> cacheResponse?
       end
 
-      module RequestMethods
+      module RequestMethods : Request
         attr_accessor cached_response: cacheResponse?
-        attr_reader options: cacheOptions
+        # attr_reader options: cacheOptions
 
         def response_cache_key: () -> String?
       end
 
-      module ResponseMethods
+      module ResponseMethods : Response
         attr_writer original_request: cacheRequest
 
         @cached: bool

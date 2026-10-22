@@ -37,13 +37,13 @@ module HTTPX
       def self.extra_options: (Options) -> (Options & _GRPCOptions)
       def self.load_dependencies: (singleton(Session)) -> void
 
-      module ResponseMethods
+      module ResponseMethods : Response
         attr_reader trailing_metadata: Hash[String, untyped]
 
         def encoders: () -> Array[String | Encoding]
       end
 
-      module InstanceMethods
+      module InstanceMethods : Session
         def with_channel_credentials: (String ca_path, ?String? key, ?String? cert, **untyped) -> instance
 
         def rpc: (_ToS rpc_name, untyped input, untyped output, **untyped) -> instance

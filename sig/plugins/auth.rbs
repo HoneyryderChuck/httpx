@@ -13,7 +13,7 @@ module HTTPX
         def auth_header_expires_in: () -> Float?
       end
 
-      module InstanceMethods
+      module InstanceMethods : Session
         @auth_header_value: String?
         @auth_header_value_mtx: Thread::Mutex
         @skip_auth_header_value: bool
@@ -38,7 +38,7 @@ module HTTPX
         def dynamic_auth_token?: (auth_header_value_type auth_header_value) -> boolish
       end
 
-      module RequestMethods
+      module RequestMethods : Request
         attr_reader auth_token_value: String?
 
         @auth_header_value: String?
@@ -51,7 +51,7 @@ module HTTPX
       end
 
       module AuthRetries
-        module InstanceMethods
+        module InstanceMethods : Session
           private
 
           def auth_error?: (response response, Options options) -> boolish

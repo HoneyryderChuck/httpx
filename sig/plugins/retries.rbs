@@ -30,7 +30,7 @@ module HTTPX
 
       def self.extra_options: (Options options) -> retriesOptions
 
-      module InstanceMethods
+      module InstanceMethods : Session
         def max_retries: (int) -> instance
 
         private
@@ -52,8 +52,8 @@ module HTTPX
         def when_to_retry: (retriesRequest request, retriesResponse response, retriesOptions options) -> interval?
       end
 
-      module RequestMethods
-        attr_reader options: retriesOptions
+      module RequestMethods : Request
+        # attr_reader options: retriesOptions
 
         attr_accessor retries: Integer
 
@@ -62,7 +62,7 @@ module HTTPX
         def response=: (retriesResponse response) -> void
       end
 
-      module ResponseMethods
+      module ResponseMethods : Response
         def from_partial_response: (retriesHTTPResponse response) -> void
       end
 

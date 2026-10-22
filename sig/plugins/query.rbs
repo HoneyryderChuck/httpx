@@ -3,13 +3,13 @@ module HTTPX
     module Query
       def self.subplugins: () -> Hash[Symbol, Module]
 
-      module InstanceMethods
+      module InstanceMethods : Session
         def query: (uri | [uri], **untyped) -> response
                  | (_Each[uri | [uri, request_params]], **untyped) -> Array[response]
       end
 
       module QueryRetries
-        module InstanceMethods
+        module InstanceMethods : Session
         end
       end
     end

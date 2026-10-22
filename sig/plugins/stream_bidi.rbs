@@ -5,7 +5,7 @@ module HTTPX
 
       def self.extra_options: (Options) -> (Options)
 
-      module HTTP2Methods
+      module HTTP2Methods : Connection::HTTP2
         @lock: Thread::Mutex
 
         private
@@ -35,11 +35,11 @@ module HTTPX
         def wakeup: () -> void
       end
 
-      module InstanceMethods
+      module InstanceMethods : Session
         @signal: Signal
       end
 
-      module RequestMethods
+      module RequestMethods : Request
         attr_accessor headers_sent: bool
 
         @closed: bool
@@ -51,11 +51,11 @@ module HTTPX
         def closed?: () -> bool
       end
 
-      module RequestBodyMethods
+      module RequestBodyMethods : Request::Body
       end
 
-      module ConnectionMethods
-        @write_buffer: BidiBuffer
+      module ConnectionMethods : Connection
+        # @write_buffer: BidiBuffer
       end
 
     end

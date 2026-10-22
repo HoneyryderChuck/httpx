@@ -1,7 +1,7 @@
 module HTTPX
   module Plugins
     module WebDav
-      module InstanceMethods
+      module InstanceMethods : Session
         def copy: (String src, String dst) -> (Response | ErrorResponse)
 
         def move: (String src, String dst) -> (Response | ErrorResponse)

@@ -18,10 +18,10 @@ module HTTPX
         def safe_private_ranges: () -> Array[IPAddr]?
       end
 
-      module InstanceMethods
+      module InstanceMethods : Session
       end
 
-      module ConnectionMethods
+      module ConnectionMethods : Connection
       end
     end
 
