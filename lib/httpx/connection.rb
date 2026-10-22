@@ -1112,7 +1112,7 @@ module HTTPX
 
       return unless @inflight.negative?
 
-      inflight_is_negative_already_checked = true
+      @inflight_is_negative_already_checked = true
 
       warn corrupted_state_error_message("inflight accounting corrupted (is negative)")
     end
