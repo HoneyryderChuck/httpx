@@ -21,8 +21,12 @@ module HTTPX
         def merge: (instance) -> void
       end
 
-      interface _RetriesOptions
-        def tracer: () -> _Tracer
+      module OptionsMethods : Options
+        attr_reader tracer: Object & _Tracer
+
+        private
+
+        def option_tracer: [T] (T & _Tracer value) -> T
       end
 
       module RequestMethods : Request

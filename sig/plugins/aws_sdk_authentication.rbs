@@ -19,19 +19,23 @@ module HTTPX
         def initialize: (untyped aws_credentials) -> untyped
       end
 
-      interface _AwsSdkOptions
-        def aws_profile: () -> String?
-      end
-
       def self.load_dependencies: (singleton(Session)) -> void
 
       def self.configure: (singleton(Session)) -> void
 
-      def self.extra_options: (Options) -> (Options & _AwsSdkOptions)
+      def self.extra_options: [T] (T & OptionsMethods options) -> T
 
       def self.credentials: (String? profile) -> Credentials
 
       def self.region: (String? profile) -> String
+
+      module OptionsMethods : Options
+        attr_reader aws_profile: String?
+
+        private
+
+        def option_aws_profile: (_ToS value) -> String?
+      end
 
       module InstanceMethods : Session
         def aws_sdk_authentication: (?credentials: Credentials, ?region: String, **untyped) -> instance

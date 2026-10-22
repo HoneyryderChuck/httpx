@@ -10,12 +10,20 @@ module HTTPX
 
       def self?.unsafe_ip_address?: (IPAddr ipaddr) -> bool
 
-      interface _Options
-        def allowed_schemes: () -> Array[String]
+      module OptionsMethods : Options
+        attr_reader allowed_schemes: Array[String]
 
-        def extra_unsafe_ranges: () -> Array[IPAddr]?
+        attr_reader extra_unsafe_ranges: Array[IPAddr]?
 
-        def safe_private_ranges: () -> Array[IPAddr]?
+        attr_reader safe_private_ranges: Array[IPAddr]?
+
+        private
+
+        def option_allowed_schemes: (Array[String] value) -> Array[String]
+
+        def option_extra_unsafe_ranges: (Array[IPAddr] value) -> Array[IPAddr]
+
+        def option_safe_private_ranges: (Array[IPAddr] value) -> Array[IPAddr]
       end
 
       module InstanceMethods : Session

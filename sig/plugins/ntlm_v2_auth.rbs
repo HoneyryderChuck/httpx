@@ -17,11 +17,15 @@ module HTTPX
         def initialize: (string user, string password, ?domain: String?) -> void
       end
 
-      interface _NTLMV2Options
-        def ntlm: () -> Authentication?
+      module OptionsMethods : Options
+        attr_reader ntlm: Authenticator?
+
+        private
+
+        def option_ntlm: (Authenticator) -> Authenticator
       end
 
-      def self.extra_options: (Options) -> (Options & _NTLMV2Options)
+      def self.extra_options: [T] (T & OptionsMethods options) -> T
 
       def self.load_dependencies: (singleton(Session) klass) -> void
 

@@ -3,7 +3,7 @@ module HTTPX
     module StreamBidi
       def self.load_dependencies: (singleton(Session)) -> void
 
-      def self.extra_options: (Options) -> (Options)
+      def self.extra_options: [T] (T & Stream::OptionsMethods options) -> T
 
       module HTTP2Methods : Connection::HTTP2
         @lock: Thread::Mutex

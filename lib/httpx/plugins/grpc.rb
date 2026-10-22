@@ -101,6 +101,7 @@ module HTTPX
         end
 
         def option_grpc_deadline(value)
+          value = Float(value)
           raise TypeError, ":grpc_deadline must be positive" unless value.positive?
 
           value

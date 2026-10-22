@@ -15,13 +15,25 @@ module HTTPX
 
       SUPPORTED_ALGORITHMS: Hash[String, singleton(OpenSSL::Digest)]
 
-      interface _ContentDigestOptions
-        def digest_algorithm: () -> String
-        def encode_content_digest: () -> (bool | ^(Request) -> boolish)
-        def validate_content_digest: () -> (bool | ^(contentDigestResponse) -> boolish)
+      module OptionsMethods : Options
+        attr_reader digest_algorithm: String
+
+        attr_reader encode_content_digest: bool | ^(Request) -> boolish
+
+        attr_reader validate_content_digest: bool | ^(contentDigestResponse) -> boolish
+
+        private
+
+        def option_digest_algorithm: (String) -> String
+
+        def option_encode_content_digest: (bool) -> bool
+                                        | (^(Request) -> boolish) -> (^(Request) -> boolish)
+
+        def option_validate_content_digest: (bool) -> bool
+                                          | (^(contentDigestResponse) -> boolish) -> (^(contentDigestResponse) -> boolish)
       end
 
-      # def self.extra_options: (Options) -> contentDigestOptions
+      def self.extra_options: [T] (T & Options options) -> T
 
       module InstanceMethods : Session
         private
@@ -41,7 +53,6 @@ module HTTPX
         attr_reader content_digest_buffer: Response::Buffer?
       end
 
-      type contentDigestOptions = Options & _ContentDigestOptions
       type contentDigestResponse = Response & ResponseMethods
       type contentDigestResponseBody = Response::Body & ResponseBodyMethods
     end

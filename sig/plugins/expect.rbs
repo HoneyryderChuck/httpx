@@ -7,7 +7,7 @@ module HTTPX
       self.@no_expect_store: Store
       def self.no_expect_store: () -> Store
 
-      def self.extra_options: (Options) -> (Options & _ExpectOptions)
+      def self.extra_options: [T] (T & OptionsMethods options) -> T
 
       class Store
         @store: Array[String]
@@ -24,10 +24,16 @@ module HTTPX
         @informational_status: Integer?
       end
 
-      interface _ExpectOptions
-        def expect_timeout: () -> Integer?
+      module OptionsMethods : Options
+        attr_reader expect_timeout: Float?
 
-        def expect_threshold_size: () -> Integer?
+        attr_reader expect_threshold_size: Integer?
+
+        private
+
+        def option_expect_timeout: (_ToF value) -> Float
+
+        def option_expect_threshold_size: (_ToI value) -> Integer
       end
     end
   end

@@ -16,26 +16,34 @@ module HTTPX
         SUCCESS: Integer
 
         module ConnectionMethods : Connection
+          private
+
           def __socks5_proxy_connect: () ->  void
+
           def __socks5_on_packet: (String packet) ->  void
-          def __socks5_check_version: (int) -> void
-          def __on_socks5_error: (string) -> void
+
+          def __socks5_check_version: (int version) -> void
+
+          def __on_socks5_error: (string message) -> void
         end
 
         class SocksParser
           include HTTPX::Callbacks
 
           @buffer: Buffer
-          @options: Options
+          @options: OptionsMethods
 
           def close: () -> void
+
           def consume: (*untyped) -> void
+
           def empty: () -> bool
+
           def <<: (string) -> void
 
           private
 
-          def initialize: (Buffer buffer, Options options) -> untyped
+          def initialize: (Buffer buffer, OptionsMethods options) -> void
         end
 
         module Packet
