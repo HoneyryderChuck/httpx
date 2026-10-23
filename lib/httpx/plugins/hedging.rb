@@ -193,6 +193,7 @@ module HTTPX
 
       module ResponseMethods
         def finish!
+          # @type ivar @request: hedgingRequest
           connection = @request.connection
 
           super

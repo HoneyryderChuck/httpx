@@ -22,12 +22,15 @@ module HTTPX
 
       type credentials = Proc
 
-      module OptionsMethods : Stream::OptionsMethods
+      type grpcOptions = Options & Stream::OptionsMethods & OptionsMethods
+      type grpcResponse = Response & Stream::ResponseMethods & ResponseMethods
+
+      module OptionsMethods : Options, Stream::OptionsMethods
         attr_reader grpc_service: String?
 
         attr_reader grpc_compression: compression_option?
 
-        attr_reader grpc_rpcs: Hash[String, rpc_def]?
+        attr_reader grpc_rpcs: Hash[String, rpc_def]
 
         attr_reader grpc_deadline: Float?
 
@@ -51,13 +54,21 @@ module HTTPX
 
       def self.load_dependencies: (singleton(Session)) -> void
 
-      module ResponseMethods : Stream::ResponseMethods
+      def self.configure: (singleton(Session)) -> void
+
+      module ResponseMethods : Response, Stream::ResponseMethods
         attr_reader trailing_metadata: Hash[String, untyped]
 
         def encoders: () -> Array[String | Encoding]
+
+        # @override
+        def merge_headers: (_Each[[String, headers_value]] trailers) -> void
       end
 
-      module InstanceMethods : Persistent::InstanceMethods & Stream::InstanceMethods
+      module RequestBodyMethods : Request::Body
+      end
+
+      module InstanceMethods : Session, Persistent::InstanceMethods, Stream::InstanceMethods
         def with_channel_credentials: (String ca_path, ?String? key, ?String? cert, **untyped) -> instance
 
         def rpc: (_ToS rpc_name, untyped input, untyped output, **untyped) -> instance
@@ -70,10 +81,10 @@ module HTTPX
 
         def rpc_execute: (_ToS rpc_method, grpc_request input, **untyped) -> Call
 
-        def build_grpc_request: (string rpc_method, grpc_message input, ?deadline: Integer, ?metadata?: headers_input, **untyped) -> Request
+        def build_grpc_request: (string rpc_method, grpc_message input, deadline: Integer, ?metadata: headers_input?, **untyped) -> Request
       end
     end
 
-    type grpcSession = GRPC::InstanceMethods
+    type grpcSession = Session & GRPC::InstanceMethods
   end
 end

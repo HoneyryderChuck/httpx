@@ -2,6 +2,8 @@ module HTTPX
   module Plugins
     module Proxy
       module SSH
+        type sshProxyOptions = Options & OptionsMethods
+
         def self.load_dependencies: (singleton(Session)) -> void
 
         module OptionsMethods : Options
@@ -17,12 +19,16 @@ module HTTPX
 
           private
 
-          def build_gateway_socket: (int port, http_uri request_uri, OptionsMethods options) -> _ToIO
+          def build_gateway_socket: (int port, http_uri request_uri, sshProxyOptions options) -> _ToIO
+        end
+
+        module ConnectionMethods : Connection
+          def coalescable?: (Connection connection) -> bool
         end
       end
     end
 
 
-    type sessionSSHProxy = Proxy::SSH::InstanceMethods
+    type sessionSSHProxy = Session & Proxy::SSH::InstanceMethods
   end
 end

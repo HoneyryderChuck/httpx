@@ -1,6 +1,8 @@
 module HTTPX
   module Plugins
     module AwsSdkAuthentication
+      type awsSdkAuthenticationOptions = Options & AWSSigV4::OptionsMethods & OptionsMethods
+
       class Configuration
         attr_reader profile: String?
 
@@ -37,7 +39,7 @@ module HTTPX
         def option_aws_profile: (_ToS value) -> String?
       end
 
-      module InstanceMethods : AWSSigV4::InstanceMethods
+      module InstanceMethods : Session, AWSSigV4::InstanceMethods
         def aws_sdk_authentication: (?credentials: Credentials, ?region: String, **untyped) -> instance
       end
     end

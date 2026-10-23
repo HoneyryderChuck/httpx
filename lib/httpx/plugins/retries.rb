@@ -153,7 +153,7 @@ module HTTPX
         private
 
         def fetch_response(request, selector, options)
-          response = super
+          response = super #: retriesResponse | ErrorResponse | nil
 
           if response &&
              request.retries.positive? &&
@@ -267,6 +267,7 @@ module HTTPX
 
         # initializes the request instance, sets the number of retries for the request.
         def initialize(*)
+          # @type ivar @options: retriesOptions
           super
           @retries = @options.max_retries
           @partial_response = nil

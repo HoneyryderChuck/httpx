@@ -5,6 +5,16 @@ module HTTPX
 
       type jar = Jar | _Each[Jar::cookie]
 
+      type cookiesOptions = Options & OptionsMethods
+      type cookiesHeaders = Headers & HeadersMethods
+      type cookiesRequest = Request & _CookiesRequest & Plugins::_WithOptions[cookiesOptions]
+
+      interface _CookiesRequest
+        def headers: () -> cookiesHeaders
+      end
+
+      def self.load_dependencies: (singleton(Session)) -> void
+
       module OptionsMethods : Options
         attr_reader cookies: Jar
 
@@ -15,12 +25,22 @@ module HTTPX
         def option_cookies: (jar?) -> Jar
       end
 
-      def self.extra_options: [T] (T & OptionsMethods options) -> T
+      def self.extra_options: [T] (T & cookiesOptions options) -> T
 
       module InstanceMethods : Session
+        extend Forwardable
+
         def cookies: () -> Jar
 
         def make_jar: (*untyped) -> Jar
+
+        # @override 
+        def build_request: (verb verb, generic_uri uri, ?request_params params, ?Options options) -> cookiesRequest
+
+        private
+
+        # @override
+        def set_request_callbacks: (cookiesRequest request) -> void
       end
 
       module HeadersMethods : Headers

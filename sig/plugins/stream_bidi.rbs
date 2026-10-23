@@ -5,14 +5,20 @@ module HTTPX
 
       def self.extra_options: [T] (T & Stream::OptionsMethods options) -> T
 
+      type streamBidiOptions = Options & Stream::OptionsMethods
+      type streamBidiRequest = Request & Stream::RequestMethods & RequestMethods
+      type streamBidiConnection = Connection & ConnectionMethods
+
       module HTTP2Methods : Connection::HTTP2
         @lock: Thread::Mutex
 
         private
 
-        def handle_stream: (::HTTP2::Stream stream, Request & RequestMethods request) -> void
+        def handle_stream: (::HTTP2::Stream stream, streamBidiRequest request) -> void
 
-        def end_stream?: (Request & RequestMethods request, String? next_chunk) -> void
+        def send_chunk: (streamBidiRequest request, ::HTTP2::Stream stream, String chunk, String? next_chunk) -> void
+
+        def end_stream?: (streamBidiRequest request, String? next_chunk) -> void
       end
 
       class BidiBuffer < Buffer
@@ -35,11 +41,15 @@ module HTTPX
         def wakeup: () -> void
       end
 
-      module InstanceMethods : Stream::InstanceMethods
+      module InstanceMethods : Session, Stream::InstanceMethods
         @signal: Signal
+
+        def select_connection: (streamBidiConnection connection, Selector selector) -> void
+
+        def deselect_connection: (streamBidiConnection connection, Selector selector, ?bool cloned) -> void
       end
 
-      module RequestMethods : Stream::RequestMethods
+      module RequestMethods : Request, Stream::RequestMethods
         attr_accessor headers_sent: bool
 
         @closed: bool
@@ -49,13 +59,17 @@ module HTTPX
         def flush_buffer_on_body: { () -> void } -> void
 
         def closed?: () -> bool
+
+        def <<: (String chunk) -> void
       end
 
-      module RequestBodyMethods : Stream::ResponseBodyMethods
+      module RequestBodyMethods : Request::Body
       end
 
       module ConnectionMethods : Connection
-        # @write_buffer: BidiBuffer
+        attr_writer signal: Signal?
+
+        @signal: Signal?
       end
     end
   end

@@ -1,8 +1,10 @@
 module HTTPX
   module Plugins
     module NTLMAuth
+      type ntlmAuthOptions = Options & Auth::OptionsMethods & OptionsMethods
+      type ntlmAuthRequest = Request & Auth::RequestMethods & Plugins::_WithOptions[ntlmAuthOptions]
 
-      module OptionsMethods : Auth::OptionsMethods
+      module OptionsMethods : Options, Auth::OptionsMethods
         attr_reader ntlm: Authentication::Ntlm?
 
         private
@@ -14,12 +16,17 @@ module HTTPX
 
       def self.load_dependencies: (singleton(Session) klass) -> void
 
-      module InstanceMethods : Auth::InstanceMethods
+      module InstanceMethods : Session, Auth::InstanceMethods
         def ntlm_auth: (string user, string password, ?string? domain) -> instance
+
+        private
+
+        # @override
+        def send_requests: (*ntlmAuthRequest requests) -> Array[response]
       end
 
     end
 
-    type sessionNTLMAuth = NTLMAuth::InstanceMethods
+    type sessionNTLMAuth = Session & NTLMAuth::InstanceMethods
   end
 end

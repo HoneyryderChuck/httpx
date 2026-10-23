@@ -116,6 +116,7 @@ module HTTPX
           end
 
           def handle_transition(nextstate)
+            # @type ivar @options: httpProxyOptions
             return super unless @options.proxy && @options.proxy.uri.scheme == "http"
 
             case nextstate
@@ -201,6 +202,8 @@ module HTTPX
           end
 
           def __http_proxy_connect
+            # @type ivar @options: httpProxyOptions
+            # @type ivar @pending: Array[httpProxyRequest]
             req = @pending.first
             enable_proxy_tunnel = (
               req.options.enable_proxy_tunnel.nil? && req && req.uri.scheme == "https"
@@ -219,6 +222,7 @@ module HTTPX
           end
 
           def __http_on_connect(request, response)
+            # @type ivar @options: httpProxyOptions
             @inflight -= 1
             check_inflight_is_negative
             if response.is_a?(Response) && response.status == 200
@@ -256,6 +260,7 @@ module HTTPX
           end
 
           def set_protocol_headers(request)
+            # @type ivar @options: httpProxyOptions
             extra_headers = super
 
             proxy_params = @options.proxy

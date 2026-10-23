@@ -34,6 +34,9 @@ module HTTPX
         def emit_or_callback_error: (*untyped) -> void
       end
 
+      module RequestMethods : Request
+      end
+
       module ConnectionMethods : Connection
       end
     end

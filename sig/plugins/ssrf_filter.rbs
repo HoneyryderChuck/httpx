@@ -4,11 +4,16 @@ module HTTPX
 
   module Plugins
     module SsrfFilter
+      type ssrfFilterOptions = Options & OptionsMethods
+      type ssrfFilterConnection = Connection & ConnectionMethods
+
       IPV4_BLACKLIST: Array[IPAddr]
 
       IPV6_BLACKLIST: Array[[IPAddr, IPAddr]]
 
       def self?.unsafe_ip_address?: (IPAddr ipaddr) -> bool
+
+      def self.extra_options: (ssrfFilterOptions options) -> ssrfFilterOptions
 
       module OptionsMethods : Options
         attr_reader allowed_schemes: Array[String]

@@ -1,7 +1,10 @@
 module HTTPX
   module Plugins
     module DigestAuth
-      module OptionsMethods : Auth::OptionsMethods
+      type digestAuthOptions = Options & Auth::OptionsMethods & OptionsMethods
+      type digestAuthRequest = Request & Auth::RequestMethods & Plugins::_WithOptions[digestAuthOptions]
+
+      module OptionsMethods : Options, Auth::OptionsMethods
         attr_reader digest: Authentication::Digest?
 
         private
@@ -13,8 +16,13 @@ module HTTPX
 
       def self.load_dependencies: (singleton(Session) klass) -> void
 
-      module InstanceMethods : Auth::InstanceMethods
+      module InstanceMethods : Session, Auth::InstanceMethods
         def digest_auth: (string user, string password, ?hashed: bool) -> instance
+
+        private
+
+        # @override
+        def send_requests: (*digestAuthRequest requests) -> Array[response]
       end
     end
   end

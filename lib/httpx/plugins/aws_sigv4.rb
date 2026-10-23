@@ -184,7 +184,7 @@ module HTTPX
         end
 
         def build_request(*)
-          request = super
+          request = super #: awsSigV4Request
 
           return request if request.headers.key?("authorization")
 

@@ -136,6 +136,8 @@ module HTTPX
 
       module HTTP1Methods
         def interests
+          # @type ivar @request: fiberConcurrencyRequest?
+          # @type ivar @requests: Array[fiberConcurrencyRequest]
           request = @request || @requests.first
 
           return unless request
@@ -171,6 +173,7 @@ module HTTPX
         private
 
         def on_close(_, error, _)
+          # @type ivar @pending: Array[fiberConcurrencyRequest]
           if error == :http_1_1_required
             # remove all pending requests context
             @pending.each do |req|
@@ -257,6 +260,7 @@ module HTTPX
         private
 
         def current_context?
+          # @type ivar @queries: Array[[ip_family, fiberConcurrencyConnection]]
           @queries.any? { |_, conn| conn.current_context? }
         end
       end
@@ -274,6 +278,7 @@ module HTTPX
       module FiberConcurrencyStream
         module StreamResponseMethods
           def close
+            # @type ivar @request: fiberConcurrencyStreamRequest
             unless @request.current_context?
               @request.close
 

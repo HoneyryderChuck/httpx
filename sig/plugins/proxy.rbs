@@ -46,7 +46,12 @@ module HTTPX
         def load_authenticator: (String scheme, String username, String password, **untyped) -> _Authenticator
       end
 
-      def self.configure: (singleton(InstanceMethods)) -> void
+      type proxyOptions = Options & OptionsMethods
+      type proxyConnection = Connection & ConnectionMethods
+
+      def self.configure: (singleton(Session)) -> void
+
+      def self.subplugins: () -> Hash[Symbol, Module]
 
       module OptionsMethods : Options
         attr_reader proxy: Parameters?
@@ -64,15 +69,37 @@ module HTTPX
       def self.extra_options: [T] (T & OptionsMethods options) -> T
 
       module ConnectionMethods : Connection
-        @proxy_uri: generic_uri
+        @proxy_uri: URI::Generic?
+
+        private
+
+        # @override
+        def initialize_type: (http_uri uri, proxyOptions options) -> io_type
       end
 
       module InstanceMethods : Session
         @proxy_parameters: Parameters?
 
+        # @override
+        def find_connection: (http_uri request_uri, Selector selector, proxyOptions options) -> Connection
+
         private
 
-        def proxy_error?: (Request request, response, OptionsMethods options) -> bool
+        # @override
+        def fetch_response: (Request request, Selector selector, proxyOptions options) -> response?
+
+        def proxy_error?: (Request request, ErrorResponse response, proxyOptions options) -> bool
+      end
+
+      module ProxyRetries
+        module InstanceMethods : Session, Proxy::InstanceMethods, Retries::InstanceMethods
+          private
+
+          def proxy_error?: (Retries::retriesRequest request, ErrorResponse response, proxyOptions options) -> bool
+
+          # @override
+          def retryable_error?: (_Exception ex, Retries::retriesOptions options) -> boolish
+        end
       end
     end
   end
