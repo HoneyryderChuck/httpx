@@ -21,6 +21,8 @@ module HTTPX
     def force_close: (?bool delete_pending) -> void
 
     def terminate: () -> void
+
+    def inflight?: () -> boolish
   end
 
   class Selector
