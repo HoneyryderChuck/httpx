@@ -76,7 +76,5 @@ module HTTPX
         def canonical_query: () -> String
       end
     end
-
-    type awsSigV4Session = Session & AWSSigV4::InstanceMethods
   end
 end

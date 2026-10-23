@@ -22,7 +22,7 @@ module HTTPX
 
       type credentials = Proc
 
-      module OptionsMethods : Options
+      module OptionsMethods : Stream::OptionsMethods
         attr_reader grpc_service: String?
 
         attr_reader grpc_compression: compression_option?
@@ -51,13 +51,13 @@ module HTTPX
 
       def self.load_dependencies: (singleton(Session)) -> void
 
-      module ResponseMethods : Response
+      module ResponseMethods : Stream::ResponseMethods
         attr_reader trailing_metadata: Hash[String, untyped]
 
         def encoders: () -> Array[String | Encoding]
       end
 
-      module InstanceMethods : Session
+      module InstanceMethods : Persistent::InstanceMethods & Stream::InstanceMethods
         def with_channel_credentials: (String ca_path, ?String? key, ?String? cert, **untyped) -> instance
 
         def rpc: (_ToS rpc_name, untyped input, untyped output, **untyped) -> instance
@@ -74,6 +74,6 @@ module HTTPX
       end
     end
 
-    type grpcSession = Session & GRPC::InstanceMethods
+    type grpcSession = GRPC::InstanceMethods
   end
 end

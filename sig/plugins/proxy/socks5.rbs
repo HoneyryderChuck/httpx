@@ -15,7 +15,11 @@ module HTTPX
         IPV6: Integer
         SUCCESS: Integer
 
-        module ConnectionMethods : Connection
+        def self.ProxyParser: (singleton(Session)) -> void
+
+        def self.extra_options: [T] (T & OptionsMethods options) -> T
+
+        module ConnectionMethods : Proxy::ConnectionMethods
           private
 
           def __socks5_proxy_connect: () ->  void

@@ -37,11 +37,9 @@ module HTTPX
         def option_aws_profile: (_ToS value) -> String?
       end
 
-      module InstanceMethods : Session
+      module InstanceMethods : AWSSigV4::InstanceMethods
         def aws_sdk_authentication: (?credentials: Credentials, ?region: String, **untyped) -> instance
       end
     end
-
-    type sessionAwsSdkAuthentication = awsSigV4Session & AwsSdkAuthentication::InstanceMethods
   end
 end

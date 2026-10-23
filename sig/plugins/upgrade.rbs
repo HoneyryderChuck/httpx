@@ -27,7 +27,5 @@ module HTTPX
         def hijack_io: () -> void
       end
     end
-
-    type sessionUpgrade = Session & Upgrade::InstanceMethods
   end
 end

@@ -35,11 +35,11 @@ module HTTPX
         def wakeup: () -> void
       end
 
-      module InstanceMethods : Session
+      module InstanceMethods : Stream::InstanceMethods
         @signal: Signal
       end
 
-      module RequestMethods : Request
+      module RequestMethods : Stream::RequestMethods
         attr_accessor headers_sent: bool
 
         @closed: bool
@@ -51,15 +51,12 @@ module HTTPX
         def closed?: () -> bool
       end
 
-      module RequestBodyMethods : Request::Body
+      module RequestBodyMethods : Stream::ResponseBodyMethods
       end
 
       module ConnectionMethods : Connection
         # @write_buffer: BidiBuffer
       end
-
     end
-
-    type sessionStreamBidi = Session & StreamBidi::InstanceMethods
   end
 end

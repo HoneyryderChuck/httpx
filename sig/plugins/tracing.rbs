@@ -56,7 +56,5 @@ module HTTPX
 
       type tracingRequest = Request & RequestMethods
     end
-
-    type sessionTracing = Session
   end
 end

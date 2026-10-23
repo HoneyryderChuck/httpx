@@ -80,9 +80,6 @@ module HTTPX
 
         def try_circuit_open: (Request request, response response) -> response?
       end
-
     end
-
-    type sessionCircuitBreaker = Session & CircuitBreaker::InstanceMethods
   end
 end

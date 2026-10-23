@@ -10,7 +10,9 @@ module HTTPX
         GRANTED: Integer
         PROTOCOLS: Array[String]
 
-        module ConnectionMethods : Connection
+        def self.extra_options: [T] (T & OptionsMethods options) -> T
+
+        module ConnectionMethods : Proxy::ConnectionMethods
           def __socks4_proxy_connect: () ->  void
           def __socks4_on_packet: (String packet) ->  void
           def on_socks4_error: (string) -> void

@@ -2,7 +2,7 @@ module HTTPX
   module Plugins
     module Cache
       class Store
-        @store: Hash[String, cacheResponse]
+        @store: Hash[String, ResponseMethods]
 
         @store_mutex: Thread::Mutex
 

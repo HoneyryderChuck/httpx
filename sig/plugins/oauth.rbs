@@ -57,7 +57,7 @@ module HTTPX
         def load: (sessionOAuth http) -> void
       end
 
-      module OptionsMethods : Options
+      module OptionsMethods : Auth::OptionsMethods
         type oauth_session_options = {
           issuer: uri,
           client_id: String,
@@ -83,7 +83,7 @@ module HTTPX
         def option_oauth_options: (_ToHash[Symbol, untyped]) -> oauth_session_options
       end
 
-      module InstanceMethods : Session
+      module InstanceMethods : Auth::InstanceMethods
         attr_reader oauth_session: OAuthSession
         # @options: OptionsMethods
 
@@ -95,11 +95,11 @@ module HTTPX
       end
 
       module OAuthRetries
-        module InstanceMethods : Session
+        module InstanceMethods : OAuth::InstanceMethods & Retries::InstanceMethods
         end
       end
     end
 
-    type sessionOAuth = Session & Auth::InstanceMethods & OAuth::InstanceMethods
+    type sessionOAuth = OAuth::InstanceMethods
   end
 end

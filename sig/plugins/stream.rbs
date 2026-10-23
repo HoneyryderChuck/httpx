@@ -10,9 +10,9 @@ module HTTPX
 
         private
 
-        def stream: (boolish) -> boolish
+        def option_stream: (boolish) -> boolish
 
-        def retry_stream_response_class: [T] (T & singleton(StreamResponse)) -> T
+        def option_retry_stream_response_class: [T] (T & singleton(StreamResponse)) -> T
       end
 
       module InstanceMethods : Session
@@ -36,19 +36,15 @@ module HTTPX
         @stream: StreamResponse?
       end
     end
-
-    type sessionStream = Session & Stream::InstanceMethods
   end
 
   class StreamResponse
     include _ToS
 
-    type streamRequest = Request & Plugins::Stream::RequestMethods
+    attr_reader request: Plugins::Stream::RequestMethods
+    @options: Plugins::Stream::OptionsMethods
 
-    attr_reader request: streamRequest
-    @options: OptionsMethods
-
-    @session: Plugins::sessionStream
+    @session: Plugins::Stream::InstanceMethods
     @response_enum: Enumerator[String]?
     @buffered_chunks: Array[String]
     @on_chunk: ^(String) -> void | nil
@@ -61,7 +57,7 @@ module HTTPX
 
     def on_chunk: (string) -> void
 
-    def initialize: (streamRequest, Plugins::sessionStream) -> void
+    def initialize: (Plugins::Stream::RequestMethods, Plugins::Stream::InstanceMethods) -> void
 
     private
 

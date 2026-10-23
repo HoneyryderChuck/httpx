@@ -17,7 +17,5 @@ module HTTPX
         def __on_promise_response: (Connection::HTTP2, ::HTTP2::Stream, headers_input) -> void
       end
     end
-
-    type sessionPushPromise = Session & PushPromise::InstanceMethods
   end
 end

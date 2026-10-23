@@ -3,13 +3,11 @@ module HTTPX
     module BasicAuth
       def self.load_dependencies: (singleton(Session) klass) -> void
 
-      def self.configure: (singleton(Session) klass) -> void
+      def self.configure: (singleton(InstanceMethods) klass) -> void
 
-      module InstanceMethods : Session
+      module InstanceMethods : Auth::InstanceMethods
         def basic_auth: (string user, string password) -> instance
       end
     end
-
-    type sessionBasicAuth = sessionAuth & BasicAuth::InstanceMethods
   end
 end

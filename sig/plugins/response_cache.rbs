@@ -5,11 +5,11 @@ module HTTPX
       CACHEABLE_STATUS_CODES: Array[Integer]
       SUPPORTED_VARY_HEADERS: Array[String]
 
-      def self?.cacheable_response?: (::HTTPX::ErrorResponse | responseCacheResponse response) -> bool
+      def self?.cacheable_response?: (::HTTPX::ErrorResponse | ResponseMethods response) -> bool
 
       def self?.not_modified?: (response response) -> bool
 
-      module OptionsMethods : Options
+      module OptionsMethods : Cache::OptionsMethods
         attr_reader supported_vary_headers: Array[String]
 
         private
@@ -17,14 +17,14 @@ module HTTPX
         def option_supported_vary_headers: (Array[String] value) -> Array[String]
       end
 
-      module InstanceMethods : Session
+      module InstanceMethods : Cache::InstanceMethods
         private
 
-        def match_by_vary?: (responseCacheRequest request, responseCacheResponse response) -> bool
+        def match_by_vary?: (RequestMethods request, ResponseMethods response) -> bool
       end
 
-      module RequestMethods : Request
-        attr_accessor cached_response: responseCacheResponse?
+      module RequestMethods : Cache::RequestMethods
+        # attr_accessor cached_response: ResponseMethods?
         # attr_reader options: OptionsMethods
 
         @response_cache_key: String
@@ -34,7 +34,7 @@ module HTTPX
         def cacheable_verb?: () -> bool
       end
 
-      module ResponseMethods : Response
+      module ResponseMethods : Cache::ResponseMethods
         attr_writer revalidated_at: Time
 
         @cache_control: Array[String]?
@@ -57,13 +57,6 @@ module HTTPX
 
         def date: () -> Time
       end
-
-
-      type responseCacheRequest = Request & Cache::RequestMethods & RequestMethods
-
-      type responseCacheResponse = Response & Cache::ResponseMethods & ResponseMethods
     end
-
-    type sessionResponseCache = Session & Cache::InstanceMethods & ResponseCache::InstanceMethods
   end
 end

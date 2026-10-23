@@ -14,7 +14,7 @@ module HTTPX
         def initialize: (data: String, ?event: _ToS?, ?id: _ToS?, ?retry_after: Integer?) -> void
       end
 
-      module OptionsMethods : Options
+      module OptionsMethods : Stream::OptionsMethods
         attr_reader event_stream: boolish
 
         private
@@ -22,10 +22,10 @@ module HTTPX
         def option_event_stream: (boolish) -> boolish
       end
 
-      module InstanceMethods : Session
+      module InstanceMethods : Stream::InstanceMethods
       end
 
-      module RequestMethods : Request
+      module RequestMethods : Stream::RequestMethods
         attr_accessor last_server_sent_message: Message?
       end
 
@@ -39,11 +39,9 @@ module HTTPX
       end
 
       module ServerSentEventsRetries
-        module InstanceMethods : Session
+        module InstanceMethods : ServerSentEvents::InstanceMethods & Retries::InstanceMethods
         end
       end
     end
-
-    type sessionServerSentEvents = Session & ServerSentEvents::InstanceMethods
   end
 end

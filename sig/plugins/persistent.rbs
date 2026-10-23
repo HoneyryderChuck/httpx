@@ -5,9 +5,9 @@ module HTTPX
 
       def self.load_dependencies: (singleton(Session)) -> void
 
-      def self.extra_options: (Options) -> (Options)
+      def self.extra_options: [T] (T & Retries::OptionsMethods options) -> T
 
-      module InstanceMethods : Session
+      module InstanceMethods : Retries::InstanceMethods & FiberConcurrency::InstanceMethods
         private
 
         def reconnectable_error?: (StandardError error) -> bool
@@ -15,7 +15,5 @@ module HTTPX
         def safe_reconnectable_error?: (StandardError error) -> bool
       end
     end
-
-    type sessionPersistent = sessionFiberConcurrency & Persistent::InstanceMethods
   end
 end

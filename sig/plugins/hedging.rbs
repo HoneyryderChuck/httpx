@@ -2,47 +2,43 @@ module HTTPX
   module Plugins
     module Hedging
       module OptionsMethods : Options
-        attr_reader hedge_after: (^(requestHedging request, Response response) -> interval | interval)?
+        attr_reader hedge_after: (^(RequestMethods request, Response response) -> interval | interval)?
 
         private
 
-        def option_hedge_after: (^(requestHedging request, Response response) -> interval) -> (^(requestHedging request, Response response) -> interval)
+        def option_hedge_after: (^(RequestMethods request, Response response) -> interval) -> (^(RequestMethods request, Response response) -> interval)
                               | (_ToF value) -> interval
       end
 
       module InstanceMethods : Session
         private
 
-        def hedge_connection: (connectionHedging connection) -> connectionHedging
+        def hedge_connection: (ConnectionMethods connection) -> ConnectionMethods
 
-        def hedge_request!: (requestHedging request, connectionHedging connection, Selector selector) -> void
+        def hedge_request!: (RequestMethods request, ConnectionMethods connection, Selector selector) -> void
 
-        def when_to_hedge: (requestHedging request) -> interval?
+        def when_to_hedge: (RequestMethods request) -> interval?
       end
 
       module RequestMethods : Request
-        attr_reader hedge_request: requestHedging?
+        attr_reader hedge_request: RequestMethods?
 
         @is_hedge_request: bool
 
-        def hedge_request=: (requestHedging? request) -> void
+        def hedge_request=: (RequestMethods? request) -> void
       end
 
       module ConnectionMethods : Connection
-        attr_reader hedge_connection: connectionHedging?
+        attr_reader hedge_connection: ConnectionMethods?
 
         attr_accessor is_hedge_connection: bool
 
-        def hedge_connection=: (connectionHedging? connection) -> void
+        def hedge_connection=: (ConnectionMethods? connection) -> void
 
-        def try_yield_connection: [T] () { (connectionHedging) -> T } -> T
+        def try_yield_connection: [T] () { (ConnectionMethods) -> T } -> T
       end
     end
 
     type sessionHedging = Session & Hedging::InstanceMethods
-
-    type requestHedging = Request & Hedging::RequestMethods
-
-    type connectionHedging = Connection & Hedging::ConnectionMethods
   end
 end
