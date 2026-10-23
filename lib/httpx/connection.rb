@@ -333,6 +333,7 @@ module HTTPX
 
         # @fiber-switch-guard
         if @io.can_disconnect? && @pending.empty?
+          @state = :closed
           disconnect
           return
         end
