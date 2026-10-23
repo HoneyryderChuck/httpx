@@ -107,7 +107,7 @@ module HTTPX
         def fetch_response(request, *)
           response = super #: cacheResponse | ErrorResponse | nil
 
-          return unless response
+          return unless response && response.is_a?(Response)
 
           if cacheable_request?(request) && cacheable_response?(request, response) && !response.cached?
             log { "caching response for #{request.uri}..." }
