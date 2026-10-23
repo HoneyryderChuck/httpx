@@ -58,7 +58,7 @@ module HTTPX
 
     def build_requests: (verb, uri, request_params) -> Array[Request]
                       | (Array[[verb, uri] | [verb, uri, request_params]], ?request_params) -> Array[Request]
-                      | (verb, _Each[[uri] | [uri, request_params]], request_params) -> Array[Request]
+                      | (verb, _Each[uri | [uri] | [uri, request_params]], request_params) -> Array[Request]
 
     def do_init_connection: (Connection connection, Selector selector) -> void
 
