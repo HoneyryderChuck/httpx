@@ -46,7 +46,7 @@ module HTTPX
         def load_authenticator: (String scheme, String username, String password, **untyped) -> _Authenticator
       end
 
-      def self.configure: (singleton(Session)) -> void
+      def self.configure: (singleton(InstanceMethods)) -> void
 
       module OptionsMethods : Options
         attr_reader proxy: Parameters?
@@ -75,7 +75,5 @@ module HTTPX
         def proxy_error?: (Request request, response, OptionsMethods options) -> bool
       end
     end
-
-    type sessionProxy = Session & Proxy::InstanceMethods
   end
 end

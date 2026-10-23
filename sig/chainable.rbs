@@ -9,45 +9,45 @@ module HTTPX
     def accept: (String) -> Session
     def wrap: () { (Session) -> void } -> void
 
-    def with: (options) -> Session
-            | (options) { (Session) -> void } -> void
+    def with: (options) -> instance
+            | (options) { (instance) -> void } -> void
 
-    def plugin: (:auth, ?options) -> Plugins::sessionAuth
-              | (:basic_auth, ?options) -> Plugins::sessionBasicAuth
-              | (:digest_auth, ?options) -> Plugins::sessionDigestAuth
-              | (:ntlm_auth, ?options) -> Plugins::sessionNTLMAuth
-              | (:ntlm_v2_auth, ?options) -> Plugins::sessionNTLMV2Auth
-              | (:aws_sdk_authentication, ?options) -> Plugins::sessionAwsSdkAuthentication
+    def plugin: (:auth, ?options) -> Plugins::Auth::InstanceMethods
+              | (:basic_auth, ?options) -> Plugins::BasicAuth::InstanceMethods
+              | (:digest_auth, ?options) -> Plugins::DigestAuth::InstanceMethods
+              | (:ntlm_auth, ?options) -> Plugins::NTLMAuth::InstanceMethods
+              | (:ntlm_v2_auth, ?options) -> Plugins::NTLMV2Auth::InstanceMethods
+              | (:aws_sdk_authentication, ?options) -> Plugins::AwsSdkAuthentication::InstanceMethods
               | (:brotli, ?options) -> Session
-              | (:cookies, ?options) -> Plugins::sessionCookies
+              | (:cookies, ?options) -> Plugins::Cookies::InstanceMethods
               | (:expect, ?options) -> Session
-              | (:follow_redirects, ?options) -> Plugins::sessionFollowRedirects
-              | (:upgrade, ?options) -> Plugins::sessionUpgrade
-              | (:h2c, ?options) -> Plugins::sessionUpgrade
-              | (:h2, ?options) -> Plugins::sessionUpgrade
-              | (:fiber_concurrency, ?options) -> Plugins::sessionFiberConcurrency
-              | (:persistent, ?options) -> Plugins::sessionPersistent
-              | (:proxy, ?options) -> (Plugins::sessionProxy & Plugins::httpProxy)
-              | (:push_promise, ?options) -> Plugins::sessionPushPromise
-              | (:retries, ?options) -> Plugins::sessionRetries
-              | (:rate_limiter, ?options) -> Plugins::sessionRateLimiter
-              | (:stream, ?options) -> Plugins::sessionStream
-              | (:stream_bidi, ?options) -> Plugins::sessionStreamBidi
-              | (:server_sent_events, ?options) -> Plugins::sessionServerSentEvents
-              | (:aws_sigv4, ?options) -> Plugins::awsSigV4Session
-              | (:grpc, ?options) -> Plugins::grpcSession
-              | (:cache, ?options) -> Plugins::sessionCache
-              | (:response_cache, ?options) -> Plugins::sessionResponseCache
-              | (:circuit_breaker, ?options) -> Plugins::sessionCircuitBreaker
-              | (:oauth, ?options) -> Plugins::sessionOAuth
-              | (:callbacks, ?options) -> Plugins::sessionCallbacks
-              | (:content_digest, ?options) -> Plugins::sessionContentDigest
-              | (:ssrf_filter, ?options) -> Plugins::sessionSsrf
-              | (:webdav, ?options) -> Plugins::sessionWebDav
-              | (:xml, ?options) -> Plugins::sessionXML
-              | (:query, ?options) -> Plugins::sessionQuery
-              | (:tracing, ?options) -> Plugins::sessionTracing
-              | (:hedging, ?options) -> Plugins::sessionHedging
+              | (:follow_redirects, ?options) -> Plugins::FollowRedirects::InstanceMethods
+              | (:upgrade, ?options) -> Plugins::Upgrade::InstanceMethods
+              | (:h2c, ?options) -> Plugins::Upgrade::InstanceMethods
+              | (:h2, ?options) -> Plugins::Upgrade::InstanceMethods
+              | (:fiber_concurrency, ?options) -> Plugins::FiberConcurrency::InstanceMethods
+              | (:persistent, ?options) -> Plugins::Persistent::InstanceMethods
+              | (:proxy, ?options) -> Plugins::Proxy::HTTP::InstanceMethods
+              | (:push_promise, ?options) -> Plugins::PushPromise::InstanceMethods
+              | (:retries, ?options) -> Plugins::Retries::InstanceMethods
+              | (:rate_limiter, ?options) -> Plugins::RateLimiter::InstanceMethods
+              | (:stream, ?options) -> Plugins::Stream::InstanceMethods
+              | (:stream_bidi, ?options) -> Plugins::StreamBidi::InstanceMethods
+              | (:server_sent_events, ?options) -> Plugins::ServerSentEvents::InstanceMethods
+              | (:aws_sigv4, ?options) -> Plugins::AWSSigV4::InstanceMethods
+              | (:grpc, ?options) -> Plugins::GRPC::InstanceMethods
+              | (:cache, ?options) -> Plugins::Cache::InstanceMethods
+              | (:response_cache, ?options) -> Plugins::ResponseCache::InstanceMethods
+              | (:circuit_breaker, ?options) -> Plugins::CircuitBreaker::InstanceMethods
+              | (:oauth, ?options) -> Plugins::OAuth::InstanceMethods
+              | (:callbacks, ?options) -> Plugins::Callbacks::InstanceMethods
+              | (:content_digest, ?options) -> Plugins::ContentDigest::InstanceMethods
+              | (:ssrf_filter, ?options) -> Plugins::SsrfFilter::InstanceMethods
+              | (:webdav, ?options) -> Plugins::WebDav::InstanceMethods
+              | (:xml, ?options) -> Plugins::XML::InstanceMethods
+              | (:query, ?options) -> Plugins::Query::InstanceMethods
+              | (:tracing, ?options) -> Session
+              | (:hedging, ?options) -> Plugins::Hedging::InstanceMethods
               | (Symbol | Module, ?options) { (Class) -> void } -> Session
               | (Symbol | Module, ?options) -> Session
 

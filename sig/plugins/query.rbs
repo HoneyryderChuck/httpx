@@ -9,10 +9,9 @@ module HTTPX
       end
 
       module QueryRetries
-        module InstanceMethods : Session
+        module InstanceMethods : Query::InstanceMethods & Retries::InstanceMethods
         end
       end
     end
-    type sessionQuery = Session & Query::InstanceMethods
   end
 end

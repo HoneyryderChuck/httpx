@@ -4,7 +4,17 @@ module HTTPX
       module SSH
         def self.load_dependencies: (singleton(Session)) -> void
 
+        module OptionsMethods : Options
+          attr_reader proxy: Hash[Symbol, untyped]
+
+          private
+
+          def option_proxy: (_ToHash[Symbol, untyped]) -> Hash[Symbol, untyped]
+        end
+
         module InstanceMethods : Session
+          @gateway: Net::SSH::Gateway
+
           private
 
           def build_gateway_socket: (int port, http_uri request_uri, OptionsMethods options) -> _ToIO
@@ -13,6 +23,6 @@ module HTTPX
     end
 
 
-    type sessionSSHProxy = Proxy::InstanceMethods & Proxy::SSH::InstanceMethods
+    type sessionSSHProxy = Proxy::SSH::InstanceMethods
   end
 end

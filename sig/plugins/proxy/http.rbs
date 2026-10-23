@@ -2,19 +2,19 @@ module HTTPX
   module Plugins
     module Proxy
       module HTTP
-        module OptionsMethods : Options
+        module OptionsMethods : Proxy::OptionsMethods
           attr_reader proxy_headers: Headers?
 
           attr_reader enable_proxy_tunnel: boolish
 
           private
 
-          def option_proxy_headers: (heaheaders_input | Headers value) -> Headers
+          def option_proxy_headers: (headers_input | Headers value) -> Headers
 
-          def enable_proxy_tunnel: (boolish) -> boolish
+          def option_enable_proxy_tunnel: (boolish) -> boolish
         end
 
-        module InstanceMethods : Session
+        module InstanceMethods : Proxy::InstanceMethods
           def with_proxy_basic_auth: (Hash[Symbol, untyped] opts) -> instance
 
           def with_proxy_digest_auth: (Hash[Symbol, untyped] opts) -> instance
@@ -22,8 +22,8 @@ module HTTPX
           def with_proxy_ntlm_auth: (Hash[Symbol, untyped] opts) -> instance
         end
 
-        module ConnectionMethods : Connection
-          @tunnel_parser: Connection::HTTP1 | Connection::HTTP2
+        module ConnectionMethods : Proxy::ConnectionMethods
+          @tunnel_parser: ProxyParser
 
           def __http_proxy_connect: () ->  void
           def __http_on_connect: (top, Response) ->  void
@@ -38,6 +38,6 @@ module HTTPX
       end
     end
 
-    type httpProxy = Session & Proxy::HTTP::InstanceMethods
+    type httpProxy = Proxy::HTTP::InstanceMethods
   end
 end

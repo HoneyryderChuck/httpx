@@ -7,8 +7,6 @@ module HTTPX
       REDIRECT_STATUS: Range[Integer]
       REQUEST_BODY_HEADERS: Array[String]
 
-      type redirect_request = Request & RequestMethods
-
       module OptionsMethods : Options
         attr_reader max_redirects: Integer?
 
@@ -36,7 +34,7 @@ module HTTPX
 
         private
 
-        def redirect_request_headers: (http_uri original_uri, http_uri redirect_uri, Headers headers, OptionsMethods options) -> Headers
+        def RequestMethods_headers: (http_uri original_uri, http_uri redirect_uri, Headers headers, OptionsMethods options) -> Headers
 
         def __get_location_from_response: (Response) -> http_uri
       end
@@ -44,16 +42,16 @@ module HTTPX
       module RequestMethods : Request
         attr_accessor root_request: (Request & RequestMethods)?
 
-        @redirect_request: redirect_request
+        @RequestMethods: RequestMethods
 
-        def redirect_request: () -> redirect_request
+        def RequestMethods: () -> RequestMethods
 
-        def redirect_request=: (redirect_request req) -> void
+        def RequestMethods=: (RequestMethods req) -> void
 
         def max_redirects: () -> Integer
       end
     end
 
-    type sessionFollowRedirects = Session & FollowRedirects::InstanceMethods
+    type sessionFollowRedirects = FollowRedirects::InstanceMethods
   end
 end
