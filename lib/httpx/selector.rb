@@ -100,7 +100,7 @@ module HTTPX
         sel.terminate
         # TODO: this check is racy: connections check in to the pool on termination, and may check out and
         # change state immediately after. find a more idempotent way of doing this.
-        sel.state == :closed
+        sel.current_selector != self
       end
 
       until selectables.empty?

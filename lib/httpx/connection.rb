@@ -39,9 +39,7 @@ module HTTPX
     attr_reader :type, :io, :origin, :origins, :state, :pending, :options, :ssl_session, :sibling,
                 :read_buffer, :write_buffer
 
-    attr_writer :current_selector
-
-    attr_accessor :current_session, :family
+    attr_accessor :current_selector, :current_session, :family
 
     protected :ssl_session, :sibling, :read_buffer, :write_buffer
 
