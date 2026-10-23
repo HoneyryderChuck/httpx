@@ -200,10 +200,9 @@ module HTTPX
     end
 
     def purge_pending(&block)
-      @pending.reject! do |req|
-        block.call(req)
-        true
-      end
+      pending = @pending.dup
+      @pending.clear
+      pending.each(&block)
     end
 
     def io_connected?
