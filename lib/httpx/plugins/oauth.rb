@@ -290,7 +290,7 @@ module HTTPX
 
         def reset_auth_header_value!
           super.tap do
-            @oauth_session.reset if @oauth_session
+            @oauth_session&.reset!
           end
         end
 
