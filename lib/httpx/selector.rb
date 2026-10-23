@@ -24,8 +24,12 @@ module HTTPX
     READABLE = %i[rw r].freeze
     WRITABLE = %i[rw w].freeze
 
+    # max number of consecutive ticks allowed to neither wait on IO nor call a ready selectable.
+    MAX_BUSY_ITERATIONS = 1000
+
     private_constant :READABLE
     private_constant :WRITABLE
+    private_constant :MAX_BUSY_ITERATIONS
 
     def_delegator :@timers, :after
 
@@ -35,6 +39,8 @@ module HTTPX
       @timers = Timers.new
       @selectables = []
       @is_timer_interval = false
+      @busy_iterations = 0
+      @last_select_registered = nil
     end
 
     def empty?
@@ -51,11 +57,16 @@ module HTTPX
         timeout = next_timeout
         if timeout && timeout.negative?
           @timers.fire
+          busy_loop_check(timeout)
           throw(:jump_tick)
         end
 
         begin
+          selected = false
+
           select(timeout) do |c|
+            selected = true
+
             c.log(level: 2) { "[#{c.state}] selected from selector##{object_id}#{" after #{timeout} secs" unless timeout.nil?}..." }
 
             c.call
@@ -64,6 +75,19 @@ module HTTPX
           @timers.fire
         rescue TimeoutError => e
           @timers.fire(e)
+
+          @busy_iterations = 0
+        else
+          # a tick is healthy if it either called a ready selectable, or actually blocked waiting for one.
+          # without a timeout, #select only blocks when something registered interests; with one,
+          # it always sleeps or selects, but a zero timeout just polls.
+          waited = timeout.nil? ? @last_select_registered.to_i.positive? : timeout.positive?
+
+          if selected || waited
+            @busy_iterations = 0
+          else
+            busy_loop_check(timeout)
+          end
         end
       end
     end
@@ -133,6 +157,8 @@ module HTTPX
     private
 
     def select(interval, &block)
+      @last_select_registered = nil
+
       # do not cause an infinite loop here.
       #
       # this may happen if timeout calculation actually triggered an error which causes
@@ -153,6 +179,8 @@ module HTTPX
       # @type var w: (selectable | Array[selectable])?
       r, w = nil
 
+      registered = 0
+
       @selectables.delete_if do |io|
         interests = io.interests
 
@@ -166,6 +194,8 @@ module HTTPX
         end
 
         if interests
+          registered += 1
+
           io.log(level: 2) do
             "[#{io.state}] registering in selector##{object_id} for select (#{interests})#{" for #{interval} seconds" unless interval.nil?}"
           end
@@ -181,6 +211,8 @@ module HTTPX
 
         is_closed
       end
+
+      @last_select_registered = registered
 
       case r
       when Array
@@ -304,6 +336,53 @@ module HTTPX
       end
 
       connection_interval
+    end
+
+    def busy_loop_check(timeout)
+      @busy_iterations += 1
+
+      return if @busy_iterations < MAX_BUSY_ITERATIONS
+
+      # this selector is reused by subsequent requests in the same thread/fiber.
+      @busy_iterations = 0
+
+      raise Error, busy_loop_error_message(timeout)
+    end
+
+    def busy_loop_error_message(timeout)
+      selectables_state = @selectables.map do |sel|
+        state = +"#{sel.class}:#{sel.object_id}[state:#{sel.state},inflight?:#{sel.inflight?}"
+
+        case sel
+        when Connection
+          state << ",origin:#{sel.origin},pending:#{sel.pending.size}," \
+                   "io-state:#{sel.io&.state.inspect},io-interests:#{sel.io&.interests.inspect}," \
+                   "in-session:#{!sel.current_session.nil?}"
+        when Resolver::Resolver
+          num_connections = 0
+          sel.each_connection { num_connections += 1 }
+          state << ",connections:#{num_connections}"
+        end
+
+        state << "]"
+      end.join(",")
+
+      timers_state = @timers.instance_variable_get(:@intervals).map do |interval|
+        "#{interval.interval}s(callbacks:#{interval.instance_variable_get(:@callbacks).size})"
+      end.join(",")
+
+      "selector corrupted, aborted after looping #{MAX_BUSY_ITERATIONS} times " \
+        "without waiting on IO nor calling a ready selectable, " \
+        "please report this https://gitlab.com/os85/httpx/-/work_items " \
+        "along with debug logs\n(" \
+        "next-timeout:#{timeout.inspect}," \
+        "is-timer-interval:#{@is_timer_interval}," \
+        "timers:[#{timers_state}]," \
+        "next-interval-at:#{@timers.instance_variable_get(:@next_interval_at).inspect}," \
+        "last-select-registered:#{@last_select_registered.inspect}," \
+        "num-selectables:#{@selectables.size}," \
+        "selectables:[#{selectables_state}]" \
+        ")"
     end
 
     if RUBY_ENGINE == "jruby"
