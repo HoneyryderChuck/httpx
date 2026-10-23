@@ -1,7 +1,16 @@
 module HTTPX
   module Plugins
     module FiberConcurrency
+      type fiberConcurrencyRequest = Request & RequestMethods
+      type fiberConcurrencyConnection = Connection & ConnectionMethods
+
+      def self.subplugins: () -> Hash[Symbol, Module]
+
       module InstanceMethods : Session
+        private
+
+        # @override
+        def send_request: (fiberConcurrencyRequest request, Selector selector, ?Options options) ?{ (Connection) -> void } -> void
       end
 
       module RequestMethods : Request
@@ -16,7 +25,9 @@ module HTTPX
 
         def current_context?: () -> boolish
 
-        def send: (RequestMethods request) -> void
+        def send: (fiberConcurrencyRequest request) -> void
+
+        def pending_count: () -> Integer
 
         private
 
@@ -27,27 +38,42 @@ module HTTPX
       end
 
       module HTTP2Methods : Connection::HTTP2
-        @contexts: Hash[Fiber, Set[Request]]
+        @contexts: Hash[Fiber?, Set[fiberConcurrencyRequest]]
+
+        # @override
+        def send: (fiberConcurrencyRequest request, ?bool head) -> bool
 
         private
 
-        def add_to_context: (RequestMethods request) -> void
+        # @override
+        def on_stream_close: (::HTTP2::Stream stream, fiberConcurrencyRequest request, (Symbol | StandardError)? error) -> void
 
-        def clear_from_context: (RequestMethods request) -> void
+        # @override
+        def teardown: (?fiberConcurrencyRequest? request) -> void
+
+        def add_to_context: (fiberConcurrencyRequest request) -> void
+
+        def clear_from_context: (fiberConcurrencyRequest request) -> void
       end
 
-      module NativeResolverMethods : Resolver::Native
+      module ResolverNativeMethods : Resolver::Native
       end
 
-      module SystemResolverMethods : Resolver::System
+      module ResolverSystemMethods : Resolver::System
+        private
+
+        def current_context?: () -> boolish
       end
 
       module FiberConcurrencyH2C
-        module HTTP2Methods : Connection::HTTP2
+        module HTTP2Methods : Connection::HTTP2, FiberConcurrency::HTTP2Methods
+          def upgrade: (fiberConcurrencyRequest request, Response response) -> void
         end
       end
 
-       module FiberConcurrencyStream
+      module FiberConcurrencyStream
+        type fiberConcurrencyStreamRequest = Request & Stream::RequestMethods & FiberConcurrency::RequestMethods
+
         module StreamResponseMethods : StreamResponse
           def close: () -> void
         end

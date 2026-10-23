@@ -8,6 +8,8 @@ module HTTPX
     end
 
     module AWSSigV4
+      type awsSigV4Options = Options & OptionsMethods
+      type awsSigV4Request = Request & RequestMethods
 
       class Credentials < Struct[[String, String, String?]]
         attr_reader username: String
@@ -26,7 +28,7 @@ module HTTPX
         @header_provider_field: String
         @algorithm: String
 
-        def sign!: (Request & RequestMethods request) -> void
+        def sign!: (awsSigV4Request request) -> void
 
         def self.new: (instance) -> instance
                     | (**untyped params) -> instance
@@ -54,9 +56,9 @@ module HTTPX
         def hexhmac: (String key, String value) -> String
       end
 
-      def self.extra_options: [T] (T & OptionsMethods options) -> T
+      def self.load_dependencies: (*untyped) -> void
 
-      def self.load_dependencies: (singleton(Session)) -> void
+      def self.configure: (singleton(Session)) -> void
 
       module OptionsMethods : Options
         attr_reader sigv4_signer: Signer?
@@ -68,6 +70,9 @@ module HTTPX
 
       module InstanceMethods : Session
         def aws_sigv4_authentication: (**untyped) -> instance
+
+        # @override
+        def build_request: (verb verb, generic_uri uri, ?request_params params, ?Options options) -> awsSigV4Request
       end
 
       module RequestMethods : Request

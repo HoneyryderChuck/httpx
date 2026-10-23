@@ -2,7 +2,13 @@ module HTTPX
   module Plugins
     module Proxy
       module HTTP
-        module OptionsMethods : Proxy::OptionsMethods
+        type httpProxyOptions = Options & Proxy::OptionsMethods & OptionsMethods
+        type httpProxyRequest = Request & Plugins::_WithOptions[httpProxyOptions]
+        type httpProxyConnection = Connection & Proxy::ConnectionMethods & ConnectionMethods
+
+        def self.extra_options: [T] (T & Proxy::proxyOptions options) -> T
+
+        module OptionsMethods : Options, Proxy::OptionsMethods
           attr_reader proxy_headers: Headers?
 
           attr_reader enable_proxy_tunnel: boolish
@@ -14,30 +20,36 @@ module HTTPX
           def option_enable_proxy_tunnel: (boolish) -> boolish
         end
 
-        module InstanceMethods : Proxy::InstanceMethods
+        module InstanceMethods : Session, Proxy::InstanceMethods
           def with_proxy_basic_auth: (Hash[Symbol, untyped] opts) -> instance
 
           def with_proxy_digest_auth: (Hash[Symbol, untyped] opts) -> instance
 
           def with_proxy_ntlm_auth: (Hash[Symbol, untyped] opts) -> instance
+
+          private
+
+          # @override
+          def fetch_response: (httpProxyRequest request, Selector selector, httpProxyOptions options) -> response?
         end
 
-        module ConnectionMethods : Proxy::ConnectionMethods
+        module ConnectionMethods : Connection, Proxy::ConnectionMethods
           @tunnel_parser: ProxyParser
 
           def __http_proxy_connect: () ->  void
-          def __http_on_connect: (top, Response) ->  void
+          def __http_on_connect: (httpProxyRequest request, response response) ->  void
         end
 
         module ProxyParser : Connection::HTTP1
         end
 
         class ConnectRequest < Request
-          def initialize: (generic_uri uri, OptionsMethods options) -> void
+          # @override
+          def initialize: (http_uri uri, httpProxyOptions options) -> void
         end
       end
     end
 
-    type httpProxy = Proxy::HTTP::InstanceMethods
+    type httpProxy = Session & Proxy::InstanceMethods & Proxy::HTTP::InstanceMethods
   end
 end

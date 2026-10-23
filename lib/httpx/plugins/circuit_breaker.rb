@@ -28,6 +28,7 @@ module HTTPX
         include HTTPX::Callbacks
 
         def initialize(*)
+          # @type ivar @options: circuitBreakerOptions
           super
           @circuit_store = CircuitStore.new(@options)
         end

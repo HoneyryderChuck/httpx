@@ -5,7 +5,7 @@ module HTTPX
 
       def self.load_dependencies: (singleton(Session)) -> void
 
-      module InstanceMethods : Retries::InstanceMethods
+      module InstanceMethods : Session, Retries::InstanceMethods
         def rate_limit_error?: (response response) -> bool
       end
     end

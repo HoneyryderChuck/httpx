@@ -1,6 +1,9 @@
 module HTTPX
   module Plugins
     module CircuitBreaker
+      type circuitBreakerOptions = Options & OptionsMethods
+
+      type circuitBreakerRequest = Request & Plugins::_WithOptions[circuitBreakerOptions]
 
       class CircuitStore
         @circuits: Hash[String, Circuit]
@@ -17,7 +20,7 @@ module HTTPX
 
         def get_circuit_for_uri: (uri uri) -> Circuit
 
-        def initialize: (OptionsMethods options) -> void
+        def initialize: (circuitBreakerOptions options) -> void
       end
 
       class Circuit
@@ -45,7 +48,7 @@ module HTTPX
         def initialize: (Integer max_attempts, Float reset_attempts_in, Float break_in, Float circuit_breaker_half_open_drip_rate) -> void
       end
 
-      module OptionsMethods
+      module OptionsMethods : Options
         attr_reader circuit_breaker_max_attempts: Integer
 
         attr_reader circuit_breaker_reset_attempts_in: Float
@@ -71,14 +74,19 @@ module HTTPX
 
       def self.load_dependencies: (singleton(Session)) -> void
 
-      def self.extra_options: [T] (T & OptionsMethods) -> T
+      def self.extra_options: (circuitBreakerOptions options) -> circuitBreakerOptions
 
       module InstanceMethods : Session
+        include HTTPX::Callbacks
+
         @circuit_store: CircuitStore
 
         private
 
-        def try_circuit_open: (Request request, response response) -> response?
+        # @override 
+        def set_request_callbacks: (circuitBreakerRequest request) -> void
+
+        def try_circuit_open: (circuitBreakerRequest request, response response) -> response?
       end
     end
   end

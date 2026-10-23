@@ -122,6 +122,7 @@ module HTTPX
         end
 
         def generate_auth_token(request, should_regenerate)
+          # @type ivar @options: authOptions
           return unless (auth_value = @options.auth_header_value)
 
           auth_value = auth_value.call(request, should_regenerate) if dynamic_auth_token?(auth_value)
@@ -168,6 +169,7 @@ module HTTPX
         end
 
         def authorize(auth_value)
+          # @type ivar @options: authOptions
           @auth_header_value = auth_value
           if (auth_type = @options.auth_header_type)
             @auth_header_value = "#{auth_type} #{@auth_header_value}"
@@ -192,6 +194,7 @@ module HTTPX
           end
 
           def prepare_to_retry(request, response, retry_after)
+            # @type ivar @options: authRetriesOptions
             super
 
             return unless auth_error?(response, request.options) ||

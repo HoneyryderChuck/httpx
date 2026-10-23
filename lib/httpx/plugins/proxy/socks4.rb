@@ -34,6 +34,7 @@ module HTTPX
           private
 
           def handle_transition(nextstate)
+            # @type ivar @options: Proxy::proxyOptions
             return super unless @options.proxy && PROTOCOLS.include?(@options.proxy.uri.scheme)
 
             case nextstate
@@ -59,11 +60,13 @@ module HTTPX
           end
 
           def __socks4_proxy_connect
+            # @type ivar @options: Proxy::proxyOptions
             @parser = SocksParser.new(@write_buffer, @options)
             @parser.once(:packet, &method(:__socks4_on_packet))
           end
 
           def __socks4_on_packet(packet)
+            # @type ivar @options: Proxy::proxyOptions
             _version, status, _port, _ip = packet.unpack("CCnN")
             if status == GRANTED
               req = @pending.first

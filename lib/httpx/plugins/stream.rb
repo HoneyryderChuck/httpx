@@ -161,6 +161,7 @@ module HTTPX
 
       module InstanceMethods
         def request(*args, **options)
+          # @type ivar @options: streamOptions
           if args.first.is_a?(Request)
             requests = args
 
@@ -199,6 +200,7 @@ module HTTPX
 
       module ResponseMethods
         def stream
+          # @type ivar @request: streamRequest
           request = @request.root_request if @request.respond_to?(:root_request)
           request ||= @request
 
@@ -208,6 +210,7 @@ module HTTPX
 
       module ResponseBodyMethods
         def initialize(*)
+          # @type ivar @response: streamResponse
           super
           @stream = @response.stream
         end

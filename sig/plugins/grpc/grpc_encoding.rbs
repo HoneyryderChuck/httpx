@@ -4,7 +4,7 @@ module HTTPX
 
       def self?.encode: (body_encoder body, compressed: bool) -> Deflater
 
-      def self?.decode: (Plugins::GRPC::ResponseMethods | StreamResponse response) -> Inflater
+      def self?.decode: (Plugins::GRPC::grpcResponse | StreamResponse response) -> Inflater
 
       class Deflater
         attr_reader content_type: String
@@ -20,10 +20,10 @@ module HTTPX
       end
 
       class Inflater
-        @response: Plugins::GRPC::ResponseMethods
+        @response: Plugins::GRPC::grpcResponse
         @grpc_encodings: Array[String]
 
-        def initialize: (Plugins::GRPC::ResponseMethods | StreamResponse response) -> void
+        def initialize: (Plugins::GRPC::grpcResponse | StreamResponse response) -> void
 
         def call: (String message) ?{ (String) -> void } -> String
 

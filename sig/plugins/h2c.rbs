@@ -3,9 +3,14 @@ module HTTPX
     module H2C
       VALID_H2C_VERBS: Array[verb]
 
-      def self.load_dependencies: (*untyped) -> void
+      type h2cOptions = Options & Upgrade::OptionsMethods & OptionsMethods
+      type h2cRequest = Request & RequestMethods
+      type h2cConnection = Connection & Upgrade::ConnectionMethods & ConnectionMethods
+
+      def self.load_dependencies: (singleton(Session) klass) -> void
       def self.configure: (singleton(Session)) -> void
-      def self.call: (Connection, Request, response) -> void
+      def self.call: (h2cConnection connection, h2cRequest request, Response response) -> void
+      def self.extra_options: [T] (T & Upgrade::OptionsMethods options) -> T
 
       module OptionsMethods : Options
         attr_reader h2c_class: singleton(Connection::HTTP2) & H2CParser
@@ -23,8 +28,18 @@ module HTTPX
         def valid_h2c_verb?: () -> bool
       end
 
-      module ConnectionMethods : Connection
-        def upgrade_to_h2c: (Request, Response) -> void
+      module ConnectionMethods : Connection, Upgrade::ConnectionMethods
+        @h2c_handshake: bool
+
+        # @overrid
+        def send: (h2cRequest request) -> void
+
+        def upgrade_to_h2c: (h2cRequest request, Response response) -> void
+
+        private
+
+        # @overrid
+        def send_request_to_parser: (h2cRequest request) -> void
       end
     end
   end

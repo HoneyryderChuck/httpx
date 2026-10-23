@@ -37,6 +37,14 @@ module HTTPX
 
       module ConnectionMethods : Connection
         @init_time: Time?
+
+        def send_request_to_parser: (tracingRequest request) -> void
+
+        private
+
+        def handle_error: (StandardError error, ?tracingRequest? request) -> void
+
+        def ping: (tracingRequest request) -> void
       end
 
       module HTTP2Methods : Connection::HTTP2
@@ -46,6 +54,7 @@ module HTTPX
         def send: (tracingRequest request, ?bool head) -> bool
       end
 
+      type tracingOptions = Options & OptionsMethods
       type tracingRequest = Request & RequestMethods
     end
   end

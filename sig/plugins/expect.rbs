@@ -9,6 +9,9 @@ module HTTPX
 
       def self.extra_options: [T] (T & OptionsMethods options) -> T
 
+      type expectOptions = Options & OptionsMethods
+      type expectRequest = Request & RequestMethods
+
       class Store
         @store: Array[String]
         @mutex: Thread::Mutex
@@ -22,6 +25,20 @@ module HTTPX
 
       module RequestMethods : Request
         @informational_status: Integer?
+      end
+
+      module ConnectionMethods : Connection
+        private
+
+        # @override
+        def send_request_to_parser: (expectRequest request) -> void
+      end
+
+      module InstanceMethods : Session
+        private
+
+        # @override
+        def fetch_response: (expectRequest request, Selector selector, expectOptions options) -> response?
       end
 
       module OptionsMethods : Options

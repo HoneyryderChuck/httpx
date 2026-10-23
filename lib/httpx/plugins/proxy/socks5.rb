@@ -30,6 +30,7 @@ module HTTPX
 
         module ConnectionMethods
           def call
+            # @type ivar @options: Proxy::proxyOptions
             super
 
             return unless @options.proxy && @options.proxy.uri.scheme == "socks5"
@@ -57,6 +58,7 @@ module HTTPX
           private
 
           def handle_transition(nextstate)
+            # @type ivar @options: Proxy::proxyOptions
             return super unless @options.proxy && @options.proxy.uri.scheme == "socks5"
 
             case nextstate
@@ -88,12 +90,14 @@ module HTTPX
           end
 
           def __socks5_proxy_connect
+            # @type ivar @options: Proxy::proxyOptions
             @parser = SocksParser.new(@write_buffer, @options)
             @parser.on(:packet, &method(:__socks5_on_packet))
             transition(:negotiating)
           end
 
           def __socks5_on_packet(packet)
+            # @type ivar @options: Proxy::proxyOptions
             case @state
             when :connecting
               version, method = packet.unpack("CC")

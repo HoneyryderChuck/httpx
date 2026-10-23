@@ -96,6 +96,7 @@ module HTTPX
 
       module InstanceMethods
         def build_request(*)
+          # @type ivar @options: contentDigestOptions
           request = super
 
           return request if request.empty?
@@ -116,7 +117,8 @@ module HTTPX
         private
 
         def fetch_response(request, _, _)
-          response = super
+          # @type ivar @options: contentDigestOptions
+          response = super #: contentDigestResponse | ErrorResponse | nil
           return response unless response.is_a?(Response)
 
           perform_validation = @options.validate_content_digest
@@ -168,6 +170,7 @@ module HTTPX
         end
 
         def base64digest(body)
+          # @type ivar @options: contentDigestOptions
           digest = SUPPORTED_ALGORITHMS.fetch(@options.content_digest_algorithm).new
 
           if body.respond_to?(:read)

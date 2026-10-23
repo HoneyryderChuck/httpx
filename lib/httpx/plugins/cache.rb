@@ -83,11 +83,12 @@ module HTTPX
       module InstanceMethods
         # wipes out all cached responses from the cache store.
         def clear_response_cache
+          # @type ivar @options: cacheOptions
           @options.response_cache_store.clear
         end
 
         def build_request(*)
-          request = super
+          request = super #: cacheRequest
           return request unless cacheable_request?(request)
 
           prepare_cache(request)
@@ -104,7 +105,7 @@ module HTTPX
         end
 
         def fetch_response(request, *)
-          response = super
+          response = super #: cacheResponse | ErrorResponse | nil
 
           return unless response
 
@@ -178,6 +179,7 @@ module HTTPX
 
         # returns a unique cache key as a String identifying this request
         def response_cache_key
+          # @type ivar @options: cacheOptions
           return unless (call = @options.cache_key)
 
           call[self]
@@ -194,6 +196,7 @@ module HTTPX
 
         # a copy of the request this response was originally cached from
         def original_request
+          # @type ivar @request: cacheRequest
           @original_request || @request
         end
 
@@ -210,6 +213,7 @@ module HTTPX
 
       module ResponseBodyMethods
         def decode_chunk(chunk)
+          # @type ivar @response: cacheResponse
           return chunk if @response.cached?
 
           super

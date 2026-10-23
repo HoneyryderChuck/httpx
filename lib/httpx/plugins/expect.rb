@@ -69,6 +69,7 @@ module HTTPX
 
       module RequestMethods
         def initialize(*)
+          # @type ivar @options: expectOptions
           super
 
           @informational_status = nil

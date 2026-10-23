@@ -59,6 +59,7 @@ module HTTPX
         end
 
         def handle_stream(stream, request)
+          # @type ivar @options: streamBidiOptions
           return super unless @options.stream
 
           request.flush_buffer_on_body do
@@ -73,6 +74,7 @@ module HTTPX
 
         # when there ain't more chunks, it makes the buffer as full.
         def send_chunk(request, stream, chunk, next_chunk)
+          # @type ivar @options: streamBidiOptions
           return super unless @options.stream
 
           super
@@ -85,6 +87,7 @@ module HTTPX
 
         # sets end-stream flag when the request is closed.
         def end_stream?(request, next_chunk)
+          # @type ivar @options: streamBidiOptions
           return super unless @options.stream
 
           request.closed? && next_chunk.nil?
@@ -271,12 +274,14 @@ module HTTPX
         end
 
         def closed?
+          # @type ivar @options: streamBidiOptions
           return super unless @options.stream
 
           @closed
         end
 
         def can_buffer?
+          # @type ivar @options: streamBidiOptions
           return super unless @options.stream
 
           super && @state != :waiting_for_chunk
@@ -286,6 +291,7 @@ module HTTPX
         # +:waiting_for_chunk+ state, which the request transitions to once payload
         # is buffered.
         def transition(nextstate)
+          # @type ivar @options: streamBidiOptions
           return super unless @options.stream
 
           headers_sent = @headers_sent
@@ -329,6 +335,7 @@ module HTTPX
         end
 
         def close
+          # @type ivar @options: streamBidiOptions
           return super unless @options.stream
 
           @mutex.synchronize do
@@ -344,6 +351,7 @@ module HTTPX
 
       module RequestBodyMethods
         def initialize(*, **)
+          # @type ivar @options: streamBidiOptions
           super
 
           return unless @options.stream
@@ -359,6 +367,7 @@ module HTTPX
         end
 
         def empty?
+          # @type ivar @options: streamBidiOptions
           return super unless @options.stream
 
           false
@@ -371,6 +380,7 @@ module HTTPX
         attr_writer :signal
 
         def initialize(*)
+          # @type ivar @options: streamBidiOptions
           super
 
           return unless @options.stream
@@ -380,6 +390,8 @@ module HTTPX
 
         # rebuffers the +@write_buffer+ before calculating interests.
         def interests
+          # @type ivar @options: streamBidiOptions
+          # @type ivar @write_buffer: BidiBuffer
           return super unless @options.stream
 
           @write_buffer.rebuffer
@@ -388,6 +400,7 @@ module HTTPX
         end
 
         def call
+          # @type ivar @options: streamBidiOptions
           return super unless @options.stream && (error = @signal.error)
 
           on_error(error)
@@ -396,6 +409,7 @@ module HTTPX
         private
 
         def set_parser_callbacks(parser)
+          # @type ivar @options: streamBidiOptions
           return super unless @options.stream
 
           super

@@ -177,6 +177,7 @@ module HTTPX
 
       module InstanceMethods
         def initialize(*)
+          # @type ivar @options: proxyOptions
           super
           @proxy_parameters = @options.proxy
         end
@@ -272,6 +273,7 @@ module HTTPX
         using URIExtensions
 
         def initialize(*)
+          # @type ivar @options: proxyOptions
           super
           return unless @options.proxy
 
@@ -285,12 +287,14 @@ module HTTPX
         end
 
         def connecting?
+          # @type ivar @options: proxyOptions
           return super unless @options.proxy
 
           super || @state == :connecting || @state == :connected
         end
 
         def call
+          # @type ivar @options: proxyOptions
           super
 
           return unless @options.proxy
@@ -310,6 +314,7 @@ module HTTPX
         end
 
         def reset
+          # @type ivar @options: proxyOptions
           return super unless @options.proxy
 
           @state = :open
@@ -327,6 +332,7 @@ module HTTPX
         end
 
         def connect
+          # @type ivar @options: proxyOptions
           return super unless @options.proxy
 
           case @state
@@ -338,6 +344,7 @@ module HTTPX
         end
 
         def handle_transition(nextstate)
+          # @type ivar @options: proxyOptions
           return super unless @options.proxy
 
           case nextstate

@@ -27,5 +27,9 @@ module HTTPX
     def self?.load_plugin: (Symbol name) -> Module
 
     def self?.register_plugin: (Symbol, Module) -> void
+
+    interface _WithOptions[O]
+      def options: () -> O
+    end
   end
 end

@@ -12,7 +12,7 @@ module HTTPX
 
         def self.extra_options: [T] (T & OptionsMethods options) -> T
 
-        module ConnectionMethods : Proxy::ConnectionMethods
+        module ConnectionMethods : Connection, Proxy::ConnectionMethods
           def __socks4_proxy_connect: () ->  void
           def __socks4_on_packet: (String packet) ->  void
           def on_socks4_error: (string) -> void
@@ -22,7 +22,7 @@ module HTTPX
           include HTTPX::Callbacks
 
           @buffer: Buffer
-          @options: Proxy::OptionsMethods
+          @options: Proxy::proxyOptions
 
           def close: () -> void
           def consume: (*untyped) -> void
@@ -31,7 +31,7 @@ module HTTPX
 
           private
 
-          def initialize: (Buffer buffer, Proxy::OptionsMethods options) -> untyped
+          def initialize: (Buffer buffer, Proxy::proxyOptions options) -> void
         end
 
         module Packet
