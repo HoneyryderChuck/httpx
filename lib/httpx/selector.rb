@@ -98,7 +98,9 @@ module HTTPX
 
       selectables.delete_if do |sel|
         sel.terminate
-        sel.state == :closed
+        # TODO: this check is racy: connections check in to the pool on termination, and may check out and
+        # change state immediately after. find a more idempotent way of doing this.
+        sel.current_selector != self
       end
 
       until selectables.empty?

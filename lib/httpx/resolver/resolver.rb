@@ -29,9 +29,9 @@ module HTTPX
 
     attr_reader :family, :options
 
-    attr_writer :current_selector, :current_session
+    attr_writer :current_session
 
-    attr_accessor :multi
+    attr_accessor :current_selector, :multi
 
     def initialize(family, options)
       @family = family

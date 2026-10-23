@@ -13,7 +13,7 @@ module HTTPX
 
       attr_reader options: Options
 
-      attr_writer current_selector: Selector?
+      attr_accessor current_selector: Selector?
 
       attr_writer current_session: Session?
 
