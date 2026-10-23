@@ -21,6 +21,8 @@ module HTTPX
     def force_close: (?bool delete_pending) -> void
 
     def terminate: () -> void
+
+    def inflight?: () -> boolish
   end
 
   class Selector
@@ -33,11 +35,14 @@ module HTTPX
 
     READABLE: Array[io_interests]
     WRITABLE: Array[io_interests]
+    MAX_BUSY_ITERATIONS: Integer
 
     @timers: Timers
 
     @selectables: Array[selectable]
     @is_timer_interval: bool
+    @busy_iterations: Integer
+    @last_select_registered: Integer?
 
     def each: () -> ::Enumerator[selectable, self]
             | () { (selectable) -> void } -> self
@@ -72,6 +77,10 @@ module HTTPX
     def select_one: (selectable io, io_interests interests, interval? interval) { (selectable) -> void } -> void
 
     def next_timeout: () -> interval?
+
+    def busy_loop_check: (interval? timeout) -> void
+
+    def busy_loop_error_message: (interval? timeout) -> String
 
     def rw_wait: (io_select_selectable IO, interval? interval) -> untyped?
   end

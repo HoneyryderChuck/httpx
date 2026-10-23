@@ -148,6 +148,9 @@ module HTTPX
     def mergeable?(connection)
       return false if @state == :closing || @state == :closed || !@io
 
+      # do not coalesce with HEv2 sibling
+      return false if @sibling.equal?(connection)
+
       return false unless connection.addresses
 
       (
