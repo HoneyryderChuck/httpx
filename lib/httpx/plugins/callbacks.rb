@@ -33,8 +33,8 @@ module HTTPX
           MOD
         end
 
-        def plugin(*args, &blk)
-          super(*args).tap do |sess|
+        def plugin(*, &blk)
+          super(*).tap do |sess|
             CALLBACKS.each do |cb|
               next unless callbacks_for?(cb)
 

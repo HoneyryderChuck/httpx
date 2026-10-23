@@ -81,15 +81,13 @@ module HTTPX
         end
 
         def write(chunk)
-          @content_digest_buffer.write(chunk) if @content_digest_buffer
+          @content_digest_buffer&.write(chunk)
           super
         end
 
         def close
-          if @content_digest_buffer
-            @content_digest_buffer.close
-            @content_digest_buffer = nil
-          end
+          @content_digest_buffer&.close
+          @content_digest_buffer = nil
           super
         end
       end
