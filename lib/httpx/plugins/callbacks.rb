@@ -33,7 +33,8 @@ module HTTPX
           MOD
         end
 
-        def plugin(*args, &blk) # ruby 2.7 requires explicit named splat
+        def plugin(*args, &blk)
+          # ruby 2.7 requires explicit named splat
           super(*args).tap do |sess|
             CALLBACKS.each do |cb|
               next unless callbacks_for?(cb)
