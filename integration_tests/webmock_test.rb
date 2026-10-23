@@ -316,7 +316,7 @@ class WebmockTest < Minitest::Test
 
   def test_webmock_allows_real_request_with_io_body
     WebMock.allow_net_connect!
-    uri = build_uri("/anything/io-body")
+    uri = build_uri("/post")
     response = HTTPX.post(uri, body: StringIO.new("abc"))
     verify_status(response, 200)
     body = json_body(response)
