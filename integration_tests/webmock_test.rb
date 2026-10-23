@@ -187,6 +187,12 @@ class WebmockTest < Minitest::Test
                      body: "abc", headers: { "A" => "a" })
   end
 
+  def test_verification_that_expected_request_occured_with_io_body
+    stub_request(:post, MOCK_URL_HTTP).with(body: "abc")
+    http_request(:post, MOCK_URL_HTTP, body: StringIO.new("abc"))
+    assert_requested(:post, MOCK_URL_HTTP, body: "abc")
+  end
+
   def test_verification_that_expected_request_occured_with_query_params
     stub_request(:any, MOCK_URL_HTTP).with(query: hash_including("a" => %w[b c]))
     http_request(:get, "#{MOCK_URL_HTTP}/?a[]=b&a[]=c&x=1")
@@ -305,6 +311,17 @@ class WebmockTest < Minitest::Test
     verify_status(response, 200)
     verify_body_length(response)
     assert_requested(:post, uri, headers: { "Content-Type" => "application/x-www-form-urlencoded" }, body: "foo=bar")
+    assert !response.mocked?
+  end
+
+  def test_webmock_allows_real_request_with_io_body
+    WebMock.allow_net_connect!
+    uri = build_uri("/anything/io-body")
+    response = HTTPX.post(uri, body: StringIO.new("abc"))
+    verify_status(response, 200)
+    body = json_body(response)
+    assert_equal("abc", body["data"])
+    assert_requested(:post, uri, body: "abc")
     assert !response.mocked?
   end
 

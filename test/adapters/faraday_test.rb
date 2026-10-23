@@ -180,6 +180,21 @@ class FaradayTest < Minitest::Test
     assert streamed.join.lines.size == 3
   end
 
+  def test_adapter_get_data_after_non_streaming_request
+    # the first request builds (and memoizes) the session without needing on_data support
+    get(build_path("/get"))
+
+    streamed = []
+    get(build_path("/stream/3")) do |req|
+      req.options.on_data = proc do |chunk, _overall_received_bytes|
+        streamed << chunk
+      end
+    end
+
+    assert !streamed.empty?
+    assert streamed.join.lines.size == 3
+  end
+
   def test_adapter_timeout_open_timeout
     start_connect_timeout_tcp_server do |authority|
       uri = URI(build_uri("/", origin(authority)))

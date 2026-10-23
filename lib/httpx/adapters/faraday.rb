@@ -33,7 +33,7 @@ module Faraday
 
             @connection = @connection.plugin(:proxy).with(proxy: proxy_options)
           end
-          @connection = @connection.plugin(OnDataPlugin) if env.request.stream_response?
+          @connection = @connection.plugin(OnDataPlugin)
 
           @connection = @config_block.call(@connection) || @connection if @config_block
           @connection

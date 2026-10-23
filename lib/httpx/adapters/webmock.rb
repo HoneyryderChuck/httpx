@@ -20,9 +20,19 @@ module WebMock
           WebMock::RequestSignature.new(
             request.verb.downcase.to_sym,
             uri.to_s,
-            body: request.body.to_s,
+            body: build_webmock_request_body(request),
             headers: request.headers.to_h
           )
+        end
+
+        def build_webmock_request_body(request)
+          body = request.body
+
+          return body.to_s unless body.respond_to?(:read)
+
+          body.read.to_s.tap do
+            body.rewind
+          end
         end
 
         def build_webmock_response(_request, response)
