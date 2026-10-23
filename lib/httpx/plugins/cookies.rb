@@ -26,6 +26,7 @@ module HTTPX
         end
 
         def wrap
+          # @type ivar @options: cookiesOptions
           return super unless block_given?
 
           super do |session|
@@ -39,7 +40,7 @@ module HTTPX
         end
 
         def build_request(*)
-          request = super
+          request = super #: cookiesRequest
           request.headers.set_cookie(request.options.cookies[request.uri])
           request
         end
@@ -53,6 +54,7 @@ module HTTPX
         private
 
         def set_request_callbacks(request)
+          # @type ivar @options: cookiesOptions
           super
           request.on(:response) do |response|
             next unless response && response.respond_to?(:headers) && (set_cookie = response.headers["set-cookie"])

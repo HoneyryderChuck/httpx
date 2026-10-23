@@ -3,6 +3,10 @@ module HTTPX
 
   module Plugins
     module FollowRedirects
+      type followRedirectsOptions = Options & OptionsMethods
+      type followRedirectsRequest = Request & RequestMethods
+      type followRedirectsConnection = Connection & ConnectionMethods
+
       MAX_REDIRECTS: Integer
       REDIRECT_STATUS: Range[Integer]
       REQUEST_BODY_HEADERS: Array[String]
@@ -32,26 +36,40 @@ module HTTPX
       module InstanceMethods : Session
         def max_redirects: (_ToI) -> instance
 
+        # @override 
+        def build_request: (verb verb, generic_uri uri, ?request_params params, ?Options options) -> followRedirectsRequest
+
         private
 
-        def RequestMethods_headers: (http_uri original_uri, http_uri redirect_uri, Headers headers, OptionsMethods options) -> Headers
+        # @override 
+        def fetch_response: (followRedirectsRequest request, Selector selector, followRedirectsOptions options) -> response?
+
+        def redirect_request_headers: (http_uri original_uri, http_uri redirect_uri, Headers headers, followRedirectsOptions options) -> Headers
 
         def __get_location_from_response: (Response) -> http_uri
       end
 
       module RequestMethods : Request
-        attr_accessor root_request: (Request & RequestMethods)?
+        attr_accessor root_request: followRedirectsRequest?
 
-        @RequestMethods: RequestMethods
+        @redirect_request: followRedirectsRequest?
 
-        def RequestMethods: () -> RequestMethods
 
-        def RequestMethods=: (RequestMethods req) -> void
+        def redirect_request: () -> followRedirectsRequest
+
+        def redirect_request=: (followRedirectsRequest req) -> void
 
         def max_redirects: () -> Integer
       end
+
+      module ConnectionMethods : Connection
+        private
+
+        # @override 
+        def set_request_request_timeout: (followRedirectsRequest request) -> void
+      end
     end
 
-    type sessionFollowRedirects = FollowRedirects::InstanceMethods
+    type sessionFollowRedirects = Session & FollowRedirects::InstanceMethods
   end
 end

@@ -5,6 +5,9 @@ module HTTPX
 
       def self.subplugins: () -> Hash[Symbol, Module]
 
+      type sseOptions = Options & Stream::OptionsMethods & OptionsMethods
+      type sseRequest = Request & Stream::RequestMethods & RequestMethods
+
       class Message
         attr_reader data: String
         attr_reader id: _ToS?
@@ -14,7 +17,7 @@ module HTTPX
         def initialize: (data: String, ?event: _ToS?, ?id: _ToS?, ?retry_after: Integer?) -> void
       end
 
-      module OptionsMethods : Stream::OptionsMethods
+      module OptionsMethods : Options, Stream::OptionsMethods
         attr_reader event_stream: boolish
 
         private
@@ -22,10 +25,10 @@ module HTTPX
         def option_event_stream: (boolish) -> boolish
       end
 
-      module InstanceMethods : Stream::InstanceMethods
+      module InstanceMethods : Session, Stream::InstanceMethods
       end
 
-      module RequestMethods : Stream::RequestMethods
+      module RequestMethods : Request, Stream::RequestMethods
         attr_accessor last_server_sent_message: Message?
       end
 
@@ -39,7 +42,15 @@ module HTTPX
       end
 
       module ServerSentEventsRetries
-        module InstanceMethods : ServerSentEvents::InstanceMethods & Retries::InstanceMethods
+        type sseRetriesOptions = Options & Stream::OptionsMethods & Retries::OptionsMethods & ServerSentEvents::OptionsMethods
+        type sseRetriesRequest = Request & Stream::RequestMethods & Retries::RequestMethods & ServerSentEvents::RequestMethods & Plugins::_WithOptions[sseRetriesOptions]
+
+        module InstanceMethods : Session, Stream::InstanceMethods, ServerSentEvents::InstanceMethods, Retries::InstanceMethods
+          private
+
+          def prepare_to_retry: (sseRetriesRequest request, Retries::retriesResponse | ErrorResponse response, interval? retry_after) -> void
+
+          def when_to_retry: (sseRetriesRequest request, Retries::retriesResponse | ErrorResponse response, sseRetriesOptions options) -> interval?
         end
       end
     end

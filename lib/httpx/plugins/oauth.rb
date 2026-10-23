@@ -240,6 +240,7 @@ module HTTPX
         protected :oauth_session
 
         def initialize(*)
+          # @type ivar @options: oauthOptions
           super
 
           @oauth_session = if @options.oauth_options

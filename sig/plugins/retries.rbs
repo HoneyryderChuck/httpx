@@ -8,16 +8,20 @@ module HTTPX
       DEFAULT_JITTER: ^(interval) -> interval
       BACKOFF_ALGORITHMS: Array[Symbol]
 
-      def self?.retry_after_polynomial_backoff: (RequestMethods request, ResponseMethods | ErrorResponse response) -> interval
+      def self?.retry_after_polynomial_backoff: (retriesRequest request, retriesResponse | ErrorResponse response) -> interval
 
-      def self?.retry_after_exponential_backoff: (RequestMethods request, ResponseMethods | ErrorResponse response) -> interval
+      def self?.retry_after_exponential_backoff: (retriesRequest request, retriesResponse | ErrorResponse response) -> interval
+
+      type retriesOptions = Options & OptionsMethods
+      type retriesRequest = Request & RequestMethods
+      type retriesResponse = Response & ResponseMethods
 
       interface _RetryCallback
-        def call: (ResponseMethods | ErrorResponse response) -> bool?
+        def call: (retriesResponse | ErrorResponse response) -> bool?
       end
 
       module OptionsMethods : Options
-        attr_reader retry_after: (^(RequestMethods request, ResponseMethods | ErrorResponse response) -> interval | interval)?
+        attr_reader retry_after: (^(retriesRequest request, retriesResponse | ErrorResponse response) -> interval | interval)?
 
         attr_reader retry_jitter: ^(interval jitter) -> interval
 
@@ -29,8 +33,8 @@ module HTTPX
 
         private
 
-        def option_retry_after: [T] (T & ^(RequestMethods request, ResponseMethods | ErrorResponse response) -> interval) -> T
-                              | (Symbol value) -> (^(RequestMethods request, ResponseMethods | ErrorResponse response) -> interval)
+        def option_retry_after: [T] (T & ^(retriesRequest request, retriesResponse | ErrorResponse response) -> interval) -> T
+                              | (Symbol value) -> (^(retriesRequest request, retriesResponse | ErrorResponse response) -> interval)
                               | (_ToF value) -> Float
 
         def option_retry_jitter: [T] (^(interval jitter) -> interval) -> T
@@ -42,28 +46,28 @@ module HTTPX
         def option_retry_on: (_RetryCallback value) -> _RetryCallback
       end
 
-      def self.extra_options: [T] (OptionsMethods options) -> T
+      def self.extra_options: [T] (T & retriesOptions options) -> T
 
       module InstanceMethods : Session
         def max_retries: (int) -> instance
 
         private
 
-        def fetch_response: (RequestMethods request, Selector selector, OptionsMethods options) -> (ResponseMethods | ErrorResponse)?
+        def fetch_response: (retriesRequest request, Selector selector, retriesOptions options) -> (retriesResponse | ErrorResponse)?
 
-        def retryable_request?: (RequestMethods request, ResponseMethods | ErrorResponse response, OptionsMethods options) -> boolish
+        def retryable_request?: (retriesRequest request, retriesResponse | ErrorResponse response, retriesOptions options) -> boolish
 
-        def retryable_response?: (ResponseMethods | ErrorResponse response, OptionsMethods options) -> boolish
+        def retryable_response?: (retriesResponse | ErrorResponse response, retriesOptions options) -> boolish
 
-        def retryable_error?: (_Exception error, OptionsMethods options) -> boolish
+        def retryable_error?: (_Exception error, retriesOptions options) -> boolish
 
-        def try_partial_retry: (RequestMethods request, ResponseMethods | ErrorResponse response) -> void
+        def try_partial_retry: (retriesRequest request, retriesResponse | ErrorResponse response) -> void
 
-        def prepare_to_retry: (RequestMethods request, ResponseMethods | ErrorResponse response, interval? retry_after) -> void
+        def prepare_to_retry: (retriesRequest request, retriesResponse | ErrorResponse response, interval? retry_after) -> void
 
-        def can_reconnect?: (RequestMethods request, ResponseMethods | ErrorResponse response) -> bool
+        def can_reconnect?: (retriesRequest request, retriesResponse | ErrorResponse response) -> bool
 
-        def when_to_retry: (RequestMethods request, ResponseMethods | ErrorResponse response, OptionsMethods options) -> interval?
+        def when_to_retry: (retriesRequest request, retriesResponse | ErrorResponse response, retriesOptions options) -> interval?
       end
 
       module RequestMethods : Request
@@ -71,13 +75,13 @@ module HTTPX
 
         attr_accessor retries: Integer
 
-        attr_writer partial_response: ResponseMethods | ErrorResponse?
+        attr_writer partial_response: retriesResponse?
 
-        def response=: (ResponseMethods | ErrorResponse response) -> void
+        def response=: (retriesResponse | ErrorResponse response) -> void
       end
 
       module ResponseMethods : Response
-        def from_partial_response: (ResponseMethods response) -> void
+        def from_partial_response: (retriesResponse response) -> void
       end
     end
   end

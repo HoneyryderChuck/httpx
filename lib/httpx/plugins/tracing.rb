@@ -75,6 +75,7 @@ module HTTPX::Plugins
 
       # intercepts request initialization to inject the tracing logic.
       def initialize(*)
+        # @type ivar @options: tracingOptions
         super
 
         @init_time = @handshake_time = @enqueue_time = nil
@@ -189,6 +190,7 @@ module HTTPX::Plugins
       end
 
       def handle_error(er, request = nil)
+        # @type ivar @pending: Array[tracingRequest]
         if connecting? && @init_time
           # bookkeep handshake time back into pending requests, which were never initialized with it.
           handshake_time = ::Time.now.utc - @init_time

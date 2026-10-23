@@ -101,6 +101,7 @@ module HTTPX
         module ConnectionMethods
           # should not coalesce connections here, as the IP is the IP of the proxy
           def coalescable?(*)
+            # @type ivar @options: sshProxyOptions
             return super unless @options.proxy
 
             false

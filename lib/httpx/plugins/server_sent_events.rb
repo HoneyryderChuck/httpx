@@ -70,6 +70,7 @@ module HTTPX
       module StreamResponseMethods
         # yields each event Message as the server emits them.
         def each_message(&block)
+          # @type ivar @request: sseRequest
           return enum_for(__method__) unless block
 
           payload = {}

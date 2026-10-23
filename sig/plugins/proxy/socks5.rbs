@@ -19,7 +19,9 @@ module HTTPX
 
         def self.extra_options: [T] (T & OptionsMethods options) -> T
 
-        module ConnectionMethods : Proxy::ConnectionMethods
+        def self.load_dependencies: (singleton(Session)) -> void
+
+        module ConnectionMethods : Connection, Proxy::ConnectionMethods
           private
 
           def __socks5_proxy_connect: () ->  void
@@ -35,7 +37,7 @@ module HTTPX
           include HTTPX::Callbacks
 
           @buffer: Buffer
-          @options: OptionsMethods
+          @options: Proxy::proxyOptions
 
           def close: () -> void
 
@@ -47,7 +49,7 @@ module HTTPX
 
           private
 
-          def initialize: (Buffer buffer, OptionsMethods options) -> void
+          def initialize: (Buffer buffer, Proxy::proxyOptions options) -> void
         end
 
         module Packet

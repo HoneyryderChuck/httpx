@@ -246,6 +246,7 @@ module HTTPX
         end
 
         def max_redirects
+          # @type ivar @options: followRedirectsOptions
           @options.max_redirects || MAX_REDIRECTS
         end
       end

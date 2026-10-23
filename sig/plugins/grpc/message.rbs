@@ -3,14 +3,14 @@ module HTTPX
   module Plugins
     module GRPC
       module Message
-        def self?.unary: (Plugins::GRPC::ResponseMethods | ErrorResponse response) -> grpc_message
+        def self?.unary: (grpcResponse | ErrorResponse response) -> grpc_message
 
         def self?.stream: (StreamResponse) { (String) -> void } -> void
                         | (StreamResponse) -> Enumerable[String]
 
         def self?.cancel: (Request) -> void
 
-        def self?.verify_status: (StreamResponse | Plugins::GRPC::ResponseMethods | ErrorResponse) -> void
+        def self?.verify_status: (StreamResponse | grpcResponse | ErrorResponse) -> void
       end
     end
   end

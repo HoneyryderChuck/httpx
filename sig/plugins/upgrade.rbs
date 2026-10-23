@@ -1,8 +1,11 @@
 module HTTPX
   module Plugins
     module Upgrade
+      type upgradeOptions = Options & OptionsMethods
+      type upgradeConnection = Connection & ConnectionMethods
+
       interface _Upgrader
-        def call: (Connection connection, Request request, Response response) -> void
+        def call: (upgradeConnection connection, Request request, Response response) -> void
       end
 
       def self.configure: (singleton(Session)) -> void
@@ -18,6 +21,13 @@ module HTTPX
       def self.extra_options: [T] (T & OptionsMethods options) -> T
 
       module InstanceMethods : Session
+        # @override
+        def find_connection: (http_uri request_uri, Selector selector, Options options) -> upgradeConnection
+
+        private
+
+        # @override
+        def fetch_response: (Request request, Selector selector, upgradeOptions options) -> response?
       end
 
       module ConnectionMethods : Connection

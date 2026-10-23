@@ -4,7 +4,7 @@ module HTTPX
       class Call
         attr_writer decoder: _Callable
 
-        @response: ResponseMethods | StreamResponse
+        @response: grpcResponse | StreamResponse
         @consumed: bool
         @grpc_response: Enumerator[String] | String
 
@@ -14,7 +14,7 @@ module HTTPX
 
         private
 
-        def initialize: (ResponseMethods | StreamResponse response) -> untyped
+        def initialize: (grpcResponse | StreamResponse response) -> untyped
 
         def grpc_response: () -> grpc_response
       end

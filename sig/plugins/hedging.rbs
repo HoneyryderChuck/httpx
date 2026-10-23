@@ -1,41 +1,80 @@
 module HTTPX
   module Plugins
     module Hedging
+      type hedgingOptions = Options & OptionsMethods
+      type hedgingRequest = Request & RequestMethods
+      type hedgingResponse = Response & ResponseMethods
+      type hedgingConnection = Connection & ConnectionMethods
+
       module OptionsMethods : Options
-        attr_reader hedge_after: (^(RequestMethods request, Response response) -> interval | interval)?
+        attr_reader hedge_after: (^(hedgingRequest request, Response response) -> interval | interval)?
 
         private
 
-        def option_hedge_after: (^(RequestMethods request, Response response) -> interval) -> (^(RequestMethods request, Response response) -> interval)
+        def option_hedge_after: (^(hedgingRequest request, Response response) -> interval) -> (^(hedgingRequest request, Response response) -> interval)
                               | (_ToF value) -> interval
       end
 
       module InstanceMethods : Session
+        # @override 
+        def select_connection: (hedgingConnection connection, Selector selector) -> void
+
         private
 
-        def hedge_connection: (ConnectionMethods connection) -> ConnectionMethods
+        # @override 
+        def do_request: (hedgingRequest request, hedgingConnection connection, Selector selector) -> void
 
-        def hedge_request!: (RequestMethods request, ConnectionMethods connection, Selector selector) -> void
+        # @override 
+        def on_resolver_connection: (hedgingConnection connection, Selector selector) -> void
 
-        def when_to_hedge: (RequestMethods request) -> interval?
+        # @override 
+        def can_checkin?: (hedgingConnection connection) -> boolish
+
+        def hedge_connection: (hedgingConnection connection) -> hedgingConnection
+
+        def hedge_request!: (hedgingRequest request, hedgingConnection connection, Selector selector) -> void
+
+        def when_to_hedge: (hedgingRequest request) -> interval?
       end
 
       module RequestMethods : Request
-        attr_reader hedge_request: RequestMethods?
+        def dup: () -> hedgingRequest
+
+        attr_reader hedge_request: hedgingRequest?
 
         @is_hedge_request: bool
 
-        def hedge_request=: (RequestMethods? request) -> void
+        def hedge_request=: (hedgingRequest? request) -> void
+      end
+
+      module ResponseMethods : Response
       end
 
       module ConnectionMethods : Connection
-        attr_reader hedge_connection: ConnectionMethods?
+        attr_reader hedge_connection: hedgingConnection?
 
         attr_accessor is_hedge_connection: bool
 
-        def hedge_connection=: (ConnectionMethods? connection) -> void
+        def hedge_connection=: (hedgingConnection? connection) -> void
 
-        def try_yield_connection: [T] () { (ConnectionMethods) -> T } -> T
+        # override
+        def dup: () -> hedgingConnection
+
+        # override
+        def pending: () -> Array[hedgingRequest]
+
+        def try_yield_hedge_connection: [T] () { (hedgingConnection?) -> T } -> T
+
+        # override
+        def mergeable?: (hedgingConnection connection) -> bool
+
+        # override
+        def send: (hedgingRequest request) -> void
+
+        private
+
+        # override
+        def send_request_to_parser: (hedgingRequest request) -> void
       end
     end
 

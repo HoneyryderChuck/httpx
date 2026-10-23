@@ -15,7 +15,7 @@ module HTTPX
     @wrapped: bool
     @closing: bool
 
-    def wrap: () { (instance) -> void } -> void
+    def wrap: [T] () { (instance) -> T } -> T
 
     def close: (?Selector selector) -> void
 

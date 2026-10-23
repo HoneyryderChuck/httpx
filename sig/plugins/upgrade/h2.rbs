@@ -1,7 +1,13 @@
 module HTTPX
   module Plugins
     module H2
-      module ConnectionMethods : Connection
+      type h2Connection = Connection & Upgrade::ConnectionMethods & ConnectionMethods
+
+      def self.extra_options: [T] (T & Upgrade::upgradeOptions options) -> [T] 
+
+      def self.call: (h2Connection connection, Request request, Response response) -> void
+
+      module ConnectionMethods : Connection, Upgrade::ConnectionMethods
         def upgrade_to_h2: () -> void
       end
     end

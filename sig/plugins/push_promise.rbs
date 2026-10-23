@@ -1,6 +1,10 @@
 module HTTPX
   module Plugins
     module PushPromise
+      type pushPromiseResponse = Response & ResponseMethods
+
+      def self.extra_options: [T] (T & Options options) -> T 
+
       module ResponseMethods : Response
         @__pushed: bool?
 

@@ -3,21 +3,26 @@ module HTTPX
     module Stream
       STREAM_REQUEST_OPTIONS: Hash[Symbol, untyped]
 
+      type streamOptions = Options & OptionsMethods
+      type streamRequest = Request & RequestMethods
+      type streamResponse = Response & ResponseMethods
+      type streamSession = Session & InstanceMethods
+
+      def self.extra_options: [T] (T & Options options) -> T 
+
       module OptionsMethods : Options
         attr_reader stream: boolish
 
-        attr_reader retry_stream_response_class: singleton(StreamResponse)
+        attr_reader stream_response_class: singleton(StreamResponse)
 
         private
 
         def option_stream: (boolish) -> boolish
 
-        def option_retry_stream_response_class: [T] (T & singleton(StreamResponse)) -> T
+        def option_stream_response_class: [T] (T & singleton(StreamResponse)) -> T
       end
 
       module InstanceMethods : Session
-        # @options: OptionsMethods
-
         private
 
         def request: (*Request, **untyped?) -> (response | Array[response] | StreamResponse)
@@ -41,10 +46,10 @@ module HTTPX
   class StreamResponse
     include _ToS
 
-    attr_reader request: Plugins::Stream::RequestMethods
-    @options: Plugins::Stream::OptionsMethods
+    attr_reader request: Plugins::Stream::streamRequest
+    @options: Plugins::Stream::streamOptions
 
-    @session: Plugins::Stream::InstanceMethods
+    @session: Plugins::Stream::streamSession
     @response_enum: Enumerator[String]?
     @buffered_chunks: Array[String]
     @on_chunk: ^(String) -> void | nil
@@ -57,7 +62,7 @@ module HTTPX
 
     def on_chunk: (string) -> void
 
-    def initialize: (Plugins::Stream::RequestMethods, Plugins::Stream::InstanceMethods) -> void
+    def initialize: (Plugins::Stream::streamRequest, Plugins::Stream::streamSession) -> void
 
     private
 

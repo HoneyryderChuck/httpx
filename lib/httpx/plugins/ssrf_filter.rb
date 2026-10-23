@@ -110,6 +110,7 @@ module HTTPX
 
       module InstanceMethods
         def send_requests(*requests)
+          # @type ivar @options: ssrfFilterOptions
           responses = requests.map do |request|
             next if @options.allowed_schemes.include?(request.uri.scheme)
 
@@ -142,6 +143,7 @@ module HTTPX
         end
 
         def addresses=(addrs)
+          # @type ivar @options: ssrfFilterOptions
           addrs = addrs.reject do |ipaddr|
             ipaddr = ipaddr.address
             next false if @options.safe_private_ranges&.any? { |r| r.include?(ipaddr) }

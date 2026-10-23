@@ -1,38 +1,42 @@
 module HTTPX
   module Plugins
     module Cache
+      type cacheOptions = Options & OptionsMethods
+      type cacheRequest = Request & RequestMethods
+      type cacheResponse = Response & ResponseMethods
+
       def self.load_dependencies: (singleton(Session) klass) -> void
 
-      def self.extra_options: [T] (T & OptionsMethods options) -> T
+      def self.extra_options: (Options options) -> Options
 
       interface _CacheStore
-        def get: (RequestMethods request) -> ResponseMethods?
+        def get: (cacheRequest request) -> cacheResponse?
 
-        def set: (RequestMethods request, ResponseMethods response) -> void
+        def set: (cacheRequest request, cacheResponse response) -> void
 
         def clear: () -> void
       end
 
-      module OptionsMethods
-        attr_reader cache_key: (^(RequestMethods) -> String)?
+      module OptionsMethods : Options
+        attr_reader cache_key: (^(cacheRequest) -> String)?
 
-        attr_reader cacheable_request: (^(RequestMethods) -> boolish)?
+        attr_reader cacheable_request: (^(cacheRequest) -> boolish)?
 
-        attr_reader cacheable_response: (^(RequestMethods, ResponseMethods) -> boolish)?
+        attr_reader cacheable_response: (^(cacheRequest, cacheResponse) -> boolish)?
 
-        attr_reader valid_cached_response: (^(RequestMethods, ResponseMethods) -> boolish)?
+        attr_reader valid_cached_response: (^(cacheRequest, cacheResponse) -> boolish)?
 
-        attr_reader response_cache_store: Store
+        attr_reader response_cache_store: _CacheStore
 
          private
 
-        def option_cache_key: (^(RequestMethods) -> String) -> (^(RequestMethods) -> String)
+        def option_cache_key: (^(cacheRequest) -> String) -> (^(cacheRequest) -> String)
 
-        def option_cacheable_request: (^(RequestMethods) -> boolish) -> (^(RequestMethods) -> boolish)
+        def option_cacheable_request: (^(cacheRequest) -> boolish) -> (^(cacheRequest) -> boolish)
 
-        def option_cacheable_response: (^(RequestMethods, ResponseMethods) -> boolish) -> ((^(RequestMethods, ResponseMethods) -> boolish))
+        def option_cacheable_response: (^(cacheRequest, cacheResponse) -> boolish) -> ((^(cacheRequest, cacheResponse) -> boolish))
 
-        def option_valid_cached_response: (^(RequestMethods, ResponseMethods) -> boolish) -> ((^(RequestMethods, ResponseMethods) -> boolish))
+        def option_valid_cached_response: (^(cacheRequest, cacheResponse) -> boolish) -> ((^(cacheRequest, cacheResponse) -> boolish))
 
          def option_response_cache_store: (:store) -> Store
                                         | (:file_store) -> FileStore
@@ -42,36 +46,51 @@ module HTTPX
       module InstanceMethods : Session
         def clear_response_cache: () -> void
 
+        # @override
+        def build_request: (verb verb, generic_uri uri, ?request_params params, ?Options options) -> cacheRequest
+
         private
 
-        def cacheable_request?: (RequestMethods request) -> boolish
+        # @override
+        def send_request: (cacheRequest request, Selector selector, ?Options options) ?{ (Connection) -> void } -> void
 
-        def cacheable_response?: (RequestMethods request, ResponseMethods response) -> boolish
+        # @override
+        def fetch_response: (cacheRequest request, Selector selector, Options options) -> response?
 
-        def valid_cached_response?: (RequestMethods request, ResponseMethods cached_response) -> boolish
+        def cacheable_request?: (cacheRequest request) -> boolish
 
-        def prepare_cache: (RequestMethods request) -> void
+        def cacheable_response?: (cacheRequest request, cacheResponse response) -> boolish
 
-        def retrieve_cached_response: (RequestMethods request) -> ResponseMethods?
+        def valid_cached_response?: (cacheRequest request, cacheResponse cached_response) -> boolish
+
+        def prepare_cache: (cacheRequest request) -> void
+
+        def retrieve_cached_response: (cacheRequest request) -> cacheResponse?
       end
 
       module RequestMethods : Request
-        attr_accessor cached_response: ResponseMethods?
-        # attr_reader options: OptionsMethods
+        attr_accessor cached_response: cacheResponse?
 
         def response_cache_key: () -> String?
       end
 
       module ResponseMethods : Response
-        attr_writer original_request: RequestMethods
+        attr_writer original_request: cacheRequest
 
         @cached: bool
 
-        def original_request: () -> RequestMethods?
+        # Kernel#dup returns `self`, which resolves to plain Response inside the intersection.
+        def dup: () -> cacheResponse
+
+        def original_request: () -> cacheRequest?
 
         def cached?: () -> bool
 
         def mark_as_cached!: () -> void
+      end
+
+      module ResponseBodyMethods : Response::Body
+        def decode_chunk: (String chunk) -> String
       end
     end
   end

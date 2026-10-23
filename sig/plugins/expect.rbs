@@ -9,6 +9,9 @@ module HTTPX
 
       def self.extra_options: [T] (T & OptionsMethods options) -> T
 
+      type expectOptions = Options & OptionsMethods
+      type expectRequest = Request & RequestMethods
+
       class Store
         @store: Array[String]
         @mutex: Thread::Mutex
@@ -24,7 +27,7 @@ module HTTPX
         @informational_status: Integer?
       end
 
-      module ConnectionMethods : Options
+      module ConnectionMethods : Connection
         private
 
         def set_request_expect_timeout: (Request request) -> void

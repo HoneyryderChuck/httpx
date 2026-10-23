@@ -1,14 +1,19 @@
 module HTTPX
   module Plugins
     module Auth
-      type auth_header_value_type = String | ^(?RequestMethods request, ?bool should_regenerate) -> string
+      type authOptions = Options & OptionsMethods
+      type authRequest = Request & RequestMethods
+
+      def self.subplugins: () -> Hash[Symbol, Module]
+
+      type auth_header_value_type = String | ^(?authRequest request, ?bool should_regenerate) -> string
 
       module OptionsMethods : Options
         attr_reader auth_header_value: auth_header_value_type?
 
         attr_reader auth_header_type: String?
 
-        attr_reader auth_header_expires_at: (^(RequestMethods request) -> _ToF | (Object & _ToF))?
+        attr_reader auth_header_expires_at: (^(authRequest request) -> _ToF | (Object & _ToF))?
 
         attr_reader auth_header_expires_in: Float?
 
@@ -20,7 +25,7 @@ module HTTPX
 
         def option_auth_header_type: (String) -> String
 
-        def option_auth_header_expires_at: (^(RequestMethods request) -> _ToF) -> (^(RequestMethods request) -> _ToF)
+        def option_auth_header_expires_at: (^(authRequest request) -> _ToF) -> (^(authRequest request) -> _ToF)
                                          | (Object & _ToF) -> (Object & _ToF)
 
         def option_auth_header_expires_in: (Object & _ToF) -> Float
@@ -34,9 +39,9 @@ module HTTPX
         @skip_auth_header_value: bool
         @auth_header_expires_at: interval?
 
-        def authorization: (?string token, ?auth_header_type: string) ?{ (?RequestMethods, ?bool) -> string } -> instance
+        def authorization: (?string token, ?auth_header_type: string) ?{ (?authRequest, ?bool) -> string } -> instance
 
-        def bearer_auth: (?string token) ?{ (RequestMethods) -> string } -> instance
+        def bearer_auth: (?string token) ?{ (authRequest) -> string } -> instance
 
         def skip_auth_header: [T] { () -> T } -> T
 
@@ -44,13 +49,16 @@ module HTTPX
 
         private
 
-        def generate_auth_token: (RequestMethods request, bool should_regenerate) -> String?
+        # @override
+        def send_request: (authRequest request, Selector selector, ?Options options) ?{ (Connection) -> void } -> void
+
+        def generate_auth_token: (authRequest request, bool should_regenerate) -> String?
 
         def try_invalidate_auth_header_value: () -> void
 
-        def set_auth_header_expires_at: (RequestMethods request) -> void
+        def set_auth_header_expires_at: (authRequest request) -> void
 
-        def dynamic_auth_token?: (auth_header_value_type auth_header_value) -> boolish
+        def dynamic_auth_token?: (auth_header_value_type? auth_header_value) -> boolish
       end
 
       module RequestMethods : Request
@@ -66,10 +74,27 @@ module HTTPX
       end
 
       module AuthRetries
-        module InstanceMethods : Retries::InstanceMethods
+        type authRetriesOptions = Options & Auth::OptionsMethods & Retries::OptionsMethods
+
+        type authRetriesRequest = Request & Auth::RequestMethods & Retries::RequestMethods & Plugins::_WithOptions[authRetriesOptions]
+
+        module InstanceMethods : Session, Auth::InstanceMethods, Retries::InstanceMethods
           private
 
-          def auth_error?: (response response, Options options) -> boolish
+          # @override
+          def retryable_request?: (authRetriesRequest request, Retries::retriesResponse | ErrorResponse response, authRetriesOptions options) -> boolish
+
+          # @override
+          def retryable_response?: (Retries::retriesResponse | ErrorResponse response, authRetriesOptions options) -> boolish
+
+          # @override
+          def prepare_to_retry: (authRetriesRequest request, Retries::retriesResponse | ErrorResponse response, interval? retry_after) -> void
+
+          # @override
+          def when_to_retry: (authRetriesRequest request, Retries::retriesResponse | ErrorResponse response, authRetriesOptions options) -> interval?
+
+          # @override
+          def auth_error?: (response response, Options & Auth::OptionsMethods options) -> boolish
         end
       end
     end

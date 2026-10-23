@@ -9,7 +9,7 @@ module HTTPX
       end
 
       module QueryRetries
-        module InstanceMethods : Query::InstanceMethods & Retries::InstanceMethods
+        module InstanceMethods : Session, Query::InstanceMethods, Retries::InstanceMethods
         end
       end
     end

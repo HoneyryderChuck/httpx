@@ -68,7 +68,7 @@ module HTTPX
         private
 
         def fetch_response(request, *)
-          response = super
+          response = super #: responseCacheResponse | ErrorResponse | nil
 
           return unless response
 
@@ -151,6 +151,7 @@ module HTTPX
 
         # returns a unique cache key as a String identifying this request
         def response_cache_key
+          # @type ivar @options: responseCacheOptions
           @response_cache_key ||= begin
             keys = [@verb, @uri.merge(path)]
 
@@ -174,6 +175,7 @@ module HTTPX
 
         # eager-copies the response headers and body from {RequestMethods#cached_response}.
         def copy_from_cached!
+          # @type ivar @request: responseCacheRequest
           cached_response = @request.cached_response
 
           return unless cached_response

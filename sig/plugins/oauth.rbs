@@ -4,7 +4,13 @@ module HTTPX
     # https://gitlab.com/os85/httpx/wikis/OAuth
     #
     module OAuth
+      type oauthOptions = Options & Auth::OptionsMethods & OptionsMethods
+
       def self.load_dependencies: (singleton(Session) klass) -> void
+
+      def self.subplugins: () -> Hash[Symbol, Module]
+
+      def self.extra_options: (Options options) -> Options
 
       type grant_type = "client_credentials" | "refresh_token"
 
@@ -45,6 +51,8 @@ module HTTPX
 
         def token_endpoint_auth_method: () -> String
 
+        def expires_at: () -> Integer?
+
         def reset!: () -> void
 
         def fetch_access_token: (sessionOAuth http) -> String
@@ -57,7 +65,7 @@ module HTTPX
         def load: (sessionOAuth http) -> void
       end
 
-      module OptionsMethods : Auth::OptionsMethods
+      module OptionsMethods : Options, Auth::OptionsMethods
         type oauth_session_options = {
           issuer: uri,
           client_id: String,
@@ -83,9 +91,8 @@ module HTTPX
         def option_oauth_options: (_ToHash[Symbol, untyped]) -> oauth_session_options
       end
 
-      module InstanceMethods : Auth::InstanceMethods
+      module InstanceMethods : Session, Auth::InstanceMethods
         attr_reader oauth_session: OAuthSession
-        # @options: OptionsMethods
 
         def oauth_auth: (**untyped args) -> instance
 
@@ -95,11 +102,11 @@ module HTTPX
       end
 
       module OAuthRetries
-        module InstanceMethods : OAuth::InstanceMethods & Retries::InstanceMethods
+        module InstanceMethods : Session, Auth::InstanceMethods, OAuth::InstanceMethods, Retries::InstanceMethods
         end
       end
     end
 
-    type sessionOAuth = OAuth::InstanceMethods
+    type sessionOAuth = Session & Auth::InstanceMethods & OAuth::InstanceMethods
   end
 end

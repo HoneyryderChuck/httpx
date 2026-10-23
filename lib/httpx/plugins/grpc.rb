@@ -162,6 +162,7 @@ module HTTPX
         # returns a new session with a service RPC identified by +rpc_name+, passing +input+ and +output+ as its
         # input encoder and output decoder respectively; extra options (like <tt>:deadline</tt>) can be passed using +opts+.
         def rpc(rpc_name, input, output, **opts)
+          # @type ivar @options: grpcOptions
           rpc_name = rpc_name.to_s
           raise Error, "rpc #{rpc_name} already defined" if @options.grpc_rpcs.key?(rpc_name)
 
@@ -247,6 +248,7 @@ module HTTPX
         private
 
         def rpc_execute(rpc_name, input, **opts)
+          # @type ivar @options: grpcOptions
           rpc_name, input_enc, output_enc, rpc_opts = @options.grpc_rpcs[rpc_name]
 
           exec_opts = rpc_opts.merge(opts)
@@ -272,6 +274,7 @@ module HTTPX
         end
 
         def build_grpc_request(rpc_method, input, deadline:, metadata: nil, **opts)
+          # @type ivar @options: grpcOptions
           uri = @options.origin.dup
           rpc_method = "/#{rpc_method}" unless rpc_method.start_with?("/")
           rpc_method = "/#{@options.grpc_service}#{rpc_method}" if @options.grpc_service
