@@ -3,7 +3,7 @@
 module HTTPX
   module Plugins
     # https://gitlab.com/os85/httpx/wikis/Auth#ntlm-v2-auth
-    module NtlmV2Auth
+    module NTLMV2Auth
       class << self
         def load_dependencies(klass)
           require "rubyntlm"
@@ -47,7 +47,7 @@ module HTTPX
         private
 
         def option_ntlm(value)
-          raise TypeError, ":ntlm must be a #{Authenticator}" unless value.is_a?(NtlmV2Auth::Authenticator)
+          raise TypeError, ":ntlm must be a #{Authenticator}" unless value.is_a?(NTLMV2Auth::Authenticator)
 
           value
         end
@@ -89,6 +89,6 @@ module HTTPX
       end
     end
 
-    register_plugin :ntlm_v2_auth, NtlmV2Auth
+    register_plugin :ntlm_v2_auth, NTLMV2Auth
   end
 end

@@ -32,6 +32,5 @@ module HTTPX
       module RequestBodyClassMethods
       end
     end
-    type sessionXML = Session & XML::InstanceMethods
   end
 end

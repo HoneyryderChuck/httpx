@@ -18,7 +18,7 @@ module HTTPX
 
         def closed_for_select?: () -> bool
 
-        def send: (request request) -> void
+        def send: (RequestMethods request) -> void
 
         private
 
@@ -33,9 +33,9 @@ module HTTPX
 
         private
 
-        def add_to_context: (request request) -> void
+        def add_to_context: (RequestMethods request) -> void
 
-        def clear_from_context: (request request) -> void
+        def clear_from_context: (RequestMethods request) -> void
       end
 
       module NativeResolverMethods : Resolver::Native
@@ -54,10 +54,6 @@ module HTTPX
           def close: () -> void
         end
       end
-
-      type request = Request & RequestMethods
     end
-
-    type sessionFiberConcurrency = Session & FiberConcurrency::InstanceMethods
   end
 end

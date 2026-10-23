@@ -17,7 +17,5 @@ module HTTPX
         def proppatch: (String path, String xml) -> Response
       end
     end
-
-    type sessionWebDav = Session & WebDav::InstanceMethods
   end
 end

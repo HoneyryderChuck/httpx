@@ -27,8 +27,5 @@ module HTTPX
         def set_cookie: (Array[Cookie]) -> void
       end
     end
-
-    type sessionCookies = Session & Cookies::InstanceMethods
-    type headersCookies = Headers & Cookies::HeadersMethods
   end
 end

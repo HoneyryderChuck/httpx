@@ -32,7 +32,5 @@ module HTTPX
       module ConnectionMethods : Connection
       end
     end
-
-    type sessionSsrf = Session & SsrfFilter::InstanceMethods
   end
 end

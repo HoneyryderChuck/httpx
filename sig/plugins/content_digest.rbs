@@ -16,21 +16,21 @@ module HTTPX
       SUPPORTED_ALGORITHMS: Hash[String, singleton(OpenSSL::Digest)]
 
       module OptionsMethods : Options
-        attr_reader digest_algorithm: String
+        attr_reader content_digest_algorithm: String
 
         attr_reader encode_content_digest: bool | ^(Request) -> boolish
 
-        attr_reader validate_content_digest: bool | ^(contentDigestResponse) -> boolish
+        attr_reader validate_content_digest: bool | ^(ResponseMethods) -> boolish
 
         private
 
-        def option_digest_algorithm: (String) -> String
+        def option_content_digest_algorithm: (String) -> String
 
         def option_encode_content_digest: (bool) -> bool
                                         | (^(Request) -> boolish) -> (^(Request) -> boolish)
 
         def option_validate_content_digest: (bool) -> bool
-                                          | (^(contentDigestResponse) -> boolish) -> (^(contentDigestResponse) -> boolish)
+                                          | (^(ResponseMethods) -> boolish) -> (^(ResponseMethods) -> boolish)
       end
 
       def self.extra_options: [T] (T & Options options) -> T
@@ -42,21 +42,16 @@ module HTTPX
 
         def extract_content_digests: (String) -> Hash[String, String]
 
-        def base64digest: (Request::Body | contentDigestResponseBody body) -> String
+        def base64digest: (Request::Body | ResponseBodyMethods body) -> String
       end
 
       module ResponseMethods : Response
-        # attr_reader body: contentDigestResponseBody
+        # attr_reader body: ResponseBodyMethods
       end
 
       module ResponseBodyMethods : Response::Body
         attr_reader content_digest_buffer: Response::Buffer?
       end
-
-      type contentDigestResponse = Response & ResponseMethods
-      type contentDigestResponseBody = Response::Body & ResponseBodyMethods
     end
-
-    type sessionContentDigest = Session & ContentDigest::InstanceMethods
   end
 end

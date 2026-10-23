@@ -37,7 +37,5 @@ module HTTPX
       module ConnectionMethods : Connection
       end
     end
-
-    type sessionCallbacks = Session & Callbacks::InstanceMethods
   end
 end
