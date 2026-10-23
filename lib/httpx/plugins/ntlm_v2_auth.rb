@@ -67,9 +67,10 @@ module HTTPX
 
             if ntlm
               request.authorize(ntlm.negotiate)
-              probe_response = wrap { super(request).first }
+              responses = wrap { super(request) }
+              probe_response = responses.first
 
-              return probe_response unless probe_response.is_a?(Response)
+              return responses unless probe_response.is_a?(Response)
 
               if probe_response.status == 401 && ntlm.can_authenticate?(probe_response.headers["www-authenticate"])
                 request.transition(:idle)
@@ -78,7 +79,7 @@ module HTTPX
                                                     probe_response.headers["www-authenticate"]).encode("utf-8"))
                 super(request)
               else
-                probe_response
+                responses
               end
             else
               super(request)
