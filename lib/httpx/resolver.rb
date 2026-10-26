@@ -51,9 +51,9 @@ module HTTPX
       end
 
       # no domain was found
-      return :no_domain_found if message.rcode == Resolv::DNS::RCode::NXDomain
+      return :no_domain_found, nil, message.id if message.rcode == Resolv::DNS::RCode::NXDomain
 
-      return :message_truncated if message.tc == 1
+      return :message_truncated, nil, message.id if message.tc == 1
 
       if message.rcode != Resolv::DNS::RCode::NoError
         case message.rcode
@@ -62,9 +62,9 @@ module HTTPX
              # but the DNS resolver state.
              Resolv::DNS::RCode::NotImp,
              Resolv::DNS::RCode::Refused
-          return :retriable_error, message.rcode
+          return :retriable_error, message.rcode, message.id
         else
-          return :dns_error, message.rcode
+          return :dns_error, message.rcode, message.id
         end
       end
 
@@ -89,7 +89,7 @@ module HTTPX
         end
       end
 
-      [:ok, addresses]
+      [:ok, addresses, message.id]
     end
 
     private
