@@ -38,12 +38,11 @@ module HTTPX
       @search = Array(@resolver_options[:search]).map { |srch| srch.scan(/[^.]+/) }
       @_timeouts = Array(@resolver_options[:timeouts])
       @timeouts = Hash.new { |timeouts, host| timeouts[host] = @_timeouts.dup }
-      @name = nil
+      @name = @message_id = @timer = nil
       @queries = {}
       @read_buffer = "".b
       @write_buffer = Buffer.new(@resolver_options[:packet_size])
       @state = :idle
-      @timer = nil
     end
 
     def close
@@ -52,7 +51,7 @@ module HTTPX
 
     def force_close(*)
       @timer.cancel if @timer
-      @timer = @name = nil
+      @timer = @name = @message_id = nil
       @queries.clear
       @timeouts.clear
       close
@@ -195,7 +194,7 @@ module HTTPX
       @timer = @current_selector.after(timeout) do
         next unless @connections.include?(connection)
 
-        @timer = @name = nil
+        @timer = @name = @message_id = nil
 
         do_retry(h, connection, timeout)
       end
@@ -310,7 +309,13 @@ module HTTPX
     end
 
     def parse(buffer)
-      code, result = Resolver.decode_dns_answer(buffer)
+      code, result, message_id = Resolver.decode_dns_answer(buffer)
+
+      # discard late message answers for no longer inflight queries.
+      if message_id && message_id != @message_id
+        log { "resolver #{FAMILY_TYPES[@record_type]}: discarding answer for a query no longer in flight" }
+        return
+      end
 
       case code
       when :ok
@@ -462,11 +467,10 @@ module HTTPX
         @queries[hostname] = connection
       end
 
-      @name = hostname
-
       log { "resolver #{FAMILY_TYPES[@record_type]}: query for #{hostname}" }
       begin
         @write_buffer << encode_dns_query(hostname)
+        @name = hostname
       rescue Resolv::DNS::EncodeError => e
         reset_hostname(hostname, connection: connection)
         @connections.delete(connection)
@@ -479,6 +483,7 @@ module HTTPX
       message_id = Resolver.generate_id
       msg = Resolver.encode_dns_query(hostname, type: @record_type, message_id: message_id)
       msg[0, 2] = [msg.size, message_id].pack("nn") if @socket_type == :tcp
+      @message_id = message_id
       msg
     end
 
@@ -574,7 +579,7 @@ module HTTPX
     def reset_query
       @timer.cancel
 
-      @timer = @name = nil
+      @timer = @name = @message_id = nil
     end
 
     def reset_hostname(hostname, connection: @queries.delete(hostname), reset_candidates: true)
