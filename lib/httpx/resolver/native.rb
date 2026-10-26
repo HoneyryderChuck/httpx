@@ -392,7 +392,7 @@ module HTTPX
           orig_name = name
           # absolute name
           name_labels = Resolv::DNS::Name.create(name).to_a
-          name = @queries.each_key.first { |hname| name_labels == Resolv::DNS::Name.create(hname).to_a }
+          name = @queries.each_key.find { |hname| name_labels == Resolv::DNS::Name.create(hname).to_a }
 
           # probably a retried query for which there's an answer
           unless name
