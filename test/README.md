@@ -31,9 +31,11 @@ Most (not all) tests can be executed locally. Tests using [httpbin](https://http
 If you want to reproduce the whole test suite, or have a test that runs locally and fails in the CI; the (Gilab) CI suite is backed by a docker compose based script. If you have `docker` and `docker-compose` installed, you can set the environment:
 
 * open a console via `docker compose -f docker-compose.yml -f docker-compose-ruby-{RUBY_VERSION}.yml run --entrypoint bash httpx`
-* copy the relevant instructions from the [the build script](support/ci/build.sh) script
-    * install packages
-    * set required env vars
-    * install dependencies via `bundler`
-    * set the local CA bundle
+* run `source /home/test/support/ci/build.sh`.
+* run the following instructions to set the environment:
+  * `install_packages`
+  * `set_route_rules`
+  * `install_gems`
+  * `set_custom_ssl_certs`
+  * optionally, if testing RBS sigs, also run `set_rbs_test`
 * run `bundle exec rake test`
