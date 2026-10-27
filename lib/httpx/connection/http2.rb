@@ -51,7 +51,7 @@ module HTTPX
     attr_reader :streams, :pending
 
     def initialize(buffer, options)
-      @callbacks = nil
+      @callbacks = @last_error = nil
       @options = options
       @settings = @options.http2_settings
       @pending = []
@@ -74,10 +74,15 @@ module HTTPX
     end
 
     def interests
-      if @connection.closed?
+      if @connection.state == :closed
         return unless @handshake_completed
 
-        return if @buffer.empty?
+        if @buffer.empty?
+          # a closed HTTP/2 connection can still receive DATA frames from inflight streams.
+          return :r unless @streams.empty?
+
+          return
+        end
 
         # HTTP/2 GOAWAY frame buffered.
         return :w
@@ -133,7 +138,33 @@ module HTTPX
     end
 
     def close
-      unless @connection.closed?
+      if @connection.closed?
+        # if there are inflight streams waiting to be completed AFTER the peer alread shut down the
+        # connection from their end, raise-or-retry depending on whether the error is recoverable.
+        if (ex = @last_error)
+          if @streams.any? || @pending.any?
+            if ex.is_a?(GoawayError) && !ex.unrecoverable?
+              inflight_unprocessed_requests = @streams.map do |req, _|
+                req.transition(:idle)
+                req
+              end
+              @streams.clear
+              @pending.unshift(*inflight_unprocessed_requests)
+              emit(:exhausted, ex)
+            else
+              while (req, _ = @streams.shift)
+                emit(:error, req, ex)
+              end
+              while (req = @pending.shift)
+                emit(:error, req, ex)
+              end
+            end
+          end
+
+          # clean pending payload now that everything's gone.
+          @buffer.clear
+        end
+      else
         @connection.goaway
         emit(:timeout, @options.timeout.close_handshake_timeout)
       end
@@ -156,6 +187,12 @@ module HTTPX
         # data received by the peer.
         emit_stream_error(stream, request, error)
       end
+
+      # if the connection transitioned to :closed, start tearing it down. Explicitly bypass the
+      # :closing transition to give it time to complete the inflight streams.
+      return unless @connection.state == :closed
+
+      close
     end
 
     def send(request, head = false)
@@ -191,37 +228,60 @@ module HTTPX
       case ex
       when OperationTimeoutError
         if !@handshake_completed && @connection.state != :closed
+          # timed out waiting for HTTP/2 connection handshake to complete.
           @connection.goaway(:settings_timeout, "closing due to settings timeout")
           emit(:close_handshake)
           settings_ex = SettingsTimeoutError.new(ex.timeout, ex.message)
           settings_ex.set_backtrace(ex.backtrace)
           ex = settings_ex
+        elsif @connection.state == :closing
+          # failed to receive data for inflight streams in time.
+          ex = @last_error || ex
+        end
+      when EOFError
+        if @connection.state == :closing
+          # socket closed while waiting for inflight streams to finish
+          ex = @last_error || ex
         end
       when GoawayError
         last_stream_id = ex.last_stream_id
       end
 
       inflight_unprocessed_requests = [] #: Array[Request]
+      unprocessed_streams = [] #: Array[::HTTP2::Stream]
 
-      while (req, stream = @streams.shift)
+      @streams.delete_if do |req, stream|
+        # allow inflight streams to finish
+        next(false) if !last_stream_id.infinite? && stream.id <= last_stream_id
+
         @drains.delete(stream)
 
-        next if request && request == req
+        next(true) if request && request == req
 
         if stream.id > last_stream_id
           req.transition(:idle)
           # unprocessed request
           inflight_unprocessed_requests << req
+          unprocessed_streams << stream
 
-          next
+          next(true)
         end
 
         emit(:error, req, ex)
+        true
+      end
+
+      @pending.unshift(*inflight_unprocessed_requests) if inflight_unprocessed_requests.any?
+
+      unless @streams.empty?
+        unprocessed_streams.each(&:close)
+
+        # streams covered by the GOAWAY are still being processed.
+        return
       end
 
       if ex.is_a?(GoawayError) && !ex.unrecoverable?
         # resend unprocessed requests on a different connection
-        @pending.unshift(*inflight_unprocessed_requests) if inflight_unprocessed_requests.any?
         emit(:exhausted, ex) if @pending.any?
         return
       end
@@ -249,7 +309,8 @@ module HTTPX
     private
 
     def can_buffer_more_requests?
-      (@handshake_completed || !@wait_for_handshake) &&
+      !@connection.closed? &&
+        (@handshake_completed || !@wait_for_handshake) &&
         @streams.size < @max_concurrent_requests &&
         @streams.size < @max_requests
     end
@@ -527,16 +588,21 @@ module HTTPX
             emit(:error, request, error)
           end
         else
-          ex = GoawayError.new(error, last_stream_id)
+          # keep goaway error around, in case inflight streams never complete.
+          @last_error = ex = GoawayError.new(error, last_stream_id)
           ex.set_backtrace(caller)
 
           handle_error(ex)
-          teardown
         end
       end
-      return unless is_connection_closed && @streams.empty?
+      return unless is_connection_closed
 
-      emit(:close) if is_connection_closed
+      if @streams.empty?
+        emit(:close)
+      else
+        # this connection should not start new streams.
+        emit(:closing)
+      end
     end
 
     def on_frame_sent(frame)

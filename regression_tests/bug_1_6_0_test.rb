@@ -33,6 +33,7 @@ class Bug_1_6_1_Test < Minitest::Test
       if @cancelled
         super
       else
+        stream.close
         conn.goaway(:cancel)
         @cancelled = true
       end

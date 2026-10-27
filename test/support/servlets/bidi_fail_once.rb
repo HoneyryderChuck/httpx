@@ -30,6 +30,8 @@ class BidiFailOnce < Bidi
                      }, end_stream: false)
       # Send GOAWAY to trigger retry on client side
       conn.goaway(:no_error)
+      # close stream just so that the client fails faster.
+      stream.close
     else
       # Subsequent requests: work normally
       super

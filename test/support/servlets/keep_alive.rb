@@ -96,6 +96,7 @@ class KeepAlivePongThenGoawayServer < TestHTTP2Server
     # responds once, then closes the connection
     if @sent[conn]
       conn.goaway
+      sock.close
       @sent[conn] = false
     else
       super

@@ -12,6 +12,7 @@ require_relative "bidi"
 class BidiFailAfterData < Bidi
   def initialize(**)
     @stream_count = 0
+    @goaway_sent = false
     super
   end
 
@@ -23,8 +24,11 @@ class BidiFailAfterData < Bidi
     if @stream_count == 1
       # First request: send headers, wait for first data, then fail
       stream.on(:data) do |_d|
+        next if @goaway_sent
+
         # After receiving first data chunk, send GOAWAY
         conn.goaway(:no_error)
+        @goaway_sent = true
       end
 
       stream.headers({

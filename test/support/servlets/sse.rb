@@ -142,8 +142,8 @@ class SSE < TestHTTP2Server
 
           next unless @close_after && @close_after == id && !@already_closed
 
+          stream.close
           conn.goaway(:internal_error)
-
           stream_already_closed = true
           break
         end
