@@ -17,7 +17,7 @@ class BidiFailOnce < Bidi
 
   private
 
-  def handle_stream(conn, stream)
+  def handle_stream(_sock, conn, stream)
     @stream_count += 1
 
     if @stream_count == 1

@@ -179,7 +179,7 @@ class TestHTTP2Server
     @conns[sock] << data
   end
 
-  def handle_stream(conn, stream)
+  def handle_stream(_sock, conn, stream)
     stream.on(:half_close) do
       handle_request(conn, stream)
     end
@@ -213,7 +213,7 @@ class TestHTTP2Server
       close_socket(sock)
     end
     conn.on(:stream) do |stream|
-      handle_stream(conn, stream)
+      handle_stream(sock, conn, stream)
     end
   end
 

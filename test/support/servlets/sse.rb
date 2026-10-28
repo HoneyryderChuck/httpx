@@ -89,7 +89,7 @@ class SSE < TestHTTP2Server
     end
   end
 
-  def handle_stream(conn, stream)
+  def handle_stream(_sock, conn, stream)
     event_stream = false
     last_event_id = nil
     stream.on(:headers) do |h|

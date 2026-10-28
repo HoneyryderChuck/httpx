@@ -33,7 +33,7 @@ class SlowWindowUpdateServer < TestHTTP2Server
     HTTP2::Server.new(settings_initial_window_size: WINDOW)
   end
 
-  def handle_stream(conn, stream)
+  def handle_stream(_sock, conn, stream)
     super
     stream.on(:data) { |data| @received += data.bytesize }
   end

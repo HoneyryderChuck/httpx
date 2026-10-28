@@ -11,7 +11,7 @@ class CloseStreamEarly < TestHTTP2Server
 
   private
 
-  def handle_stream(conn, stream)
+  def handle_stream(_sock, conn, stream)
     stream.on(:data) do |chunk|
       @chunks_per_stream[stream.id] << chunk
     end

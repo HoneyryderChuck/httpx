@@ -29,7 +29,7 @@ class Bug_1_6_1_Test < Minitest::Test
 
     private
 
-    def handle_stream(conn, stream)
+    def handle_stream(_sock, conn, stream)
       if @cancelled
         super
       else

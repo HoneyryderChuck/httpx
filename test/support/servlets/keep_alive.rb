@@ -92,7 +92,7 @@ class KeepAlivePongThenGoawayServer < TestHTTP2Server
 
   private
 
-  def handle_stream(conn, stream)
+  def handle_stream(sock, conn, stream)
     # responds once, then closes the connection
     if @sent[conn]
       conn.goaway

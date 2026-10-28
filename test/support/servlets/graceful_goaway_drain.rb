@@ -17,16 +17,11 @@ class GracefulGoawayDrainServer < TestHTTP2Server
     @held[sock] << bytes
   end
 
-  def handle_stream(conn, stream)
+  def handle_stream(sock, conn, stream)
     @streams_count[conn] += 1
     return super unless @streams_count[conn] > @number_of_streams_before_goaway
 
     stream.on(:half_close) do
-      unless (sock = @conns.key(conn))
-        handle_request(conn, stream)
-        next
-      end
-
       held = @held[sock]
       conn.goaway
       handle_request(conn, stream)
