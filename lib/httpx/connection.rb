@@ -132,7 +132,7 @@ module HTTPX
     end
 
     def match?(uri, options)
-      return false if !used? && (@state == :closing || @state == :closed)
+      return false if @state == :closing || (!used? && @state == :closed)
 
       @origins.include?(uri.origin) &&
         # if there is more than one origin to match, it means that this connection
