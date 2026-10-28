@@ -125,12 +125,12 @@ module HTTPX
     # https://gitlab.com/os85/httpx/wikis/Stream
     #
     module Stream
-      STREAM_REQUEST_OPTIONS = { timeout: { read_timeout: Float::INFINITY, operation_timeout: 60 }.freeze }.freeze
+      STREAM_REQUEST_OPTIONS = { timeout: { operation_timeout: 60 }.freeze }.freeze
 
       def self.extra_options(options)
         options.merge(
           stream: false,
-          timeout: { read_timeout: Float::INFINITY, operation_timeout: 60 },
+          timeout: { operation_timeout: 60 },
           stream_response_class: Class.new(StreamResponse, &Options::SET_TEMPORARY_NAME).freeze
         )
       end
