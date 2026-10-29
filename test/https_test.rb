@@ -263,7 +263,8 @@ class HTTPSTest < Minitest::Test
     http2_log_inspector_methods.define_method(:interests) do
       super().tap do |ints|
         log << { interests: ints, streams: @streams.size, pending: @pending.size, buffer_empty: @buffer.empty?,
-                 drains_empty: @drains.empty?, can_buffer_more: can_buffer_more_requests? }
+                 drains_empty: @drains.empty?, awaiting_response: @streams.any? { |r, _| !r.can_buffer? },
+                 can_buffer_pending: can_buffer_pending_requests? }
       end
     end
     log_inspector_plugin.const_set(:HTTP2Methods, http2_log_inspector_methods)
@@ -288,10 +289,10 @@ class HTTPSTest < Minitest::Test
                  "expected parser to at some point be waiting for streams while having pending requests" \
                  "(#interests was called #{log.size} times)\n#{log.join("\n\t")}"
 
-    starved_ticks = overlapping_ticks.select { |entry| entry[:interests] == :w }
+    starved_ticks = overlapping_ticks.select { |entry| !%i[r rw].include?(entry[:interests]) && entry[:awaiting_response] }
 
     assert_empty starved_ticks,
-                 "connection was at some point waiting for writable readiness only while having open streams\n#{log.join("\n\t")}"
+                 "connection was at some point not reading while streams awaited a response\n#{log.join("\n\t")}"
   end
 
   def test_ssl_wrong_hostname

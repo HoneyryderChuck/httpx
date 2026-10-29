@@ -102,15 +102,10 @@ module HTTPX
         return :r
       end
 
-      # only wait for writable if we're not waiting on more streams,
-      # or waiting on ping ACKs.
-      nothing_to_wait_for = @streams.empty? && @pings.empty?
-
       # there are pending bufferable requests
-      if !@pending.empty? && can_buffer_more_requests?
-        # only wait for writable if we're not waiting on more streams,
-        # or waiting on ping ACKs.
-        return nothing_to_wait_for ? :w : :rw
+      if !@pending.empty? && can_buffer_pending_requests?
+        # only wait for writable if not waiting on the peer.
+        return waiting_for_peer? ? :rw : :w
       end
 
       unless @drains.empty?
@@ -128,12 +123,12 @@ module HTTPX
 
       if @buffer.empty?
         # skip if no more requests or pings to process
-        return if nothing_to_wait_for
+        return unless waiting_for_peer?
 
         :r
       else
         # buffered frames
-        nothing_to_wait_for ? :w : :rw
+        waiting_for_peer? ? :rw : :w
       end
     end
 
@@ -196,7 +191,7 @@ module HTTPX
     end
 
     def send(request, head = false)
-      unless can_buffer_more_requests?
+      unless can_buffer_pending_requests?
         head ? @pending.unshift(request) : @pending << request
         return false
       end
@@ -308,7 +303,13 @@ module HTTPX
 
     private
 
-    def can_buffer_more_requests?
+    # whether there are PING acks, or streams waiting for more data
+    # (that can be a response or WINDOW_UPDATE frames).
+    def waiting_for_peer?
+      waiting_for_ping? || @streams.any? { |r, s| !r.can_buffer? || !s.send_buffer.empty? }
+    end
+
+    def can_buffer_pending_requests?
       !@connection.closed? &&
         (@handshake_completed || !@wait_for_handshake) &&
         @streams.size < @max_concurrent_requests &&
@@ -316,7 +317,7 @@ module HTTPX
     end
 
     def send_pending
-      while (request = @pending.shift)
+      while !@buffer.full? && (request = @pending.shift)
         break unless send(request, true)
       end
     end

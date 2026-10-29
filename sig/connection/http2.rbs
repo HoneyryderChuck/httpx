@@ -52,7 +52,9 @@ module HTTPX
 
     def initialize: (Buffer buffer, Options options) -> untyped
 
-    def can_buffer_more_requests?: () -> bool
+    def waiting_for_peer?: () -> bool
+
+    def can_buffer_pending_requests?: () -> bool
 
     def send_pending: () -> void
 

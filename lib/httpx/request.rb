@@ -180,7 +180,7 @@ module HTTPX
     end
 
     def can_buffer?
-      @state != :done
+      @state != :done && @state != :expect
     end
 
     def started?
