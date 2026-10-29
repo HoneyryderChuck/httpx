@@ -169,6 +169,7 @@ module HTTPX
       if nameserver && @ns_index < nameserver.size
         log { "resolver #{FAMILY_TYPES[@record_type]}: failed resolving on nameserver #{@nameserver[@ns_index - 1]} (#{e.message})" }
         transition(:idle)
+        transition(:open)
         @timeouts.clear
         retry
       else

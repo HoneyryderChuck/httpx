@@ -118,6 +118,7 @@ module HTTPX
             if request.state == :expect && !request.expects?
               Expect.no_expect_store.add(request.origin)
               request.headers.delete("expect")
+              request.transition(:body)
               consume
             end
           end

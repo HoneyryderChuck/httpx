@@ -405,6 +405,106 @@ module Requests
           end
         end
       end
+
+      def test_persistent_graceful_goaway_followed_by_in_flight_response_keeps_connection_usable
+        return unless origin.start_with?("https")
+
+        start_test_servlet(GracefulGoawayDrainServer) do |server|
+          uri = "#{server.origin}/"
+          http = HTTPX.plugin(SessionWithPool)
+                      .plugin(:persistent)
+                      .with(ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE })
+
+          begin
+            verify_status(http.get(uri), 200)
+            verify_status(http.get(uri), 200)
+
+            connection = http.connections.first
+            assert connection.instance_variable_get(:@inflight).zero?,
+                   "inflight should be 0 (was #{connection.instance_variable_get(:@inflight)})"
+
+            response = http.get(uri)
+            verify_status(response, 200)
+            assert http.connections.last.equal?(connection), "connection object should have been reused"
+          ensure
+            http.close
+          end
+        end
+      end
+
+      def test_persistent_graceful_goaway_waits_for_inflight_stream_frames_across_several_reads
+        return unless origin.start_with?("https")
+
+        start_test_servlet(DelayedGoawayDrainServer, mode: :split) do |server|
+          http = HTTPX.plugin(SessionWithPool)
+                      .plugin(:persistent)
+                      .with(ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE })
+
+          begin
+            verify_status(http.get("#{server.origin}/warmup"), 200)
+
+            response = http.get("#{server.origin}/drained")
+            verify_status(response, 200)
+            assert response.to_s == "OKOK", "expected the full body (got #{response.to_s.inspect})"
+            assert server.arrivals["/drained"] == 1,
+                   "request covered by the GOAWAY should not be resent (sent #{server.arrivals["/drained"]} times)"
+            assert(http.connections.all? { |conn| conn.instance_variable_get(:@inflight).zero? })
+
+            verify_status(http.get("#{server.origin}/after"), 200)
+          ensure
+            http.close
+          end
+        end
+      end
+
+      def test_persistent_graceful_goaway_closes_connection_after_draining_large_response
+        return unless origin.start_with?("https")
+
+        start_test_servlet(DelayedGoawayDrainServer, mode: :large, body_size: 300_000) do |server|
+          http = HTTPX.plugin(SessionWithPool)
+                      .plugin(:persistent)
+                      .with(ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE })
+
+          begin
+            verify_status(http.get("#{server.origin}/warmup"), 200)
+
+            response = http.get("#{server.origin}/drained")
+            verify_status(response, 200)
+            assert response.body.bytesize == 300_000
+            assert server.arrivals["/drained"] == 1,
+                   "request covered by the GOAWAY should not be resent (sent #{server.arrivals["/drained"]} times)"
+            assert(http.connections.none? { |conn| conn.state == :closing },
+                   "drained connection should have closed (states: #{http.connections.map(&:state)})")
+          ensure
+            http.close
+          end
+        end
+      end
+
+      def test_persistent_graceful_goaway_reroutes_unprocessed_requests_after_inflight_ones_complete
+        return unless origin.start_with?("https")
+
+        start_test_servlet(DelayedGoawayDrainServer, mode: :mixed) do |server|
+          http = HTTPX.plugin(SessionWithPool)
+                      .plugin(:persistent)
+                      .with(ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE })
+
+          begin
+            verify_status(http.get("#{server.origin}/warmup"), 200)
+
+            processed, unprocessed = http.get("#{server.origin}/processed", "#{server.origin}/unprocessed")
+            verify_status(processed, 200)
+            verify_status(unprocessed, 200)
+            assert server.arrivals["/processed"] == 1,
+                   "request covered by the GOAWAY should not be resent (sent #{server.arrivals["/processed"]} times)"
+            assert server.arrivals["/unprocessed"] == 2,
+                   "request not covered by the GOAWAY should be resent once (sent #{server.arrivals["/unprocessed"]} times)"
+            assert(http.connections.all? { |conn| conn.instance_variable_get(:@inflight).zero? })
+          ensure
+            http.close
+          end
+        end
+      end
     end
   end
 end

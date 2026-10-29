@@ -21,7 +21,7 @@ class CloseAfterXThenDelaySeconds < TestHTTP2Server
     @can_delay = true
   end
 
-  def handle_stream(_conn, stream)
+  def handle_stream(_sock, _conn, stream)
     if @can_delay && @delay
       sleep(@delay)
 

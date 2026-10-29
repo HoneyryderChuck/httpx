@@ -132,7 +132,7 @@ module HTTPX
     end
 
     def match?(uri, options)
-      return false if !used? && (@state == :closing || @state == :closed)
+      return false if @state == :closing || (!used? && @state == :closed)
 
       @origins.include?(uri.origin) &&
         # if there is more than one origin to match, it means that this connection
@@ -285,8 +285,18 @@ module HTTPX
 
         call
       when :closing
+        # if bytes are available, that's the client GOAWAY frame. Otherwise, the peer closed it.
+        sending_goaway = !@write_buffer.empty?
+
         consume
-        transition(:closed)
+
+        if sending_goaway
+          # parser may have inflight streams which need terminating.
+          @parser&.close
+          transition(:closed)
+        elsif @state == :closing
+          return
+        end
 
         # @fiber-switch-guard
         # fiber may have switch while closing @io.
@@ -368,7 +378,7 @@ module HTTPX
     end
 
     def reset
-      return if @state == :closing || @state == :closed
+      return if @state == :closed
 
       # do not reset a connection which may have restarted back to :idle, such when the parser resets
       # (example: HTTP/1 parser disabling pipelining)
@@ -611,10 +621,9 @@ module HTTPX
             parser << @read_buffer.to_s
 
             # continue reading if possible.
-            break if interests == :w && !epiped
-
-            # exit the read loop if connection is preparing to be closed
-            break if @state == :closing || @state == :closed
+            break if (interests == :w && !epiped) ||
+                     # exit the read loop if connection is closed
+                     @state == :closed
 
             # exit #consume altogether if all outstanding requests have been dealt with
             if no_more_requests? && @write_buffer.empty? # rubocop:disable Style/Next
@@ -625,7 +634,7 @@ module HTTPX
 
               return
             end
-          end unless ((ints = interests).nil? || ints == :w || @state == :closing) && !epiped
+          end unless ((ints = interests).nil? || ints == :w) && !epiped
 
           #
           # tight write loop.
@@ -671,11 +680,12 @@ module HTTPX
             end
 
             # exit write loop if marked to consume from peer, or is closing.
-            break if interests == :r || @state == :closing || @state == :closed
+            break if (ints = interests) == :r || @state == :closed
 
             write_drained = false
           end unless (ints = interests) == :r
 
+          # fill the write buffer with more requests
           send_pending if @state == :open
 
           # return if socket is drained
@@ -790,6 +800,13 @@ module HTTPX
       end
       parser.on(:origin) do |origin|
         @origins |= [origin]
+      end
+      parser.on(:closing) do
+        # this happens if the peer server sent a GOAWAY frame while there are inflight
+        # streams; moving to :closing ensures that new requests won't be sent to this
+        # connection, while keeping it around to complete unfinished work
+        reset_ping_timer
+        transition(:closing)
       end
       parser.on(:close) do
         reset

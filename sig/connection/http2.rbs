@@ -20,6 +20,7 @@ module HTTPX
     @buffer: Buffer
     @handshake_completed: bool
     @wait_for_handshake: bool
+    @last_error: GoawayError?
 
     def interests: () -> io_interests?
 
@@ -51,7 +52,9 @@ module HTTPX
 
     def initialize: (Buffer buffer, Options options) -> untyped
 
-    def can_buffer_more_requests?: () -> bool
+    def waiting_for_peer?: () -> bool
+
+    def can_buffer_pending_requests?: () -> bool
 
     def send_pending: () -> void
 
@@ -119,6 +122,7 @@ module HTTPX
       UNRECOVERABLE_ERRORS: Array[Symbol]
 
       @code: Symbol
+      @last_stream_id: Integer
 
       def initialize: (Symbol code, Integer last_stream_id) -> void
 

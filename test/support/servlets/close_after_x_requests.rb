@@ -8,7 +8,7 @@ class CloseAfterXRequests < TestHTTP2Server
 
   private
 
-  def handle_stream(conn, stream)
+  def handle_stream(_sock, conn, stream)
     response = "".b
 
     stream.on(:data) do |data|

@@ -89,7 +89,7 @@ class SSE < TestHTTP2Server
     end
   end
 
-  def handle_stream(conn, stream)
+  def handle_stream(_sock, conn, stream)
     event_stream = false
     last_event_id = nil
     stream.on(:headers) do |h|
@@ -142,8 +142,8 @@ class SSE < TestHTTP2Server
 
           next unless @close_after && @close_after == id && !@already_closed
 
+          stream.close
           conn.goaway(:internal_error)
-
           stream_already_closed = true
           break
         end

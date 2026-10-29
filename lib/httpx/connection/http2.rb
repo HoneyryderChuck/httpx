@@ -51,7 +51,7 @@ module HTTPX
     attr_reader :streams, :pending
 
     def initialize(buffer, options)
-      @callbacks = nil
+      @callbacks = @last_error = nil
       @options = options
       @settings = @options.http2_settings
       @pending = []
@@ -74,10 +74,15 @@ module HTTPX
     end
 
     def interests
-      if @connection.closed?
+      if @connection.state == :closed
         return unless @handshake_completed
 
-        return if @buffer.empty?
+        if @buffer.empty?
+          # a closed HTTP/2 connection can still receive DATA frames from inflight streams.
+          return :r unless @streams.empty?
+
+          return
+        end
 
         # HTTP/2 GOAWAY frame buffered.
         return :w
@@ -85,7 +90,7 @@ module HTTPX
 
       unless @connection.state == :connected && @handshake_completed
         # HTTP/2 in intermediate state or still completing initialization-
-        return @buffer.empty? ? :r : :rw
+        return @buffer.empty? ? :r : :w
       end
 
       unless @connection.send_buffer.empty?
@@ -97,15 +102,10 @@ module HTTPX
         return :r
       end
 
-      # only wait for writable if we're not waiting on more streams,
-      # or waiting on ping ACKs.
-      nothing_to_wait_for = @streams.empty? && @pings.empty?
-
       # there are pending bufferable requests
-      if !@pending.empty? && can_buffer_more_requests?
-        # only wait for writable if we're not waiting on more streams,
-        # or waiting on ping ACKs.
-        return nothing_to_wait_for ? :w : :rw
+      if !@pending.empty? && can_buffer_pending_requests?
+        # only wait for writable if not waiting on the peer.
+        return waiting_for_peer? ? :rw : :w
       end
 
       unless @drains.empty?
@@ -123,17 +123,43 @@ module HTTPX
 
       if @buffer.empty?
         # skip if no more requests or pings to process
-        return if nothing_to_wait_for
+        return unless waiting_for_peer?
 
         :r
       else
         # buffered frames
-        nothing_to_wait_for ? :w : :rw
+        waiting_for_peer? ? :rw : :w
       end
     end
 
     def close
-      unless @connection.closed?
+      if @connection.closed?
+        # if there are inflight streams waiting to be completed AFTER the peer alread shut down the
+        # connection from their end, raise-or-retry depending on whether the error is recoverable.
+        if (ex = @last_error)
+          if @streams.any? || @pending.any?
+            if ex.is_a?(GoawayError) && !ex.unrecoverable?
+              inflight_unprocessed_requests = @streams.map do |req, _|
+                req.transition(:idle)
+                req
+              end
+              @streams.clear
+              @pending.unshift(*inflight_unprocessed_requests)
+              emit(:exhausted, ex)
+            else
+              while (req, _ = @streams.shift)
+                emit(:error, req, ex)
+              end
+              while (req = @pending.shift)
+                emit(:error, req, ex)
+              end
+            end
+          end
+
+          # clean pending payload now that everything's gone.
+          @buffer.clear
+        end
+      else
         @connection.goaway
         emit(:timeout, @options.timeout.close_handshake_timeout)
       end
@@ -156,10 +182,16 @@ module HTTPX
         # data received by the peer.
         emit_stream_error(stream, request, error)
       end
+
+      # if the connection transitioned to :closed, start tearing it down. Explicitly bypass the
+      # :closing transition to give it time to complete the inflight streams.
+      return unless @connection.state == :closed
+
+      close
     end
 
     def send(request, head = false)
-      unless can_buffer_more_requests?
+      unless can_buffer_pending_requests?
         head ? @pending.unshift(request) : @pending << request
         return false
       end
@@ -184,6 +216,8 @@ module HTTPX
 
         handle(request, stream)
       end
+
+      send_pending
     end
 
     def handle_error(ex, request = nil)
@@ -191,37 +225,60 @@ module HTTPX
       case ex
       when OperationTimeoutError
         if !@handshake_completed && @connection.state != :closed
+          # timed out waiting for HTTP/2 connection handshake to complete.
           @connection.goaway(:settings_timeout, "closing due to settings timeout")
           emit(:close_handshake)
           settings_ex = SettingsTimeoutError.new(ex.timeout, ex.message)
           settings_ex.set_backtrace(ex.backtrace)
           ex = settings_ex
+        elsif @connection.state == :closing
+          # failed to receive data for inflight streams in time.
+          ex = @last_error || ex
+        end
+      when EOFError
+        if @connection.state == :closing
+          # socket closed while waiting for inflight streams to finish
+          ex = @last_error || ex
         end
       when GoawayError
         last_stream_id = ex.last_stream_id
       end
 
       inflight_unprocessed_requests = [] #: Array[Request]
+      unprocessed_streams = [] #: Array[::HTTP2::Stream]
 
-      while (req, stream = @streams.shift)
+      @streams.delete_if do |req, stream|
+        # allow inflight streams to finish
+        next(false) if !last_stream_id.infinite? && stream.id <= last_stream_id
+
         @drains.delete(stream)
 
-        next if request && request == req
+        next(true) if request && request == req
 
         if stream.id > last_stream_id
           req.transition(:idle)
           # unprocessed request
           inflight_unprocessed_requests << req
+          unprocessed_streams << stream
 
-          next
+          next(true)
         end
 
         emit(:error, req, ex)
+        true
+      end
+
+      @pending.unshift(*inflight_unprocessed_requests) if inflight_unprocessed_requests.any?
+
+      unless @streams.empty?
+        unprocessed_streams.each(&:close)
+
+        # streams covered by the GOAWAY are still being processed.
+        return
       end
 
       if ex.is_a?(GoawayError) && !ex.unrecoverable?
         # resend unprocessed requests on a different connection
-        @pending.unshift(*inflight_unprocessed_requests) if inflight_unprocessed_requests.any?
         emit(:exhausted, ex) if @pending.any?
         return
       end
@@ -248,14 +305,21 @@ module HTTPX
 
     private
 
-    def can_buffer_more_requests?
-      (@handshake_completed || !@wait_for_handshake) &&
+    # whether there are PING acks, or streams waiting for more data
+    # (that can be a response or WINDOW_UPDATE frames).
+    def waiting_for_peer?
+      waiting_for_ping? || @streams.any? { |r, s| !r.can_buffer? || !s.send_buffer.empty? }
+    end
+
+    def can_buffer_pending_requests?
+      !@connection.closed? &&
+        (@handshake_completed || !@wait_for_handshake) &&
         @streams.size < @max_concurrent_requests &&
         @streams.size < @max_requests
     end
 
     def send_pending
-      while (request = @pending.shift)
+      while !@buffer.full? && can_buffer_pending_requests? && (request = @pending.shift)
         break unless send(request, true)
       end
     end
@@ -527,16 +591,21 @@ module HTTPX
             emit(:error, request, error)
           end
         else
-          ex = GoawayError.new(error, last_stream_id)
+          # keep goaway error around, in case inflight streams never complete.
+          @last_error = ex = GoawayError.new(error, last_stream_id)
           ex.set_backtrace(caller)
 
           handle_error(ex)
-          teardown
         end
       end
-      return unless is_connection_closed && @streams.empty?
+      return unless is_connection_closed
 
-      emit(:close) if is_connection_closed
+      if @streams.empty?
+        emit(:close)
+      else
+        # this connection should not start new streams.
+        emit(:closing)
+      end
     end
 
     def on_frame_sent(frame)

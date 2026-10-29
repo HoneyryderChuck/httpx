@@ -90,17 +90,21 @@ class TestHTTP2Server
   def start
     begin
       loop do
-        ios, * = IO.select([@server, *@ios])
-
-        return unless ios
-
-        handle_ios(ios)
+        run_once
       end
     rescue IOError, SystemCallError
     end
   end
 
   private
+
+  def run_once
+    ios, * = IO.select([@server, *@ios])
+
+    return unless ios
+
+    handle_ios(ios)
+  end
 
   def handle_ios(ios)
     ios.each do |io|
@@ -175,7 +179,7 @@ class TestHTTP2Server
     @conns[sock] << data
   end
 
-  def handle_stream(conn, stream)
+  def handle_stream(_sock, conn, stream)
     stream.on(:half_close) do
       handle_request(conn, stream)
     end
@@ -193,9 +197,7 @@ class TestHTTP2Server
 
   def handle_connection(conn, sock)
     conn.on(:frame) do |bytes|
-      # puts "Sending bytes: #{bytes.unpack("H*").first}"
-      sock.print bytes
-      sock.flush
+      flush_bytes(sock, bytes)
     end
 
     if @debug
@@ -211,8 +213,14 @@ class TestHTTP2Server
       close_socket(sock)
     end
     conn.on(:stream) do |stream|
-      handle_stream(conn, stream)
+      handle_stream(sock, conn, stream)
     end
+  end
+
+  def flush_bytes(sock, bytes)
+    # puts "Sending bytes: #{bytes.unpack("H*").first}"
+    sock.print bytes
+    sock.flush
   end
 
   def close_socket(sock)

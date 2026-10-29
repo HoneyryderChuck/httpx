@@ -5,7 +5,7 @@ require_relative "test"
 class Bidi < TestHTTP2Server
   private
 
-  def handle_stream(_conn, stream)
+  def handle_stream(_sock, _conn, stream)
     stream.on(:data) do |d|
       next if d.empty?
 
