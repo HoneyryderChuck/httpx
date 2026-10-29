@@ -680,7 +680,7 @@ module HTTPX
             end
 
             # exit write loop if marked to consume from peer, or is closing.
-            break if interests == :r || @state == :closed
+            break if (ints = interests) == :r || @state == :closed
 
             write_drained = false
           end unless (ints = interests) == :r
