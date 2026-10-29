@@ -90,7 +90,7 @@ module HTTPX
 
       unless @connection.state == :connected && @handshake_completed
         # HTTP/2 in intermediate state or still completing initialization-
-        return @buffer.empty? ? :r : :rw
+        return @buffer.empty? ? :r : :w
       end
 
       unless @connection.send_buffer.empty?
