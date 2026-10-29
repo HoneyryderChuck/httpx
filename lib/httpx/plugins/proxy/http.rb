@@ -17,7 +17,16 @@ module HTTPX
         #                         tunnel, in cases where it wouldn't otherwise normally establish it
         #                         (i.e. if the request is an http:// request).
         module OptionsMethods
+          attr_reader :connect_request_class
+
           private
+
+          def do_initialize
+            super
+
+            @connect_request_class = @request_class.dup
+            @connect_request_class.__send__(:include, ConnectRequestMethods)
+          end
 
           def option_proxy_headers(value)
             value = value.dup if value.frozen?
@@ -153,7 +162,7 @@ module HTTPX
                     if initial_state == :connecting
                       parser = tunnel_parser
                       parser.reset
-                      if @pending.first.is_a?(ConnectRequest)
+                      if @pending.first.is_a?(@options.connect_request_class)
                         connect_request = @pending.shift # this happened when reenqueing
                       end
                     end
@@ -198,7 +207,7 @@ module HTTPX
               # all requests in the queue are not only ALL HTTPS, but they also share the certificate,
               # and therefore, will share the connection.
               #
-              connect_request = ConnectRequest.new(req.uri, @options)
+              connect_request = @options.connect_request_class.new(req.uri, @options)
               send(connect_request)
             else
               handle_transition(:connected)
@@ -254,7 +263,7 @@ module HTTPX
           end
         end
 
-        class ConnectRequest < Request
+        module ConnectRequestMethods
           def initialize(uri, options)
             super("CONNECT", uri, options)
             @headers = options.headers_class.new

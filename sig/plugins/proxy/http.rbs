@@ -3,6 +3,8 @@ module HTTPX
     module Proxy
       module HTTP
         module OptionsMethods
+          attr_reader connect_request_class: Request & ConnectRequestMethods
+
           def proxy_headers: () -> Headers?
 
           def enable_proxy_tunnel: () -> bool?
@@ -26,7 +28,7 @@ module HTTPX
         module ProxyParser
         end
 
-        class ConnectRequest < Request
+        module ConnectRequestMethods : Request
           def initialize: (generic_uri uri, Options options) -> void
         end
       end
