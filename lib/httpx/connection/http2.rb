@@ -216,6 +216,8 @@ module HTTPX
 
         handle(request, stream)
       end
+
+      send_pending
     end
 
     def handle_error(ex, request = nil)
@@ -317,7 +319,7 @@ module HTTPX
     end
 
     def send_pending
-      while !@buffer.full? && (request = @pending.shift)
+      while !@buffer.full? && can_buffer_pending_requests? && (request = @pending.shift)
         break unless send(request, true)
       end
     end

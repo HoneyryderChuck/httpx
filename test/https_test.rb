@@ -295,6 +295,18 @@ class HTTPSTest < Minitest::Test
                  "connection was at some point not reading while streams awaited a response\n#{log.join("\n\t")}"
   end
 
+  def test_http2_burst_of_requests_overflowing_write_buffer
+    start_test_servlet(TestHTTP2Server) do |server|
+      # trick to avoid HPACK header compression that would reduce the number of packets.
+      uris = Array.new(50) { |i| "#{server.origin}/#{i}/#{"a" * 500}" }
+
+      HTTPX.with(ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE }, timeout: { request_timeout: 3 }).wrap do |http|
+        responses = http.get(*uris)
+        responses.each { |response| verify_status(response, 200) }
+      end
+    end
+  end
+
   def test_ssl_wrong_hostname
     uri = build_uri("/get")
     response = HTTPX.with(ssl: { hostname: "great-gatsby.com" }).get(uri)
