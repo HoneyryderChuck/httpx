@@ -158,6 +158,10 @@ module HTTPX
           @closed ? :closed : :open
         end
 
+        def closed_for_select?
+          @closed
+        end
+
         # noop
         def log(**, &_); end
 

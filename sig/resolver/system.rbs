@@ -19,6 +19,8 @@ module HTTPX
 
       attr_reader state: Symbol
 
+      def closed_for_select?: () -> bool
+
       def initialize: (Options options) -> void
 
       private

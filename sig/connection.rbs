@@ -92,6 +92,8 @@ module HTTPX
 
     def inflight?: () -> boolish
 
+    def closed_for_select?: () -> bool
+
     def interests: () -> io_interests?
 
     def to_io: () -> IO

@@ -86,6 +86,10 @@ module HTTPX
       end
     end
 
+    def closed_for_select?
+      @state == :closed
+    end
+
     def interests
       case @state
       when :idle

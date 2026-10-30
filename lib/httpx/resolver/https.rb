@@ -32,7 +32,8 @@ module HTTPX
     }.freeze
 
     def_delegators :@resolver_connection, :connecting?, :to_io, :call, :close,
-                   :closed?, :deactivate, :terminate, :inflight?, :handle_socket_timeout
+                   :closed?, :deactivate, :terminate, :inflight?, :handle_socket_timeout,
+                   :closed_for_select?
 
     def initialize(_, options)
       super

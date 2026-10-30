@@ -28,6 +28,8 @@ module HTTPX
 
       attr_reader state: Symbol
 
+      def closed_for_select?: () -> bool
+
       def call: () -> void
 
       def interests: () -> (:r | :w | nil)

@@ -224,6 +224,7 @@ module HTTPX
               send(request)
             else
               pending = @pending + @parser.pending
+              @pending.clear
               while (req = pending.shift)
                 response.finish!
                 req.response = response

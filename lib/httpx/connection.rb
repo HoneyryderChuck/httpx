@@ -230,6 +230,11 @@ module HTTPX
       @state == :idle
     end
 
+    # whether the connection can be removed from the selector.
+    def closed_for_select?
+      @state == :closed
+    end
+
     def inflight?
       @parser && (
         # parser may be dealing with other requests (possibly started from a different fiber)
