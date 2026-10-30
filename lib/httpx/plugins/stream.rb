@@ -140,14 +140,6 @@ module HTTPX
       # :stream :: whether the request to process should be handled as a stream (defaults to <tt>false</tt>).
       # :stream_response_class :: Class used to build the stream response object.
       module OptionsMethods
-        def option_stream(val)
-          val
-        end
-
-        def option_stream_response_class(value)
-          value
-        end
-
         def extend_with_plugin_classes(pl)
           return super unless defined?(pl::StreamResponseMethods)
 
@@ -156,6 +148,16 @@ module HTTPX
           @stream_response_class.__send__(:include, pl::StreamResponseMethods) if defined?(pl::StreamResponseMethods)
 
           super
+        end
+
+        private
+
+        def option_stream(val)
+          val
+        end
+
+        def option_stream_response_class(value)
+          value
         end
       end
 

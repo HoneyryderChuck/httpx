@@ -16,16 +16,20 @@ module HTTPX
         # :enable_proxy_tunnel :: when <tt>true</tt>, it forces the establishment of the CONNECT proxy
         #                         tunnel, in cases where it wouldn't otherwise normally establish it
         #                         (i.e. if the request is an http:// request).
+        # :connect_request_class :: class of the request object used for the CONNECT tunnel request.
         module OptionsMethods
-          attr_reader :connect_request_class
-
-          private
-
-          def do_initialize
+          def extend_with_plugin_classes(pl)
             super
 
             @connect_request_class = @request_class.dup
+            Options::SET_TEMPORARY_NAME[@connect_request_class, pl]
             @connect_request_class.__send__(:include, ConnectRequestMethods)
+          end
+
+          private
+
+          def option_connect_request_class(val)
+            val
           end
 
           def option_proxy_headers(value)

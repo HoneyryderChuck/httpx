@@ -3,7 +3,7 @@ module HTTPX
     module Proxy
       module HTTP
         module OptionsMethods
-          attr_reader connect_request_class: singleton(Request) # & ConnectRequestMethods)
+          def connect_request_class: () -> singleton(Request) # & ConnectRequestMethods)
 
           def proxy_headers: () -> Headers?
 
