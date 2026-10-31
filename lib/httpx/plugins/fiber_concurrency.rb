@@ -82,6 +82,12 @@ module HTTPX
           super
         end
 
+        def closed_for_select?
+          # @fiber-switch-guard
+          # a closed connection still holding requests will reconnect once the fiber closing its socket resumes.
+          super && @pending.empty?
+        end
+
         def on_io_error(e)
           return super unless e.is_a?(IOError) && e.message.include?("stream closed in another thread")
 

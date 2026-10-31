@@ -37,6 +37,23 @@ module Requests
       verify_error_response(response, /No route to host/)
     end
 
+    def test_errors_connect_timeout_tries_next_address
+      return unless origin.start_with?("http://")
+
+      start_test_servlet(TestServer) do |server|
+        server.mount_proc("/") { |_req, res| res.body = "ok" }
+        uri = "http://fallback.test:#{server.origin.port}/"
+
+        # addresses are tried from last to first, so the non-routable one is tried first, and only
+        # gets its share of the connect timeout before the next address is used.
+        [{ connect_timeout: 4 }, { request_timeout: 4 }].each do |timeout|
+          response = HTTPX.get(uri, addresses: %w[127.0.0.1 172.31.255.255], timeout: timeout)
+          verify_status(response, 200)
+          verify_body_length(response, 2)
+        end
+      end
+    end
+
     # TODO: reset this test once it's possible to test ETIMEDOUT again
     #   the new iptables crapped out on me
     # def test_errors_host_etimedout

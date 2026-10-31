@@ -21,6 +21,8 @@ module HTTPX
   class Selector
     extend Forwardable
 
+    HAS_FIBER_SCHEDULER = Fiber.respond_to?(:scheduler)
+
     READABLE = %i[rw r].freeze
     WRITABLE = %i[rw w].freeze
 
@@ -186,7 +188,7 @@ module HTTPX
       @selectables.delete_if do |io|
         interests = io.interests
 
-        is_closed = io.state == :closed
+        is_closed = io.closed_for_select?
 
         if is_closed
           # the process by which io was closed may have already triggered the on_close callback,
@@ -226,7 +228,14 @@ module HTTPX
         when Array
           select_many(r, w, interval, &block)
         when nil
-          return unless interval && @selectables.any?
+          unless interval && @selectables.any?
+            # @fiber-switch-guard
+            # may mean that another fiber is moving a selectable forward (i.e. closing its
+            # socket), so let the scheduler resume it.
+            sleep(0) if HAS_FIBER_SCHEDULER && Fiber.scheduler
+
+            return
+          end
 
           # no selectables
           # TODO: replace with sleep?

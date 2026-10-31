@@ -16,6 +16,8 @@ module HTTPX
 
         def current_context?: () -> boolish
 
+        def closed_for_select?: () -> bool
+
         def send: (request request) -> void
 
         private

@@ -37,6 +37,8 @@ module HTTPX
 
       # def closed?: () -> bool
 
+      def closed_for_select?: () -> bool
+
       def deactivate: () -> void
 
       def terminate: () -> void

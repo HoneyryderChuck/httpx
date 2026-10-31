@@ -90,6 +90,10 @@ module HTTPX
       nil
     end
 
+    def closed_for_select?
+      @state == :closed
+    end
+
     def interests
       return if @queries.empty?
 

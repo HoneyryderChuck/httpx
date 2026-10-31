@@ -92,6 +92,8 @@ module HTTPX
 
     def inflight?: () -> boolish
 
+    def closed_for_select?: () -> bool
+
     def interests: () -> io_interests?
 
     def to_io: () -> IO
@@ -139,6 +141,10 @@ module HTTPX
     def initialize: (http_uri uri, Options options) -> void
 
     def initialize_type: (http_uri uri, Options options) -> io_type
+
+    def connect_attempt_time_left: () -> interval?
+
+    def connect_next: (StandardError error) -> void
 
     def try_connect: () -> void
 

@@ -2,6 +2,8 @@ module HTTPX
   interface _Selectable
     def state: () -> Symbol
 
+    def closed_for_select?: () -> bool
+
     def to_io: () -> IO
 
     def call: () -> void
@@ -26,6 +28,7 @@ module HTTPX
   end
 
   class Selector
+    HAS_FIBER_SCHEDULER: bool
 
     type selectable = Resolver::Resolver | Connection | (Object & _Loggable & _Selectable)
 
