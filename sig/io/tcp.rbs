@@ -25,6 +25,7 @@ module HTTPX
     @keep_open: bool
 
     @ip_index: Integer
+    @attempt_started_at: Float?
 
     # TODO: lift when https://github.com/ruby/rbs/issues/1497 fixed
     def initialize: (URI::Generic origin, Array[Resolver::Entry]? addresses, Options options) ?{ (instance) -> void } -> void
@@ -32,6 +33,10 @@ module HTTPX
     def add_addresses: (Array[Resolver::Entry] addrs) -> void
 
     def addresses?: () -> bool
+
+    def connect_attempt_time_left: () -> Float?
+
+    def next_address!: (StandardError e) -> void
 
     def to_io: () -> IO
 

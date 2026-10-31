@@ -17,7 +17,7 @@ module HTTPX
       @keep_open = false
       @addresses = []
       @ip_index = -1
-      @ip = nil
+      @ip = @attempt_started_at = nil
       @hostname = origin.host
       @options = options
       @fallback_protocol = @options.fallback_protocol
@@ -80,6 +80,27 @@ module HTTPX
       @addresses.any?
     end
 
+    # time left until the attempt to connect to the current address should be abandoned.
+    def connect_attempt_time_left
+      return unless @state == :idle && @ip_index.positive? && (attempt_started_at = @attempt_started_at)
+
+      timeouts = @options.timeout
+      timeout = timeouts.connect_timeout || timeouts.request_timeout || timeouts.total_request_timeout
+
+      return unless timeout && timeout.finite?
+
+      timeout.fdiv(@addresses.size) - Utils.elapsed_time(attempt_started_at)
+    end
+
+    # abandons the connection attempt to the current address.
+    def next_address!(e)
+      @io&.close
+      @ip_index -= 1
+      raise e if @ip_index.negative?
+
+      log { "failed connecting to #{@ip} (#{e.message}), trying next..." }
+    end
+
     def to_io
       @io.to_io
     end
@@ -109,13 +130,8 @@ module HTTPX
       try_connect
     rescue Errno::EHOSTUNREACH,
            Errno::ENETUNREACH => e
-      @ip_index -= 1
-
-      raise e if @ip_index.negative?
-
-      log { "failed connecting to #{@ip} (#{e.message}), evict from cache and trying next..." }
+      next_address!(e)
       @options.resolver_cache.evict(@hostname, @ip)
-
       @io = build_socket
       retry
     rescue Errno::ECONNREFUSED,
@@ -237,6 +253,7 @@ module HTTPX
 
     def build_socket
       @ip = @addresses[@ip_index]
+      @attempt_started_at = Utils.now
       Socket.new(@ip.family, :STREAM, 0)
     end
 

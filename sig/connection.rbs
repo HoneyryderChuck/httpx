@@ -142,6 +142,10 @@ module HTTPX
 
     def initialize_type: (http_uri uri, Options options) -> io_type
 
+    def connect_attempt_time_left: () -> interval?
+
+    def connect_next: (StandardError error) -> void
+
     def try_connect: () -> void
 
     def connect: () -> void

@@ -434,9 +434,14 @@ module HTTPX
     def timeout
       return if @state == :closed || @state == :inactive
 
-      return @timeout if @timeout
+      timeout = @timeout || @options.timeout.operation_timeout
 
-      @options.timeout.operation_timeout
+      return timeout unless connecting? && (attempt_timeout = connect_attempt_time_left)
+
+      # the attempt may already be overdue
+      attempt_timeout = 0 unless attempt_timeout.positive?
+
+      timeout && timeout < attempt_timeout ? timeout : attempt_timeout
     end
 
     def idling
@@ -525,16 +530,30 @@ module HTTPX
         # they should not fail due to such errors.
         return if @state == :inactive
 
-        if (current_timeout = @timeout || timeout)
+        attempt_timeout = connect_attempt_time_left if connecting?
+
+        current_timeout = @timeout
+        current_timeout ||= @options.timeout.operation_timeout unless @state == :closed
+
+        if current_timeout
           # if @timeout isn't set, it's not a completion-based timeout, i.e.
           # operation timeout; in such a case, we have to reset it once it piggybacks.
           @reset_timeout_on_call ||= @timeout.nil?
 
           @timeout = current_timeout - error.timeout
-          return unless @timeout <= 0
+
+          if @timeout.positive?
+            # if this was a connect timeout error and there are more addresses to try.
+            connect_next(error) if attempt_timeout && !attempt_timeout.positive?
+            return
+          end
 
           @timeout = nil
           @reset_timeout_on_call = false
+        elsif attempt_timeout
+          # when request timeouts are set instead.
+          connect_next(error) unless attempt_timeout.positive?
+          return
         end
 
         error = error.to_connection_error if connecting?
@@ -554,6 +573,21 @@ module HTTPX
     # simplecov:enable
 
     private
+
+    # the time left until the attempt to connect to the current address should be abandoned.
+    def connect_attempt_time_left
+      io = @io
+
+      return unless io.respond_to?(:connect_attempt_time_left)
+
+      io.connect_attempt_time_left
+    end
+
+    def connect_next(error)
+      @io.next_address!(error)
+
+      connect
+    end
 
     def try_connect
       emit(:connecting)
