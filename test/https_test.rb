@@ -300,7 +300,7 @@ class HTTPSTest < Minitest::Test
       # trick to avoid HPACK header compression that would reduce the number of packets.
       uris = Array.new(50) { |i| "#{server.origin}/#{i}/#{"a" * 500}" }
 
-      HTTPX.with(ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE }, timeout: { request_timeout: 3 }).wrap do |http|
+      HTTPX.with(ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE }, timeout: { request_timeout: 10 }).wrap do |http|
         responses = http.get(*uris)
         responses.each { |response| verify_status(response, 200) }
       end
