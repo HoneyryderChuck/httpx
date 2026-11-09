@@ -31,7 +31,7 @@ module Requests
       start_test_servlet(SlowReader) do |server|
         uri = URI("#{server.origin}/")
         session = HTTPX.with(timeout: { write_timeout: 4 })
-        response = session.post(uri, body: StringIO.new("a" * 65_536 * 3 * 5))
+        response = session.post(uri, body: StringIO.new("a" * 16 * 1024 * 1024))
         verify_error_response(response, HTTPX::WriteTimeoutError)
 
         response1 = session.post(uri, body: StringIO.new("a" * 65_536))
