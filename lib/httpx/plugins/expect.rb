@@ -104,24 +104,28 @@ module HTTPX
       end
 
       module ConnectionMethods
-        def send_request_to_parser(request, *)
-          super.tap do |is_inflight|
-            next unless is_inflight
+        private
 
-            next unless request.headers["expect"] == "100-continue"
+        def set_request_timeouts(request)
+          super
 
-            expect_timeout = request.options.expect_timeout
+          set_request_expect_timeout(request)
+        end
 
-            next if expect_timeout.nil? || expect_timeout.infinite?
+        def set_request_expect_timeout(request)
+          return unless request.headers["expect"] == "100-continue"
 
-            set_request_timeout(:expect_timeout, request, expect_timeout, :expect, %i[body response]) do
-              # expect timeout expired
-              if request.state == :expect && !request.expects?
-                Expect.no_expect_store.add(request.origin)
-                request.headers.delete("expect")
-                request.transition(:body)
-                consume
-              end
+          expect_timeout = request.options.expect_timeout
+
+          return if expect_timeout.nil? || expect_timeout.infinite?
+
+          set_request_timeout(:expect_timeout, request, expect_timeout, :expect, %i[body response]) do
+            # expect timeout expired
+            if request.state == :expect && !request.expects?
+              Expect.no_expect_store.add(request.origin)
+              request.headers.delete("expect")
+              request.transition(:body)
+              consume
             end
           end
         end

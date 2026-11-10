@@ -27,6 +27,24 @@ module Requests
       verify_status(response1, 200)
     end
 
+    def test_session_timeouts_read_timeout_requests_queued_during_handshake
+      return unless origin.start_with?("https")
+
+      session = HTTPX.plugin(RequestTimeoutsRegistrations).with(timeout: { read_timeout: 1 })
+      # all requests are queued while the HTTP/2 handshake is going on; the slow ones are sent after the first one.
+      requests = [build_uri("/get"), build_uri("/delay/3"), build_uri("/delay/3")].map do |uri|
+        session.build_request("GET", uri)
+      end
+
+      fast_response, *slow_responses = session.request(*requests)
+
+      verify_status(fast_response, 200)
+      slow_responses.each { |response| verify_error_response(response, HTTPX::ReadTimeoutError) }
+
+      registrations = requests.map(&:timeouts_registrations)
+      assert registrations.all?(1), "request timeouts should have been set once per request (registrations: #{registrations})"
+    end
+
     def test_session_timeouts_write_timeout
       start_test_servlet(SlowReader) do |server|
         uri = URI("#{server.origin}/")

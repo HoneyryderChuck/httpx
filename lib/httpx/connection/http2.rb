@@ -204,6 +204,7 @@ module HTTPX
         handle_stream(stream, request)
         @streams[request] = stream
         @max_requests -= 1
+        emit(:request_accepted, request)
       end
       handle(request, stream)
       true

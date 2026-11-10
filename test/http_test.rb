@@ -148,6 +148,22 @@ class HTTPTest < Minitest::Test
     end
   end
 
+  def test_max_streams_rerouted_requests_set_timeouts_once
+    start_test_servlet(KeepAliveServer) do |server|
+      uri = "#{server.origin}/2"
+      HTTPX.plugin(SessionWithPool).plugin(RequestTimeoutsRegistrations).with(max_concurrent_requests: 1).wrap do |http|
+        requests = 3.times.map { http.build_request("GET", uri) }
+        responses = http.request(*requests)
+        responses.each { |response| verify_status(response, 200) }
+        assert http.connection_count == 2, "expected to have 2 connections, instead have #{http.connection_count}"
+
+        # the request moved to the second connection was already accepted by the first one.
+        registrations = requests.map(&:timeouts_registrations)
+        assert registrations.all?(1), "request timeouts should have been set once per request (registrations: #{registrations})"
+      end
+    end
+  end
+
   def test_keep_alive_timeout_from_header
     start_test_servlet(KeepAliveServer) do |server|
       uri = "#{server.origin}/timeout"

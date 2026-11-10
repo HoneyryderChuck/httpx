@@ -742,7 +742,6 @@ module HTTPX
 
     def send_request_to_parser(request, head = false)
       request.peer_address = @io&.ip&.address
-      set_request_timeouts(request)
 
       if @state == :inactive
         transition(:active)
@@ -763,6 +762,7 @@ module HTTPX
     end
 
     def set_parser_callbacks(parser)
+      parser.on(:request_accepted, &method(:set_request_timeouts))
       parser.on(:response) do |request, response|
         AltSvc.emit(request, response) do |alt_origin, origin, alt_params|
           build_altsvc_connection(alt_origin, origin, alt_params)

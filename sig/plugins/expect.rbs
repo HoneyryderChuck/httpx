@@ -24,6 +24,12 @@ module HTTPX
         @informational_status: Integer?
       end
 
+      module ConnectionMethods
+        private
+
+        def set_request_expect_timeout: (Request request) -> void
+      end
+
       interface _ExpectOptions
         def expect_timeout: () -> Integer?
 

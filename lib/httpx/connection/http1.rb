@@ -62,9 +62,6 @@ module HTTPX
           next
         end
 
-        # everything after an idle request is idle too.
-        break if request.state == :idle
-
         request.transition(:idle)
       end
       # drop completed requests
@@ -106,6 +103,7 @@ module HTTPX
 
       @requests << request
       @pipelining = @max_concurrent_requests > 1 && @requests.size > 1
+      emit(:request_accepted, request)
       true
     end
 
@@ -206,8 +204,7 @@ module HTTPX
       manage_connection(request, response)
 
       if exhausted?
-        @pending.unshift(*@requests)
-        @requests.clear
+        reset_requests
 
         emit(:exhausted)
       elsif @requests.any?
@@ -266,8 +263,7 @@ module HTTPX
       when /keep-alive/i
         if @handshake_completed
           if @max_requests.zero?
-            @pending.unshift(*@requests)
-            @requests.clear
+            reset_requests
             emit(:exhausted)
           end
           return
