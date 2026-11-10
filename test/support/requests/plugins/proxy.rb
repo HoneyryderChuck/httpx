@@ -477,6 +477,30 @@ module Requests
       #   verify_body_length(response)
       # end
 
+      def test_plugin_http_proxy_unresponsive_during_connect_tunnel
+        skip unless tls?
+
+        start_test_servlet(UnresponsiveServer) do |proxy|
+          session = HTTPX.plugin(SessionWithPool)
+                         .plugin(:proxy)
+                         .with_proxy(uri: proxy.origin)
+                         .with(timeout: { connect_timeout: 1 })
+
+          verify_proxy_handshake_timed_out(session)
+        end
+      end
+
+      def test_plugin_socks5_proxy_unresponsive_during_negotiation
+        start_test_servlet(UnresponsiveServer) do |proxy|
+          session = HTTPX.plugin(SessionWithPool)
+                         .plugin(:proxy)
+                         .with_proxy(uri: "socks5://#{proxy.authority}")
+                         .with(timeout: { connect_timeout: 1 })
+
+          verify_proxy_handshake_timed_out(session)
+        end
+      end
+
       def test_plugin_socks5_proxy_negotiation_error
         proxy = URI(socks5_proxy.first)
         proxy.password = nil
@@ -550,6 +574,23 @@ module Requests
           verify_error_response(res, /no supported authorization methods/)
           assert session.calls == 3, "expect request to be built 3 times (was #{session.calls})"
         end
+      end
+
+      private
+
+      # the proxy handshake hangs, so the connection must close while still connecting through the proxy.
+      def verify_proxy_handshake_timed_out(session)
+        started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+        response = session.get(build_uri("/get"))
+        elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started_at
+
+        verify_error_response(response, HTTPX::ConnectTimeoutError)
+        assert_in_delta 1, elapsed, 1.5, "expected the connect timeout to apply to the proxy handshake (took #{elapsed} secs)"
+
+        assert session.connections.size == 1
+        connection = session.connections.first
+        assert connection.state == :closed, "connection should have been closed (was #{connection.state})"
+        assert connection.no_more_requests?, "connection should not have kept any requests around"
       end
     end
   end
