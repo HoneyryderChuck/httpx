@@ -545,6 +545,9 @@ module HTTPX
           # when request timeouts are set instead.
           connect_next(error) unless attempt_timeout.positive?
           return
+        else
+          # the select interval came from another selectable, as this one has no timeout set.
+          return
         end
 
         error = error.to_connection_error if connecting?

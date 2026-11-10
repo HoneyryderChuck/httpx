@@ -501,6 +501,25 @@ module Requests
         end
       end
 
+      def test_plugin_proxy_connect_timeout_does_not_time_out_other_connections
+        start_test_servlet(UnresponsiveServer) do |proxy|
+          slow_uri = URI(build_uri("/delay/2"))
+          session = HTTPX.plugin(SessionWithPool)
+                         .plugin(:proxy)
+                         .with_proxy(uri: "socks5://#{proxy.authority}", no_proxy: [slow_uri.host])
+                         .with(timeout: { connect_timeout: 1 })
+
+          started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+          # the proxied connection times out while the other one is still waiting for the response.
+          unreachable, slow = session.get(build_uri("/get", "#{scheme}unreachable.httpx.test"), slow_uri)
+          elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started_at
+
+          verify_error_response(unreachable, HTTPX::ConnectTimeoutError)
+          verify_status(slow, 200)
+          assert elapsed < 10, "slow request should not have been held back (took #{elapsed} secs)"
+        end
+      end
+
       def test_plugin_socks5_proxy_negotiation_error
         proxy = URI(socks5_proxy.first)
         proxy.password = nil
