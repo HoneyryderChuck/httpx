@@ -23,6 +23,8 @@ module HTTPX
         private
 
         def backlog?: () -> boolish
+
+        def clear_pending_requests: () -> void
       end
 
       module HTTP1Methods

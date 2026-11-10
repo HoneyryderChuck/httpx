@@ -450,6 +450,9 @@ module HTTPX
     end
 
     def deactivate
+      # safety net so that connection state does not corrupt.
+      clear_pending_requests
+
       transition(:inactive)
     end
 
@@ -1116,6 +1119,10 @@ module HTTPX
                    "cloned?:#{@cloned}, " \
                    "sibling?:#{!!@sibling}, " \
                    "coalesced?:#{coalesced?})"
+    end
+
+    def clear_pending_requests
+      @pending.clear
     end
 
     # true when there are no more pending nor inflight (in parser) requests

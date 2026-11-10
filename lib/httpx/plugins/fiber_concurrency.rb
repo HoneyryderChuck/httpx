@@ -136,6 +136,12 @@ module HTTPX
           pending_count.zero? && @parser&.no_requests_to_handle?
         end
 
+        # @fiber-switch-guard
+        # pending requests from other fibers are still being waited for.
+        def clear_pending_requests
+          @pending.reject!(&:current_context?)
+        end
+
         # checks whether the connection has any pending request (which the connection itself may
         # have stored, or it may be somewhere in the parser).
         def backlog?
