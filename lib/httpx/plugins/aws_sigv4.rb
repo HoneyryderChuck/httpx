@@ -156,7 +156,6 @@ module HTTPX
 
       class << self
         def load_dependencies(*)
-          require "set"
           require "digest/sha2"
           require "cgi/escape"
         end
