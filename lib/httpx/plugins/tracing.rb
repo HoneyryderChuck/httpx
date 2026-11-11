@@ -176,24 +176,21 @@ module HTTPX::Plugins
       def initialize(*)
         super
 
-        @handshake_time = nil
         @handshake_init_time = ::Time.now.utc
-      end
-
-      def send(request, head = false)
-        if head && (htime = @handshake_time)
-          # only true for pending requests waiting on the handshake, so handshake time accrues.
-          request.handshake_time ||= 0.0
-          request.handshake_time += htime
-        end
-
-        super
       end
 
       private
 
       def on_settings(*)
-        @handshake_time = ::Time.now.utc - @handshake_init_time unless @handshake_completed
+        unless @handshake_completed
+          # pending requests must wait for the handshake completion
+          handshake_time = ::Time.now.utc - @handshake_init_time
+
+          @pending.each do |request|
+            request.handshake_time ||= 0.0
+            request.handshake_time += handshake_time
+          end
+        end
 
         super
       end

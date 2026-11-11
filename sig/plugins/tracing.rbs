@@ -36,10 +36,12 @@ module HTTPX
       end
 
       module HTTP2Methods
-        @handshake_time: Float?
         @handshake_init_time: Time
+        @pending: Array[tracingRequest]
 
-        def send: (tracingRequest request, ?bool head) -> bool
+        private
+
+        def on_settings: (*untyped) -> void
       end
 
       type tracingRequest = Request & RequestMethods

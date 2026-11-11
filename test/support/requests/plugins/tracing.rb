@@ -194,6 +194,39 @@ module Requests
         end
       end
 
+      def test_plugin_tracing_span_excludes_h2_handshake_on_reused_connection
+        start_test_servlet(SlowSettingsServer, tls: tls?, settings_delay: 2) do |server|
+          uri = "#{server.origin}/"
+          HTTPX.plugin(:tracing, tracer: test_tracer)
+               .with(fallback_protocol: "h2", timeout: { keep_alive_timeout: 1 },
+                     ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE, verify_hostname: false })
+               .wrap do |http|
+            request1 = http.build_request("GET", uri)
+            verify_status(http.request(request1), 200)
+
+            credited1 = test_tracer.span_durations[request1].last - test_tracer.total_times[request1].last
+            assert_in_delta 2, credited1, 1,
+                            "expected the first request to credit the ~2s HTTP/2 handshake (credited #{credited1}s)"
+
+            # expire keep alive timeout to enforce PING, pending requests only sent once the PONG arrives.
+            sleep 2
+
+            # same connection, handshake long done: none of these waited on it.
+            requests = 3.times.map { http.build_request("GET", uri) }
+            http.request(*requests).each { |response| verify_status(response, 200) }
+
+            requests.each do |request|
+              assert request.handshake_time.nil?,
+                     "expected no handshake time on a request sent over an open connection " \
+                     "(was #{request.handshake_time.inspect})"
+              credited = test_tracer.span_durations[request].last - test_tracer.total_times[request].last
+              assert credited < 0.5,
+                     "expected the span not to credit the connection's past handshake (credited #{credited}s)"
+            end
+          end
+        end
+      end
+
       def test_plugin_tracing_span_covers_failed_connect
         start_test_servlet(SlowHandshakeServer, tls: true, handshake_delay: 3) do |server|
           http = HTTPX.plugin(:tracing, tracer: test_tracer)
