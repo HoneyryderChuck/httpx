@@ -6,9 +6,10 @@
 class DelayedGoawayDrainServer < TestHTTP2Server
   attr_reader :arrivals
 
-  def initialize(mode:, delay: 0.2, body_size: 300_000, **kw)
+  def initialize(mode:, delay: 0.2, body_size: 300_000, max_concurrent_streams: nil, **kw)
     super(**kw)
     @mode = mode
+    @max_concurrent_streams = max_concurrent_streams
     @delay = delay
     @timers = []
     @arrivals = Hash.new(0)
@@ -28,6 +29,12 @@ class DelayedGoawayDrainServer < TestHTTP2Server
   end
 
   private
+
+  def new_http2_parser
+    return super unless @max_concurrent_streams
+
+    ::HTTP2::Server.new(settings_max_concurrent_streams: @max_concurrent_streams)
+  end
 
   def after(secs, &blk)
     @timers << [Process.clock_gettime(Process::CLOCK_MONOTONIC) + secs, blk]
@@ -74,6 +81,14 @@ class DelayedGoawayDrainServer < TestHTTP2Server
       after(@delay) do
         goaway(conn, first.id)
         after(@delay) { handle_request(conn, first) }
+      end
+    when :queued
+      # * one request in flight, the GOAWAY covers it and it completes later; meant to be used with
+      #   +max_concurrent_streams: 1+, so that other requests are still queued in the client.
+      @drained = true
+      stream.on(:half_close) do
+        goaway(conn, stream.id)
+        after(@delay) { handle_request(conn, stream) }
       end
     else
       super

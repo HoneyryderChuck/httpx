@@ -148,6 +148,22 @@ class HTTPTest < Minitest::Test
     end
   end
 
+  def test_max_streams_rerouted_requests_set_timeouts_once
+    start_test_servlet(KeepAliveServer) do |server|
+      uri = "#{server.origin}/2"
+      HTTPX.plugin(SessionWithPool).plugin(RequestTimeoutsRegistrations).with(max_concurrent_requests: 1).wrap do |http|
+        requests = 3.times.map { http.build_request("GET", uri) }
+        responses = http.request(*requests)
+        responses.each { |response| verify_status(response, 200) }
+        assert http.connection_count == 2, "expected to have 2 connections, instead have #{http.connection_count}"
+
+        # the request moved to the second connection was already accepted by the first one.
+        registrations = requests.map(&:timeouts_registrations)
+        assert registrations.all?(1), "request timeouts should have been set once per request (registrations: #{registrations})"
+      end
+    end
+  end
+
   def test_keep_alive_timeout_from_header
     start_test_servlet(KeepAliveServer) do |server|
       uri = "#{server.origin}/timeout"
@@ -205,6 +221,27 @@ class HTTPTest < Minitest::Test
       assert server.received == body.size, "expected the whole request body to be sent, got #{server.received} bytes"
       assert buffered.max <= SlowWindowUpdateServer::WINDOW,
              "expected the request body to wait for WINDOW_UPDATE frames, instead #{buffered.max} bytes were buffered"
+    end
+  end
+
+  def test_http1_pipelining_unsupported_resends_unanswered_requests
+    start_test_servlet(PipeliningUnsupportedServer) do |server|
+      uri = "#{server.origin}/"
+
+      HTTPX.plugin(SessionWithPool).wrap do |http|
+        responses = http.get(uri, uri, uri)
+
+        assert responses.size == 3
+        responses.each do |response|
+          verify_status(response, 200)
+          verify_body_length(response, 2)
+        end
+
+        pipelined, *rest = server.bursts
+        assert pipelined.first > 1, "requests should have been pipelined (bursts: #{server.bursts})"
+        assert rest.flatten.all?(1), "requests should have been resent one at a time (bursts: #{server.bursts})"
+        assert server.bursts.flatten.size == 3, "each request should have been answered once (bursts: #{server.bursts})"
+      end
     end
   end
 

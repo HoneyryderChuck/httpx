@@ -53,10 +53,10 @@ module Requests
 
       def test_hedging_delay_before_new_connection
         uri = URI(build_uri("/get"))
-        delay_uri = build_uri("/delay/3")
+        delay_uri = build_uri("/delay/6")
 
         http = HTTPX.plugin(SessionWithPool)
-                    .plugin(:hedging, hedge_after: 2)
+                    .plugin(:hedging, hedge_after: 4)
                     .plugin(KeepHedgeConnections)
 
         response = http.get(uri)

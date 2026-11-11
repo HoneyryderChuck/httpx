@@ -68,29 +68,30 @@ module HTTPX
         end
 
         def upgrade_to_h2c(request, response)
-          enqueue_pending_requests_from_parser(@parser)
+          @parser.reset_requests
 
-          @parser = request.options.h2c_class.new(@write_buffer, @options)
+          @parser = request.options.h2c_class.new(@write_buffer, @pending, @options)
           set_parser_callbacks(@parser)
-          @inflight += 1 # request is being completed below
           @parser.upgrade(request, response)
           @upgrade_protocol = "h2c"
         end
 
         private
 
-        def send_request_to_parser(request)
-          super
+        def send_request_to_parser(request, *)
+          super.tap do |is_inflight|
+            next unless is_inflight
 
-          return unless request.headers["upgrade"] == "h2c" && parser.is_a?(Connection::HTTP1)
+            next unless request.headers["upgrade"] == "h2c" && parser.is_a?(Connection::HTTP1)
 
-          max_concurrent_requests = parser.max_concurrent_requests
+            max_concurrent_requests = parser.max_concurrent_requests
 
-          return if max_concurrent_requests == 1
+            next if max_concurrent_requests == 1
 
-          parser.max_concurrent_requests = 1
-          request.once(:response) do
-            parser.max_concurrent_requests = max_concurrent_requests
+            parser.max_concurrent_requests = 1
+            request.once(:response) do
+              parser.max_concurrent_requests = max_concurrent_requests
+            end
           end
         end
       end

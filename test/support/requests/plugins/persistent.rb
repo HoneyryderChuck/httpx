@@ -420,8 +420,8 @@ module Requests
             verify_status(http.get(uri), 200)
 
             connection = http.connections.first
-            assert connection.instance_variable_get(:@inflight).zero?,
-                   "inflight should be 0 (was #{connection.instance_variable_get(:@inflight)})"
+            assert connection.no_more_requests?,
+                   "connection should have no pending nor inflight requests"
 
             response = http.get(uri)
             verify_status(response, 200)
@@ -448,7 +448,7 @@ module Requests
             assert response.to_s == "OKOK", "expected the full body (got #{response.to_s.inspect})"
             assert server.arrivals["/drained"] == 1,
                    "request covered by the GOAWAY should not be resent (sent #{server.arrivals["/drained"]} times)"
-            assert(http.connections.all? { |conn| conn.instance_variable_get(:@inflight).zero? })
+            assert(http.connections.all?(&:no_more_requests?))
 
             verify_status(http.get("#{server.origin}/after"), 200)
           ensure
@@ -499,10 +499,91 @@ module Requests
                    "request covered by the GOAWAY should not be resent (sent #{server.arrivals["/processed"]} times)"
             assert server.arrivals["/unprocessed"] == 2,
                    "request not covered by the GOAWAY should be resent once (sent #{server.arrivals["/unprocessed"]} times)"
-            assert(http.connections.all? { |conn| conn.instance_variable_get(:@inflight).zero? })
+            assert(http.connections.all?(&:no_more_requests?))
           ensure
             http.close
           end
+        end
+      end
+
+      def test_persistent_graceful_goaway_reroutes_queued_requests_with_no_inflight_streams
+        return unless origin.start_with?("https")
+
+        start_test_servlet(DelayedGoawayDrainServer, mode: :queued, max_concurrent_streams: 1) do |server|
+          http = HTTPX.plugin(SessionWithPool)
+                      .plugin(:persistent)
+                      .with(ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE })
+
+          begin
+            verify_status(http.get("#{server.origin}/warmup"), 200)
+
+            # only 1 concurrent stream allowed, /queued waits in the pending queue while
+            # the GOAWAY drains /processed.
+            processed, queued = http.get("#{server.origin}/processed", "#{server.origin}/queued")
+            verify_status(processed, 200)
+            verify_status(queued, 200)
+            assert server.arrivals["/processed"] == 1,
+                   "request covered by the GOAWAY should not be resent (sent #{server.arrivals["/processed"]} times)"
+            assert server.arrivals["/queued"] == 1,
+                   "queued request should have been sent once (sent #{server.arrivals["/queued"]} times)"
+            assert(http.connections.all?(&:no_more_requests?))
+          ensure
+            http.close
+          end
+        end
+      end
+
+      def test_persistent_inactive_connection_reopens_when_parser_queues_the_request
+        return unless origin.start_with?("https")
+
+        uri = build_uri("/get")
+        http = HTTPX.plugin(SessionWithPool).plugin(:persistent)
+
+        begin
+          verify_status(http.get(uri), 200)
+          connection = http.connections.first
+          assert connection.state == :inactive, "connection should have been deactivated (was #{connection.state})"
+          assert connection.parser.is_a?(HTTPX::Connection::HTTP2)
+
+          # the parser refuses the next request once (i.e. as when the max number of concurrent streams is
+          # reached), so it ends up in the pending queue.
+          refused = false
+          connection.parser.singleton_class.prepend(Module.new do
+            define_method(:can_buffer_pending_requests?) do
+              next super() if refused
+
+              refused = true
+              false
+            end
+          end)
+
+          verify_status(http.get(uri), 200)
+          assert refused, "parser should have refused the request"
+          assert http.connections.last.equal?(connection), "connection object should have been reused"
+        ensure
+          http.close
+        end
+      end
+
+      def test_persistent_inactive_connection_reopens_before_being_selected
+        uri = build_uri("/get")
+        http = HTTPX.plugin(SessionWithPool).plugin(:persistent).plugin(SelectedConnectionStates)
+
+        begin
+          verify_status(http.get(uri), 200)
+          connection = http.connections.first
+          assert connection.state == :inactive, "connection should have been deactivated (was #{connection.state})"
+
+          connection.selected_states.clear
+          verify_status(http.get(uri), 200)
+
+          assert http.connections.last.equal?(connection), "connection object should have been reused"
+          assert !connection.selected_states.empty?, "connection should have been selected"
+          assert connection.selected_states.none?(:inactive),
+                 "inactive connection should have reopened before being selected (states: #{connection.selected_states.uniq})"
+          assert connection.state == :inactive, "connection should have been deactivated again (was #{connection.state})"
+        ensure
+          http.close
         end
       end
     end

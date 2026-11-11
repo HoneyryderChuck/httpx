@@ -33,7 +33,7 @@ module Requests
 
         assert session.connection_count == 1
         connection = session.connections.first
-        assert connection.inflight.zero?
+        assert connection.no_more_requests?
       end
 
       def test_plugin_http_no_proxy
@@ -86,7 +86,7 @@ module Requests
 
         assert session.connection_count == 1
         connection = session.connections.first
-        assert connection.inflight.zero?
+        assert connection.no_more_requests?
       end
 
       def test_plugin_tunnel_connect_http1_proxy
@@ -104,7 +104,7 @@ module Requests
         assert response.proxied?
 
         connection = session.connections.first
-        assert connection.inflight.zero?
+        assert connection.no_more_requests?
         connect_requests = connection.connect_requests
         assert connect_requests.size == 1
         connect_req = connect_requests.first
@@ -127,7 +127,7 @@ module Requests
         assert response.proxied?
 
         connection = session.connections.first
-        assert connection.inflight.zero?
+        assert connection.no_more_requests?
         connect_requests = connection.connect_requests
         assert connect_requests.size == 1
         connect_req = connect_requests.first
@@ -170,7 +170,7 @@ module Requests
               assert http.connections.size == 1
 
               connection = http.connections.first
-              assert connection.inflight.zero?
+              assert connection.no_more_requests?
 
               # lapse the keep alive window
               sleep(1.5)
@@ -179,7 +179,7 @@ module Requests
               assert http.connections.size == 1
 
               connection = http.connections.first
-              assert connection.inflight.zero?
+              assert connection.no_more_requests?
 
               assert proxy.connect_requests.size == 2,
                      "did not open new CONNECT proxy"
@@ -207,10 +207,10 @@ module Requests
 
         assert session.connections.size == 2
         unavailable_connection, connection = session.connections
-        assert unavailable_connection.inflight.zero?
+        assert unavailable_connection.no_more_requests?
         assert unavailable_connection.connect_requests.empty?
 
-        assert connection.inflight.zero?
+        assert connection.no_more_requests?
         connect_requests = connection.connect_requests
         assert connect_requests.size == 1
         connect_req = connect_requests.first
@@ -243,7 +243,7 @@ module Requests
 
         assert session.connection_count == 1
         connection = session.connections.first
-        assert connection.inflight.zero?
+        assert connection.no_more_requests?
       end
 
       def test_plugin_http_proxy_connect_error
@@ -264,7 +264,7 @@ module Requests
 
           assert session.connections.size == 1
           connection = session.connections.first
-          assert connection.inflight.zero?
+          assert connection.no_more_requests?
         end
       end
 
@@ -280,7 +280,7 @@ module Requests
 
         assert session.connections.size == 1
         connection = session.connections.first
-        assert connection.inflight.zero?
+        assert connection.no_more_requests?
       end
 
       def test_plugin_http_proxy_auth_error
@@ -477,6 +477,49 @@ module Requests
       #   verify_body_length(response)
       # end
 
+      def test_plugin_http_proxy_unresponsive_during_connect_tunnel
+        skip unless tls?
+
+        start_test_servlet(UnresponsiveServer) do |proxy|
+          session = HTTPX.plugin(SessionWithPool)
+                         .plugin(:proxy)
+                         .with_proxy(uri: proxy.origin)
+                         .with(timeout: { connect_timeout: 1 })
+
+          verify_proxy_handshake_timed_out(session)
+        end
+      end
+
+      def test_plugin_socks5_proxy_unresponsive_during_negotiation
+        start_test_servlet(UnresponsiveServer) do |proxy|
+          session = HTTPX.plugin(SessionWithPool)
+                         .plugin(:proxy)
+                         .with_proxy(uri: "socks5://#{proxy.authority}")
+                         .with(timeout: { connect_timeout: 1 })
+
+          verify_proxy_handshake_timed_out(session)
+        end
+      end
+
+      def test_plugin_proxy_connect_timeout_does_not_time_out_other_connections
+        start_test_servlet(UnresponsiveServer) do |proxy|
+          slow_uri = URI(build_uri("/delay/2"))
+          session = HTTPX.plugin(SessionWithPool)
+                         .plugin(:proxy)
+                         .with_proxy(uri: "socks5://#{proxy.authority}", no_proxy: [slow_uri.host])
+                         .with(timeout: { connect_timeout: 1 })
+
+          started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+          # the proxied connection times out while the other one is still waiting for the response.
+          unreachable, slow = session.get(build_uri("/get", "#{scheme}unreachable.httpx.test"), slow_uri)
+          elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started_at
+
+          verify_error_response(unreachable, HTTPX::ConnectTimeoutError)
+          verify_status(slow, 200)
+          assert elapsed < 10, "slow request should not have been held back (took #{elapsed} secs)"
+        end
+      end
+
       def test_plugin_socks5_proxy_negotiation_error
         proxy = URI(socks5_proxy.first)
         proxy.password = nil
@@ -550,6 +593,23 @@ module Requests
           verify_error_response(res, /no supported authorization methods/)
           assert session.calls == 3, "expect request to be built 3 times (was #{session.calls})"
         end
+      end
+
+      private
+
+      # the proxy handshake hangs, so the connection must close while still connecting through the proxy.
+      def verify_proxy_handshake_timed_out(session)
+        started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+        response = session.get(build_uri("/get"))
+        elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started_at
+
+        verify_error_response(response, HTTPX::ConnectTimeoutError)
+        assert_in_delta 1, elapsed, 1.5, "expected the connect timeout to apply to the proxy handshake (took #{elapsed} secs)"
+
+        assert session.connections.size == 1
+        connection = session.connections.first
+        assert connection.state == :closed, "connection should have been closed (was #{connection.state})"
+        assert connection.no_more_requests?, "connection should not have kept any requests around"
       end
     end
   end

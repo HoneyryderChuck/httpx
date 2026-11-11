@@ -7,6 +7,10 @@ gem "rake", "~> 13"
 
 gem "rdoc" if RUBY_VERSION >= "4.0.0"
 
+platform :mri do
+  gem "prism", "< 2" if RUBY_VERSION < "3.3.0"
+end
+
 group :test do
   if RUBY_VERSION >= "3.2.0"
     gem "datadog", "~> 2.0", platform: :mri

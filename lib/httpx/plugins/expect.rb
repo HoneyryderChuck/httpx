@@ -104,9 +104,15 @@ module HTTPX
       end
 
       module ConnectionMethods
-        def send_request_to_parser(request)
+        private
+
+        def set_request_timeouts(request)
           super
 
+          set_request_expect_timeout(request)
+        end
+
+        def set_request_expect_timeout(request)
           return unless request.headers["expect"] == "100-continue"
 
           expect_timeout = request.options.expect_timeout

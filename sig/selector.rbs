@@ -77,6 +77,8 @@ module HTTPX
 
     def select_many: (io_select_selectable r, io_select_selectable w, interval? interval) { (selectable) -> void } -> void
 
+    def selectables_with_closed_ios: (io_select_selectable r, io_select_selectable w) -> _Each[selectable]
+
     def select_one: (selectable io, io_interests interests, interval? interval) { (selectable) -> void } -> void
 
     def next_timeout: () -> interval?

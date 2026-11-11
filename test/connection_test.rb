@@ -67,6 +67,30 @@ class ConnectionTest < Minitest::Test
     assert connection.io.instance_variable_get(:@ssl_session) == new_session
   end
 
+  def test_deactivate_clears_pending_requests
+    options = Options.new
+    connection = Connection.new(URI(origin), options)
+    connection.pending.push(Request.new("GET", origin, options), Request.new("GET", origin, options))
+
+    connection.deactivate
+
+    assert connection.pending.empty?, "abandoned requests should have been dropped"
+
+    # now, the fiber concurrency override
+
+    options = HTTPX.plugin(:fiber_concurrency).send(:default_options)
+    connection = options.connection_class.new(URI(origin), options)
+    current = options.request_class.new("GET", origin, options)
+    current.set_context!
+    other = options.request_class.new("GET", origin, options)
+    Fiber.new { other.set_context! }.resume
+    connection.pending.push(current, other)
+
+    connection.deactivate
+
+    assert connection.pending == [other], "requests from other fibers should have been kept"
+  end
+
   private
 
   def build_ssl_connection(uri)

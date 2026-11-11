@@ -26,6 +26,9 @@ module FiberSchedulerTestHelpers
       @ready = Set.new
 
       @urgent = IO.pipe
+
+      # https://bugs.ruby-lang.org/issues/22532
+      @fibers = []
     end
 
     attr :readable
@@ -56,7 +59,7 @@ module FiberSchedulerTestHelpers
       begin
         readable, writable = IO.select(@readable.keys + [@urgent.first], @writable.keys, [], next_timeout)
       rescue IOError
-        # Ignore - this can happen if the IO is closed while we are waiting.
+        interrupt_closed_io_waiters
       end
 
       # puts "readable: #{readable}" if readable&.any?
@@ -162,6 +165,9 @@ module FiberSchedulerTestHelpers
 
       self.run
     ensure
+      # https://bugs.ruby-lang.org/issues/22532
+      kill_fibers
+
       if @urgent
         @urgent.each(&:close)
         @urgent = nil
@@ -319,6 +325,9 @@ module FiberSchedulerTestHelpers
     end
 
     class FiberInterrupt
+      # https://bugs.ruby-lang.org/issues/22532
+      attr_reader :fiber
+
       def initialize(fiber, exception)
         @fiber = fiber
         @exception = exception
@@ -347,6 +356,10 @@ module FiberSchedulerTestHelpers
     # `Fiber.new` is usually sufficient.
     def fiber(&block)
       fiber = Fiber.new(blocking: false, &block)
+
+      # https://bugs.ruby-lang.org/issues/22532
+      @fibers.select!(&:alive?)
+      @fibers << fiber
 
       fiber.transfer
 
@@ -403,6 +416,42 @@ module FiberSchedulerTestHelpers
     end
 
     private
+
+    # Fibers waiting on an IO which gets closed are interrupted by the VM via the #fiber_interrupt hook
+    # since ruby 4.0.
+    def interrupt_closed_io_waiters
+      interrupted = @ready.filter_map { |f| f.fiber if f.is_a?(FiberInterrupt) }
+
+      [@readable, @writable].each do |waiters|
+        waiters.keys.each do |io|
+          next unless io.closed?
+
+          waiters.delete(io).each do |fiber|
+            next if interrupted.include?(fiber)
+
+            interrupted << fiber
+            @lock.synchronize do
+              @ready << FiberInterrupt.new(fiber, IOError.new("stream closed in another thread"))
+            end
+          end
+        end
+      end
+    end
+
+    # Kills fibers which are still suspended when the scheduler closes (i.e. after a test failure or
+    # an interrupt broke the run loop), so that their ensure blocks run.
+    #
+    # https://bugs.ruby-lang.org/issues/22532
+    def kill_fibers
+      return unless Fiber.method_defined?(:kill)
+
+      fibers, @fibers = @fibers, []
+      fibers.each do |fiber|
+        fiber.kill if fiber.alive?
+      rescue FiberError
+        # can't kill the current fiber, or one from another thread.
+      end
+    end
 
     def log(msg)
       fid = Fiber.current.object_id

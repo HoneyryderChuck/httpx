@@ -217,7 +217,7 @@ class FaradayTest < Minitest::Test
       uri = URI("#{server.origin}/")
       conn = faraday_connection(server_uri: uri.origin, request: { write_timeout: 0.5 })
       assert_raises Faraday::TimeoutError do
-        conn.post("/", "a" * 65_536 * 3 * 5)
+        conn.post("/", "a" * 16 * 1024 * 1024)
       end
     end
   end

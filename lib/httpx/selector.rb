@@ -264,18 +264,19 @@ module HTTPX
       begin
         readers, writers = ::IO.select(r, w, nil, interval)
       rescue IOError => e
-        (Array(r) + Array(w)).each do |sel|
-          # TODO: is there a way to cheaply find the IO associated with the error?
+        selectables_with_closed_ios(r, w).each do |sel|
           sel.on_io_error(e)
         end
+
+        return
       rescue StandardError => e
-        (Array(r) + Array(w)).each do |sel|
+        selectables_with_closed_ios(r, w).each do |sel|
           sel.on_error(e)
         end
 
         return
       rescue Exception => e # rubocop:disable Lint/RescueException
-        (Array(r) + Array(w)).each do |sel|
+        Set[*Array(r), *Array(w)].each do |sel|
           sel.force_close(true)
         end
 
@@ -299,6 +300,16 @@ module HTTPX
       else
         readers.each(&block) if readers
       end
+    end
+
+    # returns the selectables whose IOs were closed.
+    def selectables_with_closed_ios(r, w)
+      selectables = Set[*Array(r), *Array(w)]
+
+      closed = selectables.select { |sel| sel.to_io.closed? }
+
+      # When none of them was closed, the error can't be attributed to any of them, so all are returned.
+      closed.empty? ? selectables : closed
     end
 
     def select_one(io, interests, interval)

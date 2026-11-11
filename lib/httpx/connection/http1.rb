@@ -20,14 +20,14 @@ module HTTPX
 
     attr_accessor :max_concurrent_requests
 
-    def initialize(buffer, options)
+    def initialize(buffer, pending, options)
       @options = options
       @max_concurrent_requests = @options.max_concurrent_requests || MAX_REQUESTS
       @max_requests = @options.max_requests
       @parser = Parser::HTTP1.new(self, options.max_response_headers, options.max_response_header_value_size)
       @buffer = buffer
       @version = [1, 1]
-      @pending = []
+      @pending = pending
       @requests = []
       @callbacks = @request = nil
       @handshake_completed = @pipelining = false
@@ -51,21 +51,28 @@ module HTTPX
       @max_requests = @options.max_requests || MAX_REQUESTS
       @parser.reset!
       @handshake_completed = false
-      reset_requests
     end
 
+    # move incompleted requests back to pending queue.
     def reset_requests
-      @requests.reverse_each do |request|
-        next if request.response
+      completed_idx = 0
+      @requests.each_with_index do |request, idx|
+        if request.response
+          completed_idx = idx + 1
+          next
+        end
 
         request.transition(:idle)
-        @pending.unshift(request)
       end
+      # drop completed requests
+      @requests.shift(completed_idx)
+      @pending.unshift(*@requests)
       @requests.clear
     end
 
     def close
       reset
+      reset_requests
       emit(:close)
     end
 
@@ -88,14 +95,16 @@ module HTTPX
       @parser << data
     end
 
-    def send(request, head = false)
+    def send(request, head = false) # rubocop:disable Naming/PredicateMethod
       unless @max_requests.positive? && @max_requests > @requests.size
         head ? @pending.unshift(request) : @pending << request
-        return
+        return false
       end
 
       @requests << request
       @pipelining = @max_concurrent_requests > 1 && @requests.size > 1
+      emit(:request_accepted, request)
+      true
     end
 
     def consume
@@ -195,8 +204,7 @@ module HTTPX
       manage_connection(request, response)
 
       if exhausted?
-        @pending.unshift(*@requests)
-        @requests.clear
+        reset_requests
 
         emit(:exhausted)
       elsif @requests.any?
@@ -237,11 +245,14 @@ module HTTPX
     def ping
       reset
       emit(:reset)
-      emit(:exhausted)
     end
 
     def waiting_for_ping?
       false
+    end
+
+    def no_more_requests?
+      @requests.empty?
     end
 
     private
@@ -252,8 +263,7 @@ module HTTPX
       when /keep-alive/i
         if @handshake_completed
           if @max_requests.zero?
-            @pending.unshift(*@requests)
-            @requests.clear
+            reset_requests
             emit(:exhausted)
           end
           return
