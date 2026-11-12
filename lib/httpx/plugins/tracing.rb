@@ -144,7 +144,25 @@ module HTTPX::Plugins
         @init_time = nil
       end
 
+      def disconnect
+        return if @exhausted
+
+        return unless @current_session && @current_selector
+
+        # reset init time of connections abandoned while connecting.
+        @init_time = nil if connecting?
+
+        super
+      end
+
       private
+
+      def handle_transition(*)
+        super
+
+        # no longer relevant after connection established.
+        @init_time = nil unless connecting?
+      end
 
       def handle_error(er, request = nil)
         if connecting? && @init_time

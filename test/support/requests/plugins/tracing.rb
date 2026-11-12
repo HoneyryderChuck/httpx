@@ -227,6 +227,44 @@ module Requests
         end
       end
 
+      def test_plugin_tracing_connection_discards_connect_time_after_connecting
+        start_test_servlet(TestHTTP2Server, tls: tls?) do |server|
+          HTTPX.plugin(SessionWithPool)
+               .plugin(:persistent)
+               .plugin(:tracing, tracer: test_tracer)
+               .with(fallback_protocol: "h2", ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE, verify_hostname: false })
+               .wrap do |http|
+            verify_status(http.get("#{server.origin}/"), 200)
+
+            connections = http.connections
+            assert !connections.empty?, "expected the session to have initialized connections"
+
+            connections.each do |conn|
+              assert conn.instance_variable_get(:@init_time).nil?,
+                     "expected #{conn.state} connection to have discarded its connect attempt time "
+            end
+          end
+        end
+      end
+
+      def test_plugin_tracing_connection_discards_connect_time_after_failed_connect
+        start_test_servlet(SlowHandshakeServer, tls: true, handshake_delay: 3) do |server|
+          http = HTTPX.plugin(SessionWithPool)
+                      .plugin(:tracing, tracer: test_tracer)
+                      .with(timeout: { connect_timeout: 1 },
+                            ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE, verify_hostname: false })
+          verify_error_response(http.get("#{server.origin}/"), HTTPX::ConnectTimeoutError)
+
+          connections = http.connections
+          assert !connections.empty?, "expected the session to have initialized connections"
+
+          connections.each do |conn|
+            assert conn.instance_variable_get(:@init_time).nil?,
+                   "expected #{conn.state} connection to have discarded its connect attempt time "
+          end
+        end
+      end
+
       def test_plugin_tracing_span_covers_failed_connect
         start_test_servlet(SlowHandshakeServer, tls: true, handshake_delay: 3) do |server|
           http = HTTPX.plugin(:tracing, tracer: test_tracer)

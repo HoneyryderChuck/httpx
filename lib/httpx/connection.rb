@@ -494,6 +494,9 @@ module HTTPX
 
       @current_session = @current_selector = nil
 
+      # NOTE: don't change state of the connection after this call!
+      # the connection is checked back into the pool, and may be checked out by
+      # another thread before the next statement.
       current_session.deselect_connection(self, current_selector, @cloned)
     end
 
