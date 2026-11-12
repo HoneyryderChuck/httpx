@@ -29,6 +29,12 @@ module HTTPX
         attr_accessor init_time: Time?
 
         attr_accessor handshake_time: Float?
+
+        attr_accessor enqueue_time: Time?
+
+        private
+
+        def calculate_init_time: () -> Time
       end
 
       module ConnectionMethods
