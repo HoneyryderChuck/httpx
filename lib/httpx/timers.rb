@@ -33,15 +33,13 @@ module HTTPX
     end
 
     def wait_interval
+      drop_elapsed!(0) if @intervals.first&.elapsed?(0)
+
       return if @intervals.empty?
-
-      first_interval = @intervals.first
-
-      drop_elapsed!(0) if first_interval.elapsed?(0)
 
       @next_interval_at = Utils.now
 
-      first_interval.interval
+      @intervals.first.interval
     end
 
     def fire(error = nil)
