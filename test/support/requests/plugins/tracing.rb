@@ -265,6 +265,50 @@ module Requests
         end
       end
 
+      # the handshake time credited to a request is measured from the connection's point of view, and the
+      # connection may have started connecting long before the request was handed to it. Whatever the source
+      # of that time, the span must not start before the request was enqueued.
+      def test_plugin_tracing_span_does_not_start_before_request_is_enqueued
+        start_test_servlet(TestHTTP2Server, tls: tls?) do |server|
+          HTTPX.plugin(:tracing, tracer: test_tracer)
+               .plugin(StaleConnectTime)
+               .with(fallback_protocol: "h2", ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE, verify_hostname: false })
+               .wrap do |http|
+            request = http.build_request("GET", "#{server.origin}/")
+            enqueued_after = Time.now.utc
+            verify_status(http.request(request), 200)
+
+            assert request.init_time >= enqueued_after,
+                   "expected the span to start after the request was enqueued (#{enqueued_after}), " \
+                   "but it started at #{request.init_time}"
+
+            span_duration = test_tracer.span_durations[request].last
+            assert span_duration < 5, "expected the span to cover only the request (was #{span_duration}s)"
+          end
+        end
+      end
+
+      def test_plugin_tracing_span_does_not_start_before_request_is_requeued
+        start_test_servlet(TestHTTP2Server, tls: tls?) do |server|
+          HTTPX.plugin(:tracing, tracer: test_tracer)
+               .plugin(StaleConnectTime)
+               .plugin(RequeueOnSend)
+               .with(fallback_protocol: "h2", ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE, verify_hostname: false })
+               .wrap do |http|
+            request = http.build_request("GET", "#{server.origin}/")
+            enqueued_after = Time.now.utc
+            verify_status(http.request(request), 200)
+
+            assert request.init_time >= enqueued_after,
+                   "expected the span to start after the request was requeued (#{enqueued_after}), " \
+                   "but it started at #{request.init_time}"
+
+            span_duration = test_tracer.span_durations[request].last
+            assert span_duration < 5, "expected the span to cover only the request (was #{span_duration}s)"
+          end
+        end
+      end
+
       def test_plugin_tracing_span_covers_failed_connect
         start_test_servlet(SlowHandshakeServer, tls: true, handshake_delay: 3) do |server|
           http = HTTPX.plugin(:tracing, tracer: test_tracer)
@@ -288,6 +332,31 @@ module Requests
 
       def test_tracer
         @test_tracer ||= TestTracer.new
+      end
+
+      # moves a request queued on a connection back to idle
+      module RequeueOnSend
+        module ConnectionMethods
+          def send(request)
+            super
+
+            request.transition(:idle) if @pending.include?(request)
+          end
+        end
+      end
+
+      # simulates a connection carrying the start time of a connect attempt from long before the
+      # current request.
+      module StaleConnectTime
+        module ConnectionMethods
+          private
+
+          def connect
+            @init_time ||= Time.now.utc - 600
+
+            super
+          end
+        end
       end
 
       class TestTracer

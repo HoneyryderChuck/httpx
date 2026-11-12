@@ -70,11 +70,14 @@ module HTTPX::Plugins
       # the connection to connect.
       attr_accessor :handshake_time
 
+      # time at which the request was first handed to a connection, or last moved back to waiting for one.
+      attr_accessor :enqueue_time
+
       # intercepts request initialization to inject the tracing logic.
       def initialize(*)
         super
 
-        @init_time = @handshake_time = nil
+        @init_time = @handshake_time = @enqueue_time = nil
 
         tracer = @options.tracer
 
@@ -85,12 +88,14 @@ module HTTPX::Plugins
 
           # request is reset when it's retried.
           @init_time = @handshake_time = nil
+
+          # going back to idle means waiting to be sent again.
+          @enqueue_time = ::Time.now.utc
         end
         on(:headers) do
           # the usual request init time (when not including the connection handshake)
           # should be the time the request is buffered the first time.
-          @init_time = ::Time.now.utc
-          @init_time -= @handshake_time if @handshake_time
+          @init_time = calculate_init_time
 
           tracer.start(self)
         end
@@ -102,13 +107,26 @@ module HTTPX::Plugins
         # Example is the :ssrf_filter plugin, which raises an error on
         # initialize if the host is an IP which matches against the known set.
         # in such cases, we'll just set here right here.
-        unless @init_time
-          @init_time = ::Time.now.utc
-
-          @init_time -= @handshake_time if @handshake_time
-        end
+        @init_time ||= calculate_init_time
 
         super
+      end
+
+      private
+
+      def calculate_init_time
+        init_time = ::Time.now.utc
+
+        return init_time unless (handshake_time = @handshake_time)
+
+        init_time -= handshake_time
+
+        enqueue_time = @enqueue_time
+
+        # handshake time is measured for the connection, and may happen before the request was sent to it.
+        return init_time unless enqueue_time && init_time < enqueue_time
+
+        enqueue_time
       end
     end
 
@@ -118,6 +136,14 @@ module HTTPX::Plugins
         super
 
         @init_time = nil
+      end
+
+      def send(request)
+        # requests may be rerouted to other connections (i.e. when coalescing), so only the first
+        # connection the request is handed to marks it.
+        request.enqueue_time ||= ::Time.now.utc
+
+        super
       end
 
       def send_request_to_parser(request, *)
