@@ -284,10 +284,10 @@ module HTTPX
           @proxy_uri || super
         end
 
-        def connecting?
+        def connecting?(*args)
           return super unless @options.proxy
 
-          super || proxy_connecting?
+          super || proxy_connecting?(*args)
         end
 
         def call
@@ -317,8 +317,8 @@ module HTTPX
           "tcp"
         end
 
-        def proxy_connecting?
-          @state == :connecting || @state == :connected
+        def proxy_connecting?(state = @state)
+          %i[connecting connected].include?(state)
         end
 
         def connect

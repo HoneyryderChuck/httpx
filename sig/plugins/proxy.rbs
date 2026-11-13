@@ -56,6 +56,10 @@ module HTTPX
 
       module ConnectionMethods
         @proxy_uri: generic_uri
+
+        private
+
+        def proxy_connecting?: (?Symbol state) -> bool
       end
 
       module InstanceMethods

@@ -171,14 +171,12 @@ module HTTPX::Plugins
       end
 
       def disconnect
-        return if @exhausted
+        prevstate = @state
 
-        return unless @current_session && @current_selector
-
-        # reset init time of connections abandoned while connecting.
-        @init_time = nil if connecting?
-
-        super
+        super.tap do |was_closed|
+          # reset init time of connections abandoned while connecting.
+          @init_time = nil if was_closed && connecting?(prevstate)
+        end
       end
 
       private
