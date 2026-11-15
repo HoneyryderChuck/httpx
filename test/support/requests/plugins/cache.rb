@@ -51,6 +51,22 @@ module Requests
         verify_status(uncached, 202)
         assert uncached != original
       end
+
+      def test_plugin_cache_error_response
+        unavailable_host = URI(origin("localhost"))
+        unavailable_host.port = next_available_port
+        client = HTTPX.plugin(:cache).with(
+          cache_key: ->(request) { request.uri.to_s },
+          cacheable_request: ->(_) { true },
+          cacheable_response: ->(_, response) { response.status == 200 },
+          valid_cached_response: ->(_, _) { true },
+        )
+        request = client.build_request("GET", unavailable_host.to_s)
+        response = client.request(request)
+
+        verify_error_response(response, /Connection refused| not available/)
+        assert request.options.response_cache_store.get(request).nil?
+      end
     end
   end
 end
