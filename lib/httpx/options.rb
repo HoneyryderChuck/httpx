@@ -397,32 +397,38 @@ module HTTPX
 
     private
 
+    module OptionMethodsCache
+      def option_integer(value)
+        value = Integer(value) unless value.respond_to?(:infinite?) && value.infinite?
+        raise TypeError, "`:#{__method__.to_s.delete_prefix("option_")}` must be positive" unless value.positive?
+
+        value
+      end
+
+      def option_hash(value)
+        Hash[value]
+      end
+
+      def option_itself(value)
+        value
+      end
+    end.freeze
+
     # number options
     %i[
       max_concurrent_requests max_requests window_size buffer_size
       max_response_body_size max_response_headers max_response_header_value_size
       body_threshold_size debug_level
     ].each do |option|
-      class_eval(<<-OUT, __FILE__, __LINE__ + 1)
-        # converts +v+ into an Integer before setting the +#{option}+ option.
-        private def option_#{option}(value)                                             # private def option_max_requests(v)
-          value = Integer(value) unless value.respond_to?(:infinite?) && value.infinite?
-          raise TypeError, "`:#{option}` must be positive" unless value.positive? # raise TypeError, ":max_requests must be positive" unless value.positive?
-
-          value
-        end
-      OUT
+      define_method(:"option_#{option}", OptionMethodsCache.instance_method(:option_integer))
     end
 
     # hashable options
     %i[ssl http2_settings resolver_options pool_options].each do |option|
-      class_eval(<<-OUT, __FILE__, __LINE__ + 1)
-        # converts +v+ into an Hash before setting the +#{option}+ option.
-        private def option_#{option}(value) # def option_ssl(v)
-          Hash[value]
-        end
-      OUT
+      define_method(:"option_#{option}", OptionMethodsCache.instance_method(:option_hash))
     end
+
+    CACHE = Module.new
 
     %i[
       request_class response_class headers_class request_body_class
@@ -431,11 +437,8 @@ module HTTPX
       io fallback_protocol debug debug_redact
       compress_request_body decompress_response_body
       persistent close_on_fork
-    ].each do |method_name|
-      class_eval(<<-OUT, __FILE__, __LINE__ + 1)
-        # sets +v+ as the value of the +#{method_name}+ option
-        private def option_#{method_name}(v); v; end # private def option_smth(v); v; end
-      OUT
+    ].each do |option|
+      define_method(:"option_#{option}", OptionMethodsCache.instance_method(:option_itself))
     end
 
     def option_origin(value)

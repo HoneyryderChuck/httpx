@@ -166,6 +166,15 @@ module HTTPX
 
     private
 
+    module OptionMethodsCache
+      # RBS test does not support the method cache pattern
+      # def option_integer: (int value) -> maybe_unbounded
+
+      # def option_hash: (_ToHash[Symbol, untyped] value) -> Hash[Symbol, untyped]
+
+      # def option_itself: [T] (T value) -> T
+    end
+
     def initialize: (?options options) -> void
 
     def do_initialize: () -> void
