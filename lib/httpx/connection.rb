@@ -212,8 +212,8 @@ module HTTPX
       @io && @io.state == :connected
     end
 
-    def connecting?
-      @state == :idle
+    def connecting?(state = @state)
+      state == :idle
     end
 
     # whether the connection can be removed from the selector.
@@ -487,10 +487,10 @@ module HTTPX
     end
 
     # disconnects from the current session it's attached to
-    def disconnect
-      return if @exhausted # it'll reset
+    def disconnect # rubocop:disable Naming/PredicateMethod
+      return false if @exhausted # it'll reset
 
-      return unless (current_session = @current_session) && (current_selector = @current_selector)
+      return false unless (current_session = @current_session) && (current_selector = @current_selector)
 
       @current_session = @current_selector = nil
 
@@ -498,6 +498,7 @@ module HTTPX
       # the connection is checked back into the pool, and may be checked out by
       # another thread before the next statement.
       current_session.deselect_connection(self, current_selector, @cloned)
+      true
     end
 
     def on_connect_error(e)

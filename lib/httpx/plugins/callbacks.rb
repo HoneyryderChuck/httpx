@@ -72,8 +72,8 @@ module HTTPX
 
             emit_or_callback_error(:connection_opened, connection.origin, connection.io.socket)
           end
-          connection.on(:callback_connection_closed) do
-            next unless connection.current_session == self
+          connection.on(:callback_connection_closed) do |previous_session|
+            next unless previous_session == self
 
             emit_or_callback_error(:connection_closed, connection.origin) if connection.used?
           end
@@ -140,13 +140,10 @@ module HTTPX
         private
 
         def disconnect
-          return if @exhausted
-
-          return unless @current_session && @current_selector
-
-          emit(:callback_connection_closed)
-
-          super
+          session = @current_session
+          super.tap do |was_closed|
+            emit(:callback_connection_closed, session) if was_closed
+          end
         end
       end
     end

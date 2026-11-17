@@ -82,7 +82,7 @@ module HTTPX
 
     def purge_pending: () { (Request request) -> void } -> void
 
-    def connecting?: () -> bool
+    def connecting?: (?Symbol state) -> bool
 
     def current_context?: () -> bool
 
@@ -126,7 +126,7 @@ module HTTPX
 
     def handle_connect_error: (StandardError error) -> void
 
-    def disconnect: () -> void
+    def disconnect: () -> bool
 
     def on_error: (HTTPX::TimeoutError | Error | StandardError error, ?Request? request) -> void
 

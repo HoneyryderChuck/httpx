@@ -52,8 +52,8 @@ module HTTPX
 
           private
 
-          def proxy_connecting?
-            super || @state == :authenticating || @state == :negotiating
+          def proxy_connecting?(state = @state)
+            super || state == :authenticating || state == :negotiating
           end
 
           def handle_transition(nextstate)
