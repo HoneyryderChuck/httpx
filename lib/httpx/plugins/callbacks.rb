@@ -72,10 +72,10 @@ module HTTPX
 
             emit_or_callback_error(:connection_opened, connection.origin, connection.io.socket)
           end
-          connection.on(:callback_connection_closed) do |previous_session|
+          connection.on(:callback_connection_closed) do |previous_session, error|
             next unless previous_session == self
 
-            emit_or_callback_error(:connection_closed, connection.origin) if connection.used?
+            emit_or_callback_error(:connection_closed, connection.origin, error) if connection.used?
           end
 
           connection
@@ -109,8 +109,8 @@ module HTTPX
           end
         end
 
-        def emit_or_callback_error(*args)
-          emit(*args)
+        def emit_or_callback_error(...)
+          emit(...)
         rescue StandardError => e
           ex = CallbackError.new(e.message)
           ex.set_backtrace(e.backtrace)
@@ -137,12 +137,31 @@ module HTTPX
       end
 
       module ConnectionMethods
+        def initialize(*)
+          super
+          @last_error = nil
+        end
+
+        def on_connect_error(e)
+          @last_error = e
+          super
+        ensure
+          @last_error = nil
+        end
+
+        def on_error(e, *)
+          @last_error = e
+          super
+        ensure
+          @last_error = nil
+        end
+
         private
 
         def disconnect
           session = @current_session
           super.tap do |was_closed|
-            emit(:callback_connection_closed, session) if was_closed
+            emit(:callback_connection_closed, session, @last_error) if was_closed
           end
         end
       end
