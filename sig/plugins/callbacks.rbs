@@ -29,7 +29,7 @@ module HTTPX
 
         private
 
-        def emit_or_callback_error: (*untyped) -> void
+        def emit_or_callback_error: (*untyped, **untyped) -> void
       end
 
       module ConnectionMethods
