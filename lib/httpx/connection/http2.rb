@@ -38,7 +38,7 @@ module HTTPX
       end
 
       def unrecoverable?
-        UNRECOVERABLE_ERRORS.include?(@code)
+        @last_stream_id.zero? || UNRECOVERABLE_ERRORS.include?(@code)
       end
     end
 
@@ -228,6 +228,7 @@ module HTTPX
 
     def handle_error(ex, request = nil)
       last_stream_id = Float::INFINITY
+
       case ex
       when OperationTimeoutError
         if !@handshake_completed && @connection.state != :closed
