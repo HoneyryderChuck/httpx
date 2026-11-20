@@ -144,9 +144,9 @@ module WebMock
             request.transition(:body)
             request.transition(:trailers)
             request.transition(:done)
-            response.finish!
             request.response = response
             response << mock_response.body.dup unless response.is_a?(HTTPX::ErrorResponse)
+            response.finish!
             request.emit_response(response)
             request_signature.headers = request.headers.to_h
 
