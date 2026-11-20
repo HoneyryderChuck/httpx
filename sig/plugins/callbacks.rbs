@@ -32,8 +32,28 @@ module HTTPX
         def emit_or_callback_error: (*untyped, **untyped) -> void
       end
 
-      module ConnectionMethods
+      module RequestMethods
+        attr_reader connection: callbackConnection?
+
+        attr_reader last_connection: callbackConnection?
       end
+
+      module ResponseMethods
+      end
+
+      module ConnectionMethods
+        @last_error: StandardError?
+
+        private
+
+        def with_current_connection: [T] (callbackRequest? request) -> T
+
+        def with_last_error: [T] (StandardError request) -> T
+      end
+
+      type callbackRequest = Connection & ConnectionMethods
+
+      type callbackConnection = Connection & ConnectionMethods
     end
 
     type sessionCallbacks = Session & Callbacks::InstanceMethods
