@@ -343,8 +343,6 @@ module HTTPX
       pending_idxs = [] #: Array[Integer]
       pending = 0
 
-      waiting = false
-
       requests.each do |request|
         send_request(request, selector)
       end
@@ -357,7 +355,7 @@ module HTTPX
           if response.nil?
             pending += 1
             request.on_response_arrived = lambda do
-              pending_idxs << idx if waiting
+              pending_idxs << idx
             end
           end
         end
@@ -365,13 +363,10 @@ module HTTPX
 
       log(level: 2) { "waiting to receive #{pending} pending requests..." }
 
-      until pending.zero? || selector.empty?
-        # loop on selector until at least one response has been received.
-        waiting = true
-        catch(:coalesced) { selector.next_tick }
-        waiting = false
-
+      loop do
         while (idx = pending_idxs.shift)
+          next if responses[idx]
+
           request = requests[idx]
 
           response = fetch_response(request, selector, request.options)
@@ -387,6 +382,11 @@ module HTTPX
           request.on_response_arrived = nil
           pending -= 1
         end
+
+        break if pending.zero? || selector.empty?
+
+        # loop on selector until at least one response has been received.
+        catch(:coalesced) { selector.next_tick }
       end
 
       raise Error, "something went wrong, #{pending} responses not found " \
