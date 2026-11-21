@@ -8,6 +8,13 @@ class CloseAfterXRequests < TestHTTP2Server
 
   private
 
+  def handle_connection(conn, sock)
+    conn.on(:frame_received) do |frame|
+      conn.goaway if frame[:type] == :headers && @num_requests.zero? && conn.active_stream_count.zero?
+    end
+    super
+  end
+
   def handle_stream(_sock, conn, stream)
     response = "".b
 

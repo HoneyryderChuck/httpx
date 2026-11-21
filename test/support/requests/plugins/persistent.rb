@@ -212,7 +212,7 @@ module Requests
       end
 
       def test_persistent_retry_http2_goaway
-        return unless origin.start_with?("https")
+        return unless tls?
 
         start_test_servlet(KeepAlivePongThenGoawayServer) do |server|
           http = HTTPX.plugin(SessionWithPool)
@@ -228,6 +228,24 @@ module Requests
           http.close
         end
       end unless RUBY_ENGINE == "jruby"
+
+      def test_persistent_http2_raise_goaway_if_no_stream_handled
+        return unless tls?
+
+        start_test_servlet(CloseAfterXRequests, requests_to_process: 0) do |server|
+          HTTPX.plugin(SessionWithPool).plugin(:persistent).with(ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE }).wrap do |http|
+            uri = "#{server.origin}/"
+            responses = http.get(uri, uri, uri)
+            assert responses.size == 3
+            responses.each do |response|
+              verify_error_response(response, HTTPX::Connection::HTTP2::GoawayError)
+            end
+            connection_count = http.connection_count
+            # the test server does not support pipelining
+            assert connection_count == 2, "expected to have 2 connections, instead have #{connection_count}"
+          end
+        end
+      end
 
       def test_persistent_proxy_retry_http2_goaway
         return unless origin.start_with?("https")

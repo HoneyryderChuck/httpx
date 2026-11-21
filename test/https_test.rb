@@ -145,9 +145,28 @@ class HTTPSTest < Minitest::Test
         uri = "#{server.origin}/"
         responses = http.get(uri, uri, uri)
         assert responses.size == 3
+        responses.each do |response|
+          verify_status(response, 200)
+        end
         connection_count = http.connection_count
         # the test server does not support pipelining
         assert connection_count == 3, "expected to have 3 connections, instead have #{connection_count}"
+      end
+    end
+  end
+
+  def test_http2_raise_goaway_if_no_stream_handled
+    start_test_servlet(CloseAfterXRequests, requests_to_process: 0) do |server|
+      HTTPX.plugin(SessionWithPool).with(ssl: { verify_mode: OpenSSL::SSL::VERIFY_NONE }).wrap do |http|
+        uri = "#{server.origin}/"
+        responses = http.get(uri, uri, uri)
+        assert responses.size == 3
+        responses.each do |response|
+          verify_error_response(response, HTTPX::Connection::HTTP2::GoawayError)
+        end
+        connection_count = http.connection_count
+        # the test server does not support pipelining
+        assert connection_count == 1, "expected to have 1 connection, instead have #{connection_count}"
       end
     end
   end

@@ -67,7 +67,15 @@ module HTTPX
 
         # whether the error can be safely retried without booking threshold attempts.
         def safe_reconnectable_error?(error)
-          SAFE_REONNECTABLE_ERRORS.any? { |klass| error.is_a?(klass) }
+          case error
+          when Connection::HTTP2::GoawayError
+            # recurring GOAWAY which never accepts streams should escalate error
+            !error.unrecoverable?
+          when *SAFE_REONNECTABLE_ERRORS
+            true
+          else
+            false
+          end
         end
 
         def can_reconnect?(_, response)
