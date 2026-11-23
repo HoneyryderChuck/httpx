@@ -74,8 +74,6 @@ module HTTPX
 
     def on_resolver_close: (Resolver::Resolver resolver, Selector selector) -> void
 
-    def find_resolver_for: (Connection connection, Selector selector) -> resolver
-
     def coalesce_connections: (Connection conn1, Connection conn2, Selector selector, bool from_pool) -> void
 
     def get_current_selector: () -> Selector?

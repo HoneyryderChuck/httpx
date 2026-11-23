@@ -343,8 +343,6 @@ module HTTPX
       pending_idxs = [] #: Array[Integer]
       pending = 0
 
-      waiting = false
-
       requests.each do |request|
         send_request(request, selector)
       end
@@ -357,7 +355,7 @@ module HTTPX
           if response.nil?
             pending += 1
             request.on_response_arrived = lambda do
-              pending_idxs << idx if waiting
+              pending_idxs << idx
             end
           end
         end
@@ -365,13 +363,10 @@ module HTTPX
 
       log(level: 2) { "waiting to receive #{pending} pending requests..." }
 
-      until pending.zero? || selector.empty?
-        # loop on selector until at least one response has been received.
-        waiting = true
-        catch(:coalesced) { selector.next_tick }
-        waiting = false
-
+      loop do
         while (idx = pending_idxs.shift)
+          next if responses[idx]
+
           request = requests[idx]
 
           response = fetch_response(request, selector, request.options)
@@ -387,6 +382,11 @@ module HTTPX
           request.on_response_arrived = nil
           pending -= 1
         end
+
+        break if pending.zero? || selector.empty?
+
+        # loop on selector until at least one response has been received.
+        catch(:coalesced) { selector.next_tick }
       end
 
       raise Error, "something went wrong, #{pending} responses not found " \
@@ -409,11 +409,20 @@ module HTTPX
         return
       end
 
-      resolver = find_resolver_for(connection, selector)
+      from_pool = false
+      if (resolver = selector.find_resolver(connection.options))
+        resolver.log(level: 2) { "found resolver##{resolver.object_id}(#{resolver.state}) in selector##{selector.object_id}" }
+      else
+        resolver = @pool.checkout_resolver(connection.options)
+        resolver.log(level: 2) { "found resolver##{resolver.object_id}(#{resolver.state}) in pool##{@pool.object_id}" }
+        pin(resolver, selector)
+        from_pool = true
+      end
 
       pin(connection, selector)
+
       if early_resolve(resolver, connection)
-        @pool.checkin_resolver(resolver)
+        @pool.checkin_resolver(resolver) if from_pool
       else
         resolver.lazy_resolve(connection)
       end
@@ -441,19 +450,6 @@ module HTTPX
       end
 
       coalesce_connections(found_connection, connection, selector, from_pool)
-    end
-
-    def find_resolver_for(connection, selector)
-      if (resolver = selector.find_resolver(connection.options))
-        resolver.log(level: 2) { "found resolver##{resolver.object_id}(#{resolver.state}) in selector##{selector.object_id}" }
-        return resolver
-      end
-
-      resolver = @pool.checkout_resolver(connection.options)
-      resolver.log(level: 2) { "found resolver##{resolver.object_id}(#{resolver.state}) in pool##{@pool.object_id}" }
-      pin(resolver, selector)
-
-      resolver
     end
 
     # coalesces +conn2+ into +conn1+. if +conn1+ was loaded from the connection pool

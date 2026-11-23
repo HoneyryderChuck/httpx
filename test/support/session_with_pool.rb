@@ -29,10 +29,9 @@ module SessionWithPool
 
     private
 
-    def find_resolver_for(connection, selector)
-      resolver = super
+    def early_resolve(resolver, connection)
       @resolvers << resolver unless @resolvers.include?(resolver)
-      resolver
+      super
     end
 
     def do_init_connection(connection, *)
