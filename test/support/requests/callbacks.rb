@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "resolv"
+require "socket"
 require "httpx/plugins/callbacks"
 
 module Requests
@@ -31,8 +32,11 @@ module Requests
       origin = nil
       closed = 0
 
-      response = HTTPX.plugin(SessionWithPool).plugin(:callbacks).on_connection_closed do |o|
+      error = :unset
+
+      response = HTTPX.plugin(SessionWithPool).plugin(:callbacks).on_connection_closed do |o, err|
         origin = o
+        error = err
         closed += 1
       end.get(uri)
       verify_status(response, 200)
@@ -40,6 +44,142 @@ module Requests
       assert !origin.nil?
       assert origin.to_s == uri.origin
       assert closed == 1
+      # clean closes do not carry an error
+      assert error.nil?
+    end
+
+    def test_callbacks_connection_closed_yields_error
+      skip if tls?
+
+      server = TCPServer.new("127.0.0.1", 0)
+      thread = Thread.new do
+        sock = server.accept
+        sock.readpartial(2048)
+        sock.close
+      end
+
+      _, port, ip, = server.addr
+      uri = "http://#{ip}:#{port}/"
+
+      origin = error = nil
+      closed = 0
+
+      response = HTTPX.plugin(SessionWithPool).plugin(:callbacks).on_connection_closed do |o, err|
+        origin = o
+        error = err
+        closed += 1
+      end.get(uri)
+
+      assert response.is_a?(HTTPX::ErrorResponse)
+      assert closed == 1
+      assert origin.to_s == uri.chomp("/")
+      assert error.is_a?(StandardError), "expected an error, got #{error.inspect}"
+    ensure
+      thread&.join(1)
+      server&.close
+    end
+
+    def test_callbacks_connection_closed_error_does_not_leak
+      skip if tls?
+
+      errors = []
+      http = HTTPX.plugin(SessionWithPool).plugin(:callbacks).on_connection_closed { |_, err| errors << err }
+
+      server = TCPServer.new("127.0.0.1", 0)
+      thread = Thread.new do
+        sock = server.accept
+        sock.readpartial(2048)
+        sock.close
+      end
+
+      _, port, ip, = server.addr
+      http.get("http://#{ip}:#{port}/")
+      thread.join(1)
+
+      assert errors.size == 1 && !errors.first.nil?
+
+      ok_server = TCPServer.new("127.0.0.1", 0)
+      ok_thread = Thread.new do
+        sock = ok_server.accept
+        sock.readpartial(2048)
+        sock.write("HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nok")
+        sock.close
+      end
+
+      _, ok_port, ok_ip, = ok_server.addr
+      response = http.get("http://#{ok_ip}:#{ok_port}/")
+
+      assert response.status == 200
+      assert errors.size == 2
+      assert errors.last.nil?
+    ensure
+      ok_thread&.join(1)
+      ok_server&.close
+      server&.close
+    end
+
+    def test_callbacks_connection_opened_and_closed_yield_connection
+      uri = URI(build_uri("/get"))
+      opened = closed = nil
+
+      response = HTTPX.plugin(SessionWithPool).plugin(:callbacks)
+                      .on_connection_opened { |_, _, connection:| opened = connection }
+                      .on_connection_closed { |_, _, connection:| closed = connection }
+                      .get(uri)
+      verify_status(response, 200)
+
+      assert opened.is_a?(HTTPX::Connection)
+      assert closed.equal?(opened), "close must yield the same connection object which was opened"
+      assert opened.origin.to_s == uri.origin
+    end
+
+    def test_callbacks_request_and_response_yield_connection
+      uri = URI(build_uri("/post"))
+      opened = nil
+      seen = {}
+
+      http = HTTPX.plugin(SessionWithPool).plugin(:callbacks)
+                  .on_connection_opened { |_, _, connection:| opened = connection }
+                  .on_request_started { |_, connection:| seen[:request_started] = connection }
+                  .on_request_body_chunk { |_, _, connection:| seen[:request_body_chunk] = connection }
+                  .on_request_completed { |_, connection:| seen[:request_completed] = connection }
+                  .on_response_started { |_, _, connection:| seen[:response_started] = connection }
+                  .on_response_body_chunk { |_, _, _, connection:| seen[:response_body_chunk] = connection }
+                  .on_response_completed { |_, _, connection:| seen[:response_completed] = connection }
+
+      response = http.post(uri, body: "data")
+      verify_status(response, 200)
+
+      assert opened.is_a?(HTTPX::Connection)
+      %i[request_started request_body_chunk request_completed response_started response_body_chunk response_completed].each do |cb|
+        assert seen[cb].equal?(opened), "#{cb} did not yield the connection the request was sent on (got #{seen[cb].inspect})"
+      end
+    end
+
+    def test_callbacks_request_error_yields_connection
+      skip if tls?
+
+      server = TCPServer.new("127.0.0.1", 0)
+      thread = Thread.new do
+        sock = server.accept
+        sock.readpartial(2048)
+        sock.close
+      end
+
+      _, port, ip, = server.addr
+      opened = yielded = nil
+
+      response = HTTPX.plugin(SessionWithPool).plugin(:callbacks)
+                      .on_connection_opened { |_, _, connection:| opened = connection }
+                      .on_request_error { |_, _, connection:| yielded = connection }
+                      .get("http://#{ip}:#{port}/")
+
+      assert response.is_a?(HTTPX::ErrorResponse)
+      assert opened.is_a?(HTTPX::Connection)
+      assert yielded.equal?(opened)
+    ensure
+      thread&.join(1)
+      server&.close
     end
 
     def test_callbacks_request_error

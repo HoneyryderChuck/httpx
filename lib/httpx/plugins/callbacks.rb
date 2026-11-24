@@ -70,12 +70,12 @@ module HTTPX
           connection.on(:open) do
             next unless connection.current_session == self
 
-            emit_or_callback_error(:connection_opened, connection.origin, connection.io.socket)
+            emit_or_callback_error(:connection_opened, connection.origin, connection.io.socket, connection: connection)
           end
-          connection.on(:callback_connection_closed) do |previous_session|
+          connection.on(:callback_connection_closed) do |previous_session, error|
             next unless previous_session == self
 
-            emit_or_callback_error(:connection_closed, connection.origin) if connection.used?
+            emit_or_callback_error(:connection_closed, connection.origin, error, connection: connection) if connection.used?
           end
 
           connection
@@ -85,32 +85,35 @@ module HTTPX
           super
 
           request.on(:headers) do
-            emit_or_callback_error(:request_started, request)
+            emit_or_callback_error(:request_started, request, connection: request.connection)
           end
           request.on(:body_chunk) do |chunk|
-            emit_or_callback_error(:request_body_chunk, request, chunk)
+            emit_or_callback_error(:request_body_chunk, request, chunk, connection: request.connection)
           end
           request.on(:done) do
-            emit_or_callback_error(:request_completed, request)
+            emit_or_callback_error(:request_completed, request, connection: request.connection)
           end
 
           request.on(:response_started) do |res|
+            # .last_connection happens when an error happens before the request is prepared to be sent,
+            # i.e. when connecting fails.
+            connection = request.connection || request.last_connection
             if res.is_a?(Response)
-              emit_or_callback_error(:response_started, request, res)
+              emit_or_callback_error(:response_started, request, res, connection: connection)
               res.on(:chunk_received) do |chunk|
-                emit_or_callback_error(:response_body_chunk, request, res, chunk)
+                emit_or_callback_error(:response_body_chunk, request, res, chunk, connection: connection)
               end
             else
-              emit_or_callback_error(:request_error, request, res.error)
+              emit_or_callback_error(:request_error, request, res.error, connection: connection)
             end
           end
-          request.on(:response) do |res|
-            emit_or_callback_error(:response_completed, request, res) if res.is_a?(Response)
+          request.on(:response_completed) do |res|
+            emit_or_callback_error(:response_completed, request, res, connection: request.connection)
           end
         end
 
-        def emit_or_callback_error(*args)
-          emit(*args)
+        def emit_or_callback_error(...)
+          emit(...)
         rescue StandardError => e
           ex = CallbackError.new(e.message)
           ex.set_backtrace(e.backtrace)
@@ -125,6 +128,12 @@ module HTTPX
       end
 
       module RequestMethods
+        # allows getting the connection that the request was sent over
+        attr_reader :connection
+
+        # gets the failed connection the request was supposed to be sent over
+        attr_accessor :last_connection
+
         def drain_body
           super.tap do |chunk|
             emit(:body_chunk, chunk) if chunk
@@ -136,13 +145,68 @@ module HTTPX
         end
       end
 
+      module ResponseMethods
+        def finish!
+          # emit before connection is unassigned
+          @request.emit(:response_completed, self)
+
+          super
+        end
+      end
+
       module ConnectionMethods
+        def initialize(*)
+          super
+          @last_error = nil
+        end
+
+        def on_connect_error(e)
+          with_last_error(e) do
+            super
+          end
+        end
+
+        def on_error(e, request = nil)
+          with_current_connection(request) do
+            with_last_error(e) do
+              super
+            end
+          end
+        end
+
         private
+
+        def on_parser_error(request, _)
+          with_current_connection(request) do
+            super
+          end
+        end
+
+        def with_current_connection(request)
+          return yield unless request
+
+          begin
+            prev_conn = request.connection
+            request.connection = self
+            request.last_connection = self
+            yield
+          ensure
+            request.connection = prev_conn if request.connection == self
+            request.last_connection = nil
+          end
+        end
+
+        def with_last_error(e)
+          @last_error = e
+          yield
+        ensure
+          @last_error = nil if @last_error == e
+        end
 
         def disconnect
           session = @current_session
           super.tap do |was_closed|
-            emit(:callback_connection_closed, session) if was_closed
+            emit(:callback_connection_closed, session, @last_error) if was_closed
           end
         end
       end
