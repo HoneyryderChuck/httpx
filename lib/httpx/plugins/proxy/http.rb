@@ -132,6 +132,7 @@ module HTTPX
                 @tunnel_parser = @parser = parser =
                                    parser_type(@io.protocol).new(@write_buffer, @pending, @options.merge(max_concurrent_requests: 1))
                 parser.extend(ProxyParser)
+                parser.on(:request_accepted, &method(:set_request_timeouts))
                 parser.on(:response, &method(:__http_on_connect))
                 parser.on(:close) do
                   next unless @parser
