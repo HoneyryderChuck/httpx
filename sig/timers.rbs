@@ -3,7 +3,8 @@ module HTTPX
     type callback = ^() -> void
 
     @intervals: Array[Interval]
-    @next_interval_at: Float
+    @next_interval_at: Float?
+    @registered_at: Float?
 
     def after: (interval interval_in_secs, ^() -> void) -> Timer
              | (interval interval_in_secs) { () -> void } -> Timer
