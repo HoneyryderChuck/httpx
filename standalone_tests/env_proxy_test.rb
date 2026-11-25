@@ -4,7 +4,7 @@ require "uri"
 
 HTTP_PROXY = ENV["HTTPX_HTTP_PROXY"]
 ENV["http_proxy"] = HTTP_PROXY
-HTTPS_PROXY = ENV["HTTPX_HTTPS_PROXY"]
+HTTPS_PROXY = ENV["HTTPX_HTTP_PROXY"] # TODO: switch to HTTPS PROXY whenever it's working
 ENV["https_proxy"] = HTTPS_PROXY
 NO_PROXY = ENV["HTTPBIN_NO_PROXY_HOST"]
 ENV["no_proxy"] = URI(NO_PROXY).authority
