@@ -206,7 +206,8 @@ module HTTPX
         def disconnect
           session = @current_session
           super.tap do |was_closed|
-            emit(:callback_connection_closed, session, @last_error) if was_closed
+            # inactive connections are only checked back into the pool, and their sockets are still open.
+            emit(:callback_connection_closed, session, @last_error) if was_closed && @state == :closed
           end
         end
       end

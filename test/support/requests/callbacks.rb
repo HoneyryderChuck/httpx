@@ -118,6 +118,34 @@ module Requests
       server&.close
     end
 
+    def test_callbacks_connection_closed_not_called_on_inactive_connections
+      skip if tls?
+
+      server = TCPServer.new("127.0.0.1", 0)
+      thread = Thread.new do
+        sock = server.accept
+        sock.write("HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nok") while sock.readpartial(2048)
+      rescue IOError
+        sock&.close
+      end
+
+      _, port, ip, = server.addr
+      uri = "http://#{ip}:#{port}/"
+
+      closed = []
+      http = HTTPX.plugin(SessionWithPool).plugin(:persistent).plugin(:callbacks)
+                  .on_connection_closed { |_, _, connection:| closed << connection.state }
+
+      2.times { verify_status(http.get(uri), 200) }
+      assert closed.empty?, "expected no close for kept-alive connections, got #{closed.inspect}"
+
+      http.close
+      assert closed == [:closed]
+    ensure
+      thread&.join(1)
+      server&.close
+    end
+
     def test_callbacks_connection_opened_and_closed_yield_connection
       uri = URI(build_uri("/get"))
       opened = closed = nil
