@@ -439,6 +439,9 @@ module HTTPX
 
       @write_buffer.clear
       transition(:idle)
+
+      @pending.each { |req| req.transition(:idle) }
+
       return unless @parser
 
       @parser.reset_requests if @parser.respond_to?(:reset_requests)

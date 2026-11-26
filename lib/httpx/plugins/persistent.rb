@@ -98,6 +98,9 @@ module HTTPX
           super || begin
             return false unless response.is_a?(ErrorResponse)
 
+            # already buffered requests may have been handled by peer already
+            return false if request.state == :done
+
             error = response.error
 
             reconnectable_error?(error)

@@ -324,6 +324,7 @@ module HTTPX
 
     def can_buffer_pending_requests?
       !@connection.closed? &&
+        !waiting_for_ping? && # do not send requests if waiting for PING ack
         (@handshake_completed || !@wait_for_handshake) &&
         @streams.size < @max_concurrent_requests &&
         @streams.size < @max_requests
