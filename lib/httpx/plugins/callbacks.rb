@@ -174,6 +174,13 @@ module HTTPX
           end
         end
 
+        def idling
+          # closed without going through disconnect, and about to be reconnected.
+          emit(:callback_connection_closed, @current_session, @last_error) if @state == :closed && @current_session
+
+          super
+        end
+
         private
 
         def on_parser_error(request, _)
@@ -206,7 +213,8 @@ module HTTPX
         def disconnect
           session = @current_session
           super.tap do |was_closed|
-            emit(:callback_connection_closed, session, @last_error) if was_closed
+            # inactive connections are only checked back into the pool, and their sockets are still open.
+            emit(:callback_connection_closed, session, @last_error) if was_closed && @state == :closed
           end
         end
       end
