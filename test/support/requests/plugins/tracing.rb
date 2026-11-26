@@ -95,12 +95,13 @@ module Requests
 
             assert request2.ping? == false, "request ping state should have been reset"
 
-            assert !test_tracer.reset_times[request2].empty?, "expected the request to have reset after the GOAWAY"
+            assert test_tracer.reset_times[request2].size == 1,
+                   "expected the request to have reset once when rerouted (was #{test_tracer.reset_times[request2].size})"
 
-            assert test_tracer.started[request2] == 2,
-                   "expected one span for the original (was #{test_tracer.started[request2]})"
+            assert test_tracer.started[request2] == 1,
+                   "expected one span for the request sent after reconnecting (was #{test_tracer.started[request2]})"
             assert test_tracer.finished[request2] == 1,
-                   "expected only the resend to finish (was #{test_tracer.finished[request2]})"
+                   "expected the request to finish once (was #{test_tracer.finished[request2]})"
 
             span_duration = test_tracer.span_durations[request2].last
             assert span_duration < 1, "expected the span duration to cover reconnect and resend only"
