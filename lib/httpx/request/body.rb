@@ -74,6 +74,14 @@ module HTTPX
       @body = __getobj__
     end
 
+    # whether a copy of the body can be sent without consuming the original's payload.
+    def replayable?
+      return true if @body.nil?
+      return false if unbounded_body?
+
+      @body.replayable?
+    end
+
     def close
       @body.close if @body.respond_to?(:close)
     end

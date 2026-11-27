@@ -10,13 +10,19 @@ module HTTPX
       def initialize(body)
         @content_type = body.content_type
         @body = BodyReader.new(body)
+        @buffer = nil
         @closed = false
       end
 
       def initialize_dup(orig)
         super
-        @buffer = @buffer.dup if defined?(@buffer)
+        @buffer = @buffer.dup if @buffer
         @closed = false
+      end
+
+      # copies read the deflated payload, which is buffered once its size is computed.
+      def replayable?
+        !@buffer.nil?
       end
 
       def bytesize
@@ -61,9 +67,8 @@ module HTTPX
 
       private
 
-      # rubocop:disable-next Naming/MemoizedInstanceVariableName
       def buffer_deflate!
-        return @buffer if defined?(@buffer)
+        return @buffer if @buffer
 
         buffer = Response::Buffer.new(
           threshold_size: Options::MAX_BODY_THRESHOLD_SIZE

@@ -26,6 +26,11 @@ module HTTPX
         "multipart/form-data; boundary=#{@boundary}"
       end
 
+      # whether a copy reads every part without consuming the original's.
+      def replayable?
+        @parts.all? { |part| part.is_a?(StringIO) || file_with_path?(part) }
+      end
+
       def to_s
         read || ""
       ensure
@@ -61,11 +66,15 @@ module HTTPX
       def copy_part(part)
         if part.is_a?(StringIO)
           StringIO.new(part.string)
-        elsif part.respond_to?(:path) && (path = part.path) && File.file?(path)
-          File.open(path, File::RDONLY, encoding: Encoding::BINARY)
+        elsif file_with_path?(part)
+          File.open(part.path, File::RDONLY, encoding: Encoding::BINARY)
         else
           part
         end
+      end
+
+      def file_with_path?(part)
+        part.respond_to?(:path) && (path = part.path) && File.file?(path)
       end
 
       def to_parts(form)

@@ -18,13 +18,21 @@ module HTTPX::Transcoder
       def initialize_dup(_)
         @body = if @body.is_a?(StringIO)
           StringIO.new(@body.string)
-        elsif @body.respond_to?(:path) && (path = @body.path) && File.file?(path)
-          File.open(path, File::RDONLY, encoding: Encoding::BINARY)
+        elsif file_with_path?(@body)
+          File.open(@body.path, File::RDONLY, encoding: Encoding::BINARY)
         else
           @body
         end
 
         __setobj__(@body)
+      end
+
+      # whether a copy reads the payload without consuming the original's.
+      def replayable?
+        @body.is_a?(StringIO) ||
+          file_with_path?(@body) ||
+          @body.respond_to?(:to_ary) ||
+          !(@body.respond_to?(:read) || @body.respond_to?(:each))
       end
 
       def bytesize
@@ -45,6 +53,12 @@ module HTTPX::Transcoder
 
       def content_type
         "application/octet-stream"
+      end
+
+      private
+
+      def file_with_path?(body)
+        body.respond_to?(:path) && (path = body.path) && File.file?(path)
       end
     end
 

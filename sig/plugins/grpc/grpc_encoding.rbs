@@ -17,6 +17,8 @@ module HTTPX
         def bytesize: () -> (Integer | Float)
 
         def read: (?int? length, ?string outbuf) -> String?
+
+        def replayable?: () -> false
       end
 
       class Inflater

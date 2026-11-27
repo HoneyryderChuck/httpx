@@ -16,6 +16,8 @@ module HTTPX
 
           def to_s: () -> String
 
+          def replayable?: () -> true
+
           private
 
           def initialize: (Nokogiri::XML::Node | String xml) -> void

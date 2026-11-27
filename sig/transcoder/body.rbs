@@ -15,7 +15,11 @@ module HTTPX
 
         def initialize_dup: (Encoder orig) -> void
 
+        def replayable?: () -> bool
+
         private
+
+        def file_with_path?: (untyped body) -> bool
 
         def initialize: (untyped body) -> untyped
       end

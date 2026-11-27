@@ -35,6 +35,10 @@ module HTTPX
         def content_type
           "application/x-www-form-urlencoded"
         end
+
+        def replayable?
+          true
+        end
       end
 
       module Decoder

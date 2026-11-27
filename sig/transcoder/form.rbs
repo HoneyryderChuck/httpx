@@ -22,6 +22,8 @@ module HTTPX::Transcoder
 
       def content_type: () -> String
 
+      def replayable?: () -> true
+
       private
 
       def initialize: (urlencoded_input form) -> untyped

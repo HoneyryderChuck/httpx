@@ -45,12 +45,14 @@ module HTTPX
 
         def do_request(request, connection, selector)
           super.tap do
-            # forego hedging if the connection is already open, or if
-            # the connection is scheduled for DNS resolution, as pending requests
-            # will be hedged afterwards.
-            next if connection.open? || !connection.addresses?
+            # connections scheduled for DNS resolution hedge their pending requests afterwards.
+            next unless connection.addresses?
 
-            hedge_request!(request, connection, selector)
+            if connection.open?
+              hedge_request_on_open_connection!(request, connection, selector)
+            else
+              hedge_request!(request, connection, selector)
+            end
           end
         end
 
@@ -78,6 +80,8 @@ module HTTPX
         end
 
         def hedge_request!(request, connection, selector)
+          return unless request.body.replayable?
+
           hedge_after = when_to_hedge(request)
 
           if hedge_after&.positive?
@@ -98,6 +102,29 @@ module HTTPX
           else
             request.hedge_request = hedge_request = request.dup
             hedge_connection(connection).send(hedge_request)
+          end
+        end
+
+        # an open connection may be serving other requests, so it isn't linked to a hedge connection
+        def hedge_request_on_open_connection!(request, connection, selector)
+          return unless request.body.replayable?
+
+          hedge_after = when_to_hedge(request)
+
+          return unless hedge_after&.positive?
+
+          cb = selector.after(hedge_after) do
+            next if request.response
+
+            request.hedge_request = hedge_request = request.dup
+            hedge_conn = connection.dup
+            hedge_conn.is_hedge_connection = true
+            hedge_conn.send(hedge_request)
+            select_connection(hedge_conn, selector)
+          end
+
+          request.once(:response) do
+            cb.cancel
           end
         end
 
@@ -276,7 +303,7 @@ module HTTPX
 
         def send(request)
           super.tap do
-            if @hedge_connection && !request.hedge_request
+            if @hedge_connection && !request.hedge_request && request.body.replayable?
               request.hedge_request = hedge_request = request.dup
               @hedge_connection.send(hedge_request)
             end

@@ -29,6 +29,10 @@ module HTTPX
           def to_s
             @raw.to_s
           end
+
+          def replayable?
+            true
+          end
         end
 
         def encode(xml)

@@ -20,6 +20,11 @@ module HTTPX
           Float::INFINITY
         end
 
+        # streams from the wrapped body, which copies would share.
+        def replayable?
+          false
+        end
+
         def read(length = nil, outbuf = nil)
           buf = @body.read(length, outbuf)
 

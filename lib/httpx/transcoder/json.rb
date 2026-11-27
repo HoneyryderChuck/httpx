@@ -37,6 +37,10 @@ module HTTPX::Transcoder
       def content_type
         "application/json; charset=#{@charset}"
       end
+
+      def replayable?
+        true
+      end
     end
 
     def encode(json)

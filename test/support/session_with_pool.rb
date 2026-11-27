@@ -77,6 +77,11 @@ module SessionWithPool
 
   module RequestMethods
     attr_accessor :stream # http2 stream
+
+    # the actual body object, wrapped by Request::Body and the encoder
+    def raw_body
+      @body.__getobj__.__getobj__
+    end
   end
 
   module ResponseMethods

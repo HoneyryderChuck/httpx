@@ -18,6 +18,8 @@ module HTTPX::Transcoder
 
       def content_type: () -> String
 
+      def replayable?: () -> true
+
       def to_s: () -> String
 
       private

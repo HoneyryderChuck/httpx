@@ -27,6 +27,8 @@ module HTTPX
 
     def initialize_dup: (Request::Body orig) -> void
 
+    def replayable?: () -> bool
+
     private
 
     def self.initialize_body: (Hash[Symbol, untyped] params) -> body_encoder?

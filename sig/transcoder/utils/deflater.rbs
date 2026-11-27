@@ -13,6 +13,8 @@ module HTTPX
 
       def initialize_dup: (Deflater orig) -> void
 
+      def replayable?: () -> bool
+
       def bytesize: () -> (Integer | Float)
 
       def read: (?int? length, ?string? outbuf) -> String?
@@ -25,7 +27,7 @@ module HTTPX
 
       private
 
-      def buffer_deflate!: () -> void
+      def buffer_deflate!: () -> Response::Buffer
 
     end
   end
