@@ -12,6 +12,8 @@ module HTTPX
 
         def hedge_request!: (requestHedging request, connectionHedging connection, Selector selector) -> void
 
+        def hedge_request_on_open_connection!: (requestHedging request, connectionHedging connection, Selector selector) -> void
+
         def when_to_hedge: (requestHedging request) -> interval?
       end
 
@@ -23,6 +25,14 @@ module HTTPX
         @hedge_error: ErrorResponse?
 
         def hedge_request=: (requestHedging? request) -> void
+
+        def initialize_dup: (requestHedging orig) -> void
+
+        def emit_response: (response response) -> void
+
+        def response=: (response? response) -> void
+
+        def hedge_in_flight?: () -> bool
       end
 
       module ConnectionMethods
@@ -31,6 +41,8 @@ module HTTPX
         attr_accessor is_hedge_connection: bool
 
         def hedge_connection=: (connectionHedging? connection) -> void
+
+        def match?: (http_uri uri, Options options) -> bool
 
         def try_yield_connection: [T] () { (connectionHedging) -> T } -> T
       end

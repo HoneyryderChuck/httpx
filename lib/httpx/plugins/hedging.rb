@@ -229,24 +229,41 @@ module HTTPX
             hedge_request.emit(:refuse)
           end
         ensure
-          self.hedge_request = nil
+          self.hedge_request = nil unless response.equal?(@hedge_error)
+
+          # the copy's payload (e.g. its own file handle) isn't needed once it's done.
+          close if @is_hedge_request
+        end
+
+        protected
+
+        def hedge_in_flight?
+          @response.nil? && @hedge_error.nil?
         end
       end
 
       module ResponseMethods
         def finish!
-          connection = @request.connection
+          request = @request
+          connection = request.connection
 
           super
 
-          return unless connection && (hedge_connection = connection.hedge_connection)
+          return unless connection
 
-          # disconnect connection with its hedge, so that objects do not leak after
-          # they're not needed.
-          connection.hedge_connection = hedge_connection.hedge_connection = nil
+          # swap healthy connection if an inflight hedge connection won against the resident.
+          if (hedge_connection = connection.hedge_connection)
+            # disconnect connection with its hedge.
+            connection.hedge_connection = hedge_connection.hedge_connection = nil
+          elsif (pair = request.hedge_request) && !pair.response&.finished?
+            # the pair of a request hedged on an already open connection.
+            hedge_connection = pair.connection
+          end
+
+          return unless hedge_connection
 
           # remarking itself as the main connection, so that it's not discarded when
-          # going back to the pool.
+          # going back to the pool, and the slower one as the hedge, so that it isn't reused.
           connection.is_hedge_connection = false
           hedge_connection.is_hedge_connection = true
         end
@@ -294,6 +311,11 @@ module HTTPX
           ensure
             @hedge_connection = hedge_conn
           end
+        end
+
+        # hedge connections are discarded once their request settles, so they don't take new requests.
+        def match?(*)
+          !@is_hedge_connection && super
         end
 
         # connections should not merge with their hedge connections
