@@ -88,10 +88,12 @@ module HTTPX
     # dupped initialization
     def initialize_dup(orig)
       super
-      @callbacks = @parser = @sibling = @coalesced_connection = @altsvc_connection = nil
+      @callbacks = @parser = @sibling = @coalesced_connection = @altsvc_connection = @ping_timer = nil
+      @exhausted = @previously_exhausted_with_error = false
+      @no_more_requests_counter = 0
       @origins = orig.origins.dup
-      @read_buffer = orig.read_buffer.dup
-      @write_buffer = orig.write_buffer.dup
+      @read_buffer = Buffer.new(@options.buffer_size)
+      @write_buffer = Buffer.new(@options.buffer_size)
       @pending = []
       transition(:idle)
 
