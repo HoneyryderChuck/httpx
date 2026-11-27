@@ -20,6 +20,8 @@ module HTTPX
 
         @is_hedge_request: bool
 
+        @hedge_error: ErrorResponse?
+
         def hedge_request=: (requestHedging? request) -> void
       end
 

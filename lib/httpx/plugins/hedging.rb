@@ -139,11 +139,12 @@ module HTTPX
         def initialize(*)
           super
           @is_hedge_request = false
+          @hedge_error = nil
         end
 
         def initialize_dup(orig)
           super
-          @hedge_request = nil
+          @hedge_request = @hedge_error = nil
           @is_hedge_request = false
         end
 
@@ -162,6 +163,12 @@ module HTTPX
         def response=(response)
           return super unless @hedge_request # rubocop:disable Lint/ReturnInVoidContext
 
+          # a failure must not win the race while its pair can still succeed.
+          if response.is_a?(ErrorResponse) && @hedge_request.hedge_in_flight?
+            @hedge_error = response
+            return
+          end
+
           prev_response = @response
 
           begin
@@ -175,6 +182,8 @@ module HTTPX
           hedge_request = @hedge_request
 
           return super unless hedge_request
+
+          return if response.equal?(@hedge_error)
 
           return super unless hedge_request &&
                               (
