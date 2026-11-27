@@ -134,6 +134,11 @@ module HTTPX
         # gets the failed connection the request was supposed to be sent over
         attr_accessor :last_connection
 
+        def initialize_dup(orig)
+          super
+          @last_connection = nil
+        end
+
         def drain_body
           super.tap do |chunk|
             emit(:body_chunk, chunk) if chunk

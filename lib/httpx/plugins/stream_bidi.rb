@@ -270,6 +270,14 @@ module HTTPX
           @mutex = Thread::Mutex.new
         end
 
+        def initialize_dup(orig)
+          super
+          @headers_sent = false
+          @closed = false
+          @flush_buffer_on_body_cb = nil
+          @mutex = Thread::Mutex.new
+        end
+
         def flush_buffer_on_body(&cb)
           @flush_buffer_on_body_cb = on(:body, &cb)
         end

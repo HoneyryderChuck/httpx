@@ -141,6 +141,12 @@ module HTTPX
           @is_hedge_request = false
         end
 
+        def initialize_dup(orig)
+          super
+          @hedge_request = nil
+          @is_hedge_request = false
+        end
+
         def hedge_request=(request)
           @hedge_request = request
 

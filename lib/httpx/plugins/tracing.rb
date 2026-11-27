@@ -102,6 +102,11 @@ module HTTPX::Plugins
         on(:response) { |response| tracer.finish(self, response) }
       end
 
+      def initialize_dup(orig)
+        super
+        @init_time = @handshake_time = @enqueue_time = nil
+      end
+
       def response=(*)
         # There are situations where connection initialization fails.
         # Example is the :ssrf_filter plugin, which raises an error on

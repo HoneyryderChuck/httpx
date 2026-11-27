@@ -82,6 +82,54 @@ class RequestTest < Minitest::Test
     assert body.to_s == "foo"
   end
 
+  def test_request_dup_is_unsent
+    request = make_request("POST", "http://example.com/", body: "payload")
+    request.transition(:headers)
+    request.transition(:body)
+    request.transition(:done)
+    request.response = ErrorResponse.new(request, Error.new("failed"))
+
+    copy = request.dup
+
+    assert copy.state == :idle
+    assert copy.response.nil?
+    assert request.state == :done, "original should be untouched"
+    assert !copy.headers.equal?(request.headers)
+    assert copy.body.to_enum(:each).to_a.join == "payload"
+  end
+
+  def test_request_dup_copies_payloads_independently
+    payload = "x" * 50_000
+    file = Tempfile.new("request-dup")
+    file.write(payload)
+    file.flush
+
+    {
+      "stringio" => -> { { body: StringIO.new(payload) } },
+      "file" => -> { file.rewind && { body: File.open(file.path) } },
+      "multipart" => -> { { form: { "field" => "value", "file" => File.open(file.path) } } },
+      "deflated" => -> { { headers: { "content-encoding" => "gzip" }, body: StringIO.new(payload) } },
+    }.each do |label, params|
+      request = make_request("POST", "http://example.com/", params.call)
+
+      # the original starts sending before the copy is made.
+      original_chunks = request.body.to_enum(:each)
+      first_chunk = original_chunks.next
+
+      copy = request.dup
+
+      copied = copy.body.to_enum(:each).to_a.join
+      rest = []
+      loop { rest << original_chunks.next }
+      sent = first_chunk + rest.join
+
+      assert sent.bytesize == request.body.bytesize, "#{label}: original sent #{sent.bytesize} of #{request.body.bytesize} bytes"
+      assert copied == sent, "#{label}: copy should send the same payload as the original"
+    end
+  ensure
+    file.close!
+  end
+
   private
 
   def resource

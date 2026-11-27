@@ -112,12 +112,18 @@ module HTTPX
       @active_timeouts = []
     end
 
-    # dupped initialization
+    # dupped initialization: the copy is a reset/unsent request, with all its state initialized.
+    #
+    # NOTE: It shares the original's callbacks and +on_response_arrived+ listener though.
     def initialize_dup(orig)
       super
-      @headers = orig.instance_variable_get(:@headers).dup
-      @body = orig.instance_variable_get(:@body).dup
-      @active_timeouts = orig.instance_variable_get(:@active_timeouts).dup
+      @headers = @headers.dup
+      @body = @body.dup
+      @trailers = @trailers.dup if @trailers
+      @state = :idle
+      @connection = @response = @drainer = @drain_error = @peer_address = @informational_status = nil
+      @ping = @started = @complete = false
+      @active_timeouts = []
     end
 
     def complete!(response = @response)

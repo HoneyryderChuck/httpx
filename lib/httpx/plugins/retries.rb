@@ -272,6 +272,12 @@ module HTTPX
           @partial_response = nil
         end
 
+        def initialize_dup(orig)
+          super
+          @retries = @options.max_retries
+          @partial_response = nil
+        end
+
         def response=(response)
           if (partial_response = @partial_response)
             if response.is_a?(Response) && response.status == 206

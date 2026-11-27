@@ -208,6 +208,11 @@ module HTTPX
           @redirect_request = nil
         end
 
+        def initialize_dup(orig)
+          super
+          @redirect_request = nil
+        end
+
         def on_response_arrived=(cb)
           @redirect_request.on_response_arrived = cb if @redirect_request
 
