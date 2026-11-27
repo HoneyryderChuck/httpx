@@ -13,6 +13,12 @@ module HTTPX
         @closed = false
       end
 
+      def initialize_dup(orig)
+        super
+        @buffer = @buffer.dup if defined?(@buffer)
+        @closed = false
+      end
+
       def bytesize
         buffer_deflate!
 

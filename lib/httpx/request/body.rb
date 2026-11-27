@@ -68,6 +68,12 @@ module HTTPX
       end
     end
 
+    # the copy reads the payload as its encoder's copy does.
+    def initialize_dup(orig)
+      super
+      @body = __getobj__
+    end
+
     def close
       @body.close if @body.respond_to?(:close)
     end

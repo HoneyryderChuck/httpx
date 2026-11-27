@@ -15,6 +15,18 @@ module HTTPX::Transcoder
         super
       end
 
+      def initialize_dup(_)
+        @body = if @body.is_a?(StringIO)
+          StringIO.new(@body.string)
+        elsif @body.respond_to?(:path) && (path = @body.path) && File.file?(path)
+          File.open(path, File::RDONLY, encoding: Encoding::BINARY)
+        else
+          @body
+        end
+
+        __setobj__(@body)
+      end
+
       def bytesize
         if @body.respond_to?(:bytesize)
           @body.bytesize

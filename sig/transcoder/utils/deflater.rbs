@@ -11,6 +11,8 @@ module HTTPX
 
       def initialize: (body_encoder body) -> void
 
+      def initialize_dup: (Deflater orig) -> void
+
       def bytesize: () -> (Integer | Float)
 
       def read: (?int? length, ?string? outbuf) -> String?

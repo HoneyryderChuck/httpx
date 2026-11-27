@@ -15,6 +15,13 @@ module HTTPX
         @parts = to_parts(form)
       end
 
+      def initialize_dup(orig)
+        super
+        @buffer = "".b
+        @part_index = 0
+        @parts = @parts.map { |part| copy_part(part) }
+      end
+
       def content_type
         "multipart/form-data; boundary=#{@boundary}"
       end
@@ -50,6 +57,16 @@ module HTTPX
       end
 
       private
+
+      def copy_part(part)
+        if part.is_a?(StringIO)
+          StringIO.new(part.string)
+        elsif part.respond_to?(:path) && (path = part.path) && File.file?(path)
+          File.open(path, File::RDONLY, encoding: Encoding::BINARY)
+        else
+          part
+        end
+      end
 
       def to_parts(form)
         params = form.each_with_object([]) do |(key, val), aux|

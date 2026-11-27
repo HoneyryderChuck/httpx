@@ -42,7 +42,11 @@ module HTTPX
 
         def rewind: () -> void
 
+        def initialize_dup: (Encoder orig) -> void
+
         private
+
+        def copy_part: (Object & _Reader part) -> (Object & _Reader)
 
         def to_parts: (multipart_input multipart_data) -> Array[_Reader]
 

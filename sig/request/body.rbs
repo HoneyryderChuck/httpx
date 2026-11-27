@@ -25,6 +25,8 @@ module HTTPX
 
     def chunk!: () -> void
 
+    def initialize_dup: (Request::Body orig) -> void
+
     private
 
     def self.initialize_body: (Hash[Symbol, untyped] params) -> body_encoder?

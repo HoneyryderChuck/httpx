@@ -33,6 +33,8 @@ module HTTPX
             FileUtils.copy_file(other.buffer.path, temp.path)
           end
         end
+
+      __setobj__(@buffer)
     end
 
     # size in bytes of the buffered content.

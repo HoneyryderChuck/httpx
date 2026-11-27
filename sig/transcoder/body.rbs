@@ -13,6 +13,8 @@ module HTTPX
 
         def to_s: () -> String
 
+        def initialize_dup: (Encoder orig) -> void
+
         private
 
         def initialize: (untyped body) -> untyped
